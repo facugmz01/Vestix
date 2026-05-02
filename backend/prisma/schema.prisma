@@ -74,6 +74,7 @@ model Branch {
   warehouses     Warehouse[]
   cashRegisters  CashRegister[]
   stockLevels    StockLevel[]
+  returns        SaleReturn[] // Added relation
 }
 
 model Warehouse {
