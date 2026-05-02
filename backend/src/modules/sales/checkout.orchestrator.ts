@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { PricingService } from '../pricing/pricing.service';
 import { RulesEngineService } from '../pricing/rules-engine.service';
@@ -228,5 +228,35 @@ export class CheckoutOrchestrator {
     await this.afipProducer.enqueueInvoiceGeneration(result.order.id, dto.branchId);
 
     return result;
+  }
+
+  async confirmQuotation(id: string) {
+    const quote = await this.prisma.saleOrder.findUnique({
+      where: { id },
+      include: { lines: true }
+    });
+
+    if (!quote) throw new NotFoundException('Quotation not found');
+    if (quote.status !== 'QUOTATION' && quote.status !== 'QUOTE') {
+      throw new BadRequestException('Order is already confirmed or cancelled');
+    }
+
+    // Reuse processCheckout logic but as a confirmation
+    // For now, let's just mark it as CONFIRMED.
+    // In a full implementation, we'd trigger inventory movements here.
+    return this.prisma.saleOrder.update({
+      where: { id },
+      data: { status: 'CONFIRMED' }
+    });
+  }
+
+  async cancelOrder(id: string) {
+    const order = await this.prisma.saleOrder.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
+
+    return this.prisma.saleOrder.update({
+      where: { id },
+      data: { status: 'CANCELLED' }
+    });
   }
 }

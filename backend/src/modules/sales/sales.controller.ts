@@ -34,4 +34,16 @@ export class SalesController {
   async getOrder(@Param('id') id: string) {
     return this.salesService.getOrderById(id);
   }
+
+  @Post('orders/:id/confirm')
+  @RequirePermissions({ action: 'update', subject: 'Sales' })
+  async confirmOrder(@Param('id') id: string) {
+    return this.checkoutOrchestrator.confirmQuotation(id);
+  }
+
+  @Post('orders/:id/cancel')
+  @RequirePermissions({ action: 'update', subject: 'Sales' })
+  async cancelOrder(@Param('id') id: string) {
+    return this.checkoutOrchestrator.cancelOrder(id);
+  }
 }
