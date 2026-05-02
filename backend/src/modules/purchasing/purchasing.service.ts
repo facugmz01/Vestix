@@ -35,7 +35,7 @@ export class PurchasingService {
         },
         include: { lines: true }
       });
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Error creating PO: ${error.message}`, error.stack);
       throw new BadRequestException('Error al crear la orden de compra. Verificá los datos o sincronizá la base de datos.');
     }
