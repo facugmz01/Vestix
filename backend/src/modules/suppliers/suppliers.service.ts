@@ -16,18 +16,21 @@ export class SuppliersService {
   }
 
   async createSupplier(dto: CreateSupplierDto) {
-    if (dto.taxId) {
-      const exists = await this.prisma.supplier.findUnique({ where: { taxId: dto.taxId } });
-      if (exists) throw new ConflictException(`El CUIT ${dto.taxId} ya está registrado`);
+    const taxId = dto.taxId === '' ? null : dto.taxId;
+    const email = dto.email === '' ? null : dto.email;
+
+    if (taxId) {
+      const exists = await this.prisma.supplier.findUnique({ where: { taxId } });
+      if (exists) throw new ConflictException(`El CUIT ${taxId} ya está registrado`);
     }
 
     const supplier = await this.prisma.supplier.create({
       data: {
         companyName: dto.companyName,
-        contactName: dto.contactName,
-        taxId: dto.taxId,
-        email: dto.email,
-        phone: dto.phone,
+        contactName: dto.contactName || null,
+        taxId: taxId,
+        email: email,
+        phone: dto.phone || null,
         balance: dto.initialBalance || 0,
         currency: dto.currency || 'ARS',
       }
@@ -76,6 +79,11 @@ export class SuppliersService {
 
   async updateSupplier(id: string, dto: any) {
     await this.getSupplier(id);
+    
+    // Clean empty strings for unique fields
+    if (dto.taxId === '') dto.taxId = null;
+    if (dto.email === '') dto.email = null;
+
     const updated = await this.prisma.supplier.update({
       where: { id },
       data: dto,

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, IsEnum, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, IsEnum, IsBoolean, ValidateIf } from 'class-validator';
 
 export enum CustomerType {
   INDIVIDUAL = 'INDIVIDUAL',
@@ -16,10 +16,12 @@ export class CreateCustomerDto {
 
   @IsOptional()
   @IsString()
+  @ValidateIf(o => o.taxId !== '' && o.taxId !== null)
   taxId?: string;
 
   @IsOptional()
   @IsEmail()
+  @ValidateIf(o => o.email !== '' && o.email !== null)
   email?: string;
 
   @IsOptional()

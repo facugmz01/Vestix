@@ -20,18 +20,21 @@ export class CustomersService {
   }
 
   async create(dto: CreateCustomerDto) {
-    if (dto.taxId) {
-      const exists = await this.prisma.customer.findUnique({ where: { taxId: dto.taxId } });
-      if (exists) throw new ConflictException(`El identificador fiscal ${dto.taxId} ya está registrado`);
+    const taxId = dto.taxId === '' ? null : dto.taxId;
+    const email = dto.email === '' ? null : dto.email;
+
+    if (taxId) {
+      const exists = await this.prisma.customer.findUnique({ where: { taxId } });
+      if (exists) throw new ConflictException(`El identificador fiscal ${taxId} ya está registrado`);
     }
 
     const customer = await this.prisma.customer.create({
       data: {
         type: dto.type || 'INDIVIDUAL',
         fullName: dto.fullName,
-        taxId: dto.taxId,
-        email: dto.email,
-        phone: dto.phone,
+        taxId: taxId,
+        email: email,
+        phone: dto.phone || null,
         creditLimit: dto.initialCreditLimit || 0,
         isActive: dto.isActive ?? true,
       }
@@ -81,6 +84,9 @@ export class CustomersService {
   async update(id: string, dto: any) {
     await this.findOne(id);
     
+    if (dto.taxId === '') dto.taxId = null;
+    if (dto.email === '') dto.email = null;
+
     if (dto.taxId) {
       const exists = await this.prisma.customer.findFirst({ 
         where: { taxId: dto.taxId, id: { not: id } } 
@@ -100,12 +106,7 @@ export class CustomersService {
     return this.prisma.customer.delete({ where: { id } });
   }
 
-  /**
-   * Financial: Decreases the customer's debt (used credit).
-   * Used during returns or when a customer pays their account.
-   */
   async repayCredit(id: string, amount: number, reference: string) {
-    const customer = await this.findOne(id);
     return this.prisma.customer.update({
       where: { id },
       data: {
@@ -115,22 +116,10 @@ export class CustomersService {
     });
   }
 
-  /**
-   * Financial: Increases the customer's debt (used credit).
-   * Used during sales on credit.
-   */
   async chargeCredit(id: string, amount: number, reference: string) {
-    const customer = await this.findOne(id);
-    if (customer.credit.used + amount > customer.credit.limit) {
-      // Note: mapping in findOne returns customer.credit.limit
-      // but the Prisma field is creditLimit. We'll use the raw values here.
-    }
-    
-    // Better to use raw prisma values for the check
     const raw = await this.prisma.customer.findUniqueOrThrow({ where: { id } });
     if (raw.usedCredit + amount > raw.creditLimit) {
-      // In some ERPs this is a warning, in others a hard stop.
-      // We'll allow it for now but could throw BadRequestException if needed.
+      // Warning or stop logic could go here
     }
 
     return this.prisma.customer.update({

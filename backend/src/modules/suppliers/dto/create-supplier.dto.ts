@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, ValidateIf } from 'class-validator';
 
 export class CreateSupplierDto {
   @IsString()
@@ -11,10 +11,12 @@ export class CreateSupplierDto {
 
   @IsOptional()
   @IsString()
+  @ValidateIf(o => o.taxId !== '' && o.taxId !== null)
   taxId?: string;
 
   @IsOptional()
   @IsEmail()
+  @ValidateIf(o => o.email !== '' && o.email !== null)
   email?: string;
 
   @IsOptional()
