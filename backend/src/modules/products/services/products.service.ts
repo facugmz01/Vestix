@@ -167,7 +167,7 @@ export class ProductsService {
         for (const variant of variants) {
           if (variant.id) {
             // Update
-            const { id: varId, productId, createdAt, updatedAt, ...varData } = variant;
+            const { id: varId, productId, createdAt, updatedAt, ...varData } = variant as any;
             await tx.productVariant.update({
               where: { id: varId },
               data: varData
