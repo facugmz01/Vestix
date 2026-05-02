@@ -1,15 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { InventoryMovement, MovementType } from './models/inventory-movement.model';
-import { StockLevel } from './models/stock-level.model';
-import * as crypto from 'crypto';
+import { PrismaService } from '../../core/prisma/prisma.service';
 
 @Injectable()
 export class InventoryService {
-  // Database Tables / Collections
-  private movements: InventoryMovement[] = [];
-  
-  // Represents a Materialized View in PostgreSQL or a Redis Cache mapping 'variantId_warehouseId' to Stock
-  private stockLevels: Map<string, StockLevel> = new Map(); 
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * CORE ENGINE: Records an immutable movement and updates the materialized view.
@@ -18,142 +12,125 @@ export class InventoryService {
     variantId: string;
     sourceWarehouseId: string | null;
     destinationWarehouseId: string | null;
-    branchId: string | null; // For stock-level denormalization
-    type: MovementType;
+    branchId: string | null;
+    type: string;
     quantity: number;
     unitCost?: number;
     referenceId?: string;
   }) {
     if (data.quantity <= 0) {
-      throw new BadRequestException('Movement quantity must be strictly positive.');
+      throw new BadRequestException('La cantidad del movimiento debe ser mayor a cero.');
     }
 
-    // 1. Write the Immutable Ledger Record
-    const movement: InventoryMovement = {
-      id: crypto.randomUUID(),
-      variantId: data.variantId,
-      sourceWarehouseId: data.sourceWarehouseId,
-      destinationWarehouseId: data.destinationWarehouseId,
-      type: data.type,
-      quantity: data.quantity,
-      unitCost: data.unitCost || 0, // WAC calculated here in production
-      referenceId: data.referenceId || null,
-      createdAt: new Date(),
-    };
-    this.movements.push(movement);
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Write the Immutable Ledger Record
+      const movement = await tx.inventoryMovement.create({
+        data: {
+          variantId: data.variantId,
+          sourceWarehouseId: data.sourceWarehouseId,
+          destinationWarehouseId: data.destinationWarehouseId,
+          type: data.type,
+          quantity: data.quantity,
+          unitCost: data.unitCost || 0,
+          referenceId: data.referenceId || null,
+        },
+      });
 
-    // 2. Incrementally Update the Fast-Read Cache
-    // In production, this executes inside the same DB Transaction as the movement insert.
-    if (data.sourceWarehouseId) {
-      this.processOutbound(data.variantId, data.sourceWarehouseId, data.type, data.quantity);
-    }
-    
-    if (data.destinationWarehouseId) {
-      this.processInbound(data.variantId, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
-    }
+      // 2. Update Source Stock (Outbound)
+      if (data.sourceWarehouseId) {
+        await this.updateStock(tx, data.variantId, data.sourceWarehouseId, data.branchId, data.type, -data.quantity);
+      }
+      
+      // 3. Update Destination Stock (Inbound)
+      if (data.destinationWarehouseId) {
+        await this.updateStock(tx, data.variantId, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
+      }
 
-    return movement;
+      return movement;
+    });
   }
 
-  /**
-   * Crucial for Omni-Channel: Reserves stock immediately when an E-commerce order is placed.
-   */
-  async reserveStock(variantId: string, warehouseId: string, branchId: string, quantity: number, orderId: string) {
-    const stock = this.getStock(variantId, warehouseId);
+  private async updateStock(tx: any, variantId: string, warehouseId: string, branchId: string | null, type: string, quantityChange: number) {
+    // Determine which field to update based on movement type
+    // Note: quantityChange is positive for inbound, negative for outbound
     
-    // We enforce availability checks for online orders to prevent selling phantom stock
+    let updateData: any = {};
+    if (type === 'RESERVATION') {
+      // Reservation increases reserved and decreases available
+      updateData = {
+        reservedQuantity: { increment: Math.abs(quantityChange) },
+        availableQuantity: { decrement: Math.abs(quantityChange) }
+      };
+    } else if (type === 'RESERVATION_RELEASE') {
+      // Release decreases reserved and increases available
+      updateData = {
+        reservedQuantity: { decrement: Math.abs(quantityChange) },
+        availableQuantity: { increment: Math.abs(quantityChange) }
+      };
+    } else {
+      // Normal movement affects physical and available
+      updateData = {
+        physicalQuantity: { increment: quantityChange },
+        availableQuantity: { increment: quantityChange }
+      };
+    }
+
+    // Upsert the stock level record
+    return tx.stockLevel.upsert({
+      where: { variantId_warehouseId: { variantId, warehouseId } },
+      update: updateData,
+      create: {
+        variantId,
+        warehouseId,
+        branchId: branchId || undefined,
+        physicalQuantity: quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : 0) : 0,
+        availableQuantity: quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : -quantityChange) : 0,
+        reservedQuantity: type === 'RESERVATION' ? Math.abs(quantityChange) : 0,
+      }
+    });
+  }
+
+  async reserveStock(variantId: string, warehouseId: string, branchId: string, quantity: number, orderId: string) {
+    const stock = await this.prisma.stockLevel.findUnique({
+      where: { variantId_warehouseId: { variantId, warehouseId } }
+    });
+    
     if (!stock || stock.availableQuantity < quantity) {
-      throw new BadRequestException(`Insufficient available stock for variant ${variantId}. Cannot fulfill online order.`);
+      throw new BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
     }
 
     return this.recordMovement({
       variantId,
-      sourceWarehouseId: null, // Reservations happen within the same warehouse, logic handled by MovementType
+      sourceWarehouseId: null,
       destinationWarehouseId: warehouseId,
       branchId,
-      type: MovementType.RESERVATION,
+      type: 'RESERVATION',
       quantity,
       referenceId: orderId
     });
   }
 
-  /**
-   * Reverses a reservation if a payment fails or the customer cancels.
-   */
   async releaseReservation(variantId: string, warehouseId: string, branchId: string, quantity: number, orderId: string) {
     return this.recordMovement({
       variantId,
       sourceWarehouseId: warehouseId,
       destinationWarehouseId: null,
       branchId,
-      type: MovementType.RESERVATION_RELEASE,
+      type: 'RESERVATION_RELEASE',
       quantity,
       referenceId: orderId
     });
   }
 
-  // --- QUERY METHODS ---
-
-  /**
-   * Gets real-time stock across an entire physical branch (e.g. sums STORE_FRONT + BACKROOM).
-   */
-  getStockPerBranch(branchId: string, variantId?: string): StockLevel[] {
-    return Array.from(this.stockLevels.values()).filter(lvl => 
-      lvl.branchId === branchId && (!variantId || lvl.variantId === variantId)
-    );
+  async getStockPerBranch(branchId: string, variantId?: string) {
+    return this.prisma.stockLevel.findMany({
+      where: { branchId, ...(variantId ? { variantId } : {}) }
+    });
   }
 
-  /**
-   * Gets real-time stock isolated to a specific warehouse room.
-   */
-  getStockPerWarehouse(warehouseId: string, variantId?: string): StockLevel[] {
-    return Array.from(this.stockLevels.values()).filter(lvl => 
-      lvl.warehouseId === warehouseId && (!variantId || lvl.variantId === variantId)
-    );
-  }
-
-  // --- INTERNAL STATE LOGIC ---
-
-  private processInbound(variantId: string, warehouseId: string, branchId: string | null, type: MovementType, quantity: number) {
-    const key = `${variantId}_${warehouseId}`;
-    if (!this.stockLevels.has(key)) {
-      this.stockLevels.set(key, { variantId, warehouseId, branchId, physicalQuantity: 0, reservedQuantity: 0, availableQuantity: 0, updatedAt: new Date() });
-    }
-    
-    const stock = this.stockLevels.get(key)!;
-
-    if (type === MovementType.RESERVATION) {
-      stock.reservedQuantity += quantity;
-      stock.availableQuantity -= quantity; // Physical quantity does not change, it's just claimed.
-    } else {
-      stock.physicalQuantity += quantity;
-      stock.availableQuantity += quantity;
-    }
-    stock.updatedAt = new Date();
-  }
-
-  private processOutbound(variantId: string, warehouseId: string, type: MovementType, quantity: number) {
-    const key = `${variantId}_${warehouseId}`;
-    const stock = this.stockLevels.get(key);
-    
-    if (!stock) return; 
-
-    if (type === MovementType.RESERVATION_RELEASE) {
-      stock.reservedQuantity -= quantity;
-      stock.availableQuantity += quantity; // Item is freed up to be sold again
-    } else if (type === MovementType.SALE) {
-      stock.physicalQuantity -= quantity;
-      // Note: If the sale was from an online order, it would release the reservation first.
-      // If it's a direct POS sale, we just reduce available.
-      stock.availableQuantity -= quantity; 
-    } else {
-      stock.physicalQuantity -= quantity;
-      stock.availableQuantity -= quantity;
-    }
-    stock.updatedAt = new Date();
-  }
-
-  private getStock(variantId: string, warehouseId: string) {
-    return this.stockLevels.get(`${variantId}_${warehouseId}`);
+  async getStockPerWarehouse(warehouseId: string, variantId?: string) {
+    return this.prisma.stockLevel.findMany({
+      where: { warehouseId, ...(variantId ? { variantId } : {}) }
+    });
   }
 }

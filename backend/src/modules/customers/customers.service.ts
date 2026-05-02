@@ -99,4 +99,46 @@ export class CustomersService {
     await this.findOne(id);
     return this.prisma.customer.delete({ where: { id } });
   }
+
+  /**
+   * Financial: Decreases the customer's debt (used credit).
+   * Used during returns or when a customer pays their account.
+   */
+  async repayCredit(id: string, amount: number, reference: string) {
+    const customer = await this.findOne(id);
+    return this.prisma.customer.update({
+      where: { id },
+      data: {
+        usedCredit: { decrement: amount },
+        updatedAt: new Date(),
+      }
+    });
+  }
+
+  /**
+   * Financial: Increases the customer's debt (used credit).
+   * Used during sales on credit.
+   */
+  async chargeCredit(id: string, amount: number, reference: string) {
+    const customer = await this.findOne(id);
+    if (customer.credit.used + amount > customer.credit.limit) {
+      // Note: mapping in findOne returns customer.credit.limit
+      // but the Prisma field is creditLimit. We'll use the raw values here.
+    }
+    
+    // Better to use raw prisma values for the check
+    const raw = await this.prisma.customer.findUniqueOrThrow({ where: { id } });
+    if (raw.usedCredit + amount > raw.creditLimit) {
+      // In some ERPs this is a warning, in others a hard stop.
+      // We'll allow it for now but could throw BadRequestException if needed.
+    }
+
+    return this.prisma.customer.update({
+      where: { id },
+      data: {
+        usedCredit: { increment: amount },
+        updatedAt: new Date(),
+      }
+    });
+  }
 }

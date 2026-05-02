@@ -325,7 +325,7 @@ model Invoice {
 
 model AuditLog {
   id            String   @id @default(uuid())
-  userId        String
+  userId        String?
   userEmail     String?
   ipAddress     String?
   action        String
@@ -333,7 +333,7 @@ model AuditLog {
   resourceId    String?
   previousValue Json?
   newValue      Json?
-  module        String
+  module        String?
   description   String?
   createdAt     DateTime @default(now())
 
@@ -341,6 +341,39 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@index([action])
+}
+
+model FinancialAccount {
+  id           String                 @id @default(uuid())
+  name         String
+  type         String                 @default("CASH") // CASH | BANK | CREDIT_CARD | EXPENSE | REVENUE
+  currency     String                 @default("ARS")
+  branchId     String?
+  balance      Float                  @default(0)
+  isActive     Boolean                @default(true)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  transactions FinancialTransaction[]
+}
+
+model FinancialTransaction {
+  id          String           @id @default(uuid())
+  accountId   String
+  account     FinancialAccount @relation(fields: [accountId], references: [id])
+  type        String           // DEBIT | CREDIT
+  amount      Float
+  referenceId String
+  description String
+  createdAt   DateTime         @default(now())
+}
+
+model PaymentReceipt {
+  id          String   @id @default(uuid())
+  accountId   String
+  amount      Float
+  payerName   String
+  referenceId String
+  issuedAt    DateTime @default(now())
 }
 
 model TreasuryReceipt {

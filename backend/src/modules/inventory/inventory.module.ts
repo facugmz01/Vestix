@@ -6,10 +6,11 @@ import { TransfersService } from './transfers/transfers.service';
 import { ReservationsService } from './reservations/reservations.service';
 import { ReservationExpiryJob } from './reservation-expiry.job';
 import { InventoryController } from './inventory.controller';
+import { PrismaModule } from '../../core/prisma/prisma.module';
 
 @Global() 
 @Module({
-  imports: [ScheduleModule.forRoot()],
+  imports: [ScheduleModule.forRoot(), PrismaModule],
   controllers: [InventoryController],
   providers: [InventoryService, StockMovementService, TransfersService, ReservationsService, ReservationExpiryJob],
   exports: [InventoryService, StockMovementService, TransfersService, ReservationsService],
