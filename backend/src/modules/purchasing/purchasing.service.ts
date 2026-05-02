@@ -135,14 +135,20 @@ export class PurchasingService {
     if (uuidRegex.test(id)) {
       return this.prisma.purchaseOrder.findUnique({
         where: { id },
-        include: { lines: { include: { variant: { include: { product: true } } } } }
+        include: { 
+          supplier: true,
+          lines: { include: { variant: { include: { product: true } } } } 
+        }
       });
     }
 
     // Short ID / Prefix search
     return this.prisma.purchaseOrder.findFirst({
       where: { id: { startsWith: id } },
-      include: { lines: { include: { variant: { include: { product: true } } } } }
+      include: { 
+        supplier: true,
+        lines: { include: { variant: { include: { product: true } } } } 
+      }
     });
   }
 

@@ -65,10 +65,12 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
     const payloadLines = Object.entries(scannedItems)
       .filter(([_, qty]) => qty > 0)
       .map(([variantId, qty]) => {
-        // Find poLineItemId (in our simple mapping, variantId acts as poLineItemId if they map 1:1, 
-        // but backend draftReceipt expects { poLineItemId, variantId, quantity })
-        // Usually frontend has the poLineItemId, assuming variantId === poLineItemId here for demo.
-        return { poLineItemId: variantId, variantId, quantity: qty };
+        const poLine = purchaseOrder.lines.find(l => l.variantId === variantId);
+        return { 
+          poLineItemId: poLine?.id || variantId, 
+          variantId, 
+          quantity: qty 
+        };
       });
 
     if (payloadLines.length === 0) {
@@ -114,7 +116,7 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
             <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
               <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--blue)' }}>Recepcionando Orden de Compra</p>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: 'monospace' }}>{purchaseOrder.id}</h3>
-              <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{purchaseOrder.supplierName}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{purchaseOrder.supplier?.companyName || 'Proveedor Desconocido'}</p>
               <div style={{ marginTop: '12px', textAlign: 'right' }}>
                 <Button variant="outline" size="sm" onClick={() => setPurchaseOrder(null)}>Cambiar OC</Button>
               </div>
