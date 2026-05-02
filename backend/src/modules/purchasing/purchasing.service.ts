@@ -1,35 +1,44 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { StockMovementService } from '../inventory/stock-movement.service';
 
 @Injectable()
 export class PurchasingService {
+  private readonly logger = new Logger(PurchasingService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly stockMovementService: StockMovementService
   ) {}
 
   async createPO(dto: any) {
-    return this.prisma.purchaseOrder.create({
-      data: {
-        supplierId: dto.supplierId,
-        destinationWarehouseId: dto.destinationWarehouseId,
-        status: 'DRAFT',
-        totalAmount: dto.totalAmount || 0,
-        paidAmount: 0,
-        currency: dto.currency || 'ARS',
-        notes: dto.notes,
-        lines: {
-          create: dto.lines.map(l => ({
-            variantId: l.variantId,
-            orderedQuantity: l.orderedQuantity,
-            unitCost: l.unitCost,
-            totalAmount: l.orderedQuantity * l.unitCost
-          }))
-        }
-      },
-      include: { lines: true }
-    });
+    try {
+      const totalAmount = (dto.lines || []).reduce((sum, l) => sum + (l.orderedQuantity * l.unitCost), 0);
+
+      return await this.prisma.purchaseOrder.create({
+        data: {
+          supplierId: dto.supplierId,
+          destinationWarehouseId: dto.destinationWarehouseId,
+          status: 'DRAFT',
+          totalAmount: totalAmount,
+          paidAmount: 0,
+          currency: dto.currency || 'ARS',
+          notes: dto.notes,
+          lines: {
+            create: (dto.lines || []).map(l => ({
+              variantId: l.variantId,
+              orderedQuantity: l.orderedQuantity,
+              unitCost: l.unitCost,
+              totalAmount: l.orderedQuantity * l.unitCost
+            }))
+          }
+        },
+        include: { lines: true }
+      });
+    } catch (error) {
+      this.logger.error(`Error creating PO: ${error.message}`, error.stack);
+      throw new BadRequestException('Error al crear la orden de compra. Verificá los datos o sincronizá la base de datos.');
+    }
   }
 
   async processDirectPurchase(dto: {
@@ -128,8 +137,6 @@ export class PurchasingService {
 
     return { data, total, page, pageSize };
   }
-
-  // --- METHODS FOR GOODS RECEIPT ---
 
   async getPO(id: string) {
     return this.prisma.purchaseOrder.findUnique({
