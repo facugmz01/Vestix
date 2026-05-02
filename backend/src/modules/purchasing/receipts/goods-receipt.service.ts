@@ -1,46 +1,66 @@
-import { Injectable, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
-import { GoodsReceipt, ReceiptStatus, GoodsReceiptLine } from './models/goods-receipt.model';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '../../../core/prisma/prisma.service';
 import { PurchasingService } from '../purchasing.service';
 import { StockMovementService } from '../../inventory/stock-movement.service';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class GoodsReceiptService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly purchasingService: PurchasingService,
     private readonly stockMovementService: StockMovementService
   ) {}
 
-  private receipts: GoodsReceipt[] = [];
+  async findAll(query: any = {}) {
+    const page = parseInt(query.page) || 1;
+    const pageSize = parseInt(query.pageSize) || 50;
+    const skip = (page - 1) * pageSize;
+
+    const [data, total] = await Promise.all([
+      this.prisma.goodsReceipt.findMany({
+        include: { lines: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.goodsReceipt.count(),
+    ]);
+
+    return { data, total, page, pageSize };
+  }
+
+  async findOne(id: string) {
+    return this.prisma.goodsReceipt.findUnique({
+      where: { id },
+      include: { lines: true }
+    });
+  }
 
   /**
-   * 1. Draft a Goods Receipt based on what was physically scanned by the warehouse worker.
+   * 1. Draft a Goods Receipt based on what was physically scanned.
    */
   async draftReceipt(payload: {
     purchaseOrderId: string;
-    receivedByUserId: string;
+    receivedByUserId?: string;
     scannedItems: { poLineItemId: string, variantId: string, quantity: number }[];
+    notes?: string;
   }) {
     const po = await this.purchasingService.getPO(payload.purchaseOrderId);
     if (!po) throw new NotFoundException('Purchase Order not found');
 
-    const lines: GoodsReceiptLine[] = [];
     let hasDifferences = false;
+    const lineData = [];
 
     for (const scan of payload.scannedItems) {
       const poLine = po.lines.find(l => l.id === scan.poLineItemId);
       if (!poLine) throw new BadRequestException(`Line item ${scan.poLineItemId} does not belong to PO ${po.id}`);
 
-      // Calculate what we were expecting today (Ordered - Previously Received)
-      const expected = poLine.orderedQuantity - poLine.receivedQuantity; 
+      const expected = poLine.orderedQuantity - poLine.receivedQuantity;
       const difference = scan.quantity - expected;
 
-      if (difference !== 0) {
-        hasDifferences = true; // Flags the entire document as DISPUTED
-      }
+      if (difference !== 0) hasDifferences = true;
 
-      lines.push({
-        id: crypto.randomUUID(),
+      lineData.push({
         poLineItemId: scan.poLineItemId,
         variantId: scan.variantId,
         expectedQuantity: expected,
@@ -50,61 +70,80 @@ export class GoodsReceiptService {
       });
     }
 
-    const receipt: GoodsReceipt = {
-      id: crypto.randomUUID(),
-      purchaseOrderId: po.id,
-      destinationWarehouseId: po.destinationWarehouseId,
-      receivedByUserId: payload.receivedByUserId,
-      status: hasDifferences ? ReceiptStatus.DISPUTED : ReceiptStatus.DRAFT,
-      lines,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.receipts.push(receipt);
-    return receipt;
+    return this.prisma.goodsReceipt.create({
+      data: {
+        purchaseOrderId: po.id,
+        destinationWarehouseId: po.destinationWarehouseId,
+        receivedByUserId: payload.receivedByUserId,
+        status: hasDifferences ? 'DISPUTED' : 'DRAFT',
+        notes: payload.notes,
+        lines: {
+          create: lineData
+        }
+      },
+      include: { lines: true }
+    });
   }
 
   /**
    * 2. Validate and Commit the Receipt.
-   * This pushes the physical goods into the Inventory Ledger and finalizes the financial cost.
+   * This pushes the physical goods into the Inventory Ledger.
    */
-  async validateReceipt(receiptId: string, approvedByUserId?: string) {
-    const receipt = this.receipts.find(r => r.id === receiptId);
-    if (!receipt) throw new NotFoundException('Goods Receipt not found');
-
-    if (receipt.status === ReceiptStatus.VALIDATED) {
-      throw new ConflictException('This receipt has already been validated and posted to the ledger.');
-    }
-
-    // Strict Rule: If it's disputed (e.g., supplier sent 110 instead of 100), 
-    // it requires an explicit manager override before the extra 10 enter our financial ledger.
-    if (receipt.status === ReceiptStatus.DISPUTED && !approvedByUserId) {
-      throw new BadRequestException('This receipt contains differences. A manager must explicitly approve the validation.');
-    }
-
-    const po = await this.purchasingService.getPO(receipt.purchaseOrderId);
-
-    // Commit to double-entry ledger
-    for (const line of receipt.lines) {
-      const poLine = po.lines.find(l => l.id === line.poLineItemId)!;
-      
-      await this.stockMovementService.processGoodsReceipt({
-        variantId: line.variantId,
-        destinationWarehouseId: receipt.destinationWarehouseId,
-        branchId: 'DERIVED-FROM-WAREHOUSE-ID', // Handled via DB joins in prod
-        quantity: line.receivedQuantity,
-        purchaseCost: poLine.unitCost, 
-        purchaseOrderId: po.id,
+  async validateReceipt(receiptId: string, branchId: string, approvedByUserId?: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const receipt = await tx.goodsReceipt.findUnique({
+        where: { id: receiptId },
+        include: { lines: { include: { poLineItem: true } } }
       });
-    }
 
-    // Update the parent Purchase Order to reflect the new received quantities
-    await this.purchasingService.applyReceiptToPO(receipt.purchaseOrderId, receipt.lines);
+      if (!receipt) throw new NotFoundException('Goods Receipt not found');
+      if (receipt.status === 'VALIDATED') throw new ConflictException('Already validated');
 
-    receipt.status = ReceiptStatus.VALIDATED;
-    receipt.updatedAt = new Date();
-    
-    return receipt;
+      if (receipt.status === 'DISPUTED' && !approvedByUserId) {
+        throw new BadRequestException('Disputed receipt requires manager approval');
+      }
+
+      // Load Stock
+      for (const line of receipt.lines) {
+        await this.stockMovementService.processGoodsReceipt({
+          variantId: line.variantId,
+          destinationWarehouseId: receipt.destinationWarehouseId,
+          branchId: branchId,
+          quantity: line.receivedQuantity,
+          purchaseCost: line.poLineItem.unitCost,
+          purchaseOrderId: receipt.purchaseOrderId,
+        });
+
+        // Update PO Line received quantity
+        await tx.pOLineItem.update({
+          where: { id: line.poLineItemId },
+          data: { receivedQuantity: { increment: line.receivedQuantity } }
+        });
+      }
+
+      // Update PO Status if fully received
+      const updatedPo = await tx.purchaseOrder.findUnique({
+        where: { id: receipt.purchaseOrderId },
+        include: { lines: true }
+      });
+      const allFullyReceived = updatedPo.lines.every(l => l.receivedQuantity >= l.orderedQuantity);
+      
+      await tx.purchaseOrder.update({
+        where: { id: receipt.purchaseOrderId },
+        data: { 
+          status: allFullyReceived ? 'COMPLETED' : 'PARTIALLY_RECEIVED',
+          completedAt: allFullyReceived ? new Date() : undefined
+        }
+      });
+
+      return tx.goodsReceipt.update({
+        where: { id: receiptId },
+        data: { 
+          status: 'VALIDATED',
+          receivedByUserId: approvedByUserId || receipt.receivedByUserId
+        },
+        include: { lines: true }
+      });
+    });
   }
 }
