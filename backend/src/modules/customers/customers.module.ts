@@ -1,9 +1,11 @@
 import { Module, Global } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CustomersController } from './customers.controller';
+import { PrismaModule } from '../../core/prisma/prisma.module';
 
-@Global() // Global because the upcoming Sales/Checkout module relies heavily on Customer Credit
+@Global()
 @Module({
+  imports: [PrismaModule],
   controllers: [CustomersController],
   providers: [CustomersService],
   exports: [CustomersService],

@@ -1,27 +1,31 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, IsEnum } from 'class-validator';
 
 export class CreateSupplierDto {
   @IsString()
   @IsNotEmpty()
   companyName: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   contactName?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   taxId?: string;
 
-  @IsEmail()
   @IsOptional()
+  @IsEmail()
   email?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   phone?: string;
 
+  @IsOptional()
+  @IsNumber()
+  initialBalance?: number;
+
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  currency: string; // e.g., USD, ARS (Critical for cross-border purchasing)
+  currency?: string;
 }

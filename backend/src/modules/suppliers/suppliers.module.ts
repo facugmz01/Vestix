@@ -1,9 +1,11 @@
 import { Module, Global } from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
 import { SuppliersController } from './suppliers.controller';
+import { PrismaModule } from '../../core/prisma/prisma.module';
 
-@Global() // Global so the Purchasing module can resolve supplier balances
+@Global()
 @Module({
+  imports: [PrismaModule],
   controllers: [SuppliersController],
   providers: [SuppliersService],
   exports: [SuppliersService],

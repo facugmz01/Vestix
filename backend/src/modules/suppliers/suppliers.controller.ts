@@ -1,12 +1,39 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { SuppliersService } from './suppliers.service';
+import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('suppliers')
 export class SuppliersController {
-  
+  constructor(private readonly suppliersService: SuppliersService) {}
+
+  @Post()
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  create(@Body() dto: CreateSupplierDto) {
+    return this.suppliersService.createSupplier(dto);
+  }
+
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Purchasing' })
-  getSuppliers(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return { data: [], total: 0 };
+  findAll(@Query() query: any) {
+    return this.suppliersService.findAll(query);
+  }
+
+  @Get(':id')
+  @RequirePermissions({ action: 'read', subject: 'Purchasing' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.suppliersService.getSupplier(id);
+  }
+
+  @Patch(':id')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.suppliersService.updateSupplier(id, dto);
+  }
+
+  @Delete(':id')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.suppliersService.deleteSupplier(id);
   }
 }

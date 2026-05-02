@@ -1,36 +1,39 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { CustomersService } from './customers.service';
+import { CreateCustomerDto } from './dto/create-customer.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('customers')
 export class CustomersController {
-  
+  constructor(private readonly customersService: CustomersService) {}
+
+  @Post()
+  @RequirePermissions({ action: 'create', subject: 'Customers' })
+  create(@Body() dto: CreateCustomerDto) {
+    return this.customersService.create(dto);
+  }
+
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Customers' })
-  findAll(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return { data: [], total: 0 };
+  findAll(@Query() query: any) {
+    return this.customersService.findAll(query);
   }
 
   @Get(':id')
   @RequirePermissions({ action: 'read', subject: 'Customers' })
-  findOne(@Param('id') id: string) {
-    return {};
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.customersService.findOne(id);
   }
 
-  @Post()
-  @RequirePermissions({ action: 'create', subject: 'Customers' })
-  create(@Body() body: any) {
-    return {};
-  }
-
-  @Put(':id')
+  @Patch(':id')
   @RequirePermissions({ action: 'update', subject: 'Customers' })
-  update(@Param('id') id: string, @Body() body: any) {
-    return {};
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.customersService.update(id, dto);
   }
 
   @Delete(':id')
   @RequirePermissions({ action: 'delete', subject: 'Customers' })
-  delete(@Param('id') id: string) {
-    return { success: true };
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.customersService.remove(id);
   }
 }

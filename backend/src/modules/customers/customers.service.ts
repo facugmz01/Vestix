@@ -1,139 +1,102 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Customer, CustomerType, CustomerHistoryRecord } from './models/customer.model';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class CustomersService {
-  private customers: Customer[] = [];
-  private history: CustomerHistoryRecord[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  async createCustomer(dto: CreateCustomerDto): Promise<Customer> {
-    const customer: Customer = {
-      id: crypto.randomUUID(),
-      type: dto.type,
-      fullName: dto.fullName,
-      taxId: dto.taxId,
-      email: dto.email,
-      phone: dto.phone,
+  private mapCustomer(c: any) {
+    if (!c) return null;
+    const { creditLimit, usedCredit, ...rest } = c;
+    return {
+      ...rest,
       credit: {
-        limit: dto.creditLimit || 0,
-        used: 0,
-        available: dto.creditLimit || 0,
-        onHold: false,
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
+        limit: creditLimit,
+        used: usedCredit,
+        available: creditLimit - usedCredit
+      }
     };
-
-    this.customers.push(customer);
-    
-    await this.logHistory(customer.id, 'CUSTOMER_CREATED', customer.id, 'Customer profile initialized');
-
-    return customer;
   }
 
-  async getCustomer(id: string): Promise<Customer> {
-    const customer = this.customers.find(c => c.id === id);
-    if (!customer) throw new NotFoundException('Customer not found');
-    return customer;
-  }
-
-  /**
-   * Modifies a B2B client's credit limit. Highly sensitive operation.
-   */
-  async updateCreditLimit(id: string, newLimit: number, userId: string) {
-    if (newLimit < 0) throw new BadRequestException('Credit limit cannot be negative.');
-
-    const customer = await this.getCustomer(id);
-    const oldLimit = customer.credit.limit;
-    
-    customer.credit.limit = newLimit;
-    customer.credit.available = newLimit - customer.credit.used; // Recalculate dynamic availability
-
-    // If their available drops below 0 because they currently owe MORE than the new limit, auto-hold the account
-    if (customer.credit.available < 0) {
-      customer.credit.onHold = true;
+  async create(dto: CreateCustomerDto) {
+    if (dto.taxId) {
+      const exists = await this.prisma.customer.findUnique({ where: { taxId: dto.taxId } });
+      if (exists) throw new ConflictException(`El identificador fiscal ${dto.taxId} ya está registrado`);
     }
 
-    customer.updatedAt = new Date();
+    const customer = await this.prisma.customer.create({
+      data: {
+        type: dto.type || 'INDIVIDUAL',
+        fullName: dto.fullName,
+        taxId: dto.taxId,
+        email: dto.email,
+        phone: dto.phone,
+        creditLimit: dto.initialCreditLimit || 0,
+        isActive: dto.isActive ?? true,
+      }
+    });
 
-    await this.logHistory(
-      id, 
-      'CREDIT_LIMIT_CHANGED', 
-      id, 
-      `Limit safely changed from ${oldLimit} to ${newLimit} by user ${userId}`
-    );
-
-    return customer.credit;
+    return this.mapCustomer(customer);
   }
 
-  /**
-   * Financial Gateway: Executed during Checkout when a B2B customer selects "Pay On Account"
-   */
-  async consumeCredit(id: string, amount: number, orderId: string) {
-    const customer = await this.getCustomer(id);
+  async findAll(query: any = {}) {
+    const page = parseInt(query.page) || 1;
+    const pageSize = parseInt(query.pageSize) || 50;
+    const skip = (page - 1) * pageSize;
 
-    if (customer.credit.onHold) {
-      throw new BadRequestException('Checkout blocked: Account is currently on financial hold.');
+    const where: any = {};
+    if (query.search) {
+      where.OR = [
+        { fullName: { contains: query.search, mode: 'insensitive' } },
+        { email: { contains: query.search, mode: 'insensitive' } },
+        { taxId: { contains: query.search, mode: 'insensitive' } },
+      ];
     }
 
-    if (customer.credit.available < amount) {
-      throw new BadRequestException(`Checkout blocked: Insufficient credit available. Reduce the order by $${amount - customer.credit.available} or request a limit increase.`);
-    }
+    const [data, total] = await Promise.all([
+      this.prisma.customer.findMany({
+        where,
+        orderBy: { fullName: 'asc' },
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.customer.count({ where }),
+    ]);
 
-    customer.credit.used += amount;
-    customer.credit.available -= amount;
-    customer.updatedAt = new Date();
-
-    await this.logHistory(id, 'CREDIT_CONSUMED', orderId, `Consumed $${amount} for order ${orderId}`);
-
-    return customer.credit;
-  }
-
-  /**
-   * Repayment processing. Executed when the Accounts Receivable department processes an incoming bank transfer.
-   */
-  async repayCredit(id: string, amount: number, paymentReceiptId: string) {
-    const customer = await this.getCustomer(id);
-
-    if (amount <= 0) throw new BadRequestException('Repayment must be strictly positive.');
-
-    // Reduce used credit, but do not allow it to go below 0
-    customer.credit.used = Math.max(0, customer.credit.used - amount);
-    customer.credit.available = customer.credit.limit - customer.credit.used;
-    
-    // Auto-lift financial holds if their account returns to good standing
-    if (customer.credit.available >= 0 && customer.credit.onHold) {
-      customer.credit.onHold = false; 
-    }
-
-    customer.updatedAt = new Date();
-
-    await this.logHistory(id, 'CREDIT_REPAYMENT', paymentReceiptId, `Repaid $${amount} via receipt ${paymentReceiptId}`);
-
-    return customer.credit;
-  }
-
-  /**
-   * Retrieves the full audit trail for customer dispute resolutions.
-   */
-  async getCustomerHistory(id: string): Promise<CustomerHistoryRecord[]> {
-    return this.history
-      .filter(h => h.customerId === id)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Newest first
-  }
-
-  // --- INTERNAL UTILITY ---
-  private async logHistory(customerId: string, actionType: string, referenceId: string, description: string) {
-    const record: CustomerHistoryRecord = {
-      id: crypto.randomUUID(),
-      customerId,
-      actionType,
-      referenceId,
-      description,
-      createdAt: new Date(),
+    return {
+      data: data.map(c => this.mapCustomer(c)),
+      total,
+      page,
+      pageSize
     };
-    this.history.push(record);
+  }
+
+  async findOne(id: string) {
+    const customer = await this.prisma.customer.findUnique({ where: { id } });
+    if (!customer) throw new NotFoundException('Cliente no encontrado');
+    return this.mapCustomer(customer);
+  }
+
+  async update(id: string, dto: any) {
+    await this.findOne(id);
+    
+    if (dto.taxId) {
+      const exists = await this.prisma.customer.findFirst({ 
+        where: { taxId: dto.taxId, id: { not: id } } 
+      });
+      if (exists) throw new ConflictException(`El identificador fiscal ${dto.taxId} ya está en uso`);
+    }
+
+    const updated = await this.prisma.customer.update({
+      where: { id },
+      data: dto,
+    });
+    return this.mapCustomer(updated);
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.customer.delete({ where: { id } });
   }
 }

@@ -1,28 +1,36 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsEmail, IsNumber, Min } from 'class-validator';
-import { CustomerType } from '../models/customer.model';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, IsEnum, IsBoolean } from 'class-validator';
+
+export enum CustomerType {
+  INDIVIDUAL = 'INDIVIDUAL',
+  BUSINESS = 'BUSINESS',
+}
 
 export class CreateCustomerDto {
   @IsEnum(CustomerType)
-  type: CustomerType;
+  @IsOptional()
+  type?: CustomerType;
 
   @IsString()
   @IsNotEmpty()
   fullName: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   taxId?: string;
 
-  @IsEmail()
   @IsOptional()
+  @IsEmail()
   email?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   phone?: string;
 
-  @IsNumber()
   @IsOptional()
-  @Min(0)
-  creditLimit?: number;
+  @IsNumber()
+  initialCreditLimit?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
