@@ -1,15 +1,15 @@
-import { erpApi } from './axios.config';
+import { apiClient } from './client';
 
 export const purchasingApi = {
   getOrders: (params: any) => 
-    erpApi.get('/purchasing/orders', { params }).then(res => res.data),
+    apiClient.get('/purchasing/orders', { params }).then(res => res.data),
   
   processDirect: (data: any) => 
-    erpApi.post('/purchasing/direct', data).then(res => res.data),
+    apiClient.post('/purchasing/direct', data).then(res => res.data),
 
   getSuppliers: () =>
-    erpApi.get('/suppliers').then(res => res.data),
+    apiClient.get('/suppliers').then(res => res.data),
 
   searchCatalog: (query: string) =>
-    erpApi.get('/pos/search', { params: { query } }).then(res => res.data),
+    apiClient.get('/pos/catalog/search', { params: { q: query } }).then(res => res.data),
 };

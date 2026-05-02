@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 import { purchasingApi } from '@/api/purchasing.api';
 import { queryKeys } from '@/api/queryKeys';
-import { erpApi } from '@/api/axios.config';
+import { apiClient } from '@/api/client';
 import type { Supplier, ProductVariant } from '@/types';
 import { Button, Input, Badge, Drawer } from '@/components/ui';
 
@@ -23,12 +23,12 @@ export default function NewPurchasePage() {
 
   const { data: accounts } = useQuery({
     queryKey: ['treasury', 'accounts'],
-    queryFn: () => erpApi.get('/finance/treasury/accounts').then(res => res.data),
+    queryFn: () => apiClient.get('/finance/treasury/accounts').then(res => res.data),
   });
 
   const { data: warehouses } = useQuery({
     queryKey: ['warehouses'],
-    queryFn: () => erpApi.get('/warehouses').then(res => res.data),
+    queryFn: () => apiClient.get('/warehouses').then(res => res.data),
   });
 
   // 2. State
