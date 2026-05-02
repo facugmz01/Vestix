@@ -12,7 +12,19 @@ export class SalesService {
   async getOrderById(id: string) {
     return this.prisma.saleOrder.findUnique({
       where: { id },
-      include: { lines: true, variance: true }
+      include: { 
+        lines: {
+          include: {
+            variant: {
+              include: {
+                product: true
+              }
+            }
+          }
+        }, 
+        customer: true,
+        variance: true 
+      }
     });
   }
 

@@ -47,6 +47,13 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
 
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
+  const paymentMethodNames: Record<string, string> = {
+    CASH: 'Efectivo',
+    CREDIT_CARD: 'Tarjeta (Débito/Crédito)',
+    BANK_TRANSFER: 'Transferencia',
+    CUSTOMER_CREDIT: 'Cuenta Corriente',
+  };
+
   const getStatusColor = (s: string) => {
     switch (s) {
       case 'QUOTATION': return 'orange';
@@ -64,7 +71,9 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>{sale.status === 'QUOTATION' ? 'Presupuesto Nro' : 'Venta Nro'}</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{sale.id.split('-')[0]}</h3>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace', color: 'var(--blue)' }}>
+              {sale.status === 'QUOTATION' ? 'P-' : 'V-'}{sale.id.split('-')[0].toUpperCase()}
+            </h3>
             <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>Cliente: <strong style={{ color: 'var(--text-primary)' }}>{sale.customerName || 'Consumidor Final'}</strong></p>
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -81,7 +90,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
           </div>
           <div style={{ padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Condición de Pago</span>
-            <p style={{ margin: 0, fontWeight: 600 }}>{sale.paymentMethod}</p>
+            <p style={{ margin: 0, fontWeight: 600 }}>{paymentMethodNames[sale.paymentMethod] || sale.paymentMethod}</p>
           </div>
           <div style={{ padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Monto Final</span>
@@ -96,10 +105,21 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
           </h4>
           
           <Table
-            keyField="variantId"
+            keyField="id"
             data={sale.lines}
             columns={[
-              { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
+              { 
+                key: 'product', 
+                header: 'Artículo / SKU', 
+                render: (l) => (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 700, fontSize: '14px' }}>{l.variant?.product?.name || 'Producto Desconocido'}</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      SKU: {l.variant?.sku || l.variantSku || 'N/A'} - {l.variant?.size || ''} {l.variant?.color || ''}
+                    </span>
+                  </div>
+                ) 
+              },
               { key: 'price', header: 'Precio Base', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{fmtCurrency(l.basePrice)}</span> },
               { key: 'qty', header: 'Cant.', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.quantity}</span> },
               { key: 'discount', header: 'Desc. L.', render: (l) => l.discountAmount > 0 ? <span style={{ color: 'var(--red)' }}>-{fmtCurrency(l.discountAmount)}</span> : '-' },
