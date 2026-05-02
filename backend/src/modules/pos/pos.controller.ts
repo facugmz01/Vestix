@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { PosService } from './pos.service';
 import { ScanBarcodeDto } from './dto/scan-barcode.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';

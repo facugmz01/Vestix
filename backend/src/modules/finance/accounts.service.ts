@@ -34,12 +34,6 @@ export class AccountsService {
     });
   }
 
-  async getAccounts() {
-    return this.prisma.financialAccount.findMany({
-      where: { isActive: true }
-    });
-  }
-
   /**
    * CORE LEDGER ENGINE: Posts a financial transaction.
    */

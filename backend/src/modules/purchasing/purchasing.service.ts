@@ -32,9 +32,6 @@ export class PurchasingService {
     });
   }
 
-  /**
-   * One-step purchase: Creates PO, receives stock, and records payment.
-   */
   async processDirectPurchase(dto: {
     supplierId: string;
     warehouseId: string;
@@ -53,7 +50,6 @@ export class PurchasingService {
     const paidAmount = dto.paymentAmount || 0;
 
     return this.prisma.$transaction(async (tx) => {
-      // 1. Create Purchase Order (COMPLETED status because it's direct)
       const po = await tx.purchaseOrder.create({
         data: {
           supplierId: dto.supplierId,
@@ -77,7 +73,6 @@ export class PurchasingService {
         include: { lines: true }
       });
 
-      // 2. Increase Stock
       for (const line of dto.lines) {
         await this.stockMovementService.processGoodsReceipt({
           variantId: line.variantId,
@@ -89,18 +84,13 @@ export class PurchasingService {
         });
       }
 
-      // 3. Handle Payment and Supplier Balance
       const remainingDebt = totalAmount - paidAmount;
-      
-      // Update Supplier Balance (Debt to supplier)
       await tx.supplier.update({
         where: { id: dto.supplierId },
         data: { balance: { increment: remainingDebt } }
       });
 
-      // If money was paid from an account, record the transaction
       if (paidAmount > 0 && dto.paymentAccountId) {
-        // Record outgoing payment in Treasury
         await tx.financialTransaction.create({
           data: {
             accountId: dto.paymentAccountId,
@@ -111,7 +101,6 @@ export class PurchasingService {
           }
         });
 
-        // Update account balance
         await tx.financialAccount.update({
           where: { id: dto.paymentAccountId },
           data: { balance: { decrement: paidAmount } }
@@ -138,5 +127,45 @@ export class PurchasingService {
     ]);
 
     return { data, total, page, pageSize };
+  }
+
+  // --- METHODS FOR GOODS RECEIPT ---
+
+  async getPO(id: string) {
+    return this.prisma.purchaseOrder.findUnique({
+      where: { id },
+      include: { lines: true }
+    });
+  }
+
+  async applyReceiptToPO(poId: string, receiptLines: { lineItemId: string, receivedQuantity: number }[]) {
+    return this.prisma.$transaction(async (tx) => {
+      const po = await tx.purchaseOrder.findUnique({
+        where: { id: poId },
+        include: { lines: true }
+      });
+      if (!po) return;
+
+      for (const receipt of receiptLines) {
+        await tx.pOLineItem.update({
+          where: { id: receipt.lineItemId },
+          data: { receivedQuantity: { increment: receipt.receivedQuantity } }
+        });
+      }
+
+      const updatedPo = await tx.purchaseOrder.findUnique({
+        where: { id: poId },
+        include: { lines: true }
+      });
+
+      const allFullyReceived = updatedPo.lines.every(l => l.receivedQuantity >= l.orderedQuantity);
+      await tx.purchaseOrder.update({
+        where: { id: poId },
+        data: { 
+          status: allFullyReceived ? 'COMPLETED' : 'PARTIALLY_RECEIVED',
+          completedAt: allFullyReceived ? new Date() : undefined
+        }
+      });
+    });
   }
 }

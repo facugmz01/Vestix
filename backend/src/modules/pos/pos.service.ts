@@ -133,7 +133,7 @@ export class PosService {
       id: v.id,
       sku: v.sku,
       name: v.product.name,
-      basePrice: v.price || 0, // Using variant price or default to 0
+      basePrice: v.basePrice || 0, // Using variant basePrice or default to 0
       size: v.size,
       color: v.color,
     })));

@@ -283,13 +283,15 @@ model PurchaseOrder {
   supplierId             String
   supplier               Supplier     @relation(fields: [supplierId], references: [id])
   destinationWarehouseId String
-  status                 String
-  totalCost              Float
+  status                 String       // DRAFT, ISSUED, PARTIALLY_RECEIVED, COMPLETED, CANCELLED
+  totalAmount            Float        @default(0)
+  paidAmount             Float        @default(0)
+  currency               String       @default("ARS")
+  notes                  String?
   issuedAt               DateTime?
   completedAt            DateTime?
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
-
   lines                  POLineItem[]
 }
 
@@ -302,6 +304,8 @@ model POLineItem {
   orderedQuantity  Int
   receivedQuantity Int            @default(0)
   unitCost         Float
+  discountAmount   Float          @default(0)
+  totalAmount      Float
 }
 
 model Invoice {
