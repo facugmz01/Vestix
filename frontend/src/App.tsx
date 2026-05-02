@@ -53,6 +53,7 @@ const BranchesPage   = lazy(() => import('@/pages/admin/BranchesPage'));
 const WarehousesPage = lazy(() => import('@/pages/admin/WarehousesPage'));
 const LocationsPage  = lazy(() => import('@/pages/admin/LocationsPage'));
 const CashRegistersPage = lazy(() => import('@/pages/admin/CashRegistersPage'));
+const PriceInquiryPage = lazy(() => import('@/pages/admin/PriceInquiryPage'));
 
 // ─── Standalone pages ─────────────────────────────────────────────────────────
 const StorefrontLayout = lazy(() => import('@/layouts/StorefrontLayout'));
@@ -113,6 +114,7 @@ export default function App() {
                 <Route path="/admin/attributes" element={<AttributesPage />} />
                 <Route path="/admin/catalog/:productId/variants" element={<ProductVariantsPage />} />
                 <Route path="/admin/promotions"  element={<PromotionsPage />} />
+                <Route path="/admin/price-inquiry" element={<PriceInquiryPage />} />
               </Route>
 
               <Route element={<RequirePermission action="read"   subject="Inventory" />}>

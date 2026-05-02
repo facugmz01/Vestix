@@ -42,6 +42,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { id:'catalog',   label:'Catálogo',           to:'/admin/catalog',     icon:Package, action:'read', subject:'Catalog' },
       { id:'attributes',label:'Categorías y Precios', to:'/admin/attributes',  icon:Layers,  action:'read', subject:'Catalog' },
       { id:'promotions',label:'Promociones',to:'/admin/promotions',icon:Package,         action:'read',   subject:'Catalog'    },
+      { id:'price-inquiry', label:'Consulta de Precios', to:'/admin/price-inquiry', icon:Tag, action:'read', subject:'Catalog' },
       { id:'inventory', label:'Inventario', to:'/admin/inventory', icon:Warehouse,       action:'read',   subject:'Inventory'  },
       { id:'movements', label:'Movimientos',to:'/admin/inventory/movements', icon:History,action:'read',  subject:'Inventory'  },
       { id:'transfers', label:'Transferencias',to:'/admin/inventory/transfers', icon:Truck,action:'read', subject:'Inventory'  },
