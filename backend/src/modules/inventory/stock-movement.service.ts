@@ -89,7 +89,7 @@ export class StockMovementService {
     userId: string;
   }) {
     // 1. Get current system stock
-    const currentStockArr = this.inventoryLedger.getStockPerWarehouse(payload.warehouseId, payload.variantId);
+    const currentStockArr = await this.inventoryLedger.getStockPerWarehouse(payload.warehouseId, payload.variantId);
     const currentStock = currentStockArr.length > 0 ? currentStockArr[0].physicalQuantity : 0;
 
     if (payload.countedQuantity === currentStock) {

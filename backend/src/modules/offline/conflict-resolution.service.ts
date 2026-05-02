@@ -27,7 +27,7 @@ export class ConflictResolutionService {
     const conflicts: ConflictDetail[] = [];
 
     for (const line of (op.payload.lines ?? [])) {
-      const stockLevels = this.inventoryService.getStockPerBranch(op.branchId, line.variantId);
+      const stockLevels = await this.inventoryService.getStockPerBranch(op.branchId, line.variantId);
       const serverAvailable = stockLevels.reduce((s: number, l: any) => s + l.availableQuantity, 0);
 
       if (serverAvailable < line.quantity) {
@@ -59,7 +59,7 @@ export class ConflictResolutionService {
     const conflicts: ConflictDetail[] = [];
     
     for (const countLine of (op.payload.counts ?? [])) {
-      const stockLevels = this.inventoryService.getStockPerBranch(op.branchId, countLine.variantId);
+      const stockLevels = await this.inventoryService.getStockPerBranch(op.branchId, countLine.variantId);
       const serverQty = stockLevels.reduce((s: number, l: any) => s + l.availableQuantity, 0);
       
       if (serverQty !== countLine.countedQuantity) {

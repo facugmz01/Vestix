@@ -44,7 +44,7 @@ export class CatalogService {
       // 3. Omni-Channel Availability Check
       // We explicitly check stock allocated to the E-COMMERCE branch.
       // We don't want to show an item "In Stock" online if it's only available in the physical shop.
-      const stock = this.inventoryService.getStockPerBranch('E-COMMERCE-BRANCH', product.id);
+      const stock = await this.inventoryService.getStockPerBranch('E-COMMERCE-BRANCH', product.id);
       const availableQty = stock.reduce((sum, lvl) => sum + lvl.availableQuantity, 0);
 
       if (filters.inStockOnly && availableQty <= 0) continue;

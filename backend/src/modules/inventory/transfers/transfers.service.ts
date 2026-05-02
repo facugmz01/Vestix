@@ -24,7 +24,7 @@ export class TransfersService {
 
     // PRE-VALIDATION: Ensure source actually has the requested items before allowing a draft
     for (const line of data.lines) {
-      const stockArr = this.inventoryLedger.getStockPerWarehouse(data.sourceWarehouseId, line.variantId);
+      const stockArr = await this.inventoryLedger.getStockPerWarehouse(data.sourceWarehouseId, line.variantId);
       const available = stockArr.length > 0 ? stockArr[0].availableQuantity : 0;
       
       if (available < line.quantity) {
@@ -60,7 +60,7 @@ export class TransfersService {
     for (const line of transfer.lines) {
       // STRICT CONCURRENCY CHECK: Re-verify stock right before dispatch
       // (Someone might have bought the item at the POS while the transfer was sitting in DRAFT)
-      const stockArr = this.inventoryLedger.getStockPerWarehouse(transfer.sourceWarehouseId, line.variantId);
+      const stockArr = await this.inventoryLedger.getStockPerWarehouse(transfer.sourceWarehouseId, line.variantId);
       const available = stockArr.length > 0 ? stockArr[0].availableQuantity : 0;
       
       if (available < line.quantity) {
