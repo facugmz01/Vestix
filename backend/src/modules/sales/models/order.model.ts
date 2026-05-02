@@ -1,11 +1,13 @@
 export enum OrderSource {
   POS = 'POS',                 // Physical offline-first checkout
   ECOMMERCE = 'ECOMMERCE',     // Online storefront
+  BACKOFFICE = 'BACKOFFICE',   // Manual entry from admin panel
 }
 
 export enum PaymentMethod {
   CASH = 'CASH',
   CREDIT_CARD = 'CREDIT_CARD',
+  BANK_TRANSFER = 'BANK_TRANSFER',
   CUSTOMER_CREDIT = 'CUSTOMER_CREDIT', // B2B Wholesale "Pay on Account"
 }
 

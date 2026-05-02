@@ -96,28 +96,33 @@ export function SaleFormDrawer({ open, onClose }: Props) {
 
   const mutation = useMutation({
     mutationFn: (data: { status: 'QUOTATION'|'CONFIRMED' }) => {
-      const payload: CreateSaleDto = {
+      const payload = {
+        id: crypto.randomUUID(),
         branchId,
+        warehouseId: undefined as any,   // Backoffice — no warehouse needed
         customerId: customerId || undefined,
         source: 'BACKOFFICE',
         paymentMethod,
         status: data.status,
+        posGrandTotal: grandTotal,
+        createdAtIso: new Date().toISOString(),
         cartDiscountTotal: cartDiscountAmt,
         lines: lines.map(l => ({
           variantId: l.variantId,
+          categoryId: 'default',
           quantity: l.quantity,
-          basePrice: l.basePrice,
-          discountAmount: (l.basePrice * l.quantity) * (l.discountPct / 100),
+          unitPriceOverride: l.basePrice,
+          discountPct: l.discountPct,
         })),
       };
-      return salesApi.createSale(payload);
+      return salesApi.createSale(payload as any);
     },
     onSuccess: (_, variables) => {
       toast.success(variables.status === 'QUOTATION' ? 'Presupuesto creado con éxito' : 'Venta Confirmada');
       queryClient.invalidateQueries({ queryKey: queryKeys.sales.all() });
       onClose();
     },
-    onError: (err: any) => toast.error(err.message || 'Error al procesar la operación'),
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message || 'Error al procesar la operación'),
   });
 
   const handleSave = (status: 'QUOTATION' | 'CONFIRMED') => {

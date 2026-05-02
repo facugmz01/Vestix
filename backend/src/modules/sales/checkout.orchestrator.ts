@@ -91,7 +91,8 @@ export class CheckoutOrchestrator {
     // 4. ATOMIC TRANSACTION EXECUTION
     const result = await this.prisma.$transaction(async (tx) => {
       
-      const isQuote = dto.status === 'QUOTE';
+      const isQuote = dto.status === 'QUOTE' || dto.status === 'QUOTATION';
+      const isBackoffice = dto.source === 'BACKOFFICE' as any;
 
       // --- A. FINANCE BOUNDARY ---
       if (!isQuote) {
@@ -108,22 +109,21 @@ export class CheckoutOrchestrator {
             where: { id: dto.customerId },
             data: { usedCredit: { increment: posTotal } }
           });
-        } else {
-          if (!dto.paymentAccountId) throw new BadRequestException('Treasury Account ID required');
+        } else if (dto.paymentAccountId && !isBackoffice) {
           await tx.treasuryReceipt.create({
             data: {
               accountId: dto.paymentAccountId,
               amount: posTotal,
               payerName: dto.customerId || 'Walk-in',
               referenceId: dto.id,
-              description: `POS Checkout via ${dto.paymentMethod}`
+              description: `Checkout via ${dto.paymentMethod}`
             }
           });
         }
       }
 
       // --- B. INVENTORY BOUNDARY ---
-      if (!isQuote) {
+      if (!isQuote && dto.warehouseId) {
         for (const line of finalLinesForDB) {
           await tx.inventoryMovement.create({
             data: {

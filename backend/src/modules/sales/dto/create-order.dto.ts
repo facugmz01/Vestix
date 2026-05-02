@@ -34,8 +34,8 @@ export class CreateOrderDto {
   branchId: string;
 
   @IsUUID('4')
-  @IsNotEmpty()
-  warehouseId: string; // Where the physical stock is being pulled from (e.g., STORE_FRONT)
+  @IsOptional()
+  warehouseId?: string; // Where the physical stock is being pulled from
 
   @IsEnum(OrderSource)
   source: OrderSource;
