@@ -37,8 +37,8 @@ export function ProductTable({ products, onView, onEdit, onDelete }: Props) {
         },
         { 
           key: 'category', 
-          header: 'Categoría ID',
-          render: (p) => <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.categoryId}</span>
+          header: 'Categoría',
+          render: (p) => <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{p.category?.name || p.categoryId}</span>
         },
         { 
           key: 'status', 

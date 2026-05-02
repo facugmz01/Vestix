@@ -2,6 +2,8 @@ import { Drawer, Badge, Button } from '@/components/ui';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { Package, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
 import type { Product } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { productsApi } from '@/api/products.api';
 
 interface Props {
   open: boolean;
@@ -10,7 +12,15 @@ interface Props {
 }
 
 export function ProductDetailDrawer({ open, onClose, product }: Props) {
-  if (!product) return null;
+  const { data: fullProduct, isLoading } = useQuery({
+    queryKey: ['product', product?.id],
+    queryFn: () => productsApi.getProduct(product!.id),
+    enabled: !!product?.id && open,
+  });
+
+  const displayProduct = fullProduct || product;
+
+  if (!displayProduct) return null;
 
   return (
     <Drawer open={open} onClose={onClose} title="Ficha Técnica" width="md">
@@ -18,9 +28,9 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
         
         {/* Header */}
         <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-          {product.images && product.images.length > 0 ? (
+          {displayProduct.images && displayProduct.images.length > 0 ? (
             <div style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
-              <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={displayProduct.images[0]} alt={displayProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ) : (
             <div style={{ width: '100px', height: '100px', borderRadius: '8px', background: 'var(--bg-elevated)', border: '1px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', flexShrink: 0 }}>
@@ -31,17 +41,17 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px' }}>
-                {product.name}
+                {displayProduct.name}
               </h3>
-              <ProductStatusBadge isActive={product.isActive} isPublished={product.isPublished} />
+              <ProductStatusBadge isActive={displayProduct.isActive} isPublished={displayProduct.isPublished} />
             </div>
             
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-              <Badge color="gray">Cat ID: {product.categoryId}</Badge>
-              {product.brandId && <Badge color="blue">Marca ID: {product.brandId}</Badge>}
+              <Badge color="gray">{displayProduct.category?.name || `Cat: ${displayProduct.categoryId}`}</Badge>
+              {displayProduct.brandId && <Badge color="blue">{displayProduct.brand?.name || `Marca: ${displayProduct.brandId}`}</Badge>}
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-              ID Sistema: {product.id}
+              ID Sistema: {displayProduct.id}
             </p>
           </div>
         </div>
@@ -50,21 +60,48 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
         <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: 'var(--radius)' }}>
           <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Descripción Comercial</h4>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>
-            {product.description || 'Sin descripción detallada.'}
+            {displayProduct.description || 'Sin descripción detallada.'}
           </p>
         </div>
 
-        {/* Variants Warning */}
-        <div style={{ border: '1px solid var(--accent-muted)', borderLeft: '4px solid var(--accent)', background: 'var(--bg-base)', padding: '16px', borderRadius: 'var(--radius)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+        {/* Variants */}
+        <div style={{ border: '1px solid var(--border)', background: 'var(--bg-base)', padding: '16px', borderRadius: 'var(--radius)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
             <Package size={18} color="var(--accent)" />
-            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Gestión de Variantes</h4>
+            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Variantes y Precios</h4>
           </div>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Este es un "Producto Madre". El stock, precios (SKU) y códigos de barra se gestionan a nivel de <strong>Variante</strong> (Color/Talle). Ingresá a la matriz de variantes para administrar el inventario físico.
-          </p>
-          <Button variant="outline" size="sm" style={{ marginTop: '12px' }} icon={<LinkIcon size={14} />} onClick={() => window.location.href = `/admin/catalog/${product.id}/variants`}>
-            Ir a Variantes y Precios
+
+          {isLoading ? (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Cargando variantes...</p>
+          ) : displayProduct.variants && displayProduct.variants.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ textAlign: 'left', padding: '8px 4px', color: 'var(--text-secondary)' }}>SKU</th>
+                    <th style={{ textAlign: 'left', padding: '8px 4px', color: 'var(--text-secondary)' }}>Color</th>
+                    <th style={{ textAlign: 'left', padding: '8px 4px', color: 'var(--text-secondary)' }}>Talle</th>
+                    <th style={{ textAlign: 'right', padding: '8px 4px', color: 'var(--text-secondary)' }}>Precio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayProduct.variants.map((v) => (
+                    <tr key={v.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '8px 4px' }}>{v.sku}</td>
+                      <td style={{ padding: '8px 4px' }}>{v.color || '-'}</td>
+                      <td style={{ padding: '8px 4px' }}>{v.size || '-'}</td>
+                      <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 600 }}>${v.basePrice}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Este producto no tiene variantes configuradas.</p>
+          )}
+
+          <Button variant="outline" size="sm" style={{ marginTop: '16px', width: '100%' }} icon={<LinkIcon size={14} />} onClick={() => window.location.href = `/admin/catalog/${displayProduct.id}/variants`}>
+            Administrar Inventario Completo
           </Button>
         </div>
 
