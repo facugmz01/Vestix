@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Send, Truck, Package } from 'lucide-react';
+import { Plus, Eye, Send, Truck, Package, Trash2, Edit2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import { 
   PageContainer, Section, Table, Button, Badge, 
@@ -50,6 +51,22 @@ export default function PurchasingPage() {
   const handleView = (order: PurchaseOrder) => {
     setSelectedOrder(order);
     setDetailOpen(true);
+  };
+
+  const queryClient = useQueryClient();
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => purchasesApi.removeOrder(id),
+    onSuccess: () => {
+      toast.success('Borrador eliminado correctamente');
+      queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all() });
+    },
+    onError: (err: any) => toast.error(err.message || 'Error al eliminar'),
+  });
+
+  const handleDelete = (order: PurchaseOrder) => {
+    if (window.confirm('¿Estás seguro de eliminar este borrador de orden de compra?')) {
+      deleteMutation.mutate(order.id);
+    }
   };
 
   const orders = data?.data ?? [];
@@ -165,7 +182,10 @@ export default function PurchasingPage() {
                     {o.status === 'DRAFT' && (
                       <ActionGuard action="manage" subject="Purchasing">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(o)} aria-label="Editar" title="Editar borrador">
-                          <Send size={16} />
+                          <Edit2 size={16} />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(o)} aria-label="Eliminar" title="Eliminar borrador">
+                          <Trash2 size={16} color="var(--red)" />
                         </Button>
                       </ActionGuard>
                     )}

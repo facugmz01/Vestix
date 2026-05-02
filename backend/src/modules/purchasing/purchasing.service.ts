@@ -175,4 +175,46 @@ export class PurchasingService {
       });
     });
   }
+
+  async updatePO(id: string, dto: any) {
+    const po = await this.getPO(id);
+    if (!po) throw new NotFoundException('Orden de compra no encontrada');
+    if (po.status !== 'DRAFT') throw new BadRequestException('Solo se pueden editar órdenes en borrador');
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.pOLineItem.deleteMany({ where: { purchaseOrderId: id } });
+      
+      const totalAmount = (dto.lines || []).reduce((sum: number, l: any) => sum + (l.orderedQuantity * l.unitCost), 0);
+
+      return tx.purchaseOrder.update({
+        where: { id },
+        data: {
+          destinationWarehouseId: dto.destinationWarehouseId,
+          notes: dto.notes,
+          totalAmount,
+          lines: {
+            create: (dto.lines || []).map((l: any) => ({
+              variantId: l.variantId,
+              orderedQuantity: l.orderedQuantity,
+              unitCost: l.unitCost,
+              totalAmount: l.orderedQuantity * l.unitCost
+            }))
+          }
+        },
+        include: { lines: true }
+      });
+    });
+  }
+
+  async removePO(id: string) {
+    const po = await this.getPO(id);
+    if (!po) throw new NotFoundException('Orden de compra no encontrada');
+    if (po.status !== 'DRAFT') throw new BadRequestException('Solo se pueden borrar órdenes en borrador');
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.pOLineItem.deleteMany({ where: { purchaseOrderId: id } });
+      return tx.purchaseOrder.delete({ where: { id } });
+    });
+  }
 }
+

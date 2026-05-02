@@ -46,4 +46,8 @@ export const purchasesApi = {
 
   cancelOrder: (id: string) =>
     post<PurchaseOrder>(`/purchasing/orders/${id}/cancel`, {}),
+
+  removeOrder: (id: string) =>
+    del<void>(`/purchasing/orders/${id}`),
 };
+

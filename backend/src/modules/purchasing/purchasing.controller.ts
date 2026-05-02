@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, ParseUUIDPipe, Patch, Delete } from '@nestjs/common';
 import { PurchasingService } from './purchasing.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
@@ -23,4 +23,23 @@ export class PurchasingController {
   createPO(@Body() dto: any) {
     return this.purchasingService.createPO(dto);
   }
+
+  @Get('orders/:id')
+  @RequirePermissions({ action: 'read', subject: 'Purchasing' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.purchasingService.getPO(id);
+  }
+
+  @Patch('orders/:id')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.purchasingService.updatePO(id, dto);
+  }
+
+  @Delete('orders/:id')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.purchasingService.removePO(id);
+  }
 }
+
