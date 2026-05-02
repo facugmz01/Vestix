@@ -150,36 +150,45 @@ export default function POSPage() {
   };
 
   const checkoutMutation = useMutation({
-    mutationFn: () => salesApi.createSale({
+    mutationFn: (status: 'COMPLETED' | 'QUOTE' = 'COMPLETED') => salesApi.createSale({
       id: crypto.randomUUID(),
       branchId: session?.branchId || 'main',
       warehouseId: 'main', // Default or from session
       customerId: selectedCustomerId || undefined,
       source: 'POS',
       paymentMethod,
+      paymentAccountId: paymentMethod === 'CUSTOMER_CREDIT' ? undefined : 'default-cash-account', // Should come from session/config
+      status,
+      posGrandTotal: grandTotal,
       createdAtIso: new Date().toISOString(),
       lines: cart.map(i => ({
         variantId: i.variant.id,
-        categoryId: 'default', // Ideally fetched from product, default for now
+        categoryId: 'default', // Ideally fetched from product
         quantity: i.qty,
+        unitPriceOverride: i.variant.basePrice,
+        discountPct: i.discountPct
       }))
     }),
-    onSuccess: (sale) => {
-      toast.success('Venta registrada con éxito');
+    onSuccess: (_, status) => {
+      toast.success(status === 'QUOTE' ? 'Presupuesto guardado' : 'Venta registrada con éxito');
       setCart([]);
       setCartDiscountPct(0);
       setSelectedCustomerId('');
       setPaymentModalOpen(false);
       setAmountTendered(0);
-      // Here we could trigger a print ticket dialog with the returned `sale.id`
     },
-    onError: (err: any) => toast.error(err.message || 'Error al procesar el cobro'),
+    onError: (err: any) => toast.error(err.message || 'Error al procesar la operación'),
   });
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
     setPaymentModalOpen(true);
     setAmountTendered(grandTotal);
+  };
+
+  const handleSaveQuote = () => {
+    if (cart.length === 0) return;
+    checkoutMutation.mutate('QUOTE');
   };
 
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
@@ -283,9 +292,32 @@ export default function POSPage() {
                       <div onClick={() => updateQty(item.variant.id, 1)} style={{ cursor: 'pointer', padding: '4px' }}><Plus size={14} /></div>
                     </div>
                     
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>{fmtCurrency(item.variant.basePrice)} c/u</p>
-                      <p style={{ margin: 0, fontSize: '16px', fontWeight: 900 }}>{fmtCurrency(item.variant.basePrice * item.qty)}</p>
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>Precio Unit.</p>
+                      <input 
+                        type="number" 
+                        value={item.variant.basePrice} 
+                        onChange={e => {
+                          const newPrice = Number(e.target.value);
+                          setCart(prev => prev.map(i => i.variant.id === item.variant.id ? { ...i, variant: { ...i.variant, basePrice: newPrice } } : i));
+                        }}
+                        style={{ width: '90px', padding: '4px', textAlign: 'right', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 700, background: 'var(--bg-base)' }}
+                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--accent)' }}>Desc %</span>
+                        <input 
+                          type="number" 
+                          value={item.discountPct} 
+                          onChange={e => {
+                            const newDisc = Number(e.target.value);
+                            setCart(prev => prev.map(i => i.variant.id === item.variant.id ? { ...i, discountPct: newDisc } : i));
+                          }}
+                          style={{ width: '50px', padding: '2px', textAlign: 'right', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '12px' }}
+                        />
+                      </div>
+                      <p style={{ margin: '4px 0 0', fontSize: '16px', fontWeight: 900 }}>
+                        {fmtCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -316,14 +348,24 @@ export default function POSPage() {
             <span style={{ fontSize: '32px', fontWeight: 900, color: 'var(--green)', lineHeight: 1 }}>{fmtCurrency(grandTotal)}</span>
           </div>
 
-          <Button 
-            variant="primary" 
-            style={{ width: '100%', height: '56px', fontSize: '18px', marginTop: '8px' }}
-            disabled={cart.length === 0}
-            onClick={handleCheckout}
-          >
-            Cobrar ({cart.reduce((a,c) => a + c.qty, 0)} ítems)
-          </Button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '8px' }}>
+            <Button 
+              variant="secondary" 
+              style={{ height: '56px' }}
+              disabled={cart.length === 0 || checkoutMutation.isPending}
+              onClick={handleSaveQuote}
+            >
+              Guardar Presupuesto
+            </Button>
+            <Button 
+              variant="primary" 
+              style={{ height: '56px', fontSize: '18px' }}
+              disabled={cart.length === 0}
+              onClick={handleCheckout}
+            >
+              Cobrar ({cart.reduce((a,c) => a + c.qty, 0)} ítems)
+            </Button>
+          </div>
         </div>
       </div>
 

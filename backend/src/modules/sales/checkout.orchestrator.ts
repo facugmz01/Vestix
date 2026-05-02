@@ -32,7 +32,10 @@ export class CheckoutOrchestrator {
     // 2. PRICING EVALUATION (Server-Authoritative)
     const evaluatedLines = [];
     for (const lineDto of dto.lines) {
-      const productBasePrice = 20.00; // MOCK: Should resolve from Catalog DB
+      const variant = await this.prisma.productVariant.findUnique({ where: { id: lineDto.variantId } });
+      if (!variant) throw new BadRequestException(`Variant ${lineDto.variantId} not found`);
+
+      const productBasePrice = lineDto.unitPriceOverride !== undefined ? lineDto.unitPriceOverride : variant.basePrice;
       const resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, productBasePrice, dto.customerId);
       
       const manualDiscountAmount = lineDto.discountPct ? (resolvedBasePrice * (lineDto.discountPct / 100)) : 0;
@@ -75,7 +78,12 @@ export class CheckoutOrchestrator {
     if ((dto.source as string) === 'OFFLINE_POS' && (dto as any).posGrandTotal !== undefined) {
       posTotal = (dto as any).posGrandTotal;
     } else if ((dto as any).posGrandTotal !== undefined && Math.abs((dto as any).posGrandTotal - serverCalculatedTotal) > 0.01) {
-      throw new BadRequestException(`Price mismatch. Expected ${serverCalculatedTotal}, got ${(dto as any).posGrandTotal}`);
+      // IF it's a quote, we are more relaxed or just accept the manual input
+      if (dto.status === 'QUOTE') {
+        posTotal = (dto as any).posGrandTotal;
+      } else {
+        throw new BadRequestException(`Price mismatch. Expected ${serverCalculatedTotal}, got ${(dto as any).posGrandTotal}`);
+      }
     }
 
     const posDifference = posTotal - serverCalculatedTotal;
@@ -83,78 +91,82 @@ export class CheckoutOrchestrator {
     // 4. ATOMIC TRANSACTION EXECUTION
     const result = await this.prisma.$transaction(async (tx) => {
       
+      const isQuote = dto.status === 'QUOTE';
+
       // --- A. FINANCE BOUNDARY ---
-      if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
-        if (!dto.customerId) throw new BadRequestException('Customer ID required for credit');
-        const customer = await tx.customer.findUnique({ where: { id: dto.customerId }});
-        if (!customer) throw new BadRequestException('Customer not found');
-        
-        if (customer.usedCredit + posTotal > customer.creditLimit) {
-          throw new BadRequestException('Credit limit exceeded');
-        }
-        
-        await tx.customer.update({
-          where: { id: dto.customerId },
-          data: { usedCredit: { increment: posTotal } }
-        });
-      } else {
-        if (!dto.paymentAccountId) throw new BadRequestException('Treasury Account ID required');
-        await tx.treasuryReceipt.create({
-          data: {
-            accountId: dto.paymentAccountId,
-            amount: posTotal,
-            payerName: dto.customerId || 'Walk-in',
-            referenceId: dto.id,
-            description: `POS Checkout via ${dto.paymentMethod}`
+      if (!isQuote) {
+        if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
+          if (!dto.customerId) throw new BadRequestException('Customer ID required for credit');
+          const customer = await tx.customer.findUnique({ where: { id: dto.customerId }});
+          if (!customer) throw new BadRequestException('Customer not found');
+          
+          if (customer.usedCredit + posTotal > customer.creditLimit) {
+            throw new BadRequestException('Credit limit exceeded');
           }
-        });
+          
+          await tx.customer.update({
+            where: { id: dto.customerId },
+            data: { usedCredit: { increment: posTotal } }
+          });
+        } else {
+          if (!dto.paymentAccountId) throw new BadRequestException('Treasury Account ID required');
+          await tx.treasuryReceipt.create({
+            data: {
+              accountId: dto.paymentAccountId,
+              amount: posTotal,
+              payerName: dto.customerId || 'Walk-in',
+              referenceId: dto.id,
+              description: `POS Checkout via ${dto.paymentMethod}`
+            }
+          });
+        }
       }
 
       // --- B. INVENTORY BOUNDARY ---
-      for (const line of finalLinesForDB) {
-        await tx.inventoryMovement.create({
-          data: {
-            variantId: line.variantId,
-            sourceWarehouseId: dto.warehouseId,
-            type: 'SALE_EXIT',
-            quantity: line.quantity,
-            unitCost: line.basePrice,
-            referenceId: dto.id
-          }
-        });
-
-        const stock = await tx.stockLevel.findUnique({
-          where: { variantId_warehouseId: { variantId: line.variantId, warehouseId: dto.warehouseId } }
-        });
-        
-        // Ensure wasReserved exists on DTO or fallback to false
-        const wasReserved = (dto as any).wasReserved || false;
-
-        if (stock) {
-          await tx.stockLevel.update({
-            where: { id: stock.id },
-            data: wasReserved 
-              ? {
-                  physicalQuantity: { decrement: line.quantity },
-                  reservedQuantity: { decrement: line.quantity }
-                }
-              : {
-                  physicalQuantity: { decrement: line.quantity },
-                  availableQuantity: { decrement: line.quantity }
-                }
-          });
-        } else {
-          // Virtual Negative Stock Creation
-          await tx.stockLevel.create({
+      if (!isQuote) {
+        for (const line of finalLinesForDB) {
+          await tx.inventoryMovement.create({
             data: {
               variantId: line.variantId,
-              warehouseId: dto.warehouseId,
-              branchId: dto.branchId,
-              physicalQuantity: -line.quantity,
-              availableQuantity: wasReserved ? 0 : -line.quantity,
-              reservedQuantity: wasReserved ? -line.quantity : 0
+              sourceWarehouseId: dto.warehouseId,
+              type: 'SALE_EXIT',
+              quantity: line.quantity,
+              unitCost: line.basePrice,
+              referenceId: dto.id
             }
           });
+
+          const stock = await tx.stockLevel.findUnique({
+            where: { variantId_warehouseId: { variantId: line.variantId, warehouseId: dto.warehouseId } }
+          });
+          
+          const wasReserved = (dto as any).wasReserved || false;
+
+          if (stock) {
+            await tx.stockLevel.update({
+              where: { id: stock.id },
+              data: wasReserved 
+                ? {
+                    physicalQuantity: { decrement: line.quantity },
+                    reservedQuantity: { decrement: line.quantity }
+                  }
+                : {
+                    physicalQuantity: { decrement: line.quantity },
+                    availableQuantity: { decrement: line.quantity }
+                  }
+            });
+          } else {
+            await tx.stockLevel.create({
+              data: {
+                variantId: line.variantId,
+                warehouseId: dto.warehouseId,
+                branchId: dto.branchId,
+                physicalQuantity: -line.quantity,
+                availableQuantity: wasReserved ? 0 : -line.quantity,
+                reservedQuantity: wasReserved ? -line.quantity : 0
+              }
+            });
+          }
         }
       }
 
@@ -171,6 +183,7 @@ export class CheckoutOrchestrator {
           appliedPromotions: cartEvaluation.appliedPromotions,
           paymentMethod: dto.paymentMethod,
           paymentAccountId: dto.paymentAccountId,
+          status: dto.status || 'COMPLETED',
           createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
           lines: {
             create: finalLinesForDB.map(l => ({

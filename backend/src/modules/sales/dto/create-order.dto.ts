@@ -18,6 +18,10 @@ class OrderLineDto {
   @IsNumber()
   @IsOptional()
   discountPct?: number; // Manual line discount percentage applied by the cashier
+
+  @IsNumber()
+  @IsOptional()
+  unitPriceOverride?: number; // Manual price set by the cashier
 }
 
 export class CreateOrderDto {
@@ -52,6 +56,10 @@ export class CreateOrderDto {
   @IsOptional()
   paymentAccountId?: string; // Required for Cash/Card, skipped for Customer Credit
   
+  @IsString()
+  @IsOptional()
+  status?: string; // COMPLETED | QUOTE
+
   @IsString()
   @IsOptional()
   createdAtIso?: string; // Used to retain the accurate offline POS timestamp

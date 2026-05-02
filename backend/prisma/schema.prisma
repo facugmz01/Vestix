@@ -191,6 +191,7 @@ model SaleOrder {
   appliedPromotions Json            @default("[]")
   paymentMethod     String
   paymentAccountId  String?
+  status            String          @default("COMPLETED") // COMPLETED | QUOTE | CANCELLED
   createdAt         DateTime
   syncedAt          DateTime        @default(now())
 
