@@ -78,7 +78,7 @@ export default function NewPurchasePage() {
     mutationFn: (data: any) => purchasingApi.processDirect(data),
     onSuccess: () => {
       toast.success('Compra registrada correctamente');
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stock.all() });
       navigate('/admin/purchasing');
     },
     onError: (err: any) => toast.error(err.message || 'Error al procesar compra'),
