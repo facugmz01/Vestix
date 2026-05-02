@@ -124,14 +124,25 @@ export class PosService {
       where: {
         OR: [
           { sku: { contains: query, mode: 'insensitive' } },
+          { barcode: { contains: query, mode: 'insensitive' } },
+          { color: { contains: query, mode: 'insensitive' } },
+          { size: { contains: query, mode: 'insensitive' } },
           { product: { name: { contains: query, mode: 'insensitive' } } },
+          { product: { description: { contains: query, mode: 'insensitive' } } },
+          { product: { category: { name: { contains: query, mode: 'insensitive' } } } },
+          { product: { brand: { name: { contains: query, mode: 'insensitive' } } } },
         ],
       },
       include: { 
-        product: true,
+        product: {
+          include: {
+            category: true,
+            brand: true,
+          }
+        },
         stockLevels: true,
       },
-      take: 20,
+      take: 30,
     });
 
     return variants.map(v => ({
