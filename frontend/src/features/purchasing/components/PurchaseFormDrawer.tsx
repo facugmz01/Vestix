@@ -7,7 +7,7 @@ import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import type { PurchaseOrder } from '@/types';
 import toast from 'react-hot-toast';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Search, Package } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -24,9 +24,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
   const [lines, setLines] = useState<{ variantId: string; variantSku: string; quantity: number; unitCost: number }[]>([]);
 
-  const [variantSearch, setVariantSearch] = useState('');
-  const [variantQty, setVariantQty] = useState(1);
-  const [variantCost, setVariantCost] = useState(0);
+  const [search, setSearch] = useState('');
 
   const { data: suppliersData } = useQuery({ 
     queryKey: queryKeys.suppliers.all(), 
@@ -38,6 +36,12 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
     queryKey: ['warehouses'],
     queryFn: () => apiClient.get('/warehouses').then(res => res.data),
     enabled: open
+  });
+
+  const { data: searchResults, isLoading: isSearching } = useQuery({
+    queryKey: ['pos-search', search],
+    queryFn: () => purchasesApi.searchCatalog(search),
+    enabled: search.length >= 3 && open,
   });
 
   useEffect(() => {
@@ -56,22 +60,36 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
       setDestinationWarehouseId('');
       setExpectedDeliveryDate('');
       setLines([]);
+      setSearch('');
     }
   }, [open, orderToEdit]);
 
-  const addLine = () => {
-    if (!variantSearch.trim() || variantQty <= 0 || variantCost < 0) return;
-    setLines([...lines, { variantId: variantSearch, variantSku: variantSearch, quantity: variantQty, unitCost: variantCost }]);
-    setVariantSearch('');
-    setVariantQty(1);
-    setVariantCost(0);
+  const handleAddToCart = (product: any) => {
+    const existing = lines.find(l => l.variantId === product.id);
+    if (existing) {
+      setLines(lines.map(l => l.variantId === product.id ? { ...l, quantity: l.quantity + 1 } : l));
+    } else {
+      setLines([...lines, { variantId: product.id, variantSku: product.name + (product.size ? ` (${product.size})` : ''), quantity: 1, unitCost: product.basePrice || 0 }]);
+    }
+    setSearch('');
   };
 
   const removeLine = (idx: number) => {
     setLines(lines.filter((_, i) => i !== idx));
   };
 
+  const updateLineQty = (idx: number, qty: number) => {
+    if (qty < 1) return;
+    setLines(lines.map((l, i) => i === idx ? { ...l, quantity: qty } : l));
+  };
+
+  const updateLineCost = (idx: number, cost: number) => {
+    if (cost < 0) return;
+    setLines(lines.map((l, i) => i === idx ? { ...l, unitCost: cost } : l));
+  };
+
   const totals = lines.reduce((acc, line) => acc + (line.quantity * line.unitCost), 0);
+  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
@@ -105,9 +123,9 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   return (
     <Drawer
       open={open}
-      title={isEditing ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'}
+      title={isEditing ? 'Editar Orden de Compra' : 'Nueva Orden de Compra (Borrador)'}
       onClose={onClose}
-      width="md"
+      width="1100px"
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancelar</Button>
@@ -115,67 +133,111 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '20px', height: '100%' }}>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Proveedor *</label>
-            <select value={supplierId} onChange={e => setSupplierId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} required>
-              <option value="">Seleccionar Proveedor...</option>
-              {(suppliersData?.data || []).map((s: any) => <option key={s.id} value={s.id}>{s.companyName}</option>)}
-            </select>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Destino (Depósito) *</label>
-            <select value={destinationWarehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} required>
-              <option value="">Seleccionar Depósito...</option>
-              {(warehouses?.data || warehouses || []).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
-            </select>
-          </div>
-          
-          <Input 
-            label="Fecha de Entrega Esperada" 
-            type="date" 
-            value={expectedDeliveryDate} 
-            onChange={e => setExpectedDeliveryDate(e.target.value)} 
-          />
-        </div>
-
-        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: '14px' }}>Artículos (Detalle de OC)</h4>
-          
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', alignItems: 'flex-end' }}>
-            <div style={{ flex: 2 }}><Input label="SKU" value={variantSearch} onChange={e => setVariantSearch(e.target.value)} /></div>
-            <div style={{ flex: 1 }}><Input label="Cant." type="number" min="1" value={variantQty} onChange={e => setVariantQty(Number(e.target.value))} /></div>
-            <div style={{ flex: 1 }}><Input label="Costo U. ($)" type="number" min="0" step="0.01" value={variantCost} onChange={e => setVariantCost(Number(e.target.value))} /></div>
-            <Button type="button" variant="outline" onClick={addLine} style={{ marginBottom: '2px' }}><Plus size={16} /></Button>
+        {/* LEFT PANEL: CATALOG SEARCH */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border)', paddingRight: '20px' }}>
+          <div style={{ position: 'relative', marginBottom: '20px' }}>
+            <Search size={20} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--text-muted)' }} />
+            <input 
+              type="text"
+              placeholder="Buscar catálogo por SKU, nombre o categoría..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: '12px', border: '2px solid var(--accent)', fontSize: '15px', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+            />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {lines.length === 0 && <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>No hay artículos en la OC.</p>}
-            {lines.map((l, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '4px' }}>
-                <div>
-                  <span style={{ fontSize: '14px', fontWeight: 600, fontFamily: 'monospace' }}>{l.variantSku}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={{ fontSize: '13px' }}>Cant: {l.quantity}</span>
-                  <span style={{ fontSize: '13px' }}>Costo: ${l.unitCost}</span>
-                  <span style={{ fontSize: '14px', fontWeight: 'bold' }}>${l.quantity * l.unitCost}</span>
-                  <X size={16} color="var(--red)" style={{ cursor: 'pointer' }} onClick={() => removeLine(i)} />
-                </div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {search.length < 3 ? (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                <Package size={48} style={{ opacity: 0.2, marginBottom: '12px' }} />
+                <p>Escribí al menos 3 letras para buscar.</p>
               </div>
-            ))}
-          </div>
-          
-          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--border)', textAlign: 'right' }}>
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Monto Total OC: </span>
-            <span style={{ fontSize: '20px', fontWeight: 900 }}>${totals.toFixed(2)}</span>
+            ) : isSearching ? (
+              <p>Buscando en catálogo...</p>
+            ) : searchResults?.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
+                {searchResults.map((p: any) => (
+                  <div key={p.id} onClick={() => handleAddToCart(p)} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                    <p style={{ margin: '0 0 4px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{p.sku}</p>
+                    <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, minHeight: '34px' }}>{p.name} {p.size && `(${p.size})`}</p>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--accent)' }}>{fmtCurrency(p.basePrice)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No se encontraron resultados.</p>
+            )}
           </div>
         </div>
 
+        {/* RIGHT PANEL: CART & SETUP */}
+        <div style={{ width: '450px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h3 style={{ margin: 0, fontSize: '16px' }}>Configuración de OC</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Proveedor *</label>
+              <select value={supplierId} onChange={e => setSupplierId(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} required>
+                <option value="">Seleccionar Proveedor...</option>
+                {(suppliersData?.data || []).map((s: any) => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+              </select>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Destino (Depósito) *</label>
+              <select value={destinationWarehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} required>
+                <option value="">Seleccionar Depósito...</option>
+                {(warehouses?.data || warehouses || []).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </div>
+            
+            <Input 
+              label="Fecha de Entrega Esperada" 
+              type="date" 
+              value={expectedDeliveryDate} 
+              onChange={e => setExpectedDeliveryDate(e.target.value)} 
+            />
+          </div>
+
+          <div style={{ flex: 1, background: 'var(--bg-elevated)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Artículos Agregados</h3>
+            
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {lines.length === 0 && <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '20px' }}>No hay artículos en la orden.</p>}
+              {lines.map((l, i) => (
+                <div key={i} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{l.variantSku}</span>
+                    <X size={16} color="var(--red)" style={{ cursor: 'pointer' }} onClick={() => removeLine(i)} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Cant.</label>
+                      <input type="number" min="1" value={l.quantity} onChange={(e) => updateLineQty(i, Number(e.target.value))} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Costo U.</label>
+                      <input type="number" min="0" step="0.01" value={l.unitCost} onChange={(e) => updateLineCost(i, Number(e.target.value))} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)' }} />
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', marginTop: '8px', fontSize: '13px', fontWeight: 800 }}>
+                    {fmtCurrency(l.quantity * l.unitCost)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--border)', textAlign: 'right' }}>
+              <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Monto Total OC: </span>
+              <span style={{ fontSize: '24px', fontWeight: 900, display: 'block', color: 'var(--text-primary)' }}>{fmtCurrency(totals)}</span>
+            </div>
+          </div>
+
+        </div>
       </form>
     </Drawer>
   );
 }
+
