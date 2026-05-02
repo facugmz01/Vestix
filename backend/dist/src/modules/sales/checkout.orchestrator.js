@@ -1,0 +1,226 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CheckoutOrchestrator = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../core/prisma/prisma.service");
+const pricing_service_1 = require("../pricing/pricing.service");
+const rules_engine_service_1 = require("../pricing/rules-engine.service");
+const afip_producer_1 = require("../afip/afip.producer");
+const crypto = __importStar(require("crypto"));
+let CheckoutOrchestrator = class CheckoutOrchestrator {
+    constructor(prisma, pricingService, rulesEngine, afipProducer) {
+        this.prisma = prisma;
+        this.pricingService = pricingService;
+        this.rulesEngine = rulesEngine;
+        this.afipProducer = afipProducer;
+    }
+    async processCheckout(dto) {
+        const existingOrder = await this.prisma.saleOrder.findUnique({
+            where: { id: dto.id },
+        });
+        if (existingOrder) {
+            return { status: 'ALREADY_PROCESSED', order: existingOrder };
+        }
+        const evaluatedLines = [];
+        for (const lineDto of dto.lines) {
+            const productBasePrice = 20.00;
+            const resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, productBasePrice, dto.customerId);
+            const manualDiscountAmount = lineDto.discountPct ? (resolvedBasePrice * (lineDto.discountPct / 100)) : 0;
+            const finalPriceAfterManualDiscount = resolvedBasePrice - manualDiscountAmount;
+            evaluatedLines.push({
+                variantId: lineDto.variantId,
+                categoryId: lineDto.categoryId || 'default_category',
+                quantity: lineDto.quantity,
+                basePrice: resolvedBasePrice,
+                manualDiscountAmount: manualDiscountAmount,
+                finalPrice: finalPriceAfterManualDiscount
+            });
+        }
+        const cartEvaluation = this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
+            id: crypto.randomUUID(),
+            variantId: l.variantId,
+            categoryId: l.categoryId,
+            quantity: l.quantity,
+            unitPrice: l.finalPrice
+        })));
+        const serverCalculatedTotal = cartEvaluation.finalTotal;
+        const finalLinesForDB = evaluatedLines.map((line, index) => {
+            const promotionalDiscount = cartEvaluation.lines[index].promotionalDiscount;
+            const totalDiscountAmount = line.manualDiscountAmount + promotionalDiscount;
+            return {
+                ...line,
+                totalDiscountAmount,
+                finalPrice: line.basePrice - (totalDiscountAmount / line.quantity)
+            };
+        });
+        let posTotal = serverCalculatedTotal;
+        if (dto.source === 'OFFLINE_POS' && dto.posGrandTotal !== undefined) {
+            posTotal = dto.posGrandTotal;
+        }
+        else if (dto.posGrandTotal !== undefined && Math.abs(dto.posGrandTotal - serverCalculatedTotal) > 0.01) {
+            throw new common_1.BadRequestException(`Price mismatch. Expected ${serverCalculatedTotal}, got ${dto.posGrandTotal}`);
+        }
+        const posDifference = posTotal - serverCalculatedTotal;
+        const result = await this.prisma.$transaction(async (tx) => {
+            if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
+                if (!dto.customerId)
+                    throw new common_1.BadRequestException('Customer ID required for credit');
+                const customer = await tx.customer.findUnique({ where: { id: dto.customerId } });
+                if (!customer)
+                    throw new common_1.BadRequestException('Customer not found');
+                if (customer.usedCredit + posTotal > customer.creditLimit) {
+                    throw new common_1.BadRequestException('Credit limit exceeded');
+                }
+                await tx.customer.update({
+                    where: { id: dto.customerId },
+                    data: { usedCredit: { increment: posTotal } }
+                });
+            }
+            else {
+                if (!dto.paymentAccountId)
+                    throw new common_1.BadRequestException('Treasury Account ID required');
+                await tx.treasuryReceipt.create({
+                    data: {
+                        accountId: dto.paymentAccountId,
+                        amount: posTotal,
+                        payerName: dto.customerId || 'Walk-in',
+                        referenceId: dto.id,
+                        description: `POS Checkout via ${dto.paymentMethod}`
+                    }
+                });
+            }
+            for (const line of finalLinesForDB) {
+                await tx.inventoryMovement.create({
+                    data: {
+                        variantId: line.variantId,
+                        sourceWarehouseId: dto.warehouseId,
+                        type: 'SALE_EXIT',
+                        quantity: line.quantity,
+                        unitCost: line.basePrice,
+                        referenceId: dto.id
+                    }
+                });
+                const stock = await tx.stockLevel.findUnique({
+                    where: { variantId_warehouseId: { variantId: line.variantId, warehouseId: dto.warehouseId } }
+                });
+                const wasReserved = dto.wasReserved || false;
+                if (stock) {
+                    await tx.stockLevel.update({
+                        where: { id: stock.id },
+                        data: wasReserved
+                            ? {
+                                physicalQuantity: { decrement: line.quantity },
+                                reservedQuantity: { decrement: line.quantity }
+                            }
+                            : {
+                                physicalQuantity: { decrement: line.quantity },
+                                availableQuantity: { decrement: line.quantity }
+                            }
+                    });
+                }
+                else {
+                    await tx.stockLevel.create({
+                        data: {
+                            variantId: line.variantId,
+                            warehouseId: dto.warehouseId,
+                            branchId: dto.branchId,
+                            physicalQuantity: -line.quantity,
+                            availableQuantity: wasReserved ? 0 : -line.quantity,
+                            reservedQuantity: wasReserved ? -line.quantity : 0
+                        }
+                    });
+                }
+            }
+            const order = await tx.saleOrder.create({
+                data: {
+                    id: dto.id,
+                    branchId: dto.branchId,
+                    source: dto.source,
+                    customerId: dto.customerId,
+                    subtotal: cartEvaluation.originalTotal,
+                    cartDiscountTotal: cartEvaluation.discountTotal,
+                    grandTotal: posTotal,
+                    appliedPromotions: cartEvaluation.appliedPromotions,
+                    paymentMethod: dto.paymentMethod,
+                    paymentAccountId: dto.paymentAccountId,
+                    createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
+                    lines: {
+                        create: finalLinesForDB.map(l => ({
+                            variantId: l.variantId,
+                            categoryId: l.categoryId,
+                            quantity: l.quantity,
+                            basePrice: l.basePrice,
+                            discountAmount: l.totalDiscountAmount,
+                            finalPrice: l.finalPrice
+                        }))
+                    }
+                },
+                include: { lines: true }
+            });
+            if (Math.abs(posDifference) > 0.01) {
+                await tx.saleOrderVariance.create({
+                    data: {
+                        orderId: order.id,
+                        posTotal: posTotal,
+                        serverTotal: serverCalculatedTotal,
+                        difference: posDifference
+                    }
+                });
+            }
+            return { status: 'SUCCESS', order };
+        });
+        await this.afipProducer.enqueueInvoiceGeneration(result.order.id, dto.branchId);
+        return result;
+    }
+};
+exports.CheckoutOrchestrator = CheckoutOrchestrator;
+exports.CheckoutOrchestrator = CheckoutOrchestrator = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        pricing_service_1.PricingService,
+        rules_engine_service_1.RulesEngineService,
+        afip_producer_1.AfipProducer])
+], CheckoutOrchestrator);
+//# sourceMappingURL=checkout.orchestrator.js.map
