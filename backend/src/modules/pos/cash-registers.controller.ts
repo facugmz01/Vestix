@@ -5,8 +5,11 @@ import { IsString, IsNotEmpty, IsBoolean, IsOptional, IsUUID } from 'class-valid
 
 class CreateCashRegisterDto {
   @IsString() @IsNotEmpty() name: string;
-  @IsString() @IsNotEmpty() code: string;
+  
+  @IsOptional() @IsString() code?: string;
+  
   @IsUUID('4') @IsNotEmpty() branchId: string;
+  
   @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
@@ -17,10 +20,13 @@ export class CashRegistersController {
   @Post()
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async create(@Body() dto: CreateCashRegisterDto) {
+    // Generate code if missing
+    const code = dto.code || dto.name.toUpperCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
+
     return this.prisma.cashRegister.create({
       data: {
         name: dto.name,
-        code: dto.code,
+        code: code,
         branchId: dto.branchId,
         isActive: dto.isActive ?? true,
       },
