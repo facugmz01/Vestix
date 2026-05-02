@@ -1,0 +1,8 @@
+.section { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-lg); }
+.p-sm { padding:12px; }
+.p-md { padding:20px; }
+.p-lg { padding:28px; }
+.header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.title  { font-size:15px; font-weight:600; color:var(--text-primary); }
+.subtitle { font-size:13px; color:var(--text-secondary); margin-top:3px; }
+.action { flex-shrink:0; }

@@ -1,0 +1,28 @@
+.shell {
+  display: flex; min-height: 100dvh;
+}
+/* Sidebar: hidden below 1024px */
+.sidebarWrapper {
+  display: flex;
+}
+@media (max-width: 1023px) {
+  .sidebarWrapper { display: none; }
+}
+
+.main {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  overflow-x: hidden;
+}
+.content {
+  flex: 1;
+  padding: 24px 28px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  animation: fadeIn .22s ease;
+}
+@media (max-width: 768px) {
+  .content { padding: 16px; padding-bottom: 80px; /* space for mobile nav */ }
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }

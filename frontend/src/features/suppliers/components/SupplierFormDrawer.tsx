@@ -1,0 +1,165 @@
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Drawer, Button, Input } from '@/components/ui';
+import { suppliersApi, type CreateSupplierDto } from '@/api/suppliers.api';
+import { queryKeys } from '@/api/queryKeys';
+import type { Supplier } from '@/types';
+import toast from 'react-hot-toast';
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  supplierToEdit?: Supplier | null;
+}
+
+export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
+  const queryClient = useQueryClient();
+  const isEditing = !!supplierToEdit;
+
+  const [formData, setFormData] = useState<CreateSupplierDto>({
+    companyName: '',
+    contactName: '',
+    taxId: '',
+    email: '',
+    initialBalance: 0,
+    currency: 'ARS',
+  });
+
+  useEffect(() => {
+    if (open && supplierToEdit) {
+      setFormData({
+        companyName: supplierToEdit.companyName,
+        contactName: supplierToEdit.contactName || '',
+        taxId: supplierToEdit.taxId || '',
+        email: supplierToEdit.email || '',
+        // Editing balance directly is usually disabled, but we keep the field state
+        initialBalance: supplierToEdit.account?.balance || 0,
+        currency: supplierToEdit.account?.currency || 'ARS',
+      });
+    } else if (open && !supplierToEdit) {
+      setFormData({
+        companyName: '',
+        contactName: '',
+        taxId: '',
+        email: '',
+        initialBalance: 0,
+        currency: 'ARS',
+      });
+    }
+  }, [open, supplierToEdit]);
+
+  const mutation = useMutation({
+    mutationFn: (data: CreateSupplierDto) => {
+      if (isEditing && supplierToEdit) {
+        // Exclude financial setup from update payload
+        const { initialBalance, currency, ...updateData } = data;
+        return suppliersApi.updateSupplier(supplierToEdit.id, updateData);
+      }
+      return suppliersApi.createSupplier(data);
+    },
+    onSuccess: () => {
+      toast.success(isEditing ? 'Proveedor actualizado' : 'Proveedor creado exitosamente');
+      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all() });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error al guardar el proveedor');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.companyName.trim()) {
+      toast.error('La Razón Social es obligatoria');
+      return;
+    }
+    mutation.mutate(formData);
+  };
+
+  return (
+    <Drawer
+      open={open}
+      title={isEditing ? 'Editar Proveedor' : 'Nuevo Proveedor'}
+      onClose={onClose}
+      width="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>
+            Cancelar
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} loading={mutation.isPending}>
+            Guardar
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        
+        <Input
+          label="Razón Social / Empresa *"
+          value={formData.companyName}
+          onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+          required
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <Input
+            label="CUIT / Tax ID"
+            value={formData.taxId || ''}
+            onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+          />
+          <Input
+            label="Nombre de Contacto"
+            value={formData.contactName || ''}
+            onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+          />
+        </div>
+
+        <Input
+          label="Correo Electrónico (Para envío de OCs)"
+          type="email"
+          value={formData.email || ''}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+        />
+
+        <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+
+        <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: 'var(--radius)' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
+            Cuenta Corriente / Financiera
+          </h4>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+            <Input
+              label="Saldo Inicial de Deuda"
+              type="number"
+              value={formData.initialBalance}
+              onChange={(e) => setFormData({ ...formData, initialBalance: Number(e.target.value) })}
+              disabled={isEditing}
+              helperText="Saldo a favor del proveedor (lo que le debemos)."
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Moneda</label>
+              <select
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                disabled={isEditing}
+                style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+              >
+                <option value="ARS">ARS</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+          </div>
+
+          {isEditing && (
+            <p style={{ fontSize: '12px', color: 'var(--orange)', marginTop: '8px' }}>
+              * El saldo y la moneda de la cuenta no se pueden modificar desde aquí. Utilizá los pagos o notas de crédito en la ficha financiera.
+            </p>
+          )}
+        </div>
+
+      </form>
+    </Drawer>
+  );
+}

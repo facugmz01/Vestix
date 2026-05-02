@@ -1,0 +1,128 @@
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Download, RefreshCw } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { Button } from '@/components/ui';
+import { reportsApi } from '@/api/reports.api';
+import { queryKeys } from '@/api/queryKeys';
+import { BarChart, KpiCard } from './ChartPrimitives';
+import { TrendingUp, ShoppingBag, Users, CreditCard } from 'lucide-react';
+
+interface Props {
+  from: string;
+  to: string;
+  branchId?: string;
+}
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
+
+export function SalesReportPanel({ from, to, branchId }: Props) {
+  const fmtCurrency = (v: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v);
+
+  const { data: summary, isLoading: sl } = useQuery({
+    queryKey: queryKeys.reports.salesSummary(from, to, branchId),
+    queryFn: () => reportsApi.getSalesSummary(from, to, branchId),
+    enabled: !!from && !!to,
+  });
+
+  const { data: topSellers, isLoading: tsl } = useQuery({
+    queryKey: queryKeys.reports.topSellers(from, to),
+    queryFn: () => reportsApi.getTopSellers(from, to, 10),
+    enabled: !!from && !!to,
+  });
+
+  const { data: cogs } = useQuery({
+    queryKey: queryKeys.reports.cogs(from, to),
+    queryFn: () => reportsApi.getCogs(from, to),
+    enabled: !!from && !!to,
+  });
+
+  const exportMutation = useMutation({
+    mutationFn: () => reportsApi.exportReport('sales', { from, to, branchId: branchId ?? '' }),
+    onSuccess: (data) => { window.open(data.downloadUrl, '_blank'); toast.success('Reporte exportado'); },
+    onError: () => toast.error('Error al exportar'),
+  });
+
+  if (sl) return <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando datos de ventas...</div>;
+  if (!summary) return null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Button variant="outline" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>Exportar Excel</Button>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <KpiCard label="Total Facturado" value={fmtCurrency(summary.totalRevenue)} icon={<TrendingUp size={20} />} color="#3b82f6" />
+        <KpiCard label="Transacciones" value={String(summary.totalOrders)} icon={<ShoppingBag size={20} />} color="#10b981" />
+        <KpiCard label="Ticket Promedio" value={fmtCurrency(summary.averageTicket)} icon={<CreditCard size={20} />} color="#f59e0b" />
+        <KpiCard label="Clientes Únicos" value={String(summary.uniqueCustomers ?? '—')} icon={<Users size={20} />} color="#8b5cf6" />
+      </div>
+
+      {/* COGS */}
+      {cogs && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+          <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Costo de Mercadería Vendida</p>
+            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900 }}>{fmtCurrency(cogs.totalCOGS)}</h3>
+          </div>
+          <div style={{ padding: '20px', background: 'var(--green-bg)', borderRadius: '12px', border: '1px solid var(--green)', textAlign: 'center' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--green)', textTransform: 'uppercase', fontWeight: 600 }}>Ganancia Bruta</p>
+            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: 'var(--green)' }}>{fmtCurrency(cogs.grossProfit)}</h3>
+          </div>
+          <div style={{ padding: '20px', background: 'var(--blue-bg)', borderRadius: '12px', border: '1px solid var(--blue)', textAlign: 'center' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--blue)', textTransform: 'uppercase', fontWeight: 600 }}>Margen Bruto</p>
+            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: 'var(--blue)' }}>{cogs.grossMarginPct.toFixed(1)}%</h3>
+          </div>
+        </div>
+      )}
+
+      {/* Top Sellers */}
+      {!tsl && topSellers && topSellers.length > 0 && (
+        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
+          <h4 style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: 700 }}>Top 10 Productos más Vendidos</h4>
+          <BarChart
+            data={topSellers.slice(0, 10).map((t, i) => ({
+              label: t.productName?.split(' ').slice(0, 2).join(' ') ?? `SKU ${i + 1}`,
+              value: t.totalQuantity,
+              color: COLORS[i % COLORS.length],
+            }))}
+            height={180}
+            formatValue={(v) => String(v)}
+          />
+        </div>
+      )}
+
+      {/* Sales by method if available */}
+      {summary.byPaymentMethod && summary.byPaymentMethod.length > 0 && (
+        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
+          <h4 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700 }}>Ventas por Medio de Pago</h4>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                <th style={{ padding: '8px', textAlign: 'left' }}>Método</th>
+                <th style={{ padding: '8px', textAlign: 'right' }}>Transacciones</th>
+                <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
+                <th style={{ padding: '8px', textAlign: 'right' }}>%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summary.byPaymentMethod.map((m: any, i: number) => (
+                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px 8px', fontWeight: 600 }}>{m.method}</td>
+                  <td style={{ padding: '10px 8px', textAlign: 'right' }}>{m.count}</td>
+                  <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700 }}>{fmtCurrency(m.amount)}</td>
+                  <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>
+                    {summary.totalRevenue > 0 ? ((m.amount / summary.totalRevenue) * 100).toFixed(1) : 0}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

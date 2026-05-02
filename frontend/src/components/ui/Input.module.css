@@ -1,0 +1,23 @@
+.wrapper  { display: flex; flex-direction: column; gap: 6px; }
+.label    { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.inputRow { position: relative; }
+.leftIcon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); display: flex; align-items: center;
+}
+.input {
+  width: 100%;
+  padding: 9px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.input::placeholder { color: var(--text-muted); }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.withIcon  { padding-left: 38px; }
+.hasError  { border-color: var(--red) !important; }
+.error     { font-size: 12px; color: var(--red); }

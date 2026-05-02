@@ -1,0 +1,320 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  roleId   String
+  role     Role   @relation(fields: [roleId], references: [id])
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  users       User[]
+  permissions Permission[]
+}
+
+model Permission {
+  id      String @id @default(uuid())
+  action  String
+  subject String
+  roleId  String
+  role    Role   @relation(fields: [roleId], references: [id])
+}
+
+model Customer {
+  id          String      @id @default(uuid())
+  name        String
+  email       String?
+  creditLimit Float       @default(0)
+  usedCredit  Float       @default(0)
+  orders      SaleOrder[]
+}
+
+model Supplier {
+  id             String          @id @default(uuid())
+  name           String
+  purchaseOrders PurchaseOrder[]
+}
+
+model Branch {
+  id     String      @id @default(uuid())
+  name   String
+  orders SaleOrder[]
+}
+
+model Warehouse {
+  id       String @id @default(uuid())
+  name     String
+  branchId String
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  parentId  String?
+  parent    Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Brand {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id          String           @id @default(uuid())
+  name        String
+  baseSku     String?          @unique
+  description String?
+  categoryId  String
+  category    Category         @relation(fields: [categoryId], references: [id])
+  brandId     String?
+  brand       Brand?           @relation(fields: [brandId], references: [id])
+  
+  // --- New Fields ---
+  isVariable  Boolean          @default(false)
+  costPrice   Float            @default(0)
+  
+  isActive    Boolean          @default(true)
+  isPublished Boolean          @default(false)
+  images      Json             @default("[]")
+  metadata    Json             @default("{}")
+  variants    ProductVariant[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id         String          @id @default(uuid())
+  productId  String
+  product    Product         @relation(fields: [productId], references: [id])
+  sku        String          @unique
+  barcode    String?         @unique
+  size       String?
+  color      String?
+  
+  // Pricing Inheritance
+  costPrice  Float           @default(0)
+  basePrice  Float           @default(0) 
+  
+  isActive   Boolean         @default(true)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  orderLines OrderLineItem[]
+  poLines    POLineItem[]
+}
+
+model Attribute {
+  id        String           @id @default(uuid())
+  name      String           @unique // e.g., "Color", "Talle"
+  values    AttributeValue[]
+  createdAt DateTime         @default(now())
+}
+
+model AttributeValue {
+  id          String    @id @default(uuid())
+  attributeId String
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  value       String    // e.g., "Rojo", "XL"
+  createdAt   DateTime  @default(now())
+}
+
+model PriceList {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "Mayorista", "Minorista"
+  margin      Float    // e.g., 1.30 for 30% margin
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model SaleOrder {
+  id                String          @id // V2: Idempotent Offline UUID
+  branchId          String
+  branch            Branch          @relation(fields: [branchId], references: [id])
+  source            String
+  customerId        String?
+  customer          Customer?       @relation(fields: [customerId], references: [id])
+  subtotal          Float
+  cartDiscountTotal Float
+  grandTotal        Float
+  appliedPromotions Json            @default("[]")
+  paymentMethod     String
+  paymentAccountId  String?
+  createdAt         DateTime
+  syncedAt          DateTime        @default(now())
+
+  lines             OrderLineItem[]
+  invoices          Invoice[]
+  variance          SaleOrderVariance?
+
+  @@index([createdAt])
+  @@index([source])
+  @@index([customerId])
+  @@index([paymentMethod])
+}
+
+// V2: Offline Price Divergence Tracking
+model SaleOrderVariance {
+  id          String    @id @default(uuid())
+  orderId     String    @unique
+  order       SaleOrder @relation(fields: [orderId], references: [id])
+  posTotal    Float
+  serverTotal Float
+  difference  Float
+  resolved    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model OrderLineItem {
+  id             String         @id @default(uuid())
+  orderId        String
+  order          SaleOrder      @relation(fields: [orderId], references: [id])
+  variantId      String
+  variant        ProductVariant @relation(fields: [variantId], references: [id])
+  categoryId     String
+  quantity       Int
+  basePrice      Float
+  discountAmount Float
+  finalPrice     Float
+}
+
+model InventoryMovement {
+  id                     String   @id @default(uuid())
+  variantId              String
+  sourceWarehouseId      String?
+  destinationWarehouseId String?
+  type                   String
+  quantity               Int
+  unitCost               Float
+  referenceId            String?
+  createdAt              DateTime @default(now())
+
+  @@index([variantId])
+  @@index([referenceId])
+  @@index([createdAt])
+}
+
+model StockLevel {
+  id                String             @id @default(uuid())
+  variantId         String
+  warehouseId       String
+  branchId          String?
+  physicalQuantity  Int                @default(0) // V2: Allowed to go negative to support offline sales
+  reservedQuantity  Int                @default(0)
+  availableQuantity Int                @default(0) // V2: Allowed to go negative
+  updatedAt         DateTime           @updatedAt
+  reservations      StockReservation[]
+
+  @@unique([variantId, warehouseId])
+  @@index([variantId])
+}
+
+/// Explicit e-commerce stock hold.
+/// Created when a cart checkout is initiated; consumed or released on payment outcome.
+/// The expiry cleanup job targets ACTIVE records where expiresAt < now().
+model StockReservation {
+  id           String      @id @default(uuid())
+  stockLevelId String
+  stockLevel   StockLevel  @relation(fields: [stockLevelId], references: [id])
+  variantId    String
+  warehouseId  String
+  quantity     Int
+  orderId      String?     // Populated once checkout converts the reservation to a sale
+  cartId       String?     // Source cart/session that created this hold
+  status       String      @default("ACTIVE") // ACTIVE | CONSUMED | EXPIRED | CANCELLED
+  expiresAt    DateTime    // Hard expiry deadline
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([status, expiresAt]) // Critical index for the cleanup job query
+  @@index([orderId])
+  @@index([cartId])
+}
+
+model PurchaseOrder {
+  id                     String       @id @default(uuid())
+  supplierId             String
+  supplier               Supplier     @relation(fields: [supplierId], references: [id])
+  destinationWarehouseId String
+  status                 String
+  totalCost              Float
+  issuedAt               DateTime?
+  completedAt            DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  lines                  POLineItem[]
+}
+
+model POLineItem {
+  id               String         @id @default(uuid())
+  purchaseOrderId  String
+  purchaseOrder    PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id])
+  variantId        String
+  variant          ProductVariant @relation(fields: [variantId], references: [id])
+  orderedQuantity  Int
+  receivedQuantity Int            @default(0)
+  unitCost         Float
+}
+
+model Invoice {
+  id                     String    @id @default(uuid())
+  orderId                String
+  order                  SaleOrder @relation(fields: [orderId], references: [id])
+  type                   String
+  cae                    String?
+  caeExpiration          DateTime?
+  receiptNumber          String?
+  customerDocumentType   String
+  customerDocumentNumber String
+  netAmount              Float
+  vatAmount              Float
+  totalAmount            Float
+  status                 String
+  afipErrorMessage       String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String
+  userEmail     String?
+  ipAddress     String?
+  action        String
+  resource      String
+  resourceId    String?
+  previousValue Json?
+  newValue      Json?
+  module        String
+  description   String?
+  createdAt     DateTime @default(now())
+
+  @@index([resource, resourceId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model TreasuryReceipt {
+  id          String   @id @default(uuid())
+  accountId   String
+  amount      Float
+  payerName   String
+  referenceId String?
+  description String?
+  createdAt   DateTime @default(now())
+}

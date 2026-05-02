@@ -1,0 +1,21 @@
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  display:inline-block;
+  background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-overlay) 50%, var(--bg-elevated) 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.tableWrapper { display:flex; flex-direction:column; gap:0; }
+.row {
+  display:flex; align-items:center; gap:20px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+}
+.row:last-child { border-bottom:none; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
+.card { display:flex; flex-direction:column; gap:8px; padding:12px; background:var(--bg-surface); border-radius:var(--radius-lg); border:1px solid var(--border); }
+.statsRow { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
+.statCard { display:flex; flex-direction:column; gap:10px; padding:20px; background:var(--bg-surface); border-radius:var(--radius-lg); border:1px solid var(--border); }

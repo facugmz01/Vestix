@@ -1,0 +1,15 @@
+.bar      { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-top:8px; }
+.info     { font-size:13px; color:var(--text-secondary); }
+.controls { display:flex; align-items:center; gap:4px; }
+.btn {
+  min-width:32px; height:32px; padding:0 8px;
+  border-radius:var(--radius-sm);
+  background:var(--bg-elevated); border:1px solid var(--border);
+  color:var(--text-secondary); font-size:13px; font-weight:500;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+}
+.btn:hover:not(:disabled) { background:var(--bg-overlay); color:var(--text-primary); border-color:rgba(255,255,255,.12); }
+.btn:disabled { opacity:.35; cursor:not-allowed; }
+.btn.active   { background:var(--accent); border-color:var(--accent); color:#fff; }
+.ellipsis     { color:var(--text-muted); padding:0 4px; font-size:13px; line-height:32px; }

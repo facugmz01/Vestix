@@ -1,0 +1,12 @@
+.form        { display: flex; flex-direction: column; gap: 24px; }
+.heading     { text-align: center; }
+.title       { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.subtitle    { font-size: 14px; color: var(--text-secondary); }
+.fields      { display: flex; flex-direction: column; gap: 14px; }
+.submit      { width: 100%; }
+.errorBanner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: var(--radius);
+  background: var(--red-bg); border: 1px solid rgba(239,68,68,0.25);
+  color: var(--red); font-size: 13px; font-weight: 500;
+}

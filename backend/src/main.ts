@@ -1,0 +1,75 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidationPipe, BadRequestException } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
+import cookieParser from 'cookie-parser';
+import { GlobalHttpExceptionFilter } from './core/filters/http-exception.filter';
+
+async function bootstrap() {
+  // ─── APP CREATION ───────────────────────────────────────────────────────────
+  const app = await NestFactory.create(AppModule, {
+    // nestjs-pino replaces NestJS default logger with structured JSON output
+    bufferLogs: true,
+  });
+
+  // ─── STRUCTURED LOGGING ─────────────────────────────────────────────────────
+  // Requires LoggerModule registered in AppModule via nestjs-pino
+  app.useLogger(app.get(Logger));
+
+  // ─── MIDDLEWARE ─────────────────────────────────────────────────────────────
+  app.use(cookieParser());
+
+  // ─── CORS ───────────────────────────────────────────────────────────────────
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'https://app.roindumentaria.com.ar',
+    'https://roindumentaria.com.ar',
+  ];
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization, Cookie',
+  });
+
+  // ─── GLOBAL FILTERS ─────────────────────────────────────────────────────────
+  // Prevents stack trace leakage in production; returns a consistent error schema
+  app.useGlobalFilters(new GlobalHttpExceptionFilter());
+
+  // ─── GLOBAL PIPES ───────────────────────────────────────────────────────────
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      exceptionFactory: (errors) => {
+        const formattedErrors = errors.reduce((acc, err) => {
+          acc[err.property] = Object.values(err.constraints || {}).join(', ');
+          return acc;
+        }, {});
+        return new BadRequestException({
+          statusCode: 400,
+          message: 'Validation failed',
+          errors: formattedErrors,
+        });
+      },
+    }),
+  );
+
+  // ─── API PREFIX ─────────────────────────────────────────────────────────────
+  app.setGlobalPrefix('api', { exclude: ['health'] });
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+
+  app.get(Logger).log(`Application running on port ${port} [${process.env.NODE_ENV ?? 'development'}]`);
+}
+bootstrap();
+

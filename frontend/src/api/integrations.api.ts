@@ -1,0 +1,36 @@
+import { get, post, patch } from './client';
+import { cleanParams } from './requestUtils';
+import type { Integration, WebhookLog, PagedResponse } from '@/types';
+
+export interface WebhookLogsFilters {
+  page?: number;
+  pageSize?: number;
+  success?: boolean;
+  direction?: string;
+}
+
+export const integrationsApi = {
+  getAll: () =>
+    get<Integration[]>('/integrations'),
+
+  getOne: (id: string) =>
+    get<Integration>(`/integrations/${id}`),
+
+  saveConfig: (id: string, config: Record<string, string>) =>
+    patch<Integration>(`/integrations/${id}/config`, { config }),
+
+  toggleActive: (id: string, isActive: boolean) =>
+    patch<Integration>(`/integrations/${id}/toggle`, { isActive }),
+
+  testConnection: (id: string) =>
+    post<{ success: boolean; message: string }>(`/integrations/${id}/test`, {}),
+
+  triggerSync: (id: string) =>
+    post<{ message: string }>(`/integrations/${id}/sync`, {}),
+
+  getWebhookLogs: (id: string, filters?: WebhookLogsFilters) =>
+    get<PagedResponse<WebhookLog>>(`/integrations/${id}/webhook-logs`, { params: cleanParams(filters ?? {}) }),
+
+  retryWebhook: (integrationId: string, logId: string) =>
+    post<WebhookLog>(`/integrations/${integrationId}/webhook-logs/${logId}/retry`, {}),
+};

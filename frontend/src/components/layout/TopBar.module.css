@@ -1,0 +1,19 @@
+.topbar {
+  height: 48px; display: flex; align-items: center;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  position: sticky; top: 0; z-index: 10;
+  flex-shrink: 0;
+}
+.breadcrumbs { flex: 1; }
+.crumbList { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.crumb { display: flex; align-items: center; gap: 4px; }
+.homeIcon { color: var(--text-muted); }
+.crumbLink {
+  font-size: 13px; color: var(--text-secondary); text-decoration: none;
+  transition: color .15s;
+}
+.crumbLink:hover { color: var(--accent); }
+.crumbCurrent { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.sep { color: var(--text-muted); }
