@@ -47,12 +47,15 @@ export class ProductsService {
       // 4. Create Variants
       if (createProductDto.isVariable && createProductDto.variants?.length) {
         await tx.productVariant.createMany({
-          data: createProductDto.variants.map(v => ({
-            ...v,
-            productId: product.id,
-            costPrice: v.costPrice || createProductDto.costPrice || 0,
-            sku: v.sku || `${finalSku}-${v.size || ''}-${v.color || ''}-${crypto.randomBytes(2).toString('hex')}`.toUpperCase()
-          }))
+          data: createProductDto.variants.map(v => {
+            const parts = [finalSku, v.size, v.color].filter(Boolean).join('-');
+            return {
+              ...v,
+              productId: product.id,
+              costPrice: v.costPrice || createProductDto.costPrice || 0,
+              sku: v.sku || `${parts}-${crypto.randomBytes(2).toString('hex')}`.toUpperCase()
+            };
+          })
         });
       } else {
         // Simple product: create one default variant
@@ -60,7 +63,7 @@ export class ProductsService {
           data: {
             productId: product.id,
             sku: finalSku,
-            basePrice: createProductDto.variants?.[0]?.basePrice || 0,
+            basePrice: createProductDto.basePrice || createProductDto.variants?.[0]?.basePrice || 0,
             costPrice: createProductDto.costPrice || 0,
             isActive: true
           }
@@ -124,15 +127,87 @@ export class ProductsService {
       if (exists) throw new ConflictException('El SKU Base ya está en uso por otro producto');
     }
 
-    const { variants, images, ...data } = updateProductDto;
+    // We also extract basePrice if present so it doesn't try to save it on the Product model
+    const { variants, images, basePrice, ...data } = updateProductDto;
 
-    return this.prisma.product.update({
-      where: { id },
-      data: {
-        ...data,
-        images: images as any,
-      },
-      include: { category: true, brand: true }
+    return this.prisma.$transaction(async (tx) => {
+      const updatedProduct = await tx.product.update({
+        where: { id },
+        data: {
+          ...data,
+          images: images as any,
+        },
+        include: { category: true, brand: true }
+      });
+
+      if (variants && Array.isArray(variants)) {
+        const existingVariants = await tx.productVariant.findMany({ where: { productId: id } });
+        
+        // Identify variants to delete (exist in DB but not in payload)
+        const variantsToKeepIds = variants.filter(v => v.id).map(v => v.id);
+        const variantsToDelete = existingVariants.filter(v => !variantsToKeepIds.includes(v.id));
+
+        for (const variant of variantsToDelete) {
+          try {
+            await tx.productVariant.delete({ where: { id: variant.id } });
+          } catch (error: any) {
+            // If it fails due to foreign key constraints (e.g. sales, stock), soft delete it
+            if (error.code === 'P2003') {
+              await tx.productVariant.update({
+                where: { id: variant.id },
+                data: { isActive: false }
+              });
+            } else {
+              throw error;
+            }
+          }
+        }
+
+        // Update or create variants
+        for (const variant of variants) {
+          if (variant.id) {
+            // Update
+            const { id: varId, productId, createdAt, updatedAt, ...varData } = variant;
+            await tx.productVariant.update({
+              where: { id: varId },
+              data: varData
+            });
+          } else {
+            // Create
+            const finalSku = updateProductDto.baseSku || product.baseSku;
+            const parts = [finalSku, variant.size, variant.color].filter(Boolean).join('-');
+            await tx.productVariant.create({
+              data: {
+                ...variant,
+                productId: id,
+                costPrice: variant.costPrice || updateProductDto.costPrice || product.costPrice || 0,
+                sku: variant.sku || `${parts}-${crypto.randomBytes(2).toString('hex')}`.toUpperCase()
+              }
+            });
+          }
+        }
+        
+        // If switched to simple, ensure at least one default variant exists
+        const isNowVariable = updateProductDto.isVariable !== undefined ? updateProductDto.isVariable : product.isVariable;
+        if (!isNowVariable && variants.length === 0) {
+          // Check if we just deleted all variants
+          const remaining = await tx.productVariant.count({ where: { productId: id, isActive: true } });
+          if (remaining === 0) {
+            const finalSku = updateProductDto.baseSku || product.baseSku;
+            await tx.productVariant.create({
+              data: {
+                productId: id,
+                sku: finalSku || `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+                basePrice: updateProductDto.basePrice || 0,
+                costPrice: updateProductDto.costPrice || product.costPrice || 0,
+                isActive: true
+              }
+            });
+          }
+        }
+      }
+
+      return updatedProduct;
     });
   }
 

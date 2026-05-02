@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, Trash2 } from 'lucide-react';
 import { productsApi } from '@/api/products.api';
 import { Button, Input } from '@/components/ui';
+import toast from 'react-hot-toast';
 
 interface Props {
   costPrice: number;
@@ -34,14 +35,23 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
 
     // Cartesian product
     let combinations: any[] = [{}];
+    // Mapear solo atributos soportados (size, color)
+    let hasUnsupported = false;
+    let supportedCount = 0;
+    
     attrNames.forEach(name => {
-      const next: any[] = [];
-      const values = selectedAttributes[name];
-      
-      // Map attribute name to internal key (Talle -> size, Color -> color)
       let key = name.toLowerCase();
       if (key === 'talle' || key === 'tamaño') key = 'size';
       if (key === 'color') key = 'color';
+
+      if (key !== 'size' && key !== 'color') {
+        hasUnsupported = true;
+        return; // Ignorar atributos no soportados por el esquema actual
+      }
+
+      supportedCount++;
+      const next: any[] = [];
+      const values = selectedAttributes[name];
 
       values.forEach(val => {
         combinations.forEach(combo => {
@@ -50,6 +60,14 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
       });
       combinations = next;
     });
+
+    if (hasUnsupported) {
+      toast.error('Actualmente la base de datos solo soporta combinaciones de "Talle" y "Color". Se ignoraron otros atributos.');
+    }
+
+    if (supportedCount === 0) {
+      return; // No generar nada si no hay atributos soportados
+    }
 
     const variants = combinations.map(combo => ({
       ...combo,

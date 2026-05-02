@@ -134,7 +134,7 @@ El frontend debe compilarse localmente o en el servidor antes de ser servido por
 4. **Habilitar sitio y reiniciar Nginx:**
    ```bash
    sudo ln -s /etc/nginx/sites-available/erp /etc/nginx/sites-enabled/
-   sudo nginx -t
+    sudo nginx -t
    sudo systemctl restart nginx
    ```
 

@@ -26,6 +26,10 @@ export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
     isActive: true,
     isPublished: false,
     images: [],
+    variants: [],
+    isVariable: false,
+    costPrice: 0,
+    basePrice: 0,
   });
 
   useEffect(() => {
@@ -39,6 +43,10 @@ export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
         isActive: productToEdit.isActive,
         isPublished: productToEdit.isPublished,
         images: productToEdit.images || [],
+        variants: productToEdit.variants || [],
+        isVariable: productToEdit.isVariable || false,
+        costPrice: productToEdit.costPrice || 0,
+        basePrice: productToEdit.variants?.[0]?.basePrice || 0,
       });
     } else if (open && !productToEdit) {
       setFormData({
@@ -50,6 +58,10 @@ export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
         isActive: true,
         isPublished: false,
         images: [],
+        variants: [],
+        isVariable: false,
+        costPrice: 0,
+        basePrice: 0,
       });
     }
   }, [open, productToEdit]);

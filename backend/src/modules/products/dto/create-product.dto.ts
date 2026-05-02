@@ -1,6 +1,36 @@
 import { IsString, IsNotEmpty, IsOptional, IsUUID, IsArray, ValidateNested, IsObject, IsNumber, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export class ProductVariantDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  sku?: string;
+
+  @IsOptional()
+  @IsString()
+  size?: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
+  @IsNumber()
+  costPrice?: number;
+
+  @IsOptional()
+  @IsNumber()
+  basePrice?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
 export class ProductImageDto {
   @IsString()
   @IsNotEmpty()
@@ -45,8 +75,14 @@ export class CreateProductDto {
   costPrice?: number;
 
   @IsOptional()
+  @IsNumber()
+  basePrice?: number;
+
+  @IsOptional()
   @IsArray()
-  variants?: any[];
+  @ValidateNested({ each: true })
+  @Type(() => ProductVariantDto)
+  variants?: ProductVariantDto[];
 
   @IsOptional()
   @IsBoolean()
