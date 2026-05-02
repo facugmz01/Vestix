@@ -199,6 +199,7 @@ model SaleOrder {
   lines             OrderLineItem[]
   invoices          Invoice[]
   variance          SaleOrderVariance?
+  returns           SaleReturn[] // Added relation
 
   @@index([createdAt])
   @@index([source])
@@ -229,6 +230,34 @@ model OrderLineItem {
   basePrice      Float
   discountAmount Float
   finalPrice     Float
+  returnLines    SaleReturnLine[] // Added relation to track which items were returned
+}
+
+model SaleReturn {
+  id                String           @id @default(uuid())
+  saleOrderId       String
+  saleOrder         SaleOrder        @relation(fields: [saleOrderId], references: [id])
+  branchId          String
+  branch            Branch           @relation(fields: [branchId], references: [id])
+  action            String           // REFUND | EXCHANGE
+  status            String           @default("PENDING") // PENDING | APPROVED | REJECTED
+  totalRefundAmount Float
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  lines             SaleReturnLine[]
+}
+
+model SaleReturnLine {
+  id           String         @id @default(uuid())
+  returnId     String
+  return       SaleReturn     @relation(fields: [returnId], references: [id])
+  orderLineId  String
+  orderLine    OrderLineItem  @relation(fields: [orderLineId], references: [id])
+  variantId    String
+  quantity     Int
+  unitPrice    Float          // Price at which it was originally sold
+  condition    String         @default("NEW") // NEW | DEFECTIVE | USED
+  reason       String?
 }
 
 model InventoryMovement {
