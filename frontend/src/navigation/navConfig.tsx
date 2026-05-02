@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
   Truck, Users, CreditCard, BarChart2, Settings, Tag,
-  Monitor, Globe, ChevronRight, History, Banknote, Wallet, FileText, Bell, Plug, Shield, RefreshCw
+  Monitor, Globe, ChevronRight, History, Banknote, Wallet, FileText, Bell, Plug, Shield, RefreshCw, Layers
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';
@@ -39,9 +39,8 @@ export const NAV_GROUPS: NavGroup[] = [
     id:    'commerce',
     label: 'Comercio',
     items: [
-      { id:'catalog',   label:'Catálogo',   to:'/admin/catalog',   icon:Package,         action:'read',   subject:'Catalog'    },
-      { id:'taxonomy',  label:'Categorías y Marcas',to:'/admin/taxonomy',icon:Tag,        action:'read',   subject:'Catalog'    },
-      { id:'attributes',label:'Atributos y Precios',to:'/admin/attributes',icon:Tag,      action:'read',   subject:'Catalog'    },
+      { id:'catalog',   label:'Catálogo',           to:'/admin/catalog',     icon:Package, action:'read', subject:'Catalog' },
+      { id:'attributes',label:'Categorías y Precios', to:'/admin/attributes',  icon:Layers,  action:'read', subject:'Catalog' },
       { id:'promotions',label:'Promociones',to:'/admin/promotions',icon:Package,         action:'read',   subject:'Catalog'    },
       { id:'inventory', label:'Inventario', to:'/admin/inventory', icon:Warehouse,       action:'read',   subject:'Inventory'  },
       { id:'movements', label:'Movimientos',to:'/admin/inventory/movements', icon:History,action:'read',  subject:'Inventory'  },
