@@ -63,16 +63,16 @@ export class PurchasingService {
         data: {
           supplierId: dto.supplierId,
           destinationWarehouseId: dto.warehouseId,
-          status: 'COMPLETED',
+          status: 'ISSUED', // Changed from COMPLETED to ISSUED/PENDING RECEIPT
           totalAmount,
           paidAmount,
-          completedAt: new Date(),
+          completedAt: null, // Not completed until received
           notes: dto.notes,
           lines: {
             create: dto.lines.map(l => ({
               variantId: l.variantId,
               orderedQuantity: l.quantity,
-              receivedQuantity: l.quantity,
+              receivedQuantity: 0, // Stock not loaded yet
               unitCost: l.unitCost,
               discountAmount: l.discountAmount || 0,
               totalAmount: (l.quantity * l.unitCost) - (l.discountAmount || 0)
@@ -82,16 +82,7 @@ export class PurchasingService {
         include: { lines: true }
       });
 
-      for (const line of dto.lines) {
-        await this.stockMovementService.processGoodsReceipt({
-          variantId: line.variantId,
-          destinationWarehouseId: dto.warehouseId,
-          branchId: dto.branchId,
-          quantity: line.quantity,
-          purchaseCost: line.unitCost,
-          purchaseOrderId: po.id
-        });
-      }
+      // REMOVED: Stock loading logic. Stock must now be received via Goods Receipts.
 
       const remainingDebt = totalAmount - paidAmount;
       await tx.supplier.update({

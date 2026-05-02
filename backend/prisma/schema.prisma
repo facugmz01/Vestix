@@ -303,6 +303,7 @@ model PurchaseOrder {
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   lines                  POLineItem[]
+  receipts               GoodsReceipt[]
 }
 
 model POLineItem {
@@ -316,6 +317,33 @@ model POLineItem {
   unitCost         Float
   discountAmount   Float          @default(0)
   totalAmount      Float
+  receiptLines     GoodsReceiptLine[]
+}
+
+model GoodsReceipt {
+  id                     String       @id @default(uuid())
+  purchaseOrderId        String
+  purchaseOrder          PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  destinationWarehouseId String
+  receivedByUserId       String?
+  status                 String       // DRAFT, DISPUTED, VALIDATED
+  notes                  String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  lines                  GoodsReceiptLine[]
+}
+
+model GoodsReceiptLine {
+  id               String       @id @default(uuid())
+  receiptId        String
+  receipt          GoodsReceipt @relation(fields: [receiptId], references: [id])
+  poLineItemId     String
+  poLineItem       POLineItem   @relation(fields: [poLineItemId], references: [id])
+  variantId        String
+  expectedQuantity Int
+  receivedQuantity Int
+  difference       Int
+  notes            String?
 }
 
 model Invoice {

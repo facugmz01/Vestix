@@ -323,7 +323,7 @@ export default function NewPurchasePage() {
                 }))
               })}
             >
-              Confirmar Ingreso de Mercadería
+              Generar Orden y Pago
             </Button>
           </div>
 
