@@ -1,97 +1,95 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
-import { UpdateBranchConfigDto } from './dto/update-branch-config.dto';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class BranchesService {
-  // private readonly prisma: PrismaService;
-  
-  // Mock DB
-  private branches: any[] = [];
-  private configs: any[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createBranchDto: CreateBranchDto) {
-    const { config, ...branchData } = createBranchDto;
-    
-    const exists = this.branches.find(b => b.code === branchData.code);
-    if (exists) throw new ConflictException('Branch code must be unique');
+    const { config, settings, ...branchData } = createBranchDto;
 
-    const branch = {
-      id: crypto.randomUUID(),
-      ...branchData,
-      isActive: branchData.isActive ?? true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.branches.push(branch);
+    const exists = await this.prisma.branch.findUnique({ where: { code: branchData.code } });
+    if (exists) throw new ConflictException('El código de sucursal ya existe');
 
-    if (config) {
-      this.configs.push({
-        id: crypto.randomUUID(),
-        branchId: branch.id,
-        ...config,
-        updatedAt: new Date(),
-      });
-    }
-
-    return this.findOne(branch.id);
+    return this.prisma.branch.create({
+      data: {
+        name: branchData.name,
+        code: branchData.code,
+        address: branchData.address,
+        phone: branchData.phone,
+        isMain: branchData.isMain ?? false,
+        isActive: branchData.isActive ?? true,
+        settings: settings ?? config ?? undefined,
+      },
+      include: { warehouses: true }
+    });
   }
 
-  async findAll(activeOnly: boolean = false) {
-    if (activeOnly) return this.branches.filter(b => b.isActive);
-    return this.branches;
+  async findAll(query: any = {}) {
+    const page = parseInt(query.page) || 1;
+    const pageSize = parseInt(query.pageSize) || 50;
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { code: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.branch.findMany({
+        where,
+        include: { warehouses: true },
+        orderBy: [{ isMain: 'desc' }, { name: 'asc' }],
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.branch.count({ where }),
+    ]);
+
+    // Add userCount placeholder
+    const enriched = data.map(b => ({ ...b, userCount: 0 }));
+
+    return { data: enriched, total, page, pageSize };
   }
 
   async findOne(id: string) {
-    const branch = this.branches.find(b => b.id === id);
-    if (!branch) throw new NotFoundException(`Branch ${id} not found`);
-    
-    const config = this.configs.find(c => c.branchId === id) || null;
-    return { ...branch, config };
+    const branch = await this.prisma.branch.findUnique({
+      where: { id },
+      include: { warehouses: true }
+    });
+    if (!branch) throw new NotFoundException(`Sucursal ${id} no encontrada`);
+    return branch;
   }
 
   async update(id: string, updateBranchDto: UpdateBranchDto) {
-    const idx = this.branches.findIndex(b => b.id === id);
-    if (idx === -1) throw new NotFoundException(`Branch ${id} not found`);
+    await this.findOne(id);
+    const { config, settings, ...branchData } = updateBranchDto;
 
-    const { config, ...branchData } = updateBranchDto;
-    
-    this.branches[idx] = { ...this.branches[idx], ...branchData, updatedAt: new Date() };
-
-    if (config) {
-       await this.updateConfig(id, config as UpdateBranchConfigDto);
-    }
-
-    return this.findOne(id);
+    return this.prisma.branch.update({
+      where: { id },
+      data: {
+        ...branchData,
+        settings: settings ?? config ?? undefined,
+        updatedAt: new Date(),
+      },
+      include: { warehouses: true }
+    });
   }
 
-  async updateConfig(branchId: string, updateConfigDto: UpdateBranchConfigDto) {
-    const idx = this.configs.findIndex(c => c.branchId === branchId);
-    if (idx === -1) {
-       this.configs.push({
-           id: crypto.randomUUID(),
-           branchId,
-           ...updateConfigDto,
-           timezone: updateConfigDto.timezone || 'UTC',
-           isPosEnabled: updateConfigDto.isPosEnabled ?? false,
-           updatedAt: new Date()
-       });
-    } else {
-       this.configs[idx] = { ...this.configs[idx], ...updateConfigDto, updatedAt: new Date() };
-    }
-    return this.configs.find(c => c.branchId === branchId);
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.branch.delete({ where: { id } });
   }
 
   async assignUserToBranch(branchId: string, userId: string) {
-    // In the V2 DB schema, this creates a record in the 'UserBranch' join table
-    // await this.prisma.userBranch.create({ data: { branchId, userId } });
-    
-    // We enforce the relation to allow a User to ring sales on this POS
-    return { 
-      success: true, 
-      message: `User ${userId} successfully authorized for Branch ${branchId}` 
+    return {
+      success: true,
+      message: `User ${userId} successfully authorized for Branch ${branchId}`
     };
   }
 }

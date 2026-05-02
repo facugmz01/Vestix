@@ -1,18 +1,4 @@
-import { IsString, IsNotEmpty, IsBoolean, IsOptional, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
-
-export class BranchConfigDto {
-  @IsString()
-  @IsNotEmpty()
-  timezone: string;
-
-  @IsBoolean()
-  isPosEnabled: boolean;
-
-  @IsOptional()
-  @IsString()
-  taxIdentifier?: string;
-}
+import { IsString, IsNotEmpty, IsBoolean, IsOptional, IsObject } from 'class-validator';
 
 export class CreateBranchDto {
   @IsString()
@@ -23,16 +9,37 @@ export class CreateBranchDto {
   @IsNotEmpty()
   code: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  address: string;
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
 
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
-  @ValidateNested()
-  @Type(() => BranchConfigDto)
   @IsOptional()
-  config?: BranchConfigDto;
+  @IsBoolean()
+  isMain?: boolean;
+
+  // Frontend sends settings as a flat object
+  @IsOptional()
+  @IsObject()
+  settings?: {
+    taxId?: string;
+    posReceiptHeader?: string;
+    posReceiptFooter?: string;
+  };
+
+  // Also accept legacy config shape
+  @IsOptional()
+  @IsObject()
+  config?: {
+    timezone?: string;
+    isPosEnabled?: boolean;
+    taxIdentifier?: string;
+  };
 }

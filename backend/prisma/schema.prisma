@@ -46,15 +46,30 @@ model Supplier {
 }
 
 model Branch {
-  id     String      @id @default(uuid())
-  name   String
-  orders SaleOrder[]
+  id         String      @id @default(uuid())
+  name       String
+  code       String      @unique
+  address    String?
+  phone      String?
+  isMain     Boolean     @default(false)
+  isActive   Boolean     @default(true)
+  settings   Json?       // { taxId, posReceiptHeader, posReceiptFooter }
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  orders     SaleOrder[]
+  warehouses Warehouse[]
 }
 
 model Warehouse {
-  id       String @id @default(uuid())
-  name     String
-  branchId String
+  id          String       @id @default(uuid())
+  name        String
+  code        String?
+  isActive    Boolean      @default(true)
+  branchId    String
+  branch      Branch       @relation(fields: [branchId], references: [id])
+  stockLevels StockLevel[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model Category {
