@@ -56,8 +56,9 @@ model Branch {
   settings   Json?       // { taxId, posReceiptHeader, posReceiptFooter }
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-  orders     SaleOrder[]
-  warehouses Warehouse[]
+  orders         SaleOrder[]
+  warehouses     Warehouse[]
+  cashRegisters  CashRegister[]
 }
 
 model Warehouse {
@@ -334,4 +335,15 @@ model TreasuryReceipt {
   referenceId String?
   description String?
   createdAt   DateTime @default(now())
+}
+
+model CashRegister {
+  id         String   @id @default(uuid())
+  name       String
+  code       String   @unique
+  branchId   String
+  branch     Branch   @relation(fields: [branchId], references: [id])
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
