@@ -40,7 +40,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
 
   const { data: searchResults, isLoading: isSearching } = useQuery({
     queryKey: ['pos-search', search],
-    queryFn: () => purchasesApi.searchCatalog(search),
+    queryFn: () => apiClient.get('/pos/catalog/search', { params: { q: search } }).then(res => res.data),
     enabled: search.length >= 3 && open,
   });
 
