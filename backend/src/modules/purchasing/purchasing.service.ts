@@ -130,9 +130,19 @@ export class PurchasingService {
   }
 
   async getPO(id: string) {
-    return this.prisma.purchaseOrder.findUnique({
-      where: { id },
-      include: { lines: true }
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    if (uuidRegex.test(id)) {
+      return this.prisma.purchaseOrder.findUnique({
+        where: { id },
+        include: { lines: { include: { variant: { include: { product: true } } } } }
+      });
+    }
+
+    // Short ID / Prefix search
+    return this.prisma.purchaseOrder.findFirst({
+      where: { id: { startsWith: id } },
+      include: { lines: { include: { variant: { include: { product: true } } } } }
     });
   }
 

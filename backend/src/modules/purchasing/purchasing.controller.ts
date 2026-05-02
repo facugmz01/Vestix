@@ -26,19 +26,19 @@ export class PurchasingController {
 
   @Get('orders/:id')
   @RequirePermissions({ action: 'read', subject: 'Purchasing' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id') id: string) {
     return this.purchasingService.getPO(id);
   }
 
   @Patch('orders/:id')
   @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  update(@Param('id') id: string, @Body() dto: any) {
     return this.purchasingService.updatePO(id, dto);
   }
 
   @Delete('orders/:id')
   @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id') id: string) {
     return this.purchasingService.removePO(id);
   }
 }
