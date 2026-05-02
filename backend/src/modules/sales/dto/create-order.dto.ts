@@ -68,6 +68,10 @@ export class CreateOrderDto {
   @IsOptional()
   posGrandTotal?: number; // Offline POS calculated total, critical for PriceVariance tracking
 
+  @IsNumber()
+  @IsOptional()
+  cartDiscountTotal?: number; // Total discount amount applied to the cart
+
   @IsBoolean()
   @IsOptional()
   wasReserved?: boolean; // Flag to determine if the stock should deduct from 'available' or 'reserved' quantities

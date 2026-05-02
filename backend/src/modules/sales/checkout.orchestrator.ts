@@ -35,8 +35,14 @@ export class CheckoutOrchestrator {
       const variant = await this.prisma.productVariant.findUnique({ where: { id: lineDto.variantId } });
       if (!variant) throw new BadRequestException(`Variant ${lineDto.variantId} not found`);
 
-      const productBasePrice = lineDto.unitPriceOverride !== undefined ? lineDto.unitPriceOverride : variant.basePrice;
-      const resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, productBasePrice, dto.customerId);
+      // If a manual override is provided (e.g. from POS or Backoffice), trust it.
+      // Otherwise, resolve the price automatically from price lists.
+      let resolvedBasePrice: number;
+      if (lineDto.unitPriceOverride !== undefined) {
+        resolvedBasePrice = lineDto.unitPriceOverride;
+      } else {
+        resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, variant.basePrice, dto.customerId);
+      }
       
       const manualDiscountAmount = lineDto.discountPct ? (resolvedBasePrice * (lineDto.discountPct / 100)) : 0;
       const finalPriceAfterManualDiscount = resolvedBasePrice - manualDiscountAmount;
@@ -73,13 +79,16 @@ export class CheckoutOrchestrator {
     });
 
     // 3. VARIANCE DETECTION
-    // Offline Trust: Accept the POS grand total if provided
+    // Trust: Accept the grand total if provided by POS or BACKOFFICE
+    const isQuote = dto.status === 'QUOTE' || dto.status === 'QUOTATION';
+    const isManualEntry = dto.source === 'POS' || dto.source === 'BACKOFFICE' || (dto.source as string) === 'OFFLINE_POS';
+    
     let posTotal = serverCalculatedTotal;
-    if ((dto.source as string) === 'OFFLINE_POS' && (dto as any).posGrandTotal !== undefined) {
+    if (isManualEntry && (dto as any).posGrandTotal !== undefined) {
       posTotal = (dto as any).posGrandTotal;
     } else if ((dto as any).posGrandTotal !== undefined && Math.abs((dto as any).posGrandTotal - serverCalculatedTotal) > 0.01) {
-      // IF it's a quote, we are more relaxed or just accept the manual input
-      if (dto.status === 'QUOTE') {
+      // IF it's a quote, we are more relaxed
+      if (isQuote) {
         posTotal = (dto as any).posGrandTotal;
       } else {
         throw new BadRequestException(`Price mismatch. Expected ${serverCalculatedTotal}, got ${(dto as any).posGrandTotal}`);
@@ -91,8 +100,7 @@ export class CheckoutOrchestrator {
     // 4. ATOMIC TRANSACTION EXECUTION
     const result = await this.prisma.$transaction(async (tx) => {
       
-      const isQuote = dto.status === 'QUOTE' || dto.status === 'QUOTATION';
-      const isBackoffice = dto.source === 'BACKOFFICE' as any;
+      const isBackoffice = dto.source === 'BACKOFFICE';
 
       // --- A. FINANCE BOUNDARY ---
       if (!isQuote) {
