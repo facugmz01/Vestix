@@ -120,23 +120,28 @@ export class PosService {
   }
 
   async searchCatalog(query: string) {
-    return this.prisma.productVariant.findMany({
+    const variants = await this.prisma.productVariant.findMany({
       where: {
         OR: [
           { sku: { contains: query, mode: 'insensitive' } },
           { product: { name: { contains: query, mode: 'insensitive' } } },
         ],
       },
-      include: { product: true },
+      include: { 
+        product: true,
+        stockLevels: true,
+      },
       take: 20,
-    }).then(variants => variants.map(v => ({
-      id: v.id,
-      sku: v.sku,
-      name: v.product.name,
-      basePrice: v.basePrice || 0, // Using variant basePrice or default to 0
-      costPrice: v.costPrice || v.product.costPrice || 0,
-      size: v.size,
-      color: v.color,
-    })));
+    });
+
+    return variants.map(v => ({
+      ...v,
+      // For legacy POS support if needed:
+      name: v.product?.name || 'Producto Desconocido',
+      product: v.product,
+      stockLevels: v.stockLevels,
+      basePrice: v.basePrice || 0,
+      costPrice: v.costPrice || v.product?.costPrice || 0,
+    }));
   }
 }

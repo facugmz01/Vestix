@@ -66,6 +66,22 @@ export default function PriceInquiryPage() {
             keyField="id"
             data={results}
             columns={[
+              {
+                key: 'image',
+                header: '',
+                render: (v: any) => {
+                  const imgUrl = v.imageUrl || (v.product?.images && v.product.images.length > 0 ? v.product.images[0] : null);
+                  return (
+                    <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: 'var(--bg-elevated)', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={v.sku} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <Package size={20} color="var(--text-muted)" />
+                      )}
+                    </div>
+                  );
+                }
+              },
               { 
                 key: 'product', 
                 header: 'Producto',
