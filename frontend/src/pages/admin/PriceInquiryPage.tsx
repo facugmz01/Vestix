@@ -13,6 +13,7 @@ import type { ProductVariant } from '@/types';
 export default function PriceInquiryPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -72,7 +73,14 @@ export default function PriceInquiryPage() {
                 render: (v: any) => {
                   const imgUrl = v.imageUrl || (v.product?.images && v.product.images.length > 0 ? v.product.images[0] : null);
                   return (
-                    <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: 'var(--bg-elevated)', overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div 
+                      style={{ 
+                        width: '48px', height: '48px', borderRadius: '8px', background: 'var(--bg-elevated)', 
+                        overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', 
+                        alignItems: 'center', justifyContent: 'center', cursor: imgUrl ? 'zoom-in' : 'default' 
+                      }}
+                      onClick={() => imgUrl && setPreviewImage(imgUrl)}
+                    >
                       {imgUrl ? (
                         <img src={imgUrl} alt={v.sku} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
@@ -136,6 +144,34 @@ export default function PriceInquiryPage() {
           />
         )}
       </Section>
+
+      {/* Image Preview Overlay */}
+      {previewImage && (
+        <div 
+          style={{ 
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+            background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', 
+            justifyContent: 'center', zIndex: 9999, cursor: 'zoom-out' 
+          }}
+          onClick={() => setPreviewImage(null)}
+        >
+          <img 
+            src={previewImage} 
+            alt="Preview" 
+            style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} 
+          />
+          <button 
+            style={{ 
+              position: 'absolute', top: '20px', right: '20px', background: 'white', 
+              border: 'none', borderRadius: '50%', width: '40px', height: '40px', 
+              cursor: 'pointer', fontWeight: 'bold', fontSize: '20px' 
+            }}
+            onClick={() => setPreviewImage(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
     </PageContainer>
   );
 }
