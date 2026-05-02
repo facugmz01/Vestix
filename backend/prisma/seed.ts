@@ -32,12 +32,14 @@ async function main() {
   });
 
   // 3. Main Branch & Warehouse
-  const branch = await prisma.branch.create({
-    data: { name: 'Casa Central' }
+  const branch = await prisma.branch.upsert({
+    where: { code: 'CENTRAL' },
+    update: {},
+    create: { name: 'Casa Central', code: 'CENTRAL', isMain: true }
   });
 
   const warehouse = await prisma.warehouse.create({
-    data: { name: 'Depósito Principal', branchId: branch.id }
+    data: { name: 'Depósito Principal', code: 'DEP-01', branchId: branch.id }
   });
 
   // 4. Base Catalog Item

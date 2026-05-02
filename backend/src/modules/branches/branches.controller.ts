@@ -20,9 +20,8 @@ export class BranchesController {
 
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Branch' })
-  async findAll(@Query('activeOnly') activeOnly?: string) {
-    const branches = await this.branchesService.findAll(activeOnly === 'true');
-    return { data: branches, total: branches.length };
+  async findAll(@Query() query: any) {
+    return this.branchesService.findAll(query);
   }
 
   @Get(':id')
@@ -46,7 +45,8 @@ export class BranchesController {
     @Param('id', ParseUUIDPipe) id: string, 
     @Body() updateConfigDto: UpdateBranchConfigDto
   ) {
-    return this.branchesService.updateConfig(id, updateConfigDto);
+    // Config is now merged into the main update endpoint via the settings field
+    return this.branchesService.update(id, { settings: updateConfigDto } as any);
   }
 
   @Post(':id/users/:userId')
