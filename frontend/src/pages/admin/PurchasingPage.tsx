@@ -154,7 +154,7 @@ export default function PurchasingPage() {
               { 
                 key: 'supplier', 
                 header: 'Proveedor',
-                render: (o) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{o.supplierName || 'Desconocido'}</span>
+                render: (o: any) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{o.supplier?.companyName || o.supplier?.name || 'Desconocido'}</span>
               },
               { 
                 key: 'date', 

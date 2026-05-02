@@ -134,6 +134,7 @@ export class PosService {
       sku: v.sku,
       name: v.product.name,
       basePrice: v.basePrice || 0, // Using variant basePrice or default to 0
+      costPrice: v.costPrice || v.product.costPrice || 0,
       size: v.size,
       color: v.color,
     })));

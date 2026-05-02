@@ -69,7 +69,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
     if (existing) {
       setLines(lines.map(l => l.variantId === product.id ? { ...l, quantity: l.quantity + 1 } : l));
     } else {
-      setLines([...lines, { variantId: product.id, variantSku: product.name + (product.size ? ` (${product.size})` : ''), quantity: 1, unitCost: product.basePrice || 0 }]);
+      setLines([...lines, { variantId: product.id, variantSku: product.name + (product.size ? ` (${product.size})` : ''), quantity: 1, unitCost: product.costPrice || 0 }]);
     }
     setSearch('');
   };

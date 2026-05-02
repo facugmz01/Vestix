@@ -55,7 +55,7 @@ export default function NewPurchasePage() {
       if (exists) {
         return prev.map(i => i.variant.id === variant.id ? { ...i, qty: i.qty + 1 } : i);
       }
-      return [...prev, { variant, qty: 1, cost: variant.basePrice, discount: 0 }];
+      return [...prev, { variant, qty: 1, cost: variant.costPrice, discount: 0 }];
     });
     setSearch('');
     searchInputRef.current?.focus();
@@ -142,7 +142,7 @@ export default function NewPurchasePage() {
                   <div key={p.id} onClick={() => handleAddToCart(p)} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}>
                     <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{p.sku}</p>
                     <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, minHeight: '40px' }}>{p.name} {p.size && `(${p.size})`}</p>
-                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--accent)' }}>{fmtCurrency(p.basePrice)}</p>
+                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--accent)' }}>{fmtCurrency(p.costPrice)}</p>
                   </div>
                 ))}
               </div>
