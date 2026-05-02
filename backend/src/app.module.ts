@@ -27,6 +27,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { InvoicingModule } from './modules/invoicing/invoicing.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { PosModule } from './modules/pos/pos.module';
+import { IdentifiersModule } from './modules/identifiers/identifiers.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { PosModule } from './modules/pos/pos.module';
     InvoicingModule,
     SuppliersModule,
     PosModule,
+    IdentifiersModule,
   ],
 })
 export class AppModule {}
