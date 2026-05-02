@@ -163,7 +163,7 @@ export default function NewPurchasePage() {
                 style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
               >
                 <option value="">-- Seleccionar Proveedor --</option>
-                {suppliers?.data.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+                {(suppliers?.data || []).map((s: any) => <option key={s.id} value={s.id}>{s.companyName}</option>)}
               </select>
             </div>
 
@@ -175,7 +175,7 @@ export default function NewPurchasePage() {
                 style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
               >
                 <option value="">-- Seleccionar Depósito --</option>
-                {warehouses?.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                {(warehouses?.data || warehouses || []).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function NewPurchasePage() {
               style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
             >
               <option value="">-- No pagar ahora (Deuda) --</option>
-              {accounts?.map(a => <option key={a.id} value={a.id}>{a.name} ({fmtCurrency(a.balance)})</option>)}
+              {(accounts?.data || accounts || []).map((a: any) => <option key={a.id} value={a.id}>{a.name} ({fmtCurrency(a.balance)})</option>)}
             </select>
           </div>
 
