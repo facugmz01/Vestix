@@ -1,1 +1,0 @@
-import{h as o}from"./index-Br11lBjv.js";import{c as r}from"./requestUtils-gaJB49jo.js";const c={getProducts:t=>o("/catalog/products",{params:r({...t,isPublished:!0})}),getProduct:t=>o(`/catalog/products/${t}`)};export{c as s};
