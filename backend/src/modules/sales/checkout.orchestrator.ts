@@ -132,50 +132,12 @@ export class CheckoutOrchestrator {
 
       // --- B. INVENTORY BOUNDARY ---
       if (!isQuote && dto.warehouseId) {
-        for (const line of finalLinesForDB) {
-          await tx.inventoryMovement.create({
-            data: {
-              variantId: line.variantId,
-              sourceWarehouseId: dto.warehouseId,
-              type: 'SALE_EXIT',
-              quantity: line.quantity,
-              unitCost: line.basePrice,
-              referenceId: dto.id
-            }
-          });
-
-          const stock = await tx.stockLevel.findUnique({
-            where: { variantId_warehouseId: { variantId: line.variantId, warehouseId: dto.warehouseId } }
-          });
-          
-          const wasReserved = (dto as any).wasReserved || false;
-
-          if (stock) {
-            await tx.stockLevel.update({
-              where: { id: stock.id },
-              data: wasReserved 
-                ? {
-                    physicalQuantity: { decrement: line.quantity },
-                    reservedQuantity: { decrement: line.quantity }
-                  }
-                : {
-                    physicalQuantity: { decrement: line.quantity },
-                    availableQuantity: { decrement: line.quantity }
-                  }
-            });
-          } else {
-            await tx.stockLevel.create({
-              data: {
-                variantId: line.variantId,
-                warehouseId: dto.warehouseId,
-                branchId: dto.branchId,
-                physicalQuantity: -line.quantity,
-                availableQuantity: wasReserved ? 0 : -line.quantity,
-                reservedQuantity: wasReserved ? -line.quantity : 0
-              }
-            });
-          }
-        }
+        await this.deductStock(tx, {
+          orderId: dto.id,
+          branchId: dto.branchId,
+          warehouseId: dto.warehouseId,
+          lines: finalLinesForDB
+        });
       }
 
       // --- C. SALES BOUNDARY ---
@@ -183,6 +145,7 @@ export class CheckoutOrchestrator {
         data: {
           id: dto.id,
           branchId: dto.branchId,
+          warehouseId: dto.warehouseId, // SAVE the warehouseId for later confirmation if it's a quote
           source: dto.source,
           customerId: dto.customerId,
           subtotal: cartEvaluation.originalTotal,
@@ -241,13 +204,79 @@ export class CheckoutOrchestrator {
       throw new BadRequestException('Order is already confirmed or cancelled');
     }
 
-    // Reuse processCheckout logic but as a confirmation
-    // For now, let's just mark it as CONFIRMED.
-    // In a full implementation, we'd trigger inventory movements here.
-    return this.prisma.saleOrder.update({
-      where: { id },
-      data: { status: 'CONFIRMED' }
+    // Use the saved warehouseId or fall back to the first warehouse in the branch if somehow missing
+    let targetWarehouseId = (quote as any).warehouseId;
+    if (!targetWarehouseId) {
+      const branch = await this.prisma.branch.findUnique({ where: { id: quote.branchId }, include: { warehouses: true } });
+      if (branch?.warehouses.length) targetWarehouseId = branch.warehouses[0].id;
+    }
+
+    if (!targetWarehouseId) throw new BadRequestException('No warehouse specified for stock deduction');
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. DEDUCT STOCK
+      await this.deductStock(tx, {
+        orderId: quote.id,
+        branchId: quote.branchId,
+        warehouseId: targetWarehouseId,
+        lines: quote.lines.map(l => ({
+          variantId: l.variantId,
+          quantity: l.quantity,
+          basePrice: l.basePrice
+        }))
+      });
+
+      // 2. UPDATE STATUS
+      const updated = await tx.saleOrder.update({
+        where: { id },
+        data: { status: 'CONFIRMED' },
+        include: { lines: true }
+      });
+
+      // 3. ENQUEUE AFIP (Post-Confirmation)
+      await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
+
+      return updated;
     });
+  }
+
+  private async deductStock(tx: any, data: { orderId: string, branchId: string, warehouseId: string, lines: any[] }) {
+    for (const line of data.lines) {
+      await tx.inventoryMovement.create({
+        data: {
+          variantId: line.variantId,
+          sourceWarehouseId: data.warehouseId,
+          type: 'SALE_EXIT',
+          quantity: line.quantity,
+          unitCost: line.basePrice,
+          referenceId: data.orderId
+        }
+      });
+
+      const stock = await tx.stockLevel.findUnique({
+        where: { variantId_warehouseId: { variantId: line.variantId, warehouseId: data.warehouseId } }
+      });
+
+      if (stock) {
+        await tx.stockLevel.update({
+          where: { id: stock.id },
+          data: {
+            physicalQuantity: { decrement: line.quantity },
+            availableQuantity: { decrement: line.quantity }
+          }
+        });
+      } else {
+        await tx.stockLevel.create({
+          data: {
+            variantId: line.variantId,
+            warehouseId: data.warehouseId,
+            branchId: data.branchId,
+            physicalQuantity: -line.quantity,
+            availableQuantity: -line.quantity
+          }
+        });
+      }
+    }
   }
 
   async cancelOrder(id: string) {

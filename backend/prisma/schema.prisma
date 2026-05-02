@@ -182,6 +182,7 @@ model SaleOrder {
   id                String          @id // V2: Idempotent Offline UUID
   branchId          String
   branch            Branch          @relation(fields: [branchId], references: [id])
+  warehouseId       String?         // Added to track the source warehouse for stock deduction
   source            String
   customerId        String?
   customer          Customer?       @relation(fields: [customerId], references: [id])

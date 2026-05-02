@@ -111,7 +111,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
       const payload = {
         id: crypto.randomUUID(),
         branchId,
-        warehouseId: data.status === 'CONFIRMED' ? warehouseId : undefined,
+        warehouseId,   // Send it always so we know the intended stock origin
         customerId: customerId || undefined,
         source: 'BACKOFFICE',
         paymentMethod,
