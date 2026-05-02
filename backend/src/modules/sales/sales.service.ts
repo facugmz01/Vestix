@@ -3,7 +3,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 
 @Injectable()
 export class SalesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * Domain-specific read operations.
@@ -49,12 +49,12 @@ export class SalesService {
       this.prisma.saleOrder.count({ where })
     ]);
 
-    return { 
+    return {
       data: data.map(order => ({
         ...order,
         customerName: order.customer?.fullName
-      })), 
-      total 
+      })),
+      total
     };
   }
 }
