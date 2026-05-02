@@ -21,10 +21,41 @@ export function ProductImagesUploader({ images, onChange }: Props) {
     e.stopPropagation();
     setIsDragging(false);
     
-    // Mock logic: Just add a placeholder image URL for the dropped files
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const newMocks = Array.from(e.dataTransfer.files).map(f => URL.createObjectURL(f));
-      onChange([...images, ...newMocks]);
+      const files = Array.from(e.dataTransfer.files);
+      const promises = files.map(file => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            resolve(event.target?.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+      
+      Promise.all(promises).then(newImages => {
+        onChange([...images, ...newImages]);
+      });
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      const promises = files.map(file => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            resolve(event.target?.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+      
+      Promise.all(promises).then(newImages => {
+        onChange([...images, ...newImages]);
+      });
+      e.target.value = ''; // Reset
     }
   };
 
@@ -45,7 +76,8 @@ export function ProductImagesUploader({ images, onChange }: Props) {
           textAlign: 'center',
           background: isDragging ? 'var(--accent-muted)' : 'var(--bg-elevated)',
           transition: 'all 0.2s ease',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          position: 'relative'
         }}
       >
         <UploadCloud size={32} color="var(--text-secondary)" style={{ margin: '0 auto 12px' }} />
@@ -55,6 +87,13 @@ export function ProductImagesUploader({ images, onChange }: Props) {
         <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
           PNG, JPG hasta 5MB. La primera imagen será la principal.
         </p>
+        <input 
+          type="file" 
+          multiple 
+          accept="image/*" 
+          onChange={handleFileSelect} 
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} 
+        />
       </div>
 
       {images.length > 0 && (

@@ -181,18 +181,46 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
                             style={{ width: '80px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border)' }}
                           />
                         </td>
-                        <td style={{ padding: '8px' }}>
-                          <input 
-                            type="text" 
-                            placeholder="URL imagen"
-                            value={v.imageUrl || ''} 
-                            onChange={(e) => {
-                              const newVariants = [...(formData.variants || [])];
-                              newVariants[i] = { ...v, imageUrl: e.target.value };
-                              onChange({ ...formData, variants: newVariants });
-                            }}
-                            style={{ width: '150px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border)' }}
-                          />
+                        <td style={{ padding: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {v.imageUrl ? (
+                            <img src={v.imageUrl} alt="variant" style={{ width: 30, height: 30, objectFit: 'cover', borderRadius: 4 }} />
+                          ) : (
+                            <div style={{ width: 30, height: 30, background: 'var(--bg-base)', border: '1px dashed var(--border)', borderRadius: 4 }}></div>
+                          )}
+                          <label style={{ cursor: 'pointer', background: 'var(--bg-elevated)', padding: '4px 8px', borderRadius: 4, border: '1px solid var(--border)', fontSize: '12px' }}>
+                            Subir
+                            <input 
+                              type="file" 
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const newVariants = [...(formData.variants || [])];
+                                    newVariants[i] = { ...v, imageUrl: event.target?.result as string };
+                                    onChange({ ...formData, variants: newVariants });
+                                  };
+                                  reader.readAsDataURL(e.target.files[0]);
+                                  e.target.value = '';
+                                }
+                              }}
+                            />
+                          </label>
+                          {v.imageUrl && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => {
+                                const newVariants = [...(formData.variants || [])];
+                                newVariants[i] = { ...v, imageUrl: undefined };
+                                onChange({ ...formData, variants: newVariants });
+                              }}
+                              style={{ padding: '4px', height: 'auto' }}
+                            >
+                              X
+                            </Button>
+                          )}
                         </td>
                         <td style={{ padding: '8px', textAlign: 'right' }}>
                           <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => onChange({ ...formData, variants: formData.variants?.filter((_, idx) => idx !== i) })} />
