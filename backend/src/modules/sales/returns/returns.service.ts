@@ -134,9 +134,22 @@ export class ReturnsService {
           data: { usedCredit: { decrement: totalRefund } }
         });
       } else {
+        // Find an account to attribute the refund to. 
+        // Use the one from the original sale, or the first active one for the branch.
+        let accountId = sale.paymentAccountId;
+        if (!accountId) {
+          const defaultAccount = await tx.financialAccount.findFirst({
+            where: { branchId: dto.branchId, isActive: true }
+          });
+          accountId = defaultAccount?.id;
+        }
+
+        if (!accountId) throw new BadRequestException('No financial account found for refund');
+
         // Create an outflow receipt in Treasury
         await tx.treasuryReceipt.create({
           data: {
+            accountId,
             amount: -totalRefund, // Negative for outflow
             payerName: sale.customer?.fullName || 'Consumidor Final',
             referenceId: saleReturn.id,
