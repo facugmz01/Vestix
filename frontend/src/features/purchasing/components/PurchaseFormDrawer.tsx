@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
 import { purchasesApi, type CreatePurchaseOrderDto } from '@/api/purchases.api';
 import { suppliersApi } from '@/api/suppliers.api';
+import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import type { PurchaseOrder } from '@/types';
 import toast from 'react-hot-toast';
@@ -19,6 +20,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const isEditing = !!orderToEdit;
 
   const [supplierId, setSupplierId] = useState('');
+  const [destinationWarehouseId, setDestinationWarehouseId] = useState('');
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
   const [lines, setLines] = useState<{ variantId: string; variantSku: string; quantity: number; unitCost: number }[]>([]);
 
@@ -32,9 +34,16 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
     enabled: open
   });
 
+  const { data: warehouses } = useQuery({
+    queryKey: ['warehouses'],
+    queryFn: () => apiClient.get('/warehouses').then(res => res.data),
+    enabled: open
+  });
+
   useEffect(() => {
     if (open && orderToEdit) {
       setSupplierId(orderToEdit.supplierId);
+      setDestinationWarehouseId(orderToEdit.destinationWarehouseId || '');
       setExpectedDeliveryDate(orderToEdit.expectedDeliveryDate ? orderToEdit.expectedDeliveryDate.split('T')[0] : '');
       setLines(orderToEdit.lines.map(l => ({
         variantId: l.variantId,
@@ -44,6 +53,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
       })));
     } else if (open && !orderToEdit) {
       setSupplierId('');
+      setDestinationWarehouseId('');
       setExpectedDeliveryDate('');
       setLines([]);
     }
@@ -64,7 +74,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const totals = lines.reduce((acc, line) => acc + (line.quantity * line.unitCost), 0);
 
   const mutation = useMutation({
-    mutationFn: (data: CreatePurchaseOrderDto) => {
+    mutationFn: (data: any) => {
       const payload = { ...data, expectedDeliveryDate: data.expectedDeliveryDate || undefined };
       if (isEditing && orderToEdit) return purchasesApi.updateOrder(orderToEdit.id, payload);
       return purchasesApi.createOrder(payload);
@@ -80,14 +90,13 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supplierId) {
-      toast.error('Seleccioná un proveedor'); return;
-    }
-    if (lines.length === 0) {
-      toast.error('Agregá al menos un artículo a la orden'); return;
-    }
+    if (!supplierId) return toast.error('Seleccioná un proveedor');
+    if (!destinationWarehouseId) return toast.error('Seleccioná un depósito de destino');
+    if (lines.length === 0) return toast.error('Agregá al menos un artículo a la orden');
+    
     mutation.mutate({
       supplierId,
+      destinationWarehouseId,
       expectedDeliveryDate,
       lines: lines.map(l => ({ variantId: l.variantId, orderedQuantity: l.quantity, unitCost: l.unitCost })),
     });
@@ -113,7 +122,15 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Proveedor *</label>
             <select value={supplierId} onChange={e => setSupplierId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} required>
               <option value="">Seleccionar Proveedor...</option>
-              {suppliersData?.data.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+              {(suppliersData?.data || []).map((s: any) => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+            </select>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600 }}>Destino (Depósito) *</label>
+            <select value={destinationWarehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} required>
+              <option value="">Seleccionar Depósito...</option>
+              {(warehouses?.data || warehouses || []).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
           
