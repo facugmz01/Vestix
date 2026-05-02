@@ -8,9 +8,9 @@ export enum ReturnAction {
 }
 
 export enum ReturnCondition {
-  NEW = 'NEW',
-  DEFECTIVE = 'DEFECTIVE',
-  USED = 'USED'
+  SELLABLE = 'SELLABLE',
+  DAMAGED = 'DAMAGED',
+  DEFECTIVE = 'DEFECTIVE'
 }
 
 class CreateReturnItemDto {

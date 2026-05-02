@@ -98,8 +98,8 @@ export class ReturnsService {
         });
 
         // 3. RESTORE STOCK (Inbound Movement)
-        // Only restore if the condition is NEW or SELLABLE (assuming NEW maps to SELLABLE logic)
-        if (item.condition === 'NEW') {
+        // Only restore if the condition is SELLABLE
+        if (item.condition === 'SELLABLE') {
           // Find the warehouse from the original sale if possible, or use the branch default
           // Since we added warehouseId to SaleOrder recently, let's use it.
           const targetWarehouseId = (sale as any).warehouseId;
