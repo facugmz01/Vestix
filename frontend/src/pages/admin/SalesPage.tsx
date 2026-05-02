@@ -91,7 +91,11 @@ export default function SalesPage() {
               { 
                 key: 'id', 
                 header: 'Doc ID',
-                render: (s) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{s.id.split('-')[0]}</span>
+                render: (s) => (
+                  <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>
+                    {s.status === 'QUOTATION' ? 'P-' : 'V-'}{s.id.split('-')[0].toUpperCase()}
+                  </span>
+                )
               },
               { 
                 key: 'date', 
@@ -112,6 +116,14 @@ export default function SalesPage() {
                 key: 'customer', 
                 header: 'Cliente',
                 render: (s) => <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{s.customerName || 'Consumidor Final'}</span>
+              },
+              { 
+                key: 'payment', 
+                header: 'Condición',
+                render: (s) => {
+                  const names: any = { CASH: 'Efectivo', CREDIT_CARD: 'Tarjeta', BANK_TRANSFER: 'Transferencia', CUSTOMER_CREDIT: 'Cta. Corriente' };
+                  return <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{names[s.paymentMethod] || s.paymentMethod}</span>
+                }
               },
               { 
                 key: 'total', 
