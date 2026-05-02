@@ -61,15 +61,14 @@ model Branch {
 }
 
 model Warehouse {
-  id          String       @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   code        String?
-  isActive    Boolean      @default(true)
+  isActive    Boolean   @default(true)
   branchId    String
-  branch      Branch       @relation(fields: [branchId], references: [id])
-  stockLevels StockLevel[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  branch      Branch    @relation(fields: [branchId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Category {
@@ -228,9 +227,10 @@ model StockLevel {
   variantId         String
   warehouseId       String
   branchId          String?
-  physicalQuantity  Int                @default(0) // V2: Allowed to go negative to support offline sales
+  warehouse         Warehouse          @relation(fields: [warehouseId], references: [id])
+  physicalQuantity  Int                @default(0)
   reservedQuantity  Int                @default(0)
-  availableQuantity Int                @default(0) // V2: Allowed to go negative
+  availableQuantity Int                @default(0)
   updatedAt         DateTime           @updatedAt
   reservations      StockReservation[]
 
