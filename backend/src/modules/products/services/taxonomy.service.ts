@@ -27,6 +27,16 @@ export class BrandsService {
     if (!brand) throw new NotFoundException(`Marca ${id} no encontrada`);
     return brand;
   }
+
+  async update(id: string, data: { name?: string }) {
+    await this.findOne(id);
+    return this.prisma.brand.update({ where: { id }, data });
+  }
+
+  async delete(id: string) {
+    await this.findOne(id);
+    return this.prisma.brand.delete({ where: { id } });
+  }
 }
 
 @Injectable()
@@ -57,6 +67,16 @@ export class CategoriesService {
     if (!category) throw new NotFoundException(`Categoría ${id} no encontrada`);
     return category;
   }
+
+  async update(id: string, data: { name?: string; parentId?: string }) {
+    await this.findOne(id);
+    return this.prisma.category.update({ where: { id }, data });
+  }
+
+  async delete(id: string) {
+    await this.findOne(id);
+    return this.prisma.category.delete({ where: { id } });
+  }
 }
 
 @Injectable()
@@ -77,6 +97,19 @@ export class AttributesService {
         values: {
           create: data.values?.map((v: string) => ({ value: v })) || []
         }
+      },
+      include: { values: true }
+    });
+  }
+
+  async update(id: string, data: { name?: string; values?: string[] }) {
+    // Replace all values: delete existing and recreate
+    await this.prisma.attributeValue.deleteMany({ where: { attributeId: id } });
+    return this.prisma.attribute.update({
+      where: { id },
+      data: {
+        name: data.name,
+        values: data.values ? { create: data.values.map(v => ({ value: v })) } : undefined
       },
       include: { values: true }
     });

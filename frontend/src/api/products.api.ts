@@ -45,6 +45,7 @@ export const productsApi = {
   // Attributes
   getAttributes: () => get<any[]>('/attributes'),
   createAttribute: (dto: { name: string; values: string[] }) => post<any>('/attributes', dto),
+  updateAttribute: (id: string, dto: { name?: string; values?: string[] }) => patch<any>(`/attributes/${id}`, dto),
   deleteAttribute: (id: string) => del(`/attributes/${id}`),
 
   // Price Lists

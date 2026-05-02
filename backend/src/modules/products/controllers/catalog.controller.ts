@@ -25,6 +25,18 @@ export class CategoriesController {
   findAll() {
     return this.categoriesService.findAll();
   }
+
+  @Patch(':id')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.categoriesService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @RequirePermissions({ action: 'delete', subject: 'Catalog' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.categoriesService.delete(id);
+  }
 }
 
 @Controller('brands')
@@ -41,6 +53,18 @@ export class BrandsController {
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
   findAll() {
     return this.brandsService.findAll();
+  }
+
+  @Patch(':id')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.brandsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @RequirePermissions({ action: 'delete', subject: 'Catalog' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.brandsService.delete(id);
   }
 }
 
@@ -128,6 +152,12 @@ export class AttributesController {
   @RequirePermissions({ action: 'create', subject: 'Catalog' })
   create(@Body() data: CreateAttributeDto) {
     return this.attributesService.create(data);
+  }
+
+  @Patch(':id')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() data: any) {
+    return this.attributesService.update(id, data);
   }
 
   @Delete(':id')
