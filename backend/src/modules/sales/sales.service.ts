@@ -29,36 +29,34 @@ export class SalesService {
     const page = parseInt(params.page) || 1;
     const pageSize = parseInt(params.pageSize) || 15;
     const skip = (page - 1) * pageSize;
-    const { search } = params;
+    const { search, status } = params;
 
     const where: any = {};
+    if (status) where.status = status;
     if (search && search.trim() !== '') {
       where.OR = [
         { id: { contains: search, mode: 'insensitive' } },
+        { customer: { fullName: { contains: search, mode: 'insensitive' } } }
       ];
     }
 
-    try {
-      const [data, total] = await Promise.all([
-        this.prisma.saleOrder.findMany({
-          where,
-          skip,
-          take: pageSize,
-          orderBy: { createdAt: 'desc' },
-        }),
-        this.prisma.saleOrder.count({ where })
-      ]);
+    const [data, total] = await Promise.all([
+      this.prisma.saleOrder.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: { lines: true, customer: true }
+      }),
+      this.prisma.saleOrder.count({ where })
+    ]);
 
-      return { 
-        data: data.map(order => ({
-          ...order,
-          customerName: 'Consumidor Final'
-        })), 
-        total 
-      };
-    } catch (e) {
-      console.error('Prisma List Error:', e);
-      throw e;
-    }
+    return { 
+      data: data.map(order => ({
+        ...order,
+        customerName: order.customer?.fullName || 'Consumidor Final'
+      })), 
+      total 
+    };
   }
 }
