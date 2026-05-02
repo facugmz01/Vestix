@@ -9,7 +9,7 @@ export class WarehousesService {
 
   async create(dto: CreateWarehouseDto) {
     if (dto.code) {
-      const exists = await this.prisma.warehouse.findFirst({ where: { code: dto.code } });
+      const exists = await this.prisma.warehouse.findUnique({ where: { code: dto.code } });
       if (exists) throw new ConflictException(`El código de depósito "${dto.code}" ya existe`);
     }
 
@@ -17,6 +17,8 @@ export class WarehousesService {
       data: {
         name: dto.name,
         code: dto.code,
+        type: dto.type || 'STORAGE',
+        address: dto.address,
         branchId: dto.branchId,
         isActive: dto.isActive ?? true,
       },
@@ -31,6 +33,7 @@ export class WarehousesService {
 
     const where: any = {};
     if (query.branchId) where.branchId = query.branchId;
+    if (query.type) where.type = query.type;
     if (query.isActive !== undefined) where.isActive = query.isActive === 'true';
     if (query.search) {
       where.OR = [
@@ -64,6 +67,14 @@ export class WarehousesService {
 
   async update(id: string, dto: UpdateWarehouseDto) {
     await this.findOne(id);
+    
+    if (dto.code) {
+      const exists = await this.prisma.warehouse.findFirst({ 
+        where: { code: dto.code, id: { not: id } } 
+      });
+      if (exists) throw new ConflictException(`El código de depósito "${dto.code}" ya está en uso`);
+    }
+
     return this.prisma.warehouse.update({
       where: { id },
       data: dto,

@@ -9,6 +9,14 @@ export class CreateWarehouseDto {
   @IsString()
   code?: string;
 
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
   @IsUUID('4')
   @IsNotEmpty()
   branchId: string;
