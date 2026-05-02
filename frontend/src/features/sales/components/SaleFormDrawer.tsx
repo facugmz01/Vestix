@@ -18,6 +18,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
 
   const [branchId, setBranchId] = useState('');
+  const [warehouseId, setWarehouseId] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<CreateSaleDto['paymentMethod']>('CASH');
   
@@ -42,6 +43,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
   useEffect(() => {
     if (open) {
       setBranchId('');
+      setWarehouseId('');
       setCustomerId('');
       setLines([]);
       setGlobalDiscount(0);
@@ -49,6 +51,16 @@ export function SaleFormDrawer({ open, onClose }: Props) {
       setSearchQuery('');
     }
   }, [open]);
+
+  const selectedBranch = branchesData?.data.find(b => b.id === branchId);
+
+  useEffect(() => {
+    if (selectedBranch && selectedBranch.warehouses?.length > 0) {
+      setWarehouseId(selectedBranch.warehouses[0].id);
+    } else {
+      setWarehouseId('');
+    }
+  }, [branchId, selectedBranch]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -99,7 +111,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
       const payload = {
         id: crypto.randomUUID(),
         branchId,
-        warehouseId: undefined as any,   // Backoffice — no warehouse needed
+        warehouseId: data.status === 'CONFIRMED' ? warehouseId : undefined,
         customerId: customerId || undefined,
         source: 'BACKOFFICE',
         paymentMethod,
@@ -154,12 +166,25 @@ export function SaleFormDrawer({ open, onClose }: Props) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
         {/* Cabecera */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Sucursal Emisora *</label>
             <select value={branchId} onChange={e => setBranchId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
               <option value="">Seleccionar Sucursal...</option>
               {branchesData?.data.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600 }}>Depósito / Stock *</label>
+            <select 
+              value={warehouseId} 
+              onChange={e => setWarehouseId(e.target.value)} 
+              disabled={!branchId}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', opacity: branchId ? 1 : 0.5 }}
+            >
+              <option value="">Seleccionar Depósito...</option>
+              {selectedBranch?.warehouses?.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
           
