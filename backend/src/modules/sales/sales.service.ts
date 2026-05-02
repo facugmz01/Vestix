@@ -10,8 +10,17 @@ export class SalesService {
    * All complex writes have been offloaded to the CheckoutOrchestrator.
    */
   async getOrderById(id: string) {
-    return this.prisma.saleOrder.findUnique({
-      where: { id },
+    // If the ID is a friendly ID (e.g. SL-123 or just the first part of UUID)
+    // Strip prefixes like V- or P-
+    const cleanId = id.replace(/^[VP]-/i, '');
+
+    const order = await this.prisma.saleOrder.findFirst({
+      where: {
+        OR: [
+          { id: { equals: id } },
+          { id: { startsWith: cleanId, mode: 'insensitive' } }
+        ]
+      },
       include: { 
         lines: {
           include: {
@@ -26,6 +35,8 @@ export class SalesService {
         variance: true 
       }
     });
+
+    return order;
   }
 
   async listRecentOrders(branchId: string) {
