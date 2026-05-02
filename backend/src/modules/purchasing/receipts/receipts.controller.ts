@@ -18,7 +18,7 @@ export class ReceiptsController {
     return this.receiptsService.findOne(id);
   }
 
-  @Post()
+  @Post('draft')
   @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
   draft(@Body() dto: any) {
     return this.receiptsService.draftReceipt(dto);
