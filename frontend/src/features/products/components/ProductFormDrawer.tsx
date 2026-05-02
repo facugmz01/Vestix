@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Drawer, Button } from '@/components/ui';
 import { productsApi, type CreateProductDto } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -16,6 +16,13 @@ interface Props {
 export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
   const queryClient = useQueryClient();
   const isEditing = !!productToEdit;
+
+  // Fetch full product to get existing variants when editing
+  const { data: fullProduct } = useQuery({
+    queryKey: ['product', productToEdit?.id],
+    queryFn: () => productsApi.getProduct(productToEdit!.id),
+    enabled: !!productToEdit?.id && open,
+  });
 
   const [formData, setFormData] = useState<CreateProductDto>({
     name: '',
@@ -34,19 +41,20 @@ export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
 
   useEffect(() => {
     if (open && productToEdit) {
+      const source = fullProduct || productToEdit;
       setFormData({
-        name: productToEdit.name,
-        baseSku: productToEdit.baseSku || '',
-        description: productToEdit.description || '',
-        categoryId: productToEdit.categoryId,
-        brandId: productToEdit.brandId || '',
-        isActive: productToEdit.isActive,
-        isPublished: productToEdit.isPublished,
-        images: productToEdit.images || [],
-        variants: productToEdit.variants || [],
-        isVariable: productToEdit.isVariable || false,
-        costPrice: productToEdit.costPrice || 0,
-        basePrice: productToEdit.variants?.[0]?.basePrice || 0,
+        name: source.name,
+        baseSku: source.baseSku || '',
+        description: source.description || '',
+        categoryId: source.categoryId,
+        brandId: source.brandId || '',
+        isActive: source.isActive,
+        isPublished: source.isPublished,
+        images: source.images || [],
+        variants: source.variants?.filter(v => v.isActive !== false) || [],
+        isVariable: source.isVariable || false,
+        costPrice: source.costPrice || 0,
+        basePrice: source.variants?.[0]?.basePrice || 0,
       });
     } else if (open && !productToEdit) {
       setFormData({
@@ -64,7 +72,7 @@ export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
         basePrice: 0,
       });
     }
-  }, [open, productToEdit]);
+  }, [open, productToEdit, fullProduct]);
 
   const mutation = useMutation({
     mutationFn: (data: CreateProductDto) => {
