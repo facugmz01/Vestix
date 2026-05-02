@@ -30,6 +30,7 @@ const StockMovementsPage = lazy(() => import('@/pages/admin/StockMovementsPage')
 const TransfersPage  = lazy(() => import('@/pages/admin/TransfersPage'));
 const ReservationsPage = lazy(() => import('@/pages/admin/ReservationsPage'));
 const PurchasingPage = lazy(() => import('@/pages/admin/PurchasingPage'));
+const NewPurchasePage = lazy(() => import('@/pages/admin/NewPurchasePage'));
 const GoodsReceiptsPage = lazy(() => import('@/pages/admin/GoodsReceiptsPage'));
 const SuppliersPage  = lazy(() => import('@/pages/admin/SuppliersPage'));
 const SalesPage      = lazy(() => import('@/pages/admin/SalesPage'));
@@ -123,6 +124,7 @@ export default function App() {
 
               <Route element={<RequirePermission action="read"   subject="Purchasing" />}>
                 <Route path="/admin/purchasing" element={<PurchasingPage />} />
+                <Route path="/admin/purchasing/new" element={<NewPurchasePage />} />
                 <Route path="/admin/purchasing/receipts" element={<GoodsReceiptsPage />} />
                 <Route path="/admin/suppliers"  element={<SuppliersPage />} />
               </Route>

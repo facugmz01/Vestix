@@ -28,6 +28,18 @@ export class AccountsService {
     return acc;
   }
 
+  async getAccounts() {
+    return this.prisma.financialAccount.findMany({
+      where: { isActive: true }
+    });
+  }
+
+  async getAccounts() {
+    return this.prisma.financialAccount.findMany({
+      where: { isActive: true }
+    });
+  }
+
   /**
    * CORE LEDGER ENGINE: Posts a financial transaction.
    */

@@ -18,6 +18,12 @@ export class PosController {
     return { status: 'SYNC_READY', data: [] };
   }
 
+  @Get('catalog/search')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  async searchCatalog(@Query('q') q: string) {
+    return this.posService.searchCatalog(q);
+  }
+
   /**
    * Real-time barcode resolution when the POS is online.
    */

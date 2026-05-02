@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, Send, Truck, Package } from 'lucide-react';
 
 import { 
@@ -18,6 +19,7 @@ import { PurchaseFormDrawer } from '@/features/purchasing/components/PurchaseFor
 import { PurchaseDetailDrawer } from '@/features/purchasing/components/PurchaseDetailDrawer';
 
 export default function PurchasingPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize] = useState(15);
   const [search, setSearch] = useState('');
@@ -82,11 +84,16 @@ export default function PurchasingPage() {
       title="Compras y Abastecimiento (PO)" 
       subtitle="Gestioná Órdenes de Compra, recepciones de mercadería y cuentas corrientes con proveedores."
       action={
-        <ActionGuard action="manage" subject="Purchasing">
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
-            Nueva Orden de Compra
-          </Button>
-        </ActionGuard>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <ActionGuard action="manage" subject="Purchasing">
+            <Button variant="secondary" icon={<Plus size={16} />} onClick={handleCreate}>
+              Nueva OC (Borrador)
+            </Button>
+            <Button variant="primary" icon={<Truck size={16} />} onClick={() => navigate('/admin/purchasing/new')}>
+              Ingreso Directo (Stock)
+            </Button>
+          </ActionGuard>
+        </div>
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} órdenes</Badge>}>

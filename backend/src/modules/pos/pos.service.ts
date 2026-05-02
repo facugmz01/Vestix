@@ -4,6 +4,7 @@ import { IdentifiersService } from '../identifiers/identifiers.service';
 import { CreateOrderDto } from '../sales/dto/create-order.dto';
 import { PricingService } from '../pricing/pricing.service';
 import { RulesEngineService } from '../pricing/rules-engine.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class PosService {
     private readonly identifiersService: IdentifiersService,
     private readonly pricingService: PricingService,
     private readonly rulesEngine: RulesEngineService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -115,5 +117,25 @@ export class PosService {
         finalPrice: l.finalPrice
       }))
     };
+  }
+
+  async searchCatalog(query: string) {
+    return this.prisma.productVariant.findMany({
+      where: {
+        OR: [
+          { sku: { contains: query, mode: 'insensitive' } },
+          { product: { name: { contains: query, mode: 'insensitive' } } },
+        ],
+      },
+      include: { product: true },
+      take: 20,
+    }).then(variants => variants.map(v => ({
+      id: v.id,
+      sku: v.sku,
+      name: v.product.name,
+      basePrice: v.price || 0, // Using variant price or default to 0
+      size: v.size,
+      color: v.color,
+    })));
   }
 }

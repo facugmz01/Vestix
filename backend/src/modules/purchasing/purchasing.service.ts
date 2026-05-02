@@ -1,71 +1,142 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PurchaseOrder, POStatus, POLineItem } from './models/purchase-order.model';
-import { CreatePurchaseOrderDto } from './dto/purchasing.dto';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { StockMovementService } from '../inventory/stock-movement.service';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class PurchasingService {
-  constructor(private readonly stockMovementService: StockMovementService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stockMovementService: StockMovementService
+  ) {}
 
-  private purchaseOrders: PurchaseOrder[] = [];
-
-  async createPO(dto: CreatePurchaseOrderDto) {
-    const lines: POLineItem[] = dto.lines.map(l => ({
-      id: crypto.randomUUID(),
-      variantId: l.variantId,
-      orderedQuantity: l.orderedQuantity,
-      receivedQuantity: 0,
-      unitCost: l.unitCost,
-    }));
-
-    const totalCost = lines.reduce((sum, line) => sum + (line.orderedQuantity * line.unitCost), 0);
-
-    const po: PurchaseOrder = {
-      id: crypto.randomUUID(),
-      supplierId: dto.supplierId,
-      destinationWarehouseId: dto.destinationWarehouseId,
-      status: POStatus.DRAFT,
-      lines,
-      totalCost,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.purchaseOrders.push(po);
-    return po;
-  }
-
-  async issuePO(id: string) {
-    const po = this.purchaseOrders.find(p => p.id === id);
-    if (!po) throw new NotFoundException('PO not found');
-    po.status = POStatus.ISSUED;
-    return po;
-  }
-
-  // --- NEW EXPOSED METHODS FOR GOODS RECEIPT MODULE ---
-
-  async getPO(id: string) {
-    return this.purchaseOrders.find(p => p.id === id);
+  async createPO(dto: any) {
+    return this.prisma.purchaseOrder.create({
+      data: {
+        supplierId: dto.supplierId,
+        destinationWarehouseId: dto.destinationWarehouseId,
+        status: 'DRAFT',
+        totalAmount: dto.totalAmount || 0,
+        paidAmount: 0,
+        currency: dto.currency || 'ARS',
+        notes: dto.notes,
+        lines: {
+          create: dto.lines.map(l => ({
+            variantId: l.variantId,
+            orderedQuantity: l.orderedQuantity,
+            unitCost: l.unitCost,
+            totalAmount: l.orderedQuantity * l.unitCost
+          }))
+        }
+      },
+      include: { lines: true }
+    });
   }
 
   /**
-   * Called automatically by the Goods Receipt service once the physical delivery is validated.
-   * Modifies the PO status based on the aggregated received amounts.
+   * One-step purchase: Creates PO, receives stock, and records payment.
    */
-  async applyReceiptToPO(poId: string, receiptLines: { poLineItemId: string, receivedQuantity: number }[]) {
-    const po = this.purchaseOrders.find(p => p.id === poId);
-    if (!po) return;
+  async processDirectPurchase(dto: {
+    supplierId: string;
+    warehouseId: string;
+    branchId: string;
+    paymentAccountId?: string;
+    paymentAmount?: number;
+    lines: {
+      variantId: string;
+      quantity: number;
+      unitCost: number;
+      discountAmount?: number;
+    }[];
+    notes?: string;
+  }) {
+    const totalAmount = dto.lines.reduce((sum, l) => sum + (l.quantity * l.unitCost) - (l.discountAmount || 0), 0);
+    const paidAmount = dto.paymentAmount || 0;
 
-    for (const receipt of receiptLines) {
-      const line = po.lines.find(l => l.id === receipt.poLineItemId);
-      if (line) {
-        line.receivedQuantity += receipt.receivedQuantity;
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Create Purchase Order (COMPLETED status because it's direct)
+      const po = await tx.purchaseOrder.create({
+        data: {
+          supplierId: dto.supplierId,
+          destinationWarehouseId: dto.warehouseId,
+          status: 'COMPLETED',
+          totalAmount,
+          paidAmount,
+          completedAt: new Date(),
+          notes: dto.notes,
+          lines: {
+            create: dto.lines.map(l => ({
+              variantId: l.variantId,
+              orderedQuantity: l.quantity,
+              receivedQuantity: l.quantity,
+              unitCost: l.unitCost,
+              discountAmount: l.discountAmount || 0,
+              totalAmount: (l.quantity * l.unitCost) - (l.discountAmount || 0)
+            }))
+          }
+        },
+        include: { lines: true }
+      });
+
+      // 2. Increase Stock
+      for (const line of dto.lines) {
+        await this.stockMovementService.processGoodsReceipt({
+          variantId: line.variantId,
+          destinationWarehouseId: dto.warehouseId,
+          branchId: dto.branchId,
+          quantity: line.quantity,
+          purchaseCost: line.unitCost,
+          purchaseOrderId: po.id
+        });
       }
-    }
 
-    const allFullyReceived = po.lines.every(l => l.receivedQuantity >= l.orderedQuantity);
-    po.status = allFullyReceived ? POStatus.COMPLETED : POStatus.PARTIALLY_RECEIVED;
-    if (allFullyReceived) po.completedAt = new Date();
-    po.updatedAt = new Date();
+      // 3. Handle Payment and Supplier Balance
+      const remainingDebt = totalAmount - paidAmount;
+      
+      // Update Supplier Balance (Debt to supplier)
+      await tx.supplier.update({
+        where: { id: dto.supplierId },
+        data: { balance: { increment: remainingDebt } }
+      });
+
+      // If money was paid from an account, record the transaction
+      if (paidAmount > 0 && dto.paymentAccountId) {
+        // Record outgoing payment in Treasury
+        await tx.financialTransaction.create({
+          data: {
+            accountId: dto.paymentAccountId,
+            type: 'CREDIT',
+            amount: paidAmount,
+            referenceId: po.id,
+            description: `Pago a proveedor por compra ${po.id}`
+          }
+        });
+
+        // Update account balance
+        await tx.financialAccount.update({
+          where: { id: dto.paymentAccountId },
+          data: { balance: { decrement: paidAmount } }
+        });
+      }
+
+      return po;
+    });
+  }
+
+  async findAll(query: any = {}) {
+    const page = parseInt(query.page) || 1;
+    const pageSize = parseInt(query.pageSize) || 50;
+    const skip = (page - 1) * pageSize;
+
+    const [data, total] = await Promise.all([
+      this.prisma.purchaseOrder.findMany({
+        include: { supplier: true, lines: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.purchaseOrder.count(),
+    ]);
+
+    return { data, total, page, pageSize };
   }
 }
