@@ -138,7 +138,7 @@ export class PurchasingService {
     });
   }
 
-  async applyReceiptToPO(poId: string, receiptLines: { lineItemId: string, receivedQuantity: number }[]) {
+  async applyReceiptToPO(poId: string, receiptLines: { poLineItemId: string, receivedQuantity: number }[]) {
     return this.prisma.$transaction(async (tx) => {
       const po = await tx.purchaseOrder.findUnique({
         where: { id: poId },
@@ -148,7 +148,7 @@ export class PurchasingService {
 
       for (const receipt of receiptLines) {
         await tx.pOLineItem.update({
-          where: { id: receipt.lineItemId },
+          where: { id: receipt.poLineItemId },
           data: { receivedQuantity: { increment: receipt.receivedQuantity } }
         });
       }
