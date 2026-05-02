@@ -51,7 +51,16 @@ export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
         isActive: source.isActive,
         isPublished: source.isPublished,
         images: source.images || [],
-        variants: source.variants?.filter(v => v.isActive !== false) || [],
+        variants: source.variants?.filter(v => v.isActive !== false).map(v => ({
+          id: v.id,
+          sku: v.sku,
+          size: v.size,
+          color: v.color,
+          imageUrl: v.imageUrl,
+          costPrice: v.costPrice,
+          basePrice: v.basePrice,
+          isActive: v.isActive
+        })) || [],
         isVariable: source.isVariable || false,
         costPrice: source.costPrice || 0,
         basePrice: source.variants?.[0]?.basePrice || 0,
