@@ -61,7 +61,7 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
             onChange={(e) => onChange({ ...formData, baseSku: e.target.value })}
           />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '16px' }}>
            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Categoría *</label>
             <select
@@ -84,6 +84,16 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
               <option value="">Sin Marca</option>
               {brands?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', justifyContent: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '24px' }}>
+              <input 
+                type="checkbox" 
+                checked={formData.isPublished} 
+                onChange={(e) => onChange({ ...formData, isPublished: e.target.checked })} 
+              />
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>Publicar en E-Commerce</span>
+            </label>
           </div>
         </div>
       </Section>
@@ -150,6 +160,7 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
                       <th style={{ textAlign: 'left', padding: '8px' }}>Color</th>
                       <th style={{ textAlign: 'left', padding: '8px' }}>Talle</th>
                       <th style={{ textAlign: 'left', padding: '8px' }}>Precio</th>
+                      <th style={{ textAlign: 'left', padding: '8px' }}>Imagen (URL)</th>
                       <th style={{ textAlign: 'right', padding: '8px' }}></th>
                     </tr>
                   </thead>
@@ -158,7 +169,31 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
                       <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
                         <td style={{ padding: '8px' }}>{v.color || '-'}</td>
                         <td style={{ padding: '8px' }}>{v.size || '-'}</td>
-                        <td style={{ padding: '8px' }}>${v.basePrice}</td>
+                        <td style={{ padding: '8px' }}>
+                          <input 
+                            type="number" 
+                            value={v.basePrice} 
+                            onChange={(e) => {
+                              const newVariants = [...(formData.variants || [])];
+                              newVariants[i] = { ...v, basePrice: Number(e.target.value) };
+                              onChange({ ...formData, variants: newVariants });
+                            }}
+                            style={{ width: '80px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                          />
+                        </td>
+                        <td style={{ padding: '8px' }}>
+                          <input 
+                            type="text" 
+                            placeholder="URL imagen"
+                            value={v.imageUrl || ''} 
+                            onChange={(e) => {
+                              const newVariants = [...(formData.variants || [])];
+                              newVariants[i] = { ...v, imageUrl: e.target.value };
+                              onChange({ ...formData, variants: newVariants });
+                            }}
+                            style={{ width: '150px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                          />
+                        </td>
                         <td style={{ padding: '8px', textAlign: 'right' }}>
                           <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => onChange({ ...formData, variants: formData.variants?.filter((_, idx) => idx !== i) })} />
                         </td>

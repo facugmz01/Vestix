@@ -19,6 +19,10 @@ export class ProductVariantDto {
   color?: string;
 
   @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @IsOptional()
   @IsNumber()
   costPrice?: number;
 
@@ -31,19 +35,7 @@ export class ProductVariantDto {
   isActive?: boolean;
 }
 
-export class ProductImageDto {
-  @IsString()
-  @IsNotEmpty()
-  url: string;
 
-  @IsOptional()
-  @IsString()
-  altText?: string;
-
-  @IsNumber()
-  @IsOptional()
-  displayOrder?: number;
-}
 
 export class CreateProductDto {
   @IsString()
@@ -98,7 +90,6 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ProductImageDto)
-  images?: ProductImageDto[];
+  @IsString({ each: true })
+  images?: string[];
 }

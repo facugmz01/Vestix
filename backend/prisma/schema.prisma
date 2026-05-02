@@ -105,6 +105,7 @@ model ProductVariant {
   barcode    String?         @unique
   size       String?
   color      String?
+  imageUrl   String?
   
   // Pricing Inheritance
   costPrice  Float           @default(0)
