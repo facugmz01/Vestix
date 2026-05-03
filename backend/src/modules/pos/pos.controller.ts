@@ -3,9 +3,14 @@ import { PosService } from './pos.service';
 import { ScanBarcodeDto } from './dto/scan-barcode.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
+import { PrismaService } from '../../core/prisma/prisma.service';
+
 @Controller('pos')
 export class PosController {
-  constructor(private readonly posService: PosService) {}
+  constructor(
+    private readonly posService: PosService,
+    private readonly prisma: PrismaService
+  ) {}
 
   /**
    * OFFLINE SYNC: Used by the PWA/Dexie.js client to download the catalog database.
