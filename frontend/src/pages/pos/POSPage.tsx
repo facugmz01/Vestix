@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { posApi } from '@/api/pos.api';
 import { salesApi } from '@/api/sales.api';
 import { customersApi } from '@/api/customers.api';
+import { get } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import type { CashRegister, ProductVariant, Customer } from '@/types';
 
@@ -150,25 +151,47 @@ export default function POSPage() {
   };
 
   const checkoutMutation = useMutation({
-    mutationFn: (status: 'COMPLETED' | 'QUOTE' = 'COMPLETED') => salesApi.createSale({
-      id: crypto.randomUUID(),
-      branchId: session?.branchId || 'main',
-      warehouseId: 'main', // Default or from session
-      customerId: selectedCustomerId || undefined,
-      source: 'POS',
-      paymentMethod,
-      paymentAccountId: paymentMethod === 'CUSTOMER_CREDIT' ? undefined : 'default-cash-account', // Should come from session/config
-      status,
-      posGrandTotal: grandTotal,
-      createdAtIso: new Date().toISOString(),
-      lines: cart.map(i => ({
-        variantId: i.variant.id,
-        categoryId: 'default', // Ideally fetched from product
-        quantity: i.qty,
-        unitPriceOverride: i.variant.basePrice,
-        discountPct: i.discountPct
-      }))
-    }),
+    mutationFn: async (status: 'COMPLETED' | 'QUOTE' = 'COMPLETED') => {
+      if (!session) throw new Error('No hay sesión de caja activa');
+
+      // Find a valid warehouse for this branch
+      const warehouses = await queryClient.fetchQuery({
+        queryKey: ['warehouses', session.branchId],
+        queryFn: () => get<any[]>('/inventory/warehouses', { params: { branchId: session.branchId } })
+      });
+      const warehouseId = warehouses?.[0]?.id || 'main';
+
+      // Find a valid financial account for this branch
+      const accounts = await queryClient.fetchQuery({
+        queryKey: ['accounts', session.branchId],
+        queryFn: () => get<any[]>('/finance/accounts', { params: { branchId: session.branchId } })
+      });
+      const paymentAccountId = accounts?.find(a => a.isActive)?.id;
+
+      if (status === 'COMPLETED' && !paymentAccountId && paymentMethod !== 'CUSTOMER_CREDIT') {
+        throw new Error('No se encontró una cuenta de tesorería para registrar el pago');
+      }
+
+      return salesApi.createSale({
+        id: crypto.randomUUID(),
+        branchId: session.branchId,
+        warehouseId,
+        customerId: selectedCustomerId || undefined,
+        source: 'POS',
+        paymentMethod,
+        paymentAccountId,
+        status,
+        posGrandTotal: grandTotal,
+        createdAtIso: new Date().toISOString(),
+        lines: cart.map(i => ({
+          variantId: i.variant.id,
+          categoryId: (i.variant as any).product?.categoryId || 'default',
+          quantity: i.qty,
+          unitPriceOverride: i.variant.basePrice,
+          discountPct: i.discountPct
+        }))
+      });
+    },
     onSuccess: (_, status) => {
       toast.success(status === 'QUOTE' ? 'Presupuesto guardado' : 'Venta registrada con éxito');
       setCart([]);

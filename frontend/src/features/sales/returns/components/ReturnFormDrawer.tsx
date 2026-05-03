@@ -171,8 +171,26 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                 keyField="id"
                 data={saleOrder.lines}
                 columns={[
-                  { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
-                  { key: 'paid', header: 'Pagado C/U', render: (l) => <span>{fmtCurrency(l.finalPrice / l.quantity)}</span> },
+                  { 
+                    key: 'sku', 
+                    header: 'Artículo / SKU', 
+                    render: (l) => (
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontWeight: 700, fontSize: '13px' }}>{l.variant?.product?.name || 'Producto'}</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {l.variant?.sku || l.variantSku || l.variantId.split('-')[0]}
+                        </span>
+                      </div>
+                    )
+                  },
+                  { 
+                    key: 'paid', 
+                    header: 'Pagado C/U', 
+                    render: (l) => {
+                      const unitPrice = l.finalPrice > 0 ? (l.finalPrice / l.quantity) : l.basePrice;
+                      return <span>{fmtCurrency(unitPrice)}</span>;
+                    } 
+                  },
                   { key: 'max', header: 'Max. Devol.', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.quantity}</span> },
                   { 
                     key: 'qty', 
@@ -210,7 +228,10 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                 <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Monto Total Implicado:</span>
                 <span style={{ fontSize: '24px', fontWeight: 900, marginLeft: '12px' }}>
                   {fmtCurrency(
-                    saleOrder.lines.reduce((acc, line) => acc + ((line.finalPrice / line.quantity) * (returnItems[line.id]?.qty || 0)), 0)
+                    saleOrder.lines.reduce((acc, line) => {
+                      const unitPrice = line.finalPrice > 0 ? (line.finalPrice / line.quantity) : line.basePrice;
+                      return acc + (unitPrice * (returnItems[line.id]?.qty || 0));
+                    }, 0)
                   )}
                 </span>
                 <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>

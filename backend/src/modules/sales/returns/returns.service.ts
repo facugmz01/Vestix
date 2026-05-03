@@ -139,12 +139,17 @@ export class ReturnsService {
         let accountId = sale.paymentAccountId;
         if (!accountId) {
           const defaultAccount = await tx.financialAccount.findFirst({
-            where: { branchId: dto.branchId, isActive: true }
+            where: { isActive: true },
+            orderBy: { createdAt: 'asc' }
           });
           accountId = defaultAccount?.id;
         }
 
-        if (!accountId) throw new BadRequestException('No financial account found for refund');
+        if (!accountId) {
+          // If still no account, we cannot process the refund.
+          // In a real scenario, we might want to auto-create one or force the user to configure it.
+          throw new BadRequestException('No existe ninguna cuenta de tesorería configurada para procesar el reembolso. Por favor, cree una caja o cuenta bancaria primero.');
+        }
 
         // Create an outflow receipt in Treasury
         await tx.treasuryReceipt.create({

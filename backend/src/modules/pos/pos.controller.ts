@@ -59,12 +59,31 @@ export class PosController {
   }
 
   @Get('session/current')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
   async getCurrentSession() {
-    return null; // Return null if no session active, or a mock session
+    // In production, this would look up the active shift for the current user in this branch.
+    // Returning a mock session to unblock the POS UI for now.
+    const register = await this.prisma.cashRegister.findFirst({
+      where: { status: 'OPEN', isActive: true },
+      include: { branch: true }
+    });
+    return register;
   }
 
   @Get('registers')
-  async getRegisters() {
-    return []; // Return empty array of registers
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  async getRegisters(@Query('branchId') branchId: string) {
+    return this.prisma.cashRegister.findMany({
+      where: { branchId: branchId || undefined, isActive: true }
+    });
+  }
+
+  @Post('session/open')
+  @RequirePermissions({ action: 'update', subject: 'Sales' })
+  async openSession(@Body() dto: { cashRegisterId: string; openingAmount: number }) {
+    return this.prisma.cashRegister.update({
+      where: { id: dto.cashRegisterId },
+      data: { status: 'OPEN' }
+    });
   }
 }
