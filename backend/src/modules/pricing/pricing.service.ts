@@ -31,11 +31,12 @@ export class PricingService {
     return this.prisma.priceList.create({
       data: {
         name: dto.name,
-        type: (dto as any).type || 'RETAIL',
+        type: dto.type || 'RETAIL',
+        currency: dto.currency || 'ARS',
         isPercentageBased: dto.isPercentageBased ?? false,
         percentageDiscount: dto.percentageDiscount,
-        validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
-        validTo: dto.validTo ? new Date(dto.validTo) : undefined,
+        validFrom: (dto.validFrom && dto.validFrom.trim() !== '') ? new Date(dto.validFrom) : undefined,
+        validTo: (dto.validTo && dto.validTo.trim() !== '') ? new Date(dto.validTo) : undefined,
         isDefault: (dto as any).isDefault ?? false,
       }
     });

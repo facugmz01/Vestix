@@ -176,6 +176,7 @@ model PriceList {
   id                String           @id @default(uuid())
   name              String           @unique
   type              String           @default("RETAIL") // RETAIL | WHOLESALE | VIP | PROMOTIONAL
+  currency          String           @default("ARS")
   isActive          Boolean          @default(true)
   isPercentageBased Boolean          @default(false)
   percentageDiscount Float?
