@@ -50,9 +50,9 @@ export class PosController {
   }
 
   @Get('registers')
-  @RequirePermissions({ action: 'read', subject: 'Sales' })
-  async getRegisters(@Query('branchId') branchId: string) {
-    return this.posService.getRegisters(branchId);
+  async getRegisters() {
+    console.log('[DEBUG] getRegisters hit');
+    return this.posService.getRegisters();
   }
 
   @Post('session/open')

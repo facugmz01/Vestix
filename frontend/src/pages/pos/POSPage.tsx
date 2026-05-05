@@ -37,7 +37,7 @@ function SessionModal({
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Seleccionar Caja</label>
             <select value={selectedReg} onChange={e => setSelectedReg(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)' }}>
               <option value="">-- Cajas Disponibles --</option>
-              {availableRegisters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              {Array.isArray(availableRegisters) && availableRegisters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           </div>
           
@@ -80,7 +80,7 @@ export default function POSPage() {
   const { data: registersData } = useQuery({
     queryKey: queryKeys.pos.registers(currentBranchId),
     queryFn: () => posApi.getAvailableRegisters(currentBranchId),
-    enabled: !isSessionLoading && !session && !!currentBranchId,
+    enabled: !isSessionLoading && !session,
   });
 
   const openSessionMutation = useMutation({
