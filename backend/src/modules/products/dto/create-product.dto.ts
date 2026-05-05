@@ -33,6 +33,10 @@ export class ProductVariantDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsObject()
+  attributes?: Record<string, any>;
 }
 
 
