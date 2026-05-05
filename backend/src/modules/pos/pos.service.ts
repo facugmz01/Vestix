@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CheckoutOrchestrator } from '../sales/checkout.orchestrator';
 import { IdentifiersService } from '../identifiers/identifiers.service';
 import { CreateOrderDto } from '../sales/dto/create-order.dto';
@@ -264,3 +264,4 @@ export class PosService {
       }))
     };
   }
+}
