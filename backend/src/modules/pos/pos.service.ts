@@ -177,8 +177,13 @@ export class PosService {
   }
 
   async getRegisters(branchId?: string) {
+    const where: any = { isActive: true };
+    if (branchId && branchId !== '') {
+      where.branchId = branchId;
+    }
+    
     return this.prisma.cashRegister.findMany({
-      where: { branchId: branchId || undefined, isActive: true },
+      where,
       include: { branch: true }
     });
   }

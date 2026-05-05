@@ -8,6 +8,7 @@ import { salesApi } from '@/api/sales.api';
 import { customersApi } from '@/api/customers.api';
 import { get } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
+import { useAuthStore } from '@/store/auth.store';
 import type { CashRegister, ProductVariant, Customer } from '@/types';
 
 import { Button, Input, Badge, Drawer } from '@/components/ui';
@@ -67,15 +68,19 @@ export default function POSPage() {
   const queryClient = useQueryClient();
   
   // 1. Session Management
+  const { user } = useAuthStore();
+  
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: queryKeys.pos.session(),
     queryFn: () => posApi.getMyRegister(),
   });
+  
+  const currentBranchId = session?.branchId || user?.branchId || '';
 
   const { data: registersData } = useQuery({
-    queryKey: queryKeys.pos.registers('current-branch'), // Usually derived from auth
-    queryFn: () => posApi.getAvailableRegisters('current-branch'),
-    enabled: !isSessionLoading && !session, // Only load if no active session
+    queryKey: queryKeys.pos.registers(currentBranchId),
+    queryFn: () => posApi.getAvailableRegisters(currentBranchId),
+    enabled: !isSessionLoading && !session && !!currentBranchId,
   });
 
   const openSessionMutation = useMutation({
