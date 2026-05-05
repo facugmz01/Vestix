@@ -67,9 +67,9 @@ export class OpenSessionDto {
   @Min(0)
   openingAmount: number;
 
+  @IsOptional()
   @IsUUID('4')
-  @IsNotEmpty()
-  userId: string;
+  userId?: string;
 }
 
 export class CloseSessionDto {
@@ -81,9 +81,9 @@ export class CloseSessionDto {
   @Min(0)
   closingAmount: number;
 
+  @IsOptional()
   @IsUUID('4')
-  @IsNotEmpty()
-  userId: string;
+  userId?: string;
 
   @IsString()
   @IsOptional()

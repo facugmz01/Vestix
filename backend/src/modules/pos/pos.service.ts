@@ -177,22 +177,15 @@ export class PosService {
   }
 
   async getRegisters(branchId?: string) {
-    const registers = await this.prisma.cashRegister.findMany({
+    const where: any = { isActive: true };
+    if (branchId && branchId !== '' && branchId !== 'current-branch') {
+      where.branchId = branchId;
+    }
+    
+    return this.prisma.cashRegister.findMany({
+      where,
       include: { branch: true }
     });
-    
-    if (registers.length === 0) {
-      console.log('[DEBUG] No registers found in DB, returning dummy');
-      return [{
-        id: 'dummy-id',
-        name: 'Caja de Prueba (Auto-generada)',
-        branchId: 'dummy-branch',
-        isActive: true,
-        status: 'CLOSED'
-      }];
-    }
-
-    return registers;
   }
 
   async getCurrentSession(registerId: string) {

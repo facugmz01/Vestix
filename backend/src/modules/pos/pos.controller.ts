@@ -8,6 +8,7 @@ import {
   CloseSessionDto 
 } from './dto/pos.dtos';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { CurrentUser } from '../../core/rbac/decorators/current-user.decorator';
 
 @Controller('pos')
 export class PosController {
@@ -50,20 +51,20 @@ export class PosController {
   }
 
   @Get('registers')
-  async getRegisters() {
-    console.log('[DEBUG] getRegisters hit');
-    return this.posService.getRegisters();
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  async getRegisters(@Query('branchId') branchId: string) {
+    return this.posService.getRegisters(branchId);
   }
 
   @Post('session/open')
   @RequirePermissions({ action: 'update', subject: 'Sales' })
-  async openSession(@Body() dto: OpenSessionDto) {
-    return this.posService.openSession(dto);
+  async openSession(@Body() dto: OpenSessionDto, @CurrentUser('userId') userId: string) {
+    return this.posService.openSession({ ...dto, userId });
   }
 
   @Post('session/close')
   @RequirePermissions({ action: 'update', subject: 'Sales' })
-  async closeSession(@Body() dto: CloseSessionDto) {
-    return this.posService.closeSession(dto);
+  async closeSession(@Body() dto: CloseSessionDto, @CurrentUser('userId') userId: string) {
+    return this.posService.closeSession({ ...dto, userId });
   }
 }
