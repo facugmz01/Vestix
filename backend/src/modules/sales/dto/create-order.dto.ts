@@ -75,4 +75,8 @@ export class CreateOrderDto {
   @IsBoolean()
   @IsOptional()
   wasReserved?: boolean; // Flag to determine if the stock should deduct from 'available' or 'reserved' quantities
+
+  @IsUUID('4')
+  @IsOptional()
+  cashShiftId?: string; // Link to the active POS session/shift
 }

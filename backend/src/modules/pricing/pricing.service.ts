@@ -1,102 +1,92 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PriceList, PriceListType, PriceListEntry } from './models/price-list.model';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreatePriceListDto } from './dto/create-price-list.dto';
-import * as crypto from 'crypto';
 import { RulesEngineService } from './rules-engine.service';
 
 @Injectable()
 export class PricingService {
-  constructor(private readonly rulesEngine: RulesEngineService) {}
-  
-  private priceLists: PriceList[] = [];
-  private entries: PriceListEntry[] = [];
-  private customerPriceListAssignments: Map<string, string> = new Map(); 
+  constructor(
+    private readonly rulesEngine: RulesEngineService,
+    private readonly prisma: PrismaService
+  ) {}
 
   async findAll() {
-    return this.priceLists;
+    return this.prisma.priceList.findMany({
+      include: { entries: true }
+    });
   }
 
   async findOne(id: string) {
-    const list = this.priceLists.find(pl => pl.id === id);
-    if (!list) throw new NotFoundException('Price List not found');
-    return list;
+    return this.prisma.priceList.findUniqueOrThrow({
+      where: { id },
+      include: { entries: true }
+    });
   }
 
   async createPriceList(dto: CreatePriceListDto) {
     if (dto.isPercentageBased && !dto.percentageDiscount) {
       throw new ConflictException('Percentage-based lists must provide a percentageDiscount value.');
     }
-    const priceList: PriceList = {
-      id: crypto.randomUUID(),
-      ...dto,
-      isPercentageBased: dto.isPercentageBased ?? false,
-      isActive: true,
-      validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
-      validTo: dto.validTo ? new Date(dto.validTo) : undefined,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.priceLists.push(priceList);
-    return priceList;
+    
+    return this.prisma.priceList.create({
+      data: {
+        name: dto.name,
+        type: (dto as any).type || 'RETAIL',
+        isPercentageBased: dto.isPercentageBased ?? false,
+        percentageDiscount: dto.percentageDiscount,
+        validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
+        validTo: dto.validTo ? new Date(dto.validTo) : undefined,
+        isDefault: (dto as any).isDefault ?? false,
+      }
+    });
   }
 
   async setVariantPrice(priceListId: string, variantId: string, overridePrice: number) {
-    const list = this.priceLists.find(pl => pl.id === priceListId);
-    if (!list) throw new NotFoundException('Price List not found');
+    const list = await this.prisma.priceList.findUniqueOrThrow({ where: { id: priceListId } });
     if (list.isPercentageBased) throw new ConflictException('Cannot set explicit variant prices on a percentage-based price list.');
 
-    const existingIdx = this.entries.findIndex(e => e.priceListId === priceListId && e.variantId === variantId);
-    
-    if (existingIdx >= 0) {
-      this.entries[existingIdx].overridePrice = overridePrice;
-      this.entries[existingIdx].updatedAt = new Date();
-      return this.entries[existingIdx];
-    }
-
-    const entry: PriceListEntry = { id: crypto.randomUUID(), priceListId, variantId, overridePrice, updatedAt: new Date() };
-    this.entries.push(entry);
-    return entry;
-  }
-
-  async assignCustomerToPriceList(customerId: string, priceListId: string) {
-    this.customerPriceListAssignments.set(customerId, priceListId);
-    return { success: true };
+    return this.prisma.priceListEntry.upsert({
+      where: {
+        priceListId_variantId: { priceListId, variantId }
+      },
+      update: { overridePrice },
+      create: { priceListId, variantId, overridePrice }
+    });
   }
 
   async resolvePrice(variantId: string, basePrice: number, customerId?: string): Promise<number> {
-    let activeListId: string | undefined;
+    let activePriceList;
 
-    if (customerId && this.customerPriceListAssignments.has(customerId)) activeListId = this.customerPriceListAssignments.get(customerId);
-    else {
-      const defaultRetail = this.priceLists.find(pl => pl.type === PriceListType.RETAIL && pl.isActive);
-      if (defaultRetail) activeListId = defaultRetail.id;
+    // 1. Try to find customer-specific price list (Mocked link for now as Customer model doesn't have priceListId)
+    // if (customerId) { ... }
+
+    // 2. Fallback to default RETAIL list
+    if (!activePriceList) {
+      activePriceList = await this.prisma.priceList.findFirst({
+        where: { isDefault: true, isActive: true }
+      });
     }
 
-    if (!activeListId) return basePrice;
-    const list = this.priceLists.find(pl => pl.id === activeListId);
-    if (!list || !list.isActive) return basePrice;
+    if (!activePriceList) return basePrice;
     
     const now = new Date();
-    if (list.validFrom && now < list.validFrom) return basePrice;
-    if (list.validTo && now > list.validTo) return basePrice;
+    if (activePriceList.validFrom && now < activePriceList.validFrom) return basePrice;
+    if (activePriceList.validTo && now > activePriceList.validTo) return basePrice;
 
-    if (list.isPercentageBased && list.percentageDiscount) {
-      const multiplier = (100 - list.percentageDiscount) / 100;
+    if (activePriceList.isPercentageBased && activePriceList.percentageDiscount) {
+      const multiplier = (100 - activePriceList.percentageDiscount) / 100;
       return Number((basePrice * multiplier).toFixed(2));
     } else {
-      const entry = this.entries.find(e => e.priceListId === activeListId && e.variantId === variantId);
+      const entry = await this.prisma.priceListEntry.findUnique({
+        where: {
+          priceListId_variantId: { priceListId: activePriceList.id, variantId }
+        }
+      });
       if (entry) return entry.overridePrice;
     }
     return basePrice;
   }
 
-  // --- NEW CAPABILITIES: PRICING ENGINE ---
-
-  /**
-   * Calculates gross margin and markup percentages.
-   * Highly critical for managers deciding on promotional discounts.
-   * Relies on Weighted Average Cost fetched from the Inventory module.
-   */
   calculateMargin(sellingPrice: number, weightedAverageCost: number) {
     if (sellingPrice <= 0 || weightedAverageCost <= 0) return { marginPercent: 0, markupPercent: 0, grossProfit: 0 };
 
@@ -111,34 +101,22 @@ export class PricingService {
     };
   }
 
-  /**
-   * Bulk updates prices for an array of variants.
-   * e.g., "Increase all Fall 2024 variants by 5% on the VIP Price List"
-   */
   async bulkUpdateVariantPrices(priceListId: string, variantsData: { variantId: string, basePrice: number }[], modifierPercentage: number) {
-    const list = this.priceLists.find(pl => pl.id === priceListId);
-    if (!list) throw new NotFoundException('Price List not found');
+    const list = await this.prisma.priceList.findUniqueOrThrow({ where: { id: priceListId } });
     if (list.isPercentageBased) throw new ConflictException('Cannot bulk update explicit prices on a percentage-based list.');
 
-    // e.g. modifierPercentage = 5 (increase 5%), modifier = -10 (decrease 10%)
     const multiplier = (100 + modifierPercentage) / 100;
-    const updatedEntries = [];
 
-    // In production, this executes as a single batched Postgres UPSERT query for performance
-    for (const vData of variantsData) {
+    const operations = variantsData.map(vData => {
       const newExplicitPrice = Number((vData.basePrice * multiplier).toFixed(2));
-      const existingIdx = this.entries.findIndex(e => e.priceListId === priceListId && e.variantId === vData.variantId);
-      
-      if (existingIdx >= 0) {
-        this.entries[existingIdx].overridePrice = newExplicitPrice;
-        this.entries[existingIdx].updatedAt = new Date();
-        updatedEntries.push(this.entries[existingIdx]);
-      } else {
-        const entry: PriceListEntry = { id: crypto.randomUUID(), priceListId, variantId: vData.variantId, overridePrice: newExplicitPrice, updatedAt: new Date() };
-        this.entries.push(entry);
-        updatedEntries.push(entry);
-      }
-    }
-    return { success: true, updatedCount: updatedEntries.length };
+      return this.prisma.priceListEntry.upsert({
+        where: { priceListId_variantId: { priceListId, variantId: vData.variantId } },
+        update: { overridePrice: newExplicitPrice },
+        create: { priceListId, variantId: vData.variantId, overridePrice: newExplicitPrice }
+      });
+    });
+
+    await Promise.all(operations);
+    return { success: true, updatedCount: operations.length };
   }
 }

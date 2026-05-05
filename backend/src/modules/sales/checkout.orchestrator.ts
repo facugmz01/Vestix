@@ -155,6 +155,7 @@ export class CheckoutOrchestrator {
           paymentMethod: dto.paymentMethod,
           paymentAccountId: dto.paymentAccountId,
           status: dto.status || 'COMPLETED',
+          cashShiftId: dto.cashShiftId,
           createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
           lines: {
             create: finalLinesForDB.map(l => ({

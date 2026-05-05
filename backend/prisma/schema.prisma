@@ -172,11 +172,30 @@ model AttributeValue {
 }
 
 model PriceList {
-  id          String   @id @default(uuid())
-  name        String   @unique // e.g., "Mayorista", "Minorista"
-  margin      Float    // e.g., 1.30 for 30% margin
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id                String           @id @default(uuid())
+  name              String           @unique
+  type              String           @default("RETAIL") // RETAIL | WHOLESALE | VIP | PROMOTIONAL
+  isActive          Boolean          @default(true)
+  isPercentageBased Boolean          @default(false)
+  percentageDiscount Float?
+  validFrom         DateTime?
+  validTo           DateTime?
+  isDefault         Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  entries           PriceListEntry[]
+}
+
+model PriceListEntry {
+  id            String    @id @default(uuid())
+  priceListId   String
+  priceList     PriceList @relation(fields: [priceListId], references: [id])
+  variantId     String
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  overridePrice Float
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([priceListId, variantId])
 }
 
 model SaleOrder {
@@ -194,6 +213,8 @@ model SaleOrder {
   paymentMethod     String
   paymentAccountId  String?
   status            String          @default("COMPLETED") // COMPLETED | QUOTE | CANCELLED
+  cashShiftId       String?
+  cashShift         CashShift?      @relation(fields: [cashShiftId], references: [id])
   createdAt         DateTime
   syncedAt          DateTime        @default(now())
 
@@ -466,7 +487,26 @@ model CashRegister {
   code       String   @unique
   branchId   String
   branch     Branch   @relation(fields: [branchId], references: [id])
+  status     String   @default("CLOSED") // OPEN | CLOSED
   isActive   Boolean  @default(true)
+  shifts     CashShift[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model CashShift {
+  id              String       @id @default(uuid())
+  cashRegisterId  String
+  cashRegister    CashRegister @relation(fields: [cashRegisterId], references: [id])
+  openedByUserId  String
+  closedByUserId  String?
+  openingAmount   Float
+  closingAmount   Float?
+  expectedAmount  Float?
+  difference      Float?
+  status          String       @default("OPEN") // OPEN | CLOSED
+  openedAt        DateTime     @default(now())
+  closedAt        DateTime?
+  notes           String?
+  sales           SaleOrder[]
 }
