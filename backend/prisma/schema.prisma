@@ -154,6 +154,7 @@ model ProductVariant {
   poLines    POLineItem[]
   stockLevels StockLevel[]
   movements   InventoryMovement[]
+  priceListEntries PriceListEntry[]
 }
 
 model Attribute {
