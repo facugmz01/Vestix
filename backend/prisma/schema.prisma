@@ -8,11 +8,17 @@ generator client {
 }
 
 model User {
-  id       String @id @default(uuid())
-  email    String @unique
-  password String
-  roleId   String
-  role     Role   @relation(fields: [roleId], references: [id])
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String?
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Role {
@@ -75,6 +81,7 @@ model Branch {
   cashRegisters  CashRegister[]
   stockLevels    StockLevel[]
   returns        SaleReturn[] // Added relation
+  users          User[]
 }
 
 model Warehouse {

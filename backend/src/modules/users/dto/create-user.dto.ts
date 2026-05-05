@@ -13,17 +13,17 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  firstName: string;
+  fullName: string;
 
   @IsString()
-  @IsNotEmpty()
-  lastName: string;
-
-  @IsEnum(UserRole)
-  role: UserRole;
-
-  @IsArray()
-  @IsUUID('4', { each: true })
   @IsOptional()
-  branchIds?: string[];
+  password?: string;
+
+  @IsUUID('4')
+  @IsNotEmpty()
+  roleId: string;
+
+  @IsUUID('4')
+  @IsOptional()
+  branchId?: string;
 }
