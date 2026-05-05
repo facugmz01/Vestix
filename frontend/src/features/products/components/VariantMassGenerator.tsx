@@ -33,52 +33,44 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
     const attrNames = Object.keys(selectedAttributes).filter(k => selectedAttributes[k].length > 0);
     if (attrNames.length === 0) return;
 
-    // Cartesian product
+    // We now support any attributes. The backend will handle the mapping.
+    // However, for the local preview (before saving), we still want to show them.
+    
     let combinations: any[] = [{}];
-    // Mapear solo atributos soportados (size, color)
-    let hasUnsupported = false;
-    let supportedCount = 0;
     
     attrNames.forEach(name => {
-      let key = name.toLowerCase();
-      if (key === 'talle' || key === 'tamaño') key = 'size';
-      if (key === 'color') key = 'color';
-
-      if (key !== 'size' && key !== 'color') {
-        hasUnsupported = true;
-        return; // Ignorar atributos no soportados por el esquema actual
-      }
-
-      supportedCount++;
       const next: any[] = [];
       const values = selectedAttributes[name];
 
       values.forEach(val => {
         combinations.forEach(combo => {
-          next.push({ ...combo, [key]: val });
+          next.push({ ...combo, [name]: val });
         });
       });
       combinations = next;
     });
 
-    if (hasUnsupported) {
-      toast.error('Actualmente la base de datos solo soporta combinaciones de "Talle" y "Color". Se ignoraron otros atributos.');
-    }
+    const variants = combinations.map(combo => {
+      // Find color and size for the preview table
+      const colorKey = Object.keys(combo).find(k => k.toLowerCase() === 'color');
+      const sizeKey = Object.keys(combo).find(k => 
+        ['size', 'talle', 'talla', 'tamaño'].includes(k.toLowerCase()) || 
+        k.toLowerCase().startsWith('talle')
+      );
 
-    if (supportedCount === 0) {
-      return; // No generar nada si no hay atributos soportados
-    }
-
-    const variants = combinations.map(combo => ({
-      ...combo,
-      costPrice,
-      basePrice,
-      isActive: true,
-      sku: '' 
-    }));
+      return {
+        color: colorKey ? combo[colorKey] : undefined,
+        size: sizeKey ? combo[sizeKey] : undefined,
+        attributes: combo,
+        costPrice,
+        basePrice,
+        isActive: true,
+        sku: '' 
+      };
+    });
 
     onGenerate(variants);
-    setSelectedAttributes({}); // Limpiar selección después de generar
+    setSelectedAttributes({}); // Clear selection after generating
   };
 
   return (

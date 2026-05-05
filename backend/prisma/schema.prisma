@@ -148,6 +148,7 @@ model ProductVariant {
   basePrice  Float           @default(0) 
   
   isActive   Boolean         @default(true)
+  attributes Json            @default("{}")
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   orderLines OrderLineItem[]

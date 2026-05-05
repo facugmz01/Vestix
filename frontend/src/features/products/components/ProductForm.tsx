@@ -167,8 +167,22 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
                   <tbody>
                     {formData.variants.map((v, i) => (
                       <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
-                        <td style={{ padding: '8px' }}>{v.color || '-'}</td>
-                        <td style={{ padding: '8px' }}>{v.size || '-'}</td>
+                        <td style={{ padding: '8px' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {v.color || '-'}
+                            {v.attributes && Object.entries(v.attributes).map(([k, val]) => 
+                              k.toLowerCase() === 'color' ? null : 
+                              ['size', 'talle', 'talla', 'tamaño'].includes(k.toLowerCase()) ? null :
+                              k.toLowerCase().startsWith('talle') ? null :
+                              <span key={k} style={{ fontSize: '10px', background: 'var(--bg-base)', padding: '2px 4px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                                {k}: {val}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ padding: '8px' }}>
+                          {v.size || (v.attributes && Object.entries(v.attributes).find(([k]) => k.toLowerCase().startsWith('talle'))?.[1]) || '-'}
+                        </td>
                         <td style={{ padding: '8px' }}>
                           <input 
                             type="number" 

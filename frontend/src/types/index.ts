@@ -131,6 +131,7 @@ export interface ProductVariant {
   costPrice: number;
   basePrice: number; 
   isActive: boolean;
+  attributes?: Record<string, string>;
 }
 
 // ─── INVENTORY ───────────────────────────────────────────────────────────
