@@ -169,10 +169,10 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
                       <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
                         <td style={{ padding: '8px' }}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                            {v.color || '-'}
+                            {v.color || (v.attributes && Object.entries(v.attributes).find(([k]) => ['color', 'colores', 'cor'].includes(k.toLowerCase()))?.[1]) || '-'}
                             {v.attributes && Object.entries(v.attributes).map(([k, val]) => 
-                              k.toLowerCase() === 'color' ? null : 
-                              ['size', 'talle', 'talla', 'tamaño'].includes(k.toLowerCase()) ? null :
+                              ['color', 'colores', 'cor'].includes(k.toLowerCase()) ? null : 
+                              ['size', 'sizes', 'talle', 'talles', 'talla', 'tallas', 'tamaño', 'tamaños'].includes(k.toLowerCase()) ? null :
                               k.toLowerCase().startsWith('talle') ? null :
                               <span key={k} style={{ fontSize: '10px', background: 'var(--bg-base)', padding: '2px 4px', borderRadius: '4px', border: '1px solid var(--border)' }}>
                                 {k}: {val}
@@ -181,7 +181,7 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
                           </div>
                         </td>
                         <td style={{ padding: '8px' }}>
-                          {v.size || (v.attributes && Object.entries(v.attributes).find(([k]) => k.toLowerCase().startsWith('talle'))?.[1]) || '-'}
+                          {v.size || (v.attributes && Object.entries(v.attributes).find(([k]) => ['size', 'sizes', 'talle', 'talles', 'talla', 'tallas', 'tamaño', 'tamaños'].includes(k.toLowerCase()) || k.toLowerCase().startsWith('talle'))?.[1]) || '-'}
                         </td>
                         <td style={{ padding: '8px' }}>
                           <input 

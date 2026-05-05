@@ -52,9 +52,11 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
 
     const variants = combinations.map(combo => {
       // Find color and size for the preview table
-      const colorKey = Object.keys(combo).find(k => k.toLowerCase() === 'color');
+      const colorKey = Object.keys(combo).find(k => 
+        ['color', 'colores', 'cor'].includes(k.toLowerCase())
+      );
       const sizeKey = Object.keys(combo).find(k => 
-        ['size', 'talle', 'talla', 'tamaño'].includes(k.toLowerCase()) || 
+        ['size', 'sizes', 'talle', 'talles', 'talla', 'tallas', 'tamaño', 'tamaños'].includes(k.toLowerCase()) || 
         k.toLowerCase().startsWith('talle')
       );
 

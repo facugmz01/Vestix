@@ -59,7 +59,8 @@ export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
           imageUrl: v.imageUrl,
           costPrice: v.costPrice,
           basePrice: v.basePrice,
-          isActive: v.isActive
+          isActive: v.isActive,
+          attributes: v.attributes
         })) || [],
         isVariable: source.isVariable || false,
         costPrice: source.costPrice || 0,
