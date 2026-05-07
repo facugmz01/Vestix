@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Res, HttpCode, HttpStatus, Get, Req, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Res, HttpCode, HttpStatus, Get, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Response, Request } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -19,12 +20,21 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 // 1 day
     });
 
-    return this.transformUser(result.user);
+    return { 
+      message: 'Login exitoso', 
+      user: this.transformUser(result.user) 
+    };
   }
 
   @Get('me')
+  @UseGuards(AuthGuard('jwt'))
   async getMe(@Req() req: Request) {
-    const user = await this.authService.getAdminUser();
+    // req.user is set by the JwtStrategy if the token is valid
+    const reqUser = (req as any).user;
+    if (!reqUser) throw new UnauthorizedException();
+    
+    // Fetch fresh user data from DB to get latest permissions/roles
+    const user = await this.authService.getUserById(reqUser.userId);
     if (!user) throw new UnauthorizedException();
     
     return this.transformUser(user);
@@ -45,6 +55,8 @@ export class AuthController {
     return {
       id: user.id,
       email: user.email,
+      fullName: user.fullName,
+      branchId: user.branchId,
       role: user.role?.name || 'USER',
       permissions: user.role?.permissions || []
     };

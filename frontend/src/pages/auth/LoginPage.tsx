@@ -25,7 +25,8 @@ export default function LoginPage() {
     mutationFn: () => authApi.login({ email: email.trim(), password }),
     onSuccess: ({ user }) => {
       setAuth(user);
-      toast.success(`Bienvenido, ${user.fullName.split(' ')[0]}!`);
+      const name = user.fullName ? user.fullName.split(' ')[0] : user.email.split('@')[0];
+      toast.success(`Bienvenido, ${name}!`);
       navigate(intendedPath, { replace: true });
     },
     onError: (err: any) => {

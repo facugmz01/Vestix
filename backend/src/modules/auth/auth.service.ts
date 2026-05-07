@@ -39,4 +39,8 @@ export class AuthService {
   async getAdminUser() {
     return this.usersService.findByEmail('admin@roindumentaria.com.ar');
   }
+
+  async getUserById(id: string) {
+    return this.usersService.findOne(id);
+  }
 }

@@ -5,10 +5,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AssignBranchesDto } from './dto/assign-branches.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { CurrentUser } from '../../core/rbac/decorators/current-user.decorator';
+import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
 @Controller('users')
-@UseGuards(PermissionsGuard)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -22,11 +23,6 @@ export class UsersController {
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   findAll() {
     return this.usersService.findAll();
-  }
-
-  @Get('me')
-  getMe(@CurrentUser('userId') userId: string) {
-    return this.usersService.findOne(userId);
   }
 
   @Get(':id')
