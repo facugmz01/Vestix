@@ -12,6 +12,7 @@ const config_1 = require("@nestjs/config");
 const throttler_1 = require("@nestjs/throttler");
 const nestjs_pino_1 = require("nestjs-pino");
 const prisma_module_1 = require("./core/prisma/prisma.module");
+const rbac_module_1 = require("./core/rbac/rbac.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const sales_module_1 = require("./modules/sales/sales.module");
@@ -55,6 +56,7 @@ exports.AppModule = AppModule = __decorate([
                 },
             }),
             prisma_module_1.PrismaModule,
+            rbac_module_1.RbacModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             sales_module_1.SalesModule,

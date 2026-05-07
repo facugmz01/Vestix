@@ -59,22 +59,41 @@ let PosService = class PosService {
         this.prisma = prisma;
     }
     async resolveBarcode(barcode) {
-        if (!barcode || barcode.length < 5) {
-            throw new common_1.NotFoundException('Invalid barcode format.');
+        const variant = await this.prisma.productVariant.findUnique({
+            where: { barcode },
+            include: {
+                product: {
+                    include: { category: true }
+                }
+            }
+        });
+        if (!variant) {
+            throw new common_1.NotFoundException(`Producto con código de barras ${barcode} no encontrado.`);
         }
         return {
-            variantId: 'mock-variant-id-123',
-            categoryId: 'mock-category-id',
-            sku: 'MOCK-SKU',
-            name: 'Resolved Product via Scanner',
-            basePrice: 20.00
+            variantId: variant.id,
+            categoryId: variant.product.categoryId,
+            sku: variant.sku,
+            name: variant.product.name,
+            basePrice: variant.basePrice,
+            color: variant.color,
+            size: variant.size
         };
     }
     async processQuickSale(payload) {
+        const register = await this.prisma.cashRegister.findUnique({
+            where: { id: payload.cashRegisterId },
+            include: { branch: true }
+        });
+        if (!register)
+            throw new common_1.NotFoundException('Caja no encontrada.');
+        const warehouse = await this.prisma.warehouse.findFirst({
+            where: { branchId: register.branchId, isActive: true }
+        });
         const quickOrderDto = {
             id: crypto.randomUUID(),
-            branchId: payload.branchId,
-            warehouseId: payload.warehouseId,
+            branchId: register.branchId,
+            warehouseId: warehouse?.id,
             source: 'POS',
             lines: [
                 {
@@ -85,21 +104,30 @@ let PosService = class PosService {
             ],
             paymentMethod: 'CASH',
             paymentAccountId: payload.accountId,
+            cashShiftId: payload.cashShiftId,
         };
         return this.checkoutOrchestrator.processCheckout(quickOrderDto);
     }
     async calculateCart(dto) {
         const evaluatedLines = [];
         for (const lineDto of dto.lines) {
-            const productBasePrice = 20.00;
-            const resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, productBasePrice, dto.customerId);
+            const variant = await this.prisma.productVariant.findUnique({
+                where: { id: lineDto.variantId },
+                include: { product: true }
+            });
+            if (!variant)
+                throw new common_1.NotFoundException(`Producto ${lineDto.variantId} no encontrado.`);
+            const resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, variant.basePrice, dto.customerId);
+            const discountAmount = lineDto.discountPct
+                ? (resolvedBasePrice * (lineDto.discountPct / 100))
+                : 0;
             evaluatedLines.push({
                 variantId: lineDto.variantId,
-                categoryId: 'mock-category-id',
+                categoryId: variant.product.categoryId,
                 quantity: lineDto.quantity,
                 basePrice: resolvedBasePrice,
-                discountAmount: lineDto.discountPct ? (resolvedBasePrice * (lineDto.discountPct / 100)) : 0,
-                finalPrice: resolvedBasePrice
+                discountAmount: discountAmount,
+                finalPrice: resolvedBasePrice - discountAmount
             });
         }
         const cartEvaluation = this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
@@ -110,36 +138,130 @@ let PosService = class PosService {
             unitPrice: l.basePrice
         })));
         return {
-            subtotal: cartEvaluation.originalTotal,
-            lineDiscountsTotal: 0,
-            cartDiscountTotal: cartEvaluation.discountTotal,
-            grandTotal: cartEvaluation.finalTotal,
+            subtotal: Number(cartEvaluation.originalTotal.toFixed(2)),
+            lineDiscountsTotal: Number(evaluatedLines.reduce((acc, l) => acc + (l.discountAmount * l.quantity), 0).toFixed(2)),
+            cartDiscountTotal: Number(cartEvaluation.discountTotal.toFixed(2)),
+            grandTotal: Number(cartEvaluation.finalTotal.toFixed(2)),
+            appliedPromotions: cartEvaluation.appliedPromotions,
             lines: evaluatedLines.map(l => ({
                 variantId: l.variantId,
                 originalPrice: l.basePrice,
-                finalPrice: l.finalPrice
+                finalPrice: l.finalPrice,
+                discountAmount: l.discountAmount
             }))
         };
     }
     async searchCatalog(query) {
-        return this.prisma.productVariant.findMany({
+        const variants = await this.prisma.productVariant.findMany({
             where: {
+                isActive: true,
                 OR: [
                     { sku: { contains: query, mode: 'insensitive' } },
+                    { barcode: { contains: query, mode: 'insensitive' } },
                     { product: { name: { contains: query, mode: 'insensitive' } } },
                 ],
             },
-            include: { product: true },
+            include: {
+                product: { include: { category: true, brand: true } },
+                stockLevels: true,
+            },
             take: 20,
-        }).then(variants => variants.map(v => ({
+        });
+        return variants.map(v => ({
             id: v.id,
             sku: v.sku,
-            name: v.product.name,
+            barcode: v.barcode,
+            name: v.product?.name || 'Producto Desconocido',
+            category: v.product?.category?.name,
+            brand: v.product?.brand?.name,
             basePrice: v.basePrice || 0,
-            costPrice: v.costPrice || v.product.costPrice || 0,
-            size: v.size,
-            color: v.color,
-        })));
+            stock: v.stockLevels.reduce((acc, s) => acc + s.availableQuantity, 0),
+        }));
+    }
+    async getRegisters(branchId) {
+        const where = { isActive: true };
+        if (branchId && branchId !== '' && branchId !== 'current-branch') {
+            where.branchId = branchId;
+        }
+        return this.prisma.cashRegister.findMany({
+            where,
+            include: { branch: true }
+        });
+    }
+    async getCurrentSession(registerId) {
+        return this.prisma.cashShift.findFirst({
+            where: {
+                cashRegisterId: registerId,
+                status: 'OPEN'
+            },
+            include: { cashRegister: true }
+        });
+    }
+    async openSession(dto) {
+        const existing = await this.getCurrentSession(dto.cashRegisterId);
+        if (existing)
+            throw new common_1.BadRequestException('Ya existe una sesión abierta para esta caja.');
+        return this.prisma.$transaction(async (tx) => {
+            await tx.cashRegister.update({
+                where: { id: dto.cashRegisterId },
+                data: { status: 'OPEN' }
+            });
+            return tx.cashShift.create({
+                data: {
+                    cashRegisterId: dto.cashRegisterId,
+                    openedByUserId: dto.userId,
+                    openingAmount: dto.openingAmount,
+                    status: 'OPEN'
+                }
+            });
+        });
+    }
+    async closeSession(dto) {
+        const shift = await this.prisma.cashShift.findUnique({
+            where: { id: dto.shiftId }
+        });
+        if (!shift)
+            throw new common_1.NotFoundException('Sesión no encontrada.');
+        if (shift.status === 'CLOSED')
+            throw new common_1.BadRequestException('La sesión ya se encuentra cerrada.');
+        return this.prisma.$transaction(async (tx) => {
+            await tx.cashRegister.update({
+                where: { id: shift.cashRegisterId },
+                data: { status: 'CLOSED' }
+            });
+            return tx.cashShift.update({
+                where: { id: dto.shiftId },
+                data: {
+                    status: 'CLOSED',
+                    closedByUserId: dto.userId,
+                    closingAmount: dto.closingAmount,
+                    closedAt: new Date(),
+                    notes: dto.notes
+                }
+            });
+        });
+    }
+    async getCatalogSyncData() {
+        const catalog = await this.prisma.productVariant.findMany({
+            where: { isActive: true },
+            include: {
+                product: { include: { category: true, brand: true } }
+            }
+        });
+        return {
+            status: 'SYNC_READY',
+            timestamp: new Date().toISOString(),
+            data: catalog.map(v => ({
+                id: v.id,
+                sku: v.sku,
+                barcode: v.barcode,
+                name: v.product.name,
+                basePrice: v.basePrice,
+                categoryId: v.product.categoryId,
+                categoryName: v.product.category.name,
+                brandName: v.product.brand?.name
+            }))
+        };
     }
 };
 exports.PosService = PosService;

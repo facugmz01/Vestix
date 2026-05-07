@@ -157,6 +157,7 @@ export declare class InventoryService {
                 costPrice: number;
                 basePrice: number;
                 isActive: boolean;
+                attributes: import(".prisma/client").Prisma.JsonValue;
                 createdAt: Date;
                 updatedAt: Date;
             };

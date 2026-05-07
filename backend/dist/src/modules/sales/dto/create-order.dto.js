@@ -35,6 +35,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], OrderLineDto.prototype, "discountPct", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], OrderLineDto.prototype, "unitPriceOverride", void 0);
 class CreateOrderDto {
 }
 exports.CreateOrderDto = CreateOrderDto;
@@ -50,7 +55,7 @@ __decorate([
 ], CreateOrderDto.prototype, "branchId", void 0);
 __decorate([
     (0, class_validator_1.IsUUID)('4'),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateOrderDto.prototype, "warehouseId", void 0);
 __decorate([
@@ -81,6 +86,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
+], CreateOrderDto.prototype, "status", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
 ], CreateOrderDto.prototype, "createdAtIso", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
@@ -88,8 +98,18 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateOrderDto.prototype, "posGrandTotal", void 0);
 __decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateOrderDto.prototype, "cartDiscountTotal", void 0);
+__decorate([
     (0, class_validator_1.IsBoolean)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], CreateOrderDto.prototype, "wasReserved", void 0);
+__decorate([
+    (0, class_validator_1.IsUUID)('4'),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateOrderDto.prototype, "cashShiftId", void 0);
 //# sourceMappingURL=create-order.dto.js.map

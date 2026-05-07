@@ -29,8 +29,17 @@ let SalesController = class SalesController {
     async getReturns() {
         return { data: [], total: 0 };
     }
-    async getOrders() {
-        return { data: [], total: 0 };
+    async getOrders(query) {
+        return this.salesService.getOrders(query);
+    }
+    async getOrder(id) {
+        return this.salesService.getOrderById(id);
+    }
+    async confirmOrder(id) {
+        return this.checkoutOrchestrator.confirmQuotation(id);
+    }
+    async cancelOrder(id) {
+        return this.checkoutOrchestrator.cancelOrder(id);
     }
 };
 exports.SalesController = SalesController;
@@ -52,10 +61,35 @@ __decorate([
 __decorate([
     (0, common_1.Get)('orders'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "getOrders", null);
+__decorate([
+    (0, common_1.Get)('orders/:id'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "getOrder", null);
+__decorate([
+    (0, common_1.Post)('orders/:id/confirm'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Sales' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "confirmOrder", null);
+__decorate([
+    (0, common_1.Post)('orders/:id/cancel'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Sales' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "cancelOrder", null);
 exports.SalesController = SalesController = __decorate([
     (0, common_1.Controller)('sales'),
     __metadata("design:paramtypes", [sales_service_1.SalesService,

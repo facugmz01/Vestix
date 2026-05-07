@@ -4,6 +4,16 @@ export declare class PurchasingController {
     constructor(purchasingService: PurchasingService);
     findAll(query: any): Promise<{
         data: ({
+            lines: {
+                id: string;
+                purchaseOrderId: string;
+                variantId: string;
+                orderedQuantity: number;
+                receivedQuantity: number;
+                unitCost: number;
+                discountAmount: number;
+                totalAmount: number;
+            }[];
             supplier: {
                 id: string;
                 companyName: string;
@@ -16,16 +26,6 @@ export declare class PurchasingController {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            lines: {
-                id: string;
-                purchaseOrderId: string;
-                variantId: string;
-                orderedQuantity: number;
-                receivedQuantity: number;
-                unitCost: number;
-                discountAmount: number;
-                totalAmount: number;
-            }[];
         } & {
             id: string;
             supplierId: string;
@@ -95,7 +95,40 @@ export declare class PurchasingController {
         updatedAt: Date;
     }>;
     findOne(id: string): Promise<{
-        lines: {
+        lines: ({
+            variant: {
+                product: {
+                    id: string;
+                    name: string;
+                    baseSku: string | null;
+                    description: string | null;
+                    categoryId: string;
+                    brandId: string | null;
+                    isVariable: boolean;
+                    costPrice: number;
+                    isActive: boolean;
+                    isPublished: boolean;
+                    images: import(".prisma/client").Prisma.JsonValue;
+                    metadata: import(".prisma/client").Prisma.JsonValue;
+                    createdAt: Date;
+                    updatedAt: Date;
+                };
+            } & {
+                id: string;
+                productId: string;
+                sku: string;
+                barcode: string | null;
+                size: string | null;
+                color: string | null;
+                imageUrl: string | null;
+                costPrice: number;
+                basePrice: number;
+                isActive: boolean;
+                attributes: import(".prisma/client").Prisma.JsonValue;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+        } & {
             id: string;
             purchaseOrderId: string;
             variantId: string;
@@ -104,7 +137,19 @@ export declare class PurchasingController {
             unitCost: number;
             discountAmount: number;
             totalAmount: number;
-        }[];
+        })[];
+        supplier: {
+            id: string;
+            companyName: string;
+            contactName: string | null;
+            taxId: string | null;
+            email: string | null;
+            phone: string | null;
+            balance: number;
+            currency: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
     } & {
         id: string;
         supplierId: string;

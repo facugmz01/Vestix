@@ -1,10 +1,12 @@
 export declare enum OrderSource {
     POS = "POS",
-    ECOMMERCE = "ECOMMERCE"
+    ECOMMERCE = "ECOMMERCE",
+    BACKOFFICE = "BACKOFFICE"
 }
 export declare enum PaymentMethod {
     CASH = "CASH",
     CREDIT_CARD = "CREDIT_CARD",
+    BANK_TRANSFER = "BANK_TRANSFER",
     CUSTOMER_CREDIT = "CUSTOMER_CREDIT"
 }
 export interface OrderLineItem {

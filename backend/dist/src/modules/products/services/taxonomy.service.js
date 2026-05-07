@@ -141,10 +141,20 @@ let PriceListService = class PriceListService {
         });
     }
     async create(data) {
-        console.log('[TaxonomyService] CREATING PriceList:', data);
-        const result = await this.prisma.priceList.create({ data });
-        console.log('[TaxonomyService] CREATED Success:', result.id);
-        return result;
+        const { name, margin, type, currency, isPercentageBased, percentageDiscount, validFrom, validTo, isDefault } = data;
+        return this.prisma.priceList.create({
+            data: {
+                name,
+                margin: margin !== undefined ? Number(margin) : 1.0,
+                type: type || 'RETAIL',
+                currency: currency || 'ARS',
+                isPercentageBased: isPercentageBased ?? false,
+                percentageDiscount: percentageDiscount !== undefined ? Number(percentageDiscount) : null,
+                validFrom: validFrom ? new Date(validFrom) : null,
+                validTo: validTo ? new Date(validTo) : null,
+                isDefault: isDefault ?? false,
+            }
+        });
     }
     async update(id, data) {
         return this.prisma.priceList.update({ where: { id }, data });

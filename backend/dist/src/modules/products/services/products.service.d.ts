@@ -91,6 +91,7 @@ export declare class ProductsService {
             costPrice: number;
             basePrice: number;
             isActive: boolean;
+            attributes: import(".prisma/client").Prisma.JsonValue;
             createdAt: Date;
             updatedAt: Date;
         }[];
@@ -149,6 +150,7 @@ export declare class ProductsService {
         costPrice: number;
         basePrice: number;
         isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }[]>;
@@ -163,6 +165,7 @@ export declare class ProductsService {
         costPrice: number;
         basePrice: number;
         isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -177,6 +180,7 @@ export declare class ProductsService {
         costPrice: number;
         basePrice: number;
         isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -191,10 +195,11 @@ export declare class ProductsService {
         costPrice: number;
         basePrice: number;
         isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }>;
-    generateCombinations(productId: string, dto: any): Promise<import(".prisma/client").Prisma.BatchPayload>;
+    generateCombinations(productId: string, dto: any): Promise<any[] | import(".prisma/client").Prisma.BatchPayload>;
     remove(id: string): Promise<{
         id: string;
         name: string;

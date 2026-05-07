@@ -87,6 +87,7 @@ export declare class InventoryController {
             costPrice: number;
             basePrice: number;
             isActive: boolean;
+            attributes: import(".prisma/client").Prisma.JsonValue;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -157,6 +158,7 @@ export declare class InventoryController {
                 costPrice: number;
                 basePrice: number;
                 isActive: boolean;
+                attributes: import(".prisma/client").Prisma.JsonValue;
                 createdAt: Date;
                 updatedAt: Date;
             };

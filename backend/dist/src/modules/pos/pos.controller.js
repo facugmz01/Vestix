@@ -15,14 +15,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PosController = void 0;
 const common_1 = require("@nestjs/common");
 const pos_service_1 = require("./pos.service");
-const scan_barcode_dto_1 = require("./dto/scan-barcode.dto");
+const pos_dtos_1 = require("./dto/pos.dtos");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const current_user_decorator_1 = require("../../core/rbac/decorators/current-user.decorator");
 let PosController = class PosController {
     constructor(posService) {
         this.posService = posService;
     }
     async downloadPosCatalog() {
-        return { status: 'SYNC_READY', data: [] };
+        return this.posService.getCatalogSyncData();
     }
     async searchCatalog(q) {
         return this.posService.searchCatalog(q);
@@ -30,23 +31,23 @@ let PosController = class PosController {
     async scanBarcode(scanDto) {
         return this.posService.resolveBarcode(scanDto.barcode);
     }
-    async quickSale(body) {
-        return this.posService.processQuickSale({
-            branchId: 'mock-branch',
-            warehouseId: 'mock-warehouse',
-            variantId: body.variantId,
-            categoryId: body.categoryId,
-            accountId: body.accountId,
-        });
+    async quickSale(dto) {
+        return this.posService.processQuickSale(dto);
     }
     async calculateCart(dto) {
         return this.posService.calculateCart(dto);
     }
-    async getCurrentSession() {
-        return null;
+    async getCurrentSession(registerId) {
+        return this.posService.getCurrentSession(registerId);
     }
-    async getRegisters() {
-        return [];
+    async getRegisters(branchId) {
+        return this.posService.getRegisters(branchId);
+    }
+    async openSession(dto, userId) {
+        return this.posService.openSession({ ...dto, userId });
+    }
+    async closeSession(dto, userId) {
+        return this.posService.closeSession({ ...dto, userId });
     }
 };
 exports.PosController = PosController;
@@ -70,7 +71,7 @@ __decorate([
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Sales' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [scan_barcode_dto_1.ScanBarcodeDto]),
+    __metadata("design:paramtypes", [pos_dtos_1.ScanBarcodeDto]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "scanBarcode", null);
 __decorate([
@@ -78,7 +79,7 @@ __decorate([
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Sales' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [pos_dtos_1.QuickSaleDto]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "quickSale", null);
 __decorate([
@@ -86,21 +87,43 @@ __decorate([
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [pos_dtos_1.CalculateCartDto]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "calculateCart", null);
 __decorate([
     (0, common_1.Get)('session/current'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
+    __param(0, (0, common_1.Query)('registerId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "getCurrentSession", null);
 __decorate([
     (0, common_1.Get)('registers'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
+    __param(0, (0, common_1.Query)('branchId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "getRegisters", null);
+__decorate([
+    (0, common_1.Post)('session/open'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Sales' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [pos_dtos_1.OpenSessionDto, String]),
+    __metadata("design:returntype", Promise)
+], PosController.prototype, "openSession", null);
+__decorate([
+    (0, common_1.Post)('session/close'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Sales' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [pos_dtos_1.CloseSessionDto, String]),
+    __metadata("design:returntype", Promise)
+], PosController.prototype, "closeSession", null);
 exports.PosController = PosController = __decorate([
     (0, common_1.Controller)('pos'),
     __metadata("design:paramtypes", [pos_service_1.PosService])

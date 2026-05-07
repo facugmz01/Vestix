@@ -130,29 +130,61 @@ export declare class PriceListService {
     findAll(): Promise<{
         id: string;
         name: string;
+        type: string;
+        currency: string;
         margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
         isDefault: boolean;
         createdAt: Date;
+        updatedAt: Date;
     }[]>;
     create(data: any): Promise<{
         id: string;
         name: string;
+        type: string;
+        currency: string;
         margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
         isDefault: boolean;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     update(id: string, data: any): Promise<{
         id: string;
         name: string;
+        type: string;
+        currency: string;
         margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
         isDefault: boolean;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     delete(id: string): Promise<{
         id: string;
         name: string;
+        type: string;
+        currency: string;
         margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
         isDefault: boolean;
         createdAt: Date;
+        updatedAt: Date;
     }>;
 }

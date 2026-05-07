@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
 const auth_service_1 = require("./auth.service");
 let AuthController = class AuthController {
     constructor(authService) {
@@ -28,10 +29,16 @@ let AuthController = class AuthController {
             sameSite: 'strict',
             maxAge: 1000 * 60 * 60 * 24
         });
-        return this.transformUser(result.user);
+        return {
+            message: 'Login exitoso',
+            user: this.transformUser(result.user)
+        };
     }
     async getMe(req) {
-        const user = await this.authService.getAdminUser();
+        const reqUser = req.user;
+        if (!reqUser)
+            throw new common_1.UnauthorizedException();
+        const user = await this.authService.getUserById(reqUser.userId);
         if (!user)
             throw new common_1.UnauthorizedException();
         return this.transformUser(user);
@@ -48,6 +55,8 @@ let AuthController = class AuthController {
         return {
             id: user.id,
             email: user.email,
+            fullName: user.fullName,
+            branchId: user.branchId,
             role: user.role?.name || 'USER',
             permissions: user.role?.permissions || []
         };
@@ -65,6 +74,7 @@ __decorate([
 ], AuthController.prototype, "login", null);
 __decorate([
     (0, common_1.Get)('me'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

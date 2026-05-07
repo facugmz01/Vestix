@@ -57,16 +57,16 @@ let PurchasingService = PurchasingService_1 = class PurchasingService {
                 data: {
                     supplierId: dto.supplierId,
                     destinationWarehouseId: dto.warehouseId,
-                    status: 'COMPLETED',
+                    status: 'ISSUED',
                     totalAmount,
                     paidAmount,
-                    completedAt: new Date(),
+                    completedAt: null,
                     notes: dto.notes,
                     lines: {
                         create: dto.lines.map(l => ({
                             variantId: l.variantId,
                             orderedQuantity: l.quantity,
-                            receivedQuantity: l.quantity,
+                            receivedQuantity: 0,
                             unitCost: l.unitCost,
                             discountAmount: l.discountAmount || 0,
                             totalAmount: (l.quantity * l.unitCost) - (l.discountAmount || 0)
@@ -75,16 +75,6 @@ let PurchasingService = PurchasingService_1 = class PurchasingService {
                 },
                 include: { lines: true }
             });
-            for (const line of dto.lines) {
-                await this.stockMovementService.processGoodsReceipt({
-                    variantId: line.variantId,
-                    destinationWarehouseId: dto.warehouseId,
-                    branchId: dto.branchId,
-                    quantity: line.quantity,
-                    purchaseCost: line.unitCost,
-                    purchaseOrderId: po.id
-                });
-            }
             const remainingDebt = totalAmount - paidAmount;
             await tx.supplier.update({
                 where: { id: dto.supplierId },
@@ -124,9 +114,22 @@ let PurchasingService = PurchasingService_1 = class PurchasingService {
         return { data, total, page, pageSize };
     }
     async getPO(id) {
-        return this.prisma.purchaseOrder.findUnique({
-            where: { id },
-            include: { lines: true }
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(id)) {
+            return this.prisma.purchaseOrder.findUnique({
+                where: { id },
+                include: {
+                    supplier: true,
+                    lines: { include: { variant: { include: { product: true } } } }
+                }
+            });
+        }
+        return this.prisma.purchaseOrder.findFirst({
+            where: { id: { startsWith: id } },
+            include: {
+                supplier: true,
+                lines: { include: { variant: { include: { product: true } } } }
+            }
         });
     }
     async applyReceiptToPO(poId, receiptLines) {

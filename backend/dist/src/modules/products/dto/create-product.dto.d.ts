@@ -7,6 +7,7 @@ export declare class ProductVariantDto {
     costPrice?: number;
     basePrice?: number;
     isActive?: boolean;
+    attributes?: Record<string, any>;
 }
 export declare class CreateProductDto {
     name: string;

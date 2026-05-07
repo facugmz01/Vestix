@@ -4,14 +4,21 @@ export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
     login(loginDto: any, res: Response): Promise<{
-        id: any;
-        email: any;
-        role: any;
-        permissions: any;
+        message: string;
+        user: {
+            id: any;
+            email: any;
+            fullName: any;
+            branchId: any;
+            role: any;
+            permissions: any;
+        };
     }>;
     getMe(req: Request): Promise<{
         id: any;
         email: any;
+        fullName: any;
+        branchId: any;
         role: any;
         permissions: any;
     }>;

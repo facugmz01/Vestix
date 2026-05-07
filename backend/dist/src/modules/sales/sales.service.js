@@ -17,18 +17,69 @@ let SalesService = class SalesService {
         this.prisma = prisma;
     }
     async getOrderById(id) {
-        return this.prisma.saleOrder.findUnique({
-            where: { id },
-            include: { lines: true, variance: true }
+        const cleanId = id.replace(/^[VP]-/i, '');
+        const order = await this.prisma.saleOrder.findFirst({
+            where: {
+                OR: [
+                    { id: { equals: id } },
+                    { id: { startsWith: cleanId, mode: 'insensitive' } }
+                ]
+            },
+            include: {
+                lines: {
+                    include: {
+                        variant: {
+                            include: {
+                                product: true
+                            }
+                        }
+                    }
+                },
+                customer: true,
+                variance: true
+            }
         });
+        return order;
     }
     async listRecentOrders(branchId) {
         return this.prisma.saleOrder.findMany({
             where: { branchId },
             orderBy: { createdAt: 'desc' },
             take: 50,
-            include: { lines: true }
+            include: { lines: true, customer: true }
         });
+    }
+    async getOrders(params) {
+        const page = parseInt(params.page) || 1;
+        const pageSize = parseInt(params.pageSize) || 15;
+        const skip = (page - 1) * pageSize;
+        const { search, status } = params;
+        const where = {};
+        if (status)
+            where.status = status;
+        if (search && search.trim() !== '') {
+            where.OR = [
+                { id: { contains: search, mode: 'insensitive' } },
+                { customer: { fullName: { contains: search, mode: 'insensitive' } } }
+            ];
+        }
+        const [data, total] = await Promise.all([
+            this.prisma.saleOrder.findMany({
+                where,
+                skip,
+                take: pageSize,
+                orderBy: { createdAt: 'desc' },
+                include: { lines: true, customer: true }
+            }),
+            this.prisma.saleOrder.count({ where })
+        ]);
+        return {
+            data: data.map(order => ({
+                ...order,
+                customerName: order.customer?.fullName || 'Consumidor Final'
+            })),
+            total
+        };
     }
 };
 exports.SalesService = SalesService;

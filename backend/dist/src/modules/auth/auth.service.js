@@ -77,6 +77,9 @@ let AuthService = class AuthService {
     async getAdminUser() {
         return this.usersService.findByEmail('admin@roindumentaria.com.ar');
     }
+    async getUserById(id) {
+        return this.usersService.findOne(id);
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

@@ -65,8 +65,16 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
         }
         const evaluatedLines = [];
         for (const lineDto of dto.lines) {
-            const productBasePrice = 20.00;
-            const resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, productBasePrice, dto.customerId);
+            const variant = await this.prisma.productVariant.findUnique({ where: { id: lineDto.variantId } });
+            if (!variant)
+                throw new common_1.BadRequestException(`Variant ${lineDto.variantId} not found`);
+            let resolvedBasePrice;
+            if (lineDto.unitPriceOverride !== undefined) {
+                resolvedBasePrice = lineDto.unitPriceOverride;
+            }
+            else {
+                resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, variant.basePrice, dto.customerId);
+            }
             const manualDiscountAmount = lineDto.discountPct ? (resolvedBasePrice * (lineDto.discountPct / 100)) : 0;
             const finalPriceAfterManualDiscount = resolvedBasePrice - manualDiscountAmount;
             evaluatedLines.push({
@@ -95,88 +103,63 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
                 finalPrice: line.basePrice - (totalDiscountAmount / line.quantity)
             };
         });
+        const isQuote = dto.status === 'QUOTE' || dto.status === 'QUOTATION';
+        const isManualEntry = dto.source === 'POS' || dto.source === 'BACKOFFICE' || dto.source === 'OFFLINE_POS';
         let posTotal = serverCalculatedTotal;
-        if (dto.source === 'OFFLINE_POS' && dto.posGrandTotal !== undefined) {
+        if (isManualEntry && dto.posGrandTotal !== undefined) {
             posTotal = dto.posGrandTotal;
         }
         else if (dto.posGrandTotal !== undefined && Math.abs(dto.posGrandTotal - serverCalculatedTotal) > 0.01) {
-            throw new common_1.BadRequestException(`Price mismatch. Expected ${serverCalculatedTotal}, got ${dto.posGrandTotal}`);
+            if (isQuote) {
+                posTotal = dto.posGrandTotal;
+            }
+            else {
+                throw new common_1.BadRequestException(`Price mismatch. Expected ${serverCalculatedTotal}, got ${dto.posGrandTotal}`);
+            }
         }
         const posDifference = posTotal - serverCalculatedTotal;
         const result = await this.prisma.$transaction(async (tx) => {
-            if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
-                if (!dto.customerId)
-                    throw new common_1.BadRequestException('Customer ID required for credit');
-                const customer = await tx.customer.findUnique({ where: { id: dto.customerId } });
-                if (!customer)
-                    throw new common_1.BadRequestException('Customer not found');
-                if (customer.usedCredit + posTotal > customer.creditLimit) {
-                    throw new common_1.BadRequestException('Credit limit exceeded');
-                }
-                await tx.customer.update({
-                    where: { id: dto.customerId },
-                    data: { usedCredit: { increment: posTotal } }
-                });
-            }
-            else {
-                if (!dto.paymentAccountId)
-                    throw new common_1.BadRequestException('Treasury Account ID required');
-                await tx.treasuryReceipt.create({
-                    data: {
-                        accountId: dto.paymentAccountId,
-                        amount: posTotal,
-                        payerName: dto.customerId || 'Walk-in',
-                        referenceId: dto.id,
-                        description: `POS Checkout via ${dto.paymentMethod}`
+            const isBackoffice = dto.source === 'BACKOFFICE';
+            if (!isQuote) {
+                if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
+                    if (!dto.customerId)
+                        throw new common_1.BadRequestException('Customer ID required for credit');
+                    const customer = await tx.customer.findUnique({ where: { id: dto.customerId } });
+                    if (!customer)
+                        throw new common_1.BadRequestException('Customer not found');
+                    if (customer.usedCredit + posTotal > customer.creditLimit) {
+                        throw new common_1.BadRequestException('Credit limit exceeded');
                     }
-                });
-            }
-            for (const line of finalLinesForDB) {
-                await tx.inventoryMovement.create({
-                    data: {
-                        variantId: line.variantId,
-                        sourceWarehouseId: dto.warehouseId,
-                        type: 'SALE_EXIT',
-                        quantity: line.quantity,
-                        unitCost: line.basePrice,
-                        referenceId: dto.id
-                    }
-                });
-                const stock = await tx.stockLevel.findUnique({
-                    where: { variantId_warehouseId: { variantId: line.variantId, warehouseId: dto.warehouseId } }
-                });
-                const wasReserved = dto.wasReserved || false;
-                if (stock) {
-                    await tx.stockLevel.update({
-                        where: { id: stock.id },
-                        data: wasReserved
-                            ? {
-                                physicalQuantity: { decrement: line.quantity },
-                                reservedQuantity: { decrement: line.quantity }
-                            }
-                            : {
-                                physicalQuantity: { decrement: line.quantity },
-                                availableQuantity: { decrement: line.quantity }
-                            }
+                    await tx.customer.update({
+                        where: { id: dto.customerId },
+                        data: { usedCredit: { increment: posTotal } }
                     });
                 }
-                else {
-                    await tx.stockLevel.create({
+                else if (dto.paymentAccountId && !isBackoffice) {
+                    await tx.treasuryReceipt.create({
                         data: {
-                            variantId: line.variantId,
-                            warehouseId: dto.warehouseId,
-                            branchId: dto.branchId,
-                            physicalQuantity: -line.quantity,
-                            availableQuantity: wasReserved ? 0 : -line.quantity,
-                            reservedQuantity: wasReserved ? -line.quantity : 0
+                            accountId: dto.paymentAccountId,
+                            amount: posTotal,
+                            payerName: dto.customerId || 'Walk-in',
+                            referenceId: dto.id,
+                            description: `Checkout via ${dto.paymentMethod}`
                         }
                     });
                 }
+            }
+            if (!isQuote && dto.warehouseId) {
+                await this.deductStock(tx, {
+                    orderId: dto.id,
+                    branchId: dto.branchId,
+                    warehouseId: dto.warehouseId,
+                    lines: finalLinesForDB
+                });
             }
             const order = await tx.saleOrder.create({
                 data: {
                     id: dto.id,
                     branchId: dto.branchId,
+                    warehouseId: dto.warehouseId,
                     source: dto.source,
                     customerId: dto.customerId,
                     subtotal: cartEvaluation.originalTotal,
@@ -185,6 +168,8 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
                     appliedPromotions: cartEvaluation.appliedPromotions,
                     paymentMethod: dto.paymentMethod,
                     paymentAccountId: dto.paymentAccountId,
+                    status: dto.status || 'COMPLETED',
+                    cashShiftId: dto.cashShiftId,
                     createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
                     lines: {
                         create: finalLinesForDB.map(l => ({
@@ -213,6 +198,90 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
         });
         await this.afipProducer.enqueueInvoiceGeneration(result.order.id, dto.branchId);
         return result;
+    }
+    async confirmQuotation(id) {
+        const quote = await this.prisma.saleOrder.findUnique({
+            where: { id },
+            include: { lines: true }
+        });
+        if (!quote)
+            throw new common_1.NotFoundException('Quotation not found');
+        if (quote.status !== 'QUOTATION' && quote.status !== 'QUOTE') {
+            throw new common_1.BadRequestException('Order is already confirmed or cancelled');
+        }
+        let targetWarehouseId = quote.warehouseId;
+        if (!targetWarehouseId) {
+            const branch = await this.prisma.branch.findUnique({ where: { id: quote.branchId }, include: { warehouses: true } });
+            if (branch?.warehouses.length)
+                targetWarehouseId = branch.warehouses[0].id;
+        }
+        if (!targetWarehouseId)
+            throw new common_1.BadRequestException('No warehouse specified for stock deduction');
+        return this.prisma.$transaction(async (tx) => {
+            await this.deductStock(tx, {
+                orderId: quote.id,
+                branchId: quote.branchId,
+                warehouseId: targetWarehouseId,
+                lines: quote.lines.map(l => ({
+                    variantId: l.variantId,
+                    quantity: l.quantity,
+                    basePrice: l.basePrice
+                }))
+            });
+            const updated = await tx.saleOrder.update({
+                where: { id },
+                data: { status: 'CONFIRMED' },
+                include: { lines: true }
+            });
+            await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
+            return updated;
+        });
+    }
+    async deductStock(tx, data) {
+        for (const line of data.lines) {
+            await tx.inventoryMovement.create({
+                data: {
+                    variantId: line.variantId,
+                    sourceWarehouseId: data.warehouseId,
+                    type: 'SALE_EXIT',
+                    quantity: line.quantity,
+                    unitCost: line.basePrice,
+                    referenceId: data.orderId
+                }
+            });
+            const stock = await tx.stockLevel.findUnique({
+                where: { variantId_warehouseId: { variantId: line.variantId, warehouseId: data.warehouseId } }
+            });
+            if (stock) {
+                await tx.stockLevel.update({
+                    where: { id: stock.id },
+                    data: {
+                        physicalQuantity: { decrement: line.quantity },
+                        availableQuantity: { decrement: line.quantity }
+                    }
+                });
+            }
+            else {
+                await tx.stockLevel.create({
+                    data: {
+                        variantId: line.variantId,
+                        warehouseId: data.warehouseId,
+                        branchId: data.branchId,
+                        physicalQuantity: -line.quantity,
+                        availableQuantity: -line.quantity
+                    }
+                });
+            }
+        }
+    }
+    async cancelOrder(id) {
+        const order = await this.prisma.saleOrder.findUnique({ where: { id } });
+        if (!order)
+            throw new common_1.NotFoundException('Order not found');
+        return this.prisma.saleOrder.update({
+            where: { id },
+            data: { status: 'CANCELLED' }
+        });
     }
 };
 exports.CheckoutOrchestrator = CheckoutOrchestrator;

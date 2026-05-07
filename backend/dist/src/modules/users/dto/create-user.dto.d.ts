@@ -6,8 +6,8 @@ export declare enum UserRole {
 }
 export declare class CreateUserDto {
     email: string;
-    firstName: string;
-    lastName: string;
-    role: UserRole;
-    branchIds?: string[];
+    fullName: string;
+    password?: string;
+    roleId: string;
+    branchId?: string;
 }

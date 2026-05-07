@@ -52,10 +52,10 @@ let UsersService = class UsersService {
     }
     async onModuleInit() {
         const adminRole = await this.prisma.role.upsert({
-            where: { name: 'SUPERADMIN' },
+            where: { name: 'SUPER_ADMIN' },
             update: {},
             create: {
-                name: 'SUPERADMIN',
+                name: 'SUPER_ADMIN',
                 permissions: {
                     create: [
                         { action: 'manage', subject: 'all' }
@@ -82,32 +82,35 @@ let UsersService = class UsersService {
         if (existing) {
             throw new common_1.ConflictException('User with this email already exists');
         }
-        const hashedPassword = await bcrypt.hash('DefaultPassword123!', 10);
-        const { branchIds, ...userData } = createUserDto;
-        const defaultRole = await this.prisma.role.upsert({
-            where: { name: 'USER' },
-            update: {},
-            create: { name: 'USER' }
-        });
-        const roleId = defaultRole.id;
+        const hashedPassword = await bcrypt.hash(createUserDto.password || 'DefaultPassword123!', 10);
+        const { branchId, ...userData } = createUserDto;
         return this.prisma.user.create({
             data: {
                 email: userData.email,
-                roleId: roleId,
+                fullName: userData.fullName,
+                roleId: userData.roleId,
+                branchId: branchId,
                 password: hashedPassword,
+                isActive: true,
             },
             select: this.userSelect(),
         });
     }
     async findAll() {
         return this.prisma.user.findMany({
-            select: this.userSelect(),
+            include: {
+                role: true,
+                branch: true,
+            },
         });
     }
     async findOne(id) {
         const user = await this.prisma.user.findUnique({
             where: { id },
-            select: this.userSelect(),
+            include: {
+                role: { include: { permissions: true } },
+                branch: true,
+            },
         });
         if (!user) {
             throw new common_1.NotFoundException(`User with ID ${id} not found`);
@@ -122,34 +125,50 @@ let UsersService = class UsersService {
                     include: {
                         permissions: true
                     }
-                }
+                },
+                branch: true
             }
         });
     }
     async update(id, updateUserDto) {
         await this.findOne(id);
-        const { branchIds, ...updateData } = updateUserDto;
+        const { password, ...updateData } = updateUserDto;
+        const data = { ...updateData };
+        if (password) {
+            data.password = await bcrypt.hash(password, 10);
+        }
         return this.prisma.user.update({
             where: { id },
-            data: {
-                ...updateData
-            },
+            data,
             select: this.userSelect(),
         });
     }
     async toggleActivation(id, isActive) {
-        await this.findOne(id);
-        return this.findOne(id);
+        return this.prisma.user.update({
+            where: { id },
+            data: { isActive },
+            select: this.userSelect(),
+        });
     }
-    async assignBranches(id, assignBranchesDto) {
-        await this.findOne(id);
-        return this.findOne(id);
+    async assignBranches(id, dto) {
+        return this.prisma.user.update({
+            where: { id },
+            data: { branchId: dto.branchIds[0] || null },
+            select: this.userSelect(),
+        });
     }
     userSelect() {
         return {
             id: true,
             email: true,
+            fullName: true,
+            roleId: true,
+            branchId: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
             role: true,
+            branch: true,
         };
     }
 };

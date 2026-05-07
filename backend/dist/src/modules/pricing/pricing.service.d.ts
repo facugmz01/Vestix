@@ -1,18 +1,77 @@
-import { PriceList, PriceListEntry } from './models/price-list.model';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreatePriceListDto } from './dto/create-price-list.dto';
 import { RulesEngineService } from './rules-engine.service';
 export declare class PricingService {
     private readonly rulesEngine;
-    constructor(rulesEngine: RulesEngineService);
-    private priceLists;
-    private entries;
-    private customerPriceListAssignments;
-    findAll(): Promise<PriceList[]>;
-    findOne(id: string): Promise<PriceList>;
-    createPriceList(dto: CreatePriceListDto): Promise<PriceList>;
-    setVariantPrice(priceListId: string, variantId: string, overridePrice: number): Promise<PriceListEntry>;
-    assignCustomerToPriceList(customerId: string, priceListId: string): Promise<{
-        success: boolean;
+    private readonly prisma;
+    constructor(rulesEngine: RulesEngineService, prisma: PrismaService);
+    findAll(): Promise<({
+        entries: {
+            id: string;
+            priceListId: string;
+            variantId: string;
+            overridePrice: number;
+            updatedAt: Date;
+        }[];
+    } & {
+        id: string;
+        name: string;
+        type: string;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    })[]>;
+    findOne(id: string): Promise<{
+        entries: {
+            id: string;
+            priceListId: string;
+            variantId: string;
+            overridePrice: number;
+            updatedAt: Date;
+        }[];
+    } & {
+        id: string;
+        name: string;
+        type: string;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    createPriceList(dto: CreatePriceListDto): Promise<{
+        id: string;
+        name: string;
+        type: string;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    setVariantPrice(priceListId: string, variantId: string, overridePrice: number): Promise<{
+        id: string;
+        priceListId: string;
+        variantId: string;
+        overridePrice: number;
+        updatedAt: Date;
     }>;
     resolvePrice(variantId: string, basePrice: number, customerId?: string): Promise<number>;
     calculateMargin(sellingPrice: number, weightedAverageCost: number): {

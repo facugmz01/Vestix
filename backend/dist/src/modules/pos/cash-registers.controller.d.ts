@@ -26,6 +26,7 @@ export declare class CashRegistersController {
         name: string;
         code: string;
         branchId: string;
+        status: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -49,6 +50,7 @@ export declare class CashRegistersController {
             name: string;
             code: string;
             branchId: string;
+            status: string;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -75,6 +77,7 @@ export declare class CashRegistersController {
         name: string;
         code: string;
         branchId: string;
+        status: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -97,6 +100,7 @@ export declare class CashRegistersController {
         name: string;
         code: string;
         branchId: string;
+        status: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -106,6 +110,7 @@ export declare class CashRegistersController {
         name: string;
         code: string;
         branchId: string;
+        status: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;

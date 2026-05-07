@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './core/prisma/prisma.module';
+import { RbacModule } from './core/rbac/rbac.module';
 
 // --- Importación de todos los módulos del sistema ---
 import { AuthModule } from './modules/auth/auth.module';
@@ -48,8 +49,9 @@ import { IdentifiersModule } from './modules/identifiers/identifiers.module';
       },
     }),
 
-    // 3. Base de Datos
+    // 3. Base de Datos y Core
     PrismaModule,
+    RbacModule,
 
     // 4. Módulos de Funcionalidad
     AuthModule,

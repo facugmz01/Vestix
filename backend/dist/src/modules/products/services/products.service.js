@@ -253,21 +253,41 @@ let ProductsService = class ProductsService {
         });
     }
     async generateCombinations(productId, dto) {
-        const variants = [];
-        for (const color of dto.colors) {
-            for (const size of dto.sizes) {
-                variants.push({
-                    productId,
-                    color,
-                    size,
-                    basePrice: dto.basePrice,
-                    sku: `${productId.substring(0, 4)}-${color}-${size}`.toUpperCase(),
-                    isActive: true
-                });
+        const { attributes, basePrice } = dto;
+        const attrNames = Object.keys(attributes);
+        if (attrNames.length === 0)
+            return [];
+        let combinations = [{}];
+        for (const name of attrNames) {
+            const next = [];
+            const values = attributes[name];
+            for (const val of values) {
+                for (const combo of combinations) {
+                    next.push({ ...combo, [name]: val });
+                }
             }
+            combinations = next;
         }
+        const variantsData = combinations.map(combo => {
+            const colorKey = Object.keys(combo).find(k => k.toLowerCase() === 'color');
+            const sizeKey = Object.keys(combo).find(k => ['size', 'talle', 'talla', 'tamaño'].includes(k.toLowerCase()) ||
+                k.toLowerCase().startsWith('talle'));
+            const color = colorKey ? combo[colorKey] : null;
+            const size = sizeKey ? combo[sizeKey] : null;
+            const attrString = Object.values(combo).join('-');
+            const sku = `${productId.substring(0, 4)}-${attrString}`.toUpperCase().replace(/\s+/g, '');
+            return {
+                productId,
+                color,
+                size,
+                attributes: combo,
+                basePrice: basePrice || 0,
+                sku,
+                isActive: true
+            };
+        });
         return this.prisma.productVariant.createMany({
-            data: variants,
+            data: variantsData,
             skipDuplicates: true
         });
     }

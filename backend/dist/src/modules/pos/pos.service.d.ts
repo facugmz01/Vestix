@@ -16,18 +16,21 @@ export declare class PosService {
         sku: string;
         name: string;
         basePrice: number;
+        color: string;
+        size: string;
     }>;
     processQuickSale(payload: {
-        branchId: string;
-        warehouseId: string;
+        cashRegisterId: string;
         variantId: string;
         categoryId: string;
         accountId: string;
+        cashShiftId?: string;
     }): Promise<{
         status: string;
         order: {
             id: string;
             branchId: string;
+            warehouseId: string | null;
             source: string;
             customerId: string | null;
             subtotal: number;
@@ -36,6 +39,8 @@ export declare class PosService {
             appliedPromotions: import(".prisma/client").Prisma.JsonValue;
             paymentMethod: string;
             paymentAccountId: string | null;
+            status: string;
+            cashShiftId: string | null;
             createdAt: Date;
             syncedAt: Date;
         };
@@ -53,19 +58,121 @@ export declare class PosService {
         lineDiscountsTotal: number;
         cartDiscountTotal: number;
         grandTotal: number;
+        appliedPromotions: string[];
         lines: {
             variantId: any;
             originalPrice: any;
             finalPrice: any;
+            discountAmount: any;
         }[];
     }>;
     searchCatalog(query: string): Promise<{
         id: string;
         sku: string;
+        barcode: string;
         name: string;
+        category: string;
+        brand: string;
         basePrice: number;
-        costPrice: number;
-        size: string;
-        color: string;
+        stock: number;
     }[]>;
+    getRegisters(branchId?: string): Promise<({
+        branch: {
+            id: string;
+            name: string;
+            code: string;
+            address: string | null;
+            phone: string | null;
+            isMain: boolean;
+            isActive: boolean;
+            settings: import(".prisma/client").Prisma.JsonValue | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+    } & {
+        id: string;
+        name: string;
+        code: string;
+        branchId: string;
+        status: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    })[]>;
+    getCurrentSession(registerId: string): Promise<{
+        cashRegister: {
+            id: string;
+            name: string;
+            code: string;
+            branchId: string;
+            status: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+    } & {
+        id: string;
+        cashRegisterId: string;
+        openedByUserId: string;
+        closedByUserId: string | null;
+        openingAmount: number;
+        closingAmount: number | null;
+        expectedAmount: number | null;
+        difference: number | null;
+        status: string;
+        openedAt: Date;
+        closedAt: Date | null;
+        notes: string | null;
+    }>;
+    openSession(dto: {
+        cashRegisterId: string;
+        openingAmount: number;
+        userId: string;
+    }): Promise<{
+        id: string;
+        cashRegisterId: string;
+        openedByUserId: string;
+        closedByUserId: string | null;
+        openingAmount: number;
+        closingAmount: number | null;
+        expectedAmount: number | null;
+        difference: number | null;
+        status: string;
+        openedAt: Date;
+        closedAt: Date | null;
+        notes: string | null;
+    }>;
+    closeSession(dto: {
+        shiftId: string;
+        closingAmount: number;
+        userId: string;
+        notes?: string;
+    }): Promise<{
+        id: string;
+        cashRegisterId: string;
+        openedByUserId: string;
+        closedByUserId: string | null;
+        openingAmount: number;
+        closingAmount: number | null;
+        expectedAmount: number | null;
+        difference: number | null;
+        status: string;
+        openedAt: Date;
+        closedAt: Date | null;
+        notes: string | null;
+    }>;
+    getCatalogSyncData(): Promise<{
+        status: string;
+        timestamp: string;
+        data: {
+            id: string;
+            sku: string;
+            barcode: string;
+            name: string;
+            basePrice: number;
+            categoryId: string;
+            categoryName: string;
+            brandName: string;
+        }[];
+    }>;
 }

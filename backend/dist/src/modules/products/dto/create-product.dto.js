@@ -55,6 +55,11 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], ProductVariantDto.prototype, "isActive", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)(),
+    __metadata("design:type", Object)
+], ProductVariantDto.prototype, "attributes", void 0);
 class CreateProductDto {
 }
 exports.CreateProductDto = CreateProductDto;

@@ -10,6 +10,7 @@ exports.SalesModule = void 0;
 const common_1 = require("@nestjs/common");
 const sales_service_1 = require("./sales.service");
 const sales_controller_1 = require("./sales.controller");
+const returns_controller_1 = require("./returns/returns.controller");
 const returns_service_1 = require("./returns/returns.service");
 const orders_fulfillment_service_1 = require("./orders/orders-fulfillment.service");
 const checkout_orchestrator_1 = require("./checkout.orchestrator");
@@ -20,7 +21,7 @@ exports.SalesModule = SalesModule;
 exports.SalesModule = SalesModule = __decorate([
     (0, common_1.Module)({
         imports: [afip_module_1.AfipModule],
-        controllers: [sales_controller_1.SalesController],
+        controllers: [sales_controller_1.SalesController, returns_controller_1.ReturnsController],
         providers: [sales_service_1.SalesService, returns_service_1.ReturnsService, orders_fulfillment_service_1.OrdersFulfillmentService, checkout_orchestrator_1.CheckoutOrchestrator],
         exports: [sales_service_1.SalesService, returns_service_1.ReturnsService, orders_fulfillment_service_1.OrdersFulfillmentService, checkout_orchestrator_1.CheckoutOrchestrator]
     })

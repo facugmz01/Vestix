@@ -153,6 +153,7 @@ export declare class ProductsController {
             costPrice: number;
             basePrice: number;
             isActive: boolean;
+            attributes: import(".prisma/client").Prisma.JsonValue;
             createdAt: Date;
             updatedAt: Date;
         }[];
@@ -183,6 +184,7 @@ export declare class ProductsController {
         costPrice: number;
         basePrice: number;
         isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }[]>;
@@ -197,10 +199,11 @@ export declare class ProductsController {
         costPrice: number;
         basePrice: number;
         isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }>;
-    generateCombinations(id: string, dto: any): Promise<import(".prisma/client").Prisma.BatchPayload>;
+    generateCombinations(id: string, dto: any): Promise<any[] | import(".prisma/client").Prisma.BatchPayload>;
     update(id: string, updateProductDto: UpdateProductDto): Promise<{
         category: {
             id: string;
@@ -260,6 +263,7 @@ export declare class VariantsController {
         costPrice: number;
         basePrice: number;
         isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -274,6 +278,7 @@ export declare class VariantsController {
         costPrice: number;
         basePrice: number;
         isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -329,29 +334,61 @@ export declare class PriceListController {
     findAll(): Promise<{
         id: string;
         name: string;
+        type: string;
+        currency: string;
         margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
         isDefault: boolean;
         createdAt: Date;
+        updatedAt: Date;
     }[]>;
     create(data: CreatePriceListDto): Promise<{
         id: string;
         name: string;
+        type: string;
+        currency: string;
         margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
         isDefault: boolean;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     update(id: string, data: UpdatePriceListDto): Promise<{
         id: string;
         name: string;
+        type: string;
+        currency: string;
         margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
         isDefault: boolean;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     delete(id: string): Promise<{
         id: string;
         name: string;
+        type: string;
+        currency: string;
         margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
         isDefault: boolean;
         createdAt: Date;
+        updatedAt: Date;
     }>;
 }

@@ -14,6 +14,7 @@ export declare class CheckoutOrchestrator {
         order: {
             id: string;
             branchId: string;
+            warehouseId: string | null;
             source: string;
             customerId: string | null;
             subtotal: number;
@@ -22,8 +23,56 @@ export declare class CheckoutOrchestrator {
             appliedPromotions: import(".prisma/client").Prisma.JsonValue;
             paymentMethod: string;
             paymentAccountId: string | null;
+            status: string;
+            cashShiftId: string | null;
             createdAt: Date;
             syncedAt: Date;
         };
+    }>;
+    confirmQuotation(id: string): Promise<{
+        lines: {
+            id: string;
+            orderId: string;
+            variantId: string;
+            categoryId: string;
+            quantity: number;
+            basePrice: number;
+            discountAmount: number;
+            finalPrice: number;
+        }[];
+    } & {
+        id: string;
+        branchId: string;
+        warehouseId: string | null;
+        source: string;
+        customerId: string | null;
+        subtotal: number;
+        cartDiscountTotal: number;
+        grandTotal: number;
+        appliedPromotions: import(".prisma/client").Prisma.JsonValue;
+        paymentMethod: string;
+        paymentAccountId: string | null;
+        status: string;
+        cashShiftId: string | null;
+        createdAt: Date;
+        syncedAt: Date;
+    }>;
+    private deductStock;
+    cancelOrder(id: string): Promise<{
+        id: string;
+        branchId: string;
+        warehouseId: string | null;
+        source: string;
+        customerId: string | null;
+        subtotal: number;
+        cartDiscountTotal: number;
+        grandTotal: number;
+        appliedPromotions: import(".prisma/client").Prisma.JsonValue;
+        paymentMethod: string;
+        paymentAccountId: string | null;
+        status: string;
+        cashShiftId: string | null;
+        createdAt: Date;
+        syncedAt: Date;
     }>;
 }
