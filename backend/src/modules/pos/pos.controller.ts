@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards } from '@nestjs/common';
 import { PosService } from './pos.service';
 import { 
   ScanBarcodeDto, 
@@ -10,7 +10,11 @@ import {
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { CurrentUser } from '../../core/rbac/decorators/current-user.decorator';
 
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+
 @Controller('pos')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class PosController {
   constructor(private readonly posService: PosService) {}
 
