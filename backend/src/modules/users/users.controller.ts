@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, ParseUUIDPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, ParseUUIDPipe, HttpCode, HttpStatus, UseGuards, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -21,8 +21,10 @@ export class UsersController {
 
   @Get()
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() query: any) {
+    const page = parseInt(query.page) || 1;
+    const pageSize = parseInt(query.pageSize) || 15;
+    return this.usersService.findAll({ page, pageSize });
   }
 
   @Get(':id')

@@ -33,34 +33,24 @@ export declare class UsersService implements OnModuleInit {
         roleId: string;
         branchId: string;
     }>;
-    findAll(): Promise<({
-        role: {
+    findAll({ page, pageSize }: {
+        page: number;
+        pageSize: number;
+    }): Promise<{
+        data: {
             id: string;
-            name: string;
-        };
-        branch: {
-            id: string;
-            name: string;
-            code: string;
-            address: string | null;
-            phone: string | null;
-            isMain: boolean;
+            email: string;
+            fullName: string;
+            role: string;
+            branchId: string;
             isActive: boolean;
-            settings: import(".prisma/client").Prisma.JsonValue | null;
+            lastLoginAt: Date;
             createdAt: Date;
-            updatedAt: Date;
-        };
-    } & {
-        id: string;
-        email: string;
-        password: string;
-        fullName: string | null;
-        roleId: string;
-        branchId: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-    })[]>;
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+    }>;
     findOne(id: string): Promise<{
         role: {
             permissions: {

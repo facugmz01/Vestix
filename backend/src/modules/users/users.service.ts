@@ -72,13 +72,34 @@ export class UsersService implements OnModuleInit {
     });
   }
 
-  async findAll() {
-    return this.prisma.user.findMany({
-      include: {
-        role: true,
-        branch: true,
-      },
-    });
+  async findAll({ page, pageSize }: { page: number; pageSize: number }) {
+    const skip = (page - 1) * pageSize;
+    
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take: pageSize,
+        include: {
+          role: true,
+          branch: true,
+        },
+        orderBy: { email: 'asc' },
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    const formattedData = data.map(u => ({
+      id: u.id,
+      email: u.email,
+      fullName: u.fullName,
+      role: u.role?.name || 'USER',
+      branchId: u.branchId,
+      isActive: u.isActive,
+      lastLoginAt: u.updatedAt,
+      createdAt: u.createdAt,
+    }));
+
+    return { data: formattedData, total, page, pageSize };
   }
 
   async findOne(id: string) {

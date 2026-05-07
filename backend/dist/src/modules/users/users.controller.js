@@ -28,8 +28,10 @@ let UsersController = class UsersController {
     create(createUserDto) {
         return this.usersService.create(createUserDto);
     }
-    findAll() {
-        return this.usersService.findAll();
+    findAll(query) {
+        const page = parseInt(query.page) || 1;
+        const pageSize = parseInt(query.pageSize) || 15;
+        return this.usersService.findAll({ page, pageSize });
     }
     findOne(id) {
         return this.usersService.findOne(id);
@@ -59,8 +61,9 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "findAll", null);
 __decorate([
