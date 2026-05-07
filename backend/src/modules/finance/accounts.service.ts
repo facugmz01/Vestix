@@ -34,6 +34,36 @@ export class AccountsService {
     });
   }
 
+  // --- Payment Methods Config ---
+  async getPaymentMethods() {
+    return this.prisma.paymentMethod.findMany({
+      where: { isActive: true },
+      include: {
+        account: true,
+        cashRegister: true,
+      }
+    });
+  }
+
+  async createPaymentMethod(data: { name: string, type: string, accountId?: string, cashRegisterId?: string }) {
+    return this.prisma.paymentMethod.create({
+      data: {
+        name: data.name,
+        type: data.type,
+        accountId: data.accountId,
+        cashRegisterId: data.cashRegisterId,
+        isActive: true,
+      }
+    });
+  }
+
+  async updatePaymentMethod(id: string, data: any) {
+    return this.prisma.paymentMethod.update({
+      where: { id },
+      data,
+    });
+  }
+
   /**
    * CORE LEDGER ENGINE: Posts a financial transaction.
    */

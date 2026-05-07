@@ -42,6 +42,32 @@ let AccountsService = class AccountsService {
             where: { isActive: true }
         });
     }
+    async getPaymentMethods() {
+        return this.prisma.paymentMethod.findMany({
+            where: { isActive: true },
+            include: {
+                account: true,
+                cashRegister: true,
+            }
+        });
+    }
+    async createPaymentMethod(data) {
+        return this.prisma.paymentMethod.create({
+            data: {
+                name: data.name,
+                type: data.type,
+                accountId: data.accountId,
+                cashRegisterId: data.cashRegisterId,
+                isActive: true,
+            }
+        });
+    }
+    async updatePaymentMethod(id, data) {
+        return this.prisma.paymentMethod.update({
+            where: { id },
+            data,
+        });
+    }
     async postTransaction(accountId, type, amount, referenceId, description) {
         if (amount <= 0)
             throw new common_1.BadRequestException('El monto debe ser positivo');

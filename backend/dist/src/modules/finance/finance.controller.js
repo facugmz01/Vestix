@@ -26,6 +26,15 @@ let FinanceController = class FinanceController {
     getAccounts() {
         return this.accountsService.getAccounts();
     }
+    getPaymentMethods() {
+        return this.accountsService.getPaymentMethods();
+    }
+    createPaymentMethod(body) {
+        return this.accountsService.createPaymentMethod(body);
+    }
+    updatePaymentMethod(id, body) {
+        return this.accountsService.updatePaymentMethod(id, body);
+    }
     getShifts(page, pageSize) {
         return { data: [], total: 0 };
     }
@@ -53,6 +62,30 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], FinanceController.prototype, "getAccounts", null);
+__decorate([
+    (0, common_1.Get)('payment-methods'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Settings' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "getPaymentMethods", null);
+__decorate([
+    (0, common_1.Post)('payment-methods'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "createPaymentMethod", null);
+__decorate([
+    (0, common_1.Patch)('payment-methods/:id'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "updatePaymentMethod", null);
 __decorate([
     (0, common_1.Get)('treasury/shifts'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Finance' }),

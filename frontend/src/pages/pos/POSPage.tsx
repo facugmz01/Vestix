@@ -458,6 +458,8 @@ export default function POSPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <Button variant={paymentMethod === 'CASH' ? 'primary' : 'secondary'} onClick={() => setPaymentMethod('CASH')} icon={<Banknote size={18} />}>Efectivo</Button>
                 <Button variant={paymentMethod === 'CREDIT_CARD' ? 'primary' : 'secondary'} onClick={() => setPaymentMethod('CREDIT_CARD')} icon={<CreditCard size={18} />}>Tarjeta</Button>
+                <Button variant={paymentMethod === 'BANK_TRANSFER' ? 'primary' : 'secondary'} onClick={() => setPaymentMethod('BANK_TRANSFER')} icon={<Percent size={18} />}>Transferencia</Button>
+                <Button variant={paymentMethod === 'CUSTOMER_CREDIT' ? 'primary' : 'secondary'} onClick={() => setPaymentMethod('CUSTOMER_CREDIT')} icon={<User size={18} />}>Cta. Corriente</Button>
               </div>
             </div>
 

@@ -7,17 +7,6 @@ export declare class AuthService {
     validateUser(email: string, pass: string): Promise<any>;
     generateToken(user: any): Promise<string>;
     getAdminUser(): Promise<{
-        role: {
-            permissions: {
-                id: string;
-                action: string;
-                subject: string;
-                roleId: string;
-            }[];
-        } & {
-            id: string;
-            name: string;
-        };
         branch: {
             id: string;
             name: string;
@@ -29,6 +18,17 @@ export declare class AuthService {
             settings: import(".prisma/client").Prisma.JsonValue | null;
             createdAt: Date;
             updatedAt: Date;
+        };
+        role: {
+            permissions: {
+                id: string;
+                action: string;
+                subject: string;
+                roleId: string;
+            }[];
+        } & {
+            id: string;
+            name: string;
         };
     } & {
         id: string;
@@ -42,17 +42,6 @@ export declare class AuthService {
         updatedAt: Date;
     }>;
     getUserById(id: string): Promise<{
-        role: {
-            permissions: {
-                id: string;
-                action: string;
-                subject: string;
-                roleId: string;
-            }[];
-        } & {
-            id: string;
-            name: string;
-        };
         branch: {
             id: string;
             name: string;
@@ -64,6 +53,17 @@ export declare class AuthService {
             settings: import(".prisma/client").Prisma.JsonValue | null;
             createdAt: Date;
             updatedAt: Date;
+        };
+        role: {
+            permissions: {
+                id: string;
+                action: string;
+                subject: string;
+                roleId: string;
+            }[];
+        } & {
+            id: string;
+            name: string;
         };
     } & {
         id: string;

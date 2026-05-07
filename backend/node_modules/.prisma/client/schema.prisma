@@ -450,16 +450,17 @@ model AuditLog {
 }
 
 model FinancialAccount {
-  id           String                 @id @default(uuid())
-  name         String
-  type         String                 @default("CASH") // CASH | BANK | CREDIT_CARD | EXPENSE | REVENUE
-  currency     String                 @default("ARS")
-  branchId     String?
-  balance      Float                  @default(0)
-  isActive     Boolean                @default(true)
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-  transactions FinancialTransaction[]
+  id             String                 @id @default(uuid())
+  name           String
+  type           String                 @default("CASH") // CASH | BANK | CREDIT_CARD | EXPENSE | REVENUE
+  currency       String                 @default("ARS")
+  branchId       String?
+  balance        Float                  @default(0)
+  isActive       Boolean                @default(true)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  transactions   FinancialTransaction[]
+  paymentMethods PaymentMethod[]
 }
 
 model FinancialTransaction {
@@ -493,16 +494,35 @@ model TreasuryReceipt {
 }
 
 model CashRegister {
-  id         String   @id @default(uuid())
-  name       String
-  code       String   @unique
-  branchId   String
-  branch     Branch   @relation(fields: [branchId], references: [id])
-  status     String   @default("CLOSED") // OPEN | CLOSED
-  isActive   Boolean  @default(true)
-  shifts     CashShift[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String          @id @default(uuid())
+  name           String
+  code           String          @unique
+  branchId       String
+  branch         Branch          @relation(fields: [branchId], references: [id])
+  status         String          @default("CLOSED") // OPEN | CLOSED
+  isActive       Boolean         @default(true)
+  shifts         CashShift[]
+  paymentMethods PaymentMethod[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model PaymentMethod {
+  id               String            @id @default(uuid())
+  name             String
+  type             String            // CASH | BANK_TRANSFER | CREDIT_CARD | CUSTOMER_CREDIT
+  
+  // Associating CASH with a CashRegister
+  cashRegisterId   String?           
+  cashRegister     CashRegister?     @relation(fields: [cashRegisterId], references: [id])
+  
+  // Associating BANK_TRANSFER / CREDIT_CARD with a FinancialAccount (Cuenta Bancaria)
+  accountId        String?           
+  account          FinancialAccount? @relation(fields: [accountId], references: [id])
+  
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model CashShift {
