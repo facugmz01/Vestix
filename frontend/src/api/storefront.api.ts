@@ -13,8 +13,8 @@ export interface StorefrontFilters {
 
 export const storefrontApi = {
   getProducts: (filters?: StorefrontFilters) =>
-    get<PagedResponse<Product>>('/catalog/products', { params: cleanParams({ ...filters, isPublished: true }) }), // Assuming backend supports this or we just fetch products.
+    get<PagedResponse<Product>>('/catalog/public', { params: cleanParams({ ...filters }) }),
 
   getProduct: (id: string) =>
-    get<Product>(`/catalog/products/${id}`),
+    get<Product>(`/catalog/public/${id}`),
 };

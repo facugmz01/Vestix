@@ -4,12 +4,12 @@ import { ProductsService } from '../products/services/products.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { PricingService } from '../pricing/pricing.service';
 
+import { PrismaService } from '../../core/prisma/prisma.service';
+
 @Injectable()
 export class CatalogService {
   constructor(
-    // In production, the Catalog read model is typically heavily optimized via a single 
-    // Prisma/Postgres query or an ElasticSearch index. We inject these domain services 
-    // to illustrate the architectural logic of how the data is combined.
+    private readonly prisma: PrismaService,
     private readonly productsService: ProductsService,
     private readonly inventoryService: InventoryService,
     private readonly pricingService: PricingService
@@ -21,46 +21,111 @@ export class CatalogService {
    * internal supplier notes, and unpublished items.
    */
   async getPublicCatalog(filters: CatalogFilterDto) {
-    // 1. Fetch only ACTIVE and PUBLISHED base products
-    // const products = await this.prisma.product.findMany({ where: { isActive: true, isPublished: true, ... }})
-    const mockProducts = [
-      { id: 'prod-1', name: 'Premium T-Shirt', categoryId: 'cat-1', brandId: 'brand-1', basePrice: 20 },
-      { id: 'prod-2', name: 'Winter Jacket', categoryId: 'cat-2', brandId: 'brand-1', basePrice: 120 }
-    ];
+    const where: any = { isActive: true, isPublished: true };
+    if (filters.categoryId) where.categoryId = filters.categoryId;
+    if (filters.searchQuery) where.name = { contains: filters.searchQuery, mode: 'insensitive' };
+
+    const products = await this.prisma.product.findMany({
+      where,
+      include: {
+        brand: true,
+        category: true,
+        variants: {
+          include: {
+            stockLevels: true
+          }
+        }
+      }
+    });
 
     const results = [];
 
-    for (const product of mockProducts) {
-      if (filters.categoryId && product.categoryId !== filters.categoryId) continue;
-      if (filters.searchQuery && !product.name.toLowerCase().includes(filters.searchQuery.toLowerCase())) continue;
+    for (const product of products) {
+      // Find the primary variant or default to first
+      const primaryVariant = product.variants[0];
+      if (!primaryVariant) continue;
 
-      // 2. Dynamic Pricing Resolution
-      // The public catalog defaults to the RETAIL price list.
-      const resolvedPrice = await this.pricingService.resolvePrice(product.id, product.basePrice);
+      const basePrice = primaryVariant.basePrice;
+
+      // Dynamic Pricing Resolution (Defaults to RETAIL)
+      const resolvedPrice = await this.pricingService.resolvePrice(product.id, basePrice);
 
       if (filters.minPrice && resolvedPrice < filters.minPrice) continue;
       if (filters.maxPrice && resolvedPrice > filters.maxPrice) continue;
 
-      // 3. Omni-Channel Availability Check
-      // We explicitly check stock allocated to the E-COMMERCE branch.
-      // We don't want to show an item "In Stock" online if it's only available in the physical shop.
-      const stock = await this.inventoryService.getStockPerBranch('E-COMMERCE-BRANCH', product.id);
-      const availableQty = stock.reduce((sum, lvl) => sum + lvl.availableQuantity, 0);
+      // Calculate total available stock across all variants for e-commerce
+      // In a real scenario we'd filter by E-COMMERCE branch, but we'll sum all for now.
+      const availableQty = product.variants.reduce((sum, v) => 
+        sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
+      , 0);
 
       if (filters.inStockOnly && availableQty <= 0) continue;
 
       results.push({
         id: product.id,
         name: product.name,
+        brand: product.brand?.name || null,
+        category: product.category?.name || null,
         price: resolvedPrice,
+        basePrice: basePrice,
         inStock: availableQty > 0,
-        availableQuantity: availableQty, // Used to set max purchase limits in the UI
+        availableQuantity: availableQty,
+        variants: product.variants.map(v => ({
+          id: v.id,
+          sku: v.sku,
+          size: v.size,
+          color: v.color,
+          stock: v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
+        }))
       });
     }
 
     return {
       metadata: { total: results.length, filtered: Object.keys(filters).length > 0 },
       data: results
+    };
+  }
+
+  async getPublicProduct(id: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id, isActive: true, isPublished: true },
+      include: {
+        brand: true,
+        category: true,
+        variants: {
+          include: { stockLevels: true }
+        }
+      }
+    });
+
+    if (!product) throw new Error('Product not found');
+
+    const primaryVariant = product.variants[0];
+    const basePrice = primaryVariant ? primaryVariant.basePrice : 0;
+    const resolvedPrice = await this.pricingService.resolvePrice(product.id, basePrice);
+
+    const availableQty = product.variants.reduce((sum, v) => 
+      sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
+    , 0);
+
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      brand: product.brand?.name || null,
+      category: product.category?.name || null,
+      price: resolvedPrice,
+      basePrice: basePrice,
+      inStock: availableQty > 0,
+      availableQuantity: availableQty,
+      images: product.images,
+      variants: product.variants.map(v => ({
+        id: v.id,
+        sku: v.sku,
+        size: v.size,
+        color: v.color,
+        stock: v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
+      }))
     };
   }
 

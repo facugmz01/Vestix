@@ -15,13 +15,14 @@ const returns_service_1 = require("./returns/returns.service");
 const orders_fulfillment_service_1 = require("./orders/orders-fulfillment.service");
 const checkout_orchestrator_1 = require("./checkout.orchestrator");
 const afip_module_1 = require("../afip/afip.module");
+const storefront_controller_1 = require("./storefront.controller");
 let SalesModule = class SalesModule {
 };
 exports.SalesModule = SalesModule;
 exports.SalesModule = SalesModule = __decorate([
     (0, common_1.Module)({
         imports: [afip_module_1.AfipModule],
-        controllers: [sales_controller_1.SalesController, returns_controller_1.ReturnsController],
+        controllers: [sales_controller_1.SalesController, returns_controller_1.ReturnsController, storefront_controller_1.StorefrontController],
         providers: [sales_service_1.SalesService, returns_service_1.ReturnsService, orders_fulfillment_service_1.OrdersFulfillmentService, checkout_orchestrator_1.CheckoutOrchestrator],
         exports: [sales_service_1.SalesService, returns_service_1.ReturnsService, orders_fulfillment_service_1.OrdersFulfillmentService, checkout_orchestrator_1.CheckoutOrchestrator]
     })

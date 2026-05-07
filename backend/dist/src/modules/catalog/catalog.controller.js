@@ -24,6 +24,9 @@ let CatalogController = class CatalogController {
     async getPublicCatalog(filters) {
         return this.catalogService.getPublicCatalog(filters);
     }
+    async getPublicProduct(id) {
+        return this.catalogService.getPublicProduct(id);
+    }
     async getPosSyncCatalog(branchId) {
         return this.catalogService.getPosSyncCatalog(branchId);
     }
@@ -36,6 +39,13 @@ __decorate([
     __metadata("design:paramtypes", [catalog_filter_dto_1.CatalogFilterDto]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getPublicCatalog", null);
+__decorate([
+    (0, common_1.Get)('public/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getPublicProduct", null);
 __decorate([
     (0, common_1.Get)('pos-sync/:branchId'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),

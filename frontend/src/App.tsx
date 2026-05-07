@@ -7,6 +7,7 @@ import { useSyncEngine }    from '@/hooks/useSyncEngine';
 import { OfflineStatusBar } from '@/features/offline/components/OfflineStatusBar';
 import { AdminLayout }      from '@/components/layout/AdminLayout';
 import { AuthLayout }       from '@/components/layout/AuthLayout';
+import { isStorefrontDomain } from '@/utils/storefrontDomain';
 
 // ─── Route guards from rbac module ───────────────────────────────────────────
 import {
@@ -93,13 +94,25 @@ export default function App() {
           {/* ── Error pages (accessible regardless of auth) ── */}
           <Route path="/forbidden" element={<ForbiddenPage />} />
 
-          {/* ── Storefront (Public) ── */}
+          {/* ── Storefront: Public store routes ── */}
+          {/* Always available at /store/* on the admin domain */}
+          {/* On the storefront domain, also maps to root /* */}
           <Route element={<StorefrontLayout />}>
             <Route path="/store" element={<OnlineCatalogPage />} />
             <Route path="/store/product/:id" element={<OnlineProductDetailPage />} />
             <Route path="/store/cart" element={<StorefrontCartPage />} />
             <Route path="/store/checkout" element={<StorefrontCheckoutPage />} />
             <Route path="/store/my-orders" element={<StorefrontMyOrdersPage />} />
+
+            {isStorefrontDomain() && (
+              <>
+                <Route path="/" element={<OnlineCatalogPage />} />
+                <Route path="/product/:id" element={<OnlineProductDetailPage />} />
+                <Route path="/cart" element={<StorefrontCartPage />} />
+                <Route path="/checkout" element={<StorefrontCheckoutPage />} />
+                <Route path="/my-orders" element={<StorefrontMyOrdersPage />} />
+              </>
+            )}
           </Route>
 
           {/* ── Admin zone ── */}
@@ -181,8 +194,12 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* ── Catch-all ── */}
-          <Route path="*" element={<Navigate to="/admin" replace />} />
+          {/* ── Catch-all: redirect to / on storefront domain, /admin otherwise ── */}
+          <Route path="*" element={
+            isStorefrontDomain()
+              ? <Navigate to="/" replace />
+              : <Navigate to="/admin" replace />
+          } />
 
         </Routes>
       </Suspense>

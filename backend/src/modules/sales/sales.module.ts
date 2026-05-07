@@ -7,9 +7,11 @@ import { OrdersFulfillmentService } from './orders/orders-fulfillment.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { AfipModule } from '../afip/afip.module';
 
+import { StorefrontController } from './storefront.controller';
+
 @Module({
   imports: [AfipModule],
-  controllers: [SalesController, ReturnsController],
+  controllers: [SalesController, ReturnsController, StorefrontController],
   providers: [SalesService, ReturnsService, OrdersFulfillmentService, CheckoutOrchestrator],
   exports: [SalesService, ReturnsService, OrdersFulfillmentService, CheckoutOrchestrator]
 })

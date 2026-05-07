@@ -10,6 +10,25 @@ export declare class CatalogController {
         };
         data: any[];
     }>;
+    getPublicProduct(id: string): Promise<{
+        id: string;
+        name: string;
+        description: string;
+        brand: string;
+        category: string;
+        price: number;
+        basePrice: number;
+        inStock: boolean;
+        availableQuantity: number;
+        images: import(".prisma/client").Prisma.JsonValue;
+        variants: {
+            id: string;
+            sku: string;
+            size: string;
+            color: string;
+            stock: number;
+        }[];
+    }>;
     getPosSyncCatalog(branchId: string): Promise<{
         status: string;
         timestamp: string;

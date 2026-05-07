@@ -25,24 +25,35 @@ async function bootstrap() {
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
   // ─── CORS ───────────────────────────────────────────────────────────────────
-  const allowedOrigins = [
+  const allowedOrigins: string[] = [
     'http://localhost:5173',
     'https://app.roindumentaria.com.ar',
     'https://roindumentaria.com.ar',
   ];
 
+  // Add storefront domain from env if configured
+  if (process.env.STOREFRONT_DOMAIN) {
+    allowedOrigins.push(`https://${process.env.STOREFRONT_DOMAIN}`);
+    allowedOrigins.push(`http://${process.env.STOREFRONT_DOMAIN}`);
+  }
+
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
+      // Allow requests with no origin (server-to-server, curl, etc.)
+      if (!origin) return callback(null, true);
+
+      // Allow any tienda.* subdomain dynamically
+      if (origin.includes('://tienda.')) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization, Cookie',
   });
+
 
   // ─── GLOBAL FILTERS ─────────────────────────────────────────────────────────
   // Prevents stack trace leakage in production; returns a consistent error schema

@@ -16,6 +16,11 @@ export class CatalogController {
     return this.catalogService.getPublicCatalog(filters);
   }
 
+  @Get('public/:id')
+  async getPublicProduct(@Param('id') id: string) {
+    return this.catalogService.getPublicProduct(id);
+  }
+
   /**
    * PROTECTED ENDPOINT: Internal hardware API.
    * Hit exclusively by physical POS terminals syncing their offline databases.
