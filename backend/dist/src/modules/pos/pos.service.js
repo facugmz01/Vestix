@@ -174,6 +174,9 @@ let PosService = class PosService {
             name: v.product?.name || 'Producto Desconocido',
             category: v.product?.category?.name,
             brand: v.product?.brand?.name,
+            size: v.size,
+            color: v.color,
+            costPrice: v.costPrice || 0,
             basePrice: v.basePrice || 0,
             stock: v.stockLevels.reduce((acc, s) => acc + s.availableQuantity, 0),
         }));

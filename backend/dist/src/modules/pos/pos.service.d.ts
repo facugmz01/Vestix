@@ -73,6 +73,9 @@ export declare class PosService {
         name: string;
         category: string;
         brand: string;
+        size: string;
+        color: string;
+        costPrice: number;
         basePrice: number;
         stock: number;
     }[]>;
