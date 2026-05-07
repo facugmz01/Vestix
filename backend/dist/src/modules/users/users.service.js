@@ -83,12 +83,18 @@ let UsersService = class UsersService {
             throw new common_1.ConflictException('User with this email already exists');
         }
         const hashedPassword = await bcrypt.hash(createUserDto.password || 'DefaultPassword123!', 10);
-        const { branchId, ...userData } = createUserDto;
+        const { branchId, role, ...userData } = createUserDto;
+        let dbRole = await this.prisma.role.findUnique({ where: { name: role } });
+        if (!dbRole) {
+            dbRole = await this.prisma.role.create({
+                data: { name: role }
+            });
+        }
         return this.prisma.user.create({
             data: {
                 email: userData.email,
                 fullName: userData.fullName,
-                roleId: userData.roleId,
+                roleId: dbRole.id,
                 branchId: branchId,
                 password: hashedPassword,
                 isActive: true,
@@ -132,10 +138,17 @@ let UsersService = class UsersService {
     }
     async update(id, updateUserDto) {
         await this.findOne(id);
-        const { password, ...updateData } = updateUserDto;
+        const { password, role, ...updateData } = updateUserDto;
         const data = { ...updateData };
         if (password) {
             data.password = await bcrypt.hash(password, 10);
+        }
+        if (role) {
+            let dbRole = await this.prisma.role.findUnique({ where: { name: role } });
+            if (!dbRole) {
+                dbRole = await this.prisma.role.create({ data: { name: role } });
+            }
+            data.roleId = dbRole.id;
         }
         return this.prisma.user.update({
             where: { id },

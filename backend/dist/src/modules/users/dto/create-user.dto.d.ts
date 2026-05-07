@@ -8,6 +8,6 @@ export declare class CreateUserDto {
     email: string;
     fullName: string;
     password?: string;
-    roleId: string;
+    role: string;
     branchId?: string;
 }

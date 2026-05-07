@@ -19,9 +19,9 @@ export class CreateUserDto {
   @IsOptional()
   password?: string;
 
-  @IsUUID('4')
+  @IsString()
   @IsNotEmpty()
-  roleId: string;
+  role: string;
 
   @IsUUID('4')
   @IsOptional()

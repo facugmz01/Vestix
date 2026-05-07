@@ -49,13 +49,21 @@ export class UsersService implements OnModuleInit {
 
     const hashedPassword = await bcrypt.hash(createUserDto.password || 'DefaultPassword123!', 10); 
 
-    const { branchId, ...userData } = createUserDto;
+    const { branchId, role, ...userData } = createUserDto;
+
+    let dbRole = await this.prisma.role.findUnique({ where: { name: role } });
+    if (!dbRole) {
+      // Auto-create role if it doesn't exist yet (useful for bootstrap)
+      dbRole = await this.prisma.role.create({
+        data: { name: role }
+      });
+    }
     
     return this.prisma.user.create({
       data: {
         email: userData.email,
         fullName: userData.fullName,
-        roleId: userData.roleId,
+        roleId: dbRole.id,
         branchId: branchId,
         password: hashedPassword,
         isActive: true,
@@ -105,11 +113,19 @@ export class UsersService implements OnModuleInit {
   async update(id: string, updateUserDto: UpdateUserDto) {
     await this.findOne(id); 
 
-    const { password, ...updateData } = updateUserDto;
+    const { password, role, ...updateData } = updateUserDto as any;
     const data: any = { ...updateData };
 
     if (password) {
       data.password = await bcrypt.hash(password, 10);
+    }
+
+    if (role) {
+      let dbRole = await this.prisma.role.findUnique({ where: { name: role } });
+      if (!dbRole) {
+        dbRole = await this.prisma.role.create({ data: { name: role } });
+      }
+      data.roleId = dbRole.id;
     }
 
     return this.prisma.user.update({

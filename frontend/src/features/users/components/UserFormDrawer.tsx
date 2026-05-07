@@ -70,7 +70,13 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
       toast.error('Completá los campos obligatorios');
       return;
     }
-    mutation.mutate(formData);
+
+    const payload = { ...formData };
+    if (!payload.branchId) {
+      delete payload.branchId;
+    }
+
+    mutation.mutate(payload);
   };
 
   return (
