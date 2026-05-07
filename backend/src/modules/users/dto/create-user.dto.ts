@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, IsUUID } from 'class-validator';
+import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, IsUUID, IsBoolean } from 'class-validator';
 
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
@@ -26,4 +26,8 @@ export class CreateUserDto {
   @IsUUID('4')
   @IsOptional()
   branchId?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

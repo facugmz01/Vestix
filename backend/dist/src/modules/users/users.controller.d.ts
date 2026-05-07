@@ -7,15 +7,15 @@ export declare class UsersController {
     constructor(usersService: UsersService);
     create(createUserDto: CreateUserDto): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -28,8 +28,8 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
     findAll(): Promise<({
         role: {
@@ -96,15 +96,15 @@ export declare class UsersController {
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -117,20 +117,20 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
     activate(id: string): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -143,20 +143,20 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
     deactivate(id: string): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -169,20 +169,20 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
     assignBranches(id: string, assignBranchesDto: AssignBranchesDto): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -195,7 +195,7 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
 }

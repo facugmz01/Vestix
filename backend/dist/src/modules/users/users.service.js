@@ -97,7 +97,7 @@ let UsersService = class UsersService {
                 roleId: dbRole.id,
                 branchId: branchId,
                 password: hashedPassword,
-                isActive: true,
+                isActive: userData.isActive ?? true,
             },
             select: this.userSelect(),
         });

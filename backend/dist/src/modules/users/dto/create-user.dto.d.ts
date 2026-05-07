@@ -10,4 +10,5 @@ export declare class CreateUserDto {
     password?: string;
     role: string;
     branchId?: string;
+    isActive?: boolean;
 }

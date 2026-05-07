@@ -9,15 +9,15 @@ export declare class UsersService implements OnModuleInit {
     onModuleInit(): Promise<void>;
     create(createUserDto: CreateUserDto): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -30,8 +30,8 @@ export declare class UsersService implements OnModuleInit {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
     findAll(): Promise<({
         role: {
@@ -133,15 +133,15 @@ export declare class UsersService implements OnModuleInit {
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -154,20 +154,20 @@ export declare class UsersService implements OnModuleInit {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
     toggleActivation(id: string, isActive: boolean): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -180,20 +180,20 @@ export declare class UsersService implements OnModuleInit {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
     assignBranches(id: string, dto: AssignBranchesDto): Promise<{
         id: string;
+        email: string;
+        fullName: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         role: {
             id: string;
             name: string;
         };
-        roleId: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        branchId: string;
         branch: {
             id: string;
             name: string;
@@ -206,8 +206,8 @@ export declare class UsersService implements OnModuleInit {
             createdAt: Date;
             updatedAt: Date;
         };
-        email: string;
-        fullName: string;
+        roleId: string;
+        branchId: string;
     }>;
     private userSelect;
 }

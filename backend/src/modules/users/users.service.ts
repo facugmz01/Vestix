@@ -66,7 +66,7 @@ export class UsersService implements OnModuleInit {
         roleId: dbRole.id,
         branchId: branchId,
         password: hashedPassword,
-        isActive: true,
+        isActive: userData.isActive ?? true,
       },
       select: this.userSelect(),
     });
