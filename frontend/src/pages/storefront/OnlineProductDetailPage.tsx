@@ -25,8 +25,8 @@ export default function OnlineProductDetailPage() {
 
   // Auto-select first available variant
   useEffect(() => {
-    if (product?.variants?.length > 0 && !selectedVariantId) {
-      setSelectedVariantId(product.variants[0].id);
+    if ((product?.variants?.length ?? 0) > 0 && !selectedVariantId) {
+      setSelectedVariantId(product!.variants![0].id);
     }
   }, [product, selectedVariantId]);
 
@@ -52,12 +52,12 @@ export default function OnlineProductDetailPage() {
     );
   }
 
-  const selectedVariant = product.variants?.find((v: any) => v.id === selectedVariantId);
+  const selectedVariant = product.variants?.find(v => v.id === selectedVariantId);
   const isAvailable = selectedVariant ? selectedVariant.stock > 0 : product.inStock;
-  const displayPrice = product.basePrice || product.price || 0;
+  const displayPrice = product.basePrice ?? product.price ?? 0;
 
   const handleAddToCart = () => {
-    if (!selectedVariant && product.variants?.length > 0) {
+    if (!selectedVariant && (product.variants?.length ?? 0) > 0) {
       toast.error('Seleccioná una variante antes de agregar al carrito.');
       return;
     }

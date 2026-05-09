@@ -1,6 +1,32 @@
 import { get } from './client';
 import { cleanParams } from './requestUtils';
-import type { Product, PagedResponse } from '@/types';
+import type { PagedResponse } from '@/types';
+
+// ─── Storefront-specific types (match the /catalog/public API response) ──────
+// These intentionally differ from the internal `Product` type used in the admin,
+// because the public catalog serializer flattens brand/category to strings.
+
+export interface StorefrontVariant {
+  id: string;
+  sku: string;
+  size?: string | null;
+  color?: string | null;
+  stock: number; // total available across all warehouses
+}
+
+export interface StorefrontProduct {
+  id: string;
+  name: string;
+  description?: string;
+  brand?: string | null;
+  category?: string | null;
+  price: number;
+  basePrice: number;
+  inStock: boolean;
+  availableQuantity: number;
+  images?: string[];
+  variants?: StorefrontVariant[];
+}
 
 export interface StorefrontFilters {
   page?: number;
@@ -14,11 +40,12 @@ export interface StorefrontFilters {
 export const storefrontApi = {
   getProducts: (filters?: StorefrontFilters) => {
     const { search, ...rest } = filters || {};
-    return get<PagedResponse<Product>>('/catalog/public', {
+    return get<PagedResponse<StorefrontProduct>>('/catalog/public', {
       params: cleanParams({ ...rest, searchQuery: search })
     });
   },
 
   getProduct: (id: string) =>
-    get<Product>(`/catalog/public/${id}`),
+    get<StorefrontProduct>(`/catalog/public/${id}`),
 };
+

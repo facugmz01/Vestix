@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ShoppingCart, ArrowRight, PackageX } from 'lucide-react';
+import { Trash2, ArrowRight, PackageX } from 'lucide-react';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
