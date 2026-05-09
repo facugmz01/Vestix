@@ -1,14 +1,14 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Truck, CreditCard, Trash2, Plus, Minus, ArrowLeft, Save } from 'lucide-react';
+import { Search, ShoppingCart, Truck, Trash2, Plus, Minus, ArrowLeft, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { purchasingApi } from '@/api/purchasing.api';
 import { queryKeys } from '@/api/queryKeys';
 import { apiClient } from '@/api/client';
-import type { Supplier, ProductVariant } from '@/types';
-import { Button, Input, Badge, Drawer } from '@/components/ui';
+import type { ProductVariant } from '@/types';
+import { Button, Input, Drawer } from '@/components/ui';
 
 export default function NewPurchasePage() {
   const navigate = useNavigate();
@@ -138,7 +138,7 @@ export default function NewPurchasePage() {
               <div>Cargando catálogo...</div>
             ) : searchResults?.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
-                {searchResults.map(p => (
+                {searchResults.map((p: any) => (
                   <div key={p.id} onClick={() => handleAddToCart(p)} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}>
                     <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{p.sku}</p>
                     <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, minHeight: '40px' }}>{p.name} {p.size && `(${p.size})`}</p>

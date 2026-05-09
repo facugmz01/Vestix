@@ -7,7 +7,7 @@ import { customersApi } from '@/api/customers.api';
 import { branchesApi } from '@/api/branches.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { Plus, X, Calculator, Percent, Search, Package } from 'lucide-react';
+import { X, Calculator, Percent, Search, Package } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -55,8 +55,8 @@ export function SaleFormDrawer({ open, onClose }: Props) {
   const selectedBranch = branchesData?.data.find(b => b.id === branchId);
 
   useEffect(() => {
-    if (selectedBranch && selectedBranch.warehouses?.length > 0) {
-      setWarehouseId(selectedBranch.warehouses[0].id);
+    if (selectedBranch && (selectedBranch as any).warehouses?.length > 0) {
+      setWarehouseId((selectedBranch as any).warehouses[0].id);
     } else {
       setWarehouseId('');
     }
@@ -184,7 +184,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
               style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', opacity: branchId ? 1 : 0.5 }}
             >
               <option value="">Seleccionar Depósito...</option>
-              {selectedBranch?.warehouses?.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+              {(selectedBranch as any)?.warehouses?.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
           

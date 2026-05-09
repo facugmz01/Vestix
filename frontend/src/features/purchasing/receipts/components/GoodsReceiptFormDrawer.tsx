@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input, Table } from '@/components/ui';
 import { purchasesApi } from '@/api/purchases.api';
 import { receiptsApi, type DraftReceiptDto } from '@/api/receipts.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { PurchaseOrder } from '@/types';
 import toast from 'react-hot-toast';
-import { Plus, PackageCheck } from 'lucide-react';
+import { PackageCheck } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -67,7 +67,7 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
       .map(([variantId, qty]) => {
         const poLine = purchaseOrder.lines.find(l => l.variantId === variantId);
         return { 
-          poLineItemId: poLine?.id || variantId, 
+          poLineItemId: variantId, 
           variantId, 
           quantity: qty 
         };
@@ -116,9 +116,9 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
             <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
               <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--blue)' }}>Recepcionando Orden de Compra</p>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: 'monospace' }}>{purchaseOrder.id}</h3>
-              <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{purchaseOrder.supplier?.companyName || 'Proveedor Desconocido'}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{purchaseOrder.supplierName || 'Proveedor Desconocido'}</p>
               <div style={{ marginTop: '12px', textAlign: 'right' }}>
-                <Button variant="outline" size="sm" onClick={() => setPurchaseOrder(null)}>Cambiar OC</Button>
+                <Button variant="secondary" size="sm" onClick={() => setPurchaseOrder(null)}>Cambiar OC</Button>
               </div>
             </div>
 

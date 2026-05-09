@@ -103,7 +103,7 @@ export interface AttributeValue {
 export interface Product {
   id: string; 
   name: string; 
-  baseSku: string;
+  baseSku?: string;
   description?: string;
   categoryId: string; 
   brandId?: string;
@@ -132,6 +132,7 @@ export interface ProductVariant {
   basePrice: number; 
   isActive: boolean;
   attributes?: Record<string, string>;
+  imageUrl?: string;
 }
 
 // ─── INVENTORY ───────────────────────────────────────────────────────────

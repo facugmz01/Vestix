@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input, Table, Badge } from '@/components/ui';
 import { salesApi } from '@/api/sales.api';
 import { returnsApi, type CreateReturnItemDto, type CreateReturnDto } from '@/api/returns.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { SaleOrder, ReturnAction, ItemCondition } from '@/types';
 import toast from 'react-hot-toast';
-import { Search, ShoppingCart, Repeat, AlertTriangle, ArrowRightLeft } from 'lucide-react';
+import { Search, ShoppingCart, ArrowRightLeft } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -149,7 +149,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
               <div style={{ textAlign: 'right' }}>
                 <Badge color="gray">{new Date(saleOrder.createdAt).toLocaleDateString()}</Badge>
                 <div style={{ marginTop: '8px' }}>
-                  <Button variant="outline" size="sm" onClick={() => setSaleOrder(null)}>Cambiar Ticket</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setSaleOrder(null)}>Cambiar Ticket</Button>
                 </div>
               </div>
             </div>
@@ -157,9 +157,9 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
             <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--blue)' }}>
               <h4 style={{ margin: '0 0 12px', color: 'var(--blue)' }}>Acción Requerida</h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                <Button variant={action === 'REFUND' ? 'primary' : 'outline'} onClick={() => setAction('REFUND')}>Reembolso (Refund)</Button>
-                <Button variant={action === 'EXCHANGE' ? 'primary' : 'outline'} onClick={() => setAction('EXCHANGE')} icon={<ArrowRightLeft size={16} />}>Cambio de Producto</Button>
-                <Button variant={action === 'STORE_CREDIT' ? 'primary' : 'outline'} onClick={() => setAction('STORE_CREDIT')}>Crédito a Favor</Button>
+                <Button variant={action === 'REFUND' ? 'primary' : 'secondary'} onClick={() => setAction('REFUND')}>Reembolso (Refund)</Button>
+                <Button variant={action === 'EXCHANGE' ? 'primary' : 'secondary'} onClick={() => setAction('EXCHANGE')} icon={<ArrowRightLeft size={16} />}>Cambio de Producto</Button>
+                <Button variant={action === 'STORE_CREDIT' ? 'primary' : 'secondary'} onClick={() => setAction('STORE_CREDIT')}>Crédito a Favor</Button>
               </div>
             </div>
 
@@ -176,9 +176,9 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                     header: 'Artículo / SKU', 
                     render: (l) => (
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: 700, fontSize: '13px' }}>{l.variant?.product?.name || 'Producto'}</span>
+                        <span style={{ fontWeight: 700, fontSize: '13px' }}>{l.productName || 'Producto'}</span>
                         <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
-                          {l.variant?.sku || l.variantSku || l.variantId.split('-')[0]}
+                          {l.variantSku || l.variantId.split('-')[0]}
                         </span>
                       </div>
                     )

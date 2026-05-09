@@ -10,7 +10,7 @@ import {
 
 import { salesApi } from '@/api/sales.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { SaleOrder } from '@/types';
+
 import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { SaleFormDrawer } from '@/features/sales/components/SaleFormDrawer';
@@ -21,7 +21,7 @@ export default function SalesPage() {
   const [pageSize] = useState(15);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
+
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -106,10 +106,11 @@ export default function SalesPage() {
                 key: 'source', 
                 header: 'Canal',
                 render: (s) => (
-                  <Badge color="gray" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {s.source === 'POS' ? <Monitor size={12} /> : s.source === 'ECOMMERCE' ? <ShoppingCart size={12} /> : <Calculator size={12} />}
-                    {s.source}
-                  </Badge>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Badge color="gray">
+                      {s.source}
+                    </Badge>
+                  </div>
                 )
               },
               { 

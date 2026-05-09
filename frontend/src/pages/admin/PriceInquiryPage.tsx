@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Tag, Package, History, Info } from 'lucide-react';
+import { Search, Tag, Package, Info } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Input, Badge, 
@@ -8,7 +8,7 @@ import {
 } from '@/components/ui';
 
 import { posApi } from '@/api/pos.api';
-import type { ProductVariant } from '@/types';
+
 
 export default function PriceInquiryPage() {
   const [search, setSearch] = useState('');
@@ -35,13 +35,15 @@ export default function PriceInquiryPage() {
       subtitle="Buscá rápidamente precios y disponibilidad de cualquier producto sin abrir el POS."
     >
       <div style={{ marginBottom: '24px', maxWidth: '600px' }}>
-        <Input 
-          placeholder="Escaneá un código o buscá por SKU / Nombre..." 
-          icon={<Search size={20} />}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          autoFocus
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Search size={20} color="var(--text-muted)" />
+          <Input 
+            placeholder="Escaneá un código o buscá por SKU / Nombre..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoFocus
+          />
+        </div>
         <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
           <Info size={14} /> Escribí al menos 2 caracteres para buscar.
         </p>

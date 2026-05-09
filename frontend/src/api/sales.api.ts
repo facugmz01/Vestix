@@ -15,18 +15,23 @@ export interface CreateSaleDto {
   id: string;               // REQUIRED: Idempotency key from POS
   branchId: string;
   warehouseId: string;      // REQUIRED: Physical origin of stock
-  source: 'POS' | 'ECOMMERCE'; // Aligned with backend OrderSource
+  source: 'POS' | 'ECOMMERCE' | 'BACKOFFICE'; // Aligned with backend OrderSource
   customerId?: string;
   
   paymentMethod: 'CASH' | 'CREDIT_CARD' | 'CUSTOMER_CREDIT' | 'BANK_TRANSFER';
   paymentAccountId?: string; // REQUIRED: For routing funds in Treasury
   
   createdAtIso?: string;    // REQUIRED: The exact offline timestamp
+  status?: string;
+  posGrandTotal?: number;
+  cartDiscountTotal?: number;
   
   lines: {
     variantId: string;
     categoryId: string;     // REQUIRED: For backend RulesEngine
     quantity: number;
+    unitPriceOverride?: number;
+    discountPct?: number;
   }[];
 }
 

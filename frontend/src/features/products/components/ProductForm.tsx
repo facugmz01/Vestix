@@ -5,7 +5,7 @@ import { productsApi } from '@/api/products.api';
 import { ProductImagesUploader } from './ProductImagesUploader';
 import { VariantMassGenerator } from './VariantMassGenerator';
 import type { CreateProductDto } from '@/api/products.api';
-import { Trash2, Calculator } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 interface Props {
   formData: CreateProductDto;

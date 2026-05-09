@@ -9,17 +9,16 @@ import { customersApi } from '@/api/customers.api';
 import { get } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import { useAuthStore } from '@/store/auth.store';
-import type { CashRegister, ProductVariant, Customer } from '@/types';
+import type { CashRegister, ProductVariant } from '@/types';
 
-import { Button, Input, Badge, Drawer } from '@/components/ui';
+import { Button, Input, Drawer } from '@/components/ui';
 
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
 
 // Subcomponents
 function SessionModal({ 
   open, session, availableRegisters, onOpenSession, isPending 
-}: { 
-  open: boolean, session: CashRegister | null, availableRegisters: CashRegister[], onOpenSession: (id: string, amt: number) => void, isPending: boolean 
+  open: boolean, session?: CashRegister | null, availableRegisters?: CashRegister[], onOpenSession?: (id: string, amt: number) => void, isPending?: boolean 
 }) {
   const [selectedReg, setSelectedReg] = useState('');
   const [amount, setAmount] = useState(0);
@@ -159,7 +158,7 @@ export default function POSPage() {
   };
 
   const checkoutMutation = useMutation({
-    mutationFn: async (status: 'COMPLETED' | 'QUOTE' = 'COMPLETED') => {
+    mutationFn: async (status: 'CONFIRMED' | 'QUOTATION' = 'CONFIRMED') => {
       if (!session) throw new Error('No hay sesión de caja activa');
 
       // Find a valid warehouse for this branch
@@ -176,7 +175,7 @@ export default function POSPage() {
       });
       const paymentAccountId = accounts?.find(a => a.isActive)?.id;
 
-      if (status === 'COMPLETED' && !paymentAccountId && paymentMethod !== 'CUSTOMER_CREDIT') {
+      if (status === 'CONFIRMED' && !paymentAccountId && paymentMethod !== 'CUSTOMER_CREDIT') {
         throw new Error('No se encontró una cuenta de tesorería para registrar el pago');
       }
 
@@ -201,7 +200,7 @@ export default function POSPage() {
       });
     },
     onSuccess: (_, status) => {
-      toast.success(status === 'QUOTE' ? 'Presupuesto guardado' : 'Venta registrada con éxito');
+      toast.success(status === 'QUOTATION' ? 'Presupuesto guardado' : 'Venta registrada con éxito');
       setCart([]);
       setCartDiscountPct(0);
       setSelectedCustomerId('');
@@ -219,7 +218,7 @@ export default function POSPage() {
 
   const handleSaveQuote = () => {
     if (cart.length === 0) return;
-    checkoutMutation.mutate('QUOTE');
+    checkoutMutation.mutate('QUOTATION');
   };
 
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
@@ -271,7 +270,7 @@ export default function POSPage() {
         {/* Session Blocker */}
         <SessionModal 
           open={!session} 
-          session={session} 
+          session={session || null} 
           availableRegisters={registersData || []} 
           onOpenSession={(id, amt) => openSessionMutation.mutate({ id, amt })} 
           isPending={openSessionMutation.isPending}
@@ -486,7 +485,7 @@ export default function POSPage() {
               <Button 
                 variant="primary" 
                 style={{ width: '100%', height: '56px', fontSize: '18px' }}
-                onClick={() => checkoutMutation.mutate()}
+                onClick={() => checkoutMutation.mutate('CONFIRMED')}
                 loading={checkoutMutation.isPending}
                 disabled={paymentMethod === 'CASH' && amountTendered < grandTotal}
               >

@@ -53,6 +53,7 @@ export function ProductFormDrawer({ open, onClose, productToEdit }: Props) {
         images: source.images || [],
         variants: source.variants?.filter(v => v.isActive !== false).map(v => ({
           id: v.id,
+          productId: v.productId || '',
           sku: v.sku,
           size: v.size,
           color: v.color,

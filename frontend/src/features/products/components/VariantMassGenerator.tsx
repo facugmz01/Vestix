@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, Trash2 } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { productsApi } from '@/api/products.api';
-import { Button, Input } from '@/components/ui';
-import toast from 'react-hot-toast';
+import { Button } from '@/components/ui';
 
 interface Props {
   costPrice: number;
@@ -84,7 +83,7 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
           <div key={attr.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>{attr.name}</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-              {attr.values.map(v => {
+              {attr.values.map((v: any) => {
                 const isSelected = selectedAttributes[attr.name]?.includes(v.value);
                 return (
                   <button

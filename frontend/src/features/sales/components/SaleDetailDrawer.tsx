@@ -56,7 +56,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
 
   const getStatusColor = (s: string) => {
     switch (s) {
-      case 'QUOTATION': return 'orange';
+      case 'QUOTATION': return 'gray';
       case 'CONFIRMED': return 'green';
       case 'CANCELLED': return 'red';
       default: return 'gray';
@@ -113,9 +113,9 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                 header: 'Artículo / SKU', 
                 render: (l) => (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 700, fontSize: '14px' }}>{l.variant?.product?.name || 'Producto Desconocido'}</span>
+                    <span style={{ fontWeight: 700, fontSize: '14px' }}>{l.productName || 'Producto Desconocido'}</span>
                     <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      SKU: {l.variant?.sku || l.variantSku || 'N/A'} - {l.variant?.size || ''} {l.variant?.color || ''}
+                      SKU: {l.variantSku || 'N/A'}
                     </span>
                   </div>
                 ) 

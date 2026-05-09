@@ -1,8 +1,8 @@
-import { NavLink } from 'react-router-dom';
+
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
   Truck, Users, CreditCard, BarChart2, Settings, Tag,
-  Monitor, Globe, ChevronRight, History, Banknote, Wallet, FileText, Bell, Plug, Shield, RefreshCw, Layers
+  Monitor, Globe, History, Banknote, Wallet, FileText, Bell, Plug, Shield, RefreshCw, Layers
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Drawer, Button, Input, StatusChip } from '@/components/ui';
+import { Drawer, Button, Input } from '@/components/ui';
 import { usersApi, type CreateUserDto } from '@/api/users.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { SystemUser } from '@/types';
@@ -112,24 +112,28 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
         />
         
         {!isEditing && (
-          <Input
-            label="Contraseña"
-            type="password"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            required
-            helperText="La contraseña debe tener al menos 8 caracteres."
-          />
+          <div>
+            <Input
+              label="Contraseña"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
+            />
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>La contraseña debe tener al menos 8 caracteres.</p>
+          </div>
         )}
 
         {isEditing && (
-          <Input
-            label="Cambiar Contraseña (opcional)"
-            type="password"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            helperText="Dejá en blanco si no querés cambiarla."
-          />
+          <div>
+            <Input
+              label="Cambiar Contraseña (opcional)"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>Dejá en blanco si no querés cambiarla.</p>
+          </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
