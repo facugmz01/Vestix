@@ -1,1 +1,0 @@
-import{h as a}from"./index-Dr1kA8cF.js";import{c as o}from"./requestUtils-gaJB49jo.js";const s={getProducts:t=>a("/catalog/public",{params:o({...t})}),getProduct:t=>a(`/catalog/public/${t}`)};export{s};

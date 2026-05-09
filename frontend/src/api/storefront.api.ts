@@ -12,8 +12,12 @@ export interface StorefrontFilters {
 }
 
 export const storefrontApi = {
-  getProducts: (filters?: StorefrontFilters) =>
-    get<PagedResponse<Product>>('/catalog/public', { params: cleanParams({ ...filters }) }),
+  getProducts: (filters?: StorefrontFilters) => {
+    const { search, ...rest } = filters || {};
+    return get<PagedResponse<Product>>('/catalog/public', {
+      params: cleanParams({ ...rest, searchQuery: search })
+    });
+  },
 
   getProduct: (id: string) =>
     get<Product>(`/catalog/public/${id}`),
