@@ -1,19 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CatalogFilterDto } from './dto/catalog-filter.dto';
-import { ProductsService } from '../products/services/products.service';
-import { InventoryService } from '../inventory/inventory.service';
-import { PricingService } from '../pricing/pricing.service';
-
 import { PrismaService } from '../../core/prisma/prisma.service';
 
 @Injectable()
 export class CatalogService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly productsService: ProductsService,
-    private readonly inventoryService: InventoryService,
-    private readonly pricingService: PricingService
   ) {}
+
 
   /**
    * E-COMMERCE FRONTEND ENGINE
@@ -47,8 +41,8 @@ export class CatalogService {
 
       const basePrice = primaryVariant.basePrice;
 
-      // Dynamic Pricing Resolution (Defaults to RETAIL)
-      const resolvedPrice = await this.pricingService.resolvePrice(product.id, basePrice);
+      // Precio de venta al público (se puede conectar PricingService para listas de precios dinámicas)
+      const resolvedPrice = basePrice;
 
       if (filters.minPrice && resolvedPrice < filters.minPrice) continue;
       if (filters.maxPrice && resolvedPrice > filters.maxPrice) continue;
@@ -102,7 +96,7 @@ export class CatalogService {
 
     const primaryVariant = product.variants[0];
     const basePrice = primaryVariant ? primaryVariant.basePrice : 0;
-    const resolvedPrice = await this.pricingService.resolvePrice(product.id, basePrice);
+    const resolvedPrice = basePrice; // Se puede integrar PricingService en el futuro
 
     const availableQty = product.variants.reduce((sum, v) => 
       sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)

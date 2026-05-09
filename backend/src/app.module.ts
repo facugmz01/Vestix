@@ -30,6 +30,8 @@ import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { PosModule } from './modules/pos/pos.module';
 import { IdentifiersModule } from './modules/identifiers/identifiers.module';
 
+import { CatalogModule } from './modules/catalog/catalog.module';
+
 @Module({
   imports: [
     // 1. Configuración y Seguridad
@@ -77,6 +79,7 @@ import { IdentifiersModule } from './modules/identifiers/identifiers.module';
     SuppliersModule,
     PosModule,
     IdentifiersModule,
+    CatalogModule,
   ],
 })
 export class AppModule {}

@@ -36,6 +36,7 @@ const invoicing_module_1 = require("./modules/invoicing/invoicing.module");
 const suppliers_module_1 = require("./modules/suppliers/suppliers.module");
 const pos_module_1 = require("./modules/pos/pos.module");
 const identifiers_module_1 = require("./modules/identifiers/identifiers.module");
+const catalog_module_1 = require("./modules/catalog/catalog.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -80,6 +81,7 @@ exports.AppModule = AppModule = __decorate([
             suppliers_module_1.SuppliersModule,
             pos_module_1.PosModule,
             identifiers_module_1.IdentifiersModule,
+            catalog_module_1.CatalogModule,
         ],
     })
 ], AppModule);

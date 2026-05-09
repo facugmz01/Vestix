@@ -11,16 +11,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CatalogService = void 0;
 const common_1 = require("@nestjs/common");
-const products_service_1 = require("../products/services/products.service");
-const inventory_service_1 = require("../inventory/inventory.service");
-const pricing_service_1 = require("../pricing/pricing.service");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
 let CatalogService = class CatalogService {
-    constructor(prisma, productsService, inventoryService, pricingService) {
+    constructor(prisma) {
         this.prisma = prisma;
-        this.productsService = productsService;
-        this.inventoryService = inventoryService;
-        this.pricingService = pricingService;
     }
     async getPublicCatalog(filters) {
         const where = { isActive: true, isPublished: true };
@@ -46,7 +40,7 @@ let CatalogService = class CatalogService {
             if (!primaryVariant)
                 continue;
             const basePrice = primaryVariant.basePrice;
-            const resolvedPrice = await this.pricingService.resolvePrice(product.id, basePrice);
+            const resolvedPrice = basePrice;
             if (filters.minPrice && resolvedPrice < filters.minPrice)
                 continue;
             if (filters.maxPrice && resolvedPrice > filters.maxPrice)
@@ -92,7 +86,7 @@ let CatalogService = class CatalogService {
             throw new Error('Product not found');
         const primaryVariant = product.variants[0];
         const basePrice = primaryVariant ? primaryVariant.basePrice : 0;
-        const resolvedPrice = await this.pricingService.resolvePrice(product.id, basePrice);
+        const resolvedPrice = basePrice;
         const availableQty = product.variants.reduce((sum, v) => sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0), 0);
         return {
             id: product.id,
@@ -128,9 +122,6 @@ let CatalogService = class CatalogService {
 exports.CatalogService = CatalogService;
 exports.CatalogService = CatalogService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        products_service_1.ProductsService,
-        inventory_service_1.InventoryService,
-        pricing_service_1.PricingService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], CatalogService);
 //# sourceMappingURL=catalog.service.js.map

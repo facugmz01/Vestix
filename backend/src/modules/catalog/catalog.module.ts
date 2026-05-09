@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
 import { CatalogController } from './catalog.controller';
+import { PrismaModule } from '../../core/prisma/prisma.module';
 
 @Module({
-  // Relies on the global Pricing, Inventory, and Products modules
+  imports: [PrismaModule],
   controllers: [CatalogController],
   providers: [CatalogService],
   exports: [CatalogService]
