@@ -1,4 +1,4 @@
-import { get, post, patch } from './client';
+import { get, post } from './client';
 import { cleanParams } from './requestUtils';
 import type { SaleOrder, PagedResponse } from '@/types';
 
@@ -42,7 +42,7 @@ export interface CheckoutResponse {
 
 export const salesApi = {
   getSales: (filters?: SalesFilters) =>
-    get<PagedResponse<SaleOrder>>('/sales/orders', { params: cleanParams(filters ?? {}) }),
+    get<PagedResponse<SaleOrder>>('/sales/orders', { params: cleanParams((filters as any) ?? {}) }),
 
   getSale: (id: string) =>
     get<SaleOrder>(`/sales/orders/${id}`),

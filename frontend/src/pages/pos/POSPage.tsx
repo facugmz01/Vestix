@@ -17,8 +17,9 @@ import { CustomerFormDrawer } from '@/features/customers/components/CustomerForm
 
 // Subcomponents
 function SessionModal({ 
-  open, session, availableRegisters, onOpenSession, isPending 
-  open: boolean, session?: CashRegister | null, availableRegisters?: CashRegister[], onOpenSession?: (id: string, amt: number) => void, isPending?: boolean 
+  open, availableRegisters, onOpenSession, isPending 
+}: { 
+  open: boolean, availableRegisters?: CashRegister[], onOpenSession?: (id: string, amt: number) => void, isPending?: boolean 
 }) {
   const [selectedReg, setSelectedReg] = useState('');
   const [amount, setAmount] = useState(0);
@@ -55,7 +56,7 @@ function SessionModal({
             style={{ marginTop: '16px', height: '44px' }} 
             disabled={!selectedReg || isPending}
             loading={isPending}
-            onClick={() => onOpenSession(selectedReg, amount)}
+            onClick={() => onOpenSession?.(selectedReg, amount)}
           >
             Abrir Turno
           </Button>
@@ -270,7 +271,6 @@ export default function POSPage() {
         {/* Session Blocker */}
         <SessionModal 
           open={!session} 
-          session={session || null} 
           availableRegisters={registersData || []} 
           onOpenSession={(id, amt) => openSessionMutation.mutate({ id, amt })} 
           isPending={openSessionMutation.isPending}

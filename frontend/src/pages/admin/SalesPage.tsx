@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Eye, ShoppingCart, Calculator, Monitor } from 'lucide-react';
+import { Plus, Eye, ShoppingCart } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, 

@@ -65,7 +65,6 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
     const payloadLines = Object.entries(scannedItems)
       .filter(([_, qty]) => qty > 0)
       .map(([variantId, qty]) => {
-        const poLine = purchaseOrder.lines.find(l => l.variantId === variantId);
         return { 
           poLineItemId: variantId, 
           variantId, 
