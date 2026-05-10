@@ -1,1 +1,0 @@
-import{p as e,h as o}from"./index-D6C0BhV6.js";const p={getMyRegister:()=>o("/pos/session/current"),getAvailableRegisters:s=>o("/pos/registers",{params:{branchId:s}}),openSession:s=>e("/pos/session/open",s),closeSession:s=>e("/pos/session/close",s),searchProduct:s=>o("/pos/catalog/search",{params:{q:s}}),calculateCart:s=>e("/pos/cart/calculate",s)};export{p};
