@@ -1,1 +1,0 @@
-import{h as t}from"./index-CkqfgWTF.js";import{c as s}from"./requestUtils-gaJB49jo.js";const p={getProducts:r=>{const{search:a,...o}=r||{};return t("/catalog/public",{params:s({...o,searchQuery:a})})},getProduct:r=>t(`/catalog/public/${r}`)};export{p as s};
