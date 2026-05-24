@@ -8,16 +8,19 @@ export declare class BrandsService {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     findAll(): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     update(id: string, data: {
         name?: string;
@@ -25,11 +28,13 @@ export declare class BrandsService {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     delete(id: string): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
 }
 export declare class CategoriesService {
@@ -40,6 +45,7 @@ export declare class CategoriesService {
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     findAll(): Promise<({
         parent: {
@@ -47,18 +53,21 @@ export declare class CategoriesService {
             name: string;
             parentId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     })[]>;
     findOne(id: string): Promise<{
         id: string;
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     update(id: string, data: {
         name?: string;
@@ -68,12 +77,14 @@ export declare class CategoriesService {
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     delete(id: string): Promise<{
         id: string;
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     }>;
 }
 export declare class AttributesService {
@@ -90,6 +101,7 @@ export declare class AttributesService {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     })[]>;
     create(data: any): Promise<{
         values: {
@@ -102,6 +114,7 @@ export declare class AttributesService {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     update(id: string, data: {
         name?: string;
@@ -117,11 +130,13 @@ export declare class AttributesService {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     delete(id: string): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
 }
 export declare class PriceListService {

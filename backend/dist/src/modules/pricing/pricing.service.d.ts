@@ -11,6 +11,7 @@ export declare class PricingService {
             priceListId: string;
             variantId: string;
             overridePrice: number;
+            createdAt: Date;
             updatedAt: Date;
         }[];
     } & {
@@ -34,6 +35,7 @@ export declare class PricingService {
             priceListId: string;
             variantId: string;
             overridePrice: number;
+            createdAt: Date;
             updatedAt: Date;
         }[];
     } & {
@@ -71,6 +73,7 @@ export declare class PricingService {
         priceListId: string;
         variantId: string;
         overridePrice: number;
+        createdAt: Date;
         updatedAt: Date;
     }>;
     resolvePrice(variantId: string, basePrice: number, customerId?: string): Promise<number>;

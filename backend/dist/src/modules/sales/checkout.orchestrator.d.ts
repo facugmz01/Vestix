@@ -39,6 +39,9 @@ export declare class CheckoutOrchestrator {
             basePrice: number;
             discountAmount: number;
             finalPrice: number;
+            historicalSku: string | null;
+            historicalName: string | null;
+            historicalCost: number | null;
         }[];
     } & {
         id: string;

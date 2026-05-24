@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Monitor, Search, Trash2, ShoppingCart, User, Plus, Minus, CreditCard, Banknote, Percent, LogOut, PackageOpen, ChevronRight } from 'lucide-react';
+import { Monitor, Search, Trash2, ShoppingCart, User, Plus, Minus, CreditCard, Banknote, Percent, LogOut, PackageOpen, ChevronRight, WifiOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { posApi } from '@/api/pos.api';
@@ -10,6 +10,7 @@ import { customersApi } from '@/api/customers.api';
 import { get } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import { useAuthStore } from '@/store/auth.store';
+import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import type { CashRegister, ProductVariant } from '@/types';
 
 import { Button, Input, Drawer } from '@/components/ui';
@@ -97,7 +98,10 @@ export default function POSPage() {
     onError: (err: any) => toast.error(err.message || 'Error al abrir caja'),
   });
 
-  // 2. POS State
+  // 2. Offline Queue
+  const enqueueOfflineOp = useOfflineQueueStore((s) => s.enqueue);
+
+  // 3. POS State
   const [search, setSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -165,44 +169,114 @@ export default function POSPage() {
     mutationFn: async (status: 'CONFIRMED' | 'QUOTATION' = 'CONFIRMED') => {
       if (!session) throw new Error('No hay sesión de caja activa');
 
-      const warehouses = await queryClient.fetchQuery({
-        queryKey: ['warehouses', session.branchId],
-        queryFn: () => get<any[]>('/inventory/warehouses', { params: { branchId: session.branchId } })
-      });
-      const warehouseId = warehouses?.[0]?.id || 'main';
+      // 1. Pre-generar el ID de orden (Idempotency Key dictado por el POS)
+      const orderId = crypto.randomUUID();
 
-      const accounts = await queryClient.fetchQuery({
-        queryKey: ['accounts', session.branchId],
-        queryFn: () => get<any[]>('/finance/accounts', { params: { branchId: session.branchId } })
-      });
-      const paymentAccountId = accounts?.find(a => a.isActive)?.id;
-
-      if (status === 'CONFIRMED' && !paymentAccountId && paymentMethod !== 'CUSTOMER_CREDIT') {
-        throw new Error('No se encontró una cuenta de tesorería para registrar el pago');
+      // 2. Prebúsqueda de almacén: tolerante a caídas de red (staleTime + try/catch)
+      let warehouseId = 'main';
+      try {
+        const warehouses = await queryClient.fetchQuery({
+          queryKey: ['warehouses', session.branchId],
+          queryFn: () => get<any[]>('/inventory/warehouses', { params: { branchId: session.branchId } }),
+          staleTime: 600_000, // 10 min de caché para reducir peticiones
+        });
+        warehouseId = warehouses?.[0]?.id || 'main';
+      } catch {
+        // Sin red: el servidor usará el almacén principal de la sucursal
+        warehouseId = 'main';
       }
 
-      return salesApi.createSale({
-        id: crypto.randomUUID(),
+      // 3. Prebúsqueda de cuenta de tesorería: tolerante a caídas de red
+      let paymentAccountId: string | undefined;
+      try {
+        const accounts = await queryClient.fetchQuery({
+          queryKey: ['accounts', session.branchId],
+          queryFn: () => get<any[]>('/finance/accounts', { params: { branchId: session.branchId } }),
+          staleTime: 600_000,
+        });
+        paymentAccountId = accounts?.find((a: any) => a.isActive)?.id;
+      } catch {
+        // Sin red: la cuenta se resolverá en el servidor al sincronizar
+        paymentAccountId = undefined;
+      }
+
+      // 4. Validar cuenta de tesorería solo si estamos online
+      if (status === 'CONFIRMED' && !paymentAccountId && paymentMethod !== 'CUSTOMER_CREDIT' && navigator.onLine) {
+        throw new Error('No se encontró una cuenta de tesorería activa para registrar el pago');
+      }
+
+      // 5. Construir el DTO de la venta
+      const dto = {
+        id: orderId,
         branchId: session.branchId,
         warehouseId,
         customerId: selectedCustomerId || undefined,
-        source: 'POS',
+        source: 'POS' as const,
         paymentMethod,
         paymentAccountId,
-        status,
+        status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
         posGrandTotal: grandTotal,
+        cartDiscountTotal: grandTotal < subtotal ? subtotal - grandTotal : 0,
         createdAtIso: new Date().toISOString(),
         lines: cart.map(i => ({
           variantId: i.variant.id,
           categoryId: (i.variant as any).product?.categoryId || 'default',
           quantity: i.qty,
           unitPriceOverride: i.variant.basePrice,
-          discountPct: i.discountPct
-        }))
-      });
+          discountPct: i.discountPct,
+        })),
+      };
+
+      // 6. Intercepción offline: encolar directamente si no hay red
+      if (!navigator.onLine) {
+        enqueueOfflineOp({
+          module: 'POS',
+          action: 'createSale',
+          description: `Venta POS offline (${paymentMethod}) — ${fmtCurrency(grandTotal)}`,
+          endpoint: '/sales/checkout',
+          method: 'POST',
+          maxRetries: 5,
+          payload: dto,
+        });
+        return { offline: true };
+      }
+
+      // 7. Envío online con fallback automático ante cortes físicos de red
+      try {
+        const res = await salesApi.createSale(dto);
+        return { offline: false, res };
+      } catch (err: any) {
+        const isNetworkError =
+          !err.response ||
+          err.code === 'ERR_NETWORK' ||
+          (typeof err.message === 'string' && err.message.toLowerCase().includes('network'));
+
+        if (isNetworkError) {
+          enqueueOfflineOp({
+            module: 'POS',
+            action: 'createSale',
+            description: `Venta POS offline (${paymentMethod}) — ${fmtCurrency(grandTotal)}`,
+            endpoint: '/sales/checkout',
+            method: 'POST',
+            maxRetries: 5,
+            payload: dto,
+          });
+          return { offline: true };
+        }
+        throw err;
+      }
     },
-    onSuccess: (_, status) => {
-      toast.success(status === 'QUOTATION' ? 'Presupuesto guardado' : 'Venta registrada con éxito');
+    onSuccess: (data: any, status) => {
+      if (data?.offline) {
+        toast(
+          status === 'QUOTATION'
+            ? '📋 Presupuesto guardado localmente'
+            : '💾 Venta registrada sin conexión — se sincronizará automáticamente',
+          { icon: <WifiOff size={16} />, duration: 4000 }
+        );
+      } else {
+        toast.success(status === 'QUOTATION' ? 'Presupuesto guardado ✅' : 'Venta registrada con éxito ✅');
+      }
       setCart([]);
       setCartDiscountPct(0);
       setSelectedCustomerId('');

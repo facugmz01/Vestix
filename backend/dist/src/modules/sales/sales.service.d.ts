@@ -58,6 +58,9 @@ export declare class SalesService {
             basePrice: number;
             discountAmount: number;
             finalPrice: number;
+            historicalSku: string | null;
+            historicalName: string | null;
+            historicalCost: number | null;
         })[];
         variance: {
             id: string;
@@ -108,6 +111,9 @@ export declare class SalesService {
             basePrice: number;
             discountAmount: number;
             finalPrice: number;
+            historicalSku: string | null;
+            historicalName: string | null;
+            historicalCost: number | null;
         }[];
     } & {
         id: string;
@@ -156,6 +162,9 @@ export declare class SalesService {
                 basePrice: number;
                 discountAmount: number;
                 finalPrice: number;
+                historicalSku: string | null;
+                historicalName: string | null;
+                historicalCost: number | null;
             }[];
             id: string;
             branchId: string;

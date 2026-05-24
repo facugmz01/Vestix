@@ -18,6 +18,16 @@ export declare class FinanceController {
         updatedAt: Date;
     }[]>;
     getPaymentMethods(): Promise<({
+        cashRegister: {
+            id: string;
+            name: string;
+            code: string;
+            branchId: string;
+            status: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         account: {
             id: string;
             name: string;
@@ -25,16 +35,6 @@ export declare class FinanceController {
             currency: string;
             branchId: string | null;
             balance: number;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        cashRegister: {
-            id: string;
-            name: string;
-            code: string;
-            branchId: string;
-            status: string;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;

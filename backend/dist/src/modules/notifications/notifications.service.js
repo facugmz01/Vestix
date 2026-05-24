@@ -64,7 +64,7 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             channel: payload.channel,
             templateKey: payload.templateKey,
             recipient: payload.recipient,
-            variables: payload.variables,
+            variables: payload.variables || {},
             status: notification_model_1.NotificationStatus.QUEUED,
             attempts: 0,
             createdAt: new Date(),
@@ -87,8 +87,9 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             this.logger.error(`[Dispatch] ${job.lastError}`);
             return;
         }
-        const body = this.interpolate(template.body, job.variables);
-        const subject = template.subject ? this.interpolate(template.subject, job.variables) : undefined;
+        const vars = job.variables || {};
+        const body = this.interpolate(template.body, vars);
+        const subject = template.subject ? this.interpolate(template.subject, vars) : undefined;
         job.status = notification_model_1.NotificationStatus.SENDING;
         job.attempts += 1;
         job.updatedAt = new Date();
@@ -117,6 +118,9 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
                 this.logger.error(`[Dispatch] ✗ Job ${job.id} permanently FAILED after ${MAX_ATTEMPTS} attempts.`);
             }
         }
+    }
+    getQueue() {
+        return this.queue;
     }
     async notifyOrderConfirmed(recipient, channel, vars) {
         return this.enqueue({ channel, templateKey: notification_model_1.TemplateKey.ORDER_CONFIRMED, recipient, variables: vars });

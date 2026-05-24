@@ -39,7 +39,7 @@ export class NotificationsService {
       channel: payload.channel,
       templateKey: payload.templateKey,
       recipient: payload.recipient,
-      variables: payload.variables,
+      variables: payload.variables || {},
       status: NotificationStatus.QUEUED,
       attempts: 0,
       createdAt: new Date(),
@@ -74,9 +74,10 @@ export class NotificationsService {
       return;
     }
 
-    // Interpolate template variables: {{customerName}} → "John Doe"
-    const body = this.interpolate(template.body, job.variables);
-    const subject = template.subject ? this.interpolate(template.subject, job.variables) : undefined;
+    // Interpolate template variables safely
+    const vars = job.variables || {};
+    const body = this.interpolate(template.body, vars);
+    const subject = template.subject ? this.interpolate(template.subject, vars) : undefined;
 
     job.status = NotificationStatus.SENDING;
     job.attempts += 1;
@@ -107,6 +108,14 @@ export class NotificationsService {
         this.logger.error(`[Dispatch] ✗ Job ${job.id} permanently FAILED after ${MAX_ATTEMPTS} attempts.`);
       }
     }
+  }
+
+  /**
+   * Returns the entire in-memory queue of notification jobs.
+   * Useful for administrative UI and API monitoring.
+   */
+  getQueue(): NotificationJob[] {
+    return this.queue;
   }
 
   // --- CONVENIENCE HELPERS (used across the ERP) ---

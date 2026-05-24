@@ -73,6 +73,9 @@ export declare class StorefrontController {
             basePrice: number;
             discountAmount: number;
             finalPrice: number;
+            historicalSku: string | null;
+            historicalName: string | null;
+            historicalCost: number | null;
         })[];
         variance: {
             id: string;

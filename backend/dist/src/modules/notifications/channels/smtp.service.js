@@ -14,13 +14,42 @@ let SmtpService = SmtpService_1 = class SmtpService {
         this.logger = new common_1.Logger(SmtpService_1.name);
     }
     async send(to, subject, body) {
-        try {
-            this.logger.log(`[SMTP] → ${to} | Subject: "${subject}"`);
-            return { success: true };
+        const smtpHost = process.env.SMTP_HOST;
+        const smtpPort = process.env.SMTP_PORT;
+        const smtpUser = process.env.SMTP_USER;
+        const smtpPass = process.env.SMTP_PASS;
+        const storeName = process.env.STORE_NAME || 'Vestix ERP';
+        if (smtpHost && smtpUser && smtpPass) {
+            try {
+                const nodemailer = require('nodemailer');
+                const transporter = nodemailer.createTransport({
+                    host: smtpHost,
+                    port: smtpPort ? parseInt(smtpPort, 10) : 587,
+                    secure: smtpPort === '465',
+                    auth: {
+                        user: smtpUser,
+                        pass: smtpPass,
+                    },
+                });
+                await transporter.sendMail({
+                    from: `"${storeName}" <${smtpUser}>`,
+                    to,
+                    subject,
+                    text: body,
+                });
+                this.logger.log(`[SMTP] ✓ Real email sent to ${to} | Subject: "${subject}"`);
+                return { success: true };
+            }
+            catch (err) {
+                this.logger.error(`[SMTP] Failed to send real email to ${to}: ${err.message}`);
+                throw err;
+            }
         }
-        catch (err) {
-            this.logger.error(`[SMTP] Failed to send to ${to}: ${err.message}`);
-            throw err;
+        else {
+            this.logger.log(`[SMTP Mock] → Recipient: ${to}\n` +
+                `  Subject: "${subject}"\n` +
+                `  Body: "${body.replace(/\n/g, ' ')}"`);
+            return { success: true };
         }
     }
 };

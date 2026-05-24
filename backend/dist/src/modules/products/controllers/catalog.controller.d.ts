@@ -15,6 +15,7 @@ export declare class CategoriesController {
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     findAll(): Promise<({
         parent: {
@@ -22,24 +23,28 @@ export declare class CategoriesController {
             name: string;
             parentId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     })[]>;
     update(id: string, dto: any): Promise<{
         id: string;
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     remove(id: string): Promise<{
         id: string;
         name: string;
         parentId: string | null;
         createdAt: Date;
+        updatedAt: Date;
     }>;
 }
 export declare class BrandsController {
@@ -49,21 +54,25 @@ export declare class BrandsController {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     findAll(): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }[]>;
     update(id: string, dto: any): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     remove(id: string): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
 }
 export declare class ProductsController {
@@ -75,11 +84,13 @@ export declare class ProductsController {
             name: string;
             parentId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
         brand: {
             id: string;
             name: string;
             createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;
@@ -104,11 +115,13 @@ export declare class ProductsController {
                 name: string;
                 parentId: string | null;
                 createdAt: Date;
+                updatedAt: Date;
             };
             brand: {
                 id: string;
                 name: string;
                 createdAt: Date;
+                updatedAt: Date;
             };
         } & {
             id: string;
@@ -136,11 +149,13 @@ export declare class ProductsController {
             name: string;
             parentId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
         brand: {
             id: string;
             name: string;
             createdAt: Date;
+            updatedAt: Date;
         };
         variants: {
             id: string;
@@ -210,11 +225,13 @@ export declare class ProductsController {
             name: string;
             parentId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
         brand: {
             id: string;
             name: string;
             createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;
@@ -297,6 +314,7 @@ export declare class AttributesController {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     })[]>;
     create(data: CreateAttributeDto): Promise<{
         values: {
@@ -309,6 +327,7 @@ export declare class AttributesController {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     update(id: string, data: any): Promise<{
         values: {
@@ -321,11 +340,13 @@ export declare class AttributesController {
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
     delete(id: string): Promise<{
         id: string;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
     }>;
 }
 export declare class PriceListController {

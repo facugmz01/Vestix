@@ -13,11 +13,13 @@ export declare class ProductsService {
             name: string;
             parentId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
         brand: {
             id: string;
             name: string;
             createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;
@@ -42,11 +44,13 @@ export declare class ProductsService {
                 name: string;
                 parentId: string | null;
                 createdAt: Date;
+                updatedAt: Date;
             };
             brand: {
                 id: string;
                 name: string;
                 createdAt: Date;
+                updatedAt: Date;
             };
         } & {
             id: string;
@@ -74,11 +78,13 @@ export declare class ProductsService {
             name: string;
             parentId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
         brand: {
             id: string;
             name: string;
             createdAt: Date;
+            updatedAt: Date;
         };
         variants: {
             id: string;
@@ -117,11 +123,13 @@ export declare class ProductsService {
             name: string;
             parentId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
         brand: {
             id: string;
             name: string;
             createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;

@@ -14,6 +14,7 @@ export declare class NotificationsService {
         variables: Record<string, string>;
     }): Promise<NotificationJob>;
     dispatch(jobId: string): Promise<void>;
+    getQueue(): NotificationJob[];
     notifyOrderConfirmed(recipient: string, channel: NotificationChannel, vars: {
         customerName: string;
         orderId: string;

@@ -8,6 +8,7 @@ export declare class PricingController {
             priceListId: string;
             variantId: string;
             overridePrice: number;
+            createdAt: Date;
             updatedAt: Date;
         }[];
     } & {
@@ -31,6 +32,7 @@ export declare class PricingController {
             priceListId: string;
             variantId: string;
             overridePrice: number;
+            createdAt: Date;
             updatedAt: Date;
         }[];
     } & {
