@@ -173,7 +173,7 @@ export function BranchFormDrawer({ open, onClose, branchToEdit }: Props) {
               label="CUIT / Tax ID Local"
               value={formData.settings.taxId || ''}
               onChange={(e) => setFormData({ ...formData, settings: { ...formData.settings, taxId: e.target.value } })}
-              helperText="Requerido si la sucursal factura con una razón social distinta."
+             
             />
             <Input
               label="Cabecera Ticket POS"
@@ -184,7 +184,7 @@ export function BranchFormDrawer({ open, onClose, branchToEdit }: Props) {
               label="Pie de Ticket POS"
               value={formData.settings.posReceiptFooter || ''}
               onChange={(e) => setFormData({ ...formData, settings: { ...formData.settings, posReceiptFooter: e.target.value } })}
-              helperText="Mensaje final de agradecimiento o políticas de cambio."
+             
             />
           </div>
         </div>

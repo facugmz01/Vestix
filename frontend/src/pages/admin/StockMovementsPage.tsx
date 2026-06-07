@@ -55,7 +55,7 @@ export default function StockMovementsPage() {
       title="Libro Mayor de Movimientos (Kardex Global)" 
       subtitle="Trazabilidad y auditoría completa de entradas, salidas y ajustes de mercadería."
       action={
-        <Button variant="outline" icon={<Download size={16} />}>
+        <Button variant="ghost" icon={<Download size={16} />}>
           Exportar Excel
         </Button>
       }

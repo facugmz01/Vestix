@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { AfipProducer } from './afip.producer';
 import { AfipProcessor } from './afip.processor';
+import { AfipController } from './afip.controller';
 import { PrismaModule } from '../../core/prisma/prisma.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { PrismaModule } from '../../core/prisma/prisma.module';
       },
     }),
   ],
+  controllers: [AfipController],
   providers: [AfipProducer, AfipProcessor],
   exports: [AfipProducer],
 })

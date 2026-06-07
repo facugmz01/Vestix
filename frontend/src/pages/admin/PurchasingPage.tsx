@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Send, Truck, Package, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Eye, Truck, Package, Trash2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 

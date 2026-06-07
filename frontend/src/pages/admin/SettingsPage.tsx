@@ -37,7 +37,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
 
   return (
-    <ActionGuard action="manage" subject="Settings" fallback={<p style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>No tenés permisos para acceder a la configuración del sistema.</p>}>
+    <ActionGuard action="manage" subject="Settings">
       <PageContainer
         title="Configuración del Sistema"
         subtitle="Ajustes globales que afectan el comportamiento de todo el ERP."

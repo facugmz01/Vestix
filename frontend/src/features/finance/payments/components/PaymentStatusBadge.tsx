@@ -7,7 +7,7 @@ interface Props {
 export function PaymentStatusBadge({ status }: Props) {
   switch (status) {
     case 'PENDING':
-      return <Badge color="orange">Pendiente</Badge>;
+      return <Badge color="warning">Pendiente</Badge>;
     case 'COMPLETED':
       return <Badge color="green">Completado</Badge>;
     case 'FAILED':

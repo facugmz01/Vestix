@@ -1,7 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
 import { Drawer, Badge, Table } from '@/components/ui';
-import { auditApi } from '@/api/audit.api';
-import { queryKeys } from '@/api/queryKeys';
 import type { AuditLog } from '@/types';
 import {
   Plus, Edit2, Trash2, LogIn, LogOut, Eye, CheckCircle,

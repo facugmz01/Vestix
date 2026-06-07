@@ -10,7 +10,7 @@ import {
 
 import { reservationsApi } from '@/api/reservations.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { StockReservation } from '@/types';
+
 import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { ReservationFormDrawer } from '@/features/inventory/reservations/components/ReservationFormDrawer';

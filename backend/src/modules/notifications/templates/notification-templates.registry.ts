@@ -50,4 +50,9 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     channel: NotificationChannel.WHATSAPP,
     body: `👋 ¡Hola {{customerName}}! Bienvenido/a a nuestra tienda. Somos *{{storeName}}*. ¿En qué podemos ayudarte hoy?`,
   },
+  {
+    key: TemplateKey.OTP_CODE,
+    channel: NotificationChannel.WHATSAPP,
+    body: `🔐 *Tu código de verificación es:*\n\n*{{otpCode}}*\n\nEste código expira en 10 minutos.\nSi no lo solicitaste, ignorá este mensaje.`,
+  },
 ];

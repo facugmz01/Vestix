@@ -1,6 +1,5 @@
 import { useAuthStore } from '@/store/auth.store';
 import type { Action, Subject, Role } from './permissions';
-import { Actions, Subjects } from './permissions';
 
 /**
  * Central RBAC hook.

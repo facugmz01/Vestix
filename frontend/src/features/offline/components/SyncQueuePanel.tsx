@@ -102,7 +102,7 @@ function OperationCard({ op, onRetry, onRemove }: { op: OfflineOperation; onRetr
         </div>
         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
           {(op.status === 'FAILED' || op.status === 'CONFLICT') && (
-            <Button variant="outline" size="sm" icon={<RotateCcw size={14} />} onClick={onRetry}>Reintentar</Button>
+            <Button variant="ghost" size="sm" icon={<RotateCcw size={14} />} onClick={onRetry}>Reintentar</Button>
           )}
           <Button variant="ghost" size="sm" onClick={onRemove} style={{ color: 'var(--red)' }}>
             <XCircle size={16} />

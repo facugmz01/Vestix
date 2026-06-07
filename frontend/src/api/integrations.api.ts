@@ -33,4 +33,19 @@ export const integrationsApi = {
 
   retryWebhook: (integrationId: string, logId: string) =>
     post<WebhookLog>(`/integrations/${integrationId}/webhook-logs/${logId}/retry`, {}),
+
+  getFailedAfipJobs: () =>
+    get<FailedAfipJob[]>('/afip/failed-jobs'),
+
+  retryAfipJob: (id: string) =>
+    post<{ success: boolean; message: string }>(`/afip/retry-job/${id}`, {}),
 };
+
+export interface FailedAfipJob {
+  id: string;
+  name: string;
+  data: { orderId: string; branchId: string };
+  failedReason: string;
+  attemptsMade: number;
+  failedAt: string;
+}

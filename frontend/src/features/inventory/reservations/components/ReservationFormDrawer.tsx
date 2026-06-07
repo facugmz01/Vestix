@@ -55,7 +55,7 @@ export function ReservationFormDrawer({ open, onClose }: Props) {
     onSuccess: () => {
       toast.success('Reserva creada exitosamente');
       queryClient.invalidateQueries({ queryKey: queryKeys.reservations.all() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all() }); // Refresh global stock
+      queryClient.invalidateQueries({ queryKey: queryKeys.stock.all() }); // Refresh global stock
       onClose();
     },
     onError: (err: any) => toast.error(err.message || 'Error al crear reserva (¿Hay stock suficiente?)'),
@@ -130,7 +130,7 @@ export function ReservationFormDrawer({ open, onClose }: Props) {
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', alignItems: 'flex-end' }}>
             <div style={{ flex: 2 }}><Input label="SKU / ID" value={searchSku} onChange={e => setSearchSku(e.target.value)} /></div>
             <div style={{ flex: 1 }}><Input label="Cant." type="number" min="1" value={qtyInput} onChange={e => setQtyInput(Number(e.target.value))} /></div>
-            <Button type="button" variant="outline" onClick={addLine} style={{ marginBottom: '2px' }}><Plus size={16} /></Button>
+            <Button type="button" variant="ghost" onClick={addLine} style={{ marginBottom: '2px' }}><Plus size={16} /></Button>
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>

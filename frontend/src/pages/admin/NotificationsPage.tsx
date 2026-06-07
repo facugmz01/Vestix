@@ -10,7 +10,7 @@ import {
 import { notificationsApi } from '@/api/notifications.api';
 import { queryKeys } from '@/api/queryKeys';
 import { ActionGuard } from '@/rbac/ActionGuard';
-import type { NotificationTemplate, NotificationLog } from '@/types';
+import type { NotificationTemplate } from '@/types';
 
 import { TemplateFormDrawer } from '@/features/notifications/components/TemplateFormDrawer';
 
@@ -20,7 +20,7 @@ function DeliveryStatusBadge({ status }: { status: string }) {
   switch (status) {
     case 'DELIVERED': return <Badge color="green"><CheckCircle size={12} /> Entregado</Badge>;
     case 'SENT':      return <Badge color="blue"><CheckCircle size={12} /> Enviado</Badge>;
-    case 'PENDING':   return <Badge color="orange"><Clock size={12} /> Pendiente</Badge>;
+    case 'PENDING':   return <Badge color="warning"><Clock size={12} /> Pendiente</Badge>;
     case 'FAILED':    return <Badge color="red"><AlertTriangle size={12} /> Fallido</Badge>;
     case 'BOUNCED':   return <Badge color="red"><XCircle size={12} /> Rebotado</Badge>;
     default:          return <Badge color="gray">{status}</Badge>;

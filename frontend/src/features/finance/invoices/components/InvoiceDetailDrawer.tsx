@@ -64,7 +64,7 @@ export function InvoiceDetailDrawer({ open, onClose, invoiceId }: Props) {
               {invoice.caeDueDate && <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Venc.: <strong>{new Date(invoice.caeDueDate).toLocaleDateString()}</strong></p>}
             </div>
             {invoice.pdfUrl && (
-              <Button variant="outline" size="sm" icon={<Download size={16} />} onClick={() => window.open(invoice.pdfUrl!, '_blank')}>PDF</Button>
+              <Button variant="ghost" size="sm" icon={<Download size={16} />} onClick={() => window.open(invoice.pdfUrl!, '_blank')}>PDF</Button>
             )}
           </div>
         )}

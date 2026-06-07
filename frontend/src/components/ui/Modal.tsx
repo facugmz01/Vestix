@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import styles from './Modal.module.css';
-import { Button } from './Button';
 
 interface Props {
   open: boolean;

@@ -100,7 +100,7 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Este producto no tiene variantes configuradas.</p>
           )}
 
-          <Button variant="outline" size="sm" style={{ marginTop: '16px', width: '100%' }} icon={<LinkIcon size={14} />} onClick={() => window.location.href = `/admin/catalog/${displayProduct.id}/variants`}>
+          <Button variant="ghost" size="sm" style={{ marginTop: '16px', width: '100%' }} icon={<LinkIcon size={14} />} onClick={() => window.location.href = `/admin/catalog/${displayProduct.id}/variants`}>
             Administrar Inventario Completo
           </Button>
         </div>

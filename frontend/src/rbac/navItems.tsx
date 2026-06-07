@@ -1,7 +1,6 @@
-import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
-  Truck, Users, Briefcase, CreditCard, BarChart2,
+  Truck, Users, CreditCard, BarChart2,
   Settings, Monitor, Globe,
 } from 'lucide-react';
 import { usePermissions } from '@/rbac/usePermissions';

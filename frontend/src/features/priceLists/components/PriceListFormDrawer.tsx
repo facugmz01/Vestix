@@ -114,7 +114,7 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
               step="0.1" 
               value={formData.modifierPercentage} 
               onChange={(e) => setFormData({ ...formData, modifierPercentage: Number(e.target.value) })} 
-              helperText="Ej: -15 para un 15% de descuento sobre el precio base. 20 para un 20% de recargo."
+             
             />
           </div>
         )}

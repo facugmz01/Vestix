@@ -102,7 +102,7 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
-          helperText="Ej. Caja 1 - Principal"
+         
         />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

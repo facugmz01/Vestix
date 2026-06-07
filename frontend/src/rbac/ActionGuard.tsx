@@ -27,8 +27,6 @@ export function ActionGuard({
   children,
   onDeny = 'hide',
   denyTitle = 'No tenés permiso para esta acción',
-  onClick,
-  ...rest
 }: ActionGuardProps) {
   const { can } = usePermissions();
   const allowed  = can(action, subject);
@@ -40,7 +38,6 @@ export function ActionGuard({
       title={!allowed ? denyTitle : undefined}
       style={!allowed ? { cursor: 'not-allowed', display: 'inline-flex' } : undefined}
     >
-      {/* Cloning children to inject disabled and blocked onClick when denied */}
       {typeof children === 'object' && children !== null
         ? (() => {
             const child = children as React.ReactElement<React.HTMLAttributes<HTMLElement>>;

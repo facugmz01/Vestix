@@ -48,5 +48,10 @@ exports.NOTIFICATION_TEMPLATES = [
         channel: notification_model_1.NotificationChannel.WHATSAPP,
         body: `👋 ¡Hola {{customerName}}! Bienvenido/a a nuestra tienda. Somos *{{storeName}}*. ¿En qué podemos ayudarte hoy?`,
     },
+    {
+        key: notification_model_1.TemplateKey.OTP_CODE,
+        channel: notification_model_1.NotificationChannel.WHATSAPP,
+        body: `🔐 *Tu código de verificación es:*\n\n*{{otpCode}}*\n\nEste código expira en 10 minutos.\nSi no lo solicitaste, ignorá este mensaje.`,
+    },
 ];
 //# sourceMappingURL=notification-templates.registry.js.map

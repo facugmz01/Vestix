@@ -132,7 +132,7 @@ export default function PromotionsPage() {
                 render: (p) => (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontWeight: 600 }}>{p.name}</span>
-                    {(p.conflictsWith?.length || 0) > 0 && <AlertCircle size={14} color="var(--red)" title="En conflicto" />}
+                    {(p.conflictsWith?.length || 0) > 0 && <AlertCircle size={14} color="var(--red)" />}
                   </div>
                 )
               },

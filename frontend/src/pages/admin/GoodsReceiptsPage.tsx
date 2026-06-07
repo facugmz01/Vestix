@@ -10,7 +10,7 @@ import {
 
 import { receiptsApi } from '@/api/receipts.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { GoodsReceipt } from '@/types';
+
 import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { GoodsReceiptFormDrawer } from '@/features/purchasing/receipts/components/GoodsReceiptFormDrawer';
@@ -112,7 +112,6 @@ export default function GoodsReceiptsPage() {
                   <StatusChip 
                     label={r.status === 'DISPUTED' ? 'Diferencias' : r.status === 'VALIDATED' ? 'Validado' : 'Pendiente'} 
                     color={getStatusColor(r.status) as any} 
-                    icon={r.status === 'DISPUTED' ? <AlertTriangle size={12} /> : r.status === 'VALIDATED' ? <CheckCircle size={12} /> : undefined}
                   />
                 )
               },

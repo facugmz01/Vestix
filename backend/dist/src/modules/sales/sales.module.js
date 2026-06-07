@@ -8,6 +8,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalesModule = void 0;
 const common_1 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
+const jwt_1 = require("@nestjs/jwt");
 const sales_service_1 = require("./sales.service");
 const sales_controller_1 = require("./sales.controller");
 const returns_controller_1 = require("./returns/returns.controller");
@@ -16,15 +18,37 @@ const orders_fulfillment_service_1 = require("./orders/orders-fulfillment.servic
 const checkout_orchestrator_1 = require("./checkout.orchestrator");
 const afip_module_1 = require("../afip/afip.module");
 const storefront_controller_1 = require("./storefront.controller");
+const storefront_auth_controller_1 = require("./storefront-auth.controller");
+const storefront_jwt_strategy_1 = require("./storefront-jwt.strategy");
+const mercadopago_service_1 = require("./mercadopago.service");
 let SalesModule = class SalesModule {
 };
 exports.SalesModule = SalesModule;
 exports.SalesModule = SalesModule = __decorate([
     (0, common_1.Module)({
-        imports: [afip_module_1.AfipModule],
-        controllers: [sales_controller_1.SalesController, returns_controller_1.ReturnsController, storefront_controller_1.StorefrontController],
-        providers: [sales_service_1.SalesService, returns_service_1.ReturnsService, orders_fulfillment_service_1.OrdersFulfillmentService, checkout_orchestrator_1.CheckoutOrchestrator],
-        exports: [sales_service_1.SalesService, returns_service_1.ReturnsService, orders_fulfillment_service_1.OrdersFulfillmentService, checkout_orchestrator_1.CheckoutOrchestrator]
+        imports: [
+            afip_module_1.AfipModule,
+            passport_1.PassportModule,
+            jwt_1.JwtModule.register({
+                secret: process.env.JWT_SECRET || 'fallback_secret_for_dev_only',
+                signOptions: { expiresIn: '7d' },
+            }),
+        ],
+        controllers: [
+            sales_controller_1.SalesController,
+            returns_controller_1.ReturnsController,
+            storefront_controller_1.StorefrontController,
+            storefront_auth_controller_1.StorefrontAuthController,
+        ],
+        providers: [
+            sales_service_1.SalesService,
+            returns_service_1.ReturnsService,
+            orders_fulfillment_service_1.OrdersFulfillmentService,
+            checkout_orchestrator_1.CheckoutOrchestrator,
+            storefront_jwt_strategy_1.StorefrontJwtStrategy,
+            mercadopago_service_1.MercadoPagoService,
+        ],
+        exports: [sales_service_1.SalesService, returns_service_1.ReturnsService, orders_fulfillment_service_1.OrdersFulfillmentService, checkout_orchestrator_1.CheckoutOrchestrator],
     })
 ], SalesModule);
 //# sourceMappingURL=sales.module.js.map

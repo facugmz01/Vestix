@@ -63,6 +63,7 @@ const OnlineProductDetailPage = lazy(() => import('@/pages/storefront/OnlineProd
 const StorefrontCartPage = lazy(() => import('@/pages/storefront/StorefrontCartPage'));
 const StorefrontCheckoutPage = lazy(() => import('@/pages/storefront/StorefrontCheckoutPage'));
 const StorefrontMyOrdersPage = lazy(() => import('@/pages/storefront/StorefrontMyOrdersPage'));
+const StorefrontLoginPage = lazy(() => import('@/pages/storefront/StorefrontLoginPage'));
 
 export default function App() {
   const isBooting = useAuthInit();
@@ -103,6 +104,7 @@ export default function App() {
             <Route path="/store/cart" element={<StorefrontCartPage />} />
             <Route path="/store/checkout" element={<StorefrontCheckoutPage />} />
             <Route path="/store/my-orders" element={<StorefrontMyOrdersPage />} />
+            <Route path="/store/login" element={<StorefrontLoginPage />} />
 
             {isStorefrontDomain() && (
               <>
@@ -111,6 +113,7 @@ export default function App() {
                 <Route path="/cart" element={<StorefrontCartPage />} />
                 <Route path="/checkout" element={<StorefrontCheckoutPage />} />
                 <Route path="/my-orders" element={<StorefrontMyOrdersPage />} />
+                <Route path="/login" element={<StorefrontLoginPage />} />
               </>
             )}
           </Route>

@@ -1,5 +1,4 @@
 import { get, post } from './client';
-import { cleanParams } from './requestUtils';
 import type { CashRegister, ProductVariant } from '@/types';
 
 export interface OpenSessionDto {

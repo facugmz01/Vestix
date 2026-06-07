@@ -6,7 +6,7 @@ import {
   AlertTriangle, Clock, XCircle, Wifi, WifiOff, RotateCcw
 } from 'lucide-react';
 
-import { Drawer, Button, Input, Table, Badge } from '@/components/ui';
+import { Drawer, Button, Table, Badge } from '@/components/ui';
 import { integrationsApi } from '@/api/integrations.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Integration, WebhookLog } from '@/types';
@@ -67,8 +67,8 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
   const queryClient = useQueryClient();
   const [configValues, setConfigValues] = useState<Record<string, string>>({});
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
-  const [logsPage, setLogsPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<'config' | 'webhooks'>('config');
+  const [logsPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<'config' | 'webhooks' | 'failed-afip'>('config');
 
   const fields = integration ? (PROVIDER_FIELDS[integration.provider] ?? []) : [];
 
@@ -76,6 +76,12 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
     queryKey: queryKeys.integrations.webhookLogs(integration?.id || '', { page: logsPage }),
     queryFn: () => integrationsApi.getWebhookLogs(integration!.id, { page: logsPage, pageSize: 10 }),
     enabled: open && !!integration && activeTab === 'webhooks',
+  });
+
+  const { data: failedAfipJobs, isLoading: isLoadingFailedAfip } = useQuery({
+    queryKey: queryKeys.integrations.failedAfipJobs(),
+    queryFn: () => integrationsApi.getFailedAfipJobs(),
+    enabled: open && !!integration && integration.provider === 'AFIP' && activeTab === 'failed-afip',
   });
 
   const saveMutation = useMutation({
@@ -110,6 +116,19 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
     onSuccess: () => {
       toast.success('Webhook reenviado');
       queryClient.invalidateQueries({ queryKey: queryKeys.integrations.webhookLogs(integration!.id) });
+    },
+    onError: (err: any) => toast.error(err.message || 'Error al reintentar'),
+  });
+
+  const retryAfipMutation = useMutation({
+    mutationFn: (jobId: string) => integrationsApi.retryAfipJob(jobId),
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || 'Factura re-encolada');
+        queryClient.invalidateQueries({ queryKey: queryKeys.integrations.failedAfipJobs() });
+      } else {
+        toast.error(data.message || 'Error al reintentar');
+      }
     },
     onError: (err: any) => toast.error(err.message || 'Error al reintentar'),
   });
@@ -149,8 +168,8 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <ActionGuard action="manage" subject="Settings">
-              <Button variant="outline" size="sm" onClick={() => testMutation.mutate()} loading={testMutation.isPending} icon={<TestTube size={14} />}>Probar</Button>
-              <Button variant="outline" size="sm" onClick={() => syncMutation.mutate()} loading={syncMutation.isPending} icon={<RefreshCw size={14} />}>Sincronizar</Button>
+              <Button variant="ghost" size="sm" onClick={() => testMutation.mutate()} loading={testMutation.isPending} icon={<TestTube size={14} />}>Probar</Button>
+              <Button variant="ghost" size="sm" onClick={() => syncMutation.mutate()} loading={syncMutation.isPending} icon={<RefreshCw size={14} />}>Sincronizar</Button>
             </ActionGuard>
           </div>
         </div>
@@ -158,7 +177,11 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-elevated)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)', width: 'fit-content' }}>
           <button style={tabStyle('config')} onClick={() => setActiveTab('config')}>Credenciales</button>
-          <button style={tabStyle('webhooks')} onClick={() => setActiveTab('webhooks')}>Webhook Logs</button>
+          {integration.provider === 'AFIP' ? (
+            <button style={tabStyle('failed-afip')} onClick={() => setActiveTab('failed-afip')}>Facturas Fallidas</button>
+          ) : (
+            <button style={tabStyle('webhooks')} onClick={() => setActiveTab('webhooks')}>Webhook Logs</button>
+          )}
         </div>
 
         {/* Config Tab */}
@@ -259,6 +282,56 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                         <Button variant="ghost" size="sm" onClick={() => retryMutation.mutate(l.id)} icon={<RotateCcw size={14} />}>Retry</Button>
                       </ActionGuard>
                     ) : null
+                  }
+                ]}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Failed AFIP Jobs Tab */}
+        {activeTab === 'failed-afip' && (
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {isLoadingFailedAfip ? (
+              <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>Cargando facturas fallidas...</p>
+            ) : !failedAfipJobs || failedAfipJobs.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No hay facturas fallidas pendientes.</p>
+            ) : (
+              <Table
+                keyField="id"
+                data={failedAfipJobs}
+                columns={[
+                  {
+                    key: 'date', header: 'Fecha Fallo',
+                    render: (j: any) => <span style={{ fontSize: '12px' }}>{new Date(j.failedAt).toLocaleString()}</span>
+                  },
+                  {
+                    key: 'orderId', header: 'ID Pedido',
+                    render: (j: any) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{j.data?.orderId || '—'}</span>
+                  },
+                  {
+                    key: 'reason', header: 'Razón del Fallo',
+                    render: (j: any) => <span style={{ color: 'var(--red)', fontSize: '13px', fontWeight: 500 }}>{j.failedReason}</span>
+                  },
+                  {
+                    key: 'attempts', header: 'Intentos',
+                    render: (j: any) => <Badge color="orange">{j.attemptsMade} / 5</Badge>
+                  },
+                  {
+                    key: 'actions', header: '',
+                    render: (j: any) => (
+                      <ActionGuard action="manage" subject="Settings">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => retryAfipMutation.mutate(j.id)}
+                          loading={retryAfipMutation.isPending && retryAfipMutation.variables === j.id}
+                          icon={<RotateCcw size={14} />}
+                        >
+                          Reintentar
+                        </Button>
+                      </ActionGuard>
+                    )
                   }
                 ]}
               />

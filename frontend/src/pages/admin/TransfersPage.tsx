@@ -10,7 +10,7 @@ import {
 
 import { transfersApi } from '@/api/transfers.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { StockTransfer } from '@/types';
+
 import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { TransferFormDrawer } from '@/features/inventory/transfers/components/TransferFormDrawer';

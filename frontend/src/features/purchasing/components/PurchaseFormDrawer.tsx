@@ -7,7 +7,7 @@ import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import type { PurchaseOrder } from '@/types';
 import toast from 'react-hot-toast';
-import { Plus, X, Search, Package } from 'lucide-react';
+import { X, Search, Package } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -20,7 +20,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const isEditing = !!orderToEdit;
 
   const [supplierId, setSupplierId] = useState('');
-  const [destinationWarehouseId, setDestinationWarehouseId] = useState('');
+  const [warehouseId, setDestinationWarehouseId] = useState('');
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
   const [lines, setLines] = useState<{ variantId: string; variantSku: string; quantity: number; unitCost: number }[]>([]);
 
@@ -47,7 +47,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   useEffect(() => {
     if (open && orderToEdit) {
       setSupplierId(orderToEdit.supplierId);
-      setDestinationWarehouseId(orderToEdit.destinationWarehouseId || '');
+      setDestinationWarehouseId(orderToEdit.warehouseId || '');
       setExpectedDeliveryDate(orderToEdit.expectedDeliveryDate ? orderToEdit.expectedDeliveryDate.split('T')[0] : '');
       setLines(orderToEdit.lines.map(l => ({
         variantId: l.variantId,
@@ -109,12 +109,12 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!supplierId) return toast.error('Seleccioná un proveedor');
-    if (!destinationWarehouseId) return toast.error('Seleccioná un depósito de destino');
+    if (!warehouseId) return toast.error('Seleccioná un depósito de destino');
     if (lines.length === 0) return toast.error('Agregá al menos un artículo a la orden');
     
     mutation.mutate({
       supplierId,
-      destinationWarehouseId,
+      warehouseId,
       expectedDeliveryDate,
       lines: lines.map(l => ({ variantId: l.variantId, orderedQuantity: l.quantity, unitCost: l.unitCost })),
     });
@@ -125,7 +125,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
       open={open}
       title={isEditing ? 'Editar Orden de Compra' : 'Nueva Orden de Compra (Borrador)'}
       onClose={onClose}
-      width="1100px"
+      width="lg"
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancelar</Button>
@@ -187,7 +187,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '13px', fontWeight: 600 }}>Destino (Depósito) *</label>
-              <select value={destinationWarehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} required>
+              <select value={warehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} required>
                 <option value="">Seleccionar Depósito...</option>
                 {(warehouses?.data || warehouses || []).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>

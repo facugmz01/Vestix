@@ -4,7 +4,7 @@ import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
 import { financeApi } from '@/api/finance.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { Banknote, FileText, ArrowDownRight, ArrowUpRight, Calendar, AlertTriangle } from 'lucide-react';
+import { Banknote, FileText, Calendar, AlertTriangle } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 
 interface Props {

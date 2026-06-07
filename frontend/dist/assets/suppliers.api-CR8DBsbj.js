@@ -1,0 +1,1 @@
+import{h as e,f as r,g as l,p as i}from"./index-GbJopHVj.js";import{c as a}from"./requestUtils-gaJB49jo.js";const g={getSuppliers:p=>e("/suppliers",{params:a(p??{})}),getSupplier:p=>e(`/suppliers/${p}`),createSupplier:p=>i("/suppliers",p),updateSupplier:(p,s)=>l(`/suppliers/${p}`,s),deleteSupplier:p=>r(`/suppliers/${p}`),getLedger:p=>e(`/suppliers/${p}/ledger`)};export{g as s};

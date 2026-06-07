@@ -166,13 +166,13 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
             value={formData.code}
             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
             required
-            helperText="Ej. A1-B2-C3"
+           
           />
           <Input
             label="Nombre Descriptivo (opcional)"
             value={formData.name || ''}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            helperText="Ej. Estantería Principal"
+           
           />
         </div>
 
@@ -195,7 +195,7 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
             label="Código de Barras (opcional)"
             value={formData.barcode || ''}
             onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-            helperText="Para uso con colectores de datos"
+           
           />
         </div>
 

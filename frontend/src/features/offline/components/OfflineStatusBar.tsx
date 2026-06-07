@@ -7,7 +7,7 @@
  */
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
-import { WifiOff, Wifi, Clock } from 'lucide-react';
+import { WifiOff, Clock } from 'lucide-react';
 
 export function OfflineStatusBar() {
   const { isOnline } = useNetworkStatus();

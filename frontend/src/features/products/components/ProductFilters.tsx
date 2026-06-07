@@ -21,7 +21,7 @@ export function ProductFilters({ total, search, onSearchChange, categoryId, onCa
 
   return (
     <FiltersBar actions={<Badge color="gray">{total} productos madre</Badge>}>
-      <SearchInput placeholder="Buscar por nombre..." onSearch={onSearchChange} defaultValue={search} />
+      <SearchInput placeholder="Buscar por nombre..." onSearch={onSearchChange} value={search} />
       
       <select
         value={categoryId}

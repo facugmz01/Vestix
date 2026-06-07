@@ -130,7 +130,7 @@ export default function IntegrationsPage() {
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
-                  <Button variant="outline" size="sm" onClick={() => handleView(integration)} icon={<Eye size={14} />} style={{ flex: 1 }}>
+                  <Button variant="ghost" size="sm" onClick={() => handleView(integration)} icon={<Eye size={14} />} style={{ flex: 1 }}>
                     Configurar
                   </Button>
                   <ActionGuard action="manage" subject="Settings">

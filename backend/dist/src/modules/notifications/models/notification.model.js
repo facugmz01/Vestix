@@ -23,5 +23,6 @@ var TemplateKey;
     TemplateKey["LOW_STOCK_ALERT"] = "LOW_STOCK_ALERT";
     TemplateKey["SHIFT_CLOSING_DISCREPANCY"] = "SHIFT_CLOSING_DISCREPANCY";
     TemplateKey["WELCOME_CUSTOMER"] = "WELCOME_CUSTOMER";
+    TemplateKey["OTP_CODE"] = "OTP_CODE";
 })(TemplateKey || (exports.TemplateKey = TemplateKey = {}));
 //# sourceMappingURL=notification.model.js.map

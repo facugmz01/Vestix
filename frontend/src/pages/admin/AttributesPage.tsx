@@ -8,7 +8,6 @@ import {
   EmptyState, TableSkeleton, ConfirmDialog
 } from '@/components/ui';
 import { productsApi } from '@/api/products.api';
-import { queryKeys } from '@/api/queryKeys';
 
 type Tab = 'categories' | 'brands' | 'attributes' | 'price-lists';
 
@@ -389,7 +388,7 @@ export default function AttributesPage() {
                 )}
               </>
             )}
-            <Button type="submit" variant="primary" icon={<Plus size={15} />} block>
+            <Button type="submit" variant="primary" icon={<Plus size={15} />}>
               Crear
             </Button>
           </form>
@@ -422,7 +421,7 @@ export default function AttributesPage() {
                       key={cat.id}
                       label={cat.name}
                       extraLabel="Categoría Padre"
-                      extraValue={cat.parent?.name ?? ''}
+                      extraValue={(cat as any).parent?.name ?? ''}
                       onSave={(name) => updateCatMut.mutate({ id: cat.id, name })}
                       onDelete={() => deleteCatMut.mutate(cat.id)}
                     />

@@ -138,7 +138,7 @@ export function TransferDetailDrawer({ open, onClose, transferId }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontWeight: 'bold' }}>{l.receivedQuantity || 0}</span>
                         {diff < 0 && <Badge color="red">Faltante ({diff})</Badge>}
-                        {diff > 0 && <Badge color="orange">Sobrante (+{diff})</Badge>}
+                        {diff > 0 && <Badge color="warning">Sobrante (+{diff})</Badge>}
                         {diff === 0 && <CheckCircle size={14} color="var(--green)" />}
                       </div>
                     );

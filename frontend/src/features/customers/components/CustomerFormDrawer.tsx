@@ -143,7 +143,7 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
             step="1000"
             value={formData.initialCreditLimit}
             onChange={(e) => setFormData({ ...formData, initialCreditLimit: Number(e.target.value) })}
-            helperText="Monto máximo permitido en Cuentas Corrientes. 0 indica pago de contado estricto."
+           
             disabled={isEditing} // Generalmente se edita desde otra vista por seguridad financiera
           />
           {isEditing && (

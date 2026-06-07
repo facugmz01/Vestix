@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const bullmq_1 = require("@nestjs/bullmq");
 const afip_producer_1 = require("./afip.producer");
 const afip_processor_1 = require("./afip.processor");
+const afip_controller_1 = require("./afip.controller");
 const prisma_module_1 = require("../../core/prisma/prisma.module");
 let AfipModule = class AfipModule {
 };
@@ -38,6 +39,7 @@ exports.AfipModule = AfipModule = __decorate([
                 },
             }),
         ],
+        controllers: [afip_controller_1.AfipController],
         providers: [afip_producer_1.AfipProducer, afip_processor_1.AfipProcessor],
         exports: [afip_producer_1.AfipProducer],
     })

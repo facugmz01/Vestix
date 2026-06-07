@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { CheckCircle, Truck, Store, CreditCard, User } from 'lucide-react';
 import { storefrontOrdersApi, type CheckoutDto } from '@/api/storefront-orders.api';
 import { useCartStore } from '@/store/cart.store';
+import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 
@@ -11,6 +12,7 @@ export default function StorefrontCheckoutPage() {
   const navigate = useNavigate();
   const prefix = storePrefix();
   const { items, totalPrice, clearCart } = useCartStore();
+  const enqueueOfflineOp = useOfflineQueueStore(s => s.enqueue);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [info, setInfo] = useState({ firstName: '', lastName: '', email: '', phone: '', docType: 'DNI', docNum: '' });
@@ -30,10 +32,56 @@ export default function StorefrontCheckoutPage() {
   }
 
   const mutation = useMutation({
-    mutationFn: (data: CheckoutDto) => storefrontOrdersApi.checkout(data),
-    onSuccess: () => {
+    mutationFn: async (data: CheckoutDto) => {
+      const orderId = data.id || crypto.randomUUID();
+      const payload = { ...data, id: orderId };
+
+      if (!navigator.onLine) {
+        enqueueOfflineOp({
+          module: 'STOREFRONT',
+          action: 'checkout',
+          description: `Pedido online offline por ${fmtCurrency(grandTotal)}`,
+          endpoint: '/storefront/checkout',
+          method: 'POST',
+          maxRetries: 5,
+          payload
+        });
+        return { offline: true, orderId, payment: null };
+      }
+
+      try {
+        const res = await storefrontOrdersApi.checkout(payload);
+        return { offline: false, res, payment: (res as any).payment };
+      } catch (err: any) {
+        const isNetworkError = !err.response || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error');
+        if (isNetworkError) {
+          enqueueOfflineOp({
+            module: 'STOREFRONT',
+            action: 'checkout',
+            description: `Pedido online offline por ${fmtCurrency(grandTotal)}`,
+            endpoint: '/storefront/checkout',
+            method: 'POST',
+            maxRetries: 5,
+            payload
+          });
+          return { offline: true, orderId, payment: null };
+        }
+        throw err;
+      }
+    },
+    onSuccess: (data: any) => {
       clearCart();
-      setStep(4);
+      if (data?.offline) {
+        toast.success('Pedido registrado fuera de línea (sincronizará cuando haya conexión) 💾');
+        setStep(4);
+      } else if (data?.payment?.initPoint) {
+        // ── Redirect to MercadoPago Checkout Pro ──
+        toast.success('Redirigiendo a Mercado Pago...');
+        window.location.href = data.payment.initPoint;
+      } else {
+        toast.success('¡Pedido registrado! ✅');
+        setStep(4);
+      }
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Error al procesar el pedido. Intente nuevamente.'),
   });

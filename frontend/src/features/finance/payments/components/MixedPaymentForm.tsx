@@ -63,7 +63,7 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h3 style={{ margin: 0, fontSize: '16px' }}>Medios de Pago</h3>
-        <Button variant="outline" size="sm" onClick={addLine} icon={<Plus size={16} />}>Dividir Pago</Button>
+        <Button variant="ghost" size="sm" onClick={addLine} icon={<Plus size={16} />}>Dividir Pago</Button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>

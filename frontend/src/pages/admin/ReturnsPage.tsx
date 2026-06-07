@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Eye, History, ArrowRightLeft } from 'lucide-react';
+import { Plus, Eye, ArrowRightLeft } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, 
@@ -10,7 +10,7 @@ import {
 
 import { returnsApi } from '@/api/returns.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { SaleReturn } from '@/types';
+
 import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { ReturnFormDrawer } from '@/features/sales/returns/components/ReturnFormDrawer';

@@ -31,7 +31,7 @@ export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<ReportTab>('overview');
   const [from, setFrom] = useState(defaults.from);
   const [to, setTo]     = useState(defaults.to);
-  const [branchId, setBranchId] = useState('');
+  const [branchId] = useState('');
 
   const { data: dashboard, isLoading: dl, refetch } = useQuery({
     queryKey: queryKeys.reports.dashboard(branchId || undefined),
@@ -117,53 +117,36 @@ export default function ReportsPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
                 <KpiCard
                   label="Ventas Hoy"
-                  value={fmtCurrency(dashboard.salesToday ?? 0)}
+                  value={fmtCurrency(dashboard.today?.revenue ?? 0)}
                   icon={<TrendingUp size={20} />}
                   color="#22c55e"
-                  trend={{ value: dashboard.salesTodayVsYesterday ?? 0, label: 'vs ayer' }}
+                  trend={{ value: 0, label: `${dashboard.today?.orders ?? 0} pedidos` }}
                 />
                 <KpiCard
                   label="Pedidos del Mes"
-                  value={String(dashboard.ordersThisMonth ?? 0)}
+                  value={String(dashboard.thisMonth?.orders ?? 0)}
                   icon={<ShoppingBag size={20} />}
                   color="#3b82f6"
                 />
                 <KpiCard
                   label="Artículos con Stock Bajo"
-                  value={String(dashboard.lowStockCount ?? 0)}
+                  value={String(dashboard.lowStockAlerts?.length ?? 0)}
                   icon={<Package size={20} />}
-                  color={dashboard.lowStockCount > 5 ? '#ef4444' : '#f59e0b'}
+                  color={(dashboard.lowStockAlerts?.length ?? 0) > 5 ? '#ef4444' : '#f59e0b'}
                 />
                 <KpiCard
                   label="Saldo Cajas Abiertas"
-                  value={fmtCurrency(dashboard.openCashBalance ?? 0)}
+                  value={fmtCurrency(dashboard.today?.cashInDrawers ?? 0)}
                   icon={<Wallet size={20} />}
                   color="#8b5cf6"
                 />
               </div>
 
-              {/* Monthly totals table if available */}
-              {dashboard.monthlySales && (
+              {/* Pending orders summary */}
+              {(dashboard.pendingOrders ?? 0) > 0 && (
                 <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-                  <h4 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700 }}>Ventas por Mes (últimos 6 meses)</h4>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '8px', textAlign: 'left' }}>Período</th>
-                        <th style={{ padding: '8px', textAlign: 'right' }}>Órdenes</th>
-                        <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dashboard.monthlySales.map((m: any, i: number) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '10px 8px', fontWeight: 600 }}>{m.period}</td>
-                          <td style={{ padding: '10px 8px', textAlign: 'right' }}>{m.orders}</td>
-                          <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700 }}>{fmtCurrency(m.total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <h4 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700 }}>Pedidos Pendientes</h4>
+                  <p style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: '#f59e0b' }}>{dashboard.pendingOrders}</p>
                 </div>
               )}
             </>

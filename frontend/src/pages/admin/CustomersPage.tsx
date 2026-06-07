@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { 
   PageContainer, Section, Table, Button, Badge, 
   SearchInput, FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip
+  ApiErrorDisplay, TableSkeleton, ConfirmDialog
 } from '@/components/ui';
 
 import { customersApi } from '@/api/customers.api';
@@ -165,7 +165,7 @@ export default function CustomersPage() {
                     ) : (
                       <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Contado</span>
                     )}
-                    {c.credit.onHold && <AlertCircle size={14} color="var(--red)" title="Crédito retenido" />}
+                    {c.credit.onHold && <AlertCircle size={14} color="var(--red)" />}
                   </div>
                 )
               },

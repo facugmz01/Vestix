@@ -17,6 +17,14 @@ export default function OnlineProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const { data: product, isLoading } = useQuery({
     queryKey: queryKeys.storefront.product(id!),
     queryFn: () => storefrontApi.getProduct(id!),
@@ -34,9 +42,9 @@ export default function OnlineProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 24px', display: 'flex', gap: '48px' }}>
+      <div style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 24px', display: 'flex', gap: '48px', flexDirection: isMobile ? 'column' : 'row' }}>
         <div style={{ flex: 1, background: '#f1f5f9', borderRadius: '16px', aspectRatio: '1' }} />
-        <div style={{ width: '420px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ width: isMobile ? '100%' : '420px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {[1,2,3,4].map(i => <div key={i} style={{ height: i === 1 ? 40 : 20, background: '#f1f5f9', borderRadius: 8 }} />)}
         </div>
       </div>
@@ -81,18 +89,18 @@ export default function OnlineProductDetailPage() {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '20px 16px' : '32px 24px' }}>
 
-      <Link to={`${prefix}/`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748b', textDecoration: 'none', fontWeight: 600, marginBottom: '32px', fontSize: '14px' }}>
+      <Link to={`${prefix}/`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748b', textDecoration: 'none', fontWeight: 600, marginBottom: '24px', fontSize: '14px' }}>
         <ChevronLeft size={18} /> Volver al catálogo
       </Link>
 
-      <div style={{ display: 'flex', gap: '48px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: isMobile ? '24px' : '48px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
         
         {/* Left: Gallery */}
-        <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderRadius: '16px', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '120px', color: '#cbd5e1', fontWeight: 900, userSelect: 'none' }}>{product.name.charAt(0).toUpperCase()}</span>
+            <span style={{ fontSize: isMobile ? '80px' : '120px', color: '#cbd5e1', fontWeight: 900, userSelect: 'none' }}>{product.name.charAt(0).toUpperCase()}</span>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             {[1, 2, 3].map(i => (
@@ -102,22 +110,22 @@ export default function OnlineProductDetailPage() {
         </div>
 
         {/* Right: Info & Buy Box */}
-        <div style={{ width: '430px', flexShrink: 0 }}>
+        <div style={{ width: isMobile ? '100%' : '430px', flexShrink: 0 }}>
 
           <div style={{ marginBottom: '20px' }}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
               {product.brand && <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{product.brand}</span>}
               {product.category && <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>/ {product.category}</span>}
             </div>
-            <h1 style={{ margin: '0 0 12px', fontSize: '28px', fontWeight: 900, lineHeight: 1.2, color: '#0f172a' }}>{product.name}</h1>
-            {product.description && <p style={{ margin: 0, fontSize: '15px', color: '#475569', lineHeight: 1.7 }}>{product.description}</p>}
+            <h1 style={{ margin: '0 0 12px', fontSize: isMobile ? '22px' : '28px', fontWeight: 900, lineHeight: 1.2, color: '#0f172a' }}>{product.name}</h1>
+            {product.description && <p style={{ margin: 0, fontSize: '14px', color: '#475569', lineHeight: 1.6 }}>{product.description}</p>}
           </div>
 
           {/* Buy Box */}
-          <div style={{ padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.06)', marginBottom: '24px' }}>
+          <div style={{ padding: '20px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.06)', marginBottom: '24px', boxSizing: 'border-box' }}>
             
             <div style={{ marginBottom: '20px' }}>
-              <span style={{ fontSize: '32px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{fmtCurrency(displayPrice)}</span>
+              <span style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{fmtCurrency(displayPrice)}</span>
               <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '8px', height: '8px', background: isAvailable ? '#22c55e' : '#ef4444', borderRadius: '50%', display: 'inline-block' }} />
                 <span style={{ fontSize: '13px', color: isAvailable ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
@@ -129,7 +137,7 @@ export default function OnlineProductDetailPage() {
             {/* Variant selectors */}
             {product.variants && product.variants.length > 0 && (
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '10px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, marginBottom: '10px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   {product.variants[0].size ? 'Talla' : 'Variante'}
                 </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -142,7 +150,7 @@ export default function OnlineProductDetailPage() {
                         onClick={() => !noStock && setSelectedVariantId(v.id)}
                         title={noStock ? 'Sin stock' : undefined}
                         style={{
-                          padding: '8px 14px',
+                          padding: '10px 16px',
                           borderRadius: '8px',
                           border: isSel ? '2px solid #3b82f6' : '1px solid #cbd5e1',
                           background: isSel ? '#eff6ff' : noStock ? '#fafafa' : '#fff',
@@ -165,9 +173,9 @@ export default function OnlineProductDetailPage() {
             {/* Qty + Add to Cart */}
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
-                <button onClick={() => setQty(Math.max(1, qty - 1))} style={{ padding: '12px 16px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontWeight: 800, fontSize: '16px' }}>−</button>
-                <div style={{ width: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, background: '#fff', fontSize: '15px' }}>{qty}</div>
-                <button onClick={() => setQty(qty + 1)} style={{ padding: '12px 16px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontWeight: 800, fontSize: '16px' }}>+</button>
+                <button onClick={() => setQty(Math.max(1, qty - 1))} style={{ padding: '10px 14px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontWeight: 800, fontSize: '16px' }}>−</button>
+                <div style={{ width: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, background: '#fff', fontSize: '15px' }}>{qty}</div>
+                <button onClick={() => setQty(qty + 1)} style={{ padding: '10px 14px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontWeight: 800, fontSize: '16px' }}>+</button>
               </div>
 
               <button
@@ -187,6 +195,7 @@ export default function OnlineProductDetailPage() {
                   justifyContent: 'center',
                   gap: '8px',
                   transition: 'background 0.3s ease',
+                  padding: '12px 16px'
                 }}
               >
                 {justAdded ? <><Check size={18} /> Agregado!</> : <><ShoppingCart size={18} /> {isAvailable ? 'Agregar al Carrito' : 'Agotado'}</>}
@@ -217,3 +226,6 @@ export default function OnlineProductDetailPage() {
     </div>
   );
 }
+
+
+

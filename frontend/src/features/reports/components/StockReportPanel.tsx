@@ -9,8 +9,6 @@ import { KpiCard, BarChart } from './ChartPrimitives';
 
 interface Props { branchId?: string; from: string; to: string; }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-
 export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
   const fmtCurrency = (v: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v);
 
@@ -35,7 +33,7 @@ export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant="outline" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>Exportar Excel</Button>
+        <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>Exportar Excel</Button>
       </div>
 
       {valuation && (
@@ -66,7 +64,7 @@ export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
           <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertTriangle size={16} color="var(--orange)" /> Alertas de Stock Bajo
           </h4>
-          {lowStock && lowStock.length > 0 && <Badge color="orange">{lowStock.length} artículos</Badge>}
+          {lowStock && lowStock.length > 0 && <Badge color="warning">{lowStock.length} artículos</Badge>}
         </div>
 
         {ll ? (
@@ -79,9 +77,9 @@ export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
             data={lowStock}
             columns={[
               { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.sku}</span> },
-              { key: 'product', header: 'Producto', render: (l) => <span>{l.productName}</span> },
-              { key: 'branch', header: 'Sucursal', render: (l) => <Badge color="gray">{l.branchName}</Badge> },
-              { key: 'stock', header: 'Stock Actual', render: (l) => <span style={{ fontWeight: 800, color: l.currentStock <= 0 ? 'var(--red)' : 'var(--orange)' }}>{l.currentStock}</span> },
+              { key: 'product', header: 'Producto', render: (l) => <span>{l.name}</span> },
+              { key: 'branch', header: 'Sucursal', render: (l) => <Badge color="gray">{l.branchId}</Badge> },
+              { key: 'stock', header: 'Stock Actual', render: (l) => <span style={{ fontWeight: 800, color: l.availableQuantity <= 0 ? 'var(--red)' : 'var(--orange)' }}>{l.availableQuantity}</span> },
               { key: 'reorder', header: 'Punto Reorden', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{l.reorderPoint}</span> },
             ]}
           />

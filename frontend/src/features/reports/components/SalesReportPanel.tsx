@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Download, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -50,15 +49,14 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant="outline" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>Exportar Excel</Button>
+        <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>Exportar Excel</Button>
       </div>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         <KpiCard label="Total Facturado" value={fmtCurrency(summary.totalRevenue)} icon={<TrendingUp size={20} />} color="#3b82f6" />
         <KpiCard label="Transacciones" value={String(summary.totalOrders)} icon={<ShoppingBag size={20} />} color="#10b981" />
-        <KpiCard label="Ticket Promedio" value={fmtCurrency(summary.averageTicket)} icon={<CreditCard size={20} />} color="#f59e0b" />
-        <KpiCard label="Clientes Únicos" value={String(summary.uniqueCustomers ?? '—')} icon={<Users size={20} />} color="#8b5cf6" />
+        <KpiCard label="Ticket Promedio" value={fmtCurrency(summary.averageOrderValue)} icon={<CreditCard size={20} />} color="#f59e0b" />
       </div>
 
       {/* COGS */}
@@ -85,8 +83,8 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
           <h4 style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: 700 }}>Top 10 Productos más Vendidos</h4>
           <BarChart
             data={topSellers.slice(0, 10).map((t, i) => ({
-              label: t.productName?.split(' ').slice(0, 2).join(' ') ?? `SKU ${i + 1}`,
-              value: t.totalQuantity,
+              label: t.name?.split(' ').slice(0, 2).join(' ') ?? `SKU ${i + 1}`,
+              value: t.totalUnitsSold,
               color: COLORS[i % COLORS.length],
             }))}
             height={180}

@@ -111,6 +111,7 @@ export const queryKeys = {
     all:         ()         => ['integrations', 'list'] as const,
     detail:      (id: string) => ['integrations', 'detail', id] as const,
     webhookLogs: (id: string, filters?: object) => withFilters(['integrations', id, 'webhooks'], filters),
+    failedAfipJobs: () => ['integrations', 'afip', 'failed-jobs'] as const,
   },
   audit: {
     logs:   (filters?: object) => withFilters(['audit', 'logs'], filters),

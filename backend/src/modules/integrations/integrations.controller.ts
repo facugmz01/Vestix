@@ -1,4 +1,4 @@
-import { Controller, Post, Headers, Body, RawBodyRequest, Req, Get, Query } from '@nestjs/common';
+import { Controller, Post, Headers, Body, RawBodyRequest, Req, Get, Query, Param, Patch } from '@nestjs/common';
 import { IntegrationsService } from './integrations.service';
 import { Request } from 'express';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
@@ -9,8 +9,62 @@ export class IntegrationsController {
 
   @Get()
   @RequirePermissions({ action: 'read', subject: 'System' })
-  getIntegrations(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return [];
+  async getIntegrations() {
+    return this.integrationsService.getAllIntegrations();
+  }
+
+  @Get(':id')
+  @RequirePermissions({ action: 'read', subject: 'System' })
+  async getIntegration(@Param('id') id: string) {
+    return this.integrationsService.getIntegration(id);
+  }
+
+  @Patch(':id/config')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async saveConfig(@Param('id') id: string, @Body('config') config: Record<string, string>) {
+    return this.integrationsService.saveConfig(id, config);
+  }
+
+  @Patch(':id/toggle')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async toggleActive(@Param('id') id: string, @Body('isActive') isActive: boolean) {
+    return this.integrationsService.toggleActive(id, isActive);
+  }
+
+  @Post(':id/test')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async testConnection(@Param('id') id: string) {
+    return this.integrationsService.testConnection(id);
+  }
+
+  @Post(':id/sync')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async triggerSync(@Param('id') id: string) {
+    return this.integrationsService.triggerSync(id);
+  }
+
+  @Get(':id/webhook-logs')
+  @RequirePermissions({ action: 'read', subject: 'System' })
+  async getWebhookLogs(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('success') success?: string,
+    @Query('direction') direction?: string,
+  ) {
+    const isSuccess = success === 'true' ? true : (success === 'false' ? false : undefined);
+    return this.integrationsService.getLogs(id, {
+      page: page ? Number(page) : undefined,
+      pageSize: pageSize ? Number(pageSize) : undefined,
+      success: isSuccess,
+      direction,
+    });
+  }
+
+  @Post(':id/webhook-logs/:logId/retry')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async retryWebhook(@Param('id') id: string, @Param('logId') logId: string) {
+    return this.integrationsService.retryLog(id, logId);
   }
 
   /**

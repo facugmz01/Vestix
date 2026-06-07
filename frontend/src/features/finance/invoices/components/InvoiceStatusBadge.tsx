@@ -8,7 +8,7 @@ interface Props {
 export function InvoiceStatusBadge({ status }: Props) {
   switch (status) {
     case 'PENDING':
-      return <Badge color="orange"><Clock size={12} /> Pendiente</Badge>;
+      return <Badge color="warning"><Clock size={12} /> Pendiente</Badge>;
     case 'ISSUED':
       return <Badge color="green"><CheckCircle size={12} /> Emitida (CAE OK)</Badge>;
     case 'FAILED':

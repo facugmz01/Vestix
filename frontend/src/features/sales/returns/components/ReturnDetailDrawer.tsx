@@ -3,7 +3,7 @@ import { Drawer, Button, Badge, Table } from '@/components/ui';
 import { returnsApi } from '@/api/returns.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { CheckCircle, XCircle, RefreshCcw, Banknote, ShieldAlert } from 'lucide-react';
+import { CheckCircle, XCircle, Banknote, ShieldAlert } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 
 interface Props {

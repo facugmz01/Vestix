@@ -1,4 +1,4 @@
-import { get, post, patch, del } from './client';
+import { get, post } from './client';
 import { cleanParams } from './requestUtils';
 import type { StockTransfer, PagedResponse } from '@/types';
 

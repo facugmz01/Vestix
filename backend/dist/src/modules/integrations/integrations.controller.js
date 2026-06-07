@@ -20,8 +20,35 @@ let IntegrationsController = class IntegrationsController {
     constructor(integrationsService) {
         this.integrationsService = integrationsService;
     }
-    getIntegrations(page, pageSize) {
-        return [];
+    async getIntegrations() {
+        return this.integrationsService.getAllIntegrations();
+    }
+    async getIntegration(id) {
+        return this.integrationsService.getIntegration(id);
+    }
+    async saveConfig(id, config) {
+        return this.integrationsService.saveConfig(id, config);
+    }
+    async toggleActive(id, isActive) {
+        return this.integrationsService.toggleActive(id, isActive);
+    }
+    async testConnection(id) {
+        return this.integrationsService.testConnection(id);
+    }
+    async triggerSync(id) {
+        return this.integrationsService.triggerSync(id);
+    }
+    async getWebhookLogs(id, page, pageSize, success, direction) {
+        const isSuccess = success === 'true' ? true : (success === 'false' ? false : undefined);
+        return this.integrationsService.getLogs(id, {
+            page: page ? Number(page) : undefined,
+            pageSize: pageSize ? Number(pageSize) : undefined,
+            success: isSuccess,
+            direction,
+        });
+    }
+    async retryWebhook(id, logId) {
+        return this.integrationsService.retryLog(id, logId);
     }
     async receiveWebhook(event, signature, payload, req) {
         return this.integrationsService.handleInboundWebhook(event, payload, signature, req.rawBody ?? Buffer.from(JSON.stringify(payload)));
@@ -31,12 +58,73 @@ exports.IntegrationsController = IntegrationsController;
 __decorate([
     (0, common_1.Get)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'System' }),
-    __param(0, (0, common_1.Query)('page')),
-    __param(1, (0, common_1.Query)('pageSize')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "getIntegrations", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'System' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "getIntegration", null);
+__decorate([
+    (0, common_1.Patch)(':id/config'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('config')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "saveConfig", null);
+__decorate([
+    (0, common_1.Patch)(':id/toggle'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('isActive')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "toggleActive", null);
+__decorate([
+    (0, common_1.Post)(':id/test'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "testConnection", null);
+__decorate([
+    (0, common_1.Post)(':id/sync'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "triggerSync", null);
+__decorate([
+    (0, common_1.Get)(':id/webhook-logs'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'System' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('pageSize')),
+    __param(3, (0, common_1.Query)('success')),
+    __param(4, (0, common_1.Query)('direction')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "getWebhookLogs", null);
+__decorate([
+    (0, common_1.Post)(':id/webhook-logs/:logId/retry'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('logId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", void 0)
-], IntegrationsController.prototype, "getIntegrations", null);
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "retryWebhook", null);
 __decorate([
     (0, common_1.Post)('woocommerce/webhook'),
     __param(0, (0, common_1.Headers)('x-wc-webhook-topic')),

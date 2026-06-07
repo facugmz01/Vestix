@@ -1,20 +1,70 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { storefrontOrdersApi } from '@/api/storefront-orders.api';
 import { queryKeys } from '@/api/queryKeys';
+import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
+import { storePrefix } from '@/utils/storefrontDomain';
 
 export default function StorefrontMyOrdersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { isAuthenticated, isLoading: authLoading } = useStorefrontAuthStore();
+  const prefix = storePrefix();
 
-  // Use page=1 for simplicity, you can add pagination
+  // Only fetch orders when authenticated
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.storefront.myOrders(),
     queryFn: () => storefrontOrdersApi.getMyOrders(1, 20),
+    enabled: isAuthenticated,
   });
 
   const orders = data?.data || [];
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
+  // ── Auth Gate ──────────────────────────────────────────────────────────────
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <div style={{ maxWidth: '500px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
+        <div style={{
+          background: '#fff', borderRadius: '20px', padding: '48px 32px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0'
+        }}>
+          <div style={{
+            width: '72px', height: '72px', borderRadius: '20px',
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 24px', boxShadow: '0 4px 20px rgba(16,185,129,0.3)'
+          }}>
+            <MessageCircle size={36} color="white" />
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '12px' }}>
+            Iniciá sesión para ver tus pedidos
+          </h2>
+          <p style={{ color: '#64748b', lineHeight: 1.6, marginBottom: '28px' }}>
+            Con tu número de WhatsApp podés acceder al historial de todos tus pedidos y seguir el estado de tus compras.
+          </p>
+          <Link
+            to={`${prefix}/login`}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#fff', textDecoration: 'none', fontWeight: 700,
+              padding: '14px 28px', borderRadius: '12px', fontSize: '15px',
+              boxShadow: '0 4px 16px rgba(16,185,129,0.35)',
+            }}
+          >
+            <MessageCircle size={18} /> Ingresar con WhatsApp
+          </Link>
+          <div style={{ marginTop: '20px' }}>
+            <Link to={`${prefix}/`} style={{ color: '#94a3b8', fontSize: '14px', textDecoration: 'none' }}>
+              ← Volver a la tienda
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusDisplay = (s: string) => {
     switch(s) {

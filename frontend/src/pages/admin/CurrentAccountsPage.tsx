@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Eye, FileText, Banknote, AlertTriangle } from 'lucide-react';
+import { FileText, Banknote, AlertTriangle } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, 
@@ -10,7 +10,7 @@ import {
 
 import { financeApi } from '@/api/finance.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { CurrentAccount } from '@/types';
+
 
 import { CurrentAccountDetailDrawer } from '@/features/finance/components/CurrentAccountDetailDrawer';
 

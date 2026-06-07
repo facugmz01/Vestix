@@ -122,7 +122,7 @@ export function PromotionFormDrawer({ open, onClose, promoToEdit }: Props) {
             step="0.1" 
             value={formData.value} 
             onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })} 
-            helperText="Ej: 15 (para 15%), o 2 (para un 2x1)"
+           
           />
         </div>
 

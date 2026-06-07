@@ -30,7 +30,7 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
       toast.success('Reserva concretada (Consumida).');
       queryClient.invalidateQueries({ queryKey: queryKeys.reservations.detail(reservationId!) });
       queryClient.invalidateQueries({ queryKey: queryKeys.reservations.all() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stock.all() });
     },
     onError: (err: any) => toast.error(err.message || 'Error al consumir'),
   });
@@ -41,7 +41,7 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
       toast.success('Reserva liberada. El stock vuelve a estar disponible.');
       queryClient.invalidateQueries({ queryKey: queryKeys.reservations.detail(reservationId!) });
       queryClient.invalidateQueries({ queryKey: queryKeys.reservations.all() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stock.all() });
     },
     onError: (err: any) => toast.error(err.message || 'Error al liberar'),
   });
@@ -100,7 +100,7 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
             <Badge color={getStatusColor(res.status)}>{res.status}</Badge>
             {res.status === 'ACTIVE' && (
-              <Badge color={isExpiredLocally ? 'red' : 'orange'} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <Badge color={isExpiredLocally ? 'red' : 'warning'} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                 <Clock size={12} /> Expira en: {timeLeft}
               </Badge>
             )}

@@ -125,7 +125,7 @@ export function TransferFormDrawer({ open, onClose }: Props) {
             <div style={{ width: '100px' }}>
               <Input type="number" min="1" value={variantQty} onChange={e => setVariantQty(Number(e.target.value))} />
             </div>
-            <Button type="button" variant="outline" onClick={addLine}><Plus size={16} /></Button>
+            <Button type="button" variant="ghost" onClick={addLine}><Plus size={16} /></Button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

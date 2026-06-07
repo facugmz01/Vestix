@@ -1,8 +1,8 @@
 import { get, post } from './client';
-import { cleanParams } from './requestUtils';
 import type { SaleOrder, PagedResponse } from '@/types';
 
 export interface CheckoutDto {
+  id?: string;
   customerInfo: {
     firstName: string;
     lastName: string;

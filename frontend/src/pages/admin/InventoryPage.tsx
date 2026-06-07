@@ -5,7 +5,7 @@ import { SlidersHorizontal, History, Settings2 } from 'lucide-react';
 import { 
   PageContainer, Section, Table, Button, Badge, 
   SearchInput, FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, StatusChip
+  ApiErrorDisplay, TableSkeleton
 } from '@/components/ui';
 
 import { inventoryApi, type EnrichedStockLevel } from '@/api/inventory.api';

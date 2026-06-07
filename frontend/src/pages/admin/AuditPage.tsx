@@ -130,9 +130,11 @@ export default function AuditPage() {
                 render: (l: AuditLog) => {
                   const m = ACTION_META[l.action] ?? { label: l.action, color: 'gray', icon: null };
                   return (
-                    <Badge color={m.color as any} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      {m.icon} {m.label}
-                    </Badge>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Badge color={m.color as any}>
+                        {m.icon} {m.label}
+                      </Badge>
+                    </div>
                   );
                 }
               },
@@ -173,7 +175,7 @@ export default function AuditPage() {
               {
                 key: 'changes', header: 'Cambios',
                 render: (l: AuditLog) => l.changes && Object.keys(l.changes).length > 0
-                  ? <Badge color="orange">{Object.keys(l.changes).length} campos</Badge>
+                  ? <div><Badge color="warning">{Object.keys(l.changes).length} campos</Badge></div>
                   : <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>—</span>
               },
               {

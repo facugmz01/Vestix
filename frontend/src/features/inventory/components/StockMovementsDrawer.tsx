@@ -1,7 +1,6 @@
 import { Drawer, Table, Badge } from '@/components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { inventoryApi, type EnrichedStockLevel } from '@/api/inventory.api';
-import { queryKeys } from '@/api/queryKeys';
 import { History, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 
 interface Props {

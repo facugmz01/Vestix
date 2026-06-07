@@ -16,7 +16,8 @@ export declare enum TemplateKey {
     PAYMENT_RECEIVED = "PAYMENT_RECEIVED",
     LOW_STOCK_ALERT = "LOW_STOCK_ALERT",
     SHIFT_CLOSING_DISCREPANCY = "SHIFT_CLOSING_DISCREPANCY",
-    WELCOME_CUSTOMER = "WELCOME_CUSTOMER"
+    WELCOME_CUSTOMER = "WELCOME_CUSTOMER",
+    OTP_CODE = "OTP_CODE"
 }
 export interface NotificationTemplate {
     key: TemplateKey;

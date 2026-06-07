@@ -4,7 +4,7 @@ import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
 import { treasuryApi } from '@/api/treasury.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { Wallet, ShieldAlert, CheckCircle, Calculator, AlertTriangle, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { Wallet, CheckCircle, Calculator, AlertTriangle, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { TreasuryTransactionModal } from './TreasuryTransactionModal';
 
@@ -98,7 +98,7 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
             <h4 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Wallet size={16} /> Movimientos Manuales</h4>
             {shift.status === 'OPEN' && (
               <ActionGuard action="manage" subject="Finance">
-                <Button variant="outline" size="sm" onClick={() => setTransactionModalOpen(true)}>+ Retiro / Ingreso</Button>
+                <Button variant="ghost" size="sm" onClick={() => setTransactionModalOpen(true)}>+ Retiro / Ingreso</Button>
               </ActionGuard>
             )}
           </div>

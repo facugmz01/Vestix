@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Eye, Wallet, ShieldAlert, CheckCircle } from 'lucide-react';
+import { Eye, Wallet, CheckCircle } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, 
@@ -92,7 +92,7 @@ export default function CashSessionsPage() {
                   if (s.status === 'OPEN') return <span style={{ color: 'var(--text-muted)' }}>Operando...</span>;
                   const diff = s.difference || 0;
                   if (diff === 0) return <Badge color="green"><CheckCircle size={12} /> Exacto</Badge>;
-                  return <Badge color={diff < 0 ? 'red' : 'orange'}>{diff < 0 ? 'Faltante' : 'Sobrante'} {fmtCurrency(diff)}</Badge>;
+                  return <Badge color={diff < 0 ? 'red' : 'warning'}>{diff < 0 ? 'Faltante' : 'Sobrante'} {fmtCurrency(diff)}</Badge>;
                 }
               },
               { 
