@@ -3,9 +3,15 @@ import { AppModule } from './app.module';
 import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { GlobalHttpExceptionFilter } from './core/filters/http-exception.filter';
 
 async function bootstrap() {
+  // ─── CONFIGURATION VALIDATION ──────────────────────────────────────────────
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'fallback_secret_for_dev_only') {
+    throw new Error('FATAL ERROR: JWT_SECRET environment variable is missing or insecure!');
+  }
+
   // ─── APP CREATION ───────────────────────────────────────────────────────────
   const app = await NestFactory.create(AppModule, {
     // nestjs-pino replaces NestJS default logger with structured JSON output
@@ -18,11 +24,12 @@ async function bootstrap() {
 
   // ─── MIDDLEWARE ─────────────────────────────────────────────────────────────
   app.use(cookieParser());
+  app.use(helmet());
   
-  // Increase payload limit for base64 images
+  // Safe payload limit for JSON body requests
   const bodyParser = require('body-parser');
-  app.use(bodyParser.json({ limit: '50mb' }));
-  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+  app.use(bodyParser.json({ limit: '2mb' }));
+  app.use(bodyParser.urlencoded({ limit: '2mb', extended: true }));
 
   // ─── CORS ───────────────────────────────────────────────────────────────────
   const allowedOrigins: string[] = [

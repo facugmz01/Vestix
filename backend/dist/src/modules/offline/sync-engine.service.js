@@ -19,15 +19,16 @@ const returns_service_1 = require("../sales/returns/returns.service");
 const cash_service_1 = require("../finance/cash/cash.service");
 const audit_service_1 = require("../audit/audit.service");
 const audit_log_model_1 = require("../audit/models/audit-log.model");
+const prisma_service_1 = require("../../core/prisma/prisma.service");
 let SyncEngineService = SyncEngineService_1 = class SyncEngineService {
-    constructor(conflictResolution, checkoutOrchestrator, returnsService, cashService, auditService) {
+    constructor(prisma, conflictResolution, checkoutOrchestrator, returnsService, cashService, auditService) {
+        this.prisma = prisma;
         this.conflictResolution = conflictResolution;
         this.checkoutOrchestrator = checkoutOrchestrator;
         this.returnsService = returnsService;
         this.cashService = cashService;
         this.auditService = auditService;
         this.logger = new common_1.Logger(SyncEngineService_1.name);
-        this.syncLog = [];
     }
     async processBatch(batch) {
         this.logger.log(`[Sync] Received batch ${batch.batchId} from device ${batch.deviceId} with ${batch.operations.length} operations`);
@@ -61,19 +62,48 @@ let SyncEngineService = SyncEngineService_1 = class SyncEngineService {
             results,
         };
     }
+    async getSyncLogs() {
+        return this.prisma.offlineSyncLog.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 100,
+        });
+    }
     async processSingleOperation(op) {
-        const existing = this.syncLog.find(l => l.clientGeneratedId === op.clientGeneratedId);
+        const existing = await this.prisma.offlineSyncLog.findUnique({
+            where: { clientGeneratedId: op.clientGeneratedId },
+        });
         if (existing) {
             this.logger.log(`[Sync] Skipping duplicate operation ${op.clientGeneratedId} (already ${existing.status})`);
             return { clientGeneratedId: op.clientGeneratedId, status: existing.status, detail: 'Duplicate — already processed' };
         }
-        op.status = sync_operation_model_1.SyncStatus.PROCESSING;
-        op.serverTimestamp = new Date();
-        this.syncLog.push(op);
+        await this.prisma.offlineSyncLog.create({
+            data: {
+                clientGeneratedId: op.clientGeneratedId,
+                branchId: op.branchId,
+                userId: op.userId,
+                type: op.type,
+                payload: op.payload || {},
+                clientTimestamp: new Date(op.clientTimestamp),
+                status: sync_operation_model_1.SyncStatus.PROCESSING,
+                serverTimestamp: new Date(),
+            },
+        });
         try {
+            let finalStatus = sync_operation_model_1.SyncStatus.APPLIED;
+            let conflictDetails = null;
             switch (op.type) {
                 case sync_operation_model_1.SyncOperationType.CHECKOUT:
-                    await this.applyCheckout(op);
+                    const stockConflicts = await this.conflictResolution.detectCheckoutConflicts(op);
+                    if (stockConflicts.length > 0) {
+                        conflictDetails = stockConflicts[0];
+                        finalStatus = sync_operation_model_1.SyncStatus.CONFLICT;
+                        this.logger.warn(`[Sync] Checkout ${op.clientGeneratedId} has stock conflicts — applying with CLIENT_WINS strategy`);
+                    }
+                    await this.checkoutOrchestrator.processCheckout({
+                        id: op.clientGeneratedId,
+                        ...op.payload,
+                        createdAtIso: op.clientTimestamp.toString(),
+                    });
                     break;
                 case sync_operation_model_1.SyncOperationType.RETURN:
                     await this.returnsService.processReturn(op.payload);
@@ -82,49 +112,47 @@ let SyncEngineService = SyncEngineService_1 = class SyncEngineService {
                     await this.cashService.recordExpense(op.payload.accountId, op.payload.amount, op.payload.description, op.userId);
                     break;
                 case sync_operation_model_1.SyncOperationType.STOCK_COUNT:
-                    await this.applyStockCount(op);
+                    const countConflicts = await this.conflictResolution.detectStockCountConflicts(op);
+                    if (countConflicts.length > 0) {
+                        finalStatus = sync_operation_model_1.SyncStatus.CONFLICT;
+                        conflictDetails = countConflicts[0];
+                        this.logger.warn(`[Sync] Stock count ${op.clientGeneratedId} requires MANAGER_REVIEW`);
+                    }
+                    else {
+                        this.logger.log(`[Sync] Stock count ${op.clientGeneratedId} clean — applying adjustments`);
+                    }
                     break;
                 default:
                     throw new Error(`Unknown operation type: ${op.type}`);
             }
-            op.status = sync_operation_model_1.SyncStatus.APPLIED;
-            op.appliedAt = new Date();
-            return { clientGeneratedId: op.clientGeneratedId, status: sync_operation_model_1.SyncStatus.APPLIED };
+            await this.prisma.offlineSyncLog.update({
+                where: { clientGeneratedId: op.clientGeneratedId },
+                data: {
+                    status: finalStatus,
+                    conflictDetails: conflictDetails || undefined,
+                    appliedAt: new Date(),
+                },
+            });
+            return { clientGeneratedId: op.clientGeneratedId, status: finalStatus };
         }
         catch (err) {
-            op.status = sync_operation_model_1.SyncStatus.REJECTED;
             this.logger.error(`[Sync] Operation ${op.clientGeneratedId} REJECTED: ${err.message}`);
+            await this.prisma.offlineSyncLog.update({
+                where: { clientGeneratedId: op.clientGeneratedId },
+                data: {
+                    status: sync_operation_model_1.SyncStatus.REJECTED,
+                    conflictDetails: { error: err.message },
+                },
+            });
             return { clientGeneratedId: op.clientGeneratedId, status: sync_operation_model_1.SyncStatus.REJECTED, detail: err.message };
         }
-    }
-    async applyCheckout(op) {
-        const stockConflicts = await this.conflictResolution.detectCheckoutConflicts(op);
-        if (stockConflicts.length > 0) {
-            op.conflictDetails = stockConflicts[0];
-            op.status = sync_operation_model_1.SyncStatus.CONFLICT;
-            this.logger.warn(`[Sync] Checkout ${op.clientGeneratedId} has stock conflicts — applying with CLIENT_WINS strategy`);
-        }
-        await this.checkoutOrchestrator.processCheckout({
-            id: op.clientGeneratedId,
-            ...op.payload,
-            createdAtIso: op.clientTimestamp.toString(),
-        });
-    }
-    async applyStockCount(op) {
-        const countConflicts = await this.conflictResolution.detectStockCountConflicts(op);
-        if (countConflicts.length > 0) {
-            op.status = sync_operation_model_1.SyncStatus.CONFLICT;
-            op.conflictDetails = countConflicts[0];
-            this.logger.warn(`[Sync] Stock count ${op.clientGeneratedId} requires MANAGER_REVIEW`);
-            return;
-        }
-        this.logger.log(`[Sync] Stock count ${op.clientGeneratedId} clean — applying adjustments`);
     }
 };
 exports.SyncEngineService = SyncEngineService;
 exports.SyncEngineService = SyncEngineService = SyncEngineService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [conflict_resolution_service_1.ConflictResolutionService,
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        conflict_resolution_service_1.ConflictResolutionService,
         checkout_orchestrator_1.CheckoutOrchestrator,
         returns_service_1.ReturnsService,
         cash_service_1.CashService,

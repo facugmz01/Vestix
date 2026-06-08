@@ -4,33 +4,26 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { RbacModule } from './core/rbac/rbac.module';
+import { RedisModule } from './core/redis/redis.module';
+import { BullModule } from '@nestjs/bullmq';
+
 
 // --- Importación de todos los módulos del sistema ---
-import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { SalesModule } from './modules/sales/sales.module';
-import { InventoryModule } from './modules/inventory/inventory.module';
-import { FinanceModule } from './modules/finance/finance.module';
-import { CustomersModule } from './modules/customers/customers.module';
-import { PricingModule } from './modules/pricing/pricing.module';
-import { AfipModule } from './modules/afip/afip.module';
+import { IdentityModule } from './domains/identity/identity.module';
+import { CatalogModule } from './domains/catalog/catalog.module';
+import { SalesModule } from './domains/sales/sales.module';
+import { LogisticsModule } from './domains/logistics/logistics.module';
+import { ProcurementModule } from './domains/procurement/procurement.module';
+import { FinanceModule } from './domains/finance/finance.module';
+import { InvoicingModule } from './domains/invoicing/invoicing.module';
+import { NotificationsModule } from './domains/notifications/notifications.module';
+import { IntegrationsModule } from './domains/integrations/integrations.module';
+
 import { AuditModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
-import { ProductsModule } from './modules/products/products.module';
-import { PurchasingModule } from './modules/purchasing/purchasing.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ReportsModule } from './modules/reports/reports.module';
-import { IntegrationsModule } from './modules/integrations/integrations.module';
-import { BranchesModule } from './modules/branches/branches.module';
-import { WarehousesModule } from './modules/warehouses/warehouses.module';
-import { PaymentsModule } from './modules/payments/payments.module';
-import { NotificationsModule } from './modules/notifications/notifications.module';
-import { InvoicingModule } from './modules/invoicing/invoicing.module';
-import { SuppliersModule } from './modules/suppliers/suppliers.module';
-import { PosModule } from './modules/pos/pos.module';
-import { IdentifiersModule } from './modules/identifiers/identifiers.module';
 
-import { CatalogModule } from './modules/catalog/catalog.module';
 
 @Module({
   imports: [
@@ -54,32 +47,28 @@ import { CatalogModule } from './modules/catalog/catalog.module';
     // 3. Base de Datos y Core
     PrismaModule,
     RbacModule,
+    RedisModule,
+    BullModule.forRoot({
+      connection: {
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      },
+    }),
 
     // 4. Módulos de Funcionalidad
-    AuthModule,
-    UsersModule,
+    IdentityModule,
+    CatalogModule,
     SalesModule,
-    InventoryModule,
+    LogisticsModule,
+    ProcurementModule,
     FinanceModule,
-    CustomersModule,
-    PricingModule,
-    AfipModule,
+    InvoicingModule,
+    NotificationsModule,
+    IntegrationsModule,
     AuditModule,
     HealthModule,
-    ProductsModule,
-    PurchasingModule,
     SettingsModule,
     ReportsModule,
-    IntegrationsModule,
-    BranchesModule,
-    WarehousesModule,
-    PaymentsModule,
-    NotificationsModule,
-    InvoicingModule,
-    SuppliersModule,
-    PosModule,
-    IdentifiersModule,
-    CatalogModule,
   ],
 })
 export class AppModule {}

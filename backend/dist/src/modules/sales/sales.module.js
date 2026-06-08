@@ -30,7 +30,7 @@ exports.SalesModule = SalesModule = __decorate([
             afip_module_1.AfipModule,
             passport_1.PassportModule,
             jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET || 'fallback_secret_for_dev_only',
+                secret: process.env.JWT_SECRET,
                 signOptions: { expiresIn: '7d' },
             }),
         ],

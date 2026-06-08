@@ -105,6 +105,8 @@ model Warehouse {
   saleOrders           SaleOrder[]
   purchaseOrders       PurchaseOrder[]
   goodsReceipts        GoodsReceipt[]
+  sourceTransfers      StockTransfer[]     @relation("TransferSource")
+  destinationTransfers StockTransfer[]     @relation("TransferDestination")
   
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
@@ -179,6 +181,8 @@ model ProductVariant {
   // Relaciones formalizadas agregadas
   returnLines      SaleReturnLine[]
   receiptLines     GoodsReceiptLine[]
+  transferLines    StockTransferLine[]
+  wcMapping        WcVariantMapping?
 }
 
 // Soporte para múltiples códigos de barra por variante
@@ -399,7 +403,7 @@ model InventoryMovement {
 
 model StockLevel {
   id                String             @id @default(uuid())
-  variantId         String             @unique // Se asegura que sea único para evitar inconsistencias
+  variantId         String             // campo sin @unique - la unicidad la garantiza @@unique([variantId, warehouseId])
   variant           ProductVariant     @relation(fields: [variantId], references: [id])
   warehouseId       String
   warehouse         Warehouse          @relation(fields: [warehouseId], references: [id])
@@ -432,6 +436,39 @@ model StockReservation {
   @@index([status, expiresAt])
   @@index([orderId])
   @@index([cartId])
+}
+
+// Traslados inter-deposito - persistidos en DB (reemplaza array en memoria)
+model StockTransfer {
+  id                     String              @id @default(uuid())
+  sourceWarehouseId      String
+  sourceWarehouse        Warehouse           @relation("TransferSource", fields: [sourceWarehouseId], references: [id])
+  destinationWarehouseId String
+  destinationWarehouse   Warehouse           @relation("TransferDestination", fields: [destinationWarehouseId], references: [id])
+  status                 String              @default("DRAFT") // DRAFT | IN_TRANSIT | COMPLETED | CANCELLED
+  trackingNumber         String?
+  notes                  String?
+  requestedByUserId      String?
+  dispatchedAt           DateTime?
+  receivedAt             DateTime?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  lines                  StockTransferLine[]
+
+  @@index([status])
+  @@index([sourceWarehouseId])
+  @@index([destinationWarehouseId])
+}
+
+model StockTransferLine {
+  id               String         @id @default(uuid())
+  transferId       String
+  transfer         StockTransfer  @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  variantId        String
+  variant          ProductVariant @relation(fields: [variantId], references: [id])
+  quantity         Int
+  receivedQuantity Int?           // Cantidad efectivamente recibida
+  createdAt        DateTime       @default(now())
 }
 
 // ==========================================
@@ -679,3 +716,31 @@ model IntegrationLog {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model OfflineSyncLog {
+  id                String   @id @default(uuid())
+  clientGeneratedId String   @unique
+  branchId          String
+  userId            String
+  type              String   // SyncOperationType
+  payload           Json
+  clientTimestamp   DateTime
+  status            String   // SyncStatus
+  conflictDetails   Json?    // Optional conflict info
+  appliedAt         DateTime?
+  serverTimestamp   DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model WcVariantMapping {
+  id            String   @id @default(uuid())
+  variantId     String   @unique
+  wcProductId   Int
+  wcVariationId Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  variant       ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+}
+

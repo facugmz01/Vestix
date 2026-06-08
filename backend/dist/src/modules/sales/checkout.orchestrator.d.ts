@@ -2,13 +2,15 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { PricingService } from '../pricing/pricing.service';
 import { RulesEngineService } from '../pricing/rules-engine.service';
 import { AfipProducer } from '../afip/afip.producer';
+import { InventoryService } from '../inventory/inventory.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 export declare class CheckoutOrchestrator {
     private readonly prisma;
     private readonly pricingService;
     private readonly rulesEngine;
     private readonly afipProducer;
-    constructor(prisma: PrismaService, pricingService: PricingService, rulesEngine: RulesEngineService, afipProducer: AfipProducer);
+    private readonly inventoryService;
+    constructor(prisma: PrismaService, pricingService: PricingService, rulesEngine: RulesEngineService, afipProducer: AfipProducer, inventoryService: InventoryService);
     processCheckout(dto: CreateOrderDto): Promise<{
         status: string;
         order: {

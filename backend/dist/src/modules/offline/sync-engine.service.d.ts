@@ -4,15 +4,16 @@ import { CheckoutOrchestrator } from '../sales/checkout.orchestrator';
 import { ReturnsService } from '../sales/returns/returns.service';
 import { CashService } from '../finance/cash/cash.service';
 import { AuditService } from '../audit/audit.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
 export declare class SyncEngineService {
+    private readonly prisma;
     private readonly conflictResolution;
     private readonly checkoutOrchestrator;
     private readonly returnsService;
     private readonly cashService;
     private readonly auditService;
     private readonly logger;
-    private readonly syncLog;
-    constructor(conflictResolution: ConflictResolutionService, checkoutOrchestrator: CheckoutOrchestrator, returnsService: ReturnsService, cashService: CashService, auditService: AuditService);
+    constructor(prisma: PrismaService, conflictResolution: ConflictResolutionService, checkoutOrchestrator: CheckoutOrchestrator, returnsService: ReturnsService, cashService: CashService, auditService: AuditService);
     processBatch(batch: SyncBatch): Promise<{
         batchId: string;
         total: number;
@@ -25,7 +26,20 @@ export declare class SyncEngineService {
             detail?: string;
         }[];
     }>;
+    getSyncLogs(): Promise<{
+        id: string;
+        clientGeneratedId: string;
+        branchId: string;
+        userId: string;
+        type: string;
+        payload: import(".prisma/client").Prisma.JsonValue;
+        clientTimestamp: Date;
+        status: string;
+        conflictDetails: import(".prisma/client").Prisma.JsonValue | null;
+        appliedAt: Date | null;
+        serverTimestamp: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
     private processSingleOperation;
-    private applyCheckout;
-    private applyStockCount;
 }

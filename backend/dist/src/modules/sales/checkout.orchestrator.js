@@ -48,13 +48,15 @@ const prisma_service_1 = require("../../core/prisma/prisma.service");
 const pricing_service_1 = require("../pricing/pricing.service");
 const rules_engine_service_1 = require("../pricing/rules-engine.service");
 const afip_producer_1 = require("../afip/afip.producer");
+const inventory_service_1 = require("../inventory/inventory.service");
 const crypto = __importStar(require("crypto"));
 let CheckoutOrchestrator = class CheckoutOrchestrator {
-    constructor(prisma, pricingService, rulesEngine, afipProducer) {
+    constructor(prisma, pricingService, rulesEngine, afipProducer, inventoryService) {
         this.prisma = prisma;
         this.pricingService = pricingService;
         this.rulesEngine = rulesEngine;
         this.afipProducer = afipProducer;
+        this.inventoryService = inventoryService;
     }
     async processCheckout(dto) {
         const existingOrder = await this.prisma.saleOrder.findUnique({
@@ -148,12 +150,19 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
                 }
             }
             if (!isQuote && dto.warehouseId) {
-                await this.deductStock(tx, {
-                    orderId: dto.id,
-                    branchId: dto.branchId,
-                    warehouseId: dto.warehouseId,
-                    lines: finalLinesForDB
-                });
+                if (dto.status === 'PENDING_PAYMENT') {
+                    for (const line of finalLinesForDB) {
+                        await this.inventoryService.reserveStock(line.variantId, dto.warehouseId, dto.branchId, line.quantity, dto.id, tx);
+                    }
+                }
+                else {
+                    await this.deductStock(tx, {
+                        orderId: dto.id,
+                        branchId: dto.branchId,
+                        warehouseId: dto.warehouseId,
+                        lines: finalLinesForDB
+                    });
+                }
             }
             const order = await tx.saleOrder.create({
                 data: {
@@ -239,39 +248,16 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
     }
     async deductStock(tx, data) {
         for (const line of data.lines) {
-            await tx.inventoryMovement.create({
-                data: {
-                    variantId: line.variantId,
-                    sourceWarehouseId: data.warehouseId,
-                    type: 'SALE_EXIT',
-                    quantity: line.quantity,
-                    unitCost: line.basePrice,
-                    referenceId: data.orderId
-                }
-            });
-            const stock = await tx.stockLevel.findUnique({
-                where: { variantId_warehouseId: { variantId: line.variantId, warehouseId: data.warehouseId } }
-            });
-            if (stock) {
-                await tx.stockLevel.update({
-                    where: { id: stock.id },
-                    data: {
-                        physicalQuantity: { decrement: line.quantity },
-                        availableQuantity: { decrement: line.quantity }
-                    }
-                });
-            }
-            else {
-                await tx.stockLevel.create({
-                    data: {
-                        variantId: line.variantId,
-                        warehouseId: data.warehouseId,
-                        branchId: data.branchId,
-                        physicalQuantity: -line.quantity,
-                        availableQuantity: -line.quantity
-                    }
-                });
-            }
+            await this.inventoryService.recordMovement({
+                variantId: line.variantId,
+                sourceWarehouseId: data.warehouseId,
+                destinationWarehouseId: null,
+                branchId: data.branchId,
+                type: 'SALE_EXIT',
+                quantity: line.quantity,
+                unitCost: line.basePrice,
+                referenceId: data.orderId
+            }, tx);
         }
     }
     async cancelOrder(id) {
@@ -290,6 +276,7 @@ exports.CheckoutOrchestrator = CheckoutOrchestrator = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         pricing_service_1.PricingService,
         rules_engine_service_1.RulesEngineService,
-        afip_producer_1.AfipProducer])
+        afip_producer_1.AfipProducer,
+        inventory_service_1.InventoryService])
 ], CheckoutOrchestrator);
 //# sourceMappingURL=checkout.orchestrator.js.map

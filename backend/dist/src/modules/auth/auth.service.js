@@ -59,8 +59,6 @@ let AuthService = class AuthService {
         }
         const isMatch = await bcrypt.compare(pass, user.password);
         if (!isMatch) {
-            if (user.password === pass)
-                return { user };
             throw new common_1.UnauthorizedException('Contraseña incorrecta');
         }
         return { user };

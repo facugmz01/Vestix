@@ -52,6 +52,7 @@ const checkout_orchestrator_1 = require("./checkout.orchestrator");
 const sales_service_1 = require("./sales.service");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
 const mercadopago_service_1 = require("./mercadopago.service");
+const inventory_service_1 = require("../inventory/inventory.service");
 const storefront_auth_guard_1 = require("./storefront-auth.guard");
 const crypto = __importStar(require("crypto"));
 const SHIPPING_RATES = {
@@ -59,11 +60,12 @@ const SHIPPING_RATES = {
     PICKUP: 0,
 };
 let StorefrontController = StorefrontController_1 = class StorefrontController {
-    constructor(checkoutOrchestrator, salesService, prisma, mercadoPagoService) {
+    constructor(checkoutOrchestrator, salesService, prisma, mercadoPagoService, inventoryService) {
         this.checkoutOrchestrator = checkoutOrchestrator;
         this.salesService = salesService;
         this.prisma = prisma;
         this.mercadoPagoService = mercadoPagoService;
+        this.inventoryService = inventoryService;
         this.logger = new common_1.Logger(StorefrontController_1.name);
     }
     async checkout(dto, req) {
@@ -184,12 +186,50 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
         }
         return order;
     }
-    async mercadoPagoWebhook(body) {
+    async mercadoPagoWebhook(body, req) {
         this.logger.log(`[MercadoPago Webhook] Received: ${JSON.stringify(body)}`);
         const type = body?.type || body?.action;
         const resourceId = body?.data?.id || body?.resource;
         if (!type || !resourceId) {
             return { received: true };
+        }
+        const mpWebhookSecret = process.env.MP_WEBHOOK_SECRET;
+        if (!mpWebhookSecret) {
+            this.logger.warn('[MercadoPago Webhook] No MP_WEBHOOK_SECRET configured, skipping signature verification');
+        }
+        else {
+            const xSignature = req.headers['x-signature'];
+            const xRequestId = req.headers['x-request-id'];
+            if (!xSignature || !xRequestId) {
+                this.logger.warn('[MercadoPago Webhook] Missing x-signature or x-request-id header, rejecting request');
+                return { received: false, error: 'Signature headers missing' };
+            }
+            try {
+                const parts = xSignature.split(',');
+                const tsPart = parts.find(p => p.trim().startsWith('ts='));
+                const v1Part = parts.find(p => p.trim().startsWith('v1='));
+                if (!tsPart || !v1Part) {
+                    this.logger.warn('[MercadoPago Webhook] Invalid x-signature header format');
+                    return { received: false, error: 'Invalid signature format' };
+                }
+                const ts = tsPart.split('=')[1];
+                const v1 = v1Part.split('=')[1];
+                const dataId = resourceId.toString().toLowerCase();
+                const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+                const crypto = require('crypto');
+                const calculatedHash = crypto
+                    .createHmac('sha256', mpWebhookSecret)
+                    .update(manifest)
+                    .digest('hex');
+                if (calculatedHash !== v1) {
+                    this.logger.warn('[MercadoPago Webhook] Signature mismatch! Request rejected.');
+                    return { received: false, error: 'Signature mismatch' };
+                }
+            }
+            catch (err) {
+                this.logger.error(`[MercadoPago Webhook] Signature verification failed: ${err.message}`);
+                return { received: false, error: 'Signature verification error' };
+            }
         }
         if (type === 'payment' || type === 'payment.updated') {
             try {
@@ -214,18 +254,44 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
                 }
                 this.logger.log(`[MercadoPago Webhook] Payment ${resourceId} → Order ${orderId} → Status: ${status}`);
                 if (status === 'approved') {
-                    await this.prisma.saleOrder.updateMany({
+                    const order = await this.prisma.saleOrder.findUnique({
                         where: { id: orderId },
-                        data: { status: 'COMPLETED' },
+                        include: { lines: true },
                     });
-                    this.logger.log(`[MercadoPago Webhook] ✓ Order ${orderId} marked as COMPLETED`);
+                    if (order && order.status === 'PENDING_PAYMENT') {
+                        await this.prisma.$transaction(async (tx) => {
+                            await tx.saleOrder.update({
+                                where: { id: orderId },
+                                data: { status: 'COMPLETED' },
+                            });
+                            if (order.warehouseId) {
+                                for (const line of order.lines) {
+                                    await this.inventoryService.consumeReservation(line.variantId, order.warehouseId, order.branchId, line.quantity, order.id, tx);
+                                }
+                            }
+                        });
+                        this.logger.log(`[MercadoPago Webhook] ✓ Order ${orderId} marked as COMPLETED and reservations consumed.`);
+                    }
                 }
                 else if (status === 'rejected' || status === 'cancelled') {
-                    await this.prisma.saleOrder.updateMany({
+                    const order = await this.prisma.saleOrder.findUnique({
                         where: { id: orderId },
-                        data: { status: 'CANCELLED' },
+                        include: { lines: true },
                     });
-                    this.logger.log(`[MercadoPago Webhook] ✗ Order ${orderId} marked as CANCELLED`);
+                    if (order && order.status === 'PENDING_PAYMENT') {
+                        await this.prisma.$transaction(async (tx) => {
+                            await tx.saleOrder.update({
+                                where: { id: orderId },
+                                data: { status: 'CANCELLED' },
+                            });
+                            if (order.warehouseId) {
+                                for (const line of order.lines) {
+                                    await this.inventoryService.releaseReservation(line.variantId, order.warehouseId, order.branchId, line.quantity, order.id, tx);
+                                }
+                            }
+                        });
+                        this.logger.log(`[MercadoPago Webhook] ✗ Order ${orderId} marked as CANCELLED and reservations released.`);
+                    }
                 }
             }
             catch (err) {
@@ -267,8 +333,9 @@ __decorate([
     (0, common_1.Post)('webhooks/mercadopago'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], StorefrontController.prototype, "mercadoPagoWebhook", null);
 exports.StorefrontController = StorefrontController = StorefrontController_1 = __decorate([
@@ -276,6 +343,7 @@ exports.StorefrontController = StorefrontController = StorefrontController_1 = _
     __metadata("design:paramtypes", [checkout_orchestrator_1.CheckoutOrchestrator,
         sales_service_1.SalesService,
         prisma_service_1.PrismaService,
-        mercadopago_service_1.MercadoPagoService])
+        mercadopago_service_1.MercadoPagoService,
+        inventory_service_1.InventoryService])
 ], StorefrontController);
 //# sourceMappingURL=storefront.controller.js.map

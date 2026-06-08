@@ -20,12 +20,6 @@ exports.AfipModule = AfipModule = __decorate([
     (0, common_1.Module)({
         imports: [
             prisma_module_1.PrismaModule,
-            bullmq_1.BullModule.forRoot({
-                connection: {
-                    host: process.env.REDIS_HOST || 'localhost',
-                    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-                },
-            }),
             bullmq_1.BullModule.registerQueue({
                 name: 'afip_invoices',
                 defaultJobOptions: {

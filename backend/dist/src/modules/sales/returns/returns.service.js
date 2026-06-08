@@ -112,9 +112,16 @@ let ReturnsService = class ReturnsService {
                                 referenceId: saleReturn.id
                             }
                         });
-                        await tx.stockLevel.update({
+                        await tx.stockLevel.upsert({
                             where: { variantId_warehouseId: { variantId: item.variantId, warehouseId: targetWarehouseId } },
-                            data: {
+                            create: {
+                                variantId: item.variantId,
+                                warehouseId: targetWarehouseId,
+                                branchId: sale.branchId,
+                                physicalQuantity: item.quantity,
+                                availableQuantity: item.quantity
+                            },
+                            update: {
                                 physicalQuantity: { increment: item.quantity },
                                 availableQuantity: { increment: item.quantity }
                             }

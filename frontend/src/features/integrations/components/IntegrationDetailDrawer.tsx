@@ -68,7 +68,13 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
   const [configValues, setConfigValues] = useState<Record<string, string>>({});
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [logsPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<'config' | 'webhooks' | 'failed-afip'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'webhooks' | 'failed-afip' | 'mappings'>('config');
+
+  // Variant Mapping UI States
+  const [variantSearch, setVariantSearch] = useState('');
+  const [selectedVariantId, setSelectedVariantId] = useState('');
+  const [wcProductId, setWcProductId] = useState('');
+  const [wcVariationId, setWcVariationId] = useState('');
 
   const fields = integration ? (PROVIDER_FIELDS[integration.provider] ?? []) : [];
 
@@ -82,6 +88,18 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
     queryKey: queryKeys.integrations.failedAfipJobs(),
     queryFn: () => integrationsApi.getFailedAfipJobs(),
     enabled: open && !!integration && integration.provider === 'AFIP' && activeTab === 'failed-afip',
+  });
+
+  const { data: mappingsData, isLoading: isLoadingMappings } = useQuery({
+    queryKey: ['integrations', 'woocommerce', 'mappings'],
+    queryFn: () => integrationsApi.getWcMappings(),
+    enabled: open && !!integration && integration.provider === 'WOOCOMMERCE' && activeTab === 'mappings',
+  });
+
+  const { data: searchedVariants } = useQuery({
+    queryKey: ['variants', 'search', variantSearch],
+    queryFn: () => integrationsApi.searchVariants(variantSearch),
+    enabled: variantSearch.length >= 2 && !selectedVariantId,
   });
 
   const saveMutation = useMutation({
@@ -133,6 +151,29 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
     onError: (err: any) => toast.error(err.message || 'Error al reintentar'),
   });
 
+  const saveMappingMutation = useMutation({
+    mutationFn: (data: { variantId: string; wcProductId: number; wcVariationId: number }) =>
+      integrationsApi.saveWcMapping(data.variantId, data.wcProductId, data.wcVariationId),
+    onSuccess: () => {
+      toast.success('Mapeo guardado con éxito');
+      setSelectedVariantId('');
+      setWcProductId('');
+      setWcVariationId('');
+      setVariantSearch('');
+      queryClient.invalidateQueries({ queryKey: ['integrations', 'woocommerce', 'mappings'] });
+    },
+    onError: (err: any) => toast.error(err.message || 'Error al guardar mapeo'),
+  });
+
+  const deleteMappingMutation = useMutation({
+    mutationFn: (variantId: string) => integrationsApi.deleteWcMapping(variantId),
+    onSuccess: () => {
+      toast.success('Mapeo eliminado');
+      queryClient.invalidateQueries({ queryKey: ['integrations', 'woocommerce', 'mappings'] });
+    },
+    onError: (err: any) => toast.error(err.message || 'Error al eliminar mapeo'),
+  });
+
   if (!integration) return <Drawer open={open} onClose={onClose} title="..." width="lg"><div /></Drawer>;
 
   const tabStyle = (tab: string) => ({
@@ -181,6 +222,9 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
             <button style={tabStyle('failed-afip')} onClick={() => setActiveTab('failed-afip')}>Facturas Fallidas</button>
           ) : (
             <button style={tabStyle('webhooks')} onClick={() => setActiveTab('webhooks')}>Webhook Logs</button>
+          )}
+          {integration.provider === 'WOOCOMMERCE' && (
+            <button style={tabStyle('mappings')} onClick={() => setActiveTab('mappings')}>Mapeo de Variantes</button>
           )}
         </div>
 
@@ -336,6 +380,151 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                 ]}
               />
             )}
+          </div>
+        )}
+
+        {/* Mappings Tab */}
+        {activeTab === 'mappings' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, overflowY: 'auto' }}>
+            
+            {/* Create Mapping Form */}
+            <div style={{ padding: '16px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>Crear Nuevo Mapeo</h4>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                
+                {/* Variant Search Autocomplete */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Variante ERP (Buscar por SKU/Nombre)</label>
+                  <input
+                    type="text"
+                    value={variantSearch}
+                    placeholder="Escribe 2+ caracteres..."
+                    onChange={e => {
+                      setVariantSearch(e.target.value);
+                      if (selectedVariantId) setSelectedVariantId('');
+                    }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--bg-base)' }}
+                  />
+                  {variantSearch.length >= 2 && !selectedVariantId && searchedVariants && searchedVariants.length > 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '6px', maxHeight: '150px', overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+                      {searchedVariants.map((v: any) => (
+                        <div
+                          key={v.id}
+                          onClick={() => {
+                            setSelectedVariantId(v.id);
+                            setVariantSearch(`${v.product?.name} (${v.sku})`);
+                          }}
+                          style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '12px', borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-base)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <strong>{v.product?.name}</strong> - SKU: {v.sku} {v.size ? `| Talle: ${v.size}` : ''} {v.color ? `| Color: ${v.color}` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600 }}>WooCommerce Product ID</label>
+                  <input
+                    type="number"
+                    value={wcProductId}
+                    placeholder="Ej. 101"
+                    onChange={e => setWcProductId(e.target.value)}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--bg-base)' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600 }}>WooCommerce Variation ID</label>
+                  <input
+                    type="number"
+                    value={wcVariationId}
+                    placeholder="Ej. 202 (0 si es producto simple)"
+                    onChange={e => setWcVariationId(e.target.value)}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--bg-base)' }}
+                  />
+                </div>
+
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!selectedVariantId || !wcProductId}
+                loading={saveMappingMutation.isPending}
+                onClick={() => {
+                  saveMappingMutation.mutate({
+                    variantId: selectedVariantId,
+                    wcProductId: parseInt(wcProductId, 10),
+                    wcVariationId: parseInt(wcVariationId || '0', 10),
+                  });
+                }}
+                style={{ width: 'fit-content', alignSelf: 'flex-end' }}
+              >
+                Guardar Mapeo
+              </Button>
+            </div>
+
+            {/* Mappings Table */}
+            <div style={{ flex: 1 }}>
+              <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 800 }}>Mapeos Existentes</h4>
+              {isLoadingMappings ? (
+                <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>Cargando mapeos...</p>
+              ) : !mappingsData || mappingsData.length === 0 ? (
+                <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No hay variantes mapeadas con WooCommerce aún.</p>
+              ) : (
+                <Table
+                  keyField="id"
+                  data={mappingsData}
+                  columns={[
+                    {
+                      key: 'product', header: 'Producto ERP',
+                      render: (m: any) => (
+                        <div style={{ fontSize: '13px' }}>
+                          <strong>{m.variant?.product?.name || '—'}</strong>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {m.variant?.size ? `Talle: ${m.variant.size} ` : ''}
+                            {m.variant?.color ? `| Color: ${m.variant.color}` : ''}
+                          </div>
+                        </div>
+                      )
+                    },
+                    {
+                      key: 'sku', header: 'SKU ERP',
+                      render: (m: any) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{m.variant?.sku || '—'}</span>
+                    },
+                    {
+                      key: 'wcProduct', header: 'WC Product ID',
+                      render: (m: any) => <span style={{ fontSize: '13px' }}>{m.wcProductId}</span>
+                    },
+                    {
+                      key: 'wcVariation', header: 'WC Variation ID',
+                      render: (m: any) => <span style={{ fontSize: '13px' }}>{m.wcVariationId || '—'}</span>
+                    },
+                    {
+                      key: 'actions', header: '',
+                      render: (m: any) => (
+                        <ActionGuard action="manage" subject="Settings">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteMappingMutation.mutate(m.variantId)}
+                            loading={deleteMappingMutation.isPending && deleteMappingMutation.variables === m.variantId}
+                            style={{ color: 'var(--red)' }}
+                          >
+                            Eliminar
+                          </Button>
+                        </ActionGuard>
+                      )
+                    }
+                  ]}
+                />
+              )}
+            </div>
+
           </div>
         )}
 

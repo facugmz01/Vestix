@@ -8,16 +8,21 @@ const app_module_1 = require("./app.module");
 const common_1 = require("@nestjs/common");
 const nestjs_pino_1 = require("nestjs-pino");
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const helmet_1 = __importDefault(require("helmet"));
 const http_exception_filter_1 = require("./core/filters/http-exception.filter");
 async function bootstrap() {
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'fallback_secret_for_dev_only') {
+        throw new Error('FATAL ERROR: JWT_SECRET environment variable is missing or insecure!');
+    }
     const app = await core_1.NestFactory.create(app_module_1.AppModule, {
         bufferLogs: true,
     });
     app.useLogger(app.get(nestjs_pino_1.Logger));
     app.use((0, cookie_parser_1.default)());
+    app.use((0, helmet_1.default)());
     const bodyParser = require('body-parser');
-    app.use(bodyParser.json({ limit: '50mb' }));
-    app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+    app.use(bodyParser.json({ limit: '2mb' }));
+    app.use(bodyParser.urlencoded({ limit: '2mb', extended: true }));
     const allowedOrigins = [
         'http://localhost:5173',
         'https://app.roindumentaria.com.ar',

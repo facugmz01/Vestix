@@ -3,13 +3,15 @@ import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { SalesService } from './sales.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { MercadoPagoService } from './mercadopago.service';
+import { InventoryService } from '../inventory/inventory.service';
 export declare class StorefrontController {
     private readonly checkoutOrchestrator;
     private readonly salesService;
     private readonly prisma;
     private readonly mercadoPagoService;
+    private readonly inventoryService;
     private readonly logger;
-    constructor(checkoutOrchestrator: CheckoutOrchestrator, salesService: SalesService, prisma: PrismaService, mercadoPagoService: MercadoPagoService);
+    constructor(checkoutOrchestrator: CheckoutOrchestrator, salesService: SalesService, prisma: PrismaService, mercadoPagoService: MercadoPagoService, inventoryService: InventoryService);
     checkout(dto: any, req: Request): Promise<{
         payment: {
             method: string;
@@ -172,7 +174,11 @@ export declare class StorefrontController {
         createdAt: Date;
         syncedAt: Date;
     }>;
-    mercadoPagoWebhook(body: any): Promise<{
+    mercadoPagoWebhook(body: any, req: Request): Promise<{
         received: boolean;
+        error?: undefined;
+    } | {
+        received: boolean;
+        error: string;
     }>;
 }

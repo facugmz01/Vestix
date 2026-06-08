@@ -39,6 +39,18 @@ export const integrationsApi = {
 
   retryAfipJob: (id: string) =>
     post<{ success: boolean; message: string }>(`/afip/retry-job/${id}`, {}),
+
+  getWcMappings: () =>
+    get<any[]>('/integrations/woocommerce/mappings'),
+
+  saveWcMapping: (variantId: string, wcProductId: number, wcVariationId: number) =>
+    post<{ success: boolean }>('/integrations/woocommerce/mappings', { variantId, wcProductId, wcVariationId }),
+
+  deleteWcMapping: (variantId: string) =>
+    post<{ success: boolean }>('/integrations/woocommerce/mappings/delete', { variantId }),
+
+  searchVariants: (search: string) =>
+    get<any[]>('/variants', { params: { search } }),
 };
 
 export interface FailedAfipJob {
