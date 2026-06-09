@@ -89,11 +89,13 @@ JWT_SECRET=$(openssl rand -base64 32)
 mkdir -p $APP_DIR/backend
 mkdir -p $APP_DIR/frontend
 
-# Determinar la URL pública del API
+# Determinar si es IP o Dominio
 if [[ "$SERVER_DOMAIN" == "_" || "$SERVER_DOMAIN" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  API_PUBLIC_URL="http://$SERVER_DOMAIN/api"
-  APP_PUBLIC_URL="http://$SERVER_DOMAIN"
+  IS_IP=true
+  API_PUBLIC_URL="https://$SERVER_DOMAIN/api"
+  APP_PUBLIC_URL="https://$SERVER_DOMAIN"
 else
+  IS_IP=false
   API_PUBLIC_URL="https://$SERVER_DOMAIN/api"
   APP_PUBLIC_URL="https://$SERVER_DOMAIN"
 fi
@@ -116,7 +118,7 @@ EOF
 # ─────────────────────────────────────────────────────────────
 # 5. Instalar y Compilar Backend
 # ─────────────────────────────────────────────────────────────
-echo ">>> [5/8] Instalando y compilando el Backend..."
+echo ">>> [5/9] Instalando y compilando el Backend..."
 cd $APP_DIR/backend
 rm -rf node_modules
 npm install --unsafe-perm
@@ -128,7 +130,7 @@ npm run build
 # ─────────────────────────────────────────────────────────────
 # 6. Instalar y Compilar Frontend
 # ─────────────────────────────────────────────────────────────
-echo ">>> [6/8] Instalando y compilando el Frontend..."
+echo ">>> [6/9] Instalando y compilando el Frontend..."
 cd $APP_DIR/frontend
 rm -rf node_modules
 npm install --unsafe-perm
@@ -138,7 +140,7 @@ npm run build
 # ─────────────────────────────────────────────────────────────
 # 7. Iniciar Backend con PM2
 # ─────────────────────────────────────────────────────────────
-echo ">>> [7/8] Iniciando servicios de Backend con PM2..."
+echo ">>> [7/9] Iniciando servicios de Backend con PM2..."
 cd $APP_DIR/backend
 pm2 delete vestix-backend 2>/dev/null || true
 pm2 start dist/src/main.js --name "vestix-backend" --env production
@@ -146,19 +148,65 @@ pm2 save
 pm2 startup | grep "sudo" | bash || true
 
 # ─────────────────────────────────────────────────────────────
-# 8. Configurar Nginx
+# 8. Configurar Nginx y SSL
 # ─────────────────────────────────────────────────────────────
-echo ">>> [8/8] Configurando Servidor Web Nginx..."
+echo ">>> [8/9] Configurando Servidor Web Nginx..."
 NGINX_CONF="/etc/nginx/sites-available/vestix"
 
-# Determinar server_name para Nginx
 if [[ "$SERVER_DOMAIN" == "_" ]]; then
   NGINX_SERVER_NAME="_"
 else
   NGINX_SERVER_NAME="$SERVER_DOMAIN"
 fi
 
-sudo bash -c "cat << 'NGINXEOF' > $NGINX_CONF
+if [ "$IS_IP" = true ]; then
+  echo ">>> IP detectada. Generando certificado SSL autofirmado..."
+  sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+      -keyout /etc/ssl/private/nginx-selfsigned.key \
+      -out /etc/ssl/certs/nginx-selfsigned.crt \
+      -subj "/C=AR/ST=BA/L=CABA/O=Vestix/CN=$NGINX_SERVER_NAME" 2>/dev/null
+
+  sudo bash -c "cat << 'NGINXEOF' > $NGINX_CONF
+server {
+    listen 80;
+    server_name $NGINX_SERVER_NAME;
+    return 301 https://\$host\$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name $NGINX_SERVER_NAME;
+
+    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+
+    client_max_body_size 20M;
+
+    root $APP_DIR/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        rewrite ^/api/(.*) /\$1 break;
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+NGINXEOF"
+
+else
+  echo ">>> Dominio detectado. Configurando Nginx para Certbot..."
+  sudo bash -c "cat << 'NGINXEOF' > $NGINX_CONF
 server {
     listen 80;
     server_name $NGINX_SERVER_NAME;
@@ -186,6 +234,7 @@ server {
     }
 }
 NGINXEOF"
+fi
 
 sudo ln -sf $NGINX_CONF /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
@@ -194,14 +243,29 @@ sudo systemctl restart nginx
 sudo systemctl enable nginx
 sudo systemctl enable redis-server
 
+# ─────────────────────────────────────────────────────────────
+# 9. Configurar Certbot (Sólo para Dominios)
+# ─────────────────────────────────────────────────────────────
+if [ "$IS_IP" = false ] && [ "$SERVER_DOMAIN" != "_" ]; then
+  echo ">>> [9/9] Obteniendo certificado SSL de Let's Encrypt con Certbot..."
+  sudo apt-get install -y certbot python3-certbot-nginx
+  sudo certbot --nginx -d $SERVER_DOMAIN --non-interactive --agree-tos --register-unsafely-without-email --redirect || echo "⚠️ Advertencia: Falló la generación del certificado SSL. Puedes configurarlo manualmente luego."
+else
+  echo ">>> [9/9] Certbot omitido (Se está usando IP o localhost con certificado autofirmado)."
+fi
+
 echo ""
 echo "======================================================"
 echo "  ✅ ¡Instalación Completada con Éxito!"
 echo "======================================================"
 echo ""
 echo "Resumen de la instalación:"
-echo "  URL:           $APP_PUBLIC_URL"
-echo "  Nginx:         Puerto 80 (dominio: $NGINX_SERVER_NAME)"
+echo "  URL Segura:    $APP_PUBLIC_URL"
+if [ "$IS_IP" = true ]; then
+  echo "  Nginx SSL:     Certificado Autofirmado (Verás una advertencia en el navegador)"
+else
+  echo "  Nginx SSL:     Certificado válido de Let's Encrypt"
+fi
 echo "  Backend:       PM2 → localhost:3000"
 echo "  PostgreSQL:    $DB_NAME"
 echo "  Redis:         localhost:6379"
@@ -216,6 +280,9 @@ echo "════════════════════════�
 echo ""
 echo "  📋 PRÓXIMO PASO:"
 echo "  Abrí $APP_PUBLIC_URL en tu navegador."
+if [ "$IS_IP" = true ]; then
+  echo "  (Importante: Aceptá la advertencia de seguridad SSL de tu navegador)"
+fi
 echo "  El sistema te guiará para crear el Super Admin"
 echo "  y configurar los datos de tu empresa."
 echo ""
