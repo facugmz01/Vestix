@@ -10,6 +10,7 @@ import { BullModule } from '@nestjs/bullmq';
 
 // --- Importación de todos los módulos del sistema ---
 import { IdentityModule } from './domains/identity/identity.module';
+import { SetupModule } from './domains/setup/setup.module';
 import { CatalogModule } from './domains/catalog/catalog.module';
 import { SalesModule } from './domains/sales/sales.module';
 import { LogisticsModule } from './domains/logistics/logistics.module';
@@ -57,6 +58,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 
     // 4. Módulos de Funcionalidad
     IdentityModule,
+    SetupModule,
     CatalogModule,
     SalesModule,
     LogisticsModule,

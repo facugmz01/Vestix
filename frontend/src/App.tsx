@@ -19,6 +19,7 @@ import {
 // ─── Auth & error pages ───────────────────────────────────────────────────────
 const LoginPage     = lazy(() => import('@/pages/auth/LoginPage'));
 const ForbiddenPage = lazy(() => import('@/pages/auth/ForbiddenPage'));
+const SetupWizardPage = lazy(() => import('@/pages/setup/SetupWizardPage'));
 
 // ─── Admin pages (code-split per route) ──────────────────────────────────────
 const CatalogPage    = lazy(() => import('@/pages/admin/CatalogPage'));
@@ -84,6 +85,9 @@ export default function App() {
       <OfflineStatusBar />
       <Suspense fallback={<PageSpinner />}>
         <Routes>
+
+          {/* ── Setup wizard (first launch) ── */}
+          <Route path="/setup" element={<SetupWizardPage />} />
 
           {/* ── Auth zone ── */}
           <Route element={<RequireGuest />}>

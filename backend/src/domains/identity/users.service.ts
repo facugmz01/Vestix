@@ -10,8 +10,8 @@ export class UsersService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    // 1. Ensure Superadmin Role exists
-    const adminRole = await this.prisma.role.upsert({
+    // Ensure SUPER_ADMIN role exists (the setup wizard creates the actual user)
+    await this.prisma.role.upsert({
       where: { name: 'SUPER_ADMIN' },
       update: {},
       create: {
@@ -23,22 +23,6 @@ export class UsersService implements OnModuleInit {
         }
       }
     });
-
-    // 2. Ensure Admin User exists
-    const adminEmail = 'admin@roindumentaria.com.ar';
-    const adminExists = await this.prisma.user.findUnique({ where: { email: adminEmail } });
-    
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('Admin123!', 10);
-      await this.prisma.user.create({
-        data: {
-          email: adminEmail,
-          password: hashedPassword,
-          roleId: adminRole.id
-        }
-      });
-      console.log('✅ Superadmin user created: admin@roindumentaria.com.ar / Admin123!');
-    }
   }
 
   async create(createUserDto: CreateUserDto) {
