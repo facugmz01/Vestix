@@ -26,9 +26,12 @@ export function useAuthInit(): boolean {
     const checkSetup = async () => {
       try {
         const { isInitialized } = await setupApi.getStatus();
-        if (!isInitialized && !window.location.pathname.startsWith('/setup')) {
-          window.location.replace('/setup');
-          return;
+        if (!isInitialized) {
+          if (!window.location.pathname.startsWith('/setup')) {
+            window.location.replace('/setup');
+          }
+          setCheckingSetup(false);
+          return; // Skip loading user if system isn't initialized
         }
       } catch {
         // If setup endpoint fails, continue normally

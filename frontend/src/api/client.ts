@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
         // Removed localStorage.removeItem('erp_token') since it doesn't exist there anymore.
         // The backend handles clearing the cookie via the /auth/logout endpoint if needed,
         // or the session naturally dies. We just redirect.
-        if (!window.location.pathname.startsWith('/login')) {
+        if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/setup')) {
           toast.error('Tu sesión expiró. Volvé a iniciar sesión.');
           window.location.replace('/login');
         }
