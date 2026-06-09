@@ -17,4 +17,10 @@ export class AfipProducer {
       jobId: `invoice_${orderId}`, // Idempotency key: prevents double-queueing
     });
   }
+
+  async enqueueCreditNote(returnId: string, branchId: string) {
+    await this.invoiceQueue.add('generate_credit_note', { returnId, branchId }, {
+      jobId: `credit_note_${returnId}`, // Idempotency key
+    });
+  }
 }

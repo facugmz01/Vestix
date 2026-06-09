@@ -14,10 +14,12 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../../core/prisma/prisma.service");
 const create_return_dto_1 = require("./dto/create-return.dto");
 const inventory_service_1 = require("../../logistics/inventory.service");
+const afip_producer_1 = require("../../invoicing/afip.producer");
 let ReturnsService = class ReturnsService {
-    constructor(prisma, inventoryService) {
+    constructor(prisma, inventoryService, afipProducer) {
         this.prisma = prisma;
         this.inventoryService = inventoryService;
+        this.afipProducer = afipProducer;
     }
     async getReturns(params) {
         const page = parseInt(params.page) || 1;
@@ -71,7 +73,7 @@ let ReturnsService = class ReturnsService {
         });
         if (!sale)
             throw new common_1.NotFoundException('Original sale not found');
-        return this.prisma.$transaction(async (tx) => {
+        const result = await this.prisma.$transaction(async (tx) => {
             let totalRefund = 0;
             const saleReturn = await tx.saleReturn.create({
                 data: {
@@ -145,18 +147,24 @@ let ReturnsService = class ReturnsService {
                     }
                 });
             }
-            return tx.saleReturn.update({
+            const updatedReturn = await tx.saleReturn.update({
                 where: { id: saleReturn.id },
                 data: { totalRefundAmount: totalRefund },
                 include: { lines: true }
             });
+            return updatedReturn;
         });
+        if (sale.issueInvoice) {
+            await this.afipProducer.enqueueCreditNote(result.id, sale.branchId);
+        }
+        return result;
     }
 };
 exports.ReturnsService = ReturnsService;
 exports.ReturnsService = ReturnsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        inventory_service_1.InventoryService])
+        inventory_service_1.InventoryService,
+        afip_producer_1.AfipProducer])
 ], ReturnsService);
 //# sourceMappingURL=returns.service.js.map

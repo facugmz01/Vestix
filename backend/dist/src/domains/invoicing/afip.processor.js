@@ -21,15 +21,21 @@ let AfipProcessor = AfipProcessor_1 = class AfipProcessor extends bullmq_1.Worke
         this.logger = new common_1.Logger(AfipProcessor_1.name);
     }
     async process(job) {
-        this.logger.log(`Processing AFIP invoice for Order: ${job.data.orderId}`);
+        if (job.name === 'generate_credit_note') {
+            return this.processCreditNote(job.data);
+        }
+        return this.processInvoice(job.data);
+    }
+    async processInvoice(data) {
+        this.logger.log(`Processing AFIP invoice for Order: ${data.orderId}`);
         const order = await this.prisma.saleOrder.findUnique({
-            where: { id: job.data.orderId },
+            where: { id: data.orderId },
             include: { lines: true, customer: true, invoices: true }
         });
         if (!order) {
-            throw new Error(`Order ${job.data.orderId} not found. Cannot invoice.`);
+            throw new Error(`Order ${data.orderId} not found. Cannot invoice.`);
         }
-        if (order.invoices.some(inv => inv.status === 'APPROVED')) {
+        if (order.invoices.some(inv => inv.status === 'APPROVED' && inv.type.startsWith('FA_'))) {
             this.logger.log(`Order ${order.id} already has an approved invoice. Skipping.`);
             return { status: 'ALREADY_INVOICED' };
         }
@@ -49,7 +55,7 @@ let AfipProcessor = AfipProcessor_1 = class AfipProcessor extends bullmq_1.Worke
                 caeExpiration: simulatedVto,
                 receiptNumber: receiptNumber,
                 customerDocumentType: 'DNI',
-                customerDocumentNumber: '99999999',
+                customerDocumentNumber: order.customer?.taxId || '99999999',
                 netAmount: order.grandTotal / 1.21,
                 vatAmount: order.grandTotal - (order.grandTotal / 1.21),
                 totalAmount: order.grandTotal,
@@ -57,6 +63,37 @@ let AfipProcessor = AfipProcessor_1 = class AfipProcessor extends bullmq_1.Worke
             }
         });
         this.logger.log(`Successfully generated Invoice for Order ${order.id} - CAE: ${simulatedCae}`);
+        return { status: 'SUCCESS', cae: simulatedCae };
+    }
+    async processCreditNote(data) {
+        this.logger.log(`Processing AFIP Credit Note for Return: ${data.returnId}`);
+        const saleReturn = await this.prisma.saleReturn.findUnique({
+            where: { id: data.returnId },
+            include: { saleOrder: { include: { customer: true } } }
+        });
+        if (!saleReturn)
+            throw new Error(`Return ${data.returnId} not found`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const simulatedCae = Math.floor(Math.random() * 100000000000000).toString();
+        const simulatedVto = new Date();
+        simulatedVto.setDate(simulatedVto.getDate() + 10);
+        const receiptNumber = `NC-0001-${Math.floor(Math.random() * 10000000).toString().padStart(8, '0')}`;
+        await this.prisma.invoice.create({
+            data: {
+                orderId: saleReturn.saleOrderId,
+                type: 'NC_B',
+                cae: simulatedCae,
+                caeExpiration: simulatedVto,
+                receiptNumber: receiptNumber,
+                customerDocumentType: 'DNI',
+                customerDocumentNumber: saleReturn.saleOrder.customer?.taxId || '99999999',
+                netAmount: saleReturn.totalRefundAmount / 1.21,
+                vatAmount: saleReturn.totalRefundAmount - (saleReturn.totalRefundAmount / 1.21),
+                totalAmount: saleReturn.totalRefundAmount,
+                status: 'APPROVED',
+            }
+        });
+        this.logger.log(`Successfully generated Credit Note for Return ${data.returnId} - CAE: ${simulatedCae}`);
         return { status: 'SUCCESS', cae: simulatedCae };
     }
 };

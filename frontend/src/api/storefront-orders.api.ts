@@ -24,6 +24,7 @@ export interface CheckoutDto {
     quantity: number;
     price: number; // Front-end context (validated by backend usually)
   }[];
+  issueInvoice?: boolean;
 }
 
 export const storefrontOrdersApi = {

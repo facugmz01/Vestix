@@ -1,10 +1,12 @@
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateReturnDto } from './dto/create-return.dto';
 import { InventoryService } from '../../logistics/inventory.service';
+import { AfipProducer } from '../../invoicing/afip.producer';
 export declare class ReturnsService {
     private readonly prisma;
     private readonly inventoryService;
-    constructor(prisma: PrismaService, inventoryService: InventoryService);
+    private readonly afipProducer;
+    constructor(prisma: PrismaService, inventoryService: InventoryService, afipProducer: AfipProducer);
     getReturns(params: {
         page?: any;
         pageSize?: any;
@@ -42,6 +44,7 @@ export declare class ReturnsService {
                 paymentAccountId: string | null;
                 status: string;
                 cashShiftId: string | null;
+                issueInvoice: boolean;
                 createdAt: Date;
                 syncedAt: Date;
             };
@@ -94,6 +97,7 @@ export declare class ReturnsService {
             paymentAccountId: string | null;
             status: string;
             cashShiftId: string | null;
+            issueInvoice: boolean;
             createdAt: Date;
             syncedAt: Date;
         };

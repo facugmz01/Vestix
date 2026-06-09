@@ -56,6 +56,7 @@ export declare class ReturnsController {
                 paymentAccountId: string | null;
                 status: string;
                 cashShiftId: string | null;
+                issueInvoice: boolean;
                 createdAt: Date;
                 syncedAt: Date;
             };
@@ -108,6 +109,7 @@ export declare class ReturnsController {
             paymentAccountId: string | null;
             status: string;
             cashShiftId: string | null;
+            issueInvoice: boolean;
             createdAt: Date;
             syncedAt: Date;
         };

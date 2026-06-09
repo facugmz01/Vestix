@@ -79,4 +79,8 @@ export class CreateOrderDto {
   @IsUUID('4')
   @IsOptional()
   cashShiftId?: string; // Link to the active POS session/shift
+
+  @IsBoolean()
+  @IsOptional()
+  issueInvoice?: boolean; // Whether to issue an AFIP invoice or just an internal receipt
 }

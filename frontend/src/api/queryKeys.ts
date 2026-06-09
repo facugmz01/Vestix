@@ -139,6 +139,7 @@ export const queryKeys = {
     product:  (id: string)       => ['storefront', 'product', id] as const,
     myOrders: ()                 => ['storefront', 'myOrders'] as const,
     order:    (id: string)       => ['storefront', 'order', id] as const,
+    settings: ()                 => ['storefront', 'settings'] as const,
   },
 
   // ── Purchasing ────────────────────────────────────────────────────────────

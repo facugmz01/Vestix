@@ -2,12 +2,14 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateReturnDto, ReturnAction } from './dto/create-return.dto';
 import { InventoryService } from '../../logistics/inventory.service';
+import { AfipProducer } from '../../invoicing/afip.producer';
 
 @Injectable()
 export class ReturnsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly inventoryService: InventoryService,
+    private readonly afipProducer: AfipProducer,
   ) {}
 
   async getReturns(params: { page?: any; pageSize?: any; search?: string; status?: string }) {
@@ -66,7 +68,7 @@ export class ReturnsService {
 
     if (!sale) throw new NotFoundException('Original sale not found');
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       let totalRefund = 0;
 
       // 1. CREATE RETURN RECORD
@@ -104,8 +106,6 @@ export class ReturnsService {
         // 3. RESTORE STOCK (Inbound Movement)
         // Only restore if the condition is SELLABLE
         if (item.condition === 'SELLABLE') {
-          // Find the warehouse from the original sale if possible, or use the branch default
-          // Since we added warehouseId to SaleOrder recently, let's use it.
           const targetWarehouseId = (sale as any).warehouseId;
           
           if (targetWarehouseId) {
@@ -130,8 +130,6 @@ export class ReturnsService {
           data: { usedCredit: { decrement: totalRefund } }
         });
       } else {
-        // Find an account to attribute the refund to. 
-        // Use the one from the original sale, or the first active one for the branch.
         let accountId = sale.paymentAccountId;
         if (!accountId) {
           const defaultAccount = await tx.financialAccount.findFirst({
@@ -142,12 +140,9 @@ export class ReturnsService {
         }
 
         if (!accountId) {
-          // If still no account, we cannot process the refund.
-          // In a real scenario, we might want to auto-create one or force the user to configure it.
           throw new BadRequestException('No existe ninguna cuenta de tesorería configurada para procesar el reembolso. Por favor, cree una caja o cuenta bancaria primero.');
         }
 
-        // Create an outflow receipt in Treasury
         await tx.treasuryReceipt.create({
           data: {
             accountId,
@@ -160,11 +155,21 @@ export class ReturnsService {
       }
 
       // 5. UPDATE TOTAL
-      return tx.saleReturn.update({
+      const updatedReturn = await tx.saleReturn.update({
         where: { id: saleReturn.id },
         data: { totalRefundAmount: totalRefund },
         include: { lines: true }
       });
+
+      return updatedReturn;
     });
+
+    // 6. AFIP INTEGRATION (Post-Transaction)
+    // If the original sale was invoiced to AFIP, we must issue a Credit Note
+    if ((sale as any).issueInvoice) {
+      await this.afipProducer.enqueueCreditNote(result.id, sale.branchId);
+    }
+
+    return result;
   }
 }

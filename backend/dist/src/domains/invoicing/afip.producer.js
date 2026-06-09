@@ -25,6 +25,11 @@ let AfipProducer = class AfipProducer {
             jobId: `invoice_${orderId}`,
         });
     }
+    async enqueueCreditNote(returnId, branchId) {
+        await this.invoiceQueue.add('generate_credit_note', { returnId, branchId }, {
+            jobId: `credit_note_${returnId}`,
+        });
+    }
 };
 exports.AfipProducer = AfipProducer;
 exports.AfipProducer = AfipProducer = __decorate([

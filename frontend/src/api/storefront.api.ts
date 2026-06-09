@@ -37,6 +37,16 @@ export interface StorefrontFilters {
   sortBy?: 'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST';
 }
 
+export interface StorefrontSettings {
+  storeName: string;
+  primaryColor: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  whatsappNumber?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+}
+
 export const storefrontApi = {
   getProducts: (filters?: StorefrontFilters) => {
     const { search, ...rest } = filters || {};
@@ -47,5 +57,8 @@ export const storefrontApi = {
 
   getProduct: (id: string) =>
     get<StorefrontProduct>(`/catalog/public/${id}`),
+
+  getSettings: () =>
+    get<StorefrontSettings>('/storefront/settings'),
 };
 

@@ -113,6 +113,7 @@ export default function POSPage() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'>('CASH');
   const [amountTendered, setAmountTendered] = useState<number>(0);
+  const [issueInvoice, setIssueInvoice] = useState(false);
 
   // Focus search on mount
   useEffect(() => {
@@ -225,6 +226,7 @@ export default function POSPage() {
           unitPriceOverride: i.variant.basePrice,
           discountPct: i.discountPct,
         })),
+        issueInvoice,
       };
 
       // 6. Intercepción offline: encolar directamente si no hay red
@@ -691,6 +693,19 @@ export default function POSPage() {
                 )}
               </div>
             )}
+
+            <div style={{ marginTop: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                <input 
+                  type="checkbox" 
+                  checked={issueInvoice} 
+                  onChange={e => setIssueInvoice(e.target.checked)} 
+                  style={{ accentColor: '#3b82f6', width: '20px', height: '20px' }} 
+                />
+                Emitir Factura AFIP
+              </label>
+              <p style={{ margin: '4px 0 0 28px', fontSize: '13px', color: 'var(--text-secondary)' }}>Si no lo marcas, se emitirá un recibo de uso interno.</p>
+            </div>
 
             <div style={{ marginTop: 'auto', paddingTop: '24px' }}>
               <Button 

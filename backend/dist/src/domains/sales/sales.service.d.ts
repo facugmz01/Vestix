@@ -3,19 +3,6 @@ export declare class SalesService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     getOrderById(id: string): Promise<{
-        customer: {
-            id: string;
-            type: string;
-            fullName: string;
-            taxId: string | null;
-            email: string | null;
-            phone: string | null;
-            creditLimit: number;
-            usedCredit: number;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         lines: ({
             variant: {
                 product: {
@@ -62,6 +49,19 @@ export declare class SalesService {
             historicalName: string | null;
             historicalCost: number | null;
         })[];
+        customer: {
+            id: string;
+            type: string;
+            fullName: string;
+            taxId: string | null;
+            email: string | null;
+            phone: string | null;
+            creditLimit: number;
+            usedCredit: number;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         variance: {
             id: string;
             orderId: string;
@@ -85,23 +85,11 @@ export declare class SalesService {
         paymentAccountId: string | null;
         status: string;
         cashShiftId: string | null;
+        issueInvoice: boolean;
         createdAt: Date;
         syncedAt: Date;
     }>;
     listRecentOrders(branchId: string): Promise<({
-        customer: {
-            id: string;
-            type: string;
-            fullName: string;
-            taxId: string | null;
-            email: string | null;
-            phone: string | null;
-            creditLimit: number;
-            usedCredit: number;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         lines: {
             id: string;
             orderId: string;
@@ -115,6 +103,19 @@ export declare class SalesService {
             historicalName: string | null;
             historicalCost: number | null;
         }[];
+        customer: {
+            id: string;
+            type: string;
+            fullName: string;
+            taxId: string | null;
+            email: string | null;
+            phone: string | null;
+            creditLimit: number;
+            usedCredit: number;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        };
     } & {
         id: string;
         branchId: string;
@@ -129,6 +130,7 @@ export declare class SalesService {
         paymentAccountId: string | null;
         status: string;
         cashShiftId: string | null;
+        issueInvoice: boolean;
         createdAt: Date;
         syncedAt: Date;
     })[]>;
@@ -140,19 +142,6 @@ export declare class SalesService {
     }): Promise<{
         data: {
             customerName: string;
-            customer: {
-                id: string;
-                type: string;
-                fullName: string;
-                taxId: string | null;
-                email: string | null;
-                phone: string | null;
-                creditLimit: number;
-                usedCredit: number;
-                isActive: boolean;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             lines: {
                 id: string;
                 orderId: string;
@@ -166,6 +155,19 @@ export declare class SalesService {
                 historicalName: string | null;
                 historicalCost: number | null;
             }[];
+            customer: {
+                id: string;
+                type: string;
+                fullName: string;
+                taxId: string | null;
+                email: string | null;
+                phone: string | null;
+                creditLimit: number;
+                usedCredit: number;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             id: string;
             branchId: string;
             warehouseId: string | null;
@@ -179,6 +181,7 @@ export declare class SalesService {
             paymentAccountId: string | null;
             status: string;
             cashShiftId: string | null;
+            issueInvoice: boolean;
             createdAt: Date;
             syncedAt: Date;
         }[];

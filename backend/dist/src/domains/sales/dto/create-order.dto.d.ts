@@ -21,5 +21,6 @@ export declare class CreateOrderDto {
     cartDiscountTotal?: number;
     wasReserved?: boolean;
     cashShiftId?: string;
+    issueInvoice?: boolean;
 }
 export {};

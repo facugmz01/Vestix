@@ -179,6 +179,7 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
                     paymentAccountId: dto.paymentAccountId,
                     status: dto.status || 'COMPLETED',
                     cashShiftId: dto.cashShiftId,
+                    issueInvoice: dto.issueInvoice ?? true,
                     createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
                     lines: {
                         create: finalLinesForDB.map(l => ({
@@ -205,7 +206,9 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
             }
             return { status: 'SUCCESS', order };
         });
-        await this.afipProducer.enqueueInvoiceGeneration(result.order.id, dto.branchId);
+        if (result.order.issueInvoice) {
+            await this.afipProducer.enqueueInvoiceGeneration(result.order.id, dto.branchId);
+        }
         return result;
     }
     async confirmQuotation(id) {
@@ -242,7 +245,9 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
                 data: { status: 'CONFIRMED' },
                 include: { lines: true }
             });
-            await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
+            if (updated.issueInvoice) {
+                await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
+            }
             return updated;
         });
     }

@@ -28,6 +28,8 @@ const cash_registers_controller_1 = require("./cash-registers.controller");
 const sync_engine_service_1 = require("./sync-engine.service");
 const conflict_resolution_service_1 = require("./conflict-resolution.service");
 const offline_controller_1 = require("./offline.controller");
+const store_settings_service_1 = require("./store-settings.service");
+const store_settings_controller_1 = require("./store-settings.controller");
 let SalesModule = class SalesModule {
 };
 exports.SalesModule = SalesModule;
@@ -46,6 +48,7 @@ exports.SalesModule = SalesModule = __decorate([
             returns_controller_1.ReturnsController,
             storefront_controller_1.StorefrontController,
             storefront_auth_controller_1.StorefrontAuthController,
+            store_settings_controller_1.StoreSettingsController,
             customers_controller_1.CustomersController,
             pos_controller_1.PosController,
             cash_registers_controller_1.CashRegistersController,
@@ -62,6 +65,7 @@ exports.SalesModule = SalesModule = __decorate([
             pos_service_1.PosService,
             sync_engine_service_1.SyncEngineService,
             conflict_resolution_service_1.ConflictResolutionService,
+            store_settings_service_1.StoreSettingsService,
         ],
         exports: [
             sales_service_1.SalesService,
@@ -71,6 +75,7 @@ exports.SalesModule = SalesModule = __decorate([
             customers_service_1.CustomersService,
             pos_service_1.PosService,
             sync_engine_service_1.SyncEngineService,
+            store_settings_service_1.StoreSettingsService,
         ],
     })
 ], SalesModule);

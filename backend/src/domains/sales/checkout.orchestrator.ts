@@ -171,6 +171,7 @@ export class CheckoutOrchestrator {
           paymentAccountId: dto.paymentAccountId,
           status: dto.status || 'COMPLETED',
           cashShiftId: dto.cashShiftId,
+          issueInvoice: dto.issueInvoice ?? true, // Default to true if not specified
           createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
           lines: {
             create: finalLinesForDB.map(l => ({
@@ -203,8 +204,9 @@ export class CheckoutOrchestrator {
 
     // 5. ASYNC EXTERNAL BOUNDARY — Fire and Forget
     // Enqueues AFIP invoice generation AFTER the DB transaction has committed.
-    // The HTTP response is returned immediately; the worker handles the slow government API call.
-    await this.afipProducer.enqueueInvoiceGeneration(result.order.id, dto.branchId);
+    if (result.order.issueInvoice) {
+      await this.afipProducer.enqueueInvoiceGeneration(result.order.id, dto.branchId);
+    }
 
     return result;
   }
@@ -250,7 +252,9 @@ export class CheckoutOrchestrator {
       });
 
       // 3. ENQUEUE AFIP (Post-Confirmation)
-      await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
+      if (updated.issueInvoice) {
+        await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
+      }
 
       return updated;
     });

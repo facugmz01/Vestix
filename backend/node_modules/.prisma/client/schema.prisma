@@ -12,21 +12,21 @@ generator client {
 // ==========================================
 
 model User {
-  id             String         @id @default(uuid())
-  email          String         @unique
-  password       String
-  fullName       String?
-  roleId         String
-  role           Role           @relation(fields: [roleId], references: [id])
-  branchId       String?
-  branch         Branch?        @relation(fields: [branchId], references: [id])
-  isActive       Boolean        @default(true)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String?
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relaciones inversas agregadas
-  openedShifts   CashShift[]    @relation("OpenedShifts")
-  closedShifts   CashShift[]    @relation("ClosedShifts")
+  openedShifts     CashShift[]    @relation("OpenedShifts")
+  closedShifts     CashShift[]    @relation("ClosedShifts")
   receivedReceipts GoodsReceipt[] @relation("ReceivedByUser")
 }
 
@@ -51,10 +51,10 @@ model Permission {
 
 model OutboxEvent {
   id          String    @id @default(uuid())
-  aggregate   String    // e.g., "SaleOrder", "InventoryMovement"
-  aggregateId String    // ID de la entidad afectada
-  type        String    // e.g., "ORDER_COMPLETED", "STOCK_ADJUSTED"
-  payload     Json      // Datos completos del evento en JSON
+  aggregate   String // e.g., "SaleOrder", "InventoryMovement"
+  aggregateId String // ID de la entidad afectada
+  type        String // e.g., "ORDER_COMPLETED", "STOCK_ADJUSTED"
+  payload     Json // Datos completos del evento en JSON
   status      String    @default("PENDING") // PENDING | PROCESSED | FAILED
   attempts    Int       @default(0)
   lastError   String?
@@ -76,14 +76,14 @@ model Branch {
   phone             String?
   isMain            Boolean            @default(false)
   isActive          Boolean            @default(true)
-  settings          Json?              // { taxId, posReceiptHeader, posReceiptFooter }
+  settings          Json? // { taxId, posReceiptHeader, posReceiptFooter }
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   orders            SaleOrder[]
   warehouses        Warehouse[]
   cashRegisters     CashRegister[]
   stockLevels       StockLevel[]
-  returns           SaleReturn[] 
+  returns           SaleReturn[]
   users             User[]
   financialAccounts FinancialAccount[] // Relación agregada
 }
@@ -100,16 +100,16 @@ model Warehouse {
   stockLevels          StockLevel[]
   sourceMovements      InventoryMovement[] @relation("SourceMovements")
   destinationMovements InventoryMovement[] @relation("DestinationMovements")
-  
+
   // Relaciones agregadas
   saleOrders           SaleOrder[]
   purchaseOrders       PurchaseOrder[]
   goodsReceipts        GoodsReceipt[]
-  sourceTransfers      StockTransfer[]     @relation("TransferSource")
-  destinationTransfers StockTransfer[]     @relation("TransferDestination")
-  
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  sourceTransfers      StockTransfer[] @relation("TransferSource")
+  destinationTransfers StockTransfer[] @relation("TransferDestination")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ==========================================
@@ -156,33 +156,33 @@ model Product {
 }
 
 model ProductVariant {
-  id               String              @id @default(uuid())
-  productId        String
-  product          Product             @relation(fields: [productId], references: [id])
-  sku              String              @unique
-  barcode          String?             @unique // Código principal (opcional)
-  barcodes         ProductBarcode[]    // Soporte para Múltiples códigos de barra
-  size             String?
-  color            String?
-  imageUrl         String?
-  costPrice        Float               @default(0)
-  basePrice        Float               @default(0) 
-  isActive         Boolean             @default(true)
-  attributes       Json                @default("{}")
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  
+  id         String           @id @default(uuid())
+  productId  String
+  product    Product          @relation(fields: [productId], references: [id])
+  sku        String           @unique
+  barcode    String?          @unique // Código principal (opcional)
+  barcodes   ProductBarcode[] // Soporte para Múltiples códigos de barra
+  size       String?
+  color      String?
+  imageUrl   String?
+  costPrice  Float            @default(0)
+  basePrice  Float            @default(0)
+  isActive   Boolean          @default(true)
+  attributes Json             @default("{}")
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
   orderLines       OrderLineItem[]
   poLines          POLineItem[]
   stockLevels      StockLevel[]
   movements        InventoryMovement[]
   priceListEntries PriceListEntry[]
-  
+
   // Relaciones formalizadas agregadas
-  returnLines      SaleReturnLine[]
-  receiptLines     GoodsReceiptLine[]
-  transferLines    StockTransferLine[]
-  wcMapping        WcVariantMapping?
+  returnLines   SaleReturnLine[]
+  receiptLines  GoodsReceiptLine[]
+  transferLines StockTransferLine[]
+  wcMapping     WcVariantMapping?
 }
 
 // Soporte para múltiples códigos de barra por variante
@@ -207,7 +207,7 @@ model AttributeValue {
   id          String    @id @default(uuid())
   attributeId String
   attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
-  value       String    // e.g., "Rojo", "XL"
+  value       String // e.g., "Rojo", "XL"
   createdAt   DateTime  @default(now())
 }
 
@@ -216,20 +216,20 @@ model AttributeValue {
 // ==========================================
 
 model PriceList {
-  id                String           @id @default(uuid())
-  name              String           @unique
-  type              String           @default("RETAIL") // RETAIL | WHOLESALE | VIP | PROMOTIONAL
-  currency          String           @default("ARS")
-  margin            Float            @default(1.0)
-  isActive          Boolean          @default(true)
-  isPercentageBased Boolean          @default(false)
+  id                 String           @id @default(uuid())
+  name               String           @unique
+  type               String           @default("RETAIL") // RETAIL | WHOLESALE | VIP | PROMOTIONAL
+  currency           String           @default("ARS")
+  margin             Float            @default(1.0)
+  isActive           Boolean          @default(true)
+  isPercentageBased  Boolean          @default(false)
   percentageDiscount Float?
-  validFrom         DateTime?
-  validTo           DateTime?
-  isDefault         Boolean          @default(false)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  entries           PriceListEntry[]
+  validFrom          DateTime?
+  validTo            DateTime?
+  isDefault          Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  entries            PriceListEntry[]
 }
 
 model PriceListEntry {
@@ -269,37 +269,38 @@ model Customer {
 // ==========================================
 
 model SaleOrder {
-  id                String             @id // V2: Idempotent Offline UUID
+  id                String     @id // V2: Idempotent Offline UUID
   branchId          String
-  branch            Branch             @relation(fields: [branchId], references: [id])
-  warehouseId       String?         
-  warehouse         Warehouse?         @relation(fields: [warehouseId], references: [id]) // Relación formalizada
+  branch            Branch     @relation(fields: [branchId], references: [id])
+  warehouseId       String?
+  warehouse         Warehouse? @relation(fields: [warehouseId], references: [id]) // Relación formalizada
   source            String
   customerId        String?
-  customer          Customer?          @relation(fields: [customerId], references: [id])
+  customer          Customer?  @relation(fields: [customerId], references: [id])
   subtotal          Float
   cartDiscountTotal Float
   grandTotal        Float
-  appliedPromotions Json               @default("[]")
-  
-  // Soporte legado/plano para compatibilidad inicial
-  paymentMethod     String
-  paymentAccountId  String?
-  paymentAccount    FinancialAccount?  @relation(fields: [paymentAccountId], references: [id]) // Relación formalizada
-  
-  // Soporte completo para múltiples pagos/pagos divididos
-  payments          SaleOrderPayment[] 
-  
-  status            String             @default("COMPLETED") // COMPLETED | QUOTE | CANCELLED
-  cashShiftId       String?
-  cashShift         CashShift?         @relation(fields: [cashShiftId], references: [id])
-  createdAt         DateTime
-  syncedAt          DateTime           @default(now())
+  appliedPromotions Json       @default("[]")
 
-  lines             OrderLineItem[]
-  invoices          Invoice[]
-  variance          SaleOrderVariance?
-  returns           SaleReturn[] 
+  // Soporte legado/plano para compatibilidad inicial
+  paymentMethod    String
+  paymentAccountId String?
+  paymentAccount   FinancialAccount? @relation(fields: [paymentAccountId], references: [id]) // Relación formalizada
+
+  // Soporte completo para múltiples pagos/pagos divididos
+  payments SaleOrderPayment[]
+
+  status      String     @default("COMPLETED") // COMPLETED | QUOTE | CANCELLED
+  cashShiftId String?
+  cashShift   CashShift? @relation(fields: [cashShiftId], references: [id])
+  issueInvoice Boolean   @default(true)
+  createdAt   DateTime
+  syncedAt    DateTime   @default(now())
+
+  lines    OrderLineItem[]
+  invoices Invoice[]
+  variance SaleOrderVariance?
+  returns  SaleReturn[]
 
   @@index([createdAt])
   @@index([source])
@@ -329,25 +330,25 @@ model OrderLineItem {
   basePrice      Float
   discountAmount Float
   finalPrice     Float
-  
+
   // Preservación histórica e integridad en auditorías
-  historicalSku  String?        // Snapshot del SKU de la variante al momento de la venta
-  historicalName String?        // Snapshot del nombre descriptivo al momento de la venta
-  historicalCost Float?         // Costo exacto (WAC) al momento de vender para cálculo retroactivo de ganancias
-  
-  returnLines    SaleReturnLine[] 
+  historicalSku  String? // Snapshot del SKU de la variante al momento de la venta
+  historicalName String? // Snapshot del nombre descriptivo al momento de la venta
+  historicalCost Float? // Costo exacto (WAC) al momento de vender para cálculo retroactivo de ganancias
+
+  returnLines SaleReturnLine[]
 }
 
 // Soporte para pagos divididos en el POS
 model SaleOrderPayment {
-  id              String           @id @default(uuid())
+  id              String        @id @default(uuid())
   orderId         String
-  order           SaleOrder        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order           SaleOrder     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   paymentMethodId String
-  paymentMethod   PaymentMethod    @relation(fields: [paymentMethodId], references: [id])
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
   amount          Float
-  referenceId     String?          // Referencia del cupón de tarjeta o transferencia
-  createdAt       DateTime         @default(now())
+  referenceId     String? // Referencia del cupón de tarjeta o transferencia
+  createdAt       DateTime      @default(now())
 }
 
 model SaleReturn {
@@ -356,7 +357,7 @@ model SaleReturn {
   saleOrder         SaleOrder        @relation(fields: [saleOrderId], references: [id])
   branchId          String
   branch            Branch           @relation(fields: [branchId], references: [id])
-  action            String           // REFUND | EXCHANGE
+  action            String // REFUND | EXCHANGE
   status            String           @default("PENDING") // PENDING | APPROVED | REJECTED
   totalRefundAmount Float
   createdAt         DateTime         @default(now())
@@ -365,17 +366,17 @@ model SaleReturn {
 }
 
 model SaleReturnLine {
-  id           String         @id @default(uuid())
-  returnId     String
-  return       SaleReturn     @relation(fields: [returnId], references: [id])
-  orderLineId  String
-  orderLine    OrderLineItem  @relation(fields: [orderLineId], references: [id])
-  variantId    String
-  variant      ProductVariant @relation(fields: [variantId], references: [id]) // Relación formalizada
-  quantity     Int
-  unitPrice    Float          // Precio original de venta
-  condition    String         @default("NEW") // NEW | DEFECTIVE | USED
-  reason       String?
+  id          String         @id @default(uuid())
+  returnId    String
+  return      SaleReturn     @relation(fields: [returnId], references: [id])
+  orderLineId String
+  orderLine   OrderLineItem  @relation(fields: [orderLineId], references: [id])
+  variantId   String
+  variant     ProductVariant @relation(fields: [variantId], references: [id]) // Relación formalizada
+  quantity    Int
+  unitPrice   Float // Precio original de venta
+  condition   String         @default("NEW") // NEW | DEFECTIVE | USED
+  reason      String?
 }
 
 // ==========================================
@@ -383,18 +384,18 @@ model SaleReturnLine {
 // ==========================================
 
 model InventoryMovement {
-  id                     String      @id @default(uuid())
+  id                     String         @id @default(uuid())
   variantId              String
   variant                ProductVariant @relation(fields: [variantId], references: [id])
   sourceWarehouseId      String?
-  sourceWarehouse        Warehouse?  @relation("SourceMovements", fields: [sourceWarehouseId], references: [id])
+  sourceWarehouse        Warehouse?     @relation("SourceMovements", fields: [sourceWarehouseId], references: [id])
   destinationWarehouseId String?
-  destinationWarehouse   Warehouse?  @relation("DestinationMovements", fields: [destinationWarehouseId], references: [id])
+  destinationWarehouse   Warehouse?     @relation("DestinationMovements", fields: [destinationWarehouseId], references: [id])
   type                   String
   quantity               Int
   unitCost               Float
   referenceId            String?
-  createdAt              DateTime    @default(now())
+  createdAt              DateTime       @default(now())
 
   @@index([variantId])
   @@index([referenceId])
@@ -403,7 +404,7 @@ model InventoryMovement {
 
 model StockLevel {
   id                String             @id @default(uuid())
-  variantId         String             // campo sin @unique - la unicidad la garantiza @@unique([variantId, warehouseId])
+  variantId         String // campo sin @unique - la unicidad la garantiza @@unique([variantId, warehouseId])
   variant           ProductVariant     @relation(fields: [variantId], references: [id])
   warehouseId       String
   warehouse         Warehouse          @relation(fields: [warehouseId], references: [id])
@@ -420,18 +421,18 @@ model StockLevel {
 }
 
 model StockReservation {
-  id           String      @id @default(uuid())
+  id           String     @id @default(uuid())
   stockLevelId String
-  stockLevel   StockLevel  @relation(fields: [stockLevelId], references: [id])
+  stockLevel   StockLevel @relation(fields: [stockLevelId], references: [id])
   variantId    String
   warehouseId  String
   quantity     Int
-  orderId      String?     
-  cartId       String?     
-  status       String      @default("ACTIVE") // ACTIVE | CONSUMED | EXPIRED | CANCELLED
-  expiresAt    DateTime    
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  orderId      String?
+  cartId       String?
+  status       String     @default("ACTIVE") // ACTIVE | CONSUMED | EXPIRED | CANCELLED
+  expiresAt    DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@index([status, expiresAt])
   @@index([orderId])
@@ -467,7 +468,7 @@ model StockTransferLine {
   variantId        String
   variant          ProductVariant @relation(fields: [variantId], references: [id])
   quantity         Int
-  receivedQuantity Int?           // Cantidad efectivamente recibida
+  receivedQuantity Int? // Cantidad efectivamente recibida
   createdAt        DateTime       @default(now())
 }
 
@@ -495,7 +496,7 @@ model PurchaseOrder {
   supplier               Supplier       @relation(fields: [supplierId], references: [id])
   destinationWarehouseId String
   destinationWarehouse   Warehouse      @relation(fields: [destinationWarehouseId], references: [id]) // Relación formalizada
-  status                 String         // DRAFT, ISSUED, PARTIALLY_RECEIVED, COMPLETED, CANCELLED
+  status                 String // DRAFT, ISSUED, PARTIALLY_RECEIVED, COMPLETED, CANCELLED
   totalAmount            Float          @default(0)
   paidAmount             Float          @default(0)
   currency               String         @default("ARS")
@@ -530,7 +531,7 @@ model GoodsReceipt {
   destinationWarehouse   Warehouse          @relation(fields: [destinationWarehouseId], references: [id]) // Relación formalizada
   receivedByUserId       String?
   receivedByUser         User?              @relation("ReceivedByUser", fields: [receivedByUserId], references: [id]) // Relación formalizada
-  status                 String             // DRAFT, DISPUTED, VALIDATED
+  status                 String // DRAFT, DISPUTED, VALIDATED
   notes                  String?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
@@ -575,21 +576,21 @@ model Invoice {
 }
 
 model FinancialAccount {
-  id               String                 @id @default(uuid())
-  name             String
-  type             String                 @default("CASH") // CASH | BANK | CREDIT_CARD | EXPENSE | REVENUE
-  currency         String                 @default("ARS")
-  branchId         String?
-  branch           Branch?                @relation(fields: [branchId], references: [id]) // Relación formalizada
-  balance          Float                  @default(0)
+  id             String                 @id @default(uuid())
+  name           String
+  type           String                 @default("CASH") // CASH | BANK | CREDIT_CARD | EXPENSE | REVENUE
+  currency       String                 @default("ARS")
+  branchId       String?
+  branch         Branch?                @relation(fields: [branchId], references: [id]) // Relación formalizada
+  balance        Float                  @default(0)
   isActive       Boolean                @default(true)
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  transactions     FinancialTransaction[]
-  paymentMethods   PaymentMethod[]
-  
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  transactions   FinancialTransaction[]
+  paymentMethods PaymentMethod[]
+
   // Relaciones inversas agregadas
-  saleOrders       SaleOrder[] 
+  saleOrders       SaleOrder[]
   paymentReceipts  PaymentReceipt[]
   treasuryReceipts TreasuryReceipt[]
 }
@@ -598,7 +599,7 @@ model FinancialTransaction {
   id          String           @id @default(uuid())
   accountId   String
   account     FinancialAccount @relation(fields: [accountId], references: [id])
-  type        String           // DEBIT | CREDIT
+  type        String // DEBIT | CREDIT
   amount      Float
   referenceId String
   description String
@@ -641,38 +642,38 @@ model CashRegister {
 }
 
 model PaymentMethod {
-  id               String             @id @default(uuid())
-  name             String
-  type             String             // CASH | BANK_TRANSFER | CREDIT_CARD | CUSTOMER_CREDIT
-  cashRegisterId   String?           
-  cashRegister     CashRegister?      @relation(fields: [cashRegisterId], references: [id])
-  accountId        String?           
-  account          FinancialAccount?  @relation(fields: [accountId], references: [id])
-  isActive         Boolean            @default(true)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  
+  id             String            @id @default(uuid())
+  name           String
+  type           String // CASH | BANK_TRANSFER | CREDIT_CARD | CUSTOMER_CREDIT
+  cashRegisterId String?
+  cashRegister   CashRegister?     @relation(fields: [cashRegisterId], references: [id])
+  accountId      String?
+  account        FinancialAccount? @relation(fields: [accountId], references: [id])
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
   // Relación inversa agregada
-  orderPayments    SaleOrderPayment[]
+  orderPayments SaleOrderPayment[]
 }
 
 model CashShift {
-  id              String       @id @default(uuid())
-  cashRegisterId  String
-  cashRegister    CashRegister @relation(fields: [cashRegisterId], references: [id])
-  openedByUserId  String
-  openedByUser    User         @relation("OpenedShifts", fields: [openedByUserId], references: [id]) // Relación formalizada
-  closedByUserId  String?
-  closedByUser    User?        @relation("ClosedShifts", fields: [closedByUserId], references: [id]) // Relación formalizada
-  openingAmount   Float
-  closingAmount   Float?
-  expectedAmount  Float?
-  difference      Float?
-  status          String       @default("OPEN") // OPEN | CLOSED
-  openedAt        DateTime     @default(now())
-  closedAt        DateTime?
-  notes           String?
-  sales           SaleOrder[]
+  id             String       @id @default(uuid())
+  cashRegisterId String
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
+  openedByUserId String
+  openedByUser   User         @relation("OpenedShifts", fields: [openedByUserId], references: [id]) // Relación formalizada
+  closedByUserId String?
+  closedByUser   User?        @relation("ClosedShifts", fields: [closedByUserId], references: [id]) // Relación formalizada
+  openingAmount  Float
+  closingAmount  Float?
+  expectedAmount Float?
+  difference     Float?
+  status         String       @default("OPEN") // OPEN | CLOSED
+  openedAt       DateTime     @default(now())
+  closedAt       DateTime?
+  notes          String?
+  sales          SaleOrder[]
 }
 
 // ==========================================
@@ -704,33 +705,33 @@ model AuditLog {
 // ==========================================
 
 model IntegrationLog {
-  id          String   @id @default(uuid())
-  provider    String   // AFIP, WOOCOMMERCE, etc.
-  direction   String   // INBOUND, OUTBOUND
-  action      String   // STOCK_UPDATE, INVOICE_GENERATE
-  status      String   // PENDING, SUCCESS, FAILED, RETRYING
-  payload     Json?
-  response    Json?
-  error       String?
-  attempts    Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  provider  String // AFIP, WOOCOMMERCE, etc.
+  direction String // INBOUND, OUTBOUND
+  action    String // STOCK_UPDATE, INVOICE_GENERATE
+  status    String // PENDING, SUCCESS, FAILED, RETRYING
+  payload   Json?
+  response  Json?
+  error     String?
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model OfflineSyncLog {
-  id                String   @id @default(uuid())
-  clientGeneratedId String   @unique
+  id                String    @id @default(uuid())
+  clientGeneratedId String    @unique
   branchId          String
   userId            String
-  type              String   // SyncOperationType
+  type              String // SyncOperationType
   payload           Json
   clientTimestamp   DateTime
-  status            String   // SyncStatus
-  conflictDetails   Json?    // Optional conflict info
+  status            String // SyncStatus
+  conflictDetails   Json? // Optional conflict info
   appliedAt         DateTime?
   serverTimestamp   DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model WcVariantMapping {
@@ -741,6 +742,21 @@ model WcVariantMapping {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  variant       ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 }
 
+// ==========================================
+// 13. SETTINGS MODULE
+// ==========================================
+
+model StoreSettings {
+  id             String   @id @default("default")
+  storeName      String   @default("Mi Tienda")
+  primaryColor   String   @default("#10b981")
+  heroTitle      String   @default("Bienvenidos a nuestra tienda")
+  heroSubtitle   String   @default("Encontrá los mejores productos al mejor precio")
+  whatsappNumber String?
+  instagramUrl   String?
+  facebookUrl    String?
+  updatedAt      DateTime @updatedAt
+}

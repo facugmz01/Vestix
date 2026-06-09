@@ -41,6 +41,7 @@ export declare class PosService {
             paymentAccountId: string | null;
             status: string;
             cashShiftId: string | null;
+            issueInvoice: boolean;
             createdAt: Date;
             syncedAt: Date;
         };
