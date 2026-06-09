@@ -110,10 +110,12 @@ NODE_ENV="production"
 APP_URL="$APP_PUBLIC_URL"
 EOF
 
-cat <<EOF > $APP_DIR/frontend/.env
-VITE_API_URL="/api"
-VITE_APP_URL="$APP_PUBLIC_URL"
-EOF
+# Asegurar que VITE_API_BASE y VITE_APP_URL se sobreescriban correctamente en .env.production
+touch $APP_DIR/frontend/.env.production
+sed -i '/^VITE_API_BASE=/d' $APP_DIR/frontend/.env.production
+sed -i '/^VITE_APP_URL=/d' $APP_DIR/frontend/.env.production
+echo "VITE_API_BASE=\"/api\"" >> $APP_DIR/frontend/.env.production
+echo "VITE_APP_URL=\"$APP_PUBLIC_URL\"" >> $APP_DIR/frontend/.env.production
 
 # ─────────────────────────────────────────────────────────────
 # 5. Instalar y Compilar Backend
