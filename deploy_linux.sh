@@ -76,7 +76,10 @@ EOF
 # 5. Instalar y Compilar Backend
 echo ">>> [5/8] Instalando y compilando el Backend..."
 cd $APP_DIR/backend
-npm install
+rm -rf node_modules
+npm install --unsafe-perm
+# Asegurar permisos de ejecucion para binarios locales
+chmod -R +x node_modules/.bin || true
 # Generar cliente de Prisma y empujar esquema a la BD
 npx prisma generate
 npx prisma db push --accept-data-loss
@@ -86,7 +89,10 @@ npm run build
 # 6. Instalar y Compilar Frontend
 echo ">>> [6/8] Instalando y compilando el Frontend..."
 cd $APP_DIR/frontend
-npm install
+rm -rf node_modules
+npm install --unsafe-perm
+# Asegurar permisos de ejecucion para binarios locales
+chmod -R +x node_modules/.bin || true
 npm run build
 
 # 7. Iniciar Backend con PM2
@@ -94,7 +100,7 @@ echo ">>> [7/8] Iniciando servicios de Backend con PM2..."
 cd $APP_DIR/backend
 # Detener instancia anterior si existe
 pm2 delete vestix-backend 2>/dev/null || true
-pm2 start dist/main.js --name "vestix-backend"
+pm2 start dist/src/main.js --name "vestix-backend"
 pm2 save
 # Configurar PM2 para que inicie con el sistema operativo
 pm2 startup | grep "sudo" | bash || true
