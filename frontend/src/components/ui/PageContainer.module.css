@@ -5,3 +5,5 @@
 .action  { flex-shrink: 0; }
 .body    { display: flex; flex-direction: column; gap: 20px; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+.tabsWrapper { margin: 0 -24px 24px -24px; padding: 0 24px; }

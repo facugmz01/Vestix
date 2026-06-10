@@ -27,3 +27,5 @@ export {
   OrderStatusChip, POStatusChip,
   ActiveChip, PublishedChip, StockStatusChip,
 } from './StatusChip';
+
+export * from './Tabs';

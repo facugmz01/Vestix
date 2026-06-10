@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -82,7 +83,9 @@ export default function SuppliersPage() {
   const fmtCurrency = (val: number, cur: string = 'ARS') => new Intl.NumberFormat('es-AR', { style: 'currency', currency: cur }).format(val);
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={PURCHASING_TABS} />}
+      
       title="Proveedores" 
       subtitle="Gestioná a tus abastecedores y mantené el control de tus cuentas por pagar."
       action={

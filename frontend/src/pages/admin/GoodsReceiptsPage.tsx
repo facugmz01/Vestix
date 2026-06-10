@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, CheckCircle, AlertTriangle, PackageCheck } from 'lucide-react';
 
@@ -47,7 +48,9 @@ export default function GoodsReceiptsPage() {
   };
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={PURCHASING_TABS} />}
+      
       title="Recepciones (Remitos de Proveedor)" 
       subtitle="Conteo físico e ingreso al inventario de la mercadería despachada por proveedores."
       action={

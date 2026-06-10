@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Tag, List, Pencil, Check, X, Layers, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -326,7 +327,8 @@ export default function AttributesPage() {
 
   return (
     <PageContainer
-      title="Taxonomía y Precios"
+      tabs={<Tabs items={CATALOG_TABS} />}
+            title="Taxonomía y Precios"
       subtitle="Gestioná categorías, marcas, atributos y listas de precios."
     >
       {/* Tab Bar */}

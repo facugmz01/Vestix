@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, Banknote, AlertTriangle } from 'lucide-react';
 
@@ -39,7 +40,9 @@ export default function CurrentAccountsPage() {
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={FINANCE_TABS} />}
+      
       title="Cuentas Corrientes" 
       subtitle="Saldos, vencimientos y estado de deuda de Clientes y Proveedores."
     >

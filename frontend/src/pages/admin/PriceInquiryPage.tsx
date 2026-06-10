@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect , Tabs } from 'react';
+import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Tag, Package, Info } from 'lucide-react';
 
@@ -30,7 +31,9 @@ export default function PriceInquiryPage() {
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={CATALOG_TABS} />}
+      
       title="Consulta de Precios" 
       subtitle="Buscá rápidamente precios y disponibilidad de cualquier producto sin abrir el POS."
     >

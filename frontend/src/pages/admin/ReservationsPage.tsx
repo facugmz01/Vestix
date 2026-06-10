@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, Package, Clock } from 'lucide-react';
 
@@ -49,7 +50,9 @@ export default function ReservationsPage() {
   };
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={INVENTORY_TABS} />}
+      
       title="Reservas de Stock" 
       subtitle="Monitor de mercadería retenida y apartada temporalmente para clientes."
       action={

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, FileText, AlertTriangle } from 'lucide-react';
 
@@ -44,7 +45,8 @@ export default function InvoicesPage() {
 
   return (
     <PageContainer
-      title="Facturación Electrónica (AFIP)"
+      tabs={<Tabs items={FINANCE_TABS} />}
+            title="Facturación Electrónica (AFIP)"
       subtitle="Registro de comprobantes electrónicos: Facturas A/B/C y Notas de Crédito."
       action={
         <ActionGuard action="manage" subject="Finance">

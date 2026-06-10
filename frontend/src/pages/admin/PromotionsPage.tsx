@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Zap, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -79,7 +80,9 @@ export default function PromotionsPage() {
   const activeConflicts = conflictsData || [];
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={CATALOG_TABS} />}
+      
       title="Promociones y Reglas de Precio" 
       subtitle="Definí descuentos temporales, 2x1 y analizá el impacto en tu rentabilidad."
       action={

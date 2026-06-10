@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -87,7 +88,9 @@ export default function CatalogPage() {
   const total = Array.isArray(data) ? data.length : (data?.total ?? 0);
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={CATALOG_TABS} />}
+      
       title="Catálogo Maestro" 
       subtitle="Gestioná los productos base, categorización y publicación e-commerce."
       action={

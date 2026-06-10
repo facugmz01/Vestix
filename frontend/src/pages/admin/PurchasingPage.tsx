@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, Truck, Package, Trash2, Edit2 } from 'lucide-react';
@@ -97,7 +98,9 @@ export default function PurchasingPage() {
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={PURCHASING_TABS} />}
+      
       title="Compras y Abastecimiento (PO)" 
       subtitle="Gestioná Órdenes de Compra, recepciones de mercadería y cuentas corrientes con proveedores."
       action={

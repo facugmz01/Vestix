@@ -1,11 +1,17 @@
-
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
-  Truck, Users, CreditCard, BarChart2, Settings, Tag,
-  Monitor, Globe, History, Banknote, Wallet, FileText, Bell, Plug, Shield, RefreshCw, Layers
+  Users, Wallet, Settings, Monitor, Globe, BarChart2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';
+
+import {
+  CATALOG_TABS,
+  INVENTORY_TABS,
+  PURCHASING_TABS,
+  SALES_TABS,
+  FINANCE_TABS,
+} from './moduleTabs';
 
 export interface NavItem {
   id:      string;
@@ -24,82 +30,75 @@ export interface NavGroup {
 }
 
 /**
- * Navigation grouped by module domain.
- * Each item declares the exact RBAC { action, subject } required to see it.
+ * CONSOLIDATED NAVIGATION for the Sidebar.
+ * Only the parent entry points are shown here.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
     id:    'overview',
     label: 'General',
     items: [
-      { id:'dashboard', label:'Dashboard',  to:'/admin',           icon:LayoutDashboard, action:'read',   subject:'Reports', end:true },
+      { id:'dashboard', label:'Dashboard', to:'/admin', icon:LayoutDashboard, action:'read', subject:'Reports', end:true },
     ],
   },
   {
     id:    'commerce',
     label: 'Comercio',
     items: [
-      { id:'catalog',   label:'Catálogo',           to:'/admin/catalog',     icon:Package, action:'read', subject:'Catalog' },
-      { id:'attributes',label:'Categorías y Precios', to:'/admin/attributes',  icon:Layers,  action:'read', subject:'Catalog' },
-      { id:'promotions',label:'Promociones',to:'/admin/promotions',icon:Package,         action:'read',   subject:'Catalog'    },
-      { id:'price-inquiry', label:'Consulta de Precios', to:'/admin/price-inquiry', icon:Tag, action:'read', subject:'Catalog' },
-      { id:'inventory', label:'Inventario', to:'/admin/inventory', icon:Warehouse,       action:'read',   subject:'Inventory'  },
-      { id:'movements', label:'Movimientos',to:'/admin/inventory/movements', icon:History,action:'read',  subject:'Inventory'  },
-      { id:'transfers', label:'Transferencias',to:'/admin/inventory/transfers', icon:Truck,action:'read', subject:'Inventory'  },
-      { id:'reservations', label:'Reservas de Stock',to:'/admin/inventory/reservations', icon:Package, action:'read', subject:'Inventory' },
-      { id:'purchasing',label:'Compras (OC)',to:'/admin/purchasing',icon:ShoppingCart,     action:'read',   subject:'Purchasing' },
-      { id:'receipts',  label:'Recepciones',to:'/admin/purchasing/receipts',icon:Package,  action:'read',   subject:'Purchasing' },
-      { id:'suppliers', label:'Proveedores',to:'/admin/suppliers', icon:Users,           action:'read',   subject:'Purchasing' },
-      { id:'pos',       label:'Punto de Venta',to:'/pos',            icon:Monitor,       action:'manage', subject:'Sales'      },
-      { id:'sales',     label:'Ventas',     to:'/admin/sales',     icon:ShoppingCart,    action:'read',   subject:'Sales'      },
-      { id:'returns',   label:'Devoluciones',to:'/admin/returns',  icon:History,         action:'read',   subject:'Sales'      },
-      { id:'current-accounts', label:'Cuentas Ctes.',to:'/admin/finance/current-accounts', icon:Banknote, action:'read', subject:'Finance' },
-      { id:'treasury',  label:'Cajas y Tesorería',to:'/admin/finance/treasury', icon:Wallet, action:'read', subject:'Finance' },
-      { id:'payments',  label:'Pagos y Cobros',to:'/admin/finance/payments', icon:CreditCard, action:'read', subject:'Finance' },
-      { id:'invoices',  label:'Facturación Electrónica',to:'/admin/finance/invoices', icon:FileText, action:'read', subject:'Finance' },
+      { id:'catalog',   label:'Catálogo',     to:'/admin/catalog',    icon:Package,      action:'read', subject:'Catalog' },
+      { id:'inventory', label:'Inventario',   to:'/admin/inventory',  icon:Warehouse,    action:'read', subject:'Inventory' },
+      { id:'purchasing',label:'Compras',      to:'/admin/purchasing', icon:ShoppingCart, action:'read', subject:'Purchasing' },
+      { id:'sales',     label:'Ventas',       to:'/admin/sales',      icon:ShoppingCart, action:'read', subject:'Sales' },
     ],
   },
   {
     id:    'crm',
     label: 'CRM',
     items: [
-      { id:'customers', label:'Clientes',   to:'/admin/customers', icon:Users,           action:'read',   subject:'Customers'  },
+      { id:'customers', label:'Clientes',     to:'/admin/customers',  icon:Users,        action:'read', subject:'Customers' },
     ],
   },
   {
     id:    'finance',
     label: 'Finanzas',
     items: [
-      { id:'finance',   label:'Finanzas',   to:'/admin/finance',   icon:CreditCard,      action:'read',   subject:'Finance'    },
-      { id:'reports',   label:'Reportes',   to:'/admin/reports',   icon:BarChart2,       action:'read',   subject:'Reports'    },
-      { id:'notifications', label:'Notificaciones', to:'/admin/notifications', icon:Bell, action:'read', subject:'Reports'   },
-      { id:'audit',     label:'Auditoría',   to:'/admin/audit',     icon:Shield,          action:'read',   subject:'Reports'    },
+      { id:'finance',   label:'Finanzas',     to:'/admin/finance/treasury', icon:Wallet,      action:'read', subject:'Finance' },
+    ],
+  },
+  {
+    id:    'reports',
+    label: 'Reportes y Auditoría',
+    items: [
+      { id:'reports',   label:'Reportes',     to:'/admin/reports',    icon:BarChart2,    action:'read', subject:'Reports' },
     ],
   },
   {
     id:    'channels',
     label: 'Canales',
     items: [
-      { id:'pos',       label:'POS',        to:'/pos',             icon:Monitor,         action:'create', subject:'Sales'      },
-      { id:'storefront',label:'Tienda',     to:'/store',           icon:Globe,           action:'read',   subject:'Catalog'    },
+      { id:'pos',       label:'Punto de Venta', to:'/pos',            icon:Monitor,      action:'manage', subject:'Sales' },
+      { id:'storefront',label:'Tienda Web',     to:'/store',          icon:Globe,        action:'read',   subject:'Catalog' },
     ],
   },
   {
     id:    'system',
     label: 'Sistema',
     items: [
-      { id:'branches',  label:'Sucursales', to:'/admin/branches',  icon:Warehouse,       action:'manage', subject:'Settings'   },
-      { id:'cash-registers', label:'Cajas', to:'/admin/cash-registers', icon:Monitor,    action:'manage', subject:'Settings'   },
-      { id:'warehouses',label:'Depósitos',  to:'/admin/warehouses',icon:Warehouse,       action:'manage', subject:'Inventory'  },
-      { id:'locations', label:'Ubicaciones',to:'/admin/locations', icon:Warehouse,       action:'manage', subject:'Inventory'  },
-      { id:'users',     label:'Usuarios',   to:'/admin/users',     icon:Users,           action:'manage', subject:'Users'      },
-      { id:'roles',     label:'Roles',      to:'/admin/roles',     icon:Settings,        action:'manage', subject:'Settings'   },
-      { id:'settings',  label:'Ajustes',       to:'/admin/settings',  icon:Settings,        action:'manage', subject:'Settings'   },
-      { id:'integrations', label:'Integraciones', to:'/admin/integrations', icon:Plug,        action:'manage', subject:'Settings'   },
-      { id:'sync',      label:'Sincronización', to:'/admin/sync',      icon:RefreshCw,       action:'read',   subject:'Reports'    },
+      { id:'settings',  label:'Configuración',to:'/admin/settings',   icon:Settings,     action:'manage', subject:'Settings' },
     ],
   },
 ];
 
-/** Flat list of all items (used for breadcrumb lookup). */
-export const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+/** 
+ * Flat list of all items (used for breadcrumb lookup).
+ * We manually combine NAV_GROUPS with all the Tab items so breadcrumbs can still find the hidden sub-routes.
+ */
+export const ALL_NAV_ITEMS: NavItem[] = [
+  ...NAV_GROUPS.flatMap((g) => g.items),
+  // Add sub-routes for breadcrumbs:
+  ...CATALOG_TABS.map(t => ({ ...t, action: 'read', subject: 'Catalog' } as NavItem)),
+  ...INVENTORY_TABS.map(t => ({ ...t, action: 'read', subject: 'Inventory' } as NavItem)),
+  ...PURCHASING_TABS.map(t => ({ ...t, action: 'read', subject: 'Purchasing' } as NavItem)),
+  ...SALES_TABS.map(t => ({ ...t, action: 'read', subject: 'Sales' } as NavItem)),
+  ...FINANCE_TABS.map(t => ({ ...t, action: 'read', subject: 'Finance' } as NavItem)),
+];

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, ArrowRightLeft } from 'lucide-react';
 
@@ -52,7 +53,9 @@ export default function ReturnsPage() {
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={SALES_TABS} />}
+      
       title="Gestión de Devoluciones y Cambios" 
       subtitle="Autorización de notas de crédito, retornos de mercadería y cambios de producto (RMA)."
       action={

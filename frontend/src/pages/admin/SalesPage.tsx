@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, ShoppingCart } from 'lucide-react';
 
@@ -50,7 +51,9 @@ export default function SalesPage() {
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={SALES_TABS} />}
+      
       title="Operaciones de Venta (Backoffice)" 
       subtitle="Monitor general de ventas confirmadas y presupuestos (Quotations) generados en todas las sucursales."
       action={

@@ -4,6 +4,7 @@ interface Props {
   title:     string;
   subtitle?: string;
   action?:   React.ReactNode;
+  tabs?:     React.ReactNode;
   children:  React.ReactNode;
 }
 
@@ -11,7 +12,7 @@ interface Props {
  * Top-level wrapper for every admin page.
  * Provides consistent page header and content spacing.
  */
-export function PageContainer({ title, subtitle, action, children }: Props) {
+export function PageContainer({ title, subtitle, action, tabs, children }: Props) {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -21,6 +22,7 @@ export function PageContainer({ title, subtitle, action, children }: Props) {
         </div>
         {action && <div className={styles.action}>{action}</div>}
       </div>
+      {tabs && <div className={styles.tabsWrapper}>{tabs}</div>}
       <div className={styles.body}>{children}</div>
     </div>
   );

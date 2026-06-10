@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { SlidersHorizontal, History, Settings2 } from 'lucide-react';
 
@@ -56,7 +57,9 @@ export default function InventoryPage() {
   const total = data?.total ?? 0;
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={INVENTORY_TABS} />}
+      
       title="Estado de Inventario" 
       subtitle="Visualización consolidada de existencias, disponibilidades y reservas por depósito."
       action={

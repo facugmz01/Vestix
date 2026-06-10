@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, CreditCard } from 'lucide-react';
 
@@ -35,7 +36,9 @@ export default function PaymentsPage() {
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={FINANCE_TABS} />}
+      
       title="Pagos y Cobranzas" 
       subtitle="Historial de transacciones, cobros en POS, transferencias y pagos en línea."
     >

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, ArrowDownRight, History, Download, Eye } from 'lucide-react';
 
@@ -51,7 +52,9 @@ export default function StockMovementsPage() {
   const total = data?.total ?? 0;
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={INVENTORY_TABS} />}
+      
       title="Libro Mayor de Movimientos (Kardex Global)" 
       subtitle="Trazabilidad y auditoría completa de entradas, salidas y ajustes de mercadería."
       action={

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState , Tabs } from 'react';
+import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, Truck, Navigation } from 'lucide-react';
 
@@ -64,7 +65,9 @@ export default function TransfersPage() {
   };
 
   return (
-    <PageContainer 
+    <PageContainer
+      tabs={<Tabs items={INVENTORY_TABS} />}
+      
       title="Transferencias Internas" 
       subtitle="Gestioná los envíos de mercadería entre depósitos y sucursales (Remitos internos)."
       action={
