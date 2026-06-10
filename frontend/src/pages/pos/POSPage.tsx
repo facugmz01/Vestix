@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Monitor, Search, Trash2, ShoppingCart, User, Plus, Minus, CreditCard, Banknote, Percent, LogOut, PackageOpen, ChevronRight, WifiOff } from 'lucide-react';
+import { 
+  Monitor, Search, Trash2, User, Plus, Minus, CreditCard, Banknote, 
+  LogOut, WifiOff, Maximize, Calculator, Clock, PauseCircle, FileText, 
+  Layers, Tags, XCircle, DollarSign
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { posApi } from '@/api/pos.api';
@@ -13,11 +17,10 @@ import { useAuthStore } from '@/store/auth.store';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import type { CashRegister, ProductVariant } from '@/types';
 
-import { Button, Input, Drawer } from '@/components/ui';
-
+import { Button, Input, Drawer, Modal } from '@/components/ui';
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
 
-// Subcomponents
+// --- Session Modal ---
 function SessionModal({ 
   open, availableRegisters, onOpenSession, isPending 
 }: { 
@@ -29,17 +32,17 @@ function SessionModal({
   if (!open) return null;
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: 'var(--bg-base)', padding: '32px', borderRadius: '16px', width: '90%', maxWidth: '420px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-        <h2 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '24px', fontWeight: 800 }}><Monitor size={28} color="var(--accent)" /> Apertura de Caja</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '15px', lineHeight: 1.5 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: '#fff', padding: '32px', borderRadius: '12px', width: '90%', maxWidth: '420px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+        <h2 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '24px', fontWeight: 800, color: '#1f2937' }}><Monitor size={28} color="#3b82f6" /> Apertura de Caja</h2>
+        <p style={{ color: '#6b7280', marginBottom: '24px', fontSize: '15px' }}>
           Para comenzar a operar, debés abrir una caja registradora asignando el saldo inicial de efectivo.
         </p>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Seleccionar Caja</label>
-            <select value={selectedReg} onChange={e => setSelectedReg(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '15px', outline: 'none' }}>
+            <label style={{ fontSize: '14px', fontWeight: 700, color: '#374151' }}>Seleccionar Caja</label>
+            <select value={selectedReg} onChange={e => setSelectedReg(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', color: '#111827', fontSize: '15px', outline: 'none' }}>
               <option value="">-- Cajas Disponibles --</option>
               {Array.isArray(availableRegisters) && availableRegisters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
@@ -56,7 +59,7 @@ function SessionModal({
 
           <Button 
             variant="primary" 
-            style={{ marginTop: '8px', height: '52px', fontSize: '16px', fontWeight: 800, borderRadius: '8px' }} 
+            style={{ marginTop: '8px', height: '52px', fontSize: '16px', fontWeight: 800, borderRadius: '8px', background: '#3b82f6' }} 
             disabled={!selectedReg || isPending}
             loading={isPending}
             onClick={() => onOpenSession?.(selectedReg, amount)}
@@ -69,13 +72,47 @@ function SessionModal({
   );
 }
 
+// --- Live Clock ---
+function LiveClock() {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return <span>{time.toLocaleTimeString()}</span>;
+}
+
+// --- Main POS Component ---
 export default function POSPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
-  // 1. Session Management
   const { user } = useAuthStore();
+  const enqueueOfflineOp = useOfflineQueueStore((s) => s.enqueue);
+
+  // --- State ---
+  const [search, setSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [cart, setCart] = useState<{ variant: ProductVariant, qty: number, discountPct: number }[]>([]);
+  const [cartDiscountPct, setCartDiscountPct] = useState(0);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [customerFormOpen, setCustomerFormOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'>('CASH');
+  const [amountTendered, setAmountTendered] = useState<number>(0);
+  const [issueInvoice, setIssueInvoice] = useState(false);
   
+  // Suspend Sales
+  const [suspendedSales, setSuspendedSales] = useState<any[]>([]);
+  const [suspendModalOpen, setSuspendModalOpen] = useState(false);
+
+  // Load suspended sales from local storage
+  useEffect(() => {
+    const saved = localStorage.getItem('vestix_suspended_sales');
+    if (saved) setSuspendedSales(JSON.parse(saved));
+  }, []);
+
+  // --- Queries ---
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: queryKeys.pos.session(),
     queryFn: () => posApi.getMyRegister(),
@@ -98,48 +135,34 @@ export default function POSPage() {
     onError: (err: any) => toast.error(err.message || 'Error al abrir caja'),
   });
 
-  // 2. Offline Queue
-  const enqueueOfflineOp = useOfflineQueueStore((s) => s.enqueue);
+  // Fetch some products for the right grid (mocking a "All products" view)
+  const { data: gridProducts } = useQuery({
+    queryKey: ['pos', 'gridProducts'],
+    queryFn: () => posApi.searchProduct(''), // Assuming empty search returns popular or all
+  });
 
-  // 3. POS State
-  const [search, setSearch] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const [cart, setCart] = useState<{ variant: ProductVariant, qty: number, discountPct: number }[]>([]);
-  const [cartDiscountPct, setCartDiscountPct] = useState(0);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [customerFormOpen, setCustomerFormOpen] = useState(false);
-
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'>('CASH');
-  const [amountTendered, setAmountTendered] = useState<number>(0);
-  const [issueInvoice, setIssueInvoice] = useState(false);
-
-  // Focus search on mount
-  useEffect(() => {
-    if (session && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [session]);
-
-  const { data: searchResults, isFetching: isSearching } = useQuery({
+  const { data: searchResults } = useQuery({
     queryKey: ['pos', 'search', search],
     queryFn: () => posApi.searchProduct(search),
-    enabled: search.length >= 3,
+    enabled: search.length >= 2,
   });
 
   const { data: customersData } = useQuery({
     queryKey: queryKeys.customers.all(),
-    queryFn: () => customersApi.getCustomers({ pageSize: 1000 }), // Load a decent amount for POS
+    queryFn: () => customersApi.getCustomers({ pageSize: 1000 }),
   });
 
-  // Derived Totals
+  // --- Computed ---
+  const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
   const subtotal = cart.reduce((acc, item) => acc + (item.variant.basePrice * item.qty), 0);
   const lineDiscounts = cart.reduce((acc, item) => acc + ((item.variant.basePrice * item.qty) * (item.discountPct / 100)), 0);
   const totalAfterLines = subtotal - lineDiscounts;
   const globalDiscount = totalAfterLines * (cartDiscountPct / 100);
   const grandTotal = totalAfterLines - globalDiscount;
 
+  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
+  // --- Handlers ---
   const handleAddToCart = (variant: ProductVariant) => {
     setCart(prev => {
       const exists = prev.find(i => i.variant.id === variant.id);
@@ -152,42 +175,61 @@ export default function POSPage() {
     searchInputRef.current?.focus();
   };
 
-  const updateQty = (id: string, delta: number) => {
-    setCart(prev => prev.map(i => {
-      if (i.variant.id === id) {
-        const newQty = Math.max(1, i.qty + delta);
-        return { ...i, qty: newQty };
-      }
-      return i;
-    }));
+  const updateQty = (id: string, newQty: number) => {
+    if (newQty < 1) return;
+    setCart(prev => prev.map(i => i.variant.id === id ? { ...i, qty: newQty } : i));
   };
 
   const removeLine = (id: string) => {
     setCart(prev => prev.filter(i => i.variant.id !== id));
   };
 
+  const suspendSale = () => {
+    if (cart.length === 0) return;
+    const sale = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      cart,
+      customerId: selectedCustomerId,
+      discount: cartDiscountPct,
+      total: grandTotal
+    };
+    const newSuspended = [...suspendedSales, sale];
+    setSuspendedSales(newSuspended);
+    localStorage.setItem('vestix_suspended_sales', JSON.stringify(newSuspended));
+    toast.success('Venta suspendida (Hold)');
+    setCart([]);
+    setSelectedCustomerId('');
+  };
+
+  const resumeSale = (saleId: string) => {
+    const sale = suspendedSales.find(s => s.id === saleId);
+    if (!sale) return;
+    setCart(sale.cart);
+    setSelectedCustomerId(sale.customerId);
+    setCartDiscountPct(sale.discount);
+    
+    const newSuspended = suspendedSales.filter(s => s.id !== saleId);
+    setSuspendedSales(newSuspended);
+    localStorage.setItem('vestix_suspended_sales', JSON.stringify(newSuspended));
+    setSuspendModalOpen(false);
+  };
+
   const checkoutMutation = useMutation({
     mutationFn: async (status: 'CONFIRMED' | 'QUOTATION' = 'CONFIRMED') => {
       if (!session) throw new Error('No hay sesión de caja activa');
-
-      // 1. Pre-generar el ID de orden (Idempotency Key dictado por el POS)
       const orderId = crypto.randomUUID();
-
-      // 2. Prebúsqueda de almacén: tolerante a caídas de red (staleTime + try/catch)
+      
       let warehouseId = 'main';
       try {
         const warehouses = await queryClient.fetchQuery({
           queryKey: ['warehouses', session.branchId],
           queryFn: () => get<any[]>('/inventory/warehouses', { params: { branchId: session.branchId } }),
-          staleTime: 600_000, // 10 min de caché para reducir peticiones
+          staleTime: 600_000,
         });
         warehouseId = warehouses?.[0]?.id || 'main';
-      } catch {
-        // Sin red: el servidor usará el almacén principal de la sucursal
-        warehouseId = 'main';
-      }
+      } catch { warehouseId = 'main'; }
 
-      // 3. Prebúsqueda de cuenta de tesorería: tolerante a caídas de red
       let paymentAccountId: string | undefined;
       try {
         const accounts = await queryClient.fetchQuery({
@@ -196,24 +238,15 @@ export default function POSPage() {
           staleTime: 600_000,
         });
         paymentAccountId = accounts?.find((a: any) => a.isActive)?.id;
-      } catch {
-        // Sin red: la cuenta se resolverá en el servidor al sincronizar
-        paymentAccountId = undefined;
-      }
+      } catch { paymentAccountId = undefined; }
 
-      // 4. Validar cuenta de tesorería solo si estamos online
-      if (status === 'CONFIRMED' && !paymentAccountId && paymentMethod !== 'CUSTOMER_CREDIT' && navigator.onLine) {
-        throw new Error('No se encontró una cuenta de tesorería activa para registrar el pago');
-      }
-
-      // 5. Construir el DTO de la venta
       const dto = {
         id: orderId,
         branchId: session.branchId,
         warehouseId,
         customerId: selectedCustomerId || undefined,
         source: 'POS' as const,
-        paymentMethod,
+        paymentMethod: paymentMethod === 'MULTIPLE' ? 'CASH' : paymentMethod, // Fallback for now
         paymentAccountId,
         status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
         posGrandTotal: grandTotal,
@@ -229,39 +262,22 @@ export default function POSPage() {
         issueInvoice,
       };
 
-      // 6. Intercepción offline: encolar directamente si no hay red
       if (!navigator.onLine) {
         enqueueOfflineOp({
-          module: 'POS',
-          action: 'createSale',
-          description: `Venta POS offline (${paymentMethod}) — ${fmtCurrency(grandTotal)}`,
-          endpoint: '/sales/checkout',
-          method: 'POST',
-          maxRetries: 5,
-          payload: dto,
+          module: 'POS', action: 'createSale', description: `Venta POS offline`,
+          endpoint: '/sales/checkout', method: 'POST', maxRetries: 5, payload: dto,
         });
         return { offline: true };
       }
 
-      // 7. Envío online con fallback automático ante cortes físicos de red
       try {
         const res = await salesApi.createSale(dto);
         return { offline: false, res };
       } catch (err: any) {
-        const isNetworkError =
-          !err.response ||
-          err.code === 'ERR_NETWORK' ||
-          (typeof err.message === 'string' && err.message.toLowerCase().includes('network'));
-
-        if (isNetworkError) {
+        if (!err.response || err.code === 'ERR_NETWORK') {
           enqueueOfflineOp({
-            module: 'POS',
-            action: 'createSale',
-            description: `Venta POS offline (${paymentMethod}) — ${fmtCurrency(grandTotal)}`,
-            endpoint: '/sales/checkout',
-            method: 'POST',
-            maxRetries: 5,
-            payload: dto,
+            module: 'POS', action: 'createSale', description: `Venta POS offline`,
+            endpoint: '/sales/checkout', method: 'POST', maxRetries: 5, payload: dto,
           });
           return { offline: true };
         }
@@ -269,130 +285,256 @@ export default function POSPage() {
       }
     },
     onSuccess: (data: any, status) => {
-      if (data?.offline) {
-        toast(
-          status === 'QUOTATION'
-            ? '📋 Presupuesto guardado localmente'
-            : '💾 Venta registrada sin conexión — se sincronizará automáticamente',
-          { icon: <WifiOff size={16} />, duration: 4000 }
-        );
-      } else {
-        toast.success(status === 'QUOTATION' ? 'Presupuesto guardado ✅' : 'Venta registrada con éxito ✅');
-      }
+      toast.success(data?.offline ? 'Registrado offline' : (status === 'QUOTATION' ? 'Presupuesto Creado' : 'Venta Pagada!'));
       setCart([]);
       setCartDiscountPct(0);
       setSelectedCustomerId('');
       setPaymentModalOpen(false);
       setAmountTendered(0);
     },
-    onError: (err: any) => toast.error(err.message || 'Error al procesar la operación'),
+    onError: (err: any) => toast.error(err.message || 'Error al cobrar'),
   });
 
-  const handleCheckout = () => {
+  const openPayment = (method: typeof paymentMethod) => {
     if (cart.length === 0) return;
-    setPaymentModalOpen(true);
+    setPaymentMethod(method);
     setAmountTendered(grandTotal);
+    setPaymentModalOpen(true);
   };
 
-  const handleSaveQuote = () => {
-    if (cart.length === 0) return;
-    checkoutMutation.mutate('QUOTATION');
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => console.log(err));
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
-
-  if (isSessionLoading) return <div style={{ padding: '40px', textAlign: 'center', fontSize: '18px', fontWeight: 600 }}>Cargando terminal POS...</div>;
+  if (isSessionLoading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: 600 }}>Iniciando terminal...</div>;
 
   return (
     <>
+      {/* GLOBAL STYLES FOR POS */}
       <style>{`
-        .pos-wrapper {
+        .pos-layout {
           display: flex;
           flex-direction: column;
-          height: calc(100vh - 60px);
-          margin: -24px;
-          background: var(--bg-base);
+          height: 100vh;
+          width: 100vw;
+          position: fixed;
+          top: 0; left: 0;
+          background: #f4f6f9;
+          z-index: 1000;
           overflow: hidden;
+          font-family: 'Inter', sans-serif;
         }
-        .pos-header {
+        .pos-navbar {
+          background: #3c8dbc;
+          color: #fff;
+          height: 50px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 16px 24px;
-          background: #0f172a;
-          color: #fff;
-          flex-shrink: 0;
-          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-          z-index: 10;
+          padding: 0 15px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .pos-header-btn {
-          background: rgba(255,255,255,0.1);
+        .pos-nav-logo {
+          font-size: 20px;
+          font-weight: 700;
+          letter-spacing: -0.5px;
+        }
+        .pos-nav-icons {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+        .pos-icon-btn {
+          background: transparent;
           border: none;
           color: white;
-          padding: 8px 16px;
-          border-radius: 8px;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-weight: 600;
-          transition: background 0.2s;
+          gap: 5px;
+          padding: 5px 10px;
+          border-radius: 4px;
         }
-        .pos-header-btn:hover {
-          background: rgba(255,255,255,0.2);
-        }
-        .pos-body {
+        .pos-icon-btn:hover { background: rgba(0,0,0,0.1); }
+        .pos-main {
           display: flex;
           flex: 1;
           overflow: hidden;
         }
-        .pos-products-panel {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          background: var(--bg-base);
-        }
-        .pos-cart-panel {
-          width: 420px;
+        .pos-left {
+          flex: 6.5;
           display: flex;
           flex-direction: column;
           background: #fff;
-          border-left: 1px solid #e2e8f0;
-          box-shadow: -4px 0 15px rgba(0,0,0,0.03);
-          z-index: 5;
+          border-right: 1px solid #d2d6de;
         }
-        /* Dark mode overrides for cart panel if needed */
-        [data-theme='dark'] .pos-cart-panel {
-          background: var(--bg-elevated);
-          border-left: 1px solid var(--border);
+        .pos-right {
+          flex: 3.5;
+          display: flex;
+          flex-direction: column;
+          background: #ecf0f5;
         }
+        .pos-cart-top {
+          padding: 10px;
+          background: #fff;
+          border-bottom: 1px solid #d2d6de;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .pos-search-wrap {
+          display: flex;
+          gap: 10px;
+        }
+        .pos-search-input {
+          flex: 1;
+          padding: 12px 12px 12px 40px;
+          border: 2px solid #3c8dbc;
+          border-radius: 4px;
+          font-size: 16px;
+          outline: none;
+        }
+        .pos-table-container {
+          flex: 1;
+          overflow-y: auto;
+          background: #fff;
+        }
+        .pos-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .pos-table th {
+          background: #f4f4f4;
+          padding: 10px;
+          text-align: left;
+          font-size: 13px;
+          color: #333;
+          border-bottom: 2px solid #ddd;
+          position: sticky;
+          top: 0;
+        }
+        .pos-table td {
+          padding: 8px 10px;
+          border-bottom: 1px solid #f4f4f4;
+          font-size: 14px;
+          vertical-align: middle;
+        }
+        .pos-qty-input {
+          width: 50px;
+          text-align: center;
+          padding: 4px;
+          border: 1px solid #ccc;
+          border-radius: 3px;
+        }
+        .pos-summary {
+          background: #fff;
+          border-top: 1px solid #d2d6de;
+          padding: 10px 15px;
+        }
+        .pos-summary-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 14px;
+          margin-bottom: 5px;
+        }
+        .pos-total-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: #e1f5fe;
+          padding: 10px 15px;
+          font-size: 24px;
+          font-weight: 700;
+          color: #01579b;
+        }
+        .pos-action-buttons {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 5px;
+          padding: 10px;
+          background: #fff;
+        }
+        .pos-btn {
+          padding: 15px 5px;
+          color: #fff;
+          border: none;
+          border-radius: 3px;
+          font-weight: 700;
+          font-size: 13px;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 5px;
+          transition: opacity 0.2s;
+        }
+        .pos-btn:hover { opacity: 0.9; }
+        .pos-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .bg-draft { background: #f39c12; }
+        .bg-quotation { background: #00c0ef; }
+        .bg-suspend { background: #dd4b39; }
+        .bg-credit { background: #605ca8; }
+        .bg-card { background: #39cccc; }
+        .bg-multiple { background: #001f3f; }
+        .bg-cash { background: #00a65a; grid-column: span 2; font-size: 16px; }
         
-        @media (max-width: 1024px) {
-          .pos-body {
-            flex-direction: column;
-            overflow: auto;
-          }
-          .pos-wrapper {
-            height: auto;
-            min-height: calc(100vh - 60px);
-            overflow: visible;
-          }
-          .pos-products-panel {
-            min-height: 50vh;
-            overflow: visible;
-          }
-          .pos-cart-panel {
-            width: 100%;
-            border-left: none;
-            border-top: 2px solid var(--border);
-            height: auto;
-          }
+        .pos-products-header {
+          padding: 10px;
+          display: flex;
+          gap: 10px;
+          background: #ecf0f5;
+        }
+        .pos-products-grid {
+          flex: 1;
+          overflow-y: auto;
+          padding: 10px;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+          gap: 10px;
+          align-content: start;
+        }
+        .pos-product-card {
+          background: #fff;
+          border: 1px solid #d2d6de;
+          border-radius: 4px;
+          cursor: pointer;
+          overflow: hidden;
+          text-align: center;
+          box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+        .pos-product-card:hover { border-color: #3c8dbc; }
+        .pos-product-img {
+          height: 80px;
+          background: #f4f4f4;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ccc;
+        }
+        .pos-product-info {
+          padding: 8px 5px;
+        }
+        .pos-product-name {
+          font-size: 12px;
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 4px;
+          line-height: 1.2;
+          height: 28px;
+          overflow: hidden;
+        }
+        .pos-product-price {
+          font-size: 13px;
+          font-weight: 700;
+          color: #00a65a;
         }
       `}</style>
-      
-      <div className="pos-wrapper">
-        
-        {/* Session Blocker */}
+
+      <div className="pos-layout">
         <SessionModal 
           open={!session && !isSessionLoading} 
           availableRegisters={registersData || []} 
@@ -400,332 +542,280 @@ export default function POSPage() {
           isPending={openSessionMutation.isPending}
         />
 
-        {/* TOP HEADER */}
-        <div className="pos-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <button className="pos-header-btn" onClick={() => navigate('/')}>
-              <LogOut size={18} /> Salir
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ background: '#3b82f6', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>E</div>
-              <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px' }}>Terminal POS</span>
-            </div>
+        {/* NAVBAR */}
+        <div className="pos-navbar">
+          <div className="pos-nav-logo">
+            <span style={{ fontWeight: 900 }}>Vestix</span> <span style={{ fontWeight: 300 }}>POS</span>
           </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '14px', fontWeight: 600 }}>
-            {session && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', padding: '6px 12px', borderRadius: '20px' }}>
-                <span style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%' }}></span>
-                {session.name}
-              </div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1' }}>
-              <User size={16} /> {user?.fullName || user?.email}
-            </div>
+          <div className="pos-nav-icons">
+            <div className="pos-icon-btn"><Clock size={16} /> <LiveClock /></div>
+            <button className="pos-icon-btn" onClick={() => setSuspendModalOpen(true)} title="Ventas Suspendidas">
+              <PauseCircle size={18} /> {suspendedSales.length > 0 && <span style={{ background: '#f39c12', padding: '2px 6px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{suspendedSales.length}</span>}
+            </button>
+            <button className="pos-icon-btn" onClick={toggleFullScreen} title="Pantalla Completa"><Maximize size={18} /></button>
+            <button className="pos-icon-btn" onClick={() => window.open('/calculator', '_blank', 'width=300,height=400')} title="Calculadora"><Calculator size={18} /></button>
+            <button className="pos-icon-btn" onClick={() => navigate('/')} title="Volver al Dashboard"><LogOut size={18} /> Volver</button>
           </div>
         </div>
 
-        <div className="pos-body">
-          {/* LEFT: Search & Products */}
-          <div className="pos-products-panel">
-            <div style={{ padding: '24px', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ position: 'relative', maxWidth: '800px', margin: '0 auto' }}>
-                <Search size={24} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }} />
-                <input 
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Escanear Código de Barras o Buscar Producto..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  style={{ 
-                    width: '100%', padding: '16px 16px 16px 52px', borderRadius: '12px', 
-                    border: '2px solid #3b82f6', fontSize: '18px', background: 'var(--bg-base)', 
-                    color: 'var(--text-primary)', outline: 'none', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)',
-                    boxSizing: 'border-box'
-                  }}
-                />
-                {search && (
-                  <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '16px', top: '16px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                    <Minus size={24} style={{ transform: 'rotate(45deg)' }} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
-              {search.length < 3 ? (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                  <div style={{ textAlign: 'center', maxWidth: '300px' }}>
-                    <PackageOpen size={64} style={{ opacity: 0.2, margin: '0 auto 24px' }} />
-                    <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 8px', color: 'var(--text-primary)' }}>Listo para cobrar</h3>
-                    <p style={{ fontSize: '15px', lineHeight: 1.5 }}>Utilizá el lector de código de barras o buscá manualmente por nombre o SKU.</p>
-                  </div>
-                </div>
-              ) : isSearching ? (
-                <div style={{ textAlign: 'center', padding: '60px', fontSize: '18px', fontWeight: 600, color: 'var(--text-muted)' }}>Buscando productos...</div>
-              ) : searchResults && searchResults.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
-                  {searchResults.map(p => (
-                    <div 
-                      key={p.id} 
-                      onClick={() => handleAddToCart(p)}
-                      style={{ 
-                        background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', 
-                        padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', 
-                        transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden'
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                    >
-                      <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#3b82f6' }}></div>
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', fontWeight: 600, background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: '4px', alignSelf: 'flex-start' }}>
-                        {p.sku}
-                      </span>
-                      <span style={{ fontSize: '16px', fontWeight: 700, lineHeight: 1.3, color: 'var(--text-primary)' }}>
-                        {(p as any).productName || 'Producto'} {p.size ? `- T. ${p.size}` : ''}
-                      </span>
-                      <span style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a', marginTop: 'auto' }}>
-                        {fmtCurrency(p.basePrice)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '60px', color: '#ef4444', fontSize: '18px', fontWeight: 600 }}>
-                  No se encontraron resultados para "{search}".
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT: Cart & Checkout */}
-          <div className="pos-cart-panel">
-            
-            {/* Customer Selector */}
-            <div style={{ padding: '20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-base)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Cliente
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <User size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+        <div className="pos-main">
+          {/* LEFT PANE - CART */}
+          <div className="pos-left">
+            <div className="pos-cart-top">
+              {/* Customer Select */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <User size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: '#999' }} />
                   <select 
                     value={selectedCustomerId} 
                     onChange={e => setSelectedCustomerId(e.target.value)}
-                    style={{ width: '100%', padding: '10px 10px 10px 38px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600, outline: 'none', appearance: 'none' }}
+                    style={{ width: '100%', padding: '8px 10px 8px 34px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', outline: 'none' }}
                   >
-                    <option value="">Consumidor Final</option>
+                    <option value="">Cliente Ocasional / Consumidor Final</option>
                     {customersData?.data.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                   </select>
                 </div>
-                <Button variant="secondary" onClick={() => setCustomerFormOpen(true)} title="Nuevo Cliente" style={{ padding: '10px', height: '42px', width: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Plus size={20} />
-                </Button>
+                <button onClick={() => setCustomerFormOpen(true)} style={{ padding: '0 15px', background: '#3c8dbc', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  <Plus size={18} />
+                </button>
               </div>
-            </div>
 
-            {/* Cart Items */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px', background: 'var(--bg-elevated)' }}>
-              {cart.length === 0 ? (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-muted)' }}>
-                  <ShoppingCart size={56} style={{ marginBottom: '16px', color: '#cbd5e1' }} />
-                  <p style={{ fontSize: '16px', fontWeight: 600 }}>El carrito está vacío</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {cart.map(item => (
-                    <div key={item.variant.id} style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'flex-start' }}>
-                        <div>
-                          <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                            {(item.variant as any).productName || 'Producto'} {item.variant.size ? `- T. ${item.variant.size}` : ''}
-                          </p>
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{item.variant.sku}</span>
-                        </div>
-                        <button style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', color: '#ef4444' }} onClick={() => removeLine(item.variant.id)}>
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                      
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-                          <button onClick={() => updateQty(item.variant.id, -1)} style={{ padding: '8px 12px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-primary)' }}><Minus size={16} /></button>
-                          <span style={{ fontWeight: 800, width: '32px', textAlign: 'center', fontSize: '15px' }}>{item.qty}</span>
-                          <button onClick={() => updateQty(item.variant.id, 1)} style={{ padding: '8px 12px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-primary)' }}><Plus size={16} /></button>
-                        </div>
-                        
-                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Precio:</span>
-                            <input 
-                              type="number" 
-                              value={item.variant.basePrice} 
-                              onChange={e => {
-                                const newPrice = Number(e.target.value);
-                                setCart(prev => prev.map(i => i.variant.id === item.variant.id ? { ...i, variant: { ...i.variant, basePrice: newPrice } } : i));
-                              }}
-                              style={{ width: '90px', padding: '6px', textAlign: 'right', border: '1px solid var(--border)', borderRadius: '6px', fontWeight: 700, background: 'var(--bg-base)', fontSize: '14px', outline: 'none' }}
-                            />
-                          </div>
-                          {/* Removing line discount input from normal view to simplify UI, but keeping if needed. Let's make it a small input */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
-                            <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 600 }}>Desc %:</span>
-                            <input 
-                              type="number" 
-                              value={item.discountPct} 
-                              onChange={e => {
-                                const newDisc = Number(e.target.value);
-                                setCart(prev => prev.map(i => i.variant.id === item.variant.id ? { ...i, discountPct: newDisc } : i));
-                              }}
-                              style={{ width: '60px', padding: '4px 6px', textAlign: 'right', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px', background: '#eff6ff', color: '#1d4ed8', outline: 'none' }}
-                            />
-                          </div>
-                          <p style={{ margin: '6px 0 0', fontSize: '18px', fontWeight: 900, color: '#0f172a' }}>
-                            {fmtCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Totals & Pay */}
-            <div style={{ padding: '24px', background: 'var(--bg-base)', boxShadow: '0 -4px 15px rgba(0,0,0,0.05)', zIndex: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                <span>Subtotal</span>
-                <span style={{ fontWeight: 600 }}>{fmtCurrency(subtotal)}</span>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '15px', marginBottom: '16px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3b82f6', fontWeight: 600 }}>
-                  <Percent size={16} /> Descuento Gral %
-                </span>
+              {/* Search */}
+              <div style={{ position: 'relative' }}>
+                <Search size={20} style={{ position: 'absolute', left: '12px', top: '13px', color: '#3c8dbc' }} />
                 <input 
-                  type="number" min="0" max="100" 
-                  value={cartDiscountPct} 
-                  onChange={e => setCartDiscountPct(Number(e.target.value))}
-                  style={{ width: '70px', padding: '6px', textAlign: 'right', border: '1px solid #bfdbfe', borderRadius: '6px', background: '#eff6ff', color: '#1d4ed8', fontWeight: 700, outline: 'none' }}
+                  ref={searchInputRef}
+                  type="text"
+                  className="pos-search-input"
+                  placeholder="Ingrese el nombre del producto / SKU / Escanear código de barras"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && searchResults?.length === 1) {
+                      handleAddToCart(searchResults[0]);
+                    }
+                  }}
+                  autoFocus
                 />
               </div>
+            </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: '16px', borderTop: '2px dashed var(--border)', marginBottom: '20px' }}>
-                <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>Total</span>
-                <span style={{ fontSize: '38px', fontWeight: 900, color: '#10b981', lineHeight: 1, letterSpacing: '-1px' }}>{fmtCurrency(grandTotal)}</span>
-              </div>
+            {/* Cart Table */}
+            <div className="pos-table-container">
+              <table className="pos-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '40%' }}>Producto</th>
+                    <th style={{ width: '15%', textAlign: 'center' }}>Cant.</th>
+                    <th style={{ width: '15%', textAlign: 'right' }}>Precio</th>
+                    <th style={{ width: '10%', textAlign: 'right' }}>Desc%</th>
+                    <th style={{ width: '15%', textAlign: 'right' }}>Subtotal</th>
+                    <th style={{ width: '5%', textAlign: 'center' }}><Trash2 size={16} /></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cart.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                        No hay productos agregados
+                      </td>
+                    </tr>
+                  ) : (
+                    cart.map((item, index) => (
+                      <tr key={`${item.variant.id}-${index}`}>
+                        <td style={{ fontWeight: 600, color: '#3c8dbc' }}>
+                          {(item.variant as any).productName || 'Producto'} {item.variant.size ? `(${item.variant.size})` : ''}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <button onClick={() => updateQty(item.variant.id, item.qty - 1)} style={{ padding: '2px', border: '1px solid #ccc', background: '#f4f4f4', cursor: 'pointer' }}><Minus size={12} /></button>
+                            <input 
+                              type="number" 
+                              className="pos-qty-input" 
+                              value={item.qty} 
+                              onChange={e => updateQty(item.variant.id, Number(e.target.value))}
+                            />
+                            <button onClick={() => updateQty(item.variant.id, item.qty + 1)} style={{ padding: '2px', border: '1px solid #ccc', background: '#f4f4f4', cursor: 'pointer' }}><Plus size={12} /></button>
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                           <input 
+                            type="number" 
+                            style={{ width: '70px', textAlign: 'right', padding: '2px', border: '1px solid #ccc' }}
+                            value={item.variant.basePrice} 
+                            onChange={e => {
+                              const newPrice = Number(e.target.value);
+                              setCart(prev => prev.map(i => i.variant.id === item.variant.id ? { ...i, variant: { ...i.variant, basePrice: newPrice } } : i));
+                            }}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <input 
+                            type="number" 
+                            style={{ width: '50px', textAlign: 'right', padding: '2px', border: '1px solid #ccc' }}
+                            value={item.discountPct} 
+                            onChange={e => {
+                              const newDisc = Number(e.target.value);
+                              setCart(prev => prev.map(i => i.variant.id === item.variant.id ? { ...i, discountPct: newDisc } : i));
+                            }}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                          {fmtCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button onClick={() => removeLine(item.variant.id)} style={{ color: '#dd4b39', background: 'none', border: 'none', cursor: 'pointer' }}>
+                            <XCircle size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-                <Button 
-                  variant="primary" 
-                  style={{ height: '64px', fontSize: '20px', fontWeight: 900, borderRadius: '12px', background: '#0f172a', display: 'flex', justifyContent: 'center', gap: '12px' }}
-                  disabled={cart.length === 0}
-                  onClick={handleCheckout}
-                >
-                  Cobrar <ChevronRight size={24} />
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  style={{ height: '48px', fontSize: '15px', fontWeight: 700, borderRadius: '12px', color: 'var(--text-secondary)' }}
-                  disabled={cart.length === 0 || checkoutMutation.isPending}
-                  onClick={handleSaveQuote}
-                >
-                  Guardar Presupuesto
-                </Button>
+            {/* Totals Summary */}
+            <div className="pos-summary">
+              <div className="pos-summary-row">
+                <span><b>Items:</b> {totalItems}</span>
+                <span><b>Subtotal:</b> {fmtCurrency(subtotal)}</span>
               </div>
+              <div className="pos-summary-row" style={{ alignItems: 'center' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <b>Descuento %:</b> 
+                  <input type="number" style={{ width: '60px', padding: '2px', border: '1px solid #ccc' }} value={cartDiscountPct} onChange={e => setCartDiscountPct(Number(e.target.value))} />
+                </span>
+                <span style={{ color: '#dd4b39' }}><b>(-)</b> {fmtCurrency(globalDiscount + lineDiscounts)}</span>
+              </div>
+            </div>
+            <div className="pos-total-row">
+              <span>Total a Pagar</span>
+              <span>{fmtCurrency(grandTotal)}</span>
+            </div>
+
+            {/* Ultimate POS Action Buttons */}
+            <div className="pos-action-buttons">
+              <button className="pos-btn bg-draft" disabled={cart.length === 0} onClick={() => checkoutMutation.mutate('QUOTATION')}>
+                <FileText size={20} /> Borrador
+              </button>
+              <button className="pos-btn bg-quotation" disabled={cart.length === 0} onClick={() => checkoutMutation.mutate('QUOTATION')}>
+                <FileText size={20} /> Cotización
+              </button>
+              <button className="pos-btn bg-suspend" disabled={cart.length === 0} onClick={suspendSale}>
+                <PauseCircle size={20} /> Suspender
+              </button>
+              <button className="pos-btn bg-credit" disabled={cart.length === 0} onClick={() => openPayment('CUSTOMER_CREDIT')}>
+                <User size={20} /> Crédito
+              </button>
+              <button className="pos-btn bg-card" disabled={cart.length === 0} onClick={() => openPayment('CREDIT_CARD')}>
+                <CreditCard size={20} /> Tarjeta
+              </button>
+              <button className="pos-btn bg-multiple" disabled={cart.length === 0} onClick={() => openPayment('MULTIPLE')}>
+                <Layers size={20} /> Múltiple
+              </button>
+              <button className="pos-btn bg-cash" disabled={cart.length === 0} onClick={() => openPayment('CASH')}>
+                <Banknote size={24} /> Efectivo
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT PANE - PRODUCTS */}
+          <div className="pos-right">
+            <div className="pos-products-header">
+              <select style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '3px' }}>
+                <option>Todas las Categorías</option>
+              </select>
+              <select style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '3px' }}>
+                <option>Todas las Marcas</option>
+              </select>
+            </div>
+            <div className="pos-products-grid">
+              {(search.length >= 2 ? searchResults : gridProducts)?.map(p => (
+                <div key={p.id} className="pos-product-card" onClick={() => handleAddToCart(p)}>
+                  <div className="pos-product-img">
+                    <Tags size={32} />
+                  </div>
+                  <div className="pos-product-info">
+                    <div className="pos-product-name">{(p as any).productName || 'Producto'} {p.size ? `(${p.size})` : ''}</div>
+                    <div className="pos-product-price">{fmtCurrency(p.basePrice)}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Payment Modal */}
-        <Drawer open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar Cobro" width="sm">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
-            
-            <div style={{ textAlign: 'center', padding: '32px 24px', background: '#f0fdf4', borderRadius: '16px', border: '1px solid #bbf7d0' }}>
-              <p style={{ margin: '0 0 8px', color: '#166534', fontWeight: 700, fontSize: '15px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monto a Cobrar</p>
-              <h1 style={{ margin: 0, fontSize: '56px', color: '#15803d', fontWeight: 900, letterSpacing: '-1px' }}>{fmtCurrency(grandTotal)}</h1>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>Método de Pago</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                {[
-                  { id: 'CASH', label: 'Efectivo', icon: Banknote },
-                  { id: 'CREDIT_CARD', label: 'Tarjeta', icon: CreditCard },
-                  { id: 'BANK_TRANSFER', label: 'Transf.', icon: Percent },
-                  { id: 'CUSTOMER_CREDIT', label: 'Cta. Cte.', icon: User },
-                ].map(pm => {
-                  const isSel = paymentMethod === pm.id;
-                  return (
-                    <button 
-                      key={pm.id}
-                      onClick={() => setPaymentMethod(pm.id as any)}
-                      style={{ 
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', 
-                        padding: '16px', borderRadius: '12px', border: `2px solid ${isSel ? '#3b82f6' : 'var(--border)'}`, 
-                        background: isSel ? '#eff6ff' : 'var(--bg-base)', color: isSel ? '#1d4ed8' : 'var(--text-secondary)',
-                        fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
-                      }}
-                    >
-                      <pm.icon size={28} />
-                      <span>{pm.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+        {/* PAYMENT MODAL */}
+        <Modal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar Pago">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ background: '#00a65a', color: '#fff', padding: '20px', textAlign: 'center', borderRadius: '4px' }}>
+              <div style={{ fontSize: '14px', textTransform: 'uppercase' }}>Monto a Pagar</div>
+              <div style={{ fontSize: '42px', fontWeight: 700 }}>{fmtCurrency(grandTotal)}</div>
             </div>
 
             {paymentMethod === 'CASH' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                <label style={{ fontWeight: 800, fontSize: '16px' }}>Paga con ($)</label>
+              <div>
+                <label style={{ fontWeight: 'bold' }}>Monto Recibido</label>
                 <Input 
                   type="number" 
                   min={grandTotal}
                   value={amountTendered} 
                   onChange={e => setAmountTendered(Number(e.target.value))} 
-                  style={{ fontSize: '28px', padding: '16px', fontWeight: 800, textAlign: 'center', borderRadius: '12px' }}
+                  style={{ fontSize: '24px', padding: '10px' }}
                 />
-                {amountTendered >= grandTotal && (
-                  <div style={{ marginTop: '12px', padding: '20px', background: '#fff', border: '2px solid #10b981', color: '#10b981', borderRadius: '12px', textAlign: 'center' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700, color: '#047857' }}>Vuelto a entregar</p>
-                    <p style={{ margin: 0, fontSize: '36px', fontWeight: 900 }}>{fmtCurrency(amountTendered - grandTotal)}</p>
+                {amountTendered > grandTotal && (
+                  <div style={{ marginTop: '15px', color: '#dd4b39', fontSize: '20px', fontWeight: 'bold' }}>
+                    Vuelto: {fmtCurrency(amountTendered - grandTotal)}
                   </div>
                 )}
               </div>
             )}
 
-            <div style={{ marginTop: '12px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                <input 
-                  type="checkbox" 
-                  checked={issueInvoice} 
-                  onChange={e => setIssueInvoice(e.target.checked)} 
-                  style={{ accentColor: '#3b82f6', width: '20px', height: '20px' }} 
-                />
-                Emitir Factura AFIP
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={issueInvoice} onChange={e => setIssueInvoice(e.target.checked)} />
+                Imprimir Ticket Fiscal AFIP
               </label>
-              <p style={{ margin: '4px 0 0 28px', fontSize: '13px', color: 'var(--text-secondary)' }}>Si no lo marcas, se emitirá un recibo de uso interno.</p>
             </div>
 
-            <div style={{ marginTop: 'auto', paddingTop: '24px' }}>
-              <Button 
-                variant="primary" 
-                style={{ width: '100%', height: '64px', fontSize: '20px', fontWeight: 900, borderRadius: '12px', background: '#0f172a' }}
-                onClick={() => checkoutMutation.mutate('CONFIRMED')}
-                loading={checkoutMutation.isPending}
-                disabled={paymentMethod === 'CASH' && amountTendered < grandTotal}
-              >
-                Confirmar Pago
-              </Button>
-            </div>
-
+            <Button 
+              variant="primary" 
+              style={{ height: '50px', fontSize: '18px', background: '#00a65a', border: 'none' }}
+              onClick={() => checkoutMutation.mutate('CONFIRMED')}
+              loading={checkoutMutation.isPending}
+            >
+              Completar Venta
+            </Button>
           </div>
-        </Drawer>
+        </Modal>
 
-        <CustomerFormDrawer 
-          open={customerFormOpen} 
-          onClose={() => setCustomerFormOpen(false)} 
-        />
+        {/* SUSPENDED SALES MODAL */}
+        <Modal open={suspendModalOpen} onClose={() => setSuspendModalOpen(false)} title="Ventas Suspendidas">
+          {suspendedSales.length === 0 ? (
+            <p>No hay ventas en suspenso.</p>
+          ) : (
+            <table className="pos-table" style={{ border: '1px solid #ddd' }}>
+              <thead><tr><th>Fecha</th><th>Cliente</th><th>Total</th><th>Acción</th></tr></thead>
+              <tbody>
+                {suspendedSales.map(sale => (
+                  <tr key={sale.id}>
+                    <td>{new Date(sale.date).toLocaleString()}</td>
+                    <td>{customersData?.data.find(c => c.id === sale.customerId)?.fullName || 'Consumidor Final'}</td>
+                    <td style={{ fontWeight: 'bold' }}>{fmtCurrency(sale.total)}</td>
+                    <td>
+                      <Button variant="primary" style={{ padding: '5px 10px', fontSize: '12px' }} onClick={() => resumeSale(sale.id)}>
+                        Retomar
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Modal>
+
+        <CustomerFormDrawer open={customerFormOpen} onClose={() => setCustomerFormOpen(false)} />
       </div>
     </>
   );
