@@ -21,8 +21,9 @@ git reset --hard origin/main
 # 2. Actualizar y compilar Backend
 echo ">>> [2/5] Actualizando Backend..."
 cd $APP_DIR/backend
+# Limpieza profunda para evitar corrupción de symlinks y webassembly de Prisma
+rm -rf node_modules
 npm install --unsafe-perm
-chmod +x node_modules/.bin/prisma || true
 npx prisma generate
 npx prisma db push --accept-data-loss
 npm run build
