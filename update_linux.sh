@@ -22,6 +22,7 @@ git reset --hard origin/main
 echo ">>> [2/5] Actualizando Backend..."
 cd $APP_DIR/backend
 npm install --unsafe-perm
+chmod +x node_modules/.bin/prisma || true
 npx prisma generate
 npx prisma db push --accept-data-loss
 npm run build
