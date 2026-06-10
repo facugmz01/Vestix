@@ -51,7 +51,7 @@ let UsersService = class UsersService {
         this.prisma = prisma;
     }
     async onModuleInit() {
-        const adminRole = await this.prisma.role.upsert({
+        await this.prisma.role.upsert({
             where: { name: 'SUPER_ADMIN' },
             update: {},
             create: {
@@ -63,19 +63,6 @@ let UsersService = class UsersService {
                 }
             }
         });
-        const adminEmail = 'admin@roindumentaria.com.ar';
-        const adminExists = await this.prisma.user.findUnique({ where: { email: adminEmail } });
-        if (!adminExists) {
-            const hashedPassword = await bcrypt.hash('Admin123!', 10);
-            await this.prisma.user.create({
-                data: {
-                    email: adminEmail,
-                    password: hashedPassword,
-                    roleId: adminRole.id
-                }
-            });
-            console.log('✅ Superadmin user created: admin@roindumentaria.com.ar / Admin123!');
-        }
     }
     async create(createUserDto) {
         const existing = await this.prisma.user.findUnique({ where: { email: createUserDto.email } });

@@ -16,6 +16,7 @@ const rbac_module_1 = require("./core/rbac/rbac.module");
 const redis_module_1 = require("./core/redis/redis.module");
 const bullmq_1 = require("@nestjs/bullmq");
 const identity_module_1 = require("./domains/identity/identity.module");
+const setup_module_1 = require("./domains/setup/setup.module");
 const catalog_module_1 = require("./domains/catalog/catalog.module");
 const sales_module_1 = require("./domains/sales/sales.module");
 const logistics_module_1 = require("./domains/logistics/logistics.module");
@@ -57,6 +58,7 @@ exports.AppModule = AppModule = __decorate([
                 },
             }),
             identity_module_1.IdentityModule,
+            setup_module_1.SetupModule,
             catalog_module_1.CatalogModule,
             sales_module_1.SalesModule,
             logistics_module_1.LogisticsModule,

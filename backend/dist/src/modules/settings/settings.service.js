@@ -12,94 +12,133 @@ var SettingsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SettingsService = void 0;
 const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../core/prisma/prisma.service");
 const audit_service_1 = require("../audit/audit.service");
 const audit_log_model_1 = require("../audit/models/audit-log.model");
 let SettingsService = SettingsService_1 = class SettingsService {
-    constructor(auditService) {
+    constructor(prisma, auditService) {
+        this.prisma = prisma;
         this.auditService = auditService;
         this.logger = new common_1.Logger(SettingsService_1.name);
-        this.settings = {
-            version: 1,
-            store: {
-                name: 'Mi Tienda',
-                legalName: 'Mi Tienda SRL',
-                cuit: '30-00000000-0',
-                currency: 'ARS',
-                timezone: 'America/Argentina/Buenos_Aires',
-            },
-            sku: {
-                prefix: 'TDA',
-                includeCategory: true,
-                includeBrand: false,
-                includeColor: true,
-                includeSize: true,
-                separator: '-',
-                uppercased: true,
-            },
-            barcode: {
-                companyPrefix: '0400000',
-                autoGenerate: true,
-            },
-            pricing: {
-                defaultVatRate: 0.21,
-                defaultMarginTarget: 0.45,
-                allowNegativeMargin: false,
-                roundToNearest: 0.5,
-                defaultRetailPriceListId: 'retail-default',
-            },
-            inventory: {
-                allowNegativeStock: false,
-                defaultReorderPoint: 5,
-                reservationTtlMinutes: 15,
-            },
-            offline: {
-                maxOfflineHours: 8,
-                requireManagerPinForReturns: true,
-                requireManagerPinForDiscounts: true,
-            },
-            updatedAt: new Date(),
-            updatedByUserId: 'system',
-        };
+        this.cachedSettings = null;
     }
-    getSettings() {
-        return Object.freeze({ ...this.settings });
+    async onModuleInit() {
+        await this.loadSettingsFromDb();
     }
-    async updateSettings(dto, userId) {
-        const previous = { ...this.settings };
-        this.settings = {
-            ...this.settings,
-            ...(dto.store && { store: { ...this.settings.store, ...dto.store } }),
-            ...(dto.sku && { sku: { ...this.settings.sku, ...dto.sku } }),
-            ...(dto.barcode && { barcode: { ...this.settings.barcode, ...dto.barcode } }),
-            ...(dto.pricing && { pricing: { ...this.settings.pricing, ...dto.pricing } }),
-            ...(dto.inventory && { inventory: { ...this.settings.inventory, ...dto.inventory } }),
-            ...(dto.offline && { offline: { ...this.settings.offline, ...dto.offline } }),
-            version: this.settings.version + 1,
-            updatedAt: new Date(),
-            updatedByUserId: userId,
+    async loadSettingsFromDb() {
+        let row = await this.prisma.systemSettings.findUnique({
+            where: { id: 'default' },
+        });
+        if (!row) {
+            this.logger.log('No SystemSettings found. Creating default singleton...');
+            row = await this.prisma.systemSettings.create({
+                data: {
+                    id: 'default',
+                    general: {
+                        companyName: 'Mi Empresa',
+                        legalName: 'Mi Empresa SRL',
+                        taxId: '30-00000000-0',
+                        address: '',
+                        phone: '',
+                        email: '',
+                        timezone: 'America/Argentina/Buenos_Aires',
+                        locale: 'es-AR',
+                        currency: 'ARS',
+                    },
+                    pricing: {
+                        defaultPriceListId: 'retail-default',
+                        vatDefaultPct: 0.21,
+                        allowManualDiscount: true,
+                        maxDiscountPct: 100,
+                        roundingRule: 'NONE',
+                        showPricesWithTax: true,
+                    },
+                    skuBarcode: {
+                        skuPrefix: 'SKU',
+                        skuAutoGenerate: true,
+                        barcodeFormat: 'EAN13',
+                        barcodeAutoGenerate: true,
+                        nextSkuSequence: 1,
+                    },
+                    invoicing: {
+                        fiscalPointSale: 1,
+                        afipEnvironment: 'homologation',
+                        defaultInvoiceType: 'FACTURA_B',
+                        autoIssueOnSale: false,
+                        invoiceFooterText: '',
+                    },
+                    notifications: {
+                        emailEnabled: false,
+                        smsEnabled: false,
+                        whatsappEnabled: false,
+                        pushEnabled: false,
+                        lowStockThreshold: 5,
+                        notifyOnSale: false,
+                        notifyOnPurchase: false,
+                        notifyOnLowStock: true,
+                        notifyOnTransfer: false,
+                    },
+                    integrations: {
+                        mercadopagoEnabled: false,
+                        mercadolibreEnabled: false,
+                        woocommerceEnabled: false,
+                        shopifyEnabled: false,
+                    },
+                    offline: {
+                        offlineModeEnabled: false,
+                        posOfflineTtlHours: 8,
+                        maxQueueSize: 100,
+                        autoSyncOnReconnect: true,
+                        conflictStrategy: 'SERVER_WINS',
+                    },
+                },
+            });
+        }
+        this.cachedSettings = {
+            general: row.general,
+            pricing: row.pricing,
+            skuBarcode: row.skuBarcode,
+            invoicing: row.invoicing,
+            notifications: row.notifications,
+            integrations: row.integrations,
+            offline: row.offline,
         };
-        this.logger.log(`[Settings] Updated to v${this.settings.version} by user ${userId}`);
+        this.logger.log('SystemSettings loaded from DB');
+    }
+    async getSettings() {
+        if (!this.cachedSettings) {
+            await this.loadSettingsFromDb();
+        }
+        return this.cachedSettings;
+    }
+    async updateSection(section, payload, userId) {
+        const current = await this.getSettings();
+        const previousValue = current[section];
+        const newValue = { ...previousValue, ...payload };
+        await this.prisma.systemSettings.update({
+            where: { id: 'default' },
+            data: {
+                [section]: newValue,
+            },
+        });
+        this.cachedSettings[section] = newValue;
         await this.auditService.log({
             userId,
             action: audit_log_model_1.AuditAction.UPDATE,
             resource: 'SystemSettings',
-            resourceId: 'singleton',
+            resourceId: section,
             module: 'SettingsService',
-            previousValue: previous,
-            newValue: this.settings,
-            description: `System settings updated to version ${this.settings.version}`,
+            previousValue,
+            newValue,
+            description: `Updated settings section: ${section}`,
         });
-        return this.settings;
+        return newValue;
     }
-    getSkuRules() { return this.settings.sku; }
-    getBarcodeRules() { return this.settings.barcode; }
-    getPricingRules() { return this.settings.pricing; }
-    getInventoryRules() { return this.settings.inventory; }
-    getOfflineRules() { return this.settings.offline; }
 };
 exports.SettingsService = SettingsService;
 exports.SettingsService = SettingsService = SettingsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [audit_service_1.AuditService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        audit_service_1.AuditService])
 ], SettingsService);
 //# sourceMappingURL=settings.service.js.map

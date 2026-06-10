@@ -760,3 +760,15 @@ model StoreSettings {
   facebookUrl    String?
   updatedAt      DateTime @updatedAt
 }
+
+model SystemSettings {
+  id            String   @id @default("default") // Singleton
+  general       Json     @default("{}")
+  pricing       Json     @default("{}")
+  skuBarcode    Json     @default("{}")
+  invoicing     Json     @default("{}")
+  notifications Json     @default("{}")
+  integrations  Json     @default("{}")
+  offline       Json     @default("{}")
+  updatedAt     DateTime @updatedAt
+}

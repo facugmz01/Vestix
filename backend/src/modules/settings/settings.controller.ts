@@ -1,6 +1,5 @@
 import { Controller, Get, Patch, Body, Req } from '@nestjs/common';
 import { SettingsService } from './settings.service';
-import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('settings')
@@ -9,25 +8,49 @@ export class SettingsController {
 
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Settings' })
-  getSettings() {
-    return this.settingsService.getSettings();
+  async getSettings() {
+    return await this.settingsService.getSettings();
   }
 
-  @Patch()
-  @RequirePermissions({ action: 'manage', subject: 'Settings' }) // Super Admin only
-  updateSettings(@Body() dto: UpdateSettingsDto, @Req() req: any) {
-    return this.settingsService.updateSettings(dto, req.user?.id ?? 'unknown');
+  @Patch('general')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async updateGeneral(@Body() dto: any, @Req() req: any) {
+    return await this.settingsService.updateSection('general', dto, req.user?.id ?? 'unknown');
+  }
+
+  @Patch('pricing')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async updatePricing(@Body() dto: any, @Req() req: any) {
+    return await this.settingsService.updateSection('pricing', dto, req.user?.id ?? 'unknown');
+  }
+
+  @Patch('sku-barcode')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async updateSkuBarcode(@Body() dto: any, @Req() req: any) {
+    return await this.settingsService.updateSection('skuBarcode', dto, req.user?.id ?? 'unknown');
+  }
+
+  @Patch('invoicing')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async updateInvoicing(@Body() dto: any, @Req() req: any) {
+    return await this.settingsService.updateSection('invoicing', dto, req.user?.id ?? 'unknown');
+  }
+
+  @Patch('notifications')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async updateNotifications(@Body() dto: any, @Req() req: any) {
+    return await this.settingsService.updateSection('notifications', dto, req.user?.id ?? 'unknown');
+  }
+
+  @Patch('integrations')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async updateIntegrations(@Body() dto: any, @Req() req: any) {
+    return await this.settingsService.updateSection('integrations', dto, req.user?.id ?? 'unknown');
   }
 
   @Patch('offline')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  updateOfflineSettings(@Body() dto: any, @Req() req: any) {
-    return this.settingsService.updateSettings({ offline: dto }, req.user?.id ?? 'unknown');
-  }
-
-  @Patch('store')
-  @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  updateStoreSettings(@Body() dto: any, @Req() req: any) {
-    return this.settingsService.updateSettings({ store: dto }, req.user?.id ?? 'unknown');
+  async updateOffline(@Body() dto: any, @Req() req: any) {
+    return await this.settingsService.updateSection('offline', dto, req.user?.id ?? 'unknown');
   }
 }

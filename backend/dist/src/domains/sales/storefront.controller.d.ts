@@ -43,19 +43,6 @@ export declare class StorefrontController {
     getMyOrders(page: string, pageSize: string, req: Request): Promise<{
         data: {
             customerName: string;
-            lines: {
-                id: string;
-                orderId: string;
-                variantId: string;
-                categoryId: string;
-                quantity: number;
-                basePrice: number;
-                discountAmount: number;
-                finalPrice: number;
-                historicalSku: string | null;
-                historicalName: string | null;
-                historicalCost: number | null;
-            }[];
             customer: {
                 id: string;
                 type: string;
@@ -69,6 +56,19 @@ export declare class StorefrontController {
                 createdAt: Date;
                 updatedAt: Date;
             };
+            lines: {
+                id: string;
+                orderId: string;
+                variantId: string;
+                categoryId: string;
+                quantity: number;
+                basePrice: number;
+                discountAmount: number;
+                finalPrice: number;
+                historicalSku: string | null;
+                historicalName: string | null;
+                historicalCost: number | null;
+            }[];
             id: string;
             branchId: string;
             warehouseId: string | null;
@@ -91,6 +91,19 @@ export declare class StorefrontController {
         pageSize: number;
     }>;
     getMyOrder(id: string, req: Request): Promise<{
+        customer: {
+            id: string;
+            type: string;
+            fullName: string;
+            taxId: string | null;
+            email: string | null;
+            phone: string | null;
+            creditLimit: number;
+            usedCredit: number;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         lines: ({
             variant: {
                 product: {
@@ -137,19 +150,6 @@ export declare class StorefrontController {
             historicalName: string | null;
             historicalCost: number | null;
         })[];
-        customer: {
-            id: string;
-            type: string;
-            fullName: string;
-            taxId: string | null;
-            email: string | null;
-            phone: string | null;
-            creditLimit: number;
-            usedCredit: number;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         variance: {
             id: string;
             orderId: string;

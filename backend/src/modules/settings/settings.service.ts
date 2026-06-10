@@ -1,121 +1,140 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { SystemSettings } from './models/settings.model';
-import { UpdateSettingsDto } from './dto/update-settings.dto';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/models/audit-log.model';
 
 @Injectable()
-export class SettingsService {
+export class SettingsService implements OnModuleInit {
   private readonly logger = new Logger(SettingsService.name);
 
-  /**
-   * Production defaults — safe out-of-the-box configuration for an Argentinian retailer.
-   * In production, this is hydrated from the DB singleton row on module init.
-   */
-  private settings: SystemSettings = {
-    version: 1,
-    store: {
-      name: 'Mi Tienda',
-      legalName: 'Mi Tienda SRL',
-      cuit: '30-00000000-0',
-      currency: 'ARS',
-      timezone: 'America/Argentina/Buenos_Aires',
-    },
-    sku: {
-      prefix: 'TDA',
-      includeCategory: true,
-      includeBrand: false,
-      includeColor: true,
-      includeSize: true,
-      separator: '-',
-      uppercased: true,
-    },
-    barcode: {
-      companyPrefix: '0400000', // GS1 Argentinian prefix (replace with real assigned prefix)
-      autoGenerate: true,
-    },
-    pricing: {
-      defaultVatRate: 0.21,          // 21% IVA — standard Argentine rate
-      defaultMarginTarget: 0.45,
-      allowNegativeMargin: false,
-      roundToNearest: 0.5,
-      defaultRetailPriceListId: 'retail-default',
-    },
-    inventory: {
-      allowNegativeStock: false,
-      defaultReorderPoint: 5,
-      reservationTtlMinutes: 15,
-    },
-    offline: {
-      maxOfflineHours: 8,
-      requireManagerPinForReturns: true,
-      requireManagerPinForDiscounts: true,
-    },
-    updatedAt: new Date(),
-    updatedByUserId: 'system',
-  };
+  // In-memory cache for fast reads
+  private cachedSettings: any = null;
 
-  constructor(private readonly auditService: AuditService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
-  /**
-   * READ — any module can call this to respect system-wide configuration.
-   * Returns a deep frozen copy to prevent accidental mutation from callers.
-   */
-  getSettings(): Readonly<SystemSettings> {
-    return Object.freeze({ ...this.settings });
+  async onModuleInit() {
+    await this.loadSettingsFromDb();
   }
 
-  /**
-   * PARTIAL UPDATE — merges only the provided sections, preserving unchanged config.
-   * Only callable by Super Admin (enforced at controller level via RBAC).
-   * Every write is fully audited with a before/after diff.
-   */
-  async updateSettings(dto: UpdateSettingsDto, userId: string): Promise<SystemSettings> {
-    const previous = { ...this.settings };
+  private async loadSettingsFromDb() {
+    let row = await this.prisma.systemSettings.findUnique({
+      where: { id: 'default' },
+    });
 
-    this.settings = {
-      ...this.settings,
-      ...(dto.store && { store: { ...this.settings.store, ...dto.store } }),
-      ...(dto.sku && { sku: { ...this.settings.sku, ...dto.sku } }),
-      ...(dto.barcode && { barcode: { ...this.settings.barcode, ...dto.barcode } }),
-      ...(dto.pricing && { pricing: { ...this.settings.pricing, ...dto.pricing } }),
-      ...(dto.inventory && { inventory: { ...this.settings.inventory, ...dto.inventory } }),
-      ...(dto.offline && { offline: { ...this.settings.offline, ...dto.offline } }),
-      version: this.settings.version + 1,
-      updatedAt: new Date(),
-      updatedByUserId: userId,
+    if (!row) {
+      this.logger.log('No SystemSettings found. Creating default singleton...');
+      row = await this.prisma.systemSettings.create({
+        data: {
+          id: 'default',
+          general: {
+            companyName: 'Mi Empresa',
+            legalName: 'Mi Empresa SRL',
+            taxId: '30-00000000-0',
+            address: '',
+            phone: '',
+            email: '',
+            timezone: 'America/Argentina/Buenos_Aires',
+            locale: 'es-AR',
+            currency: 'ARS',
+          },
+          pricing: {
+            defaultPriceListId: 'retail-default',
+            vatDefaultPct: 0.21,
+            allowManualDiscount: true,
+            maxDiscountPct: 100,
+            roundingRule: 'NONE',
+            showPricesWithTax: true,
+          },
+          skuBarcode: {
+            skuPrefix: 'SKU',
+            skuAutoGenerate: true,
+            barcodeFormat: 'EAN13',
+            barcodeAutoGenerate: true,
+            nextSkuSequence: 1,
+          },
+          invoicing: {
+            fiscalPointSale: 1,
+            afipEnvironment: 'homologation',
+            defaultInvoiceType: 'FACTURA_B',
+            autoIssueOnSale: false,
+            invoiceFooterText: '',
+          },
+          notifications: {
+            emailEnabled: false,
+            smsEnabled: false,
+            whatsappEnabled: false,
+            pushEnabled: false,
+            lowStockThreshold: 5,
+            notifyOnSale: false,
+            notifyOnPurchase: false,
+            notifyOnLowStock: true,
+            notifyOnTransfer: false,
+          },
+          integrations: {
+            mercadopagoEnabled: false,
+            mercadolibreEnabled: false,
+            woocommerceEnabled: false,
+            shopifyEnabled: false,
+          },
+          offline: {
+            offlineModeEnabled: false,
+            posOfflineTtlHours: 8,
+            maxQueueSize: 100,
+            autoSyncOnReconnect: true,
+            conflictStrategy: 'SERVER_WINS',
+          },
+        },
+      });
+    }
+
+    this.cachedSettings = {
+      general: row.general,
+      pricing: row.pricing,
+      skuBarcode: row.skuBarcode,
+      invoicing: row.invoicing,
+      notifications: row.notifications,
+      integrations: row.integrations,
+      offline: row.offline,
     };
+    this.logger.log('SystemSettings loaded from DB');
+  }
 
-    this.logger.log(`[Settings] Updated to v${this.settings.version} by user ${userId}`);
+  async getSettings() {
+    if (!this.cachedSettings) {
+      await this.loadSettingsFromDb();
+    }
+    return this.cachedSettings;
+  }
+
+  async updateSection(section: string, payload: any, userId: string) {
+    const current = await this.getSettings();
+    const previousValue = current[section];
+    const newValue = { ...previousValue, ...payload };
+
+    await this.prisma.systemSettings.update({
+      where: { id: 'default' },
+      data: {
+        [section]: newValue,
+      },
+    });
+
+    // Update cache
+    this.cachedSettings[section] = newValue;
 
     await this.auditService.log({
       userId,
       action: AuditAction.UPDATE,
       resource: 'SystemSettings',
-      resourceId: 'singleton',
+      resourceId: section,
       module: 'SettingsService',
-      previousValue: previous as any,
-      newValue: this.settings as any,
-      description: `System settings updated to version ${this.settings.version}`,
+      previousValue,
+      newValue,
+      description: `Updated settings section: ${section}`,
     });
 
-    return this.settings;
+    return newValue;
   }
-
-  // ─── TYPED SECTION ACCESSORS (used by other services) ────────────────────
-
-  /** Called by IdentifiersService to determine SKU generation format. */
-  getSkuRules() { return this.settings.sku; }
-
-  /** Called by IdentifiersService for GS1 barcode prefix. */
-  getBarcodeRules() { return this.settings.barcode; }
-
-  /** Called by PricingService for VAT rate and margin enforcement. */
-  getPricingRules() { return this.settings.pricing; }
-
-  /** Called by InventoryService for negative stock enforcement. */
-  getInventoryRules() { return this.settings.inventory; }
-
-  /** Called by ReservationsService for TTL. */
-  getOfflineRules() { return this.settings.offline; }
 }

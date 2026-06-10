@@ -210,6 +210,30 @@ export class SetupService {
       },
     });
 
+    // 8. Create/update SystemSettings
+    const defaultGeneral = {
+      companyName: data.companyName,
+      legalName: data.companyName,
+      taxId: data.cuit || '',
+      address: data.address || '',
+      phone: data.phone || '',
+      email: data.email || '',
+      timezone: 'America/Argentina/Buenos_Aires',
+      locale: 'es-AR',
+      currency: 'ARS',
+    };
+    
+    await this.prisma.systemSettings.upsert({
+      where: { id: 'default' },
+      update: {
+        general: defaultGeneral as any,
+      },
+      create: {
+        id: 'default',
+        general: defaultGeneral as any,
+      },
+    });
+
     return { success: true, message: 'Empresa configurada exitosamente' };
   }
 }
