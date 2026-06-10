@@ -1,4 +1,6 @@
-import { PageContainer, Section } from '@/components/ui';
+import { 
+  PageContainer, Section, Tabs
+} from '@/components/ui';
 import { SyncQueuePanel } from '@/features/offline/components/SyncQueuePanel';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';

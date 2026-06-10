@@ -3,7 +3,9 @@ import {
   Building2, Tag, Barcode, FileText, Bell, Plug, WifiOff, ChevronRight
 } from 'lucide-react';
 
-import { PageContainer } from '@/components/ui';
+import { 
+  PageContainer, Tabs
+} from '@/components/ui';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { GeneralSettingsPanel } from '@/features/settings/components/GeneralSettingsPanel';
 import {

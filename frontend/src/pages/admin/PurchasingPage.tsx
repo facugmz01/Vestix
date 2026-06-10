@@ -1,4 +1,4 @@
-import { useState , Tabs } from 'react';
+import { useState } from 'react';
 import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -6,9 +6,7 @@ import { Plus, Eye, Truck, Package, Trash2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, 
-  SearchInput, FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, StatusChip
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
 } from '@/components/ui';
 
 import { purchasesApi } from '@/api/purchases.api';

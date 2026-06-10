@@ -5,7 +5,9 @@ import {
   BarChart2, RefreshCw, Calendar
 } from 'lucide-react';
 
-import { PageContainer, Section, Button } from '@/components/ui';
+import { 
+  PageContainer, Section, Button, Tabs
+} from '@/components/ui';
 import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { KpiCard } from '@/features/reports/components/ChartPrimitives';

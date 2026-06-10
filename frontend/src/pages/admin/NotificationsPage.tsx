@@ -2,10 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit, Bell, CheckCircle, XCircle, AlertTriangle, Clock, Mail, MessageSquare } from 'lucide-react';
 
-import {
-  PageContainer, Section, Table, Button, Badge,
-  SearchInput, FiltersBar, Pagination, EmptyState,
-  ApiErrorDisplay, TableSkeleton
+import { 
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
 } from '@/components/ui';
 import { notificationsApi } from '@/api/notifications.api';
 import { queryKeys } from '@/api/queryKeys';

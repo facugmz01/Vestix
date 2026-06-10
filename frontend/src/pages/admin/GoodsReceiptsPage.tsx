@@ -1,12 +1,10 @@
-import { useState , Tabs } from 'react';
+import { useState } from 'react';
 import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, CheckCircle, AlertTriangle, PackageCheck } from 'lucide-react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, 
-  SearchInput, FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, StatusChip
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
 } from '@/components/ui';
 
 import { receiptsApi } from '@/api/receipts.api';

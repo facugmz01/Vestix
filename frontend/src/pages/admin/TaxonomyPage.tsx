@@ -4,8 +4,7 @@ import { Plus, Tag, Bookmark, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Button, 
-  EmptyState, TableSkeleton
+  PageContainer, Section, Button, EmptyState, TableSkeleton, Tabs
 } from '@/components/ui';
 import { productsApi } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';

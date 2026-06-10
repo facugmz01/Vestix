@@ -1,13 +1,11 @@
-import { useState , Tabs } from 'react';
+import { useState } from 'react';
 import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, 
-  SearchInput, FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, ConfirmDialog
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, Tabs
 } from '@/components/ui';
 
 import { suppliersApi } from '@/api/suppliers.api';

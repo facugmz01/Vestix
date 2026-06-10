@@ -4,9 +4,7 @@ import { Plus, Edit2, Trash2, Eye, Users, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, 
-  SearchInput, FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, ConfirmDialog
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, Tabs
 } from '@/components/ui';
 
 import { customersApi } from '@/api/customers.api';

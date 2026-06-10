@@ -5,7 +5,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { PageContainer, Section, Button, Badge } from '@/components/ui';
+import { 
+  PageContainer, Section, Button, Badge, Tabs
+} from '@/components/ui';
 import { integrationsApi } from '@/api/integrations.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Integration } from '@/types';

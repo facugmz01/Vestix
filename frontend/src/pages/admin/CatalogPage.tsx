@@ -1,13 +1,11 @@
-import { useState , Tabs } from 'react';
+import { useState } from 'react';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Button, 
-  Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, ConfirmDialog
+  PageContainer, Section, Button, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, Tabs
 } from '@/components/ui';
 
 import { productsApi } from '@/api/products.api';

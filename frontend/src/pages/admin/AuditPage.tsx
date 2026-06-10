@@ -5,9 +5,8 @@ import {
   CheckCircle, XCircle, FileText, Ban, Clock, Search
 } from 'lucide-react';
 
-import {
-  PageContainer, Section, Table, Button, Badge,
-  FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton
+import { 
+  PageContainer, Section, Table, Button, Badge, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
 } from '@/components/ui';
 import { auditApi } from '@/api/audit.api';
 import { queryKeys } from '@/api/queryKeys';

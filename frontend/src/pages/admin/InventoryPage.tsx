@@ -1,12 +1,10 @@
-import { useState , Tabs } from 'react';
+import { useState } from 'react';
 import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { SlidersHorizontal, History, Settings2 } from 'lucide-react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, 
-  SearchInput, FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
 } from '@/components/ui';
 
 import { inventoryApi, type EnrichedStockLevel } from '@/api/inventory.api';

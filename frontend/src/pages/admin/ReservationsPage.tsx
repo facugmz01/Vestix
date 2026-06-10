@@ -1,12 +1,10 @@
-import { useState , Tabs } from 'react';
+import { useState } from 'react';
 import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, Package, Clock } from 'lucide-react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, 
-  SearchInput, FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, StatusChip
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
 } from '@/components/ui';
 
 import { reservationsApi } from '@/api/reservations.api';

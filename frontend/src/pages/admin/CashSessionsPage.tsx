@@ -1,12 +1,10 @@
-import { useState , Tabs } from 'react';
+import { useState } from 'react';
 import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Wallet, CheckCircle } from 'lucide-react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, 
-  FiltersBar, Pagination, EmptyState, 
-  ApiErrorDisplay, TableSkeleton, StatusChip
+  PageContainer, Section, Table, Button, Badge, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
 } from '@/components/ui';
 
 import { treasuryApi } from '@/api/treasury.api';

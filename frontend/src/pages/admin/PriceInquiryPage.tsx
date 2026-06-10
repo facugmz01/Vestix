@@ -1,11 +1,10 @@
-import { useState, useEffect , Tabs } from 'react';
+import { useState, useEffect } from 'react';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Tag, Package, Info } from 'lucide-react';
 
 import { 
-  PageContainer, Section, Table, Input, Badge, 
-  EmptyState, TableSkeleton 
+  PageContainer, Section, Table, Input, Badge, EmptyState, TableSkeleton, Tabs
 } from '@/components/ui';
 
 import { posApi } from '@/api/pos.api';

@@ -8,7 +8,9 @@ import { purchasingApi } from '@/api/purchasing.api';
 import { queryKeys } from '@/api/queryKeys';
 import { apiClient } from '@/api/client';
 import type { ProductVariant } from '@/types';
-import { Button, Input, Drawer } from '@/components/ui';
+import { 
+  Button, Input, Drawer, Tabs
+} from '@/components/ui';
 
 export default function NewPurchasePage() {
   const navigate = useNavigate();
