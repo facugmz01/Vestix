@@ -1,7 +1,9 @@
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 export declare class SetupService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly settingsService;
+    constructor(prisma: PrismaService, settingsService: SettingsService);
     isSystemInitialized(): Promise<boolean>;
     createSuperAdmin(data: {
         email: string;

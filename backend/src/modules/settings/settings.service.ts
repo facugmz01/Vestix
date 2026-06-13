@@ -123,6 +123,10 @@ export class SettingsService implements OnModuleInit {
     return this.cachedSettings;
   }
 
+  async reloadSettings() {
+    await this.loadSettingsFromDb();
+  }
+
   async updateSection(section: string, payload: any, userId: string) {
     const current = await this.getSettings();
     const previousValue = current[section];

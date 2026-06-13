@@ -45,10 +45,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SetupService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const settings_service_1 = require("../../modules/settings/settings.service");
 const bcrypt = __importStar(require("bcrypt"));
 let SetupService = class SetupService {
-    constructor(prisma) {
+    constructor(prisma, settingsService) {
         this.prisma = prisma;
+        this.settingsService = settingsService;
     }
     async isSystemInitialized() {
         const superAdminRole = await this.prisma.role.findUnique({
@@ -226,12 +228,14 @@ let SetupService = class SetupService {
                 general: defaultGeneral,
             },
         });
+        await this.settingsService.reloadSettings();
         return { success: true, message: 'Empresa configurada exitosamente' };
     }
 };
 exports.SetupService = SetupService;
 exports.SetupService = SetupService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        settings_service_1.SettingsService])
 ], SetupService);
 //# sourceMappingURL=setup.service.js.map

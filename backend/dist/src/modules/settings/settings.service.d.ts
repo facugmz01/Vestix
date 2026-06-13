@@ -10,6 +10,7 @@ export declare class SettingsService implements OnModuleInit {
     onModuleInit(): Promise<void>;
     private loadSettingsFromDb;
     getSettings(): Promise<any>;
+    reloadSettings(): Promise<void>;
     updateSection(section: string, payload: any, userId: string): Promise<any>;
     testAfipConnection(): Promise<{
         success: boolean;

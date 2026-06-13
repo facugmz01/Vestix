@@ -125,6 +125,9 @@ let SettingsService = SettingsService_1 = class SettingsService {
         }
         return this.cachedSettings;
     }
+    async reloadSettings() {
+        await this.loadSettingsFromDb();
+    }
     async updateSection(section, payload, userId) {
         const current = await this.getSettings();
         const previousValue = current[section];

@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class SetupService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   /**
    * Check if the system has already been initialized
@@ -233,6 +237,8 @@ export class SetupService {
         general: defaultGeneral as any,
       },
     });
+
+    await this.settingsService.reloadSettings();
 
     return { success: true, message: 'Empresa configurada exitosamente' };
   }
