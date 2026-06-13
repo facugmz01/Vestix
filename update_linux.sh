@@ -41,7 +41,9 @@ npm run build
 # 5. Actualizar y compilar Frontend
 echo ">>> [5/6] Actualizando Frontend..."
 cd $APP_DIR/frontend
+rm -rf node_modules
 npm install --unsafe-perm
+chmod -R +x node_modules/.bin || true
 npm run build
 
 # 6. Reiniciar servidor Backend
