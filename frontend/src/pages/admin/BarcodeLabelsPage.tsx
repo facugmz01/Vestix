@@ -164,6 +164,6 @@ export function BarcodeLabelsPage() {
           )}
         </div>
       </div>
-    </>
+    </PageContainer>
   );
 }
