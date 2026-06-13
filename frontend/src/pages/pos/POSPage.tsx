@@ -271,14 +271,14 @@ export default function POSPage() {
           font-family: 'Inter', sans-serif;
         }
         .pos-navbar {
-          background: #3c8dbc;
-          color: #fff;
+          background: var(--bg-elevated);
+          color: var(--text-primary);
           height: 50px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           padding: 0 15px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          border-bottom: 1px solid var(--border);
         }
         .pos-nav-logo {
           font-size: 20px;
@@ -293,7 +293,7 @@ export default function POSPage() {
         .pos-icon-btn {
           background: transparent;
           border: none;
-          color: white;
+          color: var(--text-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -301,7 +301,7 @@ export default function POSPage() {
           padding: 5px 10px;
           border-radius: 4px;
         }
-        .pos-icon-btn:hover { background: rgba(0,0,0,0.1); }
+        .pos-icon-btn:hover { background: var(--bg-overlay); color: var(--text-primary); }
         .pos-main {
           display: flex;
           flex: 1;
@@ -311,19 +311,19 @@ export default function POSPage() {
           flex: 6.5;
           display: flex;
           flex-direction: column;
-          background: #fff;
-          border-right: 1px solid #d2d6de;
+          background: var(--bg-base);
+          border-right: 1px solid var(--border);
         }
         .pos-right {
           flex: 3.5;
           display: flex;
           flex-direction: column;
-          background: #ecf0f5;
+          background: var(--bg-surface);
         }
         .pos-cart-top {
           padding: 10px;
-          background: #fff;
-          border-bottom: 1px solid #d2d6de;
+          background: var(--bg-elevated);
+          border-bottom: 1px solid var(--border);
           display: flex;
           flex-direction: column;
           gap: 10px;
@@ -335,46 +335,55 @@ export default function POSPage() {
         .pos-search-input {
           flex: 1;
           padding: 12px 12px 12px 40px;
-          border: 2px solid #3c8dbc;
+          border: 1px solid var(--border);
+          background: var(--bg-overlay);
+          color: var(--text-primary);
           border-radius: 4px;
           font-size: 16px;
           outline: none;
         }
+        .pos-search-input:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 2px var(--accent-glow);
+        }
         .pos-table-container {
           flex: 1;
           overflow-y: auto;
-          background: #fff;
+          background: var(--bg-base);
         }
         .pos-table {
           width: 100%;
           border-collapse: collapse;
         }
         .pos-table th {
-          background: #f4f4f4;
+          background: var(--bg-elevated);
           padding: 10px;
           text-align: left;
           font-size: 13px;
-          color: #333;
-          border-bottom: 2px solid #ddd;
+          color: var(--text-secondary);
+          border-bottom: 1px solid var(--border);
           position: sticky;
           top: 0;
         }
         .pos-table td {
           padding: 8px 10px;
-          border-bottom: 1px solid #f4f4f4;
+          border-bottom: 1px solid var(--border);
           font-size: 14px;
           vertical-align: middle;
+          color: var(--text-primary);
         }
         .pos-qty-input {
           width: 50px;
           text-align: center;
           padding: 4px;
-          border: 1px solid #ccc;
+          border: 1px solid var(--border);
+          background: var(--bg-overlay);
+          color: var(--text-primary);
           border-radius: 3px;
         }
         .pos-summary {
-          background: #fff;
-          border-top: 1px solid #d2d6de;
+          background: var(--bg-elevated);
+          border-top: 1px solid var(--border);
           padding: 10px 15px;
         }
         .pos-summary-row {
@@ -382,29 +391,31 @@ export default function POSPage() {
           justify-content: space-between;
           font-size: 14px;
           margin-bottom: 5px;
+          color: var(--text-secondary);
         }
         .pos-total-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: #e1f5fe;
+          background: var(--bg-overlay);
           padding: 10px 15px;
           font-size: 24px;
           font-weight: 700;
-          color: #01579b;
+          color: var(--accent);
+          border-radius: 4px;
         }
         .pos-action-buttons {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 5px;
           padding: 10px;
-          background: #fff;
+          background: var(--bg-elevated);
         }
         .pos-btn {
           padding: 15px 5px;
-          color: #fff;
+          color: var(--text-primary);
           border: none;
-          border-radius: 3px;
+          border-radius: 4px;
           font-weight: 700;
           font-size: 13px;
           cursor: pointer;
@@ -414,21 +425,22 @@ export default function POSPage() {
           gap: 5px;
           transition: opacity 0.2s;
         }
-        .pos-btn:hover { opacity: 0.9; }
-        .pos-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .bg-draft { background: #f39c12; }
-        .bg-quotation { background: #00c0ef; }
-        .bg-suspend { background: #dd4b39; }
-        .bg-credit { background: #605ca8; }
-        .bg-card { background: #39cccc; }
-        .bg-multiple { background: #001f3f; }
-        .bg-cash { background: #00a65a; grid-column: span 2; font-size: 16px; }
+        .pos-btn:hover { opacity: 0.8; }
+        .pos-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .bg-draft { background: var(--yellow); }
+        .bg-quotation { background: var(--blue); }
+        .bg-suspend { background: var(--red); }
+        .bg-credit { background: var(--purple); }
+        .bg-card { background: var(--blue); }
+        .bg-multiple { background: var(--bg-overlay); color: var(--text-primary); border: 1px solid var(--border); }
+        .bg-cash { background: var(--green); grid-column: span 2; font-size: 16px; }
         
         .pos-products-header {
           padding: 10px;
           display: flex;
           gap: 10px;
-          background: #ecf0f5;
+          background: var(--bg-surface);
+          border-bottom: 1px solid var(--border);
         }
         .pos-products-grid {
           flex: 1;
@@ -440,22 +452,22 @@ export default function POSPage() {
           align-content: start;
         }
         .pos-product-card {
-          background: #fff;
-          border: 1px solid #d2d6de;
-          border-radius: 4px;
+          background: var(--bg-elevated);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
           cursor: pointer;
           overflow: hidden;
           text-align: center;
-          box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+          transition: all 0.2s;
         }
-        .pos-product-card:hover { border-color: #3c8dbc; }
+        .pos-product-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2); transform: translateY(-2px); }
         .pos-product-img {
           height: 80px;
-          background: #f4f4f4;
+          background: var(--bg-overlay);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #ccc;
+          color: var(--text-muted);
         }
         .pos-product-info {
           padding: 8px 5px;
@@ -463,7 +475,7 @@ export default function POSPage() {
         .pos-product-name {
           font-size: 12px;
           font-weight: 600;
-          color: #333;
+          color: var(--text-primary);
           margin-bottom: 4px;
           line-height: 1.2;
           height: 28px;
@@ -472,7 +484,7 @@ export default function POSPage() {
         .pos-product-price {
           font-size: 13px;
           font-weight: 700;
-          color: #00a65a;
+          color: var(--green);
         }
       `}</style>
 
@@ -500,11 +512,11 @@ export default function POSPage() {
           <div className="pos-nav-icons">
             <div className="pos-icon-btn"><Clock size={16} /> <LiveClock /></div>
             <button className="pos-icon-btn" onClick={() => setSuspendModalOpen(true)} title="Ventas Suspendidas">
-              <PauseCircle size={18} /> {suspendedSales.length > 0 && <span style={{ background: '#f39c12', padding: '2px 6px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{suspendedSales.length}</span>}
+              <PauseCircle size={18} /> {suspendedSales.length > 0 && <span style={{ background: 'var(--yellow)', padding: '2px 6px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{suspendedSales.length}</span>}
             </button>
             <button className="pos-icon-btn" onClick={toggleFullScreen} title="Pantalla Completa"><Maximize size={18} /></button>
             <button className="pos-icon-btn" onClick={() => window.open('/calculator', '_blank', 'width=300,height=400')} title="Calculadora"><Calculator size={18} /></button>
-            <button className="pos-icon-btn" onClick={() => setShiftModalOpen(true)} style={{ background: '#dd4b39', fontWeight: 700 }} title="Cerrar Caja">
+            <button className="pos-icon-btn" onClick={() => setShiftModalOpen(true)} style={{ background: 'var(--red)', fontWeight: 700 }} title="Cerrar Caja">
               <LogOut size={16} /> Cerrar Caja
             </button>
             <button className="pos-icon-btn" onClick={() => navigate('/')} title="Volver al Dashboard"><LogOut size={18} /> Volver</button>
@@ -518,24 +530,24 @@ export default function POSPage() {
               {/* Customer Select */}
               <div style={{ display: 'flex', gap: '10px' }}>
                 <div style={{ flex: 1, position: 'relative' }}>
-                  <User size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: '#999' }} />
+                  <User size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-muted)' }} />
                   <select 
                     value={selectedCustomerId} 
                     onChange={e => setSelectedCustomerId(e.target.value)}
-                    style={{ width: '100%', padding: '8px 10px 8px 34px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', outline: 'none' }}
+                    style={{ width: '100%', padding: '8px 10px 8px 34px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-overlay)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none' }}
                   >
                     <option value="">Cliente Ocasional / Consumidor Final</option>
                     {customersData?.data.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                   </select>
                 </div>
-                <button onClick={() => setCustomerFormOpen(true)} style={{ padding: '0 15px', background: '#3c8dbc', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                <button onClick={() => setCustomerFormOpen(true)} style={{ padding: '0 15px', background: 'var(--accent)', color: 'var(--text-primary)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                   <Plus size={18} />
                 </button>
               </div>
 
               {/* Search */}
               <div style={{ position: 'relative' }}>
-                <Search size={20} style={{ position: 'absolute', left: '12px', top: '13px', color: '#3c8dbc' }} />
+                <Search size={20} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--accent)' }} />
                 <input 
                   ref={searchInputRef}
                   type="text"
@@ -569,33 +581,33 @@ export default function POSPage() {
                 <tbody>
                   {cart.length === 0 ? (
                     <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                         No hay productos agregados
                       </td>
                     </tr>
                   ) : (
                     cart.map((item, index) => (
                       <tr key={`${item.variant.id}-${index}`}>
-                        <td style={{ fontWeight: 600, color: '#3c8dbc' }}>
+                        <td style={{ fontWeight: 600, color: 'var(--accent)' }}>
                           {(item.variant as any).productName || 'Producto'} {item.variant.size ? `(${item.variant.size})` : ''}
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <button onClick={() => updateQty(item.variant.id, item.qty - 1)} style={{ padding: '2px', border: '1px solid #ccc', background: '#f4f4f4', cursor: 'pointer' }}><Minus size={12} /></button>
+                            <button onClick={() => updateQty(item.variant.id, item.qty - 1)} style={{ padding: '2px', border: '1px solid var(--border)', background: 'var(--bg-overlay)', cursor: 'pointer' }}><Minus size={12} /></button>
                             <input 
                               type="number" 
                               className="pos-qty-input" 
                               value={item.qty} 
                               onChange={e => updateQty(item.variant.id, Number(e.target.value))}
                             />
-                            <button onClick={() => updateQty(item.variant.id, item.qty + 1)} style={{ padding: '2px', border: '1px solid #ccc', background: '#f4f4f4', cursor: 'pointer' }}><Plus size={12} /></button>
+                            <button onClick={() => updateQty(item.variant.id, item.qty + 1)} style={{ padding: '2px', border: '1px solid var(--border)', background: 'var(--bg-overlay)', cursor: 'pointer' }}><Plus size={12} /></button>
                           </div>
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                           <input 
-                            type="number" 
-                            style={{ width: '70px', textAlign: 'right', padding: '2px', border: '1px solid #ccc' }}
-                            value={item.variant.basePrice} 
+                            <input 
+                              type="number" 
+                              style={{ width: '70px', textAlign: 'right', padding: '2px', border: '1px solid var(--border)', background: 'var(--bg-overlay)', color: 'var(--text-primary)' }}
+                              value={item.variant.basePrice} 
                             onChange={e => {
                               const newPrice = Number(e.target.value);
                               setCart(prev => prev.map(i => i.variant.id === item.variant.id ? { ...i, variant: { ...i.variant, basePrice: newPrice } } : i));
@@ -605,7 +617,7 @@ export default function POSPage() {
                         <td style={{ textAlign: 'right' }}>
                           <input 
                             type="number" 
-                            style={{ width: '50px', textAlign: 'right', padding: '2px', border: '1px solid #ccc' }}
+                            style={{ width: '50px', textAlign: 'right', padding: '2px', border: '1px solid var(--border)', background: 'var(--bg-overlay)', color: 'var(--text-primary)' }}
                             value={item.discountPct} 
                             onChange={e => {
                               const newDisc = Number(e.target.value);
@@ -617,7 +629,7 @@ export default function POSPage() {
                           {fmtCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          <button onClick={() => removeLine(item.variant.id)} style={{ color: '#dd4b39', background: 'none', border: 'none', cursor: 'pointer' }}>
+                          <button onClick={() => removeLine(item.variant.id)} style={{ color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer' }}>
                             <XCircle size={18} />
                           </button>
                         </td>
@@ -637,9 +649,9 @@ export default function POSPage() {
               <div className="pos-summary-row" style={{ alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <b>Descuento %:</b> 
-                  <input type="number" style={{ width: '60px', padding: '2px', border: '1px solid #ccc' }} value={cartDiscountPct} onChange={e => setCartDiscountPct(Number(e.target.value))} />
+                  <input type="number" style={{ width: '60px', padding: '2px', border: '1px solid var(--border)' }} value={cartDiscountPct} onChange={e => setCartDiscountPct(Number(e.target.value))} />
                 </span>
-                <span style={{ color: '#dd4b39' }}><b>(-)</b> {fmtCurrency(globalDiscount + lineDiscounts)}</span>
+                <span style={{ color: 'var(--red)' }}><b>(-)</b> {fmtCurrency(globalDiscount + lineDiscounts)}</span>
               </div>
             </div>
             <div className="pos-total-row">
@@ -676,10 +688,10 @@ export default function POSPage() {
           {/* RIGHT PANE - PRODUCTS */}
           <div className="pos-right">
             <div className="pos-products-header">
-              <select style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '3px' }}>
+              <select style={{ flex: 1, padding: '8px', border: '1px solid var(--border)', borderRadius: '3px' }}>
                 <option>Todas las Categorías</option>
               </select>
-              <select style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '3px' }}>
+              <select style={{ flex: 1, padding: '8px', border: '1px solid var(--border)', borderRadius: '3px' }}>
                 <option>Todas las Marcas</option>
               </select>
             </div>
@@ -702,7 +714,7 @@ export default function POSPage() {
         {/* PAYMENT MODAL */}
         <Modal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar Pago">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ background: '#00a65a', color: '#fff', padding: '20px', textAlign: 'center', borderRadius: '4px' }}>
+            <div style={{ background: 'var(--green)', color: 'var(--text-primary)', padding: '20px', textAlign: 'center', borderRadius: '4px' }}>
               <div style={{ fontSize: '14px', textTransform: 'uppercase' }}>Monto a Pagar</div>
               <div style={{ fontSize: '42px', fontWeight: 700 }}>{fmtCurrency(grandTotal)}</div>
             </div>
@@ -718,7 +730,7 @@ export default function POSPage() {
                   style={{ fontSize: '24px', padding: '10px' }}
                 />
                 {amountTendered > grandTotal && (
-                  <div style={{ marginTop: '15px', color: '#dd4b39', fontSize: '20px', fontWeight: 'bold' }}>
+                  <div style={{ marginTop: '15px', color: 'var(--red)', fontSize: '20px', fontWeight: 'bold' }}>
                     Vuelto: {fmtCurrency(amountTendered - grandTotal)}
                   </div>
                 )}
@@ -734,7 +746,7 @@ export default function POSPage() {
 
             <Button 
               variant="primary" 
-              style={{ height: '50px', fontSize: '18px', background: '#00a65a', border: 'none' }}
+              style={{ height: '50px', fontSize: '18px', background: 'var(--green)', border: 'none' }}
               onClick={() => checkoutMutation.mutate('CONFIRMED')}
               loading={checkoutMutation.isPending}
             >
