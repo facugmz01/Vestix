@@ -1,15 +1,54 @@
 import { Queue } from 'bullmq';
 import { NotificationJob, NotificationChannel, TemplateKey } from './models/notification.model';
+import { PrismaService } from '../../core/prisma/prisma.service';
 export declare class NotificationsService {
     private readonly notificationsQueue;
+    private readonly prisma;
     private readonly logger;
-    constructor(notificationsQueue: Queue);
+    constructor(notificationsQueue: Queue, prisma: PrismaService);
+    onModuleInit(): Promise<void>;
+    getTemplates(page: number, pageSize: number): Promise<{
+        data: {
+            id: string;
+            name: string;
+            event: string;
+            channel: string;
+            subject: string | null;
+            body: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        }[];
+        total: number;
+    }>;
+    createTemplate(data: any): Promise<{
+        id: string;
+        name: string;
+        event: string;
+        channel: string;
+        subject: string | null;
+        body: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    updateTemplate(id: string, data: any): Promise<{
+        id: string;
+        name: string;
+        event: string;
+        channel: string;
+        subject: string | null;
+        body: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
     enqueue(payload: {
         channel: NotificationChannel;
         templateKey: TemplateKey;
         recipient: string;
         variables: Record<string, string>;
-    }): Promise<NotificationJob>;
+    }): Promise<NotificationJob | null>;
     getQueue(): Promise<NotificationJob[]>;
     notifyOrderConfirmed(recipient: string, channel: NotificationChannel, vars: {
         customerName: string;

@@ -49,12 +49,13 @@ const mercado_pago_service_1 = require("./mercado-pago.service");
 const orders_fulfillment_service_1 = require("../sales/orders/orders-fulfillment.service");
 const accounts_service_1 = require("./accounts.service");
 const crypto = __importStar(require("crypto"));
+const prisma_service_1 = require("../../core/prisma/prisma.service");
 let PaymentsService = class PaymentsService {
-    constructor(mpService, ordersService, accountsService) {
+    constructor(mpService, ordersService, accountsService, prisma) {
         this.mpService = mpService;
         this.ordersService = ordersService;
         this.accountsService = accountsService;
-        this.intents = [];
+        this.prisma = prisma;
     }
     async createOnlinePayment(orderId, amount, title, provider) {
         let externalRef = '';
@@ -67,29 +68,32 @@ let PaymentsService = class PaymentsService {
         else {
             throw new common_1.BadRequestException(`Provider ${provider} is not supported yet.`);
         }
-        const intent = {
-            id: crypto.randomUUID(),
-            provider,
-            externalReferenceId: externalRef,
-            orderId,
-            amount,
-            currency: 'ARS',
-            status: payment_model_1.PaymentIntentStatus.CREATED,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-        this.intents.push(intent);
+        const intent = await this.prisma.paymentIntent.create({
+            data: {
+                id: crypto.randomUUID(),
+                provider,
+                externalReferenceId: externalRef,
+                orderId,
+                amount,
+                currency: 'ARS',
+                status: payment_model_1.PaymentIntentStatus.CREATED,
+            }
+        });
         return { intentId: intent.id, checkoutUrl };
     }
     async handleWebhook(provider, payload) {
         if (provider === payment_model_1.PaymentProvider.MERCADO_PAGO) {
             const verification = await this.mpService.verifyPaymentNotification(payload.data.id);
             if (verification.status === 'approved') {
-                const intent = this.intents.find(i => i.orderId === verification.orderId);
+                const intent = await this.prisma.paymentIntent.findFirst({
+                    where: { orderId: verification.orderId }
+                });
                 if (!intent)
                     throw new common_1.NotFoundException('Payment Intent not found for this order.');
-                intent.status = payment_model_1.PaymentIntentStatus.APPROVED;
-                intent.updatedAt = new Date();
+                await this.prisma.paymentIntent.update({
+                    where: { id: intent.id },
+                    data: { status: payment_model_1.PaymentIntentStatus.APPROVED }
+                });
                 await this.ordersService.markAsPaid(intent.orderId);
                 await this.accountsService.generateIncomingReceipt({
                     accountId: 'VIRTUAL-MP-ACCOUNT-ID',
@@ -108,6 +112,7 @@ exports.PaymentsService = PaymentsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [mercado_pago_service_1.MercadoPagoService,
         orders_fulfillment_service_1.OrdersFulfillmentService,
-        accounts_service_1.AccountsService])
+        accounts_service_1.AccountsService,
+        prisma_service_1.PrismaService])
 ], PaymentsService);
 //# sourceMappingURL=payments.service.js.map

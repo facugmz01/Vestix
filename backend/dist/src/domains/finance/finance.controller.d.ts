@@ -1,7 +1,9 @@
 import { AccountsService } from './accounts.service';
+import { CashService } from './cash/cash.service';
 export declare class FinanceController {
     private readonly accountsService;
-    constructor(accountsService: AccountsService);
+    private readonly cashService;
+    constructor(accountsService: AccountsService, cashService: CashService);
     getCurrentAccounts(page: string, pageSize: string): {
         data: any[];
         total: number;
@@ -69,10 +71,61 @@ export declare class FinanceController {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    getShifts(page: string, pageSize: string): {
-        data: any[];
-        total: number;
-    };
+    getActiveShift(req: any): Promise<{
+        openedByUser: {
+            id: string;
+            email: string;
+            fullName: string;
+        };
+    } & {
+        id: string;
+        cashRegisterId: string;
+        openedByUserId: string;
+        closedByUserId: string | null;
+        openingAmount: number;
+        closingAmount: number | null;
+        expectedAmount: number | null;
+        difference: number | null;
+        status: string;
+        openedAt: Date;
+        closedAt: Date | null;
+        notes: string | null;
+    }>;
+    openShift(req: any, body: {
+        cashRegisterId: string;
+        openingAmount: number;
+    }): Promise<{
+        id: string;
+        cashRegisterId: string;
+        openedByUserId: string;
+        closedByUserId: string | null;
+        openingAmount: number;
+        closingAmount: number | null;
+        expectedAmount: number | null;
+        difference: number | null;
+        status: string;
+        openedAt: Date;
+        closedAt: Date | null;
+        notes: string | null;
+    }>;
+    closeShift(req: any, body: {
+        shiftId: string;
+        closingAmount: number;
+        notes?: string;
+    }): Promise<{
+        id: string;
+        cashRegisterId: string;
+        openedByUserId: string;
+        closedByUserId: string | null;
+        openingAmount: number;
+        closingAmount: number | null;
+        expectedAmount: number | null;
+        difference: number | null;
+        status: string;
+        openedAt: Date;
+        closedAt: Date | null;
+        notes: string | null;
+    }>;
     getPayments(page: string, pageSize: string): {
         data: any[];
         total: number;

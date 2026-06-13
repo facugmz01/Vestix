@@ -23,14 +23,27 @@ export interface CartLineItem {
 export interface EvaluatedCartLineItem extends CartLineItem {
     promotionalDiscount: number;
 }
+import { PrismaService } from '../../core/prisma/prisma.service';
 export declare class RulesEngineService {
-    private rules;
-    registerRule(rule: PromotionRule): void;
-    evaluateCartPromotions(cartLines: CartLineItem[]): {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    registerRule(rule: PromotionRule): Promise<{
+        id: string;
+        name: string;
+        type: string;
+        isActive: boolean;
+        conditions: import(".prisma/client").Prisma.JsonValue;
+        actions: import(".prisma/client").Prisma.JsonValue;
+        validFrom: Date | null;
+        validTo: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    evaluateCartPromotions(cartLines: CartLineItem[]): Promise<{
         originalTotal: number;
         discountTotal: number;
         finalTotal: number;
         appliedPromotions: string[];
         lines: EvaluatedCartLineItem[];
-    };
+    }>;
 }

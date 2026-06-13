@@ -22,24 +22,8 @@ export declare class IntegrationsController {
         webhookUrl: string;
         config: any;
     }>;
-    saveConfig(id: string, config: Record<string, string>): Promise<{
-        id: string;
-        name: string;
-        provider: string;
-        status: string;
-        lastSyncAt: string;
-        webhookUrl: string;
-        config: any;
-    }>;
-    toggleActive(id: string, isActive: boolean): Promise<{
-        id: string;
-        name: string;
-        provider: string;
-        status: string;
-        lastSyncAt: string;
-        webhookUrl: string;
-        config: any;
-    }>;
+    saveConfig(id: string, config: Record<string, string>): Promise<void>;
+    toggleActive(id: string, isActive: boolean): Promise<void>;
     testConnection(id: string): Promise<{
         success: boolean;
         message: string;

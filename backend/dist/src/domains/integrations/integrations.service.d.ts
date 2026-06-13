@@ -15,7 +15,6 @@ export declare class IntegrationsService {
     private readonly configPath;
     constructor(wcApi: WooCommerceApiService, checkoutOrchestrator: CheckoutOrchestrator, prisma: PrismaService);
     private readConfigs;
-    private writeConfigs;
     getAllIntegrations(): Promise<{
         id: string;
         name: string;
@@ -34,24 +33,8 @@ export declare class IntegrationsService {
         webhookUrl: string;
         config: any;
     }>;
-    saveConfig(id: string, config: Record<string, string>): Promise<{
-        id: string;
-        name: string;
-        provider: string;
-        status: string;
-        lastSyncAt: string;
-        webhookUrl: string;
-        config: any;
-    }>;
-    toggleActive(id: string, isActive: boolean): Promise<{
-        id: string;
-        name: string;
-        provider: string;
-        status: string;
-        lastSyncAt: string;
-        webhookUrl: string;
-        config: any;
-    }>;
+    saveConfig(id: string, config: Record<string, string>): Promise<void>;
+    toggleActive(id: string, isActive: boolean): Promise<void>;
     testConnection(id: string): Promise<{
         success: boolean;
         message: string;

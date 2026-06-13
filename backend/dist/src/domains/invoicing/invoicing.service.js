@@ -52,28 +52,26 @@ let InvoicingService = class InvoicingService {
     constructor(afipService, prisma) {
         this.afipService = afipService;
         this.prisma = prisma;
-        this.invoices = [];
     }
     async generateInvoice(payload) {
-        const existing = this.invoices.find(i => i.orderId === payload.orderId && i.status === invoice_model_1.InvoiceStatus.APPROVED);
+        const existing = await this.getInvoiceByOrder(payload.orderId);
         if (existing) {
             throw new common_1.BadRequestException(`Order ${payload.orderId} has already been invoiced under receipt ${existing.receiptNumber}.`);
         }
         const totalAmount = payload.netAmount + payload.vatAmount;
-        const invoice = {
-            id: crypto.randomUUID(),
-            orderId: payload.orderId,
-            type: payload.type,
-            customerDocumentType: payload.customerDocumentType,
-            customerDocumentNumber: payload.customerDocumentNumber,
-            netAmount: payload.netAmount,
-            vatAmount: payload.vatAmount,
-            totalAmount,
-            status: invoice_model_1.InvoiceStatus.PENDING_AFIP,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-        this.invoices.push(invoice);
+        const invoice = await this.prisma.invoice.create({
+            data: {
+                id: crypto.randomUUID(),
+                orderId: payload.orderId,
+                type: payload.type,
+                customerDocumentType: payload.customerDocumentType,
+                customerDocumentNumber: payload.customerDocumentNumber,
+                netAmount: payload.netAmount,
+                vatAmount: payload.vatAmount,
+                totalAmount,
+                status: invoice_model_1.InvoiceStatus.PENDING_AFIP,
+            }
+        });
         let afipInvoiceType = 6;
         if (payload.type === invoice_model_1.InvoiceType.FACTURA_A)
             afipInvoiceType = 1;
@@ -95,19 +93,33 @@ let InvoicingService = class InvoicingService {
                 vatAmount: payload.vatAmount,
                 totalAmount
             });
-            invoice.cae = afipResponse.cae;
-            invoice.caeExpiration = afipResponse.caeExpiration;
-            invoice.receiptNumber = afipResponse.receiptNumber;
-            invoice.status = invoice_model_1.InvoiceStatus.APPROVED;
-            invoice.updatedAt = new Date();
+            return await this.prisma.invoice.update({
+                where: { id: invoice.id },
+                data: {
+                    status: invoice_model_1.InvoiceStatus.APPROVED,
+                    cae: afipResponse.cae,
+                    caeExpiration: new Date(afipResponse.caeExpiration),
+                    receiptNumber: afipResponse.receiptNumber,
+                    updatedAt: new Date(),
+                }
+            });
         }
         catch (error) {
-            invoice.status = invoice_model_1.InvoiceStatus.REJECTED;
-            invoice.afipErrorMessage = error.message;
-            invoice.updatedAt = new Date();
+            await this.prisma.invoice.update({
+                where: { id: invoice.id },
+                data: {
+                    status: invoice_model_1.InvoiceStatus.REJECTED,
+                    afipErrorMessage: error.message,
+                    updatedAt: new Date(),
+                }
+            });
             throw new common_1.BadRequestException(`Invoicing failed: ${error.message}`);
         }
-        return invoice;
+    }
+    async getInvoiceByOrder(orderId) {
+        return this.prisma.invoice.findFirst({
+            where: { orderId, status: invoice_model_1.InvoiceStatus.APPROVED }
+        });
     }
 };
 exports.InvoicingService = InvoicingService;

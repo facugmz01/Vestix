@@ -1,9 +1,13 @@
 import { PrismaService } from '../../../core/prisma/prisma.service';
-export declare class SmtpService {
+export declare class SmsGatewayService {
     private readonly prisma;
     private readonly logger;
     constructor(prisma: PrismaService);
-    send(to: string, subject: string, body: string): Promise<{
+    sendSms(phone: string, message: string): Promise<{
         success: boolean;
+        error: string;
+    } | {
+        success: boolean;
+        error?: undefined;
     }>;
 }

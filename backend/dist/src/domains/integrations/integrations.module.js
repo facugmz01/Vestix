@@ -11,6 +11,8 @@ const common_1 = require("@nestjs/common");
 const integrations_service_1 = require("./integrations.service");
 const integrations_controller_1 = require("./integrations.controller");
 const woocommerce_api_service_1 = require("./woocommerce-api.service");
+const mercadolibre_service_1 = require("./mercadolibre.service");
+const shopify_service_1 = require("./shopify.service");
 let IntegrationsModule = class IntegrationsModule {
 };
 exports.IntegrationsModule = IntegrationsModule;
@@ -18,7 +20,12 @@ exports.IntegrationsModule = IntegrationsModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
         controllers: [integrations_controller_1.IntegrationsController],
-        providers: [integrations_service_1.IntegrationsService, woocommerce_api_service_1.WooCommerceApiService],
+        providers: [
+            integrations_service_1.IntegrationsService,
+            woocommerce_api_service_1.WooCommerceApiService,
+            mercadolibre_service_1.MercadoLibreService,
+            shopify_service_1.ShopifyService,
+        ],
         exports: [integrations_service_1.IntegrationsService],
     })
 ], IntegrationsModule);

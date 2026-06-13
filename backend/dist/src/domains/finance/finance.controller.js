@@ -15,10 +15,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FinanceController = void 0;
 const common_1 = require("@nestjs/common");
 const accounts_service_1 = require("./accounts.service");
+const cash_service_1 = require("./cash/cash.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
 let FinanceController = class FinanceController {
-    constructor(accountsService) {
+    constructor(accountsService, cashService) {
         this.accountsService = accountsService;
+        this.cashService = cashService;
     }
     getCurrentAccounts(page, pageSize) {
         return { data: [], total: 0 };
@@ -35,8 +37,14 @@ let FinanceController = class FinanceController {
     updatePaymentMethod(id, body) {
         return this.accountsService.updatePaymentMethod(id, body);
     }
-    getShifts(page, pageSize) {
-        return { data: [], total: 0 };
+    getActiveShift(req) {
+        return this.cashService.getActiveShiftForUser(req.user.id);
+    }
+    openShift(req, body) {
+        return this.cashService.openShift(body.cashRegisterId, req.user.id, body.openingAmount);
+    }
+    closeShift(req, body) {
+        return this.cashService.closeShift(body.shiftId, req.user.id, body.closingAmount, body.notes);
     }
     getPayments(page, pageSize) {
         return { data: [], total: 0 };
@@ -87,14 +95,31 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], FinanceController.prototype, "updatePaymentMethod", null);
 __decorate([
-    (0, common_1.Get)('treasury/shifts'),
+    (0, common_1.Get)('treasury/shifts/active'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Finance' }),
-    __param(0, (0, common_1.Query)('page')),
-    __param(1, (0, common_1.Query)('pageSize')),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], FinanceController.prototype, "getShifts", null);
+], FinanceController.prototype, "getActiveShift", null);
+__decorate([
+    (0, common_1.Post)('treasury/shifts/open'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Finance' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "openShift", null);
+__decorate([
+    (0, common_1.Post)('treasury/shifts/close'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Finance' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "closeShift", null);
 __decorate([
     (0, common_1.Get)('payments'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Finance' }),
@@ -115,6 +140,7 @@ __decorate([
 ], FinanceController.prototype, "getInvoices", null);
 exports.FinanceController = FinanceController = __decorate([
     (0, common_1.Controller)('finance'),
-    __metadata("design:paramtypes", [accounts_service_1.AccountsService])
+    __metadata("design:paramtypes", [accounts_service_1.AccountsService,
+        cash_service_1.CashService])
 ], FinanceController);
 //# sourceMappingURL=finance.controller.js.map

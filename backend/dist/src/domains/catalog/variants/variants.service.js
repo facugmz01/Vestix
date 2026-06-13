@@ -46,43 +46,58 @@ exports.VariantsService = void 0;
 const common_1 = require("@nestjs/common");
 const variant_generator_service_1 = require("./variant-generator.service");
 const crypto = __importStar(require("crypto"));
+const prisma_service_1 = require("../../../core/prisma/prisma.service");
 let VariantsService = class VariantsService {
-    constructor(variantGenerator) {
+    constructor(variantGenerator, prisma) {
         this.variantGenerator = variantGenerator;
-        this.variants = [];
+        this.prisma = prisma;
     }
     async generateAndSave(productId, dto) {
         const mockProductBaseSku = 'MOCK-SKU';
         const newVariantsData = this.variantGenerator.generateCombinations(dto, productId, mockProductBaseSku);
         const generatedSkus = newVariantsData.map(v => v.sku);
-        const existing = this.variants.some(v => generatedSkus.includes(v.sku));
-        if (existing) {
+        const existingCount = await this.prisma.productVariant.count({
+            where: { sku: { in: generatedSkus } }
+        });
+        if (existingCount > 0) {
             throw new common_1.ConflictException('SKU collision detected. One or more generated SKUs already exist for this product. Check attributes or use manual creation.');
         }
         const savedVariants = newVariantsData.map(vData => ({
             id: crypto.randomUUID(),
-            ...vData,
+            productId,
+            sku: vData.sku,
+            barcode: vData.barcode || null,
+            attributes: vData.attributes || {},
+            basePrice: vData.basePrice,
+            costPrice: vData.costPrice || 0,
+            isActive: true,
             createdAt: new Date(),
             updatedAt: new Date(),
         }));
-        this.variants.push(...savedVariants);
+        await this.prisma.productVariant.createMany({
+            data: savedVariants
+        });
         return savedVariants;
     }
     async findByProduct(productId) {
-        return this.variants.filter(v => v.productId === productId);
+        return this.prisma.productVariant.findMany({
+            where: { productId }
+        });
     }
     async updatePrice(id, newPrice) {
-        const idx = this.variants.findIndex(v => v.id === id);
-        if (idx === -1)
+        const variant = await this.prisma.productVariant.update({
+            where: { id },
+            data: { basePrice: newPrice }
+        });
+        if (!variant)
             throw new common_1.NotFoundException(`Variant ${id} not found`);
-        this.variants[idx].basePrice = newPrice;
-        this.variants[idx].updatedAt = new Date();
-        return this.variants[idx];
+        return variant;
     }
 };
 exports.VariantsService = VariantsService;
 exports.VariantsService = VariantsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [variant_generator_service_1.VariantGeneratorService])
+    __metadata("design:paramtypes", [variant_generator_service_1.VariantGeneratorService,
+        prisma_service_1.PrismaService])
 ], VariantsService);
 //# sourceMappingURL=variants.service.js.map

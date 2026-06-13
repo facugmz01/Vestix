@@ -18,12 +18,71 @@ const common_1 = require("@nestjs/common");
 const bullmq_1 = require("@nestjs/bullmq");
 const bullmq_2 = require("bullmq");
 const notification_model_1 = require("./models/notification.model");
+const prisma_service_1 = require("../../core/prisma/prisma.service");
+const notification_templates_registry_1 = require("./templates/notification-templates.registry");
 let NotificationsService = NotificationsService_1 = class NotificationsService {
-    constructor(notificationsQueue) {
+    constructor(notificationsQueue, prisma) {
         this.notificationsQueue = notificationsQueue;
+        this.prisma = prisma;
         this.logger = new common_1.Logger(NotificationsService_1.name);
     }
+    async onModuleInit() {
+        const count = await this.prisma.notificationTemplate.count();
+        if (count === 0) {
+            this.logger.log('Seeding initial notification templates...');
+            for (const tpl of notification_templates_registry_1.NOTIFICATION_TEMPLATES) {
+                await this.prisma.notificationTemplate.upsert({
+                    where: {
+                        event_channel: {
+                            event: tpl.key,
+                            channel: tpl.channel,
+                        }
+                    },
+                    update: {},
+                    create: {
+                        name: `Plantilla ${tpl.key} (${tpl.channel})`,
+                        event: tpl.key,
+                        channel: tpl.channel,
+                        subject: tpl.subject,
+                        body: tpl.body,
+                        isActive: true,
+                    }
+                });
+            }
+            this.logger.log('Notification templates seeded successfully.');
+        }
+    }
+    async getTemplates(page, pageSize) {
+        const skip = (page - 1) * pageSize;
+        const [data, total] = await Promise.all([
+            this.prisma.notificationTemplate.findMany({ skip, take: pageSize }),
+            this.prisma.notificationTemplate.count(),
+        ]);
+        return { data, total };
+    }
+    async createTemplate(data) {
+        return this.prisma.notificationTemplate.create({ data });
+    }
+    async updateTemplate(id, data) {
+        return this.prisma.notificationTemplate.update({ where: { id }, data });
+    }
     async enqueue(payload) {
+        const template = await this.prisma.notificationTemplate.findUnique({
+            where: {
+                event_channel: {
+                    event: payload.templateKey,
+                    channel: payload.channel,
+                }
+            }
+        });
+        if (!template) {
+            this.logger.warn(`No template found for ${payload.templateKey} on ${payload.channel}. Skipping notification.`);
+            return null;
+        }
+        if (!template.isActive) {
+            this.logger.log(`Template ${payload.templateKey} on ${payload.channel} is inactive. Skipping notification.`);
+            return null;
+        }
         const job = await this.notificationsQueue.add('send_notification', {
             channel: payload.channel,
             templateKey: payload.templateKey,
@@ -95,6 +154,7 @@ exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, bullmq_1.InjectQueue)('notifications_queue')),
-    __metadata("design:paramtypes", [bullmq_2.Queue])
+    __metadata("design:paramtypes", [bullmq_2.Queue,
+        prisma_service_1.PrismaService])
 ], NotificationsService);
 //# sourceMappingURL=notifications.service.js.map

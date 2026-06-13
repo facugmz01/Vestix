@@ -14,30 +14,39 @@ exports.NotificationsProcessor = void 0;
 const bullmq_1 = require("@nestjs/bullmq");
 const common_1 = require("@nestjs/common");
 const smtp_service_1 = require("./channels/smtp.service");
-const whatsapp_evolution_service_1 = require("./channels/whatsapp-evolution.service");
-const notification_templates_registry_1 = require("./templates/notification-templates.registry");
-const notification_model_1 = require("./models/notification.model");
+const whatsapp_openwa_service_1 = require("./channels/whatsapp-openwa.service");
+const sms_gateway_service_1 = require("./channels/sms-gateway.service");
+const prisma_service_1 = require("../../core/prisma/prisma.service");
 let NotificationsProcessor = NotificationsProcessor_1 = class NotificationsProcessor extends bullmq_1.WorkerHost {
-    constructor(smtpService, whatsAppService) {
+    constructor(smtpService, whatsAppService, smsService, prisma) {
         super();
         this.smtpService = smtpService;
         this.whatsAppService = whatsAppService;
+        this.smsService = smsService;
+        this.prisma = prisma;
         this.logger = new common_1.Logger(NotificationsProcessor_1.name);
     }
     async process(job) {
         const { channel, templateKey, recipient, variables } = job.data;
         this.logger.log(`[Queue] Processing job ${job.id} for ${recipient}`);
-        const template = notification_templates_registry_1.NOTIFICATION_TEMPLATES.find(t => t.key === templateKey && t.channel === channel);
+        const template = await this.prisma.notificationTemplate.findUnique({
+            where: {
+                event_channel: { event: templateKey, channel },
+            }
+        });
         if (!template) {
-            throw new Error(`No template found for key=${templateKey}, channel=${channel}`);
+            throw new Error(`No template found in DB for key=${templateKey}, channel=${channel}`);
         }
         const body = this.interpolate(template.body, variables);
         const subject = template.subject ? this.interpolate(template.subject, variables) : undefined;
-        if (channel === notification_model_1.NotificationChannel.EMAIL) {
-            await this.smtpService.send(recipient, subject, body);
+        if (channel === 'EMAIL') {
+            await this.smtpService.send(recipient, subject || 'Notificación', body);
         }
-        else if (channel === notification_model_1.NotificationChannel.WHATSAPP) {
+        else if (channel === 'WHATSAPP') {
             await this.whatsAppService.sendText(recipient, body);
+        }
+        else if (channel === 'SMS') {
+            await this.smsService.sendSms(recipient, body);
         }
         this.logger.log(`[Queue] ✓ Job ${job.id} successfully completed`);
     }
@@ -49,6 +58,8 @@ exports.NotificationsProcessor = NotificationsProcessor;
 exports.NotificationsProcessor = NotificationsProcessor = NotificationsProcessor_1 = __decorate([
     (0, bullmq_1.Processor)('notifications_queue'),
     __metadata("design:paramtypes", [smtp_service_1.SmtpService,
-        whatsapp_evolution_service_1.WhatsAppEvolutionService])
+        whatsapp_openwa_service_1.WhatsAppOpenWaService,
+        sms_gateway_service_1.SmsGatewayService,
+        prisma_service_1.PrismaService])
 ], NotificationsProcessor);
 //# sourceMappingURL=notifications.processor.js.map

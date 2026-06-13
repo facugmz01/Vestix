@@ -6,15 +6,6 @@ export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
     create(createUserDto: CreateUserDto): Promise<{
-        role: {
-            id: string;
-            name: string;
-        };
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        email: string;
-        isActive: boolean;
         branch: {
             id: string;
             name: string;
@@ -27,7 +18,16 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         branchId: string;
+        role: {
+            id: string;
+            name: string;
+        };
+        email: string;
         fullName: string;
         roleId: string;
     }>;
@@ -47,17 +47,6 @@ export declare class UsersController {
         pageSize: number;
     }>;
     findOne(id: string): Promise<{
-        role: {
-            permissions: {
-                id: string;
-                action: string;
-                subject: string;
-                roleId: string;
-            }[];
-        } & {
-            id: string;
-            name: string;
-        };
         branch: {
             id: string;
             name: string;
@@ -69,6 +58,17 @@ export declare class UsersController {
             settings: import(".prisma/client").Prisma.JsonValue | null;
             createdAt: Date;
             updatedAt: Date;
+        };
+        role: {
+            permissions: {
+                id: string;
+                action: string;
+                subject: string;
+                roleId: string;
+            }[];
+        } & {
+            id: string;
+            name: string;
         };
     } & {
         id: string;
@@ -82,15 +82,6 @@ export declare class UsersController {
         updatedAt: Date;
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
-        role: {
-            id: string;
-            name: string;
-        };
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        email: string;
-        isActive: boolean;
         branch: {
             id: string;
             name: string;
@@ -103,20 +94,20 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         branchId: string;
+        role: {
+            id: string;
+            name: string;
+        };
+        email: string;
         fullName: string;
         roleId: string;
     }>;
     activate(id: string): Promise<{
-        role: {
-            id: string;
-            name: string;
-        };
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        email: string;
-        isActive: boolean;
         branch: {
             id: string;
             name: string;
@@ -129,20 +120,20 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         branchId: string;
+        role: {
+            id: string;
+            name: string;
+        };
+        email: string;
         fullName: string;
         roleId: string;
     }>;
     deactivate(id: string): Promise<{
-        role: {
-            id: string;
-            name: string;
-        };
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        email: string;
-        isActive: boolean;
         branch: {
             id: string;
             name: string;
@@ -155,20 +146,20 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         branchId: string;
+        role: {
+            id: string;
+            name: string;
+        };
+        email: string;
         fullName: string;
         roleId: string;
     }>;
     assignBranches(id: string, assignBranchesDto: AssignBranchesDto): Promise<{
-        role: {
-            id: string;
-            name: string;
-        };
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        email: string;
-        isActive: boolean;
         branch: {
             id: string;
             name: string;
@@ -181,7 +172,16 @@ export declare class UsersController {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         branchId: string;
+        role: {
+            id: string;
+            name: string;
+        };
+        email: string;
         fullName: string;
         roleId: string;
     }>;

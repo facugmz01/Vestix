@@ -49,7 +49,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.IntegrationsService = void 0;
 const common_1 = require("@nestjs/common");
 const crypto = __importStar(require("crypto"));
-const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const axios_1 = __importDefault(require("axios"));
 const woocommerce_api_service_1 = require("./woocommerce-api.service");
@@ -66,28 +65,35 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
         this.logger = new common_1.Logger(IntegrationsService_1.name);
         this.configPath = path.join(__dirname, 'integrations-config.json');
     }
-    readConfigs() {
-        try {
-            if (fs.existsSync(this.configPath)) {
-                return JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
+    async readConfigs() {
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const intSettings = settings?.integrations || {};
+        return {
+            woocommerce: {
+                isActive: intSettings.woocommerceEnabled,
+                storeUrl: intSettings.wooStoreUrl,
+                consumerKey: intSettings.wooConsumerKey,
+                consumerSecret: intSettings.wooConsumerSecret,
+            },
+            afip: {
+                isActive: true,
+                cuit: '30-00000000-0',
+            },
+            mercadolibre: {
+                isActive: intSettings.mercadolibreEnabled,
+                appId: intSettings.mlAppId,
+                secretKey: intSettings.mlSecretKey,
+            },
+            shopify: {
+                isActive: intSettings.shopifyEnabled,
+                storeUrl: intSettings.shopifyStoreUrl,
+                accessToken: intSettings.shopifyAccessToken,
             }
-        }
-        catch (e) {
-            this.logger.error('Error reading config file:', e);
-        }
-        return {};
-    }
-    writeConfigs(configs) {
-        try {
-            fs.writeFileSync(this.configPath, JSON.stringify(configs, null, 2), 'utf8');
-        }
-        catch (e) {
-            this.logger.error('Error writing config file:', e);
-        }
+        };
     }
     async getAllIntegrations() {
-        const configs = this.readConfigs();
-        const providers = ['WOOCOMMERCE', 'AFIP'];
+        const configs = await this.readConfigs();
+        const providers = ['WOOCOMMERCE', 'AFIP', 'MERCADOLIBRE', 'SHOPIFY'];
         return providers.map(prov => {
             const provLower = prov.toLowerCase();
             const provConfig = configs[provLower] || {};
@@ -98,6 +104,16 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
                     status = isActive ? 'ACTIVE' : 'INACTIVE';
                 }
             }
+            else if (prov === 'MERCADOLIBRE') {
+                if (provConfig.appId && provConfig.secretKey) {
+                    status = isActive ? 'ACTIVE' : 'INACTIVE';
+                }
+            }
+            else if (prov === 'SHOPIFY') {
+                if (provConfig.storeUrl && provConfig.accessToken) {
+                    status = isActive ? 'ACTIVE' : 'INACTIVE';
+                }
+            }
             else if (prov === 'AFIP') {
                 if (provConfig.cuit) {
                     status = isActive ? 'ACTIVE' : 'INACTIVE';
@@ -105,7 +121,7 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
             }
             return {
                 id: provLower,
-                name: prov === 'WOOCOMMERCE' ? 'WooCommerce' : 'AFIP',
+                name: prov === 'WOOCOMMERCE' ? 'WooCommerce' : (prov === 'MERCADOLIBRE' ? 'Mercado Libre' : (prov === 'SHOPIFY' ? 'Shopify' : 'AFIP')),
                 provider: prov,
                 status,
                 lastSyncAt: provConfig.lastSyncAt ? new Date(provConfig.lastSyncAt).toISOString() : null,
@@ -123,24 +139,10 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
         return found;
     }
     async saveConfig(id, config) {
-        const configs = this.readConfigs();
-        const idLower = id.toLowerCase();
-        configs[idLower] = {
-            ...(configs[idLower] || {}),
-            ...config,
-        };
-        this.writeConfigs(configs);
-        return this.getIntegration(id);
+        throw new common_1.BadRequestException('Por favor, configura las integraciones desde la pestaña de Ajustes del Sistema.');
     }
     async toggleActive(id, isActive) {
-        const configs = this.readConfigs();
-        const idLower = id.toLowerCase();
-        configs[idLower] = {
-            ...(configs[idLower] || {}),
-            isActive,
-        };
-        this.writeConfigs(configs);
-        return this.getIntegration(id);
+        throw new common_1.BadRequestException('Por favor, activa/desactiva integraciones desde la pestaña de Ajustes del Sistema.');
     }
     async testConnection(id) {
         if (id.toLowerCase() === 'woocommerce') {
@@ -161,14 +163,8 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
     }
     async triggerSync(id) {
         if (id.toLowerCase() === 'woocommerce') {
-            const configs = this.readConfigs();
-            configs.woocommerce = {
-                ...(configs.woocommerce || {}),
-                lastSyncAt: new Date().toISOString(),
-            };
-            this.writeConfigs(configs);
             this.logger.log(`Full synchronization triggered for WooCommerce`);
-            return { message: 'Sincronización iniciada' };
+            return { message: 'Sincronización iniciada (Log en consola)' };
         }
         return { message: 'Sincronización no soportada' };
     }
