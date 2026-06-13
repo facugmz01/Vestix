@@ -256,233 +256,322 @@ export default function POSPage() {
 
   return (
     <>
-      {/* GLOBAL STYLES FOR POS */}
-      <style>{`
+      {/* GLOBAL STYLES FOR POS */}      <style>{`
         .pos-layout {
           display: flex;
           flex-direction: column;
           height: 100vh;
           width: 100vw;
-          position: fixed;
-          top: 0; left: 0;
-          background: #f4f6f9;
-          z-index: 1000;
+          background: var(--bg-base);
           overflow: hidden;
           font-family: 'Inter', sans-serif;
         }
         .pos-navbar {
-          background: var(--bg-elevated);
+          background: rgba(19, 22, 30, 0.8);
+          backdrop-filter: blur(12px);
           color: var(--text-primary);
-          height: 50px;
+          height: 64px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 15px;
+          padding: 0 24px;
           border-bottom: 1px solid var(--border);
+          box-shadow: var(--shadow-sm);
+          z-index: 10;
         }
         .pos-nav-logo {
-          font-size: 20px;
-          font-weight: 700;
+          font-size: 22px;
+          font-weight: 800;
           letter-spacing: -0.5px;
+          background: linear-gradient(to right, #fff, #9ca3af);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .pos-nav-logo span {
+          font-weight: 300;
         }
         .pos-nav-icons {
           display: flex;
           align-items: center;
-          gap: 15px;
+          gap: 16px;
         }
         .pos-icon-btn {
           background: transparent;
-          border: none;
+          border: 1px solid transparent;
           color: var(--text-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 5px;
-          padding: 5px 10px;
-          border-radius: 4px;
+          gap: 6px;
+          padding: 6px 12px;
+          border-radius: var(--radius);
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.2s;
         }
-        .pos-icon-btn:hover { background: var(--bg-overlay); color: var(--text-primary); }
+        .pos-icon-btn:hover { 
+          background: var(--bg-overlay); 
+          color: var(--text-primary); 
+          border-color: var(--border);
+        }
         .pos-main {
           display: flex;
           flex: 1;
           overflow: hidden;
+          padding: 16px;
+          gap: 16px;
         }
         .pos-left {
           flex: 6.5;
           display: flex;
           flex-direction: column;
-          background: var(--bg-base);
-          border-right: 1px solid var(--border);
+          background: rgba(26, 30, 42, 0.6);
+          backdrop-filter: blur(12px);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          box-shadow: var(--shadow-md);
         }
         .pos-right {
           flex: 3.5;
           display: flex;
           flex-direction: column;
-          background: var(--bg-surface);
+          background: rgba(26, 30, 42, 0.6);
+          backdrop-filter: blur(12px);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          box-shadow: var(--shadow-md);
         }
         .pos-cart-top {
-          padding: 10px;
-          background: var(--bg-elevated);
+          padding: 16px;
+          background: rgba(255,255,255,0.02);
           border-bottom: 1px solid var(--border);
           display: flex;
           flex-direction: column;
-          gap: 10px;
-        }
-        .pos-search-wrap {
-          display: flex;
-          gap: 10px;
+          gap: 12px;
         }
         .pos-search-input {
           flex: 1;
-          padding: 12px 12px 12px 40px;
+          padding: 12px 16px 12px 42px;
           border: 1px solid var(--border);
-          background: var(--bg-overlay);
+          background: rgba(0,0,0,0.2);
           color: var(--text-primary);
-          border-radius: 4px;
-          font-size: 16px;
+          border-radius: 99px;
+          font-size: 14px;
           outline: none;
+          transition: all 0.2s;
         }
         .pos-search-input:focus {
           border-color: var(--accent);
           box-shadow: 0 0 0 2px var(--accent-glow);
+          background: rgba(0,0,0,0.3);
         }
         .pos-table-container {
           flex: 1;
           overflow-y: auto;
-          background: var(--bg-base);
+          background: transparent;
         }
         .pos-table {
           width: 100%;
           border-collapse: collapse;
         }
         .pos-table th {
-          background: var(--bg-elevated);
-          padding: 10px;
+          background: rgba(0,0,0,0.2);
+          padding: 12px 16px;
           text-align: left;
-          font-size: 13px;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
           color: var(--text-secondary);
           border-bottom: 1px solid var(--border);
           position: sticky;
           top: 0;
+          backdrop-filter: blur(10px);
+          z-index: 5;
         }
         .pos-table td {
-          padding: 8px 10px;
-          border-bottom: 1px solid var(--border);
+          padding: 12px 16px;
+          border-bottom: 1px solid rgba(255,255,255,0.03);
           font-size: 14px;
           vertical-align: middle;
           color: var(--text-primary);
         }
         .pos-qty-input {
-          width: 50px;
+          width: 48px;
           text-align: center;
-          padding: 4px;
+          padding: 6px;
+          border: 1px solid var(--border);
+          background: rgba(0,0,0,0.2);
+          color: var(--text-primary);
+          border-radius: var(--radius-sm);
+          font-weight: 600;
+          outline: none;
+        }
+        .pos-qty-input:focus {
+          border-color: var(--accent);
+        }
+        .qty-btn {
+          padding: 6px;
           border: 1px solid var(--border);
           background: var(--bg-overlay);
           color: var(--text-primary);
-          border-radius: 3px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: var(--radius-sm);
+          transition: all 0.1s;
+        }
+        .qty-btn:hover {
+          background: var(--bg-elevated);
+          border-color: var(--text-muted);
+        }
+        .qty-btn:active {
+          transform: scale(0.95);
         }
         .pos-summary {
-          background: var(--bg-elevated);
+          background: rgba(0,0,0,0.2);
           border-top: 1px solid var(--border);
-          padding: 10px 15px;
+          padding: 16px;
         }
         .pos-summary-row {
           display: flex;
           justify-content: space-between;
           font-size: 14px;
-          margin-bottom: 5px;
+          margin-bottom: 8px;
           color: var(--text-secondary);
         }
         .pos-total-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: var(--bg-overlay);
-          padding: 10px 15px;
-          font-size: 24px;
-          font-weight: 700;
-          color: var(--accent);
-          border-radius: 4px;
+          background: linear-gradient(to right, rgba(99,102,241,0.1), rgba(99,102,241,0.02));
+          border: 1px solid var(--border-focus);
+          padding: 16px;
+          font-size: 28px;
+          font-weight: 800;
+          color: #fff;
+          border-radius: var(--radius);
+          margin-top: 8px;
+          box-shadow: 0 4px 20px var(--accent-glow);
         }
         .pos-action-buttons {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 5px;
-          padding: 10px;
-          background: var(--bg-elevated);
+          gap: 10px;
+          padding: 16px;
+          background: rgba(255,255,255,0.02);
+          border-top: 1px solid var(--border);
         }
         .pos-btn {
-          padding: 15px 5px;
-          color: var(--text-primary);
-          border: none;
-          border-radius: 4px;
-          font-weight: 700;
+          padding: 16px 8px;
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: var(--radius);
+          font-weight: 600;
           font-size: 13px;
           cursor: pointer;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 5px;
-          transition: opacity 0.2s;
+          gap: 8px;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: var(--shadow-sm);
         }
-        .pos-btn:hover { opacity: 0.8; }
-        .pos-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .bg-draft { background: var(--yellow); }
-        .bg-quotation { background: var(--blue); }
-        .bg-suspend { background: var(--red); }
-        .bg-credit { background: var(--purple); }
-        .bg-card { background: var(--blue); }
-        .bg-multiple { background: var(--bg-overlay); color: var(--text-primary); border: 1px solid var(--border); }
-        .bg-cash { background: var(--green); grid-column: span 2; font-size: 16px; }
+        .pos-btn:hover { 
+          transform: translateY(-3px);
+          box-shadow: var(--shadow-md);
+          filter: brightness(1.1);
+        }
+        .pos-btn:active {
+          transform: translateY(0);
+        }
+        .pos-btn:disabled { 
+          opacity: 0.4; 
+          cursor: not-allowed; 
+          transform: none !important;
+          box-shadow: none !important;
+          filter: grayscale(1);
+        }
+        
+        .bg-draft { background: linear-gradient(135deg, var(--yellow), #ca8a04); }
+        .bg-quotation { background: linear-gradient(135deg, var(--blue), #2563eb); }
+        .bg-suspend { background: linear-gradient(135deg, var(--red), #dc2626); }
+        .bg-credit { background: linear-gradient(135deg, var(--purple), #9333ea); }
+        .bg-card { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+        .bg-multiple { background: rgba(0,0,0,0.3); color: var(--text-primary); border: 1px solid var(--border); }
+        .bg-cash { 
+          background: linear-gradient(135deg, var(--green), #16a34a); 
+          grid-column: span 2; 
+          font-size: 16px; 
+          box-shadow: 0 4px 15px rgba(34,197,94,0.3);
+        }
+        .bg-cash:hover {
+          box-shadow: 0 8px 25px rgba(34,197,94,0.5);
+        }
         
         .pos-products-header {
-          padding: 10px;
+          padding: 16px;
           display: flex;
-          gap: 10px;
-          background: var(--bg-surface);
+          gap: 12px;
+          background: rgba(255,255,255,0.02);
           border-bottom: 1px solid var(--border);
         }
         .pos-products-grid {
           flex: 1;
           overflow-y: auto;
-          padding: 10px;
+          padding: 16px;
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-          gap: 10px;
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+          gap: 16px;
           align-content: start;
         }
         .pos-product-card {
-          background: var(--bg-elevated);
+          background: rgba(255,255,255,0.03);
           border: 1px solid var(--border);
-          border-radius: var(--radius-sm);
+          border-radius: var(--radius);
           cursor: pointer;
           overflow: hidden;
           text-align: center;
-          transition: all 0.2s;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .pos-product-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2); transform: translateY(-2px); }
+        .pos-product-card:hover { 
+          border-color: var(--accent); 
+          background: rgba(99,102,241,0.05);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.4), 0 0 0 1px var(--accent-glow); 
+          transform: translateY(-4px); 
+        }
+        .pos-product-card:active {
+          transform: translateY(-1px);
+        }
         .pos-product-img {
-          height: 80px;
-          background: var(--bg-overlay);
+          height: 90px;
+          background: rgba(0,0,0,0.3);
           display: flex;
           align-items: center;
           justify-content: center;
           color: var(--text-muted);
+          border-bottom: 1px solid rgba(255,255,255,0.03);
         }
         .pos-product-info {
-          padding: 8px 5px;
+          padding: 10px 8px;
         }
         .pos-product-name {
           font-size: 12px;
-          font-weight: 600;
+          font-weight: 500;
           color: var(--text-primary);
-          margin-bottom: 4px;
-          line-height: 1.2;
-          height: 28px;
+          margin-bottom: 6px;
+          line-height: 1.3;
+          height: 31px;
           overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
         }
         .pos-product-price {
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 700;
           color: var(--green);
         }
@@ -592,15 +681,15 @@ export default function POSPage() {
                           {(item.variant as any).productName || 'Producto'} {item.variant.size ? `(${item.variant.size})` : ''}
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <button onClick={() => updateQty(item.variant.id, item.qty - 1)} style={{ padding: '2px', border: '1px solid var(--border)', background: 'var(--bg-overlay)', cursor: 'pointer' }}><Minus size={12} /></button>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            <button className="qty-btn" onClick={() => updateQty(item.variant.id, item.qty - 1)}><Minus size={14} /></button>
                             <input 
                               type="number" 
                               className="pos-qty-input" 
                               value={item.qty} 
                               onChange={e => updateQty(item.variant.id, Number(e.target.value))}
                             />
-                            <button onClick={() => updateQty(item.variant.id, item.qty + 1)} style={{ padding: '2px', border: '1px solid var(--border)', background: 'var(--bg-overlay)', cursor: 'pointer' }}><Plus size={12} /></button>
+                            <button className="qty-btn" onClick={() => updateQty(item.variant.id, item.qty + 1)}><Plus size={14} /></button>
                           </div>
                         </td>
                         <td style={{ textAlign: 'right' }}>
