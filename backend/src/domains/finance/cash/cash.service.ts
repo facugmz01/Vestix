@@ -190,4 +190,88 @@ export class CashService {
 
     return { success: true, amount };
   }
+
+  async getShifts(page: number, pageSize: number) {
+    const skip = (page - 1) * pageSize;
+    const [data, total] = await Promise.all([
+      this.prisma.cashShift.findMany({
+        skip,
+        take: pageSize,
+        orderBy: { openedAt: 'desc' },
+        include: {
+          openedByUser: { select: { fullName: true } },
+          closedByUser: { select: { fullName: true } },
+          cashRegister: { select: { name: true, branch: { select: { name: true } } } }
+        }
+      }),
+      this.prisma.cashShift.count()
+    ]);
+
+    return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  }
+
+  async getShiftById(shiftId: string) {
+    const shift = await this.prisma.cashShift.findUnique({
+      where: { id: shiftId },
+      include: {
+        openedByUser: { select: { fullName: true } },
+        closedByUser: { select: { fullName: true } },
+        cashRegister: { select: { name: true, branch: { select: { name: true } } } }
+      }
+    });
+    if (!shift) throw new NotFoundException('Turno no encontrado');
+    return shift;
+  }
+
+  async getShiftMovements(shiftId: string) {
+    const shift = await this.prisma.cashShift.findUnique({
+      where: { id: shiftId },
+      include: { cashRegister: { include: { paymentMethods: true } } }
+    });
+    if (!shift) throw new NotFoundException('Turno no encontrado');
+
+    const cashPaymentMethod = shift.cashRegister.paymentMethods.find(p => p.type === 'CASH');
+    if (!cashPaymentMethod?.accountId) return [];
+
+    const end = shift.closedAt || new Date();
+    const transactions = await this.prisma.financialTransaction.findMany({
+      where: {
+        accountId: cashPaymentMethod.accountId,
+        createdAt: { gte: shift.openedAt, lte: end }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return transactions.map(t => ({
+      id: t.id,
+      type: t.type === 'DEBIT' ? 'INCOME' : 'EXPENSE',
+      concept: t.description || t.referenceId,
+      amount: t.amount,
+      createdAt: t.createdAt
+    }));
+  }
+
+  async addManualMovement(shiftId: string, userId: string, type: 'INCOME' | 'EXPENSE', amount: number, concept: string) {
+    const shift = await this.prisma.cashShift.findUnique({
+      where: { id: shiftId },
+      include: { cashRegister: { include: { paymentMethods: true } } }
+    });
+    if (!shift) throw new NotFoundException('Turno no encontrado');
+    if (shift.status === 'CLOSED') throw new BadRequestException('El turno está cerrado');
+
+    const cashPaymentMethod = shift.cashRegister.paymentMethods.find(p => p.type === 'CASH');
+    if (!cashPaymentMethod?.accountId) throw new BadRequestException('No hay cuenta de efectivo asociada a esta caja');
+
+    const txType = type === 'INCOME' ? 'DEBIT' : 'CREDIT'; // Income adds money (Debit in our treasury logic), Expense removes money (Credit)
+    
+    await this.accountsService.postTransaction(
+      cashPaymentMethod.accountId,
+      txType,
+      amount,
+      `MANUAL-${crypto.randomUUID()}`,
+      concept
+    );
+
+    return { success: true };
+  }
 }

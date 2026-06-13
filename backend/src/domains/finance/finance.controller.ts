@@ -60,6 +60,30 @@ export class FinanceController {
     return this.cashService.closeShift(body.shiftId, req.user.id, body.closingAmount, body.notes);
   }
 
+  @Get('treasury/shifts')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getShifts(@Query('page') page: string, @Query('pageSize') pageSize: string) {
+    return this.cashService.getShifts(Number(page) || 1, Number(pageSize) || 15);
+  }
+
+  @Get('treasury/shifts/:id')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getShiftById(@Param('id') id: string) {
+    return this.cashService.getShiftById(id);
+  }
+
+  @Get('treasury/shifts/:id/movements')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getShiftMovements(@Param('id') id: string) {
+    return this.cashService.getShiftMovements(id);
+  }
+
+  @Post('treasury/shifts/:id/movements')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  addManualMovement(@Req() req: any, @Param('id') id: string, @Body() body: { type: 'INCOME' | 'EXPENSE', amount: number, concept: string }) {
+    return this.cashService.addManualMovement(id, req.user.id, body.type, body.amount, body.concept);
+  }
+
   @Get('payments')
   @RequirePermissions({ action: 'read', subject: 'Finance' })
   getPayments(@Query('page') page: string, @Query('pageSize') pageSize: string) {

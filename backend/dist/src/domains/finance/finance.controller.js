@@ -46,6 +46,18 @@ let FinanceController = class FinanceController {
     closeShift(req, body) {
         return this.cashService.closeShift(body.shiftId, req.user.id, body.closingAmount, body.notes);
     }
+    getShifts(page, pageSize) {
+        return this.cashService.getShifts(Number(page) || 1, Number(pageSize) || 15);
+    }
+    getShiftById(id) {
+        return this.cashService.getShiftById(id);
+    }
+    getShiftMovements(id) {
+        return this.cashService.getShiftMovements(id);
+    }
+    addManualMovement(req, id, body) {
+        return this.cashService.addManualMovement(id, req.user.id, body.type, body.amount, body.concept);
+    }
     getPayments(page, pageSize) {
         return { data: [], total: 0 };
     }
@@ -120,6 +132,41 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], FinanceController.prototype, "closeShift", null);
+__decorate([
+    (0, common_1.Get)('treasury/shifts'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Finance' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('pageSize')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "getShifts", null);
+__decorate([
+    (0, common_1.Get)('treasury/shifts/:id'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Finance' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "getShiftById", null);
+__decorate([
+    (0, common_1.Get)('treasury/shifts/:id/movements'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Finance' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "getShiftMovements", null);
+__decorate([
+    (0, common_1.Post)('treasury/shifts/:id/movements'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Finance' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "addManualMovement", null);
 __decorate([
     (0, common_1.Get)('payments'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Finance' }),

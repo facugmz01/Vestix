@@ -126,6 +126,80 @@ export declare class FinanceController {
         closedAt: Date | null;
         notes: string | null;
     }>;
+    getShifts(page: string, pageSize: string): Promise<{
+        data: ({
+            cashRegister: {
+                branch: {
+                    name: string;
+                };
+                name: string;
+            };
+            openedByUser: {
+                fullName: string;
+            };
+            closedByUser: {
+                fullName: string;
+            };
+        } & {
+            id: string;
+            cashRegisterId: string;
+            openedByUserId: string;
+            closedByUserId: string | null;
+            openingAmount: number;
+            closingAmount: number | null;
+            expectedAmount: number | null;
+            difference: number | null;
+            status: string;
+            openedAt: Date;
+            closedAt: Date | null;
+            notes: string | null;
+        })[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+    }>;
+    getShiftById(id: string): Promise<{
+        cashRegister: {
+            branch: {
+                name: string;
+            };
+            name: string;
+        };
+        openedByUser: {
+            fullName: string;
+        };
+        closedByUser: {
+            fullName: string;
+        };
+    } & {
+        id: string;
+        cashRegisterId: string;
+        openedByUserId: string;
+        closedByUserId: string | null;
+        openingAmount: number;
+        closingAmount: number | null;
+        expectedAmount: number | null;
+        difference: number | null;
+        status: string;
+        openedAt: Date;
+        closedAt: Date | null;
+        notes: string | null;
+    }>;
+    getShiftMovements(id: string): Promise<{
+        id: string;
+        type: string;
+        concept: string;
+        amount: number;
+        createdAt: Date;
+    }[]>;
+    addManualMovement(req: any, id: string, body: {
+        type: 'INCOME' | 'EXPENSE';
+        amount: number;
+        concept: string;
+    }): Promise<{
+        success: boolean;
+    }>;
     getPayments(page: string, pageSize: string): {
         data: any[];
         total: number;
