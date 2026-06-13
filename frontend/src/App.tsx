@@ -27,6 +27,7 @@ const TaxonomyPage   = lazy(() => import('@/pages/admin/TaxonomyPage'));
 const AttributesPage = lazy(() => import('@/pages/admin/AttributesPage'));
 const ProductVariantsPage = lazy(() => import('@/pages/admin/ProductVariantsPage'));
 const PromotionsPage = lazy(() => import('@/pages/admin/PromotionsPage'));
+const BarcodeLabelsPage = lazy(() => import('@/pages/admin/BarcodeLabelsPage'));
 const InventoryPage  = lazy(() => import('@/pages/admin/InventoryPage'));
 const StockMovementsPage = lazy(() => import('@/pages/admin/StockMovementsPage'));
 const TransfersPage  = lazy(() => import('@/pages/admin/TransfersPage'));
@@ -56,6 +57,7 @@ const WarehousesPage = lazy(() => import('@/pages/admin/WarehousesPage'));
 const LocationsPage  = lazy(() => import('@/pages/admin/LocationsPage'));
 const CashRegistersPage = lazy(() => import('@/pages/admin/CashRegistersPage'));
 const PriceInquiryPage = lazy(() => import('@/pages/admin/PriceInquiryPage'));
+const QRScannerPage  = lazy(() => import('@/pages/admin/QRScannerPage'));
 
 // ─── Standalone pages ─────────────────────────────────────────────────────────
 const StorefrontLayout = lazy(() => import('@/layouts/StorefrontLayout'));
@@ -135,6 +137,8 @@ export default function App() {
                 <Route path="/admin/catalog/:productId/variants" element={<ProductVariantsPage />} />
                 <Route path="/admin/promotions"  element={<PromotionsPage />} />
                 <Route path="/admin/price-inquiry" element={<PriceInquiryPage />} />
+                <Route path="/admin/scanner" element={<QRScannerPage />} />
+                <Route path="/admin/barcodes" element={<BarcodeLabelsPage />} />
               </Route>
 
               <Route element={<RequirePermission action="read"   subject="Inventory" />}>

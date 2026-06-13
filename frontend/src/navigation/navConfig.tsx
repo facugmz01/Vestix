@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
-  Users, Wallet, Settings, Monitor, Globe, BarChart2
+  Users, Wallet, Settings, Monitor, Globe, BarChart2, Scan
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';
@@ -49,6 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { id:'inventory', label:'Inventario',   to:'/admin/inventory',  icon:Warehouse,    action:'read', subject:'Inventory' },
       { id:'purchasing',label:'Compras',      to:'/admin/purchasing', icon:ShoppingCart, action:'read', subject:'Purchasing' },
       { id:'sales',     label:'Ventas',       to:'/admin/sales',      icon:ShoppingCart, action:'read', subject:'Sales' },
+      { id:'scanner',   label:'Escáner QR',   to:'/admin/scanner',    icon:Scan,         action:'read', subject:'Catalog' },
     ],
   },
   {

@@ -152,6 +152,17 @@ export declare class TransfersService {
         data: {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
+            destinationWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             lines: ({
                 variant: {
                     id: string;
@@ -187,17 +198,6 @@ export declare class TransfersService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             id: string;
             sourceWarehouseId: string;
             destinationWarehouseId: string;
@@ -215,6 +215,17 @@ export declare class TransfersService {
     findOne(id: string): Promise<{
         sourceWarehouseName: string;
         destinationWarehouseName: string;
+        destinationWarehouse: {
+            id: string;
+            name: string;
+            code: string | null;
+            type: string | null;
+            address: string | null;
+            isActive: boolean;
+            branchId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         lines: ({
             variant: {
                 id: string;
@@ -240,17 +251,6 @@ export declare class TransfersService {
             createdAt: Date;
         })[];
         sourceWarehouse: {
-            id: string;
-            name: string;
-            code: string | null;
-            type: string | null;
-            address: string | null;
-            isActive: boolean;
-            branchId: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        destinationWarehouse: {
             id: string;
             name: string;
             code: string | null;

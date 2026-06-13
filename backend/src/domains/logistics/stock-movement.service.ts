@@ -22,6 +22,7 @@ export class StockMovementService {
     quantity: number;
     purchaseCost: number; // The actual cost paid on the supplier invoice
     purchaseOrderId: string;
+    batchId?: string;
   }, tx?: any) {
     // 1. Calculate the new Weighted Average Cost (WAC). 
     // In production, this fetches current stock & current WAC, blending it with the new incoming batch cost.
@@ -37,6 +38,7 @@ export class StockMovementService {
       quantity: payload.quantity,
       unitCost: mockUnitCost,
       referenceId: payload.purchaseOrderId,
+      batchId: payload.batchId,
     }, tx);
   }
 

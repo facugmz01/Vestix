@@ -4,29 +4,28 @@ import { SalesService } from '../sales.service';
 import { StockMovementService } from '../../logistics/stock-movement.service';
 import * as crypto from 'crypto';
 
+import { PrismaService } from '../../../core/prisma/prisma.service';
+
 @Injectable()
 export class OrdersFulfillmentService {
   constructor(
     private readonly salesService: SalesService,
-    private readonly stockService: StockMovementService
+    private readonly stockService: StockMovementService,
+    private readonly prisma: PrismaService
   ) {}
-
-  private fulfillments: OrderFulfillment[] = [];
 
   /**
    * Starts the logistics state machine. 
    * Called by the Sales orchestrator immediately after an E-commerce cart is locked.
    */
   async initializeFulfillment(saleOrderId: string) {
-    const fulfillment: OrderFulfillment = {
-      id: crypto.randomUUID(),
-      saleOrderId,
-      status: OrderStatus.PENDING_PAYMENT,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.fulfillments.push(fulfillment);
-    return fulfillment;
+    return this.prisma.orderFulfillment.create({
+      data: {
+        id: crypto.randomUUID(),
+        saleOrderId,
+        status: OrderStatus.PENDING_PAYMENT,
+      }
+    });
   }
 
   /**
@@ -34,43 +33,52 @@ export class OrdersFulfillmentService {
    * Moves the order from 'Pending' into the active warehouse picking queue.
    */
   async markAsPaid(id: string) {
-    const fulfillment = this.getFulfillment(id);
+    const fulfillment = await this.getFulfillment(id);
     if (fulfillment.status !== OrderStatus.PENDING_PAYMENT) {
        throw new BadRequestException('Order is not in a payable state.');
     }
     
     // In production, the AccountsService handles injecting the cash into the Treasury.
     // Here we strictly advance the logistics state machine.
-    fulfillment.status = OrderStatus.PAID;
-    fulfillment.paidAt = new Date();
-    fulfillment.updatedAt = new Date();
-    return fulfillment;
+    return this.prisma.orderFulfillment.update({
+      where: { id },
+      data: {
+        status: OrderStatus.PAID,
+        paidAt: new Date()
+      }
+    });
   }
 
   /**
    * Warehouse worker scans the picking ticket.
    */
   async startPicking(id: string) {
-    const fulfillment = this.getFulfillment(id);
+    const fulfillment = await this.getFulfillment(id);
     if (fulfillment.status !== OrderStatus.PAID) throw new BadRequestException('Order must be PAID before picking.');
     
-    fulfillment.status = OrderStatus.PICKING;
-    fulfillment.pickedAt = new Date();
-    fulfillment.updatedAt = new Date();
-    return fulfillment;
+    return this.prisma.orderFulfillment.update({
+      where: { id },
+      data: {
+        status: OrderStatus.PICKING,
+        pickedAt: new Date()
+      }
+    });
   }
 
   /**
    * Box is sealed and labeled.
    */
   async markAsPacked(id: string) {
-    const fulfillment = this.getFulfillment(id);
+    const fulfillment = await this.getFulfillment(id);
     if (fulfillment.status !== OrderStatus.PICKING) throw new BadRequestException('Order must be PICKING before packed.');
     
-    fulfillment.status = OrderStatus.PACKED;
-    fulfillment.packedAt = new Date();
-    fulfillment.updatedAt = new Date();
-    return fulfillment;
+    return this.prisma.orderFulfillment.update({
+      where: { id },
+      data: {
+        status: OrderStatus.PACKED,
+        packedAt: new Date()
+      }
+    });
   }
 
   /**
@@ -78,7 +86,7 @@ export class OrdersFulfillmentService {
    * This is the exact moment the physical stock officially leaves the building.
    */
   async shipOrder(id: string, trackingNumber: string, courierName: string) {
-    const fulfillment = this.getFulfillment(id);
+    const fulfillment = await this.getFulfillment(id);
     if (fulfillment.status !== OrderStatus.PACKED) throw new BadRequestException('Order must be PACKED before shipping.');
     
     // 1. Fetch the master order details
@@ -102,29 +110,35 @@ export class OrdersFulfillmentService {
     }
     */
 
-    fulfillment.status = OrderStatus.SHIPPED;
-    fulfillment.trackingNumber = trackingNumber;
-    fulfillment.courierName = courierName;
-    fulfillment.shippedAt = new Date();
-    fulfillment.updatedAt = new Date();
-    return fulfillment;
+    return this.prisma.orderFulfillment.update({
+      where: { id },
+      data: {
+        status: OrderStatus.SHIPPED,
+        trackingNumber,
+        courierName,
+        shippedAt: new Date()
+      }
+    });
   }
 
   /**
    * Courier API Webhook: Customer confirms receipt.
    */
   async markAsDelivered(id: string) {
-    const fulfillment = this.getFulfillment(id);
+    const fulfillment = await this.getFulfillment(id);
     if (fulfillment.status !== OrderStatus.SHIPPED) throw new BadRequestException('Order must be SHIPPED before delivered.');
     
-    fulfillment.status = OrderStatus.DELIVERED;
-    fulfillment.deliveredAt = new Date();
-    fulfillment.updatedAt = new Date();
-    return fulfillment;
+    return this.prisma.orderFulfillment.update({
+      where: { id },
+      data: {
+        status: OrderStatus.DELIVERED,
+        deliveredAt: new Date()
+      }
+    });
   }
 
-  private getFulfillment(id: string) {
-    const f = this.fulfillments.find(f => f.id === id);
+  private async getFulfillment(id: string) {
+    const f = await this.prisma.orderFulfillment.findUnique({ where: { id } });
     if (!f) throw new NotFoundException('Fulfillment record not found');
     return f;
   }

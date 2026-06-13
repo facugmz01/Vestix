@@ -1,5 +1,21 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsArray, ValidateNested, IsObject, IsNumber, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsUUID, IsArray, ValidateNested, IsObject, IsNumber, IsBoolean, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+
+export enum ProductType {
+  SINGLE = 'SINGLE',
+  VARIABLE = 'VARIABLE',
+  COMBO = 'COMBO'
+}
+
+export class ProductComboLineDto {
+  @IsUUID('4')
+  @IsNotEmpty()
+  childVariantId: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  quantity: number;
+}
 
 export class ProductVariantDto {
   @IsOptional()
@@ -63,8 +79,16 @@ export class CreateProductDto {
   baseSku?: string;
 
   @IsOptional()
+  @IsEnum(ProductType)
+  type?: ProductType;
+
+  @IsOptional()
   @IsBoolean()
-  isVariable?: boolean;
+  isVariable?: boolean; // Deprecated, will be ignored in favor of type
+
+  @IsOptional()
+  @IsBoolean()
+  manageBatches?: boolean;
 
   @IsOptional()
   @IsNumber()
@@ -73,6 +97,12 @@ export class CreateProductDto {
   @IsOptional()
   @IsNumber()
   basePrice?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductComboLineDto)
+  comboLines?: ProductComboLineDto[];
 
   @IsOptional()
   @IsArray()

@@ -2,75 +2,24 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Monitor, Search, Trash2, User, Plus, Minus, CreditCard, Banknote, 
-  LogOut, WifiOff, Maximize, Calculator, Clock, PauseCircle, FileText, 
-  Layers, Tags, XCircle, DollarSign
+  Search, Trash2, User, Plus, Minus, CreditCard, Banknote, 
+  LogOut, Maximize, Calculator, Clock, PauseCircle, FileText, 
+  Layers, Tags, XCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { posApi } from '@/api/pos.api';
 import { salesApi } from '@/api/sales.api';
 import { customersApi } from '@/api/customers.api';
+import { treasuryApi } from '@/api/treasury.api';
 import { get } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import { useAuthStore } from '@/store/auth.store';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
-import type { CashRegister, ProductVariant } from '@/types';
-
+import type { ProductVariant } from '@/types';
 import { Button, Input, Drawer, Modal } from '@/components/ui';
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
-
-// --- Session Modal ---
-function SessionModal({ 
-  open, availableRegisters, onOpenSession, isPending 
-}: { 
-  open: boolean, availableRegisters?: CashRegister[], onOpenSession?: (id: string, amt: number) => void, isPending?: boolean 
-}) {
-  const [selectedReg, setSelectedReg] = useState('');
-  const [amount, setAmount] = useState(0);
-
-  if (!open) return null;
-
-  return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#fff', padding: '32px', borderRadius: '12px', width: '90%', maxWidth: '420px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-        <h2 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '24px', fontWeight: 800, color: '#1f2937' }}><Monitor size={28} color="#3b82f6" /> Apertura de Caja</h2>
-        <p style={{ color: '#6b7280', marginBottom: '24px', fontSize: '15px' }}>
-          Para comenzar a operar, debés abrir una caja registradora asignando el saldo inicial de efectivo.
-        </p>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 700, color: '#374151' }}>Seleccionar Caja</label>
-            <select value={selectedReg} onChange={e => setSelectedReg(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', color: '#111827', fontSize: '15px', outline: 'none' }}>
-              <option value="">-- Cajas Disponibles --</option>
-              {Array.isArray(availableRegisters) && availableRegisters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-          </div>
-          
-          <Input 
-            label="Fondo de Caja (Efectivo Inicial)" 
-            type="number" 
-            min="0" 
-            value={amount} 
-            onChange={e => setAmount(Number(e.target.value))} 
-            style={{ fontSize: '16px', padding: '12px' }}
-          />
-
-          <Button 
-            variant="primary" 
-            style={{ marginTop: '8px', height: '52px', fontSize: '16px', fontWeight: 800, borderRadius: '8px', background: '#3b82f6' }} 
-            disabled={!selectedReg || isPending}
-            loading={isPending}
-            onClick={() => onOpenSession?.(selectedReg, amount)}
-          >
-            Abrir Turno
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { ShiftManagerModal } from '@/features/sales/components/ShiftManagerModal';
 
 // --- Live Clock ---
 function LiveClock() {
@@ -105,6 +54,7 @@ export default function POSPage() {
   // Suspend Sales
   const [suspendedSales, setSuspendedSales] = useState<any[]>([]);
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
+  const [shiftModalOpen, setShiftModalOpen] = useState(false);
 
   // Load suspended sales from local storage
   useEffect(() => {
@@ -113,26 +63,17 @@ export default function POSPage() {
   }, []);
 
   // --- Queries ---
-  const { data: session, isLoading: isSessionLoading } = useQuery({
-    queryKey: queryKeys.pos.session(),
-    queryFn: () => posApi.getMyRegister(),
+  const { data: activeShift, isLoading: isShiftLoading } = useQuery({
+    queryKey: ['shifts', 'active'],
+    queryFn: () => treasuryApi.getActiveShift(),
   });
   
-  const currentBranchId = session?.branchId || user?.branchId || '';
+  const currentBranchId = user?.branchId || '';
 
   const { data: registersData } = useQuery({
     queryKey: queryKeys.pos.registers(currentBranchId),
     queryFn: () => posApi.getAvailableRegisters(currentBranchId),
-    enabled: !isSessionLoading && !session,
-  });
-
-  const openSessionMutation = useMutation({
-    mutationFn: (data: { id: string, amt: number }) => posApi.openSession({ cashRegisterId: data.id, openingAmount: data.amt }),
-    onSuccess: () => {
-      toast.success('Caja abierta correctamente');
-      queryClient.invalidateQueries({ queryKey: queryKeys.pos.session() });
-    },
-    onError: (err: any) => toast.error(err.message || 'Error al abrir caja'),
+    enabled: !isShiftLoading && !activeShift,
   });
 
   // Fetch some products for the right grid (mocking a "All products" view)
@@ -217,14 +158,14 @@ export default function POSPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: async (status: 'CONFIRMED' | 'QUOTATION' = 'CONFIRMED') => {
-      if (!session) throw new Error('No hay sesión de caja activa');
+      if (!activeShift) throw new Error('No hay sesión de caja activa');
       const orderId = crypto.randomUUID();
       
       let warehouseId = 'main';
       try {
         const warehouses = await queryClient.fetchQuery({
-          queryKey: ['warehouses', session.branchId],
-          queryFn: () => get<any[]>('/inventory/warehouses', { params: { branchId: session.branchId } }),
+          queryKey: ['warehouses', currentBranchId],
+          queryFn: () => get<any[]>('/inventory/warehouses', { params: { branchId: currentBranchId } }),
           staleTime: 600_000,
         });
         warehouseId = warehouses?.[0]?.id || 'main';
@@ -233,8 +174,8 @@ export default function POSPage() {
       let paymentAccountId: string | undefined;
       try {
         const accounts = await queryClient.fetchQuery({
-          queryKey: ['accounts', session.branchId],
-          queryFn: () => get<any[]>('/finance/accounts', { params: { branchId: session.branchId } }),
+          queryKey: ['accounts', currentBranchId],
+          queryFn: () => get<any[]>('/finance/accounts', { params: { branchId: currentBranchId } }),
           staleTime: 600_000,
         });
         paymentAccountId = accounts?.find((a: any) => a.isActive)?.id;
@@ -242,12 +183,13 @@ export default function POSPage() {
 
       const dto = {
         id: orderId,
-        branchId: session.branchId,
+        branchId: currentBranchId,
         warehouseId,
         customerId: selectedCustomerId || undefined,
         source: 'POS' as const,
         paymentMethod: paymentMethod === 'MULTIPLE' ? 'CASH' : paymentMethod, // Fallback for now
         paymentAccountId,
+        cashShiftId: activeShift?.id,
         status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
         posGrandTotal: grandTotal,
         cartDiscountTotal: grandTotal < subtotal ? subtotal - grandTotal : 0,
@@ -310,7 +252,7 @@ export default function POSPage() {
     }
   };
 
-  if (isSessionLoading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: 600 }}>Iniciando terminal...</div>;
+  if (isShiftLoading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: 600 }}>Cargando estado de caja...</div>;
 
   return (
     <>
@@ -535,11 +477,19 @@ export default function POSPage() {
       `}</style>
 
       <div className="pos-layout">
-        <SessionModal 
-          open={!session && !isSessionLoading} 
-          availableRegisters={registersData || []} 
-          onOpenSession={(id, amt) => openSessionMutation.mutate({ id, amt })} 
-          isPending={openSessionMutation.isPending}
+        <ShiftManagerModal 
+          open={!activeShift && !isShiftLoading} 
+          mode="OPEN"
+          activeShift={null}
+          registers={registersData}
+          onClose={() => {}}
+        />
+        
+        <ShiftManagerModal 
+          open={shiftModalOpen} 
+          mode="CLOSE"
+          activeShift={activeShift || null}
+          onClose={() => setShiftModalOpen(false)}
         />
 
         {/* NAVBAR */}
@@ -554,6 +504,9 @@ export default function POSPage() {
             </button>
             <button className="pos-icon-btn" onClick={toggleFullScreen} title="Pantalla Completa"><Maximize size={18} /></button>
             <button className="pos-icon-btn" onClick={() => window.open('/calculator', '_blank', 'width=300,height=400')} title="Calculadora"><Calculator size={18} /></button>
+            <button className="pos-icon-btn" onClick={() => setShiftModalOpen(true)} style={{ background: '#dd4b39', fontWeight: 700 }} title="Cerrar Caja">
+              <LogOut size={16} /> Cerrar Caja
+            </button>
             <button className="pos-icon-btn" onClick={() => navigate('/')} title="Volver al Dashboard"><LogOut size={18} /> Volver</button>
           </div>
         </div>

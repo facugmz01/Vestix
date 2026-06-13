@@ -24,6 +24,7 @@ let InventoryService = class InventoryService {
             const movement = await transaction.inventoryMovement.create({
                 data: {
                     variantId: data.variantId,
+                    batchId: data.batchId || null,
                     sourceWarehouseId: data.sourceWarehouseId,
                     destinationWarehouseId: data.destinationWarehouseId,
                     type: data.type,
@@ -33,10 +34,10 @@ let InventoryService = class InventoryService {
                 },
             });
             if (data.sourceWarehouseId) {
-                await this.updateStock(transaction, data.variantId, data.sourceWarehouseId, data.branchId, data.type, -data.quantity);
+                await this.updateStock(transaction, data.variantId, data.batchId || null, data.sourceWarehouseId, data.branchId, data.type, -data.quantity);
             }
             if (data.destinationWarehouseId) {
-                await this.updateStock(transaction, data.variantId, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
+                await this.updateStock(transaction, data.variantId, data.batchId || null, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
             }
             return movement;
         };
@@ -47,7 +48,7 @@ let InventoryService = class InventoryService {
             return execute(t);
         });
     }
-    async updateStock(tx, variantId, warehouseId, branchId, type, quantityChange) {
+    async updateStock(tx, variantId, batchId, warehouseId, branchId, type, quantityChange) {
         let updateData = {};
         if (type === 'RESERVATION') {
             updateData = {
@@ -74,11 +75,12 @@ let InventoryService = class InventoryService {
             };
         }
         return tx.stockLevel.upsert({
-            where: { variantId_warehouseId: { variantId, warehouseId } },
+            where: { variantId_warehouseId_batchId: { variantId, warehouseId, batchId } },
             update: updateData,
             create: {
                 variantId,
                 warehouseId,
+                batchId,
                 branchId: branchId || undefined,
                 physicalQuantity: type === 'CONSUME_RESERVATION' ? -Math.abs(quantityChange) : (quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : 0) : 0),
                 availableQuantity: type === 'CONSUME_RESERVATION' ? 0 : (quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : -quantityChange) : 0),
@@ -88,8 +90,9 @@ let InventoryService = class InventoryService {
     }
     async reserveStock(variantId, warehouseId, branchId, quantity, orderId, tx) {
         const prismaClient = tx || this.prisma;
-        const stock = await prismaClient.stockLevel.findUnique({
-            where: { variantId_warehouseId: { variantId, warehouseId } }
+        const stock = await prismaClient.stockLevel.findFirst({
+            where: { variantId, warehouseId },
+            orderBy: { availableQuantity: 'desc' }
         });
         if (!stock || stock.availableQuantity < quantity) {
             throw new common_1.BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
@@ -181,8 +184,8 @@ let InventoryService = class InventoryService {
         });
     }
     async adjustStock(dto) {
-        const stock = await this.prisma.stockLevel.findUnique({
-            where: { variantId_warehouseId: { variantId: dto.variantId, warehouseId: dto.warehouseId } },
+        const stock = await this.prisma.stockLevel.findFirst({
+            where: { variantId: dto.variantId, warehouseId: dto.warehouseId },
             include: { warehouse: true }
         });
         let diff = 0;

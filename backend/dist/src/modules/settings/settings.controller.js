@@ -14,6 +14,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SettingsController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
+const multer_1 = require("multer");
+const path_1 = require("path");
 const settings_service_1 = require("./settings.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
 let SettingsController = class SettingsController {
@@ -43,6 +46,17 @@ let SettingsController = class SettingsController {
     }
     async updateOffline(dto, req) {
         return await this.settingsService.updateSection('offline', dto, req.user?.id ?? 'unknown');
+    }
+    async testAfipConnection() {
+        return this.settingsService.testAfipConnection();
+    }
+    async uploadLogo(file, req) {
+        if (!file) {
+            throw new common_1.BadRequestException('No file uploaded');
+        }
+        const logoUrl = `/uploads/logos/${file.filename}`;
+        await this.settingsService.updateSection('general', { logoUrl }, req.user?.id ?? 'unknown');
+        return { logoUrl };
     }
 };
 exports.SettingsController = SettingsController;
@@ -116,6 +130,38 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "updateOffline", null);
+__decorate([
+    (0, common_1.Post)('invoicing/test-afip'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "testAfipConnection", null);
+__decorate([
+    (0, common_1.Post)('general/logo'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/logos',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+                cb(null, `logo-${uniqueSuffix}${(0, path_1.extname)(file.originalname)}`);
+            }
+        }),
+        fileFilter: (req, file, cb) => {
+            if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+                return cb(new common_1.BadRequestException('Only image files are allowed!'), false);
+            }
+            cb(null, true);
+        },
+        limits: { fileSize: 2 * 1024 * 1024 }
+    })),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "uploadLogo", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
     __metadata("design:paramtypes", [settings_service_1.SettingsService])

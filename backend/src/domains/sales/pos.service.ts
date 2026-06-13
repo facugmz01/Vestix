@@ -124,7 +124,7 @@ export class PosService {
       });
     }
 
-    const cartEvaluation = this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
+    const cartEvaluation = await this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
       id: crypto.randomUUID(),
       variantId: l.variantId,
       categoryId: l.categoryId,

@@ -11,6 +11,7 @@ export const CATALOG_TABS: TabItem[] = [
   { id: 'attributes', label: 'Categorías y Atributos', to: '/admin/attributes', icon: Layers },
   { id: 'promotions', label: 'Promociones', to: '/admin/promotions', icon: Tag },
   { id: 'prices', label: 'Listas de Precios', to: '/admin/price-inquiry', icon: Banknote },
+  { id: 'barcodes', label: 'Etiquetas', to: '/admin/barcodes', icon: Tag },
 ];
 
 export const INVENTORY_TABS: TabItem[] = [

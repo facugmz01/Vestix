@@ -63,11 +63,11 @@ export class ReservationExpiryJob {
           });
 
           // B. Return reserved quantity back to available stock
-          await tx.stockLevel.update({
-            where: { variantId_warehouseId: {
+          await tx.stockLevel.updateMany({
+            where: {
               variantId:   reservation.variantId,
               warehouseId: reservation.warehouseId,
-            }},
+            },
             data: {
               reservedQuantity:  { decrement: reservation.quantity },
               availableQuantity: { increment: reservation.quantity },

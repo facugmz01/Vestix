@@ -4,16 +4,6 @@ export declare class PurchasingController {
     constructor(purchasingService: PurchasingService);
     findAll(query: any): Promise<{
         data: ({
-            lines: {
-                id: string;
-                purchaseOrderId: string;
-                variantId: string;
-                orderedQuantity: number;
-                receivedQuantity: number;
-                unitCost: number;
-                discountAmount: number;
-                totalAmount: number;
-            }[];
             supplier: {
                 id: string;
                 companyName: string;
@@ -26,6 +16,16 @@ export declare class PurchasingController {
                 createdAt: Date;
                 updatedAt: Date;
             };
+            lines: {
+                id: string;
+                purchaseOrderId: string;
+                variantId: string;
+                orderedQuantity: number;
+                receivedQuantity: number;
+                unitCost: number;
+                discountAmount: number;
+                totalAmount: number;
+            }[];
         } & {
             id: string;
             supplierId: string;
@@ -95,6 +95,18 @@ export declare class PurchasingController {
         updatedAt: Date;
     }>;
     findOne(id: string): Promise<{
+        supplier: {
+            id: string;
+            companyName: string;
+            contactName: string | null;
+            taxId: string | null;
+            email: string | null;
+            phone: string | null;
+            balance: number;
+            currency: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         lines: ({
             variant: {
                 product: {
@@ -104,7 +116,9 @@ export declare class PurchasingController {
                     description: string | null;
                     categoryId: string;
                     brandId: string | null;
+                    type: import(".prisma/client").$Enums.ProductType;
                     isVariable: boolean;
+                    manageBatches: boolean;
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
@@ -138,18 +152,6 @@ export declare class PurchasingController {
             discountAmount: number;
             totalAmount: number;
         })[];
-        supplier: {
-            id: string;
-            companyName: string;
-            contactName: string | null;
-            taxId: string | null;
-            email: string | null;
-            phone: string | null;
-            balance: number;
-            currency: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
     } & {
         id: string;
         supplierId: string;

@@ -7,6 +7,8 @@ import {
   NotificationStatus,
   TemplateKey,
 } from './models/notification.model';
+import { PrismaService } from '../../core/prisma/prisma.service';
+import { NOTIFICATION_TEMPLATES } from './templates/notification-templates.registry';
 
 @Injectable()
 export class NotificationsService {
@@ -14,7 +16,55 @@ export class NotificationsService {
 
   constructor(
     @InjectQueue('notifications_queue') private readonly notificationsQueue: Queue,
+    private readonly prisma: PrismaService,
   ) {}
+
+  async onModuleInit() {
+    // Seed default templates if the table is empty
+    const count = await this.prisma.notificationTemplate.count();
+    if (count === 0) {
+      this.logger.log('Seeding initial notification templates...');
+      for (const tpl of NOTIFICATION_TEMPLATES) {
+        await this.prisma.notificationTemplate.upsert({
+          where: {
+            event_channel: {
+              event: tpl.key,
+              channel: tpl.channel,
+            }
+          },
+          update: {},
+          create: {
+            name: `Plantilla ${tpl.key} (${tpl.channel})`,
+            event: tpl.key,
+            channel: tpl.channel,
+            subject: tpl.subject,
+            body: tpl.body,
+            isActive: true,
+          }
+        });
+      }
+      this.logger.log('Notification templates seeded successfully.');
+    }
+  }
+
+  // --- TEMPLATE CRUD ---
+
+  async getTemplates(page: number, pageSize: number) {
+    const skip = (page - 1) * pageSize;
+    const [data, total] = await Promise.all([
+      this.prisma.notificationTemplate.findMany({ skip, take: pageSize }),
+      this.prisma.notificationTemplate.count(),
+    ]);
+    return { data, total };
+  }
+
+  async createTemplate(data: any) {
+    return this.prisma.notificationTemplate.create({ data });
+  }
+
+  async updateTemplate(id: string, data: any) {
+    return this.prisma.notificationTemplate.update({ where: { id }, data });
+  }
 
   /**
    * PUBLIC API — called from any other module (Sales, Inventory, Finance).
@@ -25,7 +75,27 @@ export class NotificationsService {
     templateKey: TemplateKey;
     recipient: string;
     variables: Record<string, string>;
-  }): Promise<NotificationJob> {
+  }): Promise<NotificationJob | null> {
+    // First, check if the template is active in the database
+    const template = await this.prisma.notificationTemplate.findUnique({
+      where: {
+        event_channel: {
+          event: payload.templateKey,
+          channel: payload.channel,
+        }
+      }
+    });
+
+    if (!template) {
+      this.logger.warn(`No template found for ${payload.templateKey} on ${payload.channel}. Skipping notification.`);
+      return null; // Silent skip if no template exists
+    }
+
+    if (!template.isActive) {
+      this.logger.log(`Template ${payload.templateKey} on ${payload.channel} is inactive. Skipping notification.`);
+      return null;
+    }
+
     const job = await this.notificationsQueue.add('send_notification', {
       channel: payload.channel,
       templateKey: payload.templateKey,

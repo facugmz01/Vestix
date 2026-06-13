@@ -16,6 +16,8 @@ export declare class GoodsReceiptService {
                 expectedQuantity: number;
                 receivedQuantity: number;
                 difference: number;
+                batchLot: string | null;
+                batchExpirationDate: Date | null;
                 notes: string | null;
             }[];
         } & {
@@ -41,6 +43,8 @@ export declare class GoodsReceiptService {
             expectedQuantity: number;
             receivedQuantity: number;
             difference: number;
+            batchLot: string | null;
+            batchExpirationDate: Date | null;
             notes: string | null;
         }[];
     } & {
@@ -60,6 +64,8 @@ export declare class GoodsReceiptService {
             poLineItemId: string;
             variantId: string;
             quantity: number;
+            batchLot?: string;
+            batchExpirationDate?: string;
         }[];
         notes?: string;
     }): Promise<{
@@ -71,6 +77,8 @@ export declare class GoodsReceiptService {
             expectedQuantity: number;
             receivedQuantity: number;
             difference: number;
+            batchLot: string | null;
+            batchExpirationDate: Date | null;
             notes: string | null;
         }[];
     } & {
@@ -92,6 +100,8 @@ export declare class GoodsReceiptService {
             expectedQuantity: number;
             receivedQuantity: number;
             difference: number;
+            batchLot: string | null;
+            batchExpirationDate: Date | null;
             notes: string | null;
         }[];
     } & {

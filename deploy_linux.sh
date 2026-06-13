@@ -126,7 +126,7 @@ rm -rf node_modules
 npm install --unsafe-perm
 chmod -R +x node_modules/.bin || true
 npx prisma generate
-npx prisma db push --accept-data-loss
+npx prisma db push
 npm run build
 
 # ─────────────────────────────────────────────────────────────

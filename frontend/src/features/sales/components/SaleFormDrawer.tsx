@@ -6,6 +6,7 @@ import { posApi } from '@/api/pos.api';
 import { customersApi } from '@/api/customers.api';
 import { branchesApi } from '@/api/branches.api';
 import { queryKeys } from '@/api/queryKeys';
+import { settingsApi } from '@/api/settings.api';
 import toast from 'react-hot-toast';
 import { X, Calculator, Percent, Search, Package } from 'lucide-react';
 
@@ -33,6 +34,9 @@ export function SaleFormDrawer({ open, onClose }: Props) {
 
   const { data: branchesData } = useQuery({ queryKey: queryKeys.branches.all(), queryFn: () => branchesApi.getBranches({}), enabled: open });
   const { data: customersData } = useQuery({ queryKey: queryKeys.customers.all(), queryFn: () => customersApi.getCustomers({}), enabled: open });
+  const { data: pricingSettings } = useQuery({ queryKey: [queryKeys.settings.get(), 'pricing'], queryFn: () => settingsApi.getSettings().then(d => d.pricing), enabled: open });
+
+  const allowManualDiscount = pricingSettings?.allowManualDiscount !== false;
 
   const { data: searchResults, isFetching: isSearching } = useQuery({
     queryKey: ['sale-form', 'product-search', searchQuery],
@@ -365,7 +369,9 @@ export function SaleFormDrawer({ open, onClose }: Props) {
                       max="100"
                       value={l.discountPct}
                       onChange={e => updateLine(i, 'discountPct', Number(e.target.value))}
-                      style={{ width: '55px', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+                      disabled={!allowManualDiscount}
+                      title={!allowManualDiscount ? 'Descuentos manuales deshabilitados' : ''}
+                      style={{ width: '55px', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: '4px', background: !allowManualDiscount ? 'var(--bg-elevated)' : 'var(--bg-base)', color: !allowManualDiscount ? 'var(--text-muted)' : 'var(--text-primary)', opacity: !allowManualDiscount ? 0.6 : 1 }}
                     />
                   </td>
                   <td style={{ padding: '8px 4px', fontWeight: 'bold' }}>
@@ -400,7 +406,9 @@ export function SaleFormDrawer({ open, onClose }: Props) {
               max="100"
               value={globalDiscount}
               onChange={e => setGlobalDiscount(Number(e.target.value))}
-              style={{ width: '60px', padding: '4px', textAlign: 'right', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+              disabled={!allowManualDiscount}
+              title={!allowManualDiscount ? 'Descuentos manuales deshabilitados' : ''}
+              style={{ width: '60px', padding: '4px', textAlign: 'right', border: '1px solid var(--border)', borderRadius: '4px', background: !allowManualDiscount ? 'var(--bg-elevated)' : 'var(--bg-base)', color: !allowManualDiscount ? 'var(--text-muted)' : 'var(--text-primary)', opacity: !allowManualDiscount ? 0.6 : 1 }}
             />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 900, marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>

@@ -2,8 +2,9 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { SmtpService } from './channels/smtp.service';
-import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
-import { NOTIFICATION_TEMPLATES } from './templates/notification-templates.registry';
+import { WhatsAppOpenWaService } from './channels/whatsapp-openwa.service';
+import { SmsGatewayService } from './channels/sms-gateway.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationChannel } from './models/notification.model';
 
 @Processor('notifications_queue')
@@ -12,7 +13,9 @@ export class NotificationsProcessor extends WorkerHost {
 
   constructor(
     private readonly smtpService: SmtpService,
-    private readonly whatsAppService: WhatsAppEvolutionService,
+    private readonly whatsAppService: WhatsAppOpenWaService,
+    private readonly smsService: SmsGatewayService,
+    private readonly prisma: PrismaService,
   ) {
     super();
   }
@@ -28,21 +31,26 @@ export class NotificationsProcessor extends WorkerHost {
     const { channel, templateKey, recipient, variables } = job.data;
     this.logger.log(`[Queue] Processing job ${job.id} for ${recipient}`);
 
-    const template = NOTIFICATION_TEMPLATES.find(
-      t => t.key === templateKey && t.channel === channel,
-    );
+    // DB fetch for active template
+    const template = await this.prisma.notificationTemplate.findUnique({
+      where: {
+        event_channel: { event: templateKey, channel },
+      }
+    });
 
     if (!template) {
-      throw new Error(`No template found for key=${templateKey}, channel=${channel}`);
+      throw new Error(`No template found in DB for key=${templateKey}, channel=${channel}`);
     }
 
     const body = this.interpolate(template.body, variables);
     const subject = template.subject ? this.interpolate(template.subject, variables) : undefined;
 
-    if (channel === NotificationChannel.EMAIL) {
-      await this.smtpService.send(recipient, subject!, body);
-    } else if (channel === NotificationChannel.WHATSAPP) {
+    if (channel === 'EMAIL' as NotificationChannel) {
+      await this.smtpService.send(recipient, subject || 'Notificación', body);
+    } else if (channel === 'WHATSAPP' as NotificationChannel) {
       await this.whatsAppService.sendText(recipient, body);
+    } else if (channel === 'SMS' as any) {
+      await this.smsService.sendSms(recipient, body);
     }
 
     this.logger.log(`[Queue] ✓ Job ${job.id} successfully completed`);

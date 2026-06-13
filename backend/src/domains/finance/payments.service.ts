@@ -5,15 +5,16 @@ import { OrdersFulfillmentService } from '../sales/orders/orders-fulfillment.ser
 import { AccountsService } from './accounts.service';
 import * as crypto from 'crypto';
 
+import { PrismaService } from '../../core/prisma/prisma.service';
+
 @Injectable()
 export class PaymentsService {
   constructor(
     private readonly mpService: MercadoPagoService,
     private readonly ordersService: OrdersFulfillmentService,
-    private readonly accountsService: AccountsService
+    private readonly accountsService: AccountsService,
+    private readonly prisma: PrismaService
   ) {}
-
-  private intents: PaymentIntent[] = [];
 
   /**
    * 1. INITIATION: User clicks "Pay" on the E-commerce cart.
@@ -31,19 +32,17 @@ export class PaymentsService {
       throw new BadRequestException(`Provider ${provider} is not supported yet.`);
     }
 
-    const intent: PaymentIntent = {
-      id: crypto.randomUUID(),
-      provider,
-      externalReferenceId: externalRef,
-      orderId,
-      amount,
-      currency: 'ARS', // Default for MercadoPago Argentina
-      status: PaymentIntentStatus.CREATED,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.intents.push(intent);
+    const intent = await this.prisma.paymentIntent.create({
+      data: {
+        id: crypto.randomUUID(),
+        provider,
+        externalReferenceId: externalRef,
+        orderId,
+        amount,
+        currency: 'ARS', // Default for MercadoPago Argentina
+        status: PaymentIntentStatus.CREATED,
+      }
+    });
 
     return { intentId: intent.id, checkoutUrl };
   }
@@ -59,11 +58,15 @@ export class PaymentsService {
       
       if (verification.status === 'approved') {
         // 2. Find our internal tracking Intent
-        const intent = this.intents.find(i => i.orderId === verification.orderId);
+        const intent = await this.prisma.paymentIntent.findFirst({
+          where: { orderId: verification.orderId }
+        });
         if (!intent) throw new NotFoundException('Payment Intent not found for this order.');
         
-        intent.status = PaymentIntentStatus.APPROVED;
-        intent.updatedAt = new Date();
+        await this.prisma.paymentIntent.update({
+          where: { id: intent.id },
+          data: { status: PaymentIntentStatus.APPROVED }
+        });
 
         // 3. LOGISTICS GATEWAY: Tell the Warehouse to start picking the order
         await this.ordersService.markAsPaid(intent.orderId);

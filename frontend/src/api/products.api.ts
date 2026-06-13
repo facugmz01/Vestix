@@ -22,6 +22,9 @@ export const productsApi = {
   getProduct: (id: string) =>
     get<Product>(`/products/${id}`),
 
+  getVariants: (search?: string) =>
+    get<any[]>('/variants', { params: cleanParams({ search }) }),
+
   createProduct: (dto: CreateProductDto) =>
     post<Product>('/products', dto),
 

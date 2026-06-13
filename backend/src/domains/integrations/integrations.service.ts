@@ -31,37 +31,54 @@ export class IntegrationsService {
 
   // ─── CONFIGURATION MANAGEMENT ──────────────────────────────────────────────
 
-  private readConfigs() {
-    try {
-      if (fs.existsSync(this.configPath)) {
-        return JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
+  private async readConfigs() {
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const intSettings = (settings?.integrations as any) || {};
+    
+    return {
+      woocommerce: {
+        isActive: intSettings.woocommerceEnabled,
+        storeUrl: intSettings.wooStoreUrl,
+        consumerKey: intSettings.wooConsumerKey,
+        consumerSecret: intSettings.wooConsumerSecret,
+      },
+      afip: {
+        isActive: true,
+        cuit: '30-00000000-0', // Default mock
+      },
+      mercadolibre: {
+        isActive: intSettings.mercadolibreEnabled,
+        appId: intSettings.mlAppId,
+        secretKey: intSettings.mlSecretKey,
+      },
+      shopify: {
+        isActive: intSettings.shopifyEnabled,
+        storeUrl: intSettings.shopifyStoreUrl,
+        accessToken: intSettings.shopifyAccessToken,
       }
-    } catch (e) {
-      this.logger.error('Error reading config file:', e);
-    }
-    return {};
-  }
-
-  private writeConfigs(configs: any) {
-    try {
-      fs.writeFileSync(this.configPath, JSON.stringify(configs, null, 2), 'utf8');
-    } catch (e) {
-      this.logger.error('Error writing config file:', e);
-    }
+    };
   }
 
   async getAllIntegrations() {
-    const configs = this.readConfigs();
-    const providers = ['WOOCOMMERCE', 'AFIP'];
+    const configs = await this.readConfigs();
+    const providers = ['WOOCOMMERCE', 'AFIP', 'MERCADOLIBRE', 'SHOPIFY'];
     
     return providers.map(prov => {
       const provLower = prov.toLowerCase();
-      const provConfig = configs[provLower] || {};
+      const provConfig = (configs as any)[provLower] || {};
       const isActive = provConfig.isActive ?? false;
 
       let status = 'PENDING_CONFIG';
       if (prov === 'WOOCOMMERCE') {
         if (provConfig.storeUrl && provConfig.consumerKey && provConfig.consumerSecret) {
+          status = isActive ? 'ACTIVE' : 'INACTIVE';
+        }
+      } else if (prov === 'MERCADOLIBRE') {
+        if (provConfig.appId && provConfig.secretKey) {
+          status = isActive ? 'ACTIVE' : 'INACTIVE';
+        }
+      } else if (prov === 'SHOPIFY') {
+        if (provConfig.storeUrl && provConfig.accessToken) {
           status = isActive ? 'ACTIVE' : 'INACTIVE';
         }
       } else if (prov === 'AFIP') {
@@ -72,7 +89,7 @@ export class IntegrationsService {
 
       return {
         id: provLower,
-        name: prov === 'WOOCOMMERCE' ? 'WooCommerce' : 'AFIP',
+        name: prov === 'WOOCOMMERCE' ? 'WooCommerce' : (prov === 'MERCADOLIBRE' ? 'Mercado Libre' : (prov === 'SHOPIFY' ? 'Shopify' : 'AFIP')),
         provider: prov,
         status,
         lastSyncAt: provConfig.lastSyncAt ? new Date(provConfig.lastSyncAt).toISOString() : null,
@@ -91,30 +108,15 @@ export class IntegrationsService {
     return found;
   }
 
+  // Notice: saveConfig and toggleActive should now ideally go through SettingsService
+  // For backwards compatibility with the Integrations page, we'll patch SystemSettings here.
   async saveConfig(id: string, config: Record<string, string>) {
-    const configs = this.readConfigs();
-    const idLower = id.toLowerCase();
-    
-    configs[idLower] = {
-      ...(configs[idLower] || {}),
-      ...config,
-    };
-
-    this.writeConfigs(configs);
-    return this.getIntegration(id);
+    // Currently relying on CommsSettingsPanels.tsx to save settings
+    throw new BadRequestException('Por favor, configura las integraciones desde la pestaña de Ajustes del Sistema.');
   }
 
   async toggleActive(id: string, isActive: boolean) {
-    const configs = this.readConfigs();
-    const idLower = id.toLowerCase();
-
-    configs[idLower] = {
-      ...(configs[idLower] || {}),
-      isActive,
-    };
-
-    this.writeConfigs(configs);
-    return this.getIntegration(id);
+    throw new BadRequestException('Por favor, activa/desactiva integraciones desde la pestaña de Ajustes del Sistema.');
   }
 
   async testConnection(id: string) {
@@ -136,14 +138,8 @@ export class IntegrationsService {
 
   async triggerSync(id: string) {
     if (id.toLowerCase() === 'woocommerce') {
-      const configs = this.readConfigs();
-      configs.woocommerce = {
-        ...(configs.woocommerce || {}),
-        lastSyncAt: new Date().toISOString(),
-      };
-      this.writeConfigs(configs);
       this.logger.log(`Full synchronization triggered for WooCommerce`);
-      return { message: 'Sincronización iniciada' };
+      return { message: 'Sincronización iniciada (Log en consola)' };
     }
     return { message: 'Sincronización no soportada' };
   }

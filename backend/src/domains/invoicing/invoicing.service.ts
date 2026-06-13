@@ -3,11 +3,14 @@ import { Invoice, InvoiceType, InvoiceStatus } from './models/invoice.model';
 import { AfipService } from './afip.service';
 import * as crypto from 'crypto';
 
+import { PrismaService } from '../../core/prisma/prisma.service';
+
 @Injectable()
 export class InvoicingService {
-  constructor(private readonly afipService: AfipService) {}
-
-  private invoices: Invoice[] = [];
+  constructor(
+    private readonly afipService: AfipService,
+    private readonly prisma: PrismaService
+  ) {}
 
   /**
    * Internal Gateway to generate legal electronic invoices.
@@ -23,7 +26,7 @@ export class InvoicingService {
     vatAmount: number;
   }) {
     // 1. Validation: Prevent Double-Billing
-    const existing = this.invoices.find(i => i.orderId === payload.orderId && i.status === InvoiceStatus.APPROVED);
+    const existing = await this.getInvoiceByOrder(payload.orderId);
     if (existing) {
       throw new BadRequestException(`Order ${payload.orderId} has already been invoiced under receipt ${existing.receiptNumber}.`);
     }
@@ -31,21 +34,19 @@ export class InvoicingService {
     const totalAmount = payload.netAmount + payload.vatAmount;
 
     // 2. Draft the internal document
-    const invoice: Invoice = {
-      id: crypto.randomUUID(),
-      orderId: payload.orderId,
-      type: payload.type,
-      customerDocumentType: payload.customerDocumentType,
-      customerDocumentNumber: payload.customerDocumentNumber,
-      netAmount: payload.netAmount,
-      vatAmount: payload.vatAmount,
-      totalAmount,
-      status: InvoiceStatus.PENDING_AFIP,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    this.invoices.push(invoice);
+    const invoice = await this.prisma.invoice.create({
+      data: {
+        id: crypto.randomUUID(),
+        orderId: payload.orderId,
+        type: payload.type,
+        customerDocumentType: payload.customerDocumentType,
+        customerDocumentNumber: payload.customerDocumentNumber,
+        netAmount: payload.netAmount,
+        vatAmount: payload.vatAmount,
+        totalAmount,
+        status: InvoiceStatus.PENDING_AFIP,
+      }
+    });
 
     // 3. AFIP Internal Code Mapping
     let afipInvoiceType = 6; // Factura B (Final Consumer) default
@@ -55,10 +56,15 @@ export class InvoicingService {
     let afipDocType = 96; // DNI default
     if (payload.customerDocumentType === 'CUIT') afipDocType = 80;
 
+    // Read Point of Sale from Settings
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const invoicingSettings = (settings?.invoicing as any) || {};
+    const pointOfSale = parseInt(invoicingSettings.fiscalPointSale) || 1;
+
     // 4. Request Legal Authorization from the Government
     try {
       const afipResponse = await this.afipService.createElectronicInvoice({
-        pointOfSale: 1, // Determines the branch issuing the invoice
+        pointOfSale: pointOfSale, // Determines the branch issuing the invoice
         invoiceType: afipInvoiceType,
         documentType: afipDocType,
         documentNumber: parseInt(payload.customerDocumentNumber, 10),
@@ -68,21 +74,35 @@ export class InvoicingService {
       });
 
       // 5. Success: Attach the CAE to our internal document
-      invoice.cae = afipResponse.cae;
-      invoice.caeExpiration = afipResponse.caeExpiration;
-      invoice.receiptNumber = afipResponse.receiptNumber;
-      invoice.status = InvoiceStatus.APPROVED;
-      invoice.updatedAt = new Date();
+      return await this.prisma.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          status: InvoiceStatus.APPROVED,
+          cae: afipResponse.cae,
+          caeExpiration: new Date(afipResponse.caeExpiration),
+          receiptNumber: afipResponse.receiptNumber,
+          updatedAt: new Date(),
+        }
+      });
 
     } catch (error: any) {
       // 6. Failure: AFIP is down or rejected the payload (e.g. invalid CUIT)
       // The invoice is saved as REJECTED so we can retry it via cronjob later without losing the context
-      invoice.status = InvoiceStatus.REJECTED;
-      invoice.afipErrorMessage = error.message;
-      invoice.updatedAt = new Date();
+      await this.prisma.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          status: InvoiceStatus.REJECTED,
+          afipErrorMessage: error.message,
+          updatedAt: new Date(),
+        }
+      });
       throw new BadRequestException(`Invoicing failed: ${error.message}`);
     }
+  }
 
-    return invoice;
+  async getInvoiceByOrder(orderId: string) {
+    return this.prisma.invoice.findFirst({
+      where: { orderId, status: InvoiceStatus.APPROVED }
+    });
   }
 }

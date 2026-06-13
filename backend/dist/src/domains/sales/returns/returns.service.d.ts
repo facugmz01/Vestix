@@ -79,7 +79,9 @@ export declare class ReturnsService {
                         description: string | null;
                         categoryId: string;
                         brandId: string | null;
+                        type: import(".prisma/client").$Enums.ProductType;
                         isVariable: boolean;
+                        manageBatches: boolean;
                         costPrice: number;
                         isActive: boolean;
                         isPublished: boolean;

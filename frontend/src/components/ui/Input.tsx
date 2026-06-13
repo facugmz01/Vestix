@@ -4,6 +4,7 @@ import clsx from 'clsx';
 interface Props extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  helperText?: string;
   leftIcon?: React.ReactNode;
 }
 
@@ -20,7 +21,11 @@ export function Input({ label, error, leftIcon, className, id, ...rest }: Props)
           {...rest}
         />
       </div>
-      {error && <span className={styles.error}>{error}</span>}
+      {error ? (
+        <span className={styles.error}>{error}</span>
+      ) : helperText ? (
+        <span className={styles.helperText} style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>{helperText}</span>
+      ) : null}
     </div>
   );
 }

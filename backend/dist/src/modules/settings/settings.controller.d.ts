@@ -10,4 +10,11 @@ export declare class SettingsController {
     updateNotifications(dto: any, req: any): Promise<any>;
     updateIntegrations(dto: any, req: any): Promise<any>;
     updateOffline(dto: any, req: any): Promise<any>;
+    testAfipConnection(): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    uploadLogo(file: Express.Multer.File, req: any): Promise<{
+        logoUrl: string;
+    }>;
 }

@@ -58,7 +58,28 @@ let ProductsService = class ProductsService {
         if (createProductDto.brandId) {
             await this.brandsService.findOne(createProductDto.brandId);
         }
-        const finalSku = createProductDto.baseSku || `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+        let finalSku = createProductDto.baseSku;
+        if (!finalSku) {
+            const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+            const skuSettings = settings?.skuBarcode || {};
+            if (skuSettings.skuAutoGenerate) {
+                const prefix = skuSettings.skuPrefix || 'PROD-';
+                const seq = parseInt(skuSettings.nextSkuSequence) || 1;
+                finalSku = `${prefix}${seq.toString().padStart(4, '0')}`;
+                await this.prisma.systemSettings.update({
+                    where: { id: 'default' },
+                    data: {
+                        skuBarcode: {
+                            ...skuSettings,
+                            nextSkuSequence: seq + 1
+                        }
+                    }
+                });
+            }
+            else {
+                finalSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+            }
+        }
         const exists = await this.prisma.product.findUnique({ where: { baseSku: finalSku } });
         if (exists)
             throw new common_1.ConflictException(`El SKU Base ${finalSku} ya está en uso`);
@@ -70,12 +91,20 @@ let ProductsService = class ProductsService {
                     description: createProductDto.description,
                     categoryId: createProductDto.categoryId,
                     brandId: createProductDto.brandId,
+                    type: createProductDto.type || 'SINGLE',
+                    manageBatches: createProductDto.manageBatches || false,
                     isVariable: createProductDto.isVariable || false,
                     costPrice: createProductDto.costPrice || 0,
                     isActive: true,
                     isPublished: false,
                     images: createProductDto.images || [],
                     metadata: createProductDto.metadata || {},
+                    comboLines: createProductDto.type === 'COMBO' && createProductDto.comboLines?.length ? {
+                        create: createProductDto.comboLines.map(cl => ({
+                            childVariantId: cl.childVariantId,
+                            quantity: cl.quantity
+                        }))
+                    } : undefined
                 },
                 include: { category: true, brand: true }
             });
@@ -155,15 +184,24 @@ let ProductsService = class ProductsService {
             if (exists)
                 throw new common_1.ConflictException('El SKU Base ya está en uso por otro producto');
         }
-        const { variants, images, basePrice, ...data } = updateProductDto;
+        const { variants, images, basePrice, comboLines, ...data } = updateProductDto;
         return this.prisma.$transaction(async (tx) => {
+            if (data.type === 'COMBO' && comboLines !== undefined) {
+                await tx.productComboLine.deleteMany({ where: { parentProductId: id } });
+            }
             const updatedProduct = await tx.product.update({
                 where: { id },
                 data: {
                     ...data,
                     images: images,
+                    comboLines: data.type === 'COMBO' && comboLines ? {
+                        create: comboLines.map((cl) => ({
+                            childVariantId: cl.childVariantId,
+                            quantity: cl.quantity
+                        }))
+                    } : undefined
                 },
-                include: { category: true, brand: true }
+                include: { category: true, brand: true, comboLines: true }
             });
             if (variants && Array.isArray(variants)) {
                 const existingVariants = await tx.productVariant.findMany({ where: { productId: id } });

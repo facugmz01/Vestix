@@ -28,6 +28,7 @@ let StockMovementService = class StockMovementService {
             quantity: payload.quantity,
             unitCost: mockUnitCost,
             referenceId: payload.purchaseOrderId,
+            batchId: payload.batchId,
         }, tx);
     }
     async processSaleExit(payload, tx) {

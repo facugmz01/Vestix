@@ -31,6 +31,23 @@ export class CheckoutOrchestrator {
       return { status: 'ALREADY_PROCESSED', order: existingOrder };
     }
 
+    const isQuote = dto.status === 'QUOTE' || dto.status === 'QUOTATION';
+
+    // 1.b SHIFT VALIDATION
+    if (!isQuote && (dto.source === 'POS' || (dto.source as string) === 'OFFLINE_POS')) {
+      if (!dto.cashShiftId) {
+        throw new BadRequestException('Un turno de caja abierto es obligatorio para registrar ventas en el POS.');
+      }
+      const shift = await this.prisma.cashShift.findUnique({ where: { id: dto.cashShiftId } });
+      if (!shift || shift.status !== 'OPEN') {
+        throw new BadRequestException('El turno de caja provisto no es válido o ya fue cerrado.');
+      }
+    }
+
+    // Load Pricing Settings
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const pricingSettings = (settings?.pricing as any) || {};
+
     // 2. PRICING EVALUATION (Server-Authoritative)
     const evaluatedLines = [];
     for (const lineDto of dto.lines) {
@@ -46,7 +63,18 @@ export class CheckoutOrchestrator {
         resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, variant.basePrice, dto.customerId);
       }
       
-      const manualDiscountAmount = lineDto.discountPct ? (resolvedBasePrice * (lineDto.discountPct / 100)) : 0;
+      const manualDiscountPct = lineDto.discountPct || 0;
+      
+      if (manualDiscountPct > 0) {
+        if (pricingSettings.allowManualDiscount === false) {
+          throw new BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
+        }
+        if (pricingSettings.maxDiscountPct && manualDiscountPct > pricingSettings.maxDiscountPct) {
+          throw new BadRequestException(`El descuento manual excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`);
+        }
+      }
+      
+      const manualDiscountAmount = resolvedBasePrice * (manualDiscountPct / 100);
       const finalPriceAfterManualDiscount = resolvedBasePrice - manualDiscountAmount;
       
       evaluatedLines.push({
@@ -59,7 +87,8 @@ export class CheckoutOrchestrator {
       });
     }
 
-    const cartEvaluation = this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
+    // 4. Evaluate Promotions (BOGO, Cart Discounts, Category Sales)
+    const cartEvaluation = await this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
       id: crypto.randomUUID(),
       variantId: l.variantId,
       categoryId: l.categoryId,
@@ -82,7 +111,6 @@ export class CheckoutOrchestrator {
 
     // 3. VARIANCE DETECTION
     // Trust: Accept the grand total if provided by POS or BACKOFFICE
-    const isQuote = dto.status === 'QUOTE' || dto.status === 'QUOTATION';
     const isManualEntry = dto.source === 'POS' || dto.source === 'BACKOFFICE' || (dto.source as string) === 'OFFLINE_POS';
     
     let posTotal = serverCalculatedTotal;
@@ -262,16 +290,37 @@ export class CheckoutOrchestrator {
 
   private async deductStock(tx: any, data: { orderId: string, branchId: string, warehouseId: string, lines: any[] }) {
     for (const line of data.lines) {
-      await this.inventoryService.recordMovement({
-        variantId: line.variantId,
-        sourceWarehouseId: data.warehouseId,
-        destinationWarehouseId: null,
-        branchId: data.branchId,
-        type: 'SALE_EXIT',
-        quantity: line.quantity,
-        unitCost: line.basePrice,
-        referenceId: data.orderId
-      }, tx);
+      // Handle Combos
+      const variantWithProduct = await tx.productVariant.findUnique({
+        where: { id: line.variantId },
+        include: { product: { include: { comboLines: true } } }
+      });
+
+      if (variantWithProduct?.product?.type === 'COMBO') {
+        for (const cl of variantWithProduct.product.comboLines) {
+          await this.inventoryService.recordMovement({
+            variantId: cl.childVariantId,
+            sourceWarehouseId: data.warehouseId,
+            destinationWarehouseId: null,
+            branchId: data.branchId,
+            type: 'SALE_EXIT',
+            quantity: line.quantity * cl.quantity,
+            unitCost: line.basePrice, // Approximate cost distribution can be done later
+            referenceId: data.orderId
+          }, tx);
+        }
+      } else {
+        await this.inventoryService.recordMovement({
+          variantId: line.variantId,
+          sourceWarehouseId: data.warehouseId,
+          destinationWarehouseId: null,
+          branchId: data.branchId,
+          type: 'SALE_EXIT',
+          quantity: line.quantity,
+          unitCost: line.basePrice,
+          referenceId: data.orderId
+        }, tx);
+      }
     }
   }
 

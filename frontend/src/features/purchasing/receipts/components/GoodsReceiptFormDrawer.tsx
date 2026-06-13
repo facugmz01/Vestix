@@ -21,6 +21,7 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
 
   // local state for scanning items
   const [scannedItems, setScannedItems] = useState<Record<string, number>>({});
+  const [batchInfo, setBatchInfo] = useState<Record<string, { lot: string; expiration: string }>>({});
 
   const searchPO = async () => {
     if (!poSearchId.trim()) return;
@@ -44,6 +45,7 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
       setPoSearchId('');
       setPurchaseOrder(null);
       setScannedItems({});
+      setBatchInfo({});
     }
   }, [open]);
 
@@ -68,7 +70,9 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
         return { 
           poLineItemId: variantId, 
           variantId, 
-          quantity: qty 
+          quantity: qty,
+          batchLot: batchInfo[variantId]?.lot || undefined,
+          batchExpirationDate: batchInfo[variantId]?.expiration || undefined
         };
       });
 
@@ -148,6 +152,27 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
                         onChange={e => setScannedItems({ ...scannedItems, [l.variantId]: Number(e.target.value) })}
                         style={{ width: '80px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 'bold', textAlign: 'right' }}
                       />
+                    )
+                  },
+                  {
+                    key: 'batch',
+                    header: 'Lote / Vencimiento (Opcional)',
+                    render: (l) => (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input
+                          type="text"
+                          placeholder="Nro Lote"
+                          value={batchInfo[l.variantId]?.lot || ''}
+                          onChange={e => setBatchInfo({ ...batchInfo, [l.variantId]: { ...batchInfo[l.variantId], lot: e.target.value } })}
+                          style={{ width: '100px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px' }}
+                        />
+                        <input
+                          type="date"
+                          value={batchInfo[l.variantId]?.expiration || ''}
+                          onChange={e => setBatchInfo({ ...batchInfo, [l.variantId]: { ...batchInfo[l.variantId], expiration: e.target.value } })}
+                          style={{ width: '130px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px' }}
+                        />
+                      </div>
                     )
                   }
                 ]}

@@ -29,34 +29,39 @@ export interface EvaluatedCartLineItem extends CartLineItem {
   promotionalDiscount: number;
 }
 
+import { PrismaService } from '../../core/prisma/prisma.service';
+
 @Injectable()
 export class RulesEngineService {
-  private rules: PromotionRule[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  registerRule(rule: PromotionRule) {
-    this.rules.push(rule);
+  async registerRule(rule: PromotionRule) {
+    const data: any = { ...rule };
+    return this.prisma.promotionRule.create({ data });
   }
 
   /**
    * Applies complex promotional rules to a shopping cart.
    * Tracks discounts down to the individual line item for correct COGS / margin tracking.
    */
-  evaluateCartPromotions(cartLines: CartLineItem[]): {
+  async evaluateCartPromotions(cartLines: CartLineItem[]): Promise<{
     originalTotal: number;
     discountTotal: number;
     finalTotal: number;
     appliedPromotions: string[];
     lines: EvaluatedCartLineItem[];
-  } {
+  }> {
     const evaluatedLines: EvaluatedCartLineItem[] = cartLines.map(l => ({ ...l, promotionalDiscount: 0 }));
     let originalTotal = evaluatedLines.reduce((sum, line) => sum + (line.unitPrice * line.quantity), 0);
     let discountTotal = 0;
     const appliedPromotions: string[] = [];
 
-    // Filter active rules based on time bounds
     const now = new Date();
-    const activeRules = this.rules.filter(r => {
-      if (!r.isActive) return false;
+    const allRules = await this.prisma.promotionRule.findMany({
+      where: { isActive: true }
+    });
+
+    const activeRules = allRules.filter(r => {
       if (r.validFrom && now < r.validFrom) return false;
       if (r.validTo && now > r.validTo) return false;
       return true;
@@ -65,14 +70,16 @@ export class RulesEngineService {
     for (const rule of activeRules) {
       // RULE 1: Buy One Get One (BOGO)
       if (rule.type === PromotionType.BOGO) {
-        const reqQty = rule.conditions.requiredQuantity;
-        const targetVariant = rule.conditions.targetVariantId;
+        const conditions: any = rule.conditions;
+        const actions: any = rule.actions;
+        const reqQty = conditions.requiredQuantity;
+        const targetVariant = conditions.targetVariantId;
         const line = evaluatedLines.find(l => l.variantId === targetVariant);
         
-        if (line && line.quantity >= (reqQty + rule.actions.freeQuantity)) {
-          const eligibleSets = Math.floor(line.quantity / (reqQty + rule.actions.freeQuantity));
+        if (line && line.quantity >= (reqQty + actions.freeQuantity)) {
+          const eligibleSets = Math.floor(line.quantity / (reqQty + actions.freeQuantity));
           if (eligibleSets > 0) {
-            const discountAmount = eligibleSets * rule.actions.freeQuantity * line.unitPrice;
+            const discountAmount = eligibleSets * actions.freeQuantity * line.unitPrice;
             line.promotionalDiscount += discountAmount;
             discountTotal += discountAmount;
             if (!appliedPromotions.includes(rule.name)) appliedPromotions.push(rule.name);
@@ -82,8 +89,10 @@ export class RulesEngineService {
       
       // RULE 2: Category Wide Discounts
       if (rule.type === PromotionType.CATEGORY_DISCOUNT) {
-        const targetCat = rule.conditions.targetCategoryId;
-        const pctOff = rule.actions.discountPercentage;
+        const conditions: any = rule.conditions;
+        const actions: any = rule.actions;
+        const targetCat = conditions.targetCategoryId;
+        const pctOff = actions.discountPercentage;
 
         const eligibleLines = evaluatedLines.filter(l => l.categoryId === targetCat);
         eligibleLines.forEach(line => {
@@ -96,10 +105,12 @@ export class RulesEngineService {
 
       // RULE 3: Minimum Spend Cart Discount
       if (rule.type === PromotionType.CART_TOTAL_DISCOUNT) {
+        const conditions: any = rule.conditions;
+        const actions: any = rule.actions;
         // Calculate against current subtotal (after other discounts)
-        if ((originalTotal - discountTotal) >= rule.conditions.minimumSpend) {
+        if ((originalTotal - discountTotal) >= conditions.minimumSpend) {
           // Distribute cart discount proportionally across all lines to preserve item margins
-          const cartDiscountAmount = rule.actions.flatDiscountAmount;
+          const cartDiscountAmount = actions.flatDiscountAmount;
           const currentTotalAfterLineDiscounts = originalTotal - discountTotal;
           
           evaluatedLines.forEach(line => {

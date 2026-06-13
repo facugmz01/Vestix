@@ -2,7 +2,8 @@ import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { NotificationsService } from './notifications.service';
 import { SmtpService } from './channels/smtp.service';
-import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
+import { WhatsAppOpenWaService } from './channels/whatsapp-openwa.service';
+import { SmsGatewayService } from './channels/sms-gateway.service';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsProcessor } from './notifications.processor';
 
@@ -26,7 +27,8 @@ import { NotificationsProcessor } from './notifications.processor';
   providers: [
     NotificationsService,
     SmtpService,
-    WhatsAppEvolutionService,
+    WhatsAppOpenWaService,
+    SmsGatewayService,
     NotificationsProcessor,
   ],
   exports: [NotificationsService],

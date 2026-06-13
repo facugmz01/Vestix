@@ -61,6 +61,8 @@ let GoodsReceiptService = class GoodsReceiptService {
                 expectedQuantity: expected,
                 receivedQuantity: scan.quantity,
                 difference,
+                batchLot: scan.batchLot,
+                batchExpirationDate: scan.batchExpirationDate ? new Date(scan.batchExpirationDate) : undefined,
                 notes: difference > 0 ? 'Overshipment' : (difference < 0 ? 'Short shipment' : undefined),
             });
         }
@@ -82,7 +84,7 @@ let GoodsReceiptService = class GoodsReceiptService {
         return this.prisma.$transaction(async (tx) => {
             const receipt = await tx.goodsReceipt.findUnique({
                 where: { id: receiptId },
-                include: { lines: { include: { poLineItem: true } } }
+                include: { lines: { include: { poLineItem: true } }, purchaseOrder: true }
             });
             if (!receipt)
                 throw new common_1.NotFoundException('Goods Receipt not found');
@@ -92,6 +94,27 @@ let GoodsReceiptService = class GoodsReceiptService {
                 throw new common_1.BadRequestException('Disputed receipt requires manager approval');
             }
             for (const line of receipt.lines) {
+                let batchId = undefined;
+                if (line.batchLot) {
+                    let batch = await tx.productBatch.findFirst({
+                        where: {
+                            variantId: line.variantId,
+                            batchNumber: line.batchLot
+                        }
+                    });
+                    if (!batch) {
+                        batch = await tx.productBatch.create({
+                            data: {
+                                variantId: line.variantId,
+                                batchNumber: line.batchLot,
+                                expirationDate: line.batchExpirationDate,
+                                manufacturingDate: new Date(),
+                                supplierId: receipt.purchaseOrder?.supplierId
+                            }
+                        });
+                    }
+                    batchId = batch.id;
+                }
                 await this.stockMovementService.processGoodsReceipt({
                     variantId: line.variantId,
                     destinationWarehouseId: receipt.destinationWarehouseId,
@@ -99,6 +122,7 @@ let GoodsReceiptService = class GoodsReceiptService {
                     quantity: line.receivedQuantity,
                     purchaseCost: line.poLineItem.unitCost,
                     purchaseOrderId: receipt.purchaseOrderId,
+                    batchId: batchId
                 }, tx);
                 await tx.pOLineItem.update({
                     where: { id: line.poLineItemId },

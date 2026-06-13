@@ -15,6 +15,8 @@ const prisma_module_1 = require("./core/prisma/prisma.module");
 const rbac_module_1 = require("./core/rbac/rbac.module");
 const redis_module_1 = require("./core/redis/redis.module");
 const bullmq_1 = require("@nestjs/bullmq");
+const serve_static_1 = require("@nestjs/serve-static");
+const path_1 = require("path");
 const identity_module_1 = require("./domains/identity/identity.module");
 const setup_module_1 = require("./domains/setup/setup.module");
 const catalog_module_1 = require("./domains/catalog/catalog.module");
@@ -56,6 +58,10 @@ exports.AppModule = AppModule = __decorate([
                     host: process.env.REDIS_HOST || '127.0.0.1',
                     port: parseInt(process.env.REDIS_PORT || '6379', 10),
                 },
+            }),
+            serve_static_1.ServeStaticModule.forRoot({
+                rootPath: (0, path_1.join)(__dirname, '..', 'uploads'),
+                serveRoot: '/uploads',
             }),
             identity_module_1.IdentityModule,
             setup_module_1.SetupModule,

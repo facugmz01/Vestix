@@ -72,12 +72,26 @@ export class SettingsService implements OnModuleInit {
             notifyOnPurchase: false,
             notifyOnLowStock: true,
             notifyOnTransfer: false,
+            smtpHost: '',
+            smtpPort: 587,
+            smtpUser: '',
+            smtpPass: '',
+            smsGatewayUrl: '',
+            openWaUrl: '',
+            openWaSession: 'default',
           },
           integrations: {
             mercadopagoEnabled: false,
             mercadolibreEnabled: false,
             woocommerceEnabled: false,
             shopifyEnabled: false,
+            mlAppId: '',
+            mlSecretKey: '',
+            shopifyStoreUrl: '',
+            shopifyAccessToken: '',
+            wooStoreUrl: '',
+            wooConsumerKey: '',
+            wooConsumerSecret: '',
           },
           offline: {
             offlineModeEnabled: false,
@@ -112,14 +126,52 @@ export class SettingsService implements OnModuleInit {
   async updateSection(section: string, payload: any, userId: string) {
     const current = await this.getSettings();
     const previousValue = current[section];
-    const newValue = { ...previousValue, ...payload };
+    const updatedSection = { ...previousValue, ...payload };
 
-    await this.prisma.systemSettings.update({
+    const result = await this.prisma.systemSettings.update({
       where: { id: 'default' },
       data: {
-        [section]: newValue,
+        [section]: updatedSection,
       },
     });
+
+    const newValue = (result as any)[section];
+
+    // --- Unificación de la Fuente de Verdad ---
+    if (section === 'general') {
+      const g = newValue as any;
+      // 1. Sincronizar con StoreSettings
+      await this.prisma.storeSettings.updateMany({
+        where: { id: 'default' },
+        data: {
+          storeName: g.companyName || undefined,
+        },
+      });
+
+      // 2. Sincronizar con Branch (CENTRAL)
+      const branch = await this.prisma.branch.findFirst({ where: { code: 'CENTRAL' } });
+      if (branch) {
+        const currentBranchSettings = (branch.settings as any) || {};
+        await this.prisma.branch.update({
+          where: { id: branch.id },
+          data: {
+            name: g.companyName ? `${g.companyName} - Casa Central` : undefined,
+            address: g.address,
+            phone: g.phone,
+            settings: {
+              ...currentBranchSettings,
+              taxId: g.taxId || currentBranchSettings.taxId,
+              companyName: g.companyName || currentBranchSettings.companyName,
+              companyEmail: g.email || currentBranchSettings.companyEmail,
+              companyPhone: g.phone || currentBranchSettings.companyPhone,
+              companyAddress: g.address || currentBranchSettings.companyAddress,
+              posReceiptHeader: g.companyName || currentBranchSettings.posReceiptHeader,
+              posReceiptFooter: g.taxId || g.address ? `CUIT: ${g.taxId || ''} | ${g.address || ''}` : currentBranchSettings.posReceiptFooter,
+            },
+          },
+        });
+      }
+    }
 
     // Update cache
     this.cachedSettings[section] = newValue;
@@ -136,5 +188,13 @@ export class SettingsService implements OnModuleInit {
     });
 
     return newValue;
+  }
+
+  async testAfipConnection() {
+    // Mock AFIP connection test
+    return {
+      success: true,
+      message: 'Conexión con AFIP establecida correctamente (Entorno simulado)'
+    };
   }
 }

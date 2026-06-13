@@ -17,20 +17,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { queryKeys } from '@/api/queryKeys';
 
-interface Options<T extends Record<string, unknown>> {
+interface Options<T extends Record<string, any>> {
   key: string;
   queryFn: () => Promise<T>;
   mutateFn: (dto: Partial<T>) => Promise<T>;
 }
 
-interface Result<T extends Record<string, unknown>> {
+interface Result<T extends Record<string, any>> {
   form: UseFormReturn<T>;
   isSaving: boolean;
   isLoading: boolean;
   onSubmit: () => void;
 }
 
-export function useSettingsSection<T extends Record<string, unknown>>({
+export function useSettingsSection<T extends Record<string, any>>({
   key,
   queryFn,
   mutateFn,

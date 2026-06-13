@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
-import { purchasesApi, type CreatePurchaseOrderDto } from '@/api/purchases.api';
+import { purchasesApi } from '@/api/purchases.api';
 import { suppliersApi } from '@/api/suppliers.api';
 import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
@@ -47,7 +47,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   useEffect(() => {
     if (open && orderToEdit) {
       setSupplierId(orderToEdit.supplierId);
-      setDestinationWarehouseId(orderToEdit.warehouseId || '');
+      setDestinationWarehouseId((orderToEdit as any).destinationWarehouseId || (orderToEdit as any).warehouseId || '');
       setExpectedDeliveryDate(orderToEdit.expectedDeliveryDate ? orderToEdit.expectedDeliveryDate.split('T')[0] : '');
       setLines(orderToEdit.lines.map(l => ({
         variantId: l.variantId,

@@ -5,8 +5,9 @@ import { Plus, Edit2, Trash2, Eye, Package, ArrowLeft, Shuffle } from 'lucide-re
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip, Tabs
+  PageContainer, Section, Table, Button, Badge, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip
 } from '@/components/ui';
+
 
 import { productsApi } from '@/api/products.api';
 import { variantsApi } from '@/api/variants.api';

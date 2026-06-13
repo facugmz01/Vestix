@@ -21,7 +21,30 @@ export class ProductsService {
     }
 
     // 2. Base SKU Uniqueness & Generation
-    const finalSku = createProductDto.baseSku || `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    let finalSku = createProductDto.baseSku;
+
+    if (!finalSku) {
+      const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+      const skuSettings = (settings?.skuBarcode as any) || {};
+
+      if (skuSettings.skuAutoGenerate) {
+        const prefix = skuSettings.skuPrefix || 'PROD-';
+        const seq = parseInt(skuSettings.nextSkuSequence) || 1;
+        finalSku = `${prefix}${seq.toString().padStart(4, '0')}`;
+        
+        await this.prisma.systemSettings.update({
+          where: { id: 'default' },
+          data: {
+            skuBarcode: {
+              ...skuSettings,
+              nextSkuSequence: seq + 1
+            }
+          }
+        });
+      } else {
+        finalSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+      }
+    }
     const exists = await this.prisma.product.findUnique({ where: { baseSku: finalSku } });
     if (exists) throw new ConflictException(`El SKU Base ${finalSku} ya está en uso`);
 
@@ -34,12 +57,20 @@ export class ProductsService {
           description: createProductDto.description,
           categoryId: createProductDto.categoryId,
           brandId: createProductDto.brandId,
+          type: createProductDto.type || 'SINGLE',
+          manageBatches: createProductDto.manageBatches || false,
           isVariable: createProductDto.isVariable || false,
           costPrice: createProductDto.costPrice || 0,
           isActive: true,
           isPublished: false,
           images: (createProductDto.images as any) || [],
           metadata: createProductDto.metadata || {},
+          comboLines: createProductDto.type === 'COMBO' && createProductDto.comboLines?.length ? {
+            create: createProductDto.comboLines.map(cl => ({
+              childVariantId: cl.childVariantId,
+              quantity: cl.quantity
+            }))
+          } : undefined
         },
         include: { category: true, brand: true }
       });
@@ -128,16 +159,27 @@ export class ProductsService {
     }
 
     // We also extract basePrice if present so it doesn't try to save it on the Product model
-    const { variants, images, basePrice, ...data } = updateProductDto;
+    const { variants, images, basePrice, comboLines, ...data } = updateProductDto;
 
     return this.prisma.$transaction(async (tx) => {
+      // Si el producto cambia a COMBO o actualiza sus líneas de combo, borramos las existentes y creamos las nuevas.
+      if (data.type === 'COMBO' && comboLines !== undefined) {
+        await tx.productComboLine.deleteMany({ where: { parentProductId: id } });
+      }
+
       const updatedProduct = await tx.product.update({
         where: { id },
         data: {
           ...data,
           images: images as any,
+          comboLines: data.type === 'COMBO' && comboLines ? {
+            create: comboLines.map((cl: any) => ({
+              childVariantId: cl.childVariantId,
+              quantity: cl.quantity
+            }))
+          } : undefined
         },
-        include: { category: true, brand: true }
+        include: { category: true, brand: true, comboLines: true }
       });
 
       if (variants && Array.isArray(variants)) {

@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import styles from './Badge.module.css';
 
-type Color = 'green' | 'yellow' | 'red' | 'blue' | 'purple' | 'gray';
+type Color = 'green' | 'yellow' | 'orange' | 'warning' | 'red' | 'blue' | 'purple' | 'gray';
 
 interface Props {
   color?: Color;

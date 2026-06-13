@@ -8,6 +8,16 @@ generator client {
 }
 
 // ==========================================
+// 1. ENUMS
+// ==========================================
+
+enum ProductType {
+  SINGLE
+  VARIABLE
+  COMBO
+}
+
+// ==========================================
 // 1. IDENTITY & RBAC MODULE
 // ==========================================
 
@@ -136,23 +146,26 @@ model Brand {
 }
 
 model Product {
-  id          String           @id @default(uuid())
-  name        String
-  baseSku     String?          @unique
-  description String?
-  categoryId  String
-  category    Category         @relation(fields: [categoryId], references: [id])
-  brandId     String?
-  brand       Brand?           @relation(fields: [brandId], references: [id])
-  isVariable  Boolean          @default(false)
-  costPrice   Float            @default(0)
-  isActive    Boolean          @default(true)
-  isPublished Boolean          @default(false)
-  images      Json             @default("[]")
-  metadata    Json             @default("{}")
-  variants    ProductVariant[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id            String             @id @default(uuid())
+  name          String
+  baseSku       String?            @unique
+  description   String?
+  categoryId    String
+  category      Category           @relation(fields: [categoryId], references: [id])
+  brandId       String?
+  brand         Brand?             @relation(fields: [brandId], references: [id])
+  type          ProductType        @default(SINGLE)
+  isVariable    Boolean            @default(false) // Deprecated: migrar a type
+  manageBatches Boolean            @default(false)
+  costPrice     Float              @default(0)
+  isActive      Boolean            @default(true)
+  isPublished   Boolean            @default(false)
+  images        Json               @default("[]")
+  metadata      Json               @default("{}")
+  variants      ProductVariant[]
+  comboLines    ProductComboLine[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 }
 
 model ProductVariant {
@@ -183,6 +196,8 @@ model ProductVariant {
   receiptLines  GoodsReceiptLine[]
   transferLines StockTransferLine[]
   wcMapping     WcVariantMapping?
+  comboUses     ProductComboLine[]
+  batches       ProductBatch[]
 }
 
 // Soporte para múltiples códigos de barra por variante
@@ -209,6 +224,33 @@ model AttributeValue {
   attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   value       String // e.g., "Rojo", "XL"
   createdAt   DateTime  @default(now())
+}
+
+// ==========================================
+// 4B. COMBOS & BATCHES MODULE (NEW)
+// ==========================================
+
+model ProductComboLine {
+  id              String         @id @default(uuid())
+  parentProductId String
+  parentProduct   Product        @relation(fields: [parentProductId], references: [id], onDelete: Cascade)
+  childVariantId  String
+  childVariant    ProductVariant @relation(fields: [childVariantId], references: [id])
+  quantity        Float
+}
+
+model ProductBatch {
+  id                String       @id @default(uuid())
+  variantId         String
+  variant           ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  batchNumber       String
+  manufacturingDate DateTime?
+  expiryDate        DateTime?
+  stockLevels       StockLevel[]
+  movements         InventoryMovement[]
+  createdAt         DateTime     @default(now())
+  
+  @@unique([variantId, batchNumber])
 }
 
 // ==========================================
@@ -295,6 +337,8 @@ model SaleOrder {
   cashShift   CashShift? @relation(fields: [cashShiftId], references: [id])
   issueInvoice Boolean   @default(true)
   createdAt   DateTime
+  
+  fulfillment OrderFulfillment?
   syncedAt    DateTime   @default(now())
 
   lines    OrderLineItem[]
@@ -387,6 +431,8 @@ model InventoryMovement {
   id                     String         @id @default(uuid())
   variantId              String
   variant                ProductVariant @relation(fields: [variantId], references: [id])
+  batchId                String?
+  batch                  ProductBatch?  @relation(fields: [batchId], references: [id])
   sourceWarehouseId      String?
   sourceWarehouse        Warehouse?     @relation("SourceMovements", fields: [sourceWarehouseId], references: [id])
   destinationWarehouseId String?
@@ -404,10 +450,12 @@ model InventoryMovement {
 
 model StockLevel {
   id                String             @id @default(uuid())
-  variantId         String // campo sin @unique - la unicidad la garantiza @@unique([variantId, warehouseId])
+  variantId         String // campo sin @unique - la unicidad la garantiza @@unique([variantId, warehouseId, batchId])
   variant           ProductVariant     @relation(fields: [variantId], references: [id])
   warehouseId       String
   warehouse         Warehouse          @relation(fields: [warehouseId], references: [id])
+  batchId           String?
+  batch             ProductBatch?      @relation(fields: [batchId], references: [id])
   branchId          String?
   branch            Branch?            @relation(fields: [branchId], references: [id])
   physicalQuantity  Int                @default(0)
@@ -416,7 +464,7 @@ model StockLevel {
   updatedAt         DateTime           @updatedAt
   reservations      StockReservation[]
 
-  @@unique([variantId, warehouseId])
+  @@unique([variantId, warehouseId, batchId])
   @@index([variantId])
 }
 
@@ -549,6 +597,8 @@ model GoodsReceiptLine {
   expectedQuantity Int
   receivedQuantity Int
   difference       Int
+  batchLot         String?        // Lote provisto al momento de recepción
+  batchExpirationDate DateTime?   // Vencimiento provisto al momento de recepción
   notes            String?
 }
 
@@ -771,4 +821,79 @@ model SystemSettings {
   integrations  Json     @default("{}")
   offline       Json     @default("{}")
   updatedAt     DateTime @updatedAt
+}
+
+// ==========================================
+// 14. NOTIFICATIONS MODULE
+// ==========================================
+
+model NotificationTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  event     String   // e.g., 'SALE_CONFIRMED', 'LOW_STOCK_ALERT'
+  channel   String   // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
+  subject   String?  // Mostly for email
+  body      String   @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([event, channel])
+}
+
+// ==========================================
+// 15. NEW MIGRATED MODELS
+// ==========================================
+
+model PromotionRule {
+  id         String    @id @default(uuid())
+  name       String
+  type       String
+  isActive   Boolean   @default(true)
+  conditions Json
+  actions    Json
+  validFrom  DateTime?
+  validTo    DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model PaymentIntent {
+  id                  String   @id @default(uuid())
+  provider            String
+  externalReferenceId String
+  orderId             String
+  amount              Float
+  currency            String   @default("ARS")
+  status              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model OrderFulfillment {
+  id             String    @id @default(uuid())
+  saleOrderId    String    @unique
+  saleOrder      SaleOrder @relation(fields: [saleOrderId], references: [id])
+  status         String
+  trackingNumber String?
+  courierName    String?
+  paidAt         DateTime?
+  pickedAt       DateTime?
+  packedAt       DateTime?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model CartHold {
+  id          String   @id
+  warehouseId String
+  branchId    String
+  customerId  String?
+  lines       Json
+  status      String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

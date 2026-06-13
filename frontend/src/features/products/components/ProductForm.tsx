@@ -4,6 +4,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { productsApi } from '@/api/products.api';
 import { ProductImagesUploader } from './ProductImagesUploader';
 import { VariantMassGenerator } from './VariantMassGenerator';
+import { ComboRecipeBuilder } from './ComboRecipeBuilder';
 import type { CreateProductDto } from '@/api/products.api';
 import { Trash2 } from 'lucide-react';
 
@@ -95,6 +96,16 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
               <span style={{ fontSize: '14px', fontWeight: 500 }}>Publicar en E-Commerce</span>
             </label>
           </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', justifyContent: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '24px' }}>
+              <input 
+                type="checkbox" 
+                checked={formData.manageBatches} 
+                onChange={(e) => onChange({ ...formData, manageBatches: e.target.checked })} 
+              />
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>Controlar Vencimientos (Lotes)</span>
+            </label>
+          </div>
         </div>
       </Section>
 
@@ -132,19 +143,23 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
       </Section>
 
       {/* 3. Type Toggle */}
-      <Section label="Variantes del Producto">
+      <Section label="Tipo de Producto">
         <div style={{ display: 'flex', gap: '24px', marginBottom: '16px', padding: '12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-            <input type="radio" checked={!formData.isVariable} onChange={() => onChange({ ...formData, isVariable: false, variants: [] })} />
-            <span>Producto Simple (Sin talles/colores)</span>
+            <input type="radio" checked={formData.type === 'SINGLE' || (!formData.type && !formData.isVariable)} onChange={() => onChange({ ...formData, type: 'SINGLE', isVariable: false, variants: [], comboLines: [] })} />
+            <span>Simple (Sin variantes)</span>
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-            <input type="radio" checked={formData.isVariable} onChange={() => onChange({ ...formData, isVariable: true })} />
-            <span>Producto Variable (Múltiples variantes)</span>
+            <input type="radio" checked={formData.type === 'VARIABLE' || formData.isVariable} onChange={() => onChange({ ...formData, type: 'VARIABLE', isVariable: true, comboLines: [] })} />
+            <span>Variable (Talles/Colores)</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <input type="radio" checked={formData.type === 'COMBO'} onChange={() => onChange({ ...formData, type: 'COMBO', isVariable: false, variants: [] })} />
+            <span>Combo / Kit</span>
           </label>
         </div>
 
-        {formData.isVariable && (
+        {(formData.type === 'VARIABLE' || formData.isVariable) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <VariantMassGenerator 
               costPrice={formData.costPrice || 0} 
@@ -246,6 +261,13 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
               </div>
             )}
           </div>
+        )}
+
+        {formData.type === 'COMBO' && (
+          <ComboRecipeBuilder 
+            lines={formData.comboLines || []} 
+            onChange={(lines) => onChange({ ...formData, comboLines: lines })} 
+          />
         )}
       </Section>
 

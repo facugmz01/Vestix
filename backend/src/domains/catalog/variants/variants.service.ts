@@ -4,16 +4,16 @@ import { VariantGeneratorService } from './variant-generator.service';
 import { GenerateVariantsDto } from './dto/generate-variants.dto';
 import * as crypto from 'crypto';
 
+import { PrismaService } from '../../../core/prisma/prisma.service';
 // import { ProductsService } from '../services/products.service'; // Used to validate the parent Product
 
 @Injectable()
 export class VariantsService {
   constructor(
     private readonly variantGenerator: VariantGeneratorService,
+    private readonly prisma: PrismaService
     // private readonly productsService: ProductsService
   ) {}
-
-  private variants: ProductVariant[] = [];
 
   /**
    * Accepts a matrix payload, generates variants, validates uniqueness, and saves them.
@@ -28,21 +28,33 @@ export class VariantsService {
 
     // 3. Prevent duplicate SKU collisions
     const generatedSkus = newVariantsData.map(v => v.sku);
-    const existing = this.variants.some(v => generatedSkus.includes(v.sku));
     
-    if (existing) {
+    const existingCount = await this.prisma.productVariant.count({
+      where: { sku: { in: generatedSkus } }
+    });
+    
+    if (existingCount > 0) {
       throw new ConflictException('SKU collision detected. One or more generated SKUs already exist for this product. Check attributes or use manual creation.');
     }
 
     // 4. Save to Database
     const savedVariants = newVariantsData.map(vData => ({
       id: crypto.randomUUID(),
-      ...vData,
+      productId,
+      sku: vData.sku,
+      barcode: vData.barcode || null,
+      attributes: vData.attributes || {},
+      basePrice: vData.basePrice,
+      costPrice: (vData as any).costPrice || 0, // Fallback if missing
+      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     }));
 
-    this.variants.push(...savedVariants);
+    await this.prisma.productVariant.createMany({
+      data: savedVariants
+    });
+
     return savedVariants;
   }
 
@@ -50,22 +62,25 @@ export class VariantsService {
    * Returns all sellable variants for a specific product.
    */
   async findByProduct(productId: string) {
-    return this.variants.filter(v => v.productId === productId);
+    return this.prisma.productVariant.findMany({
+      where: { productId }
+    });
   }
 
   /**
    * Updates the base price of a specific variant.
    */
   async updatePrice(id: string, newPrice: number) {
-    const idx = this.variants.findIndex(v => v.id === id);
-    if (idx === -1) throw new NotFoundException(`Variant ${id} not found`);
-
-    this.variants[idx].basePrice = newPrice;
-    this.variants[idx].updatedAt = new Date();
+    const variant = await this.prisma.productVariant.update({
+      where: { id },
+      data: { basePrice: newPrice }
+    });
+    
+    if (!variant) throw new NotFoundException(`Variant ${id} not found`);
     
     // In V2 Architecture, this would ideally fire a "PriceUpdatedEvent" 
     // to invalidate offline POS caches.
     
-    return this.variants[idx];
+    return variant;
   }
 }

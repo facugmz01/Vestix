@@ -47,9 +47,11 @@ const common_1 = require("@nestjs/common");
 const invoice_model_1 = require("./models/invoice.model");
 const afip_service_1 = require("./afip.service");
 const crypto = __importStar(require("crypto"));
+const prisma_service_1 = require("../../core/prisma/prisma.service");
 let InvoicingService = class InvoicingService {
-    constructor(afipService) {
+    constructor(afipService, prisma) {
         this.afipService = afipService;
+        this.prisma = prisma;
         this.invoices = [];
     }
     async generateInvoice(payload) {
@@ -80,9 +82,12 @@ let InvoicingService = class InvoicingService {
         let afipDocType = 96;
         if (payload.customerDocumentType === 'CUIT')
             afipDocType = 80;
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const invoicingSettings = settings?.invoicing || {};
+        const pointOfSale = parseInt(invoicingSettings.fiscalPointSale) || 1;
         try {
             const afipResponse = await this.afipService.createElectronicInvoice({
-                pointOfSale: 1,
+                pointOfSale: pointOfSale,
                 invoiceType: afipInvoiceType,
                 documentType: afipDocType,
                 documentNumber: parseInt(payload.customerDocumentNumber, 10),
@@ -108,6 +113,7 @@ let InvoicingService = class InvoicingService {
 exports.InvoicingService = InvoicingService;
 exports.InvoicingService = InvoicingService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [afip_service_1.AfipService])
+    __metadata("design:paramtypes", [afip_service_1.AfipService,
+        prisma_service_1.PrismaService])
 ], InvoicingService);
 //# sourceMappingURL=invoicing.service.js.map

@@ -10,6 +10,7 @@ export class InventoryService {
    */
   async recordMovement(data: {
     variantId: string;
+    batchId?: string | null;
     sourceWarehouseId: string | null;
     destinationWarehouseId: string | null;
     branchId: string | null;
@@ -27,6 +28,7 @@ export class InventoryService {
       const movement = await transaction.inventoryMovement.create({
         data: {
           variantId: data.variantId,
+          batchId: data.batchId || null,
           sourceWarehouseId: data.sourceWarehouseId,
           destinationWarehouseId: data.destinationWarehouseId,
           type: data.type,
@@ -38,12 +40,12 @@ export class InventoryService {
 
       // 2. Update Source Stock (Outbound)
       if (data.sourceWarehouseId) {
-        await this.updateStock(transaction, data.variantId, data.sourceWarehouseId, data.branchId, data.type, -data.quantity);
+        await this.updateStock(transaction, data.variantId, data.batchId || null, data.sourceWarehouseId, data.branchId, data.type, -data.quantity);
       }
       
       // 3. Update Destination Stock (Inbound)
       if (data.destinationWarehouseId) {
-        await this.updateStock(transaction, data.variantId, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
+        await this.updateStock(transaction, data.variantId, data.batchId || null, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
       }
 
       return movement;
@@ -58,7 +60,7 @@ export class InventoryService {
     });
   }
 
-  private async updateStock(tx: any, variantId: string, warehouseId: string, branchId: string | null, type: string, quantityChange: number) {
+  private async updateStock(tx: any, variantId: string, batchId: string | null, warehouseId: string, branchId: string | null, type: string, quantityChange: number) {
     // Determine which field to update based on movement type
     // Note: quantityChange is positive for inbound, negative for outbound
     
@@ -91,11 +93,12 @@ export class InventoryService {
 
     // Upsert the stock level record
     return tx.stockLevel.upsert({
-      where: { variantId_warehouseId: { variantId, warehouseId } },
+      where: { variantId_warehouseId_batchId: { variantId, warehouseId, batchId } },
       update: updateData,
       create: {
         variantId,
         warehouseId,
+        batchId,
         branchId: branchId || undefined,
         physicalQuantity: type === 'CONSUME_RESERVATION' ? -Math.abs(quantityChange) : (quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : 0) : 0),
         availableQuantity: type === 'CONSUME_RESERVATION' ? 0 : (quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : -quantityChange) : 0),
@@ -106,8 +109,9 @@ export class InventoryService {
 
   async reserveStock(variantId: string, warehouseId: string, branchId: string, quantity: number, orderId: string, tx?: any) {
     const prismaClient = tx || this.prisma;
-    const stock = await prismaClient.stockLevel.findUnique({
-      where: { variantId_warehouseId: { variantId, warehouseId } }
+    const stock = await prismaClient.stockLevel.findFirst({
+      where: { variantId, warehouseId },
+      orderBy: { availableQuantity: 'desc' }
     });
     
     if (!stock || stock.availableQuantity < quantity) {
@@ -215,8 +219,8 @@ export class InventoryService {
   }
 
   async adjustStock(dto: { variantId: string; warehouseId: string; quantity: number; type: 'ADD' | 'SUBTRACT' | 'SET'; reason: string }) {
-    const stock = await this.prisma.stockLevel.findUnique({
-      where: { variantId_warehouseId: { variantId: dto.variantId, warehouseId: dto.warehouseId } },
+    const stock = await this.prisma.stockLevel.findFirst({
+      where: { variantId: dto.variantId, warehouseId: dto.warehouseId },
       include: { warehouse: true }
     });
 

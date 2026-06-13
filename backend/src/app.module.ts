@@ -6,6 +6,8 @@ import { PrismaModule } from './core/prisma/prisma.module';
 import { RbacModule } from './core/rbac/rbac.module';
 import { RedisModule } from './core/redis/redis.module';
 import { BullModule } from '@nestjs/bullmq';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 
 // --- Importación de todos los módulos del sistema ---
@@ -54,6 +56,12 @@ import { ReportsModule } from './modules/reports/reports.module';
         host: process.env.REDIS_HOST || '127.0.0.1',
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
       },
+    }),
+
+    // Servir archivos estáticos (Ej: Logos de empresa)
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
     }),
 
     // 4. Módulos de Funcionalidad

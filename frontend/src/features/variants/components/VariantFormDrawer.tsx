@@ -38,6 +38,7 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
         size: variantToEdit.size || '',
         color: variantToEdit.color || '',
         basePrice: variantToEdit.basePrice,
+        costPrice: variantToEdit.costPrice || 0,
         isActive: variantToEdit.isActive,
       });
     } else if (open && !variantToEdit) {
@@ -48,6 +49,7 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
         size: '',
         color: '',
         basePrice: 0,
+        costPrice: 0,
         isActive: true,
       });
     }

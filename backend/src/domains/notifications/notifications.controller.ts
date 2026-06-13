@@ -1,9 +1,26 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Patch } from '@nestjs/common';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { NotificationsService } from './notifications.service';
+import { WhatsAppOpenWaService } from './channels/whatsapp-openwa.service';
 import { NOTIFICATION_TEMPLATES } from './templates/notification-templates.registry';
 import { NotificationChannel, TemplateKey } from './models/notification.model';
-import { IsEnum, IsString, IsNotEmpty, IsObject, IsOptional } from 'class-validator';
+import { IsEnum, IsString, IsNotEmpty, IsObject, IsOptional, IsBoolean } from 'class-validator';
+
+export class CreateTemplateDto {
+  @IsString() @IsNotEmpty() name: string;
+  @IsEnum(TemplateKey) event: TemplateKey;
+  @IsEnum(NotificationChannel) channel: NotificationChannel;
+  @IsString() @IsOptional() subject?: string;
+  @IsString() @IsNotEmpty() body: string;
+  @IsBoolean() @IsOptional() isActive?: boolean;
+}
+
+export class UpdateTemplateDto {
+  @IsString() @IsOptional() name?: string;
+  @IsString() @IsOptional() subject?: string;
+  @IsString() @IsOptional() body?: string;
+  @IsBoolean() @IsOptional() isActive?: boolean;
+}
 
 export class SendTestNotificationDto {
   @IsEnum(NotificationChannel)
@@ -23,18 +40,33 @@ export class SendTestNotificationDto {
 
 @Controller('notifications')
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly whatsappService: WhatsAppOpenWaService
+  ) {}
 
   /**
    * Returns a list of all registered notification templates in the ERP catalog.
    */
   @Get('templates')
   @RequirePermissions({ action: 'read', subject: 'Notifications' })
-  getTemplates(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return {
-      data: NOTIFICATION_TEMPLATES,
-      total: NOTIFICATION_TEMPLATES.length,
-    };
+  async getTemplates(@Query('page') page: string, @Query('pageSize') pageSize: string) {
+    const p = parseInt(page) || 1;
+    const ps = parseInt(pageSize) || 10;
+    const { data, total } = await this.notificationsService.getTemplates(p, ps);
+    return { data, total };
+  }
+
+  @Post('templates')
+  @RequirePermissions({ action: 'manage', subject: 'Notifications' })
+  async createTemplate(@Body() data: CreateTemplateDto) {
+    return this.notificationsService.createTemplate(data);
+  }
+
+  @Patch('templates/:id')
+  @RequirePermissions({ action: 'manage', subject: 'Notifications' })
+  async updateTemplate(@Param('id') id: string, @Body() data: UpdateTemplateDto) {
+    return this.notificationsService.updateTemplate(id, data);
   }
 
   /**
@@ -65,8 +97,14 @@ export class NotificationsController {
 
     return {
       success: true,
-      message: `Test notification enqueued in the system. Job ID: ${job.id}`,
+      message: `Test notification enqueued in the system. Job ID: ${job?.id || 'skipped'}`,
       job,
     };
+  }
+
+  @Get('whatsapp/status')
+  @RequirePermissions({ action: 'manage', subject: 'Integrations' })
+  getWhatsAppStatus() {
+    return this.whatsappService.getStatus();
   }
 }

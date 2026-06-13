@@ -1,3 +1,12 @@
+export declare enum ProductType {
+    SINGLE = "SINGLE",
+    VARIABLE = "VARIABLE",
+    COMBO = "COMBO"
+}
+export declare class ProductComboLineDto {
+    childVariantId: string;
+    quantity: number;
+}
 export declare class ProductVariantDto {
     id?: string;
     sku?: string;
@@ -15,9 +24,12 @@ export declare class CreateProductDto {
     categoryId: string;
     brandId?: string;
     baseSku?: string;
+    type?: ProductType;
     isVariable?: boolean;
+    manageBatches?: boolean;
     costPrice?: number;
     basePrice?: number;
+    comboLines?: ProductComboLineDto[];
     variants?: ProductVariantDto[];
     isActive?: boolean;
     isPublished?: boolean;

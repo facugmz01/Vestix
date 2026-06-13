@@ -11,4 +11,8 @@ export declare class SettingsService implements OnModuleInit {
     private loadSettingsFromDb;
     getSettings(): Promise<any>;
     updateSection(section: string, payload: any, userId: string): Promise<any>;
+    testAfipConnection(): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

@@ -9,6 +9,7 @@ export declare class StockMovementService {
         quantity: number;
         purchaseCost: number;
         purchaseOrderId: string;
+        batchId?: string;
     }, tx?: any): Promise<any>;
     processSaleExit(payload: {
         variantId: string;

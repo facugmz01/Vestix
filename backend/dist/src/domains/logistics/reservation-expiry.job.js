@@ -46,11 +46,11 @@ let ReservationExpiryJob = ReservationExpiryJob_1 = class ReservationExpiryJob {
                         where: { id: reservation.id },
                         data: { status: RESERVATION_EXPIRED_STATUS },
                     });
-                    await tx.stockLevel.update({
-                        where: { variantId_warehouseId: {
-                                variantId: reservation.variantId,
-                                warehouseId: reservation.warehouseId,
-                            } },
+                    await tx.stockLevel.updateMany({
+                        where: {
+                            variantId: reservation.variantId,
+                            warehouseId: reservation.warehouseId,
+                        },
                         data: {
                             reservedQuantity: { decrement: reservation.quantity },
                             availableQuantity: { increment: reservation.quantity },

@@ -20,7 +20,7 @@ const PROVIDER_META: Record<string, { logo: string; color: string; description: 
   MERCADOLIBRE:    { logo: '🛒', color: '#ffe600', description: 'Sincronización de catálogo y pedidos del marketplace.' },
   AFIP:            { logo: '🏛️', color: '#003a7d', description: 'Facturación electrónica y consulta de padrones.' },
   SENDGRID:        { logo: '📧', color: '#1a82e2', description: 'Envío de emails transaccionales y marketing.' },
-  WHATSAPP_TWILIO: { logo: '💬', color: '#25d366', description: 'Notificaciones via WhatsApp Business.' },
+  WHATSAPP:        { logo: '💬', color: '#25d366', description: 'Notificaciones via WhatsApp (OpenWA).' },
   WOOCOMMERCE:     { logo: '🛍️', color: '#7f54b3', description: 'Sincronización bidireccional con tienda WordPress.' },
   SHOPIFY:         { logo: '🏪', color: '#96bf48', description: 'Catálogo, stock y pedidos de Shopify.' },
   GENERIC_WEBHOOK: { logo: '🔗', color: '#6b7280', description: 'Webhook genérico para integraciones custom.' },

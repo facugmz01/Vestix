@@ -99,7 +99,9 @@ export declare class ProductsController {
         description: string | null;
         categoryId: string;
         brandId: string | null;
+        type: import(".prisma/client").$Enums.ProductType;
         isVariable: boolean;
+        manageBatches: boolean;
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
@@ -130,7 +132,9 @@ export declare class ProductsController {
             description: string | null;
             categoryId: string;
             brandId: string | null;
+            type: import(".prisma/client").$Enums.ProductType;
             isVariable: boolean;
+            manageBatches: boolean;
             costPrice: number;
             isActive: boolean;
             isPublished: boolean;
@@ -179,7 +183,9 @@ export declare class ProductsController {
         description: string | null;
         categoryId: string;
         brandId: string | null;
+        type: import(".prisma/client").$Enums.ProductType;
         isVariable: boolean;
+        manageBatches: boolean;
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
@@ -233,6 +239,12 @@ export declare class ProductsController {
             createdAt: Date;
             updatedAt: Date;
         };
+        comboLines: {
+            id: string;
+            parentProductId: string;
+            childVariantId: string;
+            quantity: number;
+        }[];
     } & {
         id: string;
         name: string;
@@ -240,7 +252,9 @@ export declare class ProductsController {
         description: string | null;
         categoryId: string;
         brandId: string | null;
+        type: import(".prisma/client").$Enums.ProductType;
         isVariable: boolean;
+        manageBatches: boolean;
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
@@ -256,7 +270,9 @@ export declare class ProductsController {
         description: string | null;
         categoryId: string;
         brandId: string | null;
+        type: import(".prisma/client").$Enums.ProductType;
         isVariable: boolean;
+        manageBatches: boolean;
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
@@ -277,7 +293,9 @@ export declare class VariantsController {
             description: string | null;
             categoryId: string;
             brandId: string | null;
+            type: import(".prisma/client").$Enums.ProductType;
             isVariable: boolean;
+            manageBatches: boolean;
             costPrice: number;
             isActive: boolean;
             isPublished: boolean;

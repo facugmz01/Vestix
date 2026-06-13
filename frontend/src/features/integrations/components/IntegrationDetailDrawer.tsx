@@ -9,6 +9,7 @@ import {
 import { Drawer, Button, Table, Badge } from '@/components/ui';
 import { integrationsApi } from '@/api/integrations.api';
 import { queryKeys } from '@/api/queryKeys';
+import { notificationsApi } from '@/api/notifications.api';
 import type { Integration, WebhookLog } from '@/types';
 import { ActionGuard } from '@/rbac/ActionGuard';
 
@@ -41,10 +42,8 @@ const PROVIDER_FIELDS: Record<string, { key: string; label: string; placeholder:
     { key: 'fromEmail', label: 'Email Remitente', placeholder: 'no-reply@tuempresa.com' },
     { key: 'fromName', label: 'Nombre Remitente', placeholder: 'Tu Empresa ERP' },
   ],
-  WHATSAPP_TWILIO: [
-    { key: 'accountSid', label: 'Account SID', placeholder: 'ACxxx' },
-    { key: 'authToken', label: 'Auth Token', placeholder: 'xxxxxxxx', secret: true },
-    { key: 'fromNumber', label: 'Número WhatsApp', placeholder: 'whatsapp:+1415xxxxxxx' },
+  WHATSAPP: [
+    { key: 'sessionName', label: 'Nombre de Sesión', placeholder: 'erp-main-session' },
   ],
   WOOCOMMERCE: [
     { key: 'storeUrl', label: 'URL de la Tienda', placeholder: 'https://mitienda.com' },
@@ -68,7 +67,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
   const [configValues, setConfigValues] = useState<Record<string, string>>({});
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [logsPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<'config' | 'webhooks' | 'failed-afip' | 'mappings'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'webhooks' | 'failed-afip' | 'mappings' | 'qr'>('config');
 
   // Variant Mapping UI States
   const [variantSearch, setVariantSearch] = useState('');
@@ -100,6 +99,13 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
     queryKey: ['variants', 'search', variantSearch],
     queryFn: () => integrationsApi.searchVariants(variantSearch),
     enabled: variantSearch.length >= 2 && !selectedVariantId,
+  });
+
+  const { data: waStatus, isLoading: isLoadingWa, refetch: refetchWa } = useQuery({
+    queryKey: ['whatsapp', 'status'],
+    queryFn: () => notificationsApi.getWhatsAppStatus(),
+    enabled: open && !!integration && integration.provider === 'WHATSAPP' && activeTab === 'qr',
+    refetchInterval: (query) => (!query.state.data?.isReady && activeTab === 'qr') ? 3000 : false,
   });
 
   const saveMutation = useMutation({
@@ -225,6 +231,9 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
           )}
           {integration.provider === 'WOOCOMMERCE' && (
             <button style={tabStyle('mappings')} onClick={() => setActiveTab('mappings')}>Mapeo de Variantes</button>
+          )}
+          {integration.provider === 'WHATSAPP' && (
+            <button style={tabStyle('qr')} onClick={() => setActiveTab('qr')}>Vincular Dispositivo (QR)</button>
           )}
         </div>
 
@@ -525,6 +534,38 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
               )}
             </div>
 
+          </div>
+        )}
+
+        {/* WhatsApp QR Tab */}
+        {activeTab === 'qr' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border)', padding: '40px' }}>
+            {isLoadingWa ? (
+              <p style={{ color: 'var(--text-muted)' }}>Cargando estado de sesión...</p>
+            ) : waStatus?.isReady ? (
+              <>
+                <div style={{ width: 80, height: 80, borderRadius: 40, background: 'rgba(37,211,102,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                  <CheckCircle size={40} color="#25D366" />
+                </div>
+                <h3 style={{ margin: 0, fontSize: 20 }}>Dispositivo Vinculado</h3>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: 10 }}>Tu sesión de WhatsApp está activa y lista para enviar mensajes.</p>
+                <Button variant="outline" style={{ marginTop: 20 }} onClick={() => refetchWa()}>Verificar de nuevo</Button>
+              </>
+            ) : waStatus?.qrCode ? (
+              <>
+                <h3 style={{ margin: '0 0 10px', fontSize: 18 }}>Escanea este código QR</h3>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: 24, fontSize: 14 }}>Abre WhatsApp en tu teléfono, ve a Dispositivos vinculados y escanea el código.</p>
+                <div style={{ padding: 16, background: '#fff', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                  <img src={waStatus.qrCode} alt="WhatsApp QR Code" style={{ width: 256, height: 256 }} />
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 24, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <RefreshCw size={12} className="spin" />
+                  Actualizando automáticamente...
+                </p>
+              </>
+            ) : (
+              <p style={{ color: 'var(--text-muted)' }}>Iniciando sesión de WhatsApp. Por favor, espera...</p>
+            )}
           </div>
         )}
 

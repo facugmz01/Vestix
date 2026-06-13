@@ -114,13 +114,45 @@ let SettingsService = SettingsService_1 = class SettingsService {
     async updateSection(section, payload, userId) {
         const current = await this.getSettings();
         const previousValue = current[section];
-        const newValue = { ...previousValue, ...payload };
-        await this.prisma.systemSettings.update({
+        const updatedSection = { ...previousValue, ...payload };
+        const result = await this.prisma.systemSettings.update({
             where: { id: 'default' },
             data: {
-                [section]: newValue,
+                [section]: updatedSection,
             },
         });
+        const newValue = result[section];
+        if (section === 'general') {
+            const g = newValue;
+            await this.prisma.storeSettings.updateMany({
+                where: { id: 'default' },
+                data: {
+                    storeName: g.companyName || undefined,
+                },
+            });
+            const branch = await this.prisma.branch.findFirst({ where: { code: 'CENTRAL' } });
+            if (branch) {
+                const currentBranchSettings = branch.settings || {};
+                await this.prisma.branch.update({
+                    where: { id: branch.id },
+                    data: {
+                        name: g.companyName ? `${g.companyName} - Casa Central` : undefined,
+                        address: g.address,
+                        phone: g.phone,
+                        settings: {
+                            ...currentBranchSettings,
+                            taxId: g.taxId || currentBranchSettings.taxId,
+                            companyName: g.companyName || currentBranchSettings.companyName,
+                            companyEmail: g.email || currentBranchSettings.companyEmail,
+                            companyPhone: g.phone || currentBranchSettings.companyPhone,
+                            companyAddress: g.address || currentBranchSettings.companyAddress,
+                            posReceiptHeader: g.companyName || currentBranchSettings.posReceiptHeader,
+                            posReceiptFooter: g.taxId || g.address ? `CUIT: ${g.taxId || ''} | ${g.address || ''}` : currentBranchSettings.posReceiptFooter,
+                        },
+                    },
+                });
+            }
+        }
         this.cachedSettings[section] = newValue;
         await this.auditService.log({
             userId,
@@ -133,6 +165,12 @@ let SettingsService = SettingsService_1 = class SettingsService {
             description: `Updated settings section: ${section}`,
         });
         return newValue;
+    }
+    async testAfipConnection() {
+        return {
+            success: true,
+            message: 'Conexión con AFIP establecida correctamente (Entorno simulado)'
+        };
     }
 };
 exports.SettingsService = SettingsService;

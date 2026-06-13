@@ -1,0 +1,244 @@
+.container {
+  padding: 24px;
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.searchSection {
+  position: relative;
+  margin-bottom: 24px;
+  max-width: 600px;
+}
+
+.searchInputWrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 16px;
+  height: 48px;
+}
+
+.searchIcon {
+  color: var(--text-muted);
+  margin-right: 12px;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 15px;
+  outline: none;
+}
+
+.searchResults {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 8px;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.noResults {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.searchResultItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.searchResultItem:hover {
+  background: var(--bg-base);
+}
+
+.searchResultInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.searchResultName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.searchResultSku {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.addIcon {
+  color: var(--brand-primary);
+}
+
+.itemsTable {
+  margin-top: 24px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.table th {
+  text-align: left;
+  padding: 12px;
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.itemName {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.itemAttributes {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.quantityControl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.quantityControl button {
+  background: transparent;
+  border: none;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: 4px;
+}
+
+.quantityControl button:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.quantityControl span {
+  font-weight: 600;
+  font-size: 14px;
+  width: 30px;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Print Layout */
+.printArea {
+  display: none;
+}
+
+@media print {
+  .noPrint {
+    display: none !important;
+  }
+
+  .printArea {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 0;
+    margin: 0;
+  }
+
+  .label {
+    width: 38mm; /* Approximate width of standard small barcode label */
+    height: 25mm;
+    border: 1px dashed #ccc; /* Guía de corte, útil si imprimes en hoja A4 en lugar de térmica */
+    padding: 2mm;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    page-break-inside: avoid;
+  }
+
+  .labelHeader {
+    font-size: 6px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .labelProductName {
+    font-size: 8px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+
+  .labelAttributes {
+    font-size: 6px;
+    color: #333;
+  }
+
+  .barcodeVisual {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    background: #000;
+    color: #fff;
+    padding: 2px 4px;
+    margin: 2px 0;
+  }
+
+  .labelPrice {
+    font-size: 9px;
+    font-weight: bold;
+  }
+}

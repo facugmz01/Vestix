@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Building2, Upload, CheckCircle, XCircle } from 'lucide-react';
+import { Building2, Upload } from 'lucide-react';
 import { Input, Button } from '@/components/ui';
 import { settingsApi, type GeneralSettings } from '@/api/settings.api';
 import { queryKeys } from '@/api/queryKeys';

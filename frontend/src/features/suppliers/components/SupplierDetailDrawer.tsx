@@ -1,4 +1,4 @@
-import { Drawer, Badge, Button, Table } from '@/components/ui';
+import { Drawer, Button, Table } from '@/components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/api/queryKeys';
 import { suppliersApi } from '@/api/suppliers.api';

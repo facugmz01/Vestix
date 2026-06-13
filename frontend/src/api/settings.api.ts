@@ -54,6 +54,13 @@ export interface NotificationSettings {
   notifyOnPurchase: boolean;
   notifyOnLowStock: boolean;
   notifyOnTransfer: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smsGatewayUrl?: string;
+  openWaUrl?: string;
+  openWaSession?: string;
 }
 
 export interface IntegrationSettings {
@@ -61,6 +68,13 @@ export interface IntegrationSettings {
   mercadolibreEnabled: boolean;
   woocommerceEnabled: boolean;
   shopifyEnabled: boolean;
+  mlAppId?: string;
+  mlSecretKey?: string;
+  shopifyStoreUrl?: string;
+  shopifyAccessToken?: string;
+  wooStoreUrl?: string;
+  wooConsumerKey?: string;
+  wooConsumerSecret?: string;
 }
 
 export interface OfflineSettings {

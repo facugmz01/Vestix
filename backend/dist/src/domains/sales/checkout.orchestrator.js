@@ -65,6 +65,8 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
         if (existingOrder) {
             return { status: 'ALREADY_PROCESSED', order: existingOrder };
         }
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const pricingSettings = settings?.pricing || {};
         const evaluatedLines = [];
         for (const lineDto of dto.lines) {
             const variant = await this.prisma.productVariant.findUnique({ where: { id: lineDto.variantId } });
@@ -77,7 +79,16 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
             else {
                 resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, variant.basePrice, dto.customerId);
             }
-            const manualDiscountAmount = lineDto.discountPct ? (resolvedBasePrice * (lineDto.discountPct / 100)) : 0;
+            const manualDiscountPct = lineDto.discountPct || 0;
+            if (manualDiscountPct > 0) {
+                if (pricingSettings.allowManualDiscount === false) {
+                    throw new common_1.BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
+                }
+                if (pricingSettings.maxDiscountPct && manualDiscountPct > pricingSettings.maxDiscountPct) {
+                    throw new common_1.BadRequestException(`El descuento manual excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`);
+                }
+            }
+            const manualDiscountAmount = resolvedBasePrice * (manualDiscountPct / 100);
             const finalPriceAfterManualDiscount = resolvedBasePrice - manualDiscountAmount;
             evaluatedLines.push({
                 variantId: lineDto.variantId,
@@ -253,16 +264,36 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
     }
     async deductStock(tx, data) {
         for (const line of data.lines) {
-            await this.inventoryService.recordMovement({
-                variantId: line.variantId,
-                sourceWarehouseId: data.warehouseId,
-                destinationWarehouseId: null,
-                branchId: data.branchId,
-                type: 'SALE_EXIT',
-                quantity: line.quantity,
-                unitCost: line.basePrice,
-                referenceId: data.orderId
-            }, tx);
+            const variantWithProduct = await tx.productVariant.findUnique({
+                where: { id: line.variantId },
+                include: { product: { include: { comboLines: true } } }
+            });
+            if (variantWithProduct?.product?.type === 'COMBO') {
+                for (const cl of variantWithProduct.product.comboLines) {
+                    await this.inventoryService.recordMovement({
+                        variantId: cl.childVariantId,
+                        sourceWarehouseId: data.warehouseId,
+                        destinationWarehouseId: null,
+                        branchId: data.branchId,
+                        type: 'SALE_EXIT',
+                        quantity: line.quantity * cl.quantity,
+                        unitCost: line.basePrice,
+                        referenceId: data.orderId
+                    }, tx);
+                }
+            }
+            else {
+                await this.inventoryService.recordMovement({
+                    variantId: line.variantId,
+                    sourceWarehouseId: data.warehouseId,
+                    destinationWarehouseId: null,
+                    branchId: data.branchId,
+                    type: 'SALE_EXIT',
+                    quantity: line.quantity,
+                    unitCost: line.basePrice,
+                    referenceId: data.orderId
+                }, tx);
+            }
         }
     }
     async cancelOrder(id) {

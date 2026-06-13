@@ -3,11 +3,14 @@ import { StockReservation, ReservationStatus, ReservationLine } from './models/r
 import { StockMovementService } from '../stock-movement.service';
 import * as crypto from 'crypto';
 
+import { PrismaService } from '../../../core/prisma/prisma.service';
+
 @Injectable()
 export class ReservationsService {
-  constructor(private readonly stockService: StockMovementService) {}
-
-  private holds: StockReservation[] = [];
+  constructor(
+    private readonly stockService: StockMovementService,
+    private readonly prisma: PrismaService
+  ) {}
 
   /**
    * 1. CREATE HOLD (e.g., User adds item to E-commerce Cart)
@@ -22,7 +25,9 @@ export class ReservationsService {
     ttlMinutes?: number;
   }) {
     // Prevent duplicate active holds for the same cart
-    const existing = this.holds.find(h => h.id === payload.cartId && h.status === ReservationStatus.ACTIVE);
+    const existing = await this.prisma.cartHold.findFirst({
+      where: { id: payload.cartId, status: ReservationStatus.ACTIVE }
+    });
     if (existing) throw new BadRequestException('An active reservation already exists for this cart.');
 
     // Secure the stock. If the ledger throws (e.g., physical stock = 0), the reservation fails and cart throws error.
@@ -40,19 +45,18 @@ export class ReservationsService {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + ttl);
 
-    const reservation: StockReservation = {
-      id: payload.cartId,
-      warehouseId: payload.warehouseId,
-      branchId: payload.branchId,
-      customerId: payload.customerId,
-      lines: payload.lines,
-      status: ReservationStatus.ACTIVE,
-      expiresAt,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const reservation = await this.prisma.cartHold.create({
+      data: {
+        id: payload.cartId,
+        warehouseId: payload.warehouseId,
+        branchId: payload.branchId,
+        customerId: payload.customerId,
+        lines: payload.lines as any,
+        status: ReservationStatus.ACTIVE,
+        expiresAt,
+      }
+    });
 
-    this.holds.push(reservation);
     return reservation;
   }
 
@@ -61,27 +65,28 @@ export class ReservationsService {
    * The Sales Module will handle the physical `SALE` exit. We just mark the tracking lock as resolved.
    */
   async completeReservation(cartId: string) {
-    const reservation = this.holds.find(h => h.id === cartId);
+    const reservation = await this.prisma.cartHold.findUnique({ where: { id: cartId } });
     if (!reservation) throw new NotFoundException('Reservation tracking not found');
     
-    // Even if it technically EXPIRED on our end, if the payment gateway cleared, we must accept it.
-    reservation.status = ReservationStatus.COMPLETED;
-    reservation.updatedAt = new Date();
-    return reservation;
+    return this.prisma.cartHold.update({
+      where: { id: cartId },
+      data: { status: ReservationStatus.COMPLETED }
+    });
   }
 
   /**
    * 3. EXPLICIT CANCEL (e.g., User clears cart or payment gateway explicitly declines)
    */
   async cancelReservation(cartId: string) {
-    const reservation = this.holds.find(h => h.id === cartId);
+    const reservation = await this.prisma.cartHold.findUnique({ where: { id: cartId } });
     if (!reservation) throw new NotFoundException('Reservation not found');
     if (reservation.status !== ReservationStatus.ACTIVE) {
        throw new BadRequestException('Only active reservations can be explicitly cancelled.');
     }
 
     // Release stock back to the sellable pool
-    for (const line of reservation.lines) {
+    const lines = reservation.lines as any as ReservationLine[];
+    for (const line of lines) {
       await this.stockService['inventoryLedger'].releaseReservation(
         line.variantId,
         reservation.warehouseId,
@@ -91,9 +96,10 @@ export class ReservationsService {
       );
     }
 
-    reservation.status = ReservationStatus.CANCELLED;
-    reservation.updatedAt = new Date();
-    return reservation;
+    return this.prisma.cartHold.update({
+      where: { id: cartId },
+      data: { status: ReservationStatus.CANCELLED }
+    });
   }
 
   /**
@@ -103,12 +109,15 @@ export class ReservationsService {
    */
   async sweepExpiredReservations() {
     const now = new Date();
-    const expiredHolds = this.holds.filter(h => h.status === ReservationStatus.ACTIVE && h.expiresAt < now);
+    const expiredHolds = await this.prisma.cartHold.findMany({
+      where: { status: ReservationStatus.ACTIVE, expiresAt: { lt: now } }
+    });
 
     let releasedCount = 0;
     for (const hold of expiredHolds) {
+      const lines = hold.lines as any as ReservationLine[];
       // Release stock in the double-entry ledger
-      for (const line of hold.lines) {
+      for (const line of lines) {
         await this.stockService['inventoryLedger'].releaseReservation(
           line.variantId,
           hold.warehouseId,
@@ -117,8 +126,11 @@ export class ReservationsService {
           `CART-${hold.id}`
         );
       }
-      hold.status = ReservationStatus.EXPIRED;
-      hold.updatedAt = new Date();
+      
+      await this.prisma.cartHold.update({
+        where: { id: hold.id },
+        data: { status: ReservationStatus.EXPIRED }
+      });
       releasedCount++;
     }
 

@@ -9,9 +9,28 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateProductDto = exports.ProductVariantDto = void 0;
+exports.CreateProductDto = exports.ProductVariantDto = exports.ProductComboLineDto = exports.ProductType = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
+var ProductType;
+(function (ProductType) {
+    ProductType["SINGLE"] = "SINGLE";
+    ProductType["VARIABLE"] = "VARIABLE";
+    ProductType["COMBO"] = "COMBO";
+})(ProductType || (exports.ProductType = ProductType = {}));
+class ProductComboLineDto {
+}
+exports.ProductComboLineDto = ProductComboLineDto;
+__decorate([
+    (0, class_validator_1.IsUUID)('4'),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], ProductComboLineDto.prototype, "childVariantId", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", Number)
+], ProductComboLineDto.prototype, "quantity", void 0);
 class ProductVariantDto {
 }
 exports.ProductVariantDto = ProductVariantDto;
@@ -90,9 +109,19 @@ __decorate([
 ], CreateProductDto.prototype, "baseSku", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(ProductType),
+    __metadata("design:type", String)
+], CreateProductDto.prototype, "type", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateProductDto.prototype, "isVariable", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateProductDto.prototype, "manageBatches", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)(),
@@ -103,6 +132,13 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "basePrice", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => ProductComboLineDto),
+    __metadata("design:type", Array)
+], CreateProductDto.prototype, "comboLines", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),

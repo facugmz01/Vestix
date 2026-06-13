@@ -25,7 +25,7 @@ cd $APP_DIR/backend
 rm -rf node_modules
 npm install --unsafe-perm
 npx prisma generate
-npx prisma db push --accept-data-loss
+npx prisma db push
 npm run build
 
 # 3. Actualizar y compilar Frontend

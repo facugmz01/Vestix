@@ -100,6 +100,14 @@ export interface AttributeValue {
   value: string;
 }
 
+export type ProductType = 'SINGLE' | 'VARIABLE' | 'COMBO';
+
+export interface ProductComboLine {
+  id?: string;
+  childVariantId: string;
+  quantity: number;
+}
+
 export interface Product {
   id: string; 
   name: string; 
@@ -109,12 +117,15 @@ export interface Product {
   brandId?: string;
   brand?: Brand;
   
-  isVariable: boolean;
+  type: ProductType;
+  manageBatches: boolean;
+  isVariable: boolean; // Deprecated
   costPrice: number;
   
   basePrice?: number;
   taxRate?: number;
   variants?: ProductVariant[];
+  comboLines?: ProductComboLine[];
   isActive: boolean; 
   isPublished: boolean;
   images: string[]; 

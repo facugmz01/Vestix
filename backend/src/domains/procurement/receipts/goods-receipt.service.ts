@@ -42,7 +42,7 @@ export class GoodsReceiptService {
   async draftReceipt(payload: {
     purchaseOrderId: string;
     receivedByUserId?: string;
-    scannedItems: { poLineItemId: string, variantId: string, quantity: number }[];
+    scannedItems: { poLineItemId: string, variantId: string, quantity: number, batchLot?: string, batchExpirationDate?: string }[];
     notes?: string;
   }) {
     const po = await this.purchasingService.getPO(payload.purchaseOrderId);
@@ -66,6 +66,8 @@ export class GoodsReceiptService {
         expectedQuantity: expected,
         receivedQuantity: scan.quantity,
         difference,
+        batchLot: scan.batchLot,
+        batchExpirationDate: scan.batchExpirationDate ? new Date(scan.batchExpirationDate) : undefined,
         notes: difference > 0 ? 'Overshipment' : (difference < 0 ? 'Short shipment' : undefined),
       });
     }
@@ -93,7 +95,7 @@ export class GoodsReceiptService {
     return this.prisma.$transaction(async (tx) => {
       const receipt = await tx.goodsReceipt.findUnique({
         where: { id: receiptId },
-        include: { lines: { include: { poLineItem: true } } }
+        include: { lines: { include: { poLineItem: true } }, purchaseOrder: true }
       });
 
       if (!receipt) throw new NotFoundException('Goods Receipt not found');
@@ -105,6 +107,31 @@ export class GoodsReceiptService {
 
       // Load Stock
       for (const line of receipt.lines) {
+        let batchId = undefined;
+
+        if (line.batchLot) {
+          // Verify or create ProductBatch
+          let batch = await tx.productBatch.findFirst({
+            where: {
+              variantId: line.variantId,
+              batchNumber: line.batchLot
+            }
+          });
+
+          if (!batch) {
+            batch = await tx.productBatch.create({
+              data: {
+                variantId: line.variantId,
+                batchNumber: line.batchLot,
+                expirationDate: line.batchExpirationDate,
+                manufacturingDate: new Date(),
+                supplierId: receipt.purchaseOrder?.supplierId // Opcional, pero util si se expone en la carga
+              }
+            });
+          }
+          batchId = batch.id;
+        }
+
         await this.stockMovementService.processGoodsReceipt({
           variantId: line.variantId,
           destinationWarehouseId: receipt.destinationWarehouseId,
@@ -112,6 +139,7 @@ export class GoodsReceiptService {
           quantity: line.receivedQuantity,
           purchaseCost: line.poLineItem.unitCost,
           purchaseOrderId: receipt.purchaseOrderId,
+          batchId: batchId
         }, tx);
 
         // Update PO Line received quantity

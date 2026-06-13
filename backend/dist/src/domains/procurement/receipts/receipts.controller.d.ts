@@ -12,6 +12,8 @@ export declare class ReceiptsController {
                 expectedQuantity: number;
                 receivedQuantity: number;
                 difference: number;
+                batchLot: string | null;
+                batchExpirationDate: Date | null;
                 notes: string | null;
             }[];
         } & {
@@ -37,6 +39,8 @@ export declare class ReceiptsController {
             expectedQuantity: number;
             receivedQuantity: number;
             difference: number;
+            batchLot: string | null;
+            batchExpirationDate: Date | null;
             notes: string | null;
         }[];
     } & {
@@ -58,6 +62,8 @@ export declare class ReceiptsController {
             expectedQuantity: number;
             receivedQuantity: number;
             difference: number;
+            batchLot: string | null;
+            batchExpirationDate: Date | null;
             notes: string | null;
         }[];
     } & {
@@ -82,6 +88,8 @@ export declare class ReceiptsController {
             expectedQuantity: number;
             receivedQuantity: number;
             difference: number;
+            batchLot: string | null;
+            batchExpirationDate: Date | null;
             notes: string | null;
         }[];
     } & {

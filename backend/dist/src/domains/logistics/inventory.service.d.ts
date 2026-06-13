@@ -4,6 +4,7 @@ export declare class InventoryService {
     constructor(prisma: PrismaService);
     recordMovement(data: {
         variantId: string;
+        batchId?: string | null;
         sourceWarehouseId: string | null;
         destinationWarehouseId: string | null;
         branchId: string | null;
@@ -20,6 +21,7 @@ export declare class InventoryService {
         id: string;
         variantId: string;
         warehouseId: string;
+        batchId: string | null;
         branchId: string | null;
         physicalQuantity: number;
         reservedQuantity: number;
@@ -30,6 +32,7 @@ export declare class InventoryService {
         id: string;
         variantId: string;
         warehouseId: string;
+        batchId: string | null;
         branchId: string | null;
         physicalQuantity: number;
         reservedQuantity: number;
@@ -69,6 +72,17 @@ export declare class InventoryService {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
             warehouseName: string;
+            destinationWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             variant: {
                 product: {
                     id: string;
@@ -77,7 +91,9 @@ export declare class InventoryService {
                     description: string | null;
                     categoryId: string;
                     brandId: string | null;
+                    type: import(".prisma/client").$Enums.ProductType;
                     isVariable: boolean;
+                    manageBatches: boolean;
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
@@ -112,19 +128,9 @@ export declare class InventoryService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             id: string;
             variantId: string;
+            batchId: string | null;
             sourceWarehouseId: string | null;
             destinationWarehouseId: string | null;
             type: string;
