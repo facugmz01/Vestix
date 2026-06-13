@@ -39,6 +39,37 @@ export interface SystemSettings {
         requireManagerPinForReturns: boolean;
         requireManagerPinForDiscounts: boolean;
     };
+    notifications: {
+        emailEnabled: boolean;
+        smsEnabled: boolean;
+        whatsappEnabled: boolean;
+        pushEnabled: boolean;
+        lowStockThreshold: number;
+        notifyOnSale: boolean;
+        notifyOnPurchase: boolean;
+        notifyOnLowStock: boolean;
+        notifyOnTransfer: boolean;
+        smtpHost?: string;
+        smtpPort?: number;
+        smtpUser?: string;
+        smtpPass?: string;
+        smsGatewayUrl?: string;
+        openWaUrl?: string;
+        openWaSession?: string;
+    };
+    integrations: {
+        mercadopagoEnabled: boolean;
+        mercadolibreEnabled: boolean;
+        woocommerceEnabled: boolean;
+        shopifyEnabled: boolean;
+        mlAppId?: string;
+        mlSecretKey?: string;
+        shopifyStoreUrl?: string;
+        shopifyAccessToken?: string;
+        wooStoreUrl?: string;
+        wooConsumerKey?: string;
+        wooConsumerSecret?: string;
+    };
     updatedAt: Date;
     updatedByUserId: string;
 }

@@ -65,6 +65,16 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
         if (existingOrder) {
             return { status: 'ALREADY_PROCESSED', order: existingOrder };
         }
+        const isQuote = dto.status === 'QUOTE' || dto.status === 'QUOTATION';
+        if (!isQuote && (dto.source === 'POS' || dto.source === 'OFFLINE_POS')) {
+            if (!dto.cashShiftId) {
+                throw new common_1.BadRequestException('Un turno de caja abierto es obligatorio para registrar ventas en el POS.');
+            }
+            const shift = await this.prisma.cashShift.findUnique({ where: { id: dto.cashShiftId } });
+            if (!shift || shift.status !== 'OPEN') {
+                throw new common_1.BadRequestException('El turno de caja provisto no es válido o ya fue cerrado.');
+            }
+        }
         const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
         const pricingSettings = settings?.pricing || {};
         const evaluatedLines = [];
@@ -99,7 +109,7 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
                 finalPrice: finalPriceAfterManualDiscount
             });
         }
-        const cartEvaluation = this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
+        const cartEvaluation = await this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
             id: crypto.randomUUID(),
             variantId: l.variantId,
             categoryId: l.categoryId,
@@ -116,7 +126,6 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
                 finalPrice: line.basePrice - (totalDiscountAmount / line.quantity)
             };
         });
-        const isQuote = dto.status === 'QUOTE' || dto.status === 'QUOTATION';
         const isManualEntry = dto.source === 'POS' || dto.source === 'BACKOFFICE' || dto.source === 'OFFLINE_POS';
         let posTotal = serverCalculatedTotal;
         if (isManualEntry && dto.posGrandTotal !== undefined) {

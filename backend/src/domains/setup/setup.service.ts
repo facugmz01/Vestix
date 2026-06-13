@@ -84,8 +84,8 @@ export class SetupService {
       where: { code: 'CENTRAL' },
       update: {
         name: `${data.companyName} - Casa Central`,
-        address: data.address,
-        phone: data.phone,
+        address: data.address || '',
+        phone: data.phone || '',
         settings: {
           taxId: data.cuit,
           companyName: data.companyName,
@@ -100,8 +100,8 @@ export class SetupService {
         name: `${data.companyName} - Casa Central`,
         code: 'CENTRAL',
         isMain: true,
-        address: data.address,
-        phone: data.phone,
+        address: data.address || '',
+        phone: data.phone || '',
         settings: {
           taxId: data.cuit,
           companyName: data.companyName,

@@ -3,6 +3,19 @@ export declare class SalesService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     getOrderById(id: string): Promise<{
+        customer: {
+            id: string;
+            type: string;
+            fullName: string;
+            taxId: string | null;
+            email: string | null;
+            phone: string | null;
+            creditLimit: number;
+            usedCredit: number;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         lines: ({
             variant: {
                 product: {
@@ -51,19 +64,6 @@ export declare class SalesService {
             historicalName: string | null;
             historicalCost: number | null;
         })[];
-        customer: {
-            id: string;
-            type: string;
-            fullName: string;
-            taxId: string | null;
-            email: string | null;
-            phone: string | null;
-            creditLimit: number;
-            usedCredit: number;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         variance: {
             id: string;
             orderId: string;
@@ -92,19 +92,6 @@ export declare class SalesService {
         syncedAt: Date;
     }>;
     listRecentOrders(branchId: string): Promise<({
-        lines: {
-            id: string;
-            orderId: string;
-            variantId: string;
-            categoryId: string;
-            quantity: number;
-            basePrice: number;
-            discountAmount: number;
-            finalPrice: number;
-            historicalSku: string | null;
-            historicalName: string | null;
-            historicalCost: number | null;
-        }[];
         customer: {
             id: string;
             type: string;
@@ -118,6 +105,19 @@ export declare class SalesService {
             createdAt: Date;
             updatedAt: Date;
         };
+        lines: {
+            id: string;
+            orderId: string;
+            variantId: string;
+            categoryId: string;
+            quantity: number;
+            basePrice: number;
+            discountAmount: number;
+            finalPrice: number;
+            historicalSku: string | null;
+            historicalName: string | null;
+            historicalCost: number | null;
+        }[];
     } & {
         id: string;
         branchId: string;
@@ -144,19 +144,6 @@ export declare class SalesService {
     }): Promise<{
         data: {
             customerName: string;
-            lines: {
-                id: string;
-                orderId: string;
-                variantId: string;
-                categoryId: string;
-                quantity: number;
-                basePrice: number;
-                discountAmount: number;
-                finalPrice: number;
-                historicalSku: string | null;
-                historicalName: string | null;
-                historicalCost: number | null;
-            }[];
             customer: {
                 id: string;
                 type: string;
@@ -170,6 +157,19 @@ export declare class SalesService {
                 createdAt: Date;
                 updatedAt: Date;
             };
+            lines: {
+                id: string;
+                orderId: string;
+                variantId: string;
+                categoryId: string;
+                quantity: number;
+                basePrice: number;
+                discountAmount: number;
+                finalPrice: number;
+                historicalSku: string | null;
+                historicalName: string | null;
+                historicalCost: number | null;
+            }[];
             id: string;
             branchId: string;
             warehouseId: string | null;

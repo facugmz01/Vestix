@@ -36,8 +36,8 @@ export declare class StorefrontAuthController {
     }>;
     getMe(req: Request): Promise<{
         id: string;
-        email: string;
         phone: string;
+        email: string;
         fullName: string;
     }>;
     logout(res: Response): Promise<{
