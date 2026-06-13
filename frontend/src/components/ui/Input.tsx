@@ -8,7 +8,7 @@ interface Props extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode;
 }
 
-export function Input({ label, error, leftIcon, className, id, ...rest }: Props) {
+export function Input({ label, error, helperText, leftIcon, className, id, ...rest }: Props) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
   return (
     <div className={styles.wrapper}>
