@@ -18,43 +18,43 @@ export class SettingsController {
   @Patch('general')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async updateGeneral(@Body() dto: any, @Req() req: any) {
-    return await this.settingsService.updateSection('general', dto, req.user?.id ?? 'unknown');
+    return await this.settingsService.updateSection('general', dto, req.user?.userId ?? 'unknown');
   }
 
   @Patch('pricing')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async updatePricing(@Body() dto: any, @Req() req: any) {
-    return await this.settingsService.updateSection('pricing', dto, req.user?.id ?? 'unknown');
+    return await this.settingsService.updateSection('pricing', dto, req.user?.userId ?? 'unknown');
   }
 
   @Patch('sku-barcode')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async updateSkuBarcode(@Body() dto: any, @Req() req: any) {
-    return await this.settingsService.updateSection('skuBarcode', dto, req.user?.id ?? 'unknown');
+    return await this.settingsService.updateSection('skuBarcode', dto, req.user?.userId ?? 'unknown');
   }
 
   @Patch('invoicing')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async updateInvoicing(@Body() dto: any, @Req() req: any) {
-    return await this.settingsService.updateSection('invoicing', dto, req.user?.id ?? 'unknown');
+    return await this.settingsService.updateSection('invoicing', dto, req.user?.userId ?? 'unknown');
   }
 
   @Patch('notifications')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async updateNotifications(@Body() dto: any, @Req() req: any) {
-    return await this.settingsService.updateSection('notifications', dto, req.user?.id ?? 'unknown');
+    return await this.settingsService.updateSection('notifications', dto, req.user?.userId ?? 'unknown');
   }
 
   @Patch('integrations')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async updateIntegrations(@Body() dto: any, @Req() req: any) {
-    return await this.settingsService.updateSection('integrations', dto, req.user?.id ?? 'unknown');
+    return await this.settingsService.updateSection('integrations', dto, req.user?.userId ?? 'unknown');
   }
 
   @Patch('offline')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async updateOffline(@Body() dto: any, @Req() req: any) {
-    return await this.settingsService.updateSection('offline', dto, req.user?.id ?? 'unknown');
+    return await this.settingsService.updateSection('offline', dto, req.user?.userId ?? 'unknown');
   }
 
   @Post('invoicing/test-afip')
@@ -86,7 +86,7 @@ export class SettingsController {
       throw new BadRequestException('No file uploaded');
     }
     const logoUrl = `/uploads/logos/${file.filename}`;
-    await this.settingsService.updateSection('general', { logoUrl }, req.user?.id ?? 'unknown');
+    await this.settingsService.updateSection('general', { logoUrl }, req.user?.userId ?? 'unknown');
     return { logoUrl };
   }
 }

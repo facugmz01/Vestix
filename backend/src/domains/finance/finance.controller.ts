@@ -45,19 +45,19 @@ export class FinanceController {
   @RequirePermissions({ action: 'read', subject: 'Finance' })
   getActiveShift(@Req() req: any) {
     // req.user contains the authenticated user token
-    return this.cashService.getActiveShiftForUser(req.user.id);
+    return this.cashService.getActiveShiftForUser(req.user.userId);
   }
 
   @Post('treasury/shifts/open')
   @RequirePermissions({ action: 'manage', subject: 'Finance' })
   openShift(@Req() req: any, @Body() body: { cashRegisterId: string, openingAmount: number }) {
-    return this.cashService.openShift(body.cashRegisterId, req.user.id, body.openingAmount);
+    return this.cashService.openShift(body.cashRegisterId, req.user.userId, body.openingAmount);
   }
 
   @Post('treasury/shifts/close')
   @RequirePermissions({ action: 'manage', subject: 'Finance' })
   closeShift(@Req() req: any, @Body() body: { shiftId: string, closingAmount: number, notes?: string }) {
-    return this.cashService.closeShift(body.shiftId, req.user.id, body.closingAmount, body.notes);
+    return this.cashService.closeShift(body.shiftId, req.user.userId, body.closingAmount, body.notes);
   }
 
   @Get('treasury/shifts')
@@ -81,7 +81,7 @@ export class FinanceController {
   @Post('treasury/shifts/:id/movements')
   @RequirePermissions({ action: 'manage', subject: 'Finance' })
   addManualMovement(@Req() req: any, @Param('id') id: string, @Body() body: { type: 'INCOME' | 'EXPENSE', amount: number, concept: string }) {
-    return this.cashService.addManualMovement(id, req.user.id, body.type, body.amount, body.concept);
+    return this.cashService.addManualMovement(id, req.user.userId, body.type, body.amount, body.concept);
   }
 
   @Get('payments')
