@@ -27,25 +27,25 @@ let SettingsController = class SettingsController {
         return await this.settingsService.getSettings();
     }
     async updateGeneral(dto, req) {
-        return await this.settingsService.updateSection('general', dto, req.user?.id ?? 'unknown');
+        return await this.settingsService.updateSection('general', dto, req.user?.userId ?? 'unknown');
     }
     async updatePricing(dto, req) {
-        return await this.settingsService.updateSection('pricing', dto, req.user?.id ?? 'unknown');
+        return await this.settingsService.updateSection('pricing', dto, req.user?.userId ?? 'unknown');
     }
     async updateSkuBarcode(dto, req) {
-        return await this.settingsService.updateSection('skuBarcode', dto, req.user?.id ?? 'unknown');
+        return await this.settingsService.updateSection('skuBarcode', dto, req.user?.userId ?? 'unknown');
     }
     async updateInvoicing(dto, req) {
-        return await this.settingsService.updateSection('invoicing', dto, req.user?.id ?? 'unknown');
+        return await this.settingsService.updateSection('invoicing', dto, req.user?.userId ?? 'unknown');
     }
     async updateNotifications(dto, req) {
-        return await this.settingsService.updateSection('notifications', dto, req.user?.id ?? 'unknown');
+        return await this.settingsService.updateSection('notifications', dto, req.user?.userId ?? 'unknown');
     }
     async updateIntegrations(dto, req) {
-        return await this.settingsService.updateSection('integrations', dto, req.user?.id ?? 'unknown');
+        return await this.settingsService.updateSection('integrations', dto, req.user?.userId ?? 'unknown');
     }
     async updateOffline(dto, req) {
-        return await this.settingsService.updateSection('offline', dto, req.user?.id ?? 'unknown');
+        return await this.settingsService.updateSection('offline', dto, req.user?.userId ?? 'unknown');
     }
     async testAfipConnection() {
         return this.settingsService.testAfipConnection();
@@ -55,7 +55,7 @@ let SettingsController = class SettingsController {
             throw new common_1.BadRequestException('No file uploaded');
         }
         const logoUrl = `/uploads/logos/${file.filename}`;
-        await this.settingsService.updateSection('general', { logoUrl }, req.user?.id ?? 'unknown');
+        await this.settingsService.updateSection('general', { logoUrl }, req.user?.userId ?? 'unknown');
         return { logoUrl };
     }
 };

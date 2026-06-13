@@ -38,13 +38,13 @@ let FinanceController = class FinanceController {
         return this.accountsService.updatePaymentMethod(id, body);
     }
     getActiveShift(req) {
-        return this.cashService.getActiveShiftForUser(req.user.id);
+        return this.cashService.getActiveShiftForUser(req.user.userId);
     }
     openShift(req, body) {
-        return this.cashService.openShift(body.cashRegisterId, req.user.id, body.openingAmount);
+        return this.cashService.openShift(body.cashRegisterId, req.user.userId, body.openingAmount);
     }
     closeShift(req, body) {
-        return this.cashService.closeShift(body.shiftId, req.user.id, body.closingAmount, body.notes);
+        return this.cashService.closeShift(body.shiftId, req.user.userId, body.closingAmount, body.notes);
     }
     getShifts(page, pageSize) {
         return this.cashService.getShifts(Number(page) || 1, Number(pageSize) || 15);
@@ -56,7 +56,7 @@ let FinanceController = class FinanceController {
         return this.cashService.getShiftMovements(id);
     }
     addManualMovement(req, id, body) {
-        return this.cashService.addManualMovement(id, req.user.id, body.type, body.amount, body.concept);
+        return this.cashService.addManualMovement(id, req.user.userId, body.type, body.amount, body.concept);
     }
     getPayments(page, pageSize) {
         return { data: [], total: 0 };
