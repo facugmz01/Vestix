@@ -4,7 +4,7 @@ import { Plus, Edit2, Trash2, Eye, Tag, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip
 } from '@/components/ui';
 
 import { priceListsApi } from '@/api/priceLists.api';
@@ -65,7 +65,7 @@ export default function PriceListsPage() {
     setDeleteOpen(true);
   };
 
-  const handleAssign = (list: PriceList) => {
+  const handleAssign = (_list: PriceList) => {
     // Mock action since we don't have a full Assign UI implemented in this turn
     toast('La asignación a clientes se realiza desde la ficha de cada Cliente (CRM).', { icon: 'ℹ️' });
   };

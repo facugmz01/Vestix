@@ -17,7 +17,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { useAuthStore } from '@/store/auth.store';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import type { ProductVariant } from '@/types';
-import { Button, Input, Drawer, Modal } from '@/components/ui';
+import { Button, Input, Modal } from '@/components/ui';
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
 import { ShiftManagerModal } from '@/features/sales/components/ShiftManagerModal';
 

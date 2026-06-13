@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Input } from '@/components/ui';
 import type { PaymentMethodType } from '@/types';
-import { Trash2, Plus, CreditCard, Banknote, Landmark, Gift } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export interface MixedPaymentLine {
@@ -51,12 +51,6 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
 
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
-  const getMethodIcon = (m: string) => {
-    if (m === 'CASH') return <Banknote size={16} />;
-    if (m === 'CREDIT_CARD' || m === 'DEBIT_CARD') return <CreditCard size={16} />;
-    if (m === 'BANK_TRANSFER') return <Landmark size={16} />;
-    return <Gift size={16} />;
-  };
 
   return (
     <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', padding: '16px' }}>
@@ -67,7 +61,7 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-        {lines.map((l, i) => (
+        {lines.map((l) => (
           <div key={l.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
             <div style={{ flex: 2 }}>
               <select 

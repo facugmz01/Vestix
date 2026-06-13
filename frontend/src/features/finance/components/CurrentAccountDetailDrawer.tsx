@@ -134,9 +134,11 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                       if (m.documentType === 'CREDIT_NOTE') { color = 'orange'; }
                       return (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <Badge color={color as any} style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
-                            {icon} {m.documentType}
-                          </Badge>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
+                            <Badge color={color as any}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{icon} {m.documentType}</span>
+                            </Badge>
+                          </div>
                           <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{m.referenceId}</span>
                         </div>
                       );

@@ -1,5 +1,5 @@
 import { 
-  PageContainer, Section, Tabs
+  PageContainer, Section
 } from '@/components/ui';
 import { SyncQueuePanel } from '@/features/offline/components/SyncQueuePanel';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';

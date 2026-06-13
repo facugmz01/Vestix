@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 
 import { 
-  PageContainer, Tabs
+  PageContainer
 } from '@/components/ui';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { GeneralSettingsPanel } from '@/features/settings/components/GeneralSettingsPanel';

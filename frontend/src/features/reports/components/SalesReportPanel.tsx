@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Download, RefreshCw } from 'lucide-react';
+import { Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { Button } from '@/components/ui';
 import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { BarChart, KpiCard } from './ChartPrimitives';
-import { TrendingUp, ShoppingBag, Users, CreditCard } from 'lucide-react';
+import { TrendingUp, ShoppingBag, CreditCard } from 'lucide-react';
 
 interface Props {
   from: string;

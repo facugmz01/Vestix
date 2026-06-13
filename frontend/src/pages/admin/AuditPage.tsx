@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
+  PageContainer, Section, Table, Button, Badge, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton
 } from '@/components/ui';
 import { auditApi } from '@/api/audit.api';
 import { queryKeys } from '@/api/queryKeys';

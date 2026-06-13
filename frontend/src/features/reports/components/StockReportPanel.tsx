@@ -1,11 +1,10 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Download, AlertTriangle, Package } from 'lucide-react';
-import { useMutation as useMut } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Button, Table, Badge } from '@/components/ui';
 import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
-import { KpiCard, BarChart } from './ChartPrimitives';
+import { KpiCard } from './ChartPrimitives';
 
 interface Props { branchId?: string; from: string; to: string; }
 
@@ -22,7 +21,7 @@ export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
     queryFn: () => reportsApi.getLowStockAlerts(branchId),
   });
 
-  const exportMutation = useMut({
+  const exportMutation = useMutation({
     mutationFn: () => reportsApi.exportReport('stock', { branchId: branchId ?? '' }),
     onSuccess: (d) => { window.open(d.downloadUrl, '_blank'); toast.success('Reporte exportado'); },
     onError: () => toast.error('Error al exportar'),
@@ -64,7 +63,7 @@ export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
           <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertTriangle size={16} color="var(--orange)" /> Alertas de Stock Bajo
           </h4>
-          {lowStock && lowStock.length > 0 && <Badge color="warning">{lowStock.length} artículos</Badge>}
+          {lowStock && lowStock.length > 0 && <Badge color="yellow">{lowStock.length} artículos</Badge>}
         </div>
 
         {ll ? (

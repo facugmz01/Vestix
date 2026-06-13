@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Bell } from 'lucide-react';
+
 import { Drawer, Button, Input } from '@/components/ui';
 import { notificationsApi, type CreateTemplateDto } from '@/api/notifications.api';
 import { queryKeys } from '@/api/queryKeys';

@@ -4,7 +4,7 @@ import { productsApi } from '@/api/products.api';
 import { PageContainer } from '@/components/ui';
 import { Button } from '@/components/ui';
 import { Search, Plus, Trash2, Printer } from 'lucide-react';
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
+
 import styles from './BarcodeLabelsPage.module.css';
 
 interface LabelItem {
@@ -19,12 +19,12 @@ interface LabelItem {
   quantity: number;
 }
 
-export function BarcodeLabelsPage() {
+export default function BarcodeLabelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [labelItems, setLabelItems] = useState<LabelItem[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const { data: variants, isLoading } = useQuery({
+  const { data: variants } = useQuery({
     queryKey: ['variants-search', searchTerm],
     queryFn: () => productsApi.getVariants(searchTerm),
     enabled: searchTerm.length > 2,

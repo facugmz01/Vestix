@@ -15,7 +15,7 @@ interface Props {
 export function PriceListDetailDrawer({ open, onClose, priceList }: Props) {
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: queryKeys.priceLists.items(priceList?.id || ''),
     queryFn: () => priceListsApi.getItems(priceList!.id, page, 20),
     enabled: open && !!priceList && priceList.type === 'BASE', // Only base lists have explicit item overrides

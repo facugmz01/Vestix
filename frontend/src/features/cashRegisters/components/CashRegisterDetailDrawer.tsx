@@ -1,4 +1,4 @@
-import { Drawer, StatusChip, Badge } from '@/components/ui';
+import { Drawer, StatusChip } from '@/components/ui';
 import type { CashRegister } from '@/types';
 
 interface Props {

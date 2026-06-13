@@ -1,8 +1,8 @@
 import { Drawer, Badge } from '@/components/ui';
 import { useQuery } from '@tanstack/react-query';
-import { inventoryApi, type EnrichedMovement } from '@/api/inventory.api';
+import { inventoryApi } from '@/api/inventory.api';
 import { queryKeys } from '@/api/queryKeys';
-import { ArrowUpRight, ArrowDownRight, History, Package, Link2, Clock, MapPin, FileText } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, History, Package, Link2, Clock, MapPin } from 'lucide-react';
 
 interface Props {
   open: boolean;

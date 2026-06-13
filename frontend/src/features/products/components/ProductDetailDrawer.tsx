@@ -47,7 +47,7 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
             </div>
             
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-              <Badge color="gray">{displayProduct.category?.name || `Cat: ${displayProduct.categoryId}`}</Badge>
+              <Badge color="gray">{(displayProduct as any).category?.name || `Cat: ${displayProduct.categoryId}`}</Badge>
               {displayProduct.brandId && <Badge color="blue">{displayProduct.brand?.name || `Marca: ${displayProduct.brandId}`}</Badge>}
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>

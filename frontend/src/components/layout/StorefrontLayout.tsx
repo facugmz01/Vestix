@@ -1,5 +1,5 @@
 import { Outlet, Link } from 'react-router-dom';
-import { ShoppingBag, Search } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { APP_CONFIG } from '@/config/app.config';
 import { storefrontApi } from '@/api/storefront.api';

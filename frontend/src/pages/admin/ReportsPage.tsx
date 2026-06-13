@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 import { 
-  PageContainer, Section, Button, Tabs
+  PageContainer, Section, Button
 } from '@/components/ui';
 import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';

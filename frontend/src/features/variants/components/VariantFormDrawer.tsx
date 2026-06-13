@@ -26,6 +26,7 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
     size: '',
     color: '',
     basePrice: 0,
+    costPrice: 0,
     isActive: true,
   });
 

@@ -1,4 +1,4 @@
-import { Drawer, Badge, Table } from '@/components/ui';
+import { Drawer, Badge } from '@/components/ui';
 import type { AuditLog } from '@/types';
 import {
   Plus, Edit2, Trash2, LogIn, LogOut, Eye, CheckCircle,
@@ -54,9 +54,11 @@ export function AuditLogDetailDrawer({ open, onClose, log }: Props) {
         <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div>
-              <Badge color={actionMeta.color as any} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
-                {actionMeta.icon} {actionMeta.label}
-              </Badge>
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
+                <Badge color={actionMeta.color as any}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{actionMeta.icon} {actionMeta.label}</span>
+                </Badge>
+              </div>
               <h3 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 800 }}>{log.description}</h3>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Clock size={12} /> {new Date(log.createdAt).toLocaleString()}

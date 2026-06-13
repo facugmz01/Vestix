@@ -29,7 +29,7 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
     enabled: open && !!shiftId,
   });
 
-  const { data: movements, isLoading: isMovesLoading } = useQuery({
+  const { data: movements } = useQuery({
     queryKey: queryKeys.treasury.shiftMovements(shiftId || ''),
     queryFn: () => treasuryApi.getShiftMovements(shiftId!),
     enabled: open && !!shiftId,

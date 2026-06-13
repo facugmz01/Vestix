@@ -104,7 +104,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
   const { data: waStatus, isLoading: isLoadingWa, refetch: refetchWa } = useQuery({
     queryKey: ['whatsapp', 'status'],
     queryFn: () => notificationsApi.getWhatsAppStatus(),
-    enabled: open && !!integration && integration.provider === 'WHATSAPP' && activeTab === 'qr',
+    enabled: open && !!integration && integration.provider === 'WHATSAPP_TWILIO' && activeTab === 'qr',
     refetchInterval: (query) => (!query.state.data?.isReady && activeTab === 'qr') ? 3000 : false,
   });
 
@@ -232,7 +232,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
           {integration.provider === 'WOOCOMMERCE' && (
             <button style={tabStyle('mappings')} onClick={() => setActiveTab('mappings')}>Mapeo de Variantes</button>
           )}
-          {integration.provider === 'WHATSAPP' && (
+          {integration.provider === 'WHATSAPP_TWILIO' && (
             <button style={tabStyle('qr')} onClick={() => setActiveTab('qr')}>Vincular Dispositivo (QR)</button>
           )}
         </div>

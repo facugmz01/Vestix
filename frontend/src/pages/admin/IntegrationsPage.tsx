@@ -6,7 +6,7 @@ import {
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Button, Badge, Tabs
+  PageContainer, Button, Badge
 } from '@/components/ui';
 import { integrationsApi } from '@/api/integrations.api';
 import { queryKeys } from '@/api/queryKeys';

@@ -87,8 +87,8 @@ export default function ProductVariantsPage() {
 
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
-  if (loadingProduct) return <PageContainer title="Cargando..." />;
-  if (!product) return <PageContainer title="Producto no encontrado" action={<Button onClick={() => navigate('/admin/catalog')}>Volver</Button>} />;
+  if (loadingProduct) return <PageContainer title="Cargando..."><p style={{ color: 'var(--text-muted)' }}>Cargando producto...</p></PageContainer>;
+  if (!product) return <PageContainer title="Producto no encontrado" action={<Button onClick={() => navigate('/admin/catalog')}>Volver</Button>}><p>El producto solicitado no existe.</p></PageContainer>;
 
   return (
     <PageContainer 

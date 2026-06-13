@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/api/products.api';
-import { Input, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { Search, Plus, Trash2 } from 'lucide-react';
 
 interface ComboLine {
@@ -20,7 +20,7 @@ interface Props {
 export function ComboRecipeBuilder({ lines, onChange }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { data: variants, isLoading } = useQuery({
+  const { data: variants } = useQuery({
     queryKey: ['variants-search', searchTerm],
     queryFn: () => productsApi.getVariants(searchTerm),
     enabled: searchTerm.length > 2,

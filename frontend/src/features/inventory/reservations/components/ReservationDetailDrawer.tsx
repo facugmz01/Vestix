@@ -100,9 +100,11 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
             <Badge color={getStatusColor(res.status)}>{res.status}</Badge>
             {res.status === 'ACTIVE' && (
-              <Badge color={isExpiredLocally ? 'red' : 'warning'} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                <Clock size={12} /> Expira en: {timeLeft}
-              </Badge>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', width: 'fit-content' }}>
+                <Badge color={isExpiredLocally ? 'red' : 'warning'}>
+                  <span style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}><Clock size={12} /> Expira en: {timeLeft}</span>
+                </Badge>
+              </div>
             )}
           </div>
         </div>

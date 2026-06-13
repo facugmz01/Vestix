@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui';
-import { Eye, Edit2, Trash2, MoreVertical } from 'lucide-react';
+import { Eye, Edit2, Trash2 } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import type { Product } from '@/types';
 

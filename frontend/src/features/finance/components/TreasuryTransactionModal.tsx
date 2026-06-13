@@ -4,7 +4,7 @@ import { Drawer, Button, Input } from '@/components/ui';
 import { treasuryApi } from '@/api/treasury.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { ArrowDownRight, ArrowUpRight, Wallet } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 
 interface Props {
   open: boolean;

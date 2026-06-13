@@ -4,7 +4,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { customersApi } from '@/api/customers.api';
 import type { Customer } from '@/types';
 import { ShoppingCart, Star, CreditCard, ExternalLink } from 'lucide-react';
-import { formatCurrency } from '@/utils/formatters'; // Assuming it exists, otherwise inline it
+
 
 interface Props {
   open: boolean;

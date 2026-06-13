@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
 import { transfersApi, type CreateTransferDto } from '@/api/transfers.api';
 import { warehousesApi } from '@/api/warehouses.api';
-import { productsApi } from '@/api/products.api'; // Assuming we can search variants via products or similar. For UI simplicity, we'll mock variant selection or use a basic input
+
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { Plus, X } from 'lucide-react';

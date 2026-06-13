@@ -90,8 +90,8 @@ function OperationCard({ op, onRetry, onRemove }: { op: OfflineOperation; onRetr
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <Badge color={meta.color as any} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              {meta.icon} {meta.label}
+            <Badge color={meta.color as any}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{meta.icon} {meta.label}</span>
             </Badge>
             <Badge color="gray">{op.module}</Badge>
           </div>

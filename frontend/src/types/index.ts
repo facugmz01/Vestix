@@ -597,7 +597,7 @@ export interface SalesSummaryReport {
   period: { from: string; to: string; };
   totalOrders: number; totalRevenue: number;
   totalDiscounts: number; netRevenue: number; averageOrderValue: number;
-  byPaymentMethod: Record<string, number>;
+  byPaymentMethod: { method: string; count: number; amount: number }[];
   byChannel: Record<string, number>;
 }
 
