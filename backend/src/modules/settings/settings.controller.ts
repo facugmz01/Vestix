@@ -1,4 +1,6 @@
-import { Controller, Get, Patch, Body, Req, Post, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Req, Post, UseInterceptors, UploadedFile, BadRequestException, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -6,6 +8,7 @@ import { SettingsService } from './settings.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('settings')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 

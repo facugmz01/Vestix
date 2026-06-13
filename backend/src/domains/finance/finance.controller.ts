@@ -1,9 +1,12 @@
-import { Controller, Get, Query, Post, Body, Patch, Param, Req } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, Patch, Param, Req, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { AccountsService } from './accounts.service';
 import { CashService } from './cash/cash.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('finance')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class FinanceController {
   constructor(
     private readonly accountsService: AccountsService,
