@@ -382,10 +382,7 @@ export default function CatalogPage() {
         <ProductDetailDrawer
           open={!!detailProduct}
           onClose={() => setDetailProduct(null)}
-          productId={detailProduct.id}
-          onEdit={() => {
-            navigate(`/admin/catalog/${detailProduct.id}/edit`);
-          }}
+          product={detailProduct}
         />
       )}
       <ConfirmDialog

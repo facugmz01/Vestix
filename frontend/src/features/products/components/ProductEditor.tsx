@@ -493,7 +493,7 @@ export function ProductEditor({ initialData }: Props) {
                 </div>
                 <div>
                   <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px', color: 'var(--text-muted)' }}>Stock máximo</label>
-                  <input type="number" placeholder="Sin límite" style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-muted)' }} />
+                  <input type="number" placeholder="Sin límite" style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-elevated)' }} />
                 </div>
               </div>
 

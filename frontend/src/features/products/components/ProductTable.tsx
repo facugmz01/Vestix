@@ -16,6 +16,7 @@ export function ProductTable({ products, onView, onEdit, onDelete }: Props) {
     <Table
       keyField="id"
       data={products}
+      onRowClick={onView}
       columns={[
         {
           key: 'image',
