@@ -108,12 +108,52 @@ export function ProductEditor({ initialData }: Props) {
         }
       };
       
-      const payload = { ...data, metadata: meta };
-      if (!payload.brandId) delete payload.brandId;
-      if (!payload.baseSku) delete payload.baseSku;
+      // Sanitize payload to only include whitelisted properties to prevent backend validation errors
+      const safePayload: any = {
+        name: data.name,
+        description: data.description,
+        categoryId: data.categoryId,
+        brandId: data.brandId,
+        baseSku: data.baseSku,
+        type: data.type,
+        manageBatches: data.manageBatches,
+        costPrice: data.costPrice,
+        basePrice: data.basePrice,
+        isActive: data.isActive,
+        isPublished: data.isPublished,
+        metadata: meta,
+        images: data.images,
+      };
 
-      if (isEditing) return productsApi.updateProduct(initialData!.id, payload);
-      return productsApi.createProduct(payload);
+      if (data.comboLines) {
+        safePayload.comboLines = data.comboLines.map((c: any) => ({
+          childVariantId: c.childVariantId,
+          quantity: Number(c.quantity) || 1
+        }));
+      }
+
+      if (data.variants) {
+        safePayload.variants = data.variants.map((v: any) => {
+          const sv: any = {
+            sku: v.sku,
+            size: v.size,
+            color: v.color,
+            imageUrl: v.imageUrl,
+            costPrice: v.costPrice,
+            basePrice: v.basePrice,
+            isActive: v.isActive,
+            attributes: v.attributes,
+          };
+          if (v.id && !String(v.id).startsWith('temp-')) sv.id = v.id;
+          return sv;
+        });
+      }
+
+      if (!safePayload.brandId) delete safePayload.brandId;
+      if (!safePayload.baseSku) delete safePayload.baseSku;
+
+      if (isEditing) return productsApi.updateProduct(initialData!.id, safePayload);
+      return productsApi.createProduct(safePayload);
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Producto actualizado' : 'Producto creado exitosamente');
