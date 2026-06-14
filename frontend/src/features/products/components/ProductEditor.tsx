@@ -94,6 +94,7 @@ export function ProductEditor({ initialData }: Props) {
 
   const { data: categories } = useQuery({ queryKey: queryKeys.categories.all(), queryFn: () => productsApi.getCategories() });
   const { data: brands } = useQuery({ queryKey: queryKeys.brands.all(), queryFn: () => productsApi.getBrands() });
+  const { data: priceLists } = useQuery({ queryKey: queryKeys.priceLists.all(), queryFn: () => productsApi.getPriceLists() });
 
   const mutation = useMutation({
     mutationFn: (data: CreateProductDto) => {
@@ -346,30 +347,26 @@ export function ProductEditor({ initialData }: Props) {
                   />
                 </div>
               </div>
-
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px', color: 'var(--text-muted)' }}>Precio mayorista <span style={{ background: 'var(--text-muted)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>P2</span></label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '12px', top: '8px', color: 'var(--text-muted)' }}>$</span>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    style={{ width: '100%', padding: '8px 12px 8px 24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px', color: 'var(--text-muted)' }}>Precio especial <span style={{ background: '#eab308', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>P3</span></label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '12px', top: '8px', color: 'var(--text-muted)' }}>$</span>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    style={{ width: '100%', padding: '8px 12px 8px 24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
-                  />
-                </div>
-              </div>
+              {priceLists?.filter(pl => pl.type !== 'RETAIL' && !pl.isDefault).map((pl, idx) => {
+                const calculatedPrice = formData.basePrice ? Math.round(formData.basePrice * (pl.margin || 1)) : 0;
+                return (
+                  <div key={pl.id}>
+                    <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px', color: 'var(--text-muted)' }}>
+                      {pl.name} <span style={{ background: 'var(--text-muted)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>P{idx + 2}</span>
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '12px', top: '8px', color: 'var(--text-muted)' }}>$</span>
+                      <input
+                        type="number"
+                        value={calculatedPrice}
+                        readOnly
+                        title="Precio calculado automáticamente según el margen de la lista de precios."
+                        style={{ width: '100%', padding: '8px 12px 8px 24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
@@ -383,14 +380,60 @@ export function ProductEditor({ initialData }: Props) {
           {formData.type === 'VARIABLE' && (
             <div style={cardStyle}>
               <h3 style={cardTitleStyle}><span style={{ color: 'var(--accent)' }}>■</span> Variantes (Talles / Colores)</h3>
-              <VariantMassGenerator formData={formData} onChange={setFormData} />
+              <VariantMassGenerator 
+                costPrice={formData.costPrice || 0} 
+                basePrice={formData.basePrice || 0} 
+                onGenerate={(vars) => setFormData({ ...formData, variants: vars })} 
+              />
+              {formData.variants && formData.variants.length > 0 && (
+                <div style={{ marginTop: '24px', overflowX: 'auto' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '12px' }}>Variantes generadas ({formData.variants.length})</h4>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '8px' }}>Atributos</th>
+                        <th style={{ padding: '8px' }}>SKU</th>
+                        <th style={{ padding: '8px' }}>Costo</th>
+                        <th style={{ padding: '8px' }}>Precio Base</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.variants.map((v, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '8px', fontWeight: 500 }}>
+                            {v.color} {v.size} {Object.entries(v.attributes || {}).filter(([k]) => k.toLowerCase() !== 'color' && k.toLowerCase() !== 'talle').map(([_, val]) => val).join(' ')}
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <input 
+                              type="text" 
+                              value={v.sku || ''} 
+                              onChange={(e) => {
+                                const newVars = [...formData.variants!];
+                                newVars[i].sku = e.target.value;
+                                setFormData({ ...formData, variants: newVars });
+                              }}
+                              placeholder="SKU"
+                              style={{ width: '100px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} 
+                            />
+                          </td>
+                          <td style={{ padding: '8px' }}>${v.costPrice}</td>
+                          <td style={{ padding: '8px' }}>${v.basePrice}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
           {formData.type === 'COMBO' && (
             <div style={cardStyle}>
               <h3 style={cardTitleStyle}><span style={{ color: 'var(--accent)' }}>■</span> Receta del Combo</h3>
-              <ComboRecipeBuilder formData={formData} onChange={setFormData} />
+              <ComboRecipeBuilder 
+                lines={formData.comboLines || []} 
+                onChange={(newLines) => setFormData({ ...formData, comboLines: newLines })} 
+              />
             </div>
           )}
 
