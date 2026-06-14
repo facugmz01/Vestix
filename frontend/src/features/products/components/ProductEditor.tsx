@@ -347,12 +347,23 @@ export function ProductEditor({ initialData }: Props) {
                   />
                 </div>
               </div>
-              {priceLists?.filter(pl => pl.type !== 'RETAIL' && !pl.isDefault).map((pl, idx) => {
-                const calculatedPrice = formData.basePrice ? Math.round(formData.basePrice * (pl.margin || 1)) : 0;
+              {priceLists?.filter(pl => !pl.isDefault).map((pl, idx) => {
+                let percentage = 0;
+                let calculatedPrice = 0;
+                if (pl.isPercentageBased) {
+                  percentage = pl.percentageDiscount || 0;
+                  calculatedPrice = formData.basePrice ? Math.round(formData.basePrice * (1 + (percentage / 100))) : 0;
+                } else {
+                  percentage = Math.round(((pl.margin || 1) - 1) * 100);
+                  calculatedPrice = formData.basePrice ? Math.round(formData.basePrice * (pl.margin || 1)) : 0;
+                }
+                const percentageText = percentage > 0 ? `+${percentage}%` : `${percentage}%`;
+
                 return (
                   <div key={pl.id}>
                     <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px', color: 'var(--text-muted)' }}>
                       {pl.name} <span style={{ background: 'var(--text-muted)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>P{idx + 2}</span>
+                      <span style={{ marginLeft: '8px', fontSize: '11px', color: percentage > 0 ? 'var(--green)' : 'var(--red)' }}>{percentageText}</span>
                     </label>
                     <div style={{ position: 'relative' }}>
                       <span style={{ position: 'absolute', left: '12px', top: '8px', color: 'var(--text-muted)' }}>$</span>
@@ -360,8 +371,8 @@ export function ProductEditor({ initialData }: Props) {
                         type="number"
                         value={calculatedPrice}
                         readOnly
-                        title="Precio calculado automáticamente según el margen de la lista de precios."
-                        style={{ width: '100%', padding: '8px 12px 8px 24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
+                        title="Precio calculado automáticamente según la configuración de la lista de precios."
+                        style={{ width: '100%', padding: '8px 12px 8px 24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
                       />
                     </div>
                   </div>

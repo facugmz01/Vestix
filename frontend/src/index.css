@@ -59,7 +59,7 @@ body {
 
 a { color: var(--accent); text-decoration: none; }
 button { font-family: var(--font); cursor: pointer; border: none; background: none; }
-input, select, textarea { font-family: var(--font); }
+input, select, textarea { font-family: var(--font); color: var(--text-primary); }
 
 /* ─── SCROLLBAR ─────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
