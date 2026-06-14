@@ -100,7 +100,7 @@ export function WarehouseFormDrawer({ open, onClose, warehouseToEdit }: Props) {
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <Input
             label="Nombre del Depósito"
             value={formData.name}
@@ -115,7 +115,7 @@ export function WarehouseFormDrawer({ open, onClose, warehouseToEdit }: Props) {
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Sucursal Asociada *</label>
             <select

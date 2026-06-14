@@ -39,7 +39,7 @@ export function CashReportPanel({ from, to, branchId }: Props) {
         <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>Exportar Excel</Button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+      <div className="grid-responsive grid-cols-3">
         <KpiCard label="Total Ingresos" value={fmtCurrency(summary.totalIncome)} icon={<Wallet size={20} />} color="#22c55e" />
         <KpiCard label="Total Egresos" value={fmtCurrency(summary.totalExpenses)} icon={<Wallet size={20} />} color="#ef4444" />
         <KpiCard label="Resultado Neto de Caja" value={fmtCurrency(summary.netCash)} icon={<Wallet size={20} />} color={summary.netCash >= 0 ? '#3b82f6' : '#ef4444'} />

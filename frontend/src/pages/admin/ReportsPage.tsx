@@ -111,7 +111,7 @@ export default function ReportsPage() {
       {activeTab === 'overview' && (
         <Section>
           {dl ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            <div className="grid-responsive grid-cols-4">
               {[1,2,3,4].map(i => <div key={i} style={{ height: '120px', borderRadius: '12px', background: 'var(--bg-elevated)' }} />)}
             </div>
           ) : dashboard ? (

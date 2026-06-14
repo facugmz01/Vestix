@@ -36,7 +36,7 @@ export function UserDetailDrawer({ open, onClose, user }: Props) {
         </div>
 
         {/* Info Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <InfoBox label="Rol" value={ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role} />
           <InfoBox 
             label="Estado" 

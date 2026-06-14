@@ -170,7 +170,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
         {/* Cabecera */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-4">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Sucursal Emisora *</label>
             <select value={branchId} onChange={e => setBranchId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>

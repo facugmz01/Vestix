@@ -119,7 +119,7 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
           required
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <Input
             label={formData.type === 'BUSINESS' ? 'CUIT / RUT *' : 'DNI / Identificación'}
             value={formData.taxId || ''}

@@ -37,14 +37,14 @@ export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
 
       {valuation && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          <div className="grid-responsive grid-cols-4">
             <KpiCard label="SKUs Únicos" value={String(valuation.totalSKUs)} icon={<Package size={20} />} color="#3b82f6" />
             <KpiCard label="Unidades en Stock" value={String(valuation.totalUnits)} icon={<Package size={20} />} color="#10b981" />
             <KpiCard label="Valor al Costo" value={fmtCurrency(valuation.totalValueAtCost)} icon={<Package size={20} />} color="#f59e0b" />
             <KpiCard label="Margen Potencial" value={`${valuation.totalValueAtRetail > 0 ? (((valuation.totalValueAtRetail - valuation.totalValueAtCost) / valuation.totalValueAtRetail) * 100).toFixed(1) : 0}%`} icon={<Package size={20} />} color="#8b5cf6" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="grid-responsive grid-cols-2">
             <div style={{ padding: '20px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px' }}>
               <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Valor Venta Potencial</p>
               <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 900 }}>{fmtCurrency(valuation.totalValueAtRetail)}</h3>

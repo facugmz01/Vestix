@@ -110,7 +110,7 @@ export function BranchFormDrawer({ open, onClose, branchToEdit }: Props) {
           <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
             Información Principal
           </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="grid-responsive grid-cols-2">
             <Input
               label="Nombre de Sucursal"
               value={formData.name}

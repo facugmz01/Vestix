@@ -102,7 +102,7 @@ export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
           required
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <Input
             label="CUIT / Tax ID"
             value={formData.taxId || ''}
@@ -129,7 +129,7 @@ export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
             Cuenta Corriente / Financiera
           </h4>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+          <div className="grid-responsive grid-cols-2-1">
             <Input
               label="Saldo Inicial de Deuda"
               type="number"

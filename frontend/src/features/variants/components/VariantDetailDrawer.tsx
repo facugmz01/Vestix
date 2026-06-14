@@ -26,7 +26,7 @@ export function VariantDetailDrawer({ open, onClose, variant }: Props) {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div className="grid-responsive grid-cols-2" style={{ gap: "12px" }}>
           <InfoBox label="Talle / Tamaño" value={variant.size || '-'} />
           <InfoBox label="Color" value={variant.color || '-'} />
           <InfoBox label="Precio Base" value={fmtCurrency(variant.basePrice)} />

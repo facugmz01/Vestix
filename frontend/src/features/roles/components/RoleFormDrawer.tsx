@@ -112,7 +112,7 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
       }
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+        <div className="grid-responsive">
           <Input
             label="Nombre del Rol"
             value={name}

@@ -89,7 +89,7 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
         <Input label="Nombre de la Lista *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
         <Input label="Código (Ej: MAYORISTA_A) *" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Moneda</label>
             <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>

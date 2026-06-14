@@ -83,7 +83,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
         </div>
 
         {/* Info Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-3">
           <div style={{ padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Origen de Venta</span>
             <p style={{ margin: 0, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><ShoppingCart size={14} /> {sale.source}</p>

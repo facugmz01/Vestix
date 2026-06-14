@@ -106,7 +106,7 @@ export function PromotionFormDrawer({ open, onClose, promoToEdit }: Props) {
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Tipo de Regla</label>
             <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as any })} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
@@ -126,7 +126,7 @@ export function PromotionFormDrawer({ open, onClose, promoToEdit }: Props) {
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <Input label="Fecha Inicio *" type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required />
           <Input label="Fecha Fin (Opcional)" type="date" value={formData.endDate || ''} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} />
         </div>

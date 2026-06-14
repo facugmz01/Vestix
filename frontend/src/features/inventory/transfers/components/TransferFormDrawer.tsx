@@ -97,7 +97,7 @@ export function TransferFormDrawer({ open, onClose }: Props) {
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Depósito de Origen (Sale)</label>
             <select value={sourceWarehouseId} onChange={e => setSourceWarehouseId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} required>

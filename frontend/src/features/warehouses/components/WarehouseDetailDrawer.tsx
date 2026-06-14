@@ -35,7 +35,7 @@ export function WarehouseDetailDrawer({ open, onClose, warehouse }: Props) {
         </div>
 
         {/* Info Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+        <div className="grid-responsive" style={{ gap: "12px" }}>
           <InfoBox label="Sucursal Asociada" value={warehouse.branchName || warehouse.branchId} />
           <InfoBox label="Dirección Física" value={warehouse.address || 'Misma que sucursal / No especificada'} />
           <InfoBox label="ID Sistema" value={warehouse.id} />

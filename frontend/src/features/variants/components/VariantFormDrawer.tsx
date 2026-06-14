@@ -111,7 +111,7 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '6px' }}>
               <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>SKU *</label>
@@ -142,7 +142,7 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <Input label="Color" value={formData.color || ''} onChange={(e) => setFormData({ ...formData, color: e.target.value })} />
           <Input label="Talle / Tamaño" value={formData.size || ''} onChange={(e) => setFormData({ ...formData, size: e.target.value })} />
         </div>

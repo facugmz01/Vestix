@@ -96,7 +96,7 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
           error={errors.name?.message}
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Evento Disparador *</label>
             <select {...register('event')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>

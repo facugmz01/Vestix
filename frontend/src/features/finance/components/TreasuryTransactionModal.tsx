@@ -44,7 +44,7 @@ export function TreasuryTransactionModal({ open, onClose, shiftId }: Props) {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <label style={{ fontWeight: 600 }}>Tipo de Movimiento</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="grid-responsive grid-cols-2" style={{ gap: "12px" }}>
             <Button variant={type === 'EXPENSE' ? 'primary' : 'outline'} onClick={() => setType('EXPENSE')} icon={<ArrowUpRight size={18} color={type === 'EXPENSE' ? 'var(--bg-base)' : 'var(--red)'} />}>
               Retiro / Gasto
             </Button>

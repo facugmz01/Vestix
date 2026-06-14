@@ -156,7 +156,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
 
             <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--blue)' }}>
               <h4 style={{ margin: '0 0 12px', color: 'var(--blue)' }}>Acción Requerida</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div className="grid-responsive grid-cols-3" style={{ gap: "12px" }}>
                 <Button variant={action === 'REFUND' ? 'primary' : 'secondary'} onClick={() => setAction('REFUND')}>Reembolso (Refund)</Button>
                 <Button variant={action === 'EXCHANGE' ? 'primary' : 'secondary'} onClick={() => setAction('EXCHANGE')} icon={<ArrowRightLeft size={16} />}>Cambio de Producto</Button>
                 <Button variant={action === 'STORE_CREDIT' ? 'primary' : 'secondary'} onClick={() => setAction('STORE_CREDIT')}>Crédito a Favor</Button>

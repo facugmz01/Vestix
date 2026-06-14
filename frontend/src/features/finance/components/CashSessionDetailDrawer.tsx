@@ -73,7 +73,7 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
 
         {/* RESULTS GRID */}
         {shift.status === 'CLOSED' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+          <div className="grid-responsive grid-cols-3">
             <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px' }}>
               <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Esperado por Sistema</p>
               <h2 style={{ margin: 0, fontSize: '24px' }}>{fmtCurrency(shift.expectedClosingBalance || 0)}</h2>

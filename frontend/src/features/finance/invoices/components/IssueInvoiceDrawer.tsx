@@ -117,7 +117,7 @@ export function IssueInvoiceDrawer({ open, onClose, saleOrderId }: Props) {
               error={errors.receiverName?.message}
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px' }}>
+            <div className="grid-responsive grid-cols-120-1" style={{ gap: "12px" }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600 }}>Tipo Doc.</label>
                 <select {...register('receiverDocType')} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>

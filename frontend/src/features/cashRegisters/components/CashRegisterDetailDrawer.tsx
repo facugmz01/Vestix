@@ -53,7 +53,7 @@ export function CashRegisterDetailDrawer({ open, onClose, register }: Props) {
         </div>
 
         {/* Info Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+        <div className="grid-responsive" style={{ gap: "12px" }}>
           <InfoBox label="Sucursal" value={register.branchName || register.branchId} />
           <InfoBox label="ID Sistema" value={register.id} />
           <InfoBox 

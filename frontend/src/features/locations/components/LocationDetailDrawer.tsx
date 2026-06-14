@@ -49,7 +49,7 @@ export function LocationDetailDrawer({ open, onClose, location }: Props) {
         )}
 
         {/* Info Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+        <div className="grid-responsive" style={{ gap: "12px" }}>
           <InfoBox label="Sucursal" value={location.branchName || 'Desconocida'} />
           <InfoBox label="Depósito" value={location.warehouseName || location.warehouseId} />
           <InfoBox label="ID Sistema" value={location.id} />

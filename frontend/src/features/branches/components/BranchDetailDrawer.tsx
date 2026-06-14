@@ -29,7 +29,7 @@ export function BranchDetailDrawer({ open, onClose, branch }: Props) {
         </div>
 
         {/* Info Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+        <div className="grid-responsive" style={{ gap: "12px" }}>
           <InfoBox label="Dirección" value={branch.address || 'No especificada'} />
           <InfoBox label="Teléfono" value={branch.phone || 'No especificado'} />
           <InfoBox label="ID Sistema" value={branch.id} />

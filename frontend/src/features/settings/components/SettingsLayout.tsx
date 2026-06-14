@@ -27,7 +27,7 @@ export function SettingsRow({ label, hint, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '24px', alignItems: 'flex-start' }}>
+    <div className="grid-responsive grid-cols-settings" style={{ alignItems: "flex-start", gap: "24px" }}>
       <div>
         <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{label}</p>
         {hint && <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{hint}</p>}

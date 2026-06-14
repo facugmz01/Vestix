@@ -42,7 +42,7 @@ export function GeneralSettingsPanel() {
 
       <SettingsDivider />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="grid-responsive grid-cols-2">
         <Input label="Nombre Comercial *" {...register('general.companyName', { required: 'Requerido' })} error={errors.general?.companyName?.message} />
         <Input label="Razón Social *" {...register('general.legalName', { required: 'Requerido' })} error={errors.general?.legalName?.message} />
         <Input label="CUIT *" {...register('general.taxId', { required: 'Requerido', pattern: { value: /^\d{2}-\d{8}-\d$/, message: 'Formato: 20-12345678-9' } })} error={errors.general?.taxId?.message} placeholder="20-12345678-9" />
@@ -121,7 +121,7 @@ export function GeneralSettingsPanel() {
 
       <SettingsDivider />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="grid-responsive grid-cols-2">
         <Input label="Dirección" {...register('general.address')} />
         <Input label="Ciudad" {...register('general.city')} />
         <Input label="Provincia / Estado" {...register('general.province')} />
@@ -130,7 +130,7 @@ export function GeneralSettingsPanel() {
 
       <SettingsDivider />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="grid-responsive grid-cols-2">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <label style={{ fontSize: '13px', fontWeight: 600 }}>Zona Horaria</label>
           <select {...register('general.timezone')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>

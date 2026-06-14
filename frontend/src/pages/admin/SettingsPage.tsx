@@ -114,22 +114,24 @@ export default function SettingsPage() {
             title="Configuración del Sistema"
             subtitle="Ajustes globales que afectan el comportamiento de todo el ERP."
           >
-            <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '24px', alignItems: 'flex-start', paddingBottom: '80px' }}>
+            <div className="grid-responsive grid-cols-settings" style={{ alignItems: "flex-start", gap: "24px", paddingBottom: "80px" }}>
 
               {/* Sidebar nav */}
-              <div style={{ position: 'sticky', top: '24px', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-base)' }}>
+              <div className="settings-sidebar" style={{ position: 'sticky', top: '24px', border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--bg-base)' }}>
                 {TABS.map((tab, i) => (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     style={{
-                      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '14px 16px', border: 'none', background: activeTab === tab.id ? 'var(--blue-bg)' : 'transparent',
                       cursor: 'pointer', textAlign: 'left',
-                      borderBottom: i < TABS.length - 1 ? '1px solid var(--border)' : 'none',
+                      borderBottom: '1px solid var(--border)',
                       borderLeft: activeTab === tab.id ? '3px solid var(--accent)' : '3px solid transparent',
                       transition: 'background 0.15s',
+                      minWidth: '200px', // Ensures tabs don't squish too much on mobile
+                      flexShrink: 0,
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

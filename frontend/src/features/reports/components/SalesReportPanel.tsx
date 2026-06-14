@@ -53,7 +53,7 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <div className="grid-responsive grid-cols-4">
         <KpiCard label="Total Facturado" value={fmtCurrency(summary.totalRevenue)} icon={<TrendingUp size={20} />} color="#3b82f6" />
         <KpiCard label="Transacciones" value={String(summary.totalOrders)} icon={<ShoppingBag size={20} />} color="#10b981" />
         <KpiCard label="Ticket Promedio" value={fmtCurrency(summary.averageOrderValue)} icon={<CreditCard size={20} />} color="#f59e0b" />
@@ -61,7 +61,7 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
 
       {/* COGS */}
       {cogs && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-3">
           <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
             <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Costo de Mercadería Vendida</p>
             <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900 }}>{fmtCurrency(cogs.totalCOGS)}</h3>

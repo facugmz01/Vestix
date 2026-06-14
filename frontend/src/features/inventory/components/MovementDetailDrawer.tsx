@@ -91,7 +91,7 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
                   <span style={{ fontSize: '14px', fontFamily: 'monospace', fontWeight: 600 }}>{movement.referenceId}</span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px' }}>
+                <div className="grid-responsive grid-cols-120-1" style={{ gap: "12px" }}>
                   <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Motivo:</span>
                   <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{movement.reason || 'Sin motivo especificado'}</span>
                 </div>

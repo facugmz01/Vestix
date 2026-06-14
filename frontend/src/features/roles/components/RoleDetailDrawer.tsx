@@ -43,7 +43,7 @@ export function RoleDetailDrawer({ open, onClose, role }: Props) {
           {Object.keys(groupedPerms).length === 0 ? (
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No tiene permisos asignados.</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+            <div className="grid-responsive" style={{ gap: "12px" }}>
               {Object.entries(groupedPerms).map(([subject, actions]) => (
                 <div key={subject} style={{ background: 'var(--bg-elevated)', padding: '12px 16px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>

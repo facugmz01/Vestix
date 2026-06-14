@@ -66,7 +66,7 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
         
         {/* Header / Summary */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2-1">
           <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
             <Badge color={isCustomer ? 'blue' : 'purple'}>{isCustomer ? 'CLIENTE' : 'PROVEEDOR'}</Badge>
             <h3 style={{ margin: '8px 0 4px', fontSize: '20px', fontWeight: 800 }}>{account.entityName}</h3>

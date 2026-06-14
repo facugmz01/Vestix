@@ -48,7 +48,7 @@ export function ProductForm({ formData, onChange, onSubmit }: Props) {
       
       {/* 1. Basic Info */}
       <Section label="Información Básica">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="grid-responsive grid-cols-2">
           <Input
             label="Nombre del Producto *"
             value={formData.name}

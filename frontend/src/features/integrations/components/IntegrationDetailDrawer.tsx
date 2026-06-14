@@ -400,7 +400,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
             <div style={{ padding: '16px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>Crear Nuevo Mapeo</h4>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+              <div className="grid-responsive grid-cols-3" style={{ gap: "12px" }}>
                 
                 {/* Variant Search Autocomplete */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
