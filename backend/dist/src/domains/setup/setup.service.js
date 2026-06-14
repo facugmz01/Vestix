@@ -63,6 +63,12 @@ let SetupService = class SetupService {
         });
         return !!adminUser;
     }
+    async isCompanyConfigured() {
+        const branch = await this.prisma.branch.findFirst({
+            where: { code: 'CENTRAL' },
+        });
+        return !!branch;
+    }
     async createSuperAdmin(data) {
         const superAdminRole = await this.prisma.role.upsert({
             where: { name: 'SUPER_ADMIN' },

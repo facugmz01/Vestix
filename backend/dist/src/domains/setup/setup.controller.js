@@ -31,6 +31,14 @@ let SetupController = class SetupController {
         return this.setupService.createSuperAdmin(body);
     }
     async saveCompany(body) {
+        const isInitialized = await this.setupService.isSystemInitialized();
+        if (!isInitialized) {
+            throw new common_1.BadRequestException('Primero debés crear un Super Administrador.');
+        }
+        const hasCompany = await this.setupService.isCompanyConfigured();
+        if (hasCompany) {
+            throw new common_1.BadRequestException('La empresa ya fue configurada. Usá el módulo de Configuraciones para modificar los datos.');
+        }
         return this.setupService.saveCompanyInfo(body);
     }
 };

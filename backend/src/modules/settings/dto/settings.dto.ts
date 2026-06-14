@@ -4,143 +4,134 @@ import { IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString, Max, Min, Val
 export class GeneralSettingsDto {
   @IsOptional()
   @IsString()
-  companyName: string;
+  companyName?: string;
 
   @IsOptional()
   @IsString()
-  taxId: string;
+  taxId?: string;
 
   @IsOptional()
   @IsString()
-  legalName: string;
+  legalName?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
-  address: string;
+  address?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
-  city: string;
+  city?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
-  province: string;
+  province?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
-  country: string;
+  country?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 
   @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   website?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
   storefrontUrl?: string;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   logoUrl?: string;
 
   @IsOptional()
   @IsString()
-  timezone: string;
+  timezone?: string;
 
   @IsOptional()
   @IsString()
-  locale: string;
+  locale?: string;
 
   @IsOptional()
   @IsString()
-  currency: string;
+  currency?: string;
 }
 
 export class PricingSettingsDto {
   @IsOptional()
   @IsString()
-  defaultPriceListId: string;
+  defaultPriceListId?: string;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(100)
-  vatDefaultPct: number;
+  vatDefaultPct?: number;
 
   @IsOptional()
   @IsBoolean()
-  allowManualDiscount: boolean;
+  allowManualDiscount?: boolean;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(100)
-  maxDiscountPct: number;
+  maxDiscountPct?: number;
 
   @IsOptional()
   @IsIn(['NONE', 'NEAREST_10', 'UP', 'DOWN'])
-  roundingRule: 'NONE' | 'NEAREST_10' | 'UP' | 'DOWN';
+  roundingRule?: 'NONE' | 'NEAREST_10' | 'UP' | 'DOWN';
 
   @IsOptional()
   @IsBoolean()
-  showPricesWithTax: boolean;
+  showPricesWithTax?: boolean;
 }
 
 export class SkuBarcodeSettingsDto {
   @IsOptional()
   @IsString()
-  skuPrefix: string;
+  skuPrefix?: string;
 
   @IsOptional()
   @IsBoolean()
-  skuAutoGenerate: boolean;
+  skuAutoGenerate?: boolean;
 
   @IsOptional()
   @IsIn(['EAN13', 'CODE128', 'QR', 'NONE'])
-  barcodeFormat: 'EAN13' | 'CODE128' | 'QR' | 'NONE';
+  barcodeFormat?: 'EAN13' | 'CODE128' | 'QR' | 'NONE';
 
   @IsOptional()
   @IsBoolean()
-  barcodeAutoGenerate: boolean;
+  barcodeAutoGenerate?: boolean;
 
   @IsOptional()
   @IsNumber()
-  nextSkuSequence: number;
+  nextSkuSequence?: number;
 }
 
 export class InvoicingSettingsDto {
   @IsOptional()
   @IsNumber()
-  fiscalPointSale: number;
+  fiscalPointSale?: number;
 
   @IsOptional()
   @IsIn(['homologation', 'production'])
-  afipEnvironment: 'homologation' | 'production';
+  afipEnvironment?: 'homologation' | 'production';
 
   @IsOptional()
   @IsIn(['FACTURA_B', 'FACTURA_A', 'FACTURA_C'])
-  defaultInvoiceType: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C';
+  defaultInvoiceType?: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C';
 
   @IsOptional()
   @IsBoolean()
-  autoIssueOnSale: boolean;
+  autoIssueOnSale?: boolean;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   invoiceFooterText?: string;
@@ -149,76 +140,68 @@ export class InvoicingSettingsDto {
 export class NotificationSettingsDto {
   @IsOptional()
   @IsBoolean()
-  emailEnabled: boolean;
+  emailEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  smsEnabled: boolean;
+  smsEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  whatsappEnabled: boolean;
+  whatsappEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  pushEnabled: boolean;
+  pushEnabled?: boolean;
 
   @IsOptional()
   @IsNumber()
-  lowStockThreshold: number;
+  lowStockThreshold?: number;
 
   @IsOptional()
   @IsBoolean()
-  notifyOnSale: boolean;
+  notifyOnSale?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  notifyOnPurchase: boolean;
+  notifyOnPurchase?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  notifyOnLowStock: boolean;
+  notifyOnLowStock?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  notifyOnTransfer: boolean;
+  notifyOnTransfer?: boolean;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   smtpHost?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsNumber()
   smtpPort?: number;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   smtpUser?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
   smtpPass?: string;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   smsGatewayUrl?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
   openWaUrl?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
   openWaSession?: string;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   fcmServerKey?: string;
@@ -227,51 +210,44 @@ export class NotificationSettingsDto {
 export class IntegrationSettingsDto {
   @IsOptional()
   @IsBoolean()
-  mercadopagoEnabled: boolean;
+  mercadopagoEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  mercadolibreEnabled: boolean;
+  mercadolibreEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  woocommerceEnabled: boolean;
+  woocommerceEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  shopifyEnabled: boolean;
+  shopifyEnabled?: boolean;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   mlAppId?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
   mlSecretKey?: string;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   shopifyStoreUrl?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
   shopifyAccessToken?: string;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   wooStoreUrl?: string;
 
   @IsOptional()
-  @IsOptional()
   @IsString()
   wooConsumerKey?: string;
 
-  @IsOptional()
   @IsOptional()
   @IsString()
   wooConsumerSecret?: string;
@@ -280,23 +256,23 @@ export class IntegrationSettingsDto {
 export class OfflineSettingsDto {
   @IsOptional()
   @IsBoolean()
-  offlineModeEnabled: boolean;
+  offlineModeEnabled?: boolean;
 
   @IsOptional()
   @IsNumber()
-  posOfflineTtlHours: number;
+  posOfflineTtlHours?: number;
 
   @IsOptional()
   @IsNumber()
-  maxQueueSize: number;
+  maxQueueSize?: number;
 
   @IsOptional()
   @IsBoolean()
-  autoSyncOnReconnect: boolean;
+  autoSyncOnReconnect?: boolean;
 
   @IsOptional()
   @IsIn(['ASK_USER', 'SERVER_WINS', 'CLIENT_WINS'])
-  conflictStrategy: 'ASK_USER' | 'SERVER_WINS' | 'CLIENT_WINS';
+  conflictStrategy?: 'ASK_USER' | 'SERVER_WINS' | 'CLIENT_WINS';
 }
 
 export class UpdateSettingsDto {

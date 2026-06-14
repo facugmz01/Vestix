@@ -41,14 +41,34 @@ const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description
   { id: 'offline',       label: 'Modo Offline',      icon: <WifiOff size={16} />,   description: 'Estrategia y cola' },
 ];
 
+/**
+ * Extracts only the 7 valid settings sections from a raw API response,
+ * stripping out Prisma metadata fields like `id` and `updatedAt` that
+ * would cause a 400 from the backend's forbidNonWhitelisted validation.
+ */
+function sanitizeSettings(raw: any): SystemSettings {
+  return {
+    general:       raw?.general       ?? {},
+    pricing:       raw?.pricing       ?? {},
+    skuBarcode:    raw?.skuBarcode    ?? {},
+    invoicing:     raw?.invoicing     ?? {},
+    notifications: raw?.notifications ?? {},
+    integrations:  raw?.integrations  ?? {},
+    offline:       raw?.offline       ?? {},
+  };
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const qc = useQueryClient();
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: rawSettings, isLoading } = useQuery({
     queryKey: queryKeys.settings.get(),
     queryFn: settingsApi.getSettings,
   });
+
+  // Always work with sanitized settings (no `id`, `updatedAt`)
+  const settings = rawSettings ? sanitizeSettings(rawSettings) : undefined;
 
   const methods = useForm<SystemSettings>({
     defaultValues: settings
@@ -61,14 +81,16 @@ export default function SettingsPage() {
     if (settings) {
       reset(settings);
     }
-  }, [settings, reset]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawSettings, reset]);
 
   const mutation = useMutation({
     mutationFn: (data: SystemSettings) => settingsApi.putSettings(data),
     onSuccess: (updatedData) => {
       toast.success('Configuraciones guardadas');
+      const clean = sanitizeSettings(updatedData);
       qc.setQueryData(queryKeys.settings.get(), updatedData);
-      reset(updatedData); // Reset to clear isDirty state
+      reset(clean); // Reset to clear isDirty state
     },
     onError: () => {
       toast.error('Error al guardar configuraciones');
@@ -76,7 +98,8 @@ export default function SettingsPage() {
   });
 
   const onSubmit = (data: SystemSettings) => {
-    mutation.mutate(data);
+    // Ensure we only send the 7 valid sections
+    mutation.mutate(sanitizeSettings(data));
   };
 
   if (isLoading) {

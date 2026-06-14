@@ -5,6 +5,7 @@ export declare class SetupService {
     private readonly settingsService;
     constructor(prisma: PrismaService, settingsService: SettingsService);
     isSystemInitialized(): Promise<boolean>;
+    isCompanyConfigured(): Promise<boolean>;
     createSuperAdmin(data: {
         email: string;
         password: string;

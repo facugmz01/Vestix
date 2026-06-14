@@ -29,6 +29,17 @@ export class SetupService {
   }
 
   /**
+   * Check if the company has already been configured
+   * by looking for the CENTRAL branch.
+   */
+  async isCompanyConfigured(): Promise<boolean> {
+    const branch = await this.prisma.branch.findFirst({
+      where: { code: 'CENTRAL' },
+    });
+    return !!branch;
+  }
+
+  /**
    * Step 1: Create the SUPER_ADMIN user and seed all default roles.
    */
   async createSuperAdmin(data: {

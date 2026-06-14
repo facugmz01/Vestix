@@ -26,7 +26,7 @@ export class SetupController {
     return this.setupService.createSuperAdmin(body);
   }
 
-  // Step 2: Save company info (only works if admin exists but company not configured)
+  // Step 2: Save company info (only works if system is NOT fully configured yet)
   @Post('company')
   async saveCompany(@Body() body: {
     companyName: string;
@@ -35,6 +35,15 @@ export class SetupController {
     phone?: string;
     email?: string;
   }) {
+    const isInitialized = await this.setupService.isSystemInitialized();
+    if (!isInitialized) {
+      throw new BadRequestException('Primero debés crear un Super Administrador.');
+    }
+    // Block if the main branch already exists (setup already completed)
+    const hasCompany = await this.setupService.isCompanyConfigured();
+    if (hasCompany) {
+      throw new BadRequestException('La empresa ya fue configurada. Usá el módulo de Configuraciones para modificar los datos.');
+    }
     return this.setupService.saveCompanyInfo(body);
   }
 }

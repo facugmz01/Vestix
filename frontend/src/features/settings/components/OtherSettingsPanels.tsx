@@ -1,10 +1,9 @@
-import { Input } from '@/components/ui';
-import { SystemSettings } from '@/api/settings.api';
+import { Input, Button } from '@/components/ui';
+import { settingsApi, SystemSettings } from '@/api/settings.api';
 import { useFormContext } from 'react-hook-form';
 import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './SettingsLayout';
 import { useMutation } from '@tanstack/react-query';
 import { TestTube } from 'lucide-react';
-import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 
 // ─── Pricing Settings ────────────────────────────────────────────────────────
@@ -88,8 +87,6 @@ export function SkuBarcodeSettingsPanel() {
 }
 
 // ─── Invoicing Settings ──────────────────────────────────────────────────────
-
-import { settingsApi } from '@/api/settings.api';
 
 export function InvoicingSettingsPanel() {
   const { register, watch, setValue } = useFormContext<SystemSettings>();

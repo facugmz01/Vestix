@@ -1,18 +1,15 @@
 import { useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Building2, Upload, Globe, ExternalLink, Copy } from 'lucide-react';
 import { Input, Button } from '@/components/ui';
-import { settingsApi } from '@/api/settings.api';
-import { queryKeys } from '@/api/queryKeys';
+import { settingsApi, SystemSettings } from '@/api/settings.api';
 import { useFormContext } from 'react-hook-form';
-import { SystemSettings } from '@/api/settings.api';
 import { SettingsSection, SettingsRow, SettingsDivider } from './SettingsLayout';
 
 const TIMEZONES = ['America/Argentina/Buenos_Aires', 'America/Bogota', 'America/Santiago', 'America/Lima', 'America/Mexico_City'];
 
 export function GeneralSettingsPanel() {
-  const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { register, formState: { errors }, watch, setValue } = useFormContext<SystemSettings>();
@@ -23,7 +20,6 @@ export function GeneralSettingsPanel() {
     onSuccess: (data) => {
       setValue('general.logoUrl', data.logoUrl, { shouldDirty: true });
       toast.success('Logo actualizado');
-      qc.invalidateQueries({ queryKey: [...queryKeys.settings.get()] });
     },
     onError: () => toast.error('Error al subir logo'),
   });
@@ -129,7 +125,7 @@ export function GeneralSettingsPanel() {
         <Input label="Dirección" {...register('general.address')} />
         <Input label="Ciudad" {...register('general.city')} />
         <Input label="Provincia / Estado" {...register('general.province')} />
-        <Input label="País" {...register('general.country')} defaultValue="Argentina" />
+        <Input label="País" {...register('general.country')} />
       </div>
 
       <SettingsDivider />
