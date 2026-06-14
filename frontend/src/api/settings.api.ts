@@ -13,6 +13,7 @@ export interface GeneralSettings {
   phone: string;
   email: string;
   website?: string;
+  storefrontUrl?: string;   // URL pública del e-commerce
   logoUrl?: string;
   timezone: string;
   locale: string;
