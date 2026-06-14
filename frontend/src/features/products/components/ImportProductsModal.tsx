@@ -134,7 +134,7 @@ export function ImportProductsModal({ isOpen, onClose, onSuccess }: Props) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Importador Masivo">
+    <Modal open={isOpen} onClose={handleClose} title="Importador Masivo">
       <div className={styles.container}>
         
         {/* STEP: UPLOAD */}

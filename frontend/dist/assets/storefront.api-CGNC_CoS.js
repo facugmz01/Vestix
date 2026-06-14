@@ -1,0 +1,1 @@
+import{n as r}from"./index-DDgQ7AWB.js";import{c as o}from"./requestUtils-gaJB49jo.js";const n={getProducts:t=>{const{search:s,...e}=t||{};return r("/catalog/public",{params:o({...e,searchQuery:s})})},getProduct:t=>r(`/catalog/public/${t}`),getSettings:()=>r("/storefront/settings")};export{n as s};
