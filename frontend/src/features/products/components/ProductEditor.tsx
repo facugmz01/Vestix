@@ -134,18 +134,7 @@ export function ProductEditor({ initialData }: Props) {
     mutation.mutate(formData);
   };
 
-  const applyMarkup = (markupPercent: number) => {
-    const cost = formData.costPrice || 0;
-    const factor = 1 + (markupPercent / 100);
-    const basePrice = Math.round(cost * factor);
-    
-    const updatedVariants = formData.variants?.map(v => ({
-      ...v,
-      basePrice: Math.round((v.costPrice || cost) * factor)
-    }));
 
-    setFormData({ ...formData, basePrice, variants: updatedVariants });
-  };
 
   // UI styles to match the mockup
   const cardStyle = {
@@ -167,7 +156,7 @@ export function ProductEditor({ initialData }: Props) {
     color: 'var(--text-primary)'
   };
 
-  const [markupInput, setMarkupInput] = useState('');
+
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 0' }}>
@@ -315,55 +304,32 @@ export function ProductEditor({ initialData }: Props) {
                   <input
                     type="number"
                     value={formData.costPrice || ''}
-                    onChange={(e) => setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setFormData({ ...formData, costPrice: val, basePrice: val });
+                    }}
                     style={{ width: '100%', padding: '8px 12px 8px 24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)' }}
                   />
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Markup</span>
-                  <input 
-                    type="number" 
-                    value={markupInput}
-                    onChange={(e) => setMarkupInput(e.target.value)}
-                    onBlur={() => applyMarkup(parseFloat(markupInput))}
-                    placeholder="%" 
-                    style={{ width: '60px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '12px' }} 
-                  />
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>%</span>
                 </div>
               </div>
 
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Precio venta * <span style={{ background: '#3b82f6', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>P1</span></label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '12px', top: '8px', color: 'var(--text-muted)' }}>$</span>
-                  <input
-                    type="number"
-                    required
-                    value={formData.basePrice || ''}
-                    onChange={(e) => setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', padding: '8px 12px 8px 24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)' }}
-                  />
-                </div>
-              </div>
-              {priceLists?.filter(pl => !pl.isDefault).map((pl, idx) => {
+              {priceLists?.map((pl, idx) => {
                 let percentage = 0;
                 let calculatedPrice = 0;
                 if (pl.isPercentageBased) {
                   percentage = pl.percentageDiscount || 0;
-                  calculatedPrice = formData.basePrice ? Math.round(formData.basePrice * (1 + (percentage / 100))) : 0;
+                  calculatedPrice = formData.costPrice ? Math.round(formData.costPrice * (1 + (percentage / 100))) : 0;
                 } else {
                   percentage = Math.round(((pl.margin || 1) - 1) * 100);
-                  calculatedPrice = formData.basePrice ? Math.round(formData.basePrice * (pl.margin || 1)) : 0;
+                  calculatedPrice = formData.costPrice ? Math.round(formData.costPrice * (pl.margin || 1)) : 0;
                 }
-                const percentageText = percentage > 0 ? `+${percentage}%` : `${percentage}%`;
+                const percentageText = percentage > 0 ? `+${percentage}%` : percentage < 0 ? `${percentage}%` : '0%';
 
                 return (
                   <div key={pl.id}>
                     <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px', color: 'var(--text-muted)' }}>
-                      {pl.name} <span style={{ background: 'var(--text-muted)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>P{idx + 2}</span>
-                      <span style={{ marginLeft: '8px', fontSize: '11px', color: percentage > 0 ? 'var(--green)' : 'var(--red)' }}>{percentageText}</span>
+                      {pl.name} <span style={{ background: 'var(--text-muted)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px' }}>P{idx + 1}</span>
+                      <span style={{ marginLeft: '8px', fontSize: '11px', color: percentage > 0 ? 'var(--green)' : percentage < 0 ? 'var(--red)' : 'var(--text-muted)' }}>{percentageText}</span>
                     </label>
                     <div style={{ position: 'relative' }}>
                       <span style={{ position: 'absolute', left: '12px', top: '8px', color: 'var(--text-muted)' }}>$</span>
@@ -371,7 +337,7 @@ export function ProductEditor({ initialData }: Props) {
                         type="number"
                         value={calculatedPrice}
                         readOnly
-                        title="Precio calculado automáticamente según la configuración de la lista de precios."
+                        title="Precio calculado automáticamente sobre el costo según la configuración de la lista de precios."
                         style={{ width: '100%', padding: '8px 12px 8px 24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
                       />
                     </div>
