@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   ArrowLeft, Wand2, Plus, Image as ImageIcon,
-  Archive, Globe
+  Archive, Globe, Package
 } from 'lucide-react';
 import { Button, Input, Section, PageContainer } from '@/components/ui';
 import { productsApi, type CreateProductDto } from '@/api/products.api';
