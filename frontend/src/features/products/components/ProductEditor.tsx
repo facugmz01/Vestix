@@ -408,7 +408,7 @@ export function ProductEditor({ initialData }: Props) {
               <span style={{ background: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: '99px', fontSize: '11px', fontWeight: 600 }}>{formData.images?.length || 0}</span>
             </div>
             
-            <ProductImagesUploader formData={formData} onChange={setFormData} />
+            <ProductImagesUploader images={formData.images || []} onChange={(newImages) => setFormData({ ...formData, images: newImages })} />
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '12px' }}>
               JPG, PNG, WebP — máx. 5 MB por foto. La <strong>primera foto</strong> es la imagen principal. Arrastrá para reordenar.
             </p>
