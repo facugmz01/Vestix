@@ -214,8 +214,8 @@ export class SetupService {
       },
     });
 
-    // 8. Create/update SystemSettings
-    const defaultGeneral = {
+    // 8. Update SystemSettings.general via SettingsService (respects cache + merges properly)
+    const generalData = {
       companyName: data.companyName,
       legalName: data.companyName,
       taxId: data.cuit || '',
@@ -226,19 +226,16 @@ export class SetupService {
       locale: 'es-AR',
       currency: 'ARS',
     };
-    
+
+    // Ensure the singleton exists first (SettingsService may have already created it)
     await this.prisma.systemSettings.upsert({
       where: { id: 'default' },
-      update: {
-        general: defaultGeneral as any,
-      },
-      create: {
-        id: 'default',
-        general: defaultGeneral as any,
-      },
+      update: {},
+      create: { id: 'default' },
     });
 
-    await this.settingsService.reloadSettings();
+    // Now update only the general section through the service so the cache is kept in sync
+    await this.settingsService.updateSection('general', generalData, 'setup');
 
     return { success: true, message: 'Empresa configurada exitosamente' };
   }
