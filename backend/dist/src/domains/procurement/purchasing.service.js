@@ -14,6 +14,7 @@ exports.PurchasingService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
 const stock_movement_service_1 = require("../logistics/stock-movement.service");
+const uuid_1 = require("uuid");
 let PurchasingService = PurchasingService_1 = class PurchasingService {
     constructor(prisma, stockMovementService) {
         this.prisma = prisma;
@@ -97,6 +98,178 @@ let PurchasingService = PurchasingService_1 = class PurchasingService {
             }
             return po;
         });
+    }
+    async bulkImportPurchases(dto) {
+        return this.prisma.$transaction(async (tx) => {
+            const groupedOrders = {};
+            for (const row of dto.rows) {
+                if (!groupedOrders[row.orderId]) {
+                    groupedOrders[row.orderId] = [];
+                }
+                groupedOrders[row.orderId].push(row);
+            }
+            let createdCount = 0;
+            let errorCount = 0;
+            const errors = [];
+            for (const [externalOrderId, lines] of Object.entries(groupedOrders)) {
+                try {
+                    const firstLine = lines[0];
+                    let supplierId = null;
+                    if (firstLine.supplierIdentifier) {
+                        const ident = firstLine.supplierIdentifier.trim();
+                        const supplier = await tx.supplier.findFirst({
+                            where: {
+                                OR: [
+                                    { email: { equals: ident, mode: 'insensitive' } },
+                                    { taxId: ident },
+                                    { companyName: { equals: ident, mode: 'insensitive' } }
+                                ]
+                            }
+                        });
+                        if (supplier) {
+                            supplierId = supplier.id;
+                        }
+                        else {
+                            const newSup = await tx.supplier.create({
+                                data: {
+                                    companyName: ident,
+                                    email: ident.includes('@') ? ident : null
+                                }
+                            });
+                            supplierId = newSup.id;
+                        }
+                    }
+                    if (!supplierId) {
+                        throw new Error("Se requiere un proveedor.");
+                    }
+                    const poLinesData = [];
+                    let totalAmount = 0;
+                    for (const line of lines) {
+                        const variant = await tx.productVariant.findUnique({
+                            where: { sku: line.sku }
+                        });
+                        if (!variant) {
+                            throw new Error(`SKU no encontrado: ${line.sku}`);
+                        }
+                        const lineTotal = line.quantity * line.unitCost;
+                        totalAmount += lineTotal;
+                        poLinesData.push({
+                            id: (0, uuid_1.v4)(),
+                            variantId: variant.id,
+                            orderedQuantity: line.quantity,
+                            receivedQuantity: dto.updateStock ? line.quantity : 0,
+                            unitCost: line.unitCost,
+                            discountAmount: 0,
+                            totalAmount: lineTotal
+                        });
+                        if (dto.updateStock) {
+                            await tx.inventoryMovement.create({
+                                data: {
+                                    variantId: variant.id,
+                                    destinationWarehouseId: dto.warehouseId,
+                                    type: 'RECEIPT',
+                                    quantity: line.quantity,
+                                    unitCost: line.unitCost,
+                                    referenceId: externalOrderId
+                                }
+                            });
+                            const stockLevel = await tx.stockLevel.findFirst({
+                                where: { variantId: variant.id, warehouseId: dto.warehouseId }
+                            });
+                            if (stockLevel) {
+                                await tx.stockLevel.update({
+                                    where: { id: stockLevel.id },
+                                    data: {
+                                        physicalQuantity: { increment: line.quantity },
+                                        availableQuantity: { increment: line.quantity }
+                                    }
+                                });
+                            }
+                            else {
+                                await tx.stockLevel.create({
+                                    data: {
+                                        variantId: variant.id,
+                                        warehouseId: dto.warehouseId,
+                                        physicalQuantity: line.quantity,
+                                        availableQuantity: line.quantity
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    const poId = (0, uuid_1.v4)();
+                    await tx.purchaseOrder.create({
+                        data: {
+                            id: poId,
+                            supplierId,
+                            destinationWarehouseId: dto.warehouseId,
+                            status: dto.updateStock ? 'COMPLETED' : 'ISSUED',
+                            totalAmount,
+                            paidAmount: 0,
+                            currency: 'ARS',
+                            issuedAt: firstLine.date ? new Date(firstLine.date) : new Date(),
+                            completedAt: dto.updateStock ? (firstLine.date ? new Date(firstLine.date) : new Date()) : null,
+                            lines: {
+                                create: poLinesData
+                            }
+                        }
+                    });
+                    if (dto.updateStock) {
+                        const grId = (0, uuid_1.v4)();
+                        await tx.goodsReceipt.create({
+                            data: {
+                                id: grId,
+                                purchaseOrderId: poId,
+                                destinationWarehouseId: dto.warehouseId,
+                                status: 'VALIDATED',
+                                lines: {
+                                    create: poLinesData.map(l => ({
+                                        poLineItemId: l.id,
+                                        variantId: l.variantId,
+                                        expectedQuantity: l.orderedQuantity,
+                                        receivedQuantity: l.receivedQuantity,
+                                        difference: 0
+                                    }))
+                                }
+                            }
+                        });
+                    }
+                    let finalPaymentStatus = dto.paymentResolution;
+                    if (finalPaymentStatus === 'FROM_CSV' && firstLine.paymentStatus) {
+                        const ps = firstLine.paymentStatus.toUpperCase();
+                        if (ps.includes('PAGAD') || ps.includes('EFECTIVO') || ps.includes('CASH')) {
+                            finalPaymentStatus = 'PAID_CASH';
+                        }
+                        else {
+                            finalPaymentStatus = 'CURRENT_ACCOUNT';
+                        }
+                    }
+                    if (finalPaymentStatus === 'CURRENT_ACCOUNT') {
+                        await tx.supplier.update({
+                            where: { id: supplierId },
+                            data: { balance: { increment: totalAmount } }
+                        });
+                    }
+                    else if (finalPaymentStatus === 'PAID_CASH') {
+                        await tx.purchaseOrder.update({
+                            where: { id: poId },
+                            data: { paidAmount: totalAmount }
+                        });
+                    }
+                    createdCount++;
+                }
+                catch (error) {
+                    errorCount++;
+                    errors.push(`Orden ${externalOrderId}: ${error.message}`);
+                }
+            }
+            return {
+                success: true,
+                createdCount,
+                errorCount,
+                errors
+            };
+        }, { timeout: 30000 });
     }
     async findAll(query = {}) {
         const page = parseInt(query.page) || 1;

@@ -25,6 +25,9 @@ export const customersApi = {
   createCustomer: (dto: CreateCustomerDto) =>
     post<Customer>('/customers', dto),
 
+  bulkImportBalances: (rows: any[], resolution: 'overwrite' | 'add') =>
+    post<{ success: boolean; updatedCount: number; notFound: string[] }>('/customers/bulk-import-balances', { rows, resolution }),
+
   updateCustomer: (id: string, dto: UpdateCustomerDto) =>
     patch<Customer>(`/customers/${id}`, dto),
 

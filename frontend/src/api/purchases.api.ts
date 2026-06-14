@@ -42,7 +42,10 @@ export const purchasesApi = {
     post<PurchaseOrder>(`/purchasing/orders/${id}/issue`, {}),
 
   receiveOrder: (id: string, dto: ReceivePurchaseDto) =>
-    post<PurchaseOrder>(`/purchasing/orders/${id}/receive`, dto),
+    post<{ status: string; discrepancy: boolean }>(`/purchasing/orders/${id}/receive`, dto),
+
+  bulkImportPurchases: (rows: any[], updateStock: boolean, paymentResolution: string, warehouseId: string) =>
+    post<{ success: boolean; createdCount: number; errorCount: number; errors: string[] }>('/purchasing/bulk-import', { rows, updateStock, paymentResolution, warehouseId }),
 
   cancelOrder: (id: string) =>
     post<PurchaseOrder>(`/purchasing/orders/${id}/cancel`, {}),
@@ -50,4 +53,3 @@ export const purchasesApi = {
   removeOrder: (id: string) =>
     del<void>(`/purchasing/orders/${id}`),
 };
-

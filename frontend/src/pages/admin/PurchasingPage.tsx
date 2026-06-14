@@ -17,6 +17,8 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { PurchaseFormDrawer } from '@/features/purchasing/components/PurchaseFormDrawer';
 import { PurchaseDetailDrawer } from '@/features/purchasing/components/PurchaseDetailDrawer';
+import { ImportPurchasesModal } from '@/features/purchasing/components/ImportPurchasesModal';
+import { FileSpreadsheet } from 'lucide-react';
 
 export default function PurchasingPage() {
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ export default function PurchasingPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
 
   const { data: suppliersData } = useQuery({ queryKey: queryKeys.suppliers.all(), queryFn: () => suppliersApi.getSuppliers({}) });
@@ -100,18 +103,25 @@ export default function PurchasingPage() {
       tabs={<Tabs items={PURCHASING_TABS} />}
       
       title="Compras y Abastecimiento (PO)" 
-      subtitle="Gestioná Órdenes de Compra, recepciones de mercadería y cuentas corrientes con proveedores."
+      subtitle="Gestioná las órdenes de compra (PO), su estado de recepción y facturación."
       action={
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <ActionGuard action="manage" subject="Purchasing">
-            <Button variant="secondary" icon={<Plus size={16} />} onClick={handleCreate}>
-              Nueva OC (Borrador)
+        <ActionGuard action="manage" subject="Purchasing">
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button 
+              variant="secondary" 
+              icon={<FileSpreadsheet size={16} />} 
+              onClick={() => setImportOpen(true)}
+            >
+              Importar Compras Históricas
             </Button>
-            <Button variant="primary" icon={<Truck size={16} />} onClick={() => navigate('/admin/purchasing/new')}>
+            <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
+              Nueva Orden (PO)
+            </Button>
+            <Button variant="secondary" icon={<Truck size={16} />} onClick={() => navigate('/admin/purchasing/new')}>
               Ingreso Directo (Stock)
             </Button>
-          </ActionGuard>
-        </div>
+          </div>
+        </ActionGuard>
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} órdenes</Badge>}>
@@ -206,12 +216,23 @@ export default function PurchasingPage() {
         orderToEdit={selectedOrder?.status === 'DRAFT' ? selectedOrder : null}
       />
       
-      <PurchaseDetailDrawer 
-        open={detailOpen} 
-        onClose={() => setDetailOpen(false)} 
-        orderId={selectedOrder?.id || null} 
-      />
+      {selectedOrder && (
+        <PurchaseDetailDrawer 
+          open={detailOpen} 
+          onClose={() => setDetailOpen(false)} 
+          orderId={selectedOrder.id} 
+        />
+      )}
 
+      <ImportPurchasesModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => {
+          setImportOpen(false);
+          refetch();
+          toast.success('Compras importadas. Revisá los resultados.');
+        }}
+      />
     </PageContainer>
   );
 }

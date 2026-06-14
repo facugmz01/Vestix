@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Query, Param, ParseUUIDPipe, Patch, Delete } from '@nestjs/common';
 import { PurchasingService } from './purchasing.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { BulkImportPurchasesDto } from './dto/bulk-purchases.dto';
 
 @Controller('purchasing')
 export class PurchasingController {
@@ -10,6 +11,12 @@ export class PurchasingController {
   @RequirePermissions({ action: 'read', subject: 'Purchasing' })
   findAll(@Query() query: any) {
     return this.purchasingService.findAll(query);
+  }
+
+  @Post('bulk-import')
+  @RequirePermissions({ action: 'create', subject: 'Purchasing' })
+  bulkImportPurchases(@Body() dto: BulkImportPurchasesDto) {
+    return this.purchasingService.bulkImportPurchases(dto);
   }
 
   @Post('direct')

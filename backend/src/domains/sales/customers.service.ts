@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
 
 @Injectable()
 export class CustomersService {
@@ -130,6 +131,55 @@ export class CustomersService {
         usedCredit: { increment: amount },
         updatedAt: new Date(),
       }
+    });
+  }
+
+  async bulkImportBalances(dto: BulkImportBalancesDto) {
+    return this.prisma.$transaction(async (tx) => {
+      let updatedCount = 0;
+      const notFound = [];
+
+      for (const row of dto.rows) {
+        // Try to find the customer by taxId, then email, then fullName
+        let customer = null;
+        if (row.identifier) {
+          customer = await tx.customer.findFirst({
+            where: { taxId: row.identifier }
+          });
+
+          if (!customer) {
+            const byEmail = await tx.customer.findMany({
+              where: { email: { equals: row.identifier, mode: 'insensitive' } }
+            });
+            if (byEmail.length === 1) customer = byEmail[0];
+          }
+
+          if (!customer) {
+            const byName = await tx.customer.findMany({
+              where: { fullName: { equals: row.identifier, mode: 'insensitive' } }
+            });
+            if (byName.length === 1) customer = byName[0];
+          }
+        }
+
+        if (!customer) {
+          notFound.push(row.identifier);
+          continue;
+        }
+
+        const newUsedCredit = dto.resolution === 'overwrite' 
+          ? row.balance 
+          : customer.usedCredit + row.balance;
+
+        await tx.customer.update({
+          where: { id: customer.id },
+          data: { usedCredit: newUsedCredit }
+        });
+
+        updatedCount++;
+      }
+
+      return { success: true, updatedCount, notFound };
     });
   }
 }

@@ -25,6 +25,9 @@ export const suppliersApi = {
   createSupplier: (dto: CreateSupplierDto) =>
     post<Supplier>('/suppliers', dto),
 
+  bulkImportBalances: (rows: any[], resolution: 'overwrite' | 'add') =>
+    post<{ success: boolean; updatedCount: number; notFound: string[] }>('/suppliers/bulk-import-balances', { rows, resolution }),
+
   updateSupplier: (id: string, dto: UpdateSupplierDto) =>
     patch<Supplier>(`/suppliers/${id}`, dto),
 

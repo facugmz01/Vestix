@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
+import { BulkImportBalancesDto } from '../sales/dto/bulk-balances.dto';
 
 @Injectable()
 export class SuppliersService {
@@ -94,5 +95,54 @@ export class SuppliersService {
   async deleteSupplier(id: string) {
     await this.getSupplier(id);
     return this.prisma.supplier.delete({ where: { id } });
+  }
+
+  async bulkImportBalances(dto: BulkImportBalancesDto) {
+    return this.prisma.$transaction(async (tx) => {
+      let updatedCount = 0;
+      const notFound = [];
+
+      for (const row of dto.rows) {
+        // Try to find the supplier by taxId, then email, then companyName
+        let supplier = null;
+        if (row.identifier) {
+          supplier = await tx.supplier.findFirst({
+            where: { taxId: row.identifier }
+          });
+
+          if (!supplier) {
+            const byEmail = await tx.supplier.findMany({
+              where: { email: { equals: row.identifier, mode: 'insensitive' } }
+            });
+            if (byEmail.length === 1) supplier = byEmail[0];
+          }
+
+          if (!supplier) {
+            const byName = await tx.supplier.findMany({
+              where: { companyName: { equals: row.identifier, mode: 'insensitive' } }
+            });
+            if (byName.length === 1) supplier = byName[0];
+          }
+        }
+
+        if (!supplier) {
+          notFound.push(row.identifier);
+          continue;
+        }
+
+        const newBalance = dto.resolution === 'overwrite' 
+          ? row.balance 
+          : supplier.balance + row.balance;
+
+        await tx.supplier.update({
+          where: { id: supplier.id },
+          data: { balance: newBalance }
+        });
+
+        updatedCount++;
+      }
+
+      return { success: true, updatedCount, notFound };
+    });
   }
 }

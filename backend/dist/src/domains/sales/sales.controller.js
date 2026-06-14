@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const sales_service_1 = require("./sales.service");
 const checkout_orchestrator_1 = require("./checkout.orchestrator");
 const create_order_dto_1 = require("./dto/create-order.dto");
+const bulk_sales_dto_1 = require("./dto/bulk-sales.dto");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
 let SalesController = class SalesController {
     constructor(salesService, checkoutOrchestrator) {
@@ -28,6 +29,9 @@ let SalesController = class SalesController {
     }
     async getReturns() {
         return { data: [], total: 0 };
+    }
+    async bulkImportSales(dto) {
+        return this.salesService.bulkImportSales(dto);
     }
     async getOrders(query) {
         return this.salesService.getOrders(query);
@@ -58,6 +62,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "getReturns", null);
+__decorate([
+    (0, common_1.Post)('bulk-import'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Sales' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [bulk_sales_dto_1.BulkImportSalesDto]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "bulkImportSales", null);
 __decorate([
     (0, common_1.Get)('orders'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),

@@ -55,4 +55,7 @@ export const salesApi = {
 
   cancelSale: (id: string) =>
     post<SaleOrder>(`/sales/orders/${id}/cancel`, {}),
+
+  bulkImportSales: (rows: any[], updateStock: boolean, paymentResolution: string, branchId: string) =>
+    post<{ success: boolean; createdCount: number; errorCount: number; errors: string[] }>('/sales/bulk-import', { rows, updateStock, paymentResolution, branchId }),
 };

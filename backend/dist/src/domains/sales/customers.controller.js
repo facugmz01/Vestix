@@ -16,6 +16,7 @@ exports.CustomersController = void 0;
 const common_1 = require("@nestjs/common");
 const customers_service_1 = require("./customers.service");
 const create_customer_dto_1 = require("./dto/create-customer.dto");
+const bulk_balances_dto_1 = require("./dto/bulk-balances.dto");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
 let CustomersController = class CustomersController {
     constructor(customersService) {
@@ -23,6 +24,9 @@ let CustomersController = class CustomersController {
     }
     create(dto) {
         return this.customersService.create(dto);
+    }
+    bulkImportBalances(dto) {
+        return this.customersService.bulkImportBalances(dto);
     }
     findAll(query) {
         return this.customersService.findAll(query);
@@ -46,6 +50,14 @@ __decorate([
     __metadata("design:paramtypes", [create_customer_dto_1.CreateCustomerDto]),
     __metadata("design:returntype", void 0)
 ], CustomersController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('bulk-import-balances'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Customers' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [bulk_balances_dto_1.BulkImportBalancesDto]),
+    __metadata("design:returntype", void 0)
+], CustomersController.prototype, "bulkImportBalances", null);
 __decorate([
     (0, common_1.Get)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Customers' }),

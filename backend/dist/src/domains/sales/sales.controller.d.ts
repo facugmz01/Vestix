@@ -1,6 +1,7 @@
 import { SalesService } from './sales.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 export declare class SalesController {
     private readonly salesService;
     private readonly checkoutOrchestrator;
@@ -29,6 +30,12 @@ export declare class SalesController {
     getReturns(): Promise<{
         data: any[];
         total: number;
+    }>;
+    bulkImportSales(dto: BulkImportSalesDto): Promise<{
+        success: boolean;
+        createdCount: number;
+        errorCount: number;
+        errors: string[];
     }>;
     getOrders(query: any): Promise<{
         data: {

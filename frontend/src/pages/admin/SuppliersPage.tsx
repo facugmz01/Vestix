@@ -15,6 +15,8 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { SupplierFormDrawer } from '@/features/suppliers/components/SupplierFormDrawer';
 import { SupplierDetailDrawer } from '@/features/suppliers/components/SupplierDetailDrawer';
+import { ImportBalancesModal } from '@/components/ui/ImportBalancesModal';
+import { FileSpreadsheet } from 'lucide-react';
 
 export default function SuppliersPage() {
   const queryClient = useQueryClient();
@@ -28,6 +30,7 @@ export default function SuppliersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
@@ -88,9 +91,18 @@ export default function SuppliersPage() {
       subtitle="Gestioná a tus abastecedores y mantené el control de tus cuentas por pagar."
       action={
         <ActionGuard action="manage" subject="Purchasing">
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
-            Nuevo Proveedor
-          </Button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button 
+              variant="secondary" 
+              icon={<FileSpreadsheet size={16} />} 
+              onClick={() => setImportOpen(true)}
+            >
+              Importar Saldos
+            </Button>
+            <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
+              Nuevo Proveedor
+            </Button>
+          </div>
         </ActionGuard>
       }
     >
@@ -205,12 +217,31 @@ export default function SuppliersPage() {
       <ConfirmDialog
         open={deleteOpen}
         title="Eliminar Proveedor"
-        message={`¿Estás seguro de que querés eliminar el proveedor "${selectedSupplier?.companyName}"? Esta acción no se puede deshacer y fallará si existen Órdenes de Compra históricas a su nombre.`}
-        confirmLabel="Eliminar"
+        message={`¿Estás seguro de que querés eliminar a "${selectedSupplier?.companyName}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar Definitivamente"
         variant="danger"
         loading={deleteMutation.isPending}
         onConfirm={() => selectedSupplier && deleteMutation.mutate(selectedSupplier.id)}
         onCancel={() => setDeleteOpen(false)}
+        confirmText="Sí, Eliminar"
+        isDestructive
+        isLoading={deleteMutation.isPending}
+      />
+
+      <ImportBalancesModal 
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => {
+          setImportOpen(false);
+          refetch();
+          toast.success('Saldos importados correctamente');
+        }}
+        entityName="Proveedor"
+        title="Importar Cuentas Corrientes (Acreedores)"
+        onImport={async (rows, resolution) => {
+          const res = await suppliersApi.bulkImportBalances(rows, resolution);
+          return res.data; 
+        }}
       />
     </PageContainer>
   );

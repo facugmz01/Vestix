@@ -1,1 +1,0 @@
-import{l as r,m as o,p as h,n as s}from"./index-DDgQ7AWB.js";import{c as t}from"./requestUtils-gaJB49jo.js";const m={getWarehouses:e=>s("/warehouses",{params:t(e??{})}),getWarehouse:e=>s(`/warehouses/${e}`),createWarehouse:e=>h("/warehouses",e),updateWarehouse:(e,a)=>o(`/warehouses/${e}`,a),deleteWarehouse:e=>r(`/warehouses/${e}`)};export{m as w};

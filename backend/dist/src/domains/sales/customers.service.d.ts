@@ -1,5 +1,6 @@
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
 export declare class CustomersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
@@ -54,5 +55,10 @@ export declare class CustomersService {
         priceListId: string | null;
         createdAt: Date;
         updatedAt: Date;
+    }>;
+    bulkImportBalances(dto: BulkImportBalancesDto): Promise<{
+        success: boolean;
+        updatedCount: number;
+        notFound: any[];
     }>;
 }

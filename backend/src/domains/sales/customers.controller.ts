@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('customers')
@@ -11,6 +12,12 @@ export class CustomersController {
   @RequirePermissions({ action: 'create', subject: 'Customers' })
   create(@Body() dto: CreateCustomerDto) {
     return this.customersService.create(dto);
+  }
+
+  @Post('bulk-import-balances')
+  @RequirePermissions({ action: 'manage', subject: 'Customers' })
+  bulkImportBalances(@Body() dto: BulkImportBalancesDto) {
+    return this.customersService.bulkImportBalances(dto);
   }
 
   @Get()

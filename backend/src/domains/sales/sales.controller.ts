@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('sales')
@@ -21,6 +22,12 @@ export class SalesController {
   @RequirePermissions({ action: 'read', subject: 'Sales' })
   async getReturns() {
     return { data: [], total: 0 };
+  }
+
+  @Post('bulk-import')
+  @RequirePermissions({ action: 'create', subject: 'Sales' })
+  async bulkImportSales(@Body() dto: BulkImportSalesDto) {
+    return this.salesService.bulkImportSales(dto);
   }
 
   @Get('orders')

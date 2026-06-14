@@ -1,9 +1,15 @@
 import { SuppliersService } from './suppliers.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
+import { BulkImportBalancesDto } from '../sales/dto/bulk-balances.dto';
 export declare class SuppliersController {
     private readonly suppliersService;
     constructor(suppliersService: SuppliersService);
     create(dto: CreateSupplierDto): Promise<any>;
+    bulkImportBalances(dto: BulkImportBalancesDto): Promise<{
+        success: boolean;
+        updatedCount: number;
+        notFound: any[];
+    }>;
     findAll(query: any): Promise<{
         data: any[];
         total: number;

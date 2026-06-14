@@ -1,5 +1,6 @@
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { StockMovementService } from '../logistics/stock-movement.service';
+import { BulkImportPurchasesDto } from './dto/bulk-purchases.dto';
 export declare class PurchasingService {
     private readonly prisma;
     private readonly stockMovementService;
@@ -68,18 +69,14 @@ export declare class PurchasingService {
         createdAt: Date;
         updatedAt: Date;
     }>;
+    bulkImportPurchases(dto: BulkImportPurchasesDto): Promise<{
+        success: boolean;
+        createdCount: number;
+        errorCount: number;
+        errors: string[];
+    }>;
     findAll(query?: any): Promise<{
         data: ({
-            lines: {
-                id: string;
-                purchaseOrderId: string;
-                variantId: string;
-                orderedQuantity: number;
-                receivedQuantity: number;
-                unitCost: number;
-                discountAmount: number;
-                totalAmount: number;
-            }[];
             supplier: {
                 id: string;
                 companyName: string;
@@ -92,6 +89,16 @@ export declare class PurchasingService {
                 createdAt: Date;
                 updatedAt: Date;
             };
+            lines: {
+                id: string;
+                purchaseOrderId: string;
+                variantId: string;
+                orderedQuantity: number;
+                receivedQuantity: number;
+                unitCost: number;
+                discountAmount: number;
+                totalAmount: number;
+            }[];
         } & {
             id: string;
             supplierId: string;
@@ -111,6 +118,18 @@ export declare class PurchasingService {
         pageSize: number;
     }>;
     getPO(id: string): Promise<{
+        supplier: {
+            id: string;
+            companyName: string;
+            contactName: string | null;
+            taxId: string | null;
+            email: string | null;
+            phone: string | null;
+            balance: number;
+            currency: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         lines: ({
             variant: {
                 product: {
@@ -156,18 +175,6 @@ export declare class PurchasingService {
             discountAmount: number;
             totalAmount: number;
         })[];
-        supplier: {
-            id: string;
-            companyName: string;
-            contactName: string | null;
-            taxId: string | null;
-            email: string | null;
-            phone: string | null;
-            balance: number;
-            currency: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
     } & {
         id: string;
         supplierId: string;

@@ -14,6 +14,8 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
 import { CustomerDetailDrawer } from '@/features/customers/components/CustomerDetailDrawer';
+import { ImportBalancesModal } from '@/components/ui/ImportBalancesModal';
+import { FileSpreadsheet } from 'lucide-react';
 
 export default function CustomersPage() {
   const queryClient = useQueryClient();
@@ -27,6 +29,7 @@ export default function CustomersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
@@ -85,9 +88,18 @@ export default function CustomersPage() {
       subtitle="Gestioná tu cartera de clientes, cuentas corrientes y condiciones comerciales."
       action={
         <ActionGuard action="manage" subject="Customers">
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
-            Nuevo Cliente
-          </Button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button 
+              variant="secondary" 
+              icon={<FileSpreadsheet size={16} />} 
+              onClick={() => setImportOpen(true)}
+            >
+              Importar Saldos
+            </Button>
+            <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
+              Nuevo Cliente
+            </Button>
+          </div>
         </ActionGuard>
       }
     >
@@ -216,12 +228,31 @@ export default function CustomersPage() {
       <ConfirmDialog
         open={deleteOpen}
         title="Eliminar Cliente"
-        message={`¿Estás seguro de que querés eliminar al cliente "${selectedCustomer?.fullName}"? Esta acción no se puede deshacer y fallará si existen facturas históricas a su nombre.`}
-        confirmLabel="Eliminar"
+        message={`¿Estás seguro de que querés eliminar a "${selectedCustomer?.fullName}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar Definitivamente"
         variant="danger"
         loading={deleteMutation.isPending}
         onConfirm={() => selectedCustomer && deleteMutation.mutate(selectedCustomer.id)}
         onCancel={() => setDeleteOpen(false)}
+        confirmText="Sí, Eliminar"
+        isDestructive
+        isLoading={deleteMutation.isPending}
+      />
+
+      <ImportBalancesModal 
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => {
+          setImportOpen(false);
+          refetch();
+          toast.success('Saldos importados correctamente');
+        }}
+        entityName="Cliente"
+        title="Importar Cuentas Corrientes (Deudores)"
+        onImport={async (rows, resolution) => {
+          const res = await customersApi.bulkImportBalances(rows, resolution);
+          return res.data; // since fetch wrappers return { data: ... }
+        }}
       />
     </PageContainer>
   );

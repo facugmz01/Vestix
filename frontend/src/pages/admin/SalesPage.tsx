@@ -14,6 +14,9 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { SaleFormDrawer } from '@/features/sales/components/SaleFormDrawer';
 import { SaleDetailDrawer } from '@/features/sales/components/SaleDetailDrawer';
+import { ImportSalesModal } from '@/features/sales/components/ImportSalesModal';
+import { FileSpreadsheet } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function SalesPage() {
   const [page, setPage] = useState(1);
@@ -21,9 +24,9 @@ export default function SalesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -56,9 +59,18 @@ export default function SalesPage() {
       subtitle="Monitor general de ventas confirmadas y presupuestos (Quotations) generados en todas las sucursales."
       action={
         <ActionGuard action="manage" subject="Sales">
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
-            Crear Presupuesto / Venta
-          </Button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button 
+              variant="secondary" 
+              icon={<FileSpreadsheet size={16} />} 
+              onClick={() => setImportOpen(true)}
+            >
+              Importar Ventas Históricas
+            </Button>
+            <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
+              Crear Presupuesto / Venta
+            </Button>
+          </div>
         </ActionGuard>
       }
     >
@@ -155,17 +167,22 @@ export default function SalesPage() {
 
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
 
-      <SaleFormDrawer 
-        open={formOpen} 
-        onClose={() => setFormOpen(false)} 
-      />
+      <SaleFormDrawer open={formOpen} onClose={() => setFormOpen(false)} />
+      {selectedSaleId && <SaleDetailDrawer open={detailOpen} onClose={() => setDetailOpen(false)} saleId={selectedSaleId} />}
       
-      <SaleDetailDrawer 
-        open={detailOpen} 
-        onClose={() => setDetailOpen(false)} 
-        saleId={selectedSaleId} 
+      <ImportSalesModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => {
+          setImportOpen(false);
+          refetch();
+          toast.success('Ventas importadas. Revisá los resultados.');
+        }}
+        onImport={async (rows, updateStock, paymentResolution, branchId) => {
+          const res = await salesApi.bulkImportSales(rows, updateStock, paymentResolution, branchId);
+          return res.data;
+        }}
       />
-
     </PageContainer>
   );
 }

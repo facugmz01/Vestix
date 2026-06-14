@@ -16,12 +16,16 @@ exports.PurchasingController = void 0;
 const common_1 = require("@nestjs/common");
 const purchasing_service_1 = require("./purchasing.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const bulk_purchases_dto_1 = require("./dto/bulk-purchases.dto");
 let PurchasingController = class PurchasingController {
     constructor(purchasingService) {
         this.purchasingService = purchasingService;
     }
     findAll(query) {
         return this.purchasingService.findAll(query);
+    }
+    bulkImportPurchases(dto) {
+        return this.purchasingService.bulkImportPurchases(dto);
     }
     processDirectPurchase(dto) {
         return this.purchasingService.processDirectPurchase(dto);
@@ -48,6 +52,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PurchasingController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Post)('bulk-import'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Purchasing' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [bulk_purchases_dto_1.BulkImportPurchasesDto]),
+    __metadata("design:returntype", void 0)
+], PurchasingController.prototype, "bulkImportPurchases", null);
 __decorate([
     (0, common_1.Post)('direct'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Purchasing' }),
