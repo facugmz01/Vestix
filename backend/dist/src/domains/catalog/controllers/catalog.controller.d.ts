@@ -7,6 +7,7 @@ import { CreateBrandDto } from '../dto/create-brand.dto';
 import { CreateAttributeDto } from '../dto/create-attribute.dto';
 import { CreatePriceListDto } from '../dto/create-price-list.dto';
 import { UpdatePriceListDto } from '../dto/update-price-list.dto';
+import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 export declare class CategoriesController {
     private readonly categoriesService;
     constructor(categoriesService: CategoriesService);
@@ -109,6 +110,15 @@ export declare class ProductsController {
         metadata: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
+    }>;
+    bulkValidate(dto: BulkValidateDto): Promise<{
+        validRows: any[];
+        conflicts: any[];
+    }>;
+    bulkImport(dto: BulkImportDto): Promise<{
+        success: boolean;
+        createdCount: number;
+        updatedCount: number;
     }>;
     findAll(query: any): Promise<{
         data: ({
@@ -264,22 +274,7 @@ export declare class ProductsController {
         updatedAt: Date;
     }>;
     remove(id: string): Promise<{
-        id: string;
-        name: string;
-        baseSku: string | null;
-        description: string | null;
-        categoryId: string;
-        brandId: string | null;
-        type: import(".prisma/client").$Enums.ProductType;
-        isVariable: boolean;
-        manageBatches: boolean;
-        costPrice: number;
-        isActive: boolean;
-        isPublished: boolean;
-        images: import(".prisma/client").Prisma.JsonValue;
-        metadata: import(".prisma/client").Prisma.JsonValue;
-        createdAt: Date;
-        updatedAt: Date;
+        success: boolean;
     }>;
 }
 export declare class VariantsController {

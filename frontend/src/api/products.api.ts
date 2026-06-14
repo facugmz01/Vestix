@@ -28,6 +28,12 @@ export const productsApi = {
   createProduct: (dto: CreateProductDto) =>
     post<Product>('/products', dto),
 
+  bulkValidate: (rows: any[]) =>
+    post<{ validRows: any[]; conflicts: any[] }>('/products/bulk-validate', { rows }),
+
+  bulkImport: (rows: any[]) =>
+    post<{ success: boolean; createdCount: number; updatedCount: number }>('/products/bulk-import', { rows }),
+
   updateProduct: (id: string, dto: UpdateProductDto) =>
     patch<Product>(`/products/${id}`, dto),
 

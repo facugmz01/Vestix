@@ -23,6 +23,7 @@ const create_brand_dto_1 = require("../dto/create-brand.dto");
 const create_attribute_dto_1 = require("../dto/create-attribute.dto");
 const create_price_list_dto_1 = require("../dto/create-price-list.dto");
 const update_price_list_dto_1 = require("../dto/update-price-list.dto");
+const bulk_product_dto_1 = require("../dto/bulk-product.dto");
 const require_permissions_decorator_1 = require("../../../core/rbac/decorators/require-permissions.decorator");
 let CategoriesController = class CategoriesController {
     constructor(categoriesService) {
@@ -139,6 +140,12 @@ let ProductsController = class ProductsController {
     create(createProductDto) {
         return this.productsService.create(createProductDto);
     }
+    bulkValidate(dto) {
+        return this.productsService.bulkValidate(dto);
+    }
+    bulkImport(dto) {
+        return this.productsService.bulkImport(dto);
+    }
     findAll(query) {
         return this.productsService.findAll(query);
     }
@@ -170,6 +177,22 @@ __decorate([
     __metadata("design:paramtypes", [create_product_dto_1.CreateProductDto]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('bulk-validate'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Catalog' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [bulk_product_dto_1.BulkValidateDto]),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "bulkValidate", null);
+__decorate([
+    (0, common_1.Post)('bulk-import'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Catalog' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [bulk_product_dto_1.BulkImportDto]),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "bulkImport", null);
 __decorate([
     (0, common_1.Get)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),

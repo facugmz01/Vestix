@@ -1,0 +1,1 @@
+import{n as o,p as e}from"./index-_oAQUyKP.js";const n={checkout:r=>e("/storefront/checkout",r),getMyOrders:(r=1,t=15)=>o("/storefront/my-orders",{params:{page:r,pageSize:t}}),getMyOrder:r=>o(`/storefront/my-orders/${r}`)};export{n as s};

@@ -8,6 +8,7 @@ import { CreateBrandDto } from '../dto/create-brand.dto';
 import { CreateAttributeDto } from '../dto/create-attribute.dto';
 import { CreatePriceListDto } from '../dto/create-price-list.dto';
 import { UpdatePriceListDto } from '../dto/update-price-list.dto';
+import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { RequirePermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('categories')
@@ -76,6 +77,18 @@ export class ProductsController {
   @RequirePermissions({ action: 'create', subject: 'Catalog' })
   create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
+  }
+
+  @Post('bulk-validate')
+  @RequirePermissions({ action: 'create', subject: 'Catalog' })
+  bulkValidate(@Body() dto: BulkValidateDto) {
+    return this.productsService.bulkValidate(dto);
+  }
+
+  @Post('bulk-import')
+  @RequirePermissions({ action: 'create', subject: 'Catalog' })
+  bulkImport(@Body() dto: BulkImportDto) {
+    return this.productsService.bulkImport(dto);
   }
 
   @Get()

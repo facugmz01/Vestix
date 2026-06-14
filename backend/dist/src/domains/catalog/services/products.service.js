@@ -330,14 +330,198 @@ let ProductsService = class ProductsService {
         });
     }
     async remove(id) {
-        const product = await this.findOne(id);
+        const stockLevels = await this.prisma.stockLevel.findMany({
+            where: {
+                variant: { productId: id },
+                quantity: { gt: 0 },
+            },
+        });
+        if (stockLevels.length > 0) {
+            throw new common_1.ConflictException('No se puede eliminar el producto porque tiene stock en uno o más depósitos. Realice un ajuste de salida primero.');
+        }
         return this.prisma.$transaction(async (tx) => {
+            await tx.productComboLine.deleteMany({
+                where: { parentProductId: id },
+            });
+            const variants = await tx.productVariant.findMany({
+                where: { productId: id },
+                select: { id: true },
+            });
+            const variantIds = variants.map((v) => v.id);
+            await tx.productComboLine.deleteMany({
+                where: { childVariantId: { in: variantIds } },
+            });
+            await tx.stockLevel.deleteMany({
+                where: { variantId: { in: variantIds } },
+            });
+            await tx.priceListEntry.deleteMany({
+                where: { variantId: { in: variantIds } },
+            });
             await tx.productVariant.deleteMany({
-                where: { productId: product.id }
+                where: { productId: id },
             });
-            return tx.product.delete({
-                where: { id: product.id }
+            await tx.product.delete({
+                where: { id },
             });
+            return { success: true };
+        });
+    }
+    async bulkValidate(dto) {
+        const validRows = [];
+        const conflicts = [];
+        const skus = dto.rows.map(r => r.sku).filter(s => !!s);
+        const existingVariants = await this.prisma.productVariant.findMany({
+            where: { sku: { in: skus } },
+            include: { product: true }
+        });
+        const existingMap = new Map(existingVariants.map(v => [v.sku, v]));
+        for (const row of dto.rows) {
+            if (row.sku && existingMap.has(row.sku)) {
+                conflicts.push({
+                    row,
+                    existingProduct: existingMap.get(row.sku)
+                });
+            }
+            else {
+                validRows.push(row);
+            }
+        }
+        return { validRows, conflicts };
+    }
+    async bulkImport(dto) {
+        return this.prisma.$transaction(async (tx) => {
+            let createdCount = 0;
+            let updatedCount = 0;
+            let defaultWarehouse = await tx.warehouse.findFirst({
+                where: { code: 'DEP-01' }
+            });
+            if (!defaultWarehouse) {
+                defaultWarehouse = await tx.warehouse.findFirst();
+            }
+            for (const row of dto.rows) {
+                if (row.resolution === 'skip')
+                    continue;
+                let categoryId = null;
+                if (row.category) {
+                    let cat = await tx.category.findFirst({ where: { name: row.category } });
+                    if (!cat) {
+                        cat = await tx.category.create({ data: { name: row.category, description: 'Creada automáticamente por importador' } });
+                    }
+                    categoryId = cat.id;
+                }
+                else {
+                    let cat = await tx.category.findFirst({ where: { name: 'Sin Categoría' } });
+                    if (!cat)
+                        cat = await tx.category.create({ data: { name: 'Sin Categoría' } });
+                    categoryId = cat.id;
+                }
+                let brandId = null;
+                if (row.brand) {
+                    let br = await tx.brand.findFirst({ where: { name: row.brand } });
+                    if (!br) {
+                        br = await tx.brand.create({ data: { name: row.brand } });
+                    }
+                    brandId = br.id;
+                }
+                let sku = row.sku;
+                if (!sku) {
+                    sku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+                }
+                const costPrice = row.costPrice || 0;
+                const basePrice = row.basePrice || 0;
+                const existingVariant = await tx.productVariant.findUnique({ where: { sku } });
+                let variantId;
+                if (existingVariant && row.resolution === 'overwrite') {
+                    await tx.product.update({
+                        where: { id: existingVariant.productId },
+                        data: {
+                            name: row.name,
+                            categoryId,
+                            brandId,
+                        }
+                    });
+                    await tx.productVariant.update({
+                        where: { id: existingVariant.id },
+                        data: {
+                            barcode: row.barcode || null,
+                            costPrice,
+                            basePrice,
+                        }
+                    });
+                    variantId = existingVariant.id;
+                    updatedCount++;
+                }
+                else if (!existingVariant) {
+                    const product = await tx.product.create({
+                        data: {
+                            name: row.name,
+                            baseSku: sku,
+                            categoryId,
+                            brandId,
+                            isActive: true,
+                            type: 'SINGLE'
+                        }
+                    });
+                    const variant = await tx.productVariant.create({
+                        data: {
+                            productId: product.id,
+                            sku,
+                            barcode: row.barcode || null,
+                            costPrice,
+                            basePrice,
+                            isActive: true
+                        }
+                    });
+                    variantId = variant.id;
+                    createdCount++;
+                }
+                else {
+                    continue;
+                }
+                if (row.initialStock && row.initialStock > 0 && defaultWarehouse) {
+                    const existingStock = await tx.stockLevel.findFirst({
+                        where: {
+                            variantId,
+                            warehouseId: defaultWarehouse.id,
+                            batchId: null
+                        }
+                    });
+                    if (!existingStock || existingStock.physicalQuantity === 0) {
+                        const quantityToAdd = row.initialStock;
+                        await tx.inventoryMovement.create({
+                            data: {
+                                variantId,
+                                destinationWarehouseId: defaultWarehouse.id,
+                                type: 'INITIAL_STOCK',
+                                quantity: quantityToAdd,
+                                unitCost: costPrice
+                            }
+                        });
+                        if (existingStock) {
+                            await tx.stockLevel.update({
+                                where: { id: existingStock.id },
+                                data: {
+                                    physicalQuantity: { increment: quantityToAdd },
+                                    availableQuantity: { increment: quantityToAdd }
+                                }
+                            });
+                        }
+                        else {
+                            await tx.stockLevel.create({
+                                data: {
+                                    variantId,
+                                    warehouseId: defaultWarehouse.id,
+                                    physicalQuantity: quantityToAdd,
+                                    availableQuantity: quantityToAdd
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            return { success: true, createdCount, updatedCount };
+        }, {
+            timeout: 30000
         });
     }
     async findAllVariants(search) {

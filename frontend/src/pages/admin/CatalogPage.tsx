@@ -20,6 +20,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { ProductFormDrawer } from '@/features/products/components/ProductFormDrawer';
 import { ProductDetailDrawer } from '@/features/products/components/ProductDetailDrawer';
 import { ProductTable } from '@/features/products/components/ProductTable';
+import { ImportProductsModal } from '@/features/products/components/ImportProductsModal';
 
 // ── Status Badge ────────────────────────────────────────────────────────────
 function StatusPill({ isActive, isPublished }: { isActive: boolean; isPublished: boolean }) {
@@ -205,6 +206,7 @@ export default function CatalogPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const apiFilters = {
@@ -268,21 +270,28 @@ export default function CatalogPage() {
             </button>
           </div>
 
-          <ActionGuard action="manage" subject="Catalog">
+          <ActionGuard action="create" subject="Catalog">
+            <button
+              onClick={() => setImportOpen(true)}
+              style={{
+                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                color: 'var(--text-primary)', padding: '8px 16px', borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                fontWeight: 500, fontSize: '13px'
+              }}
+            >
+              <Package size={16} /> Importar CSV
+            </button>
             <button
               onClick={handleCreate}
               style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '8px 18px', borderRadius: 'var(--radius)',
-                background: 'var(--accent)', color: '#fff', border: 'none',
-                fontWeight: 600, fontSize: '14px', cursor: 'pointer',
-                boxShadow: '0 4px 12px var(--accent-glow)',
-                transition: 'all 0.2s',
+                background: 'var(--accent)', border: 'none', color: '#fff',
+                padding: '8px 16px', borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                fontWeight: 500, fontSize: '13px', boxShadow: '0 4px 12px var(--accent-glow)'
               }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'none')}
             >
-              <Plus size={16} /> Nuevo Producto
+              <Plus size={16} /> Crear Producto
             </button>
           </ActionGuard>
         </div>
@@ -389,6 +398,18 @@ export default function CatalogPage() {
         loading={deleteMutation.isPending}
         onConfirm={() => selectedProduct && deleteMutation.mutate(selectedProduct.id)}
         onCancel={() => setDeleteOpen(false)}
+        confirmText="Sí, Eliminar"
+        isDestructive
+        isLoading={deleteMutation.isPending}
+      />
+
+      <ImportProductsModal
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => {
+          setImportOpen(false);
+          refetch();
+        }}
       />
     </PageContainer>
   );

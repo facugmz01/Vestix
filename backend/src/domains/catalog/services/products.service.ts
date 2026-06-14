@@ -3,6 +3,7 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { CategoriesService, BrandsService } from './taxonomy.service';
+import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -336,19 +337,241 @@ export class ProductsService {
   }
 
   async remove(id: string) {
-    const product = await this.findOne(id);
-    
-    // Eliminación en cascada segura: borramos variantes primero.
-    // Si alguna variante tiene movimientos de stock u órdenes, Prisma lanzará P2003
-    // y la transacción se abortará protegiendo la integridad de los datos.
+    // 1. Verificar si existen StockLevels con cantidad
+    const stockLevels = await this.prisma.stockLevel.findMany({
+      where: {
+        variant: { productId: id },
+        quantity: { gt: 0 },
+      },
+    });
+
+    if (stockLevels.length > 0) {
+      throw new ConflictException(
+        'No se puede eliminar el producto porque tiene stock en uno o más depósitos. Realice un ajuste de salida primero.'
+      );
+    }
+
+    // 2. Transacción de eliminación
     return this.prisma.$transaction(async (tx) => {
+      await tx.productComboLine.deleteMany({
+        where: { parentProductId: id },
+      });
+
+      const variants = await tx.productVariant.findMany({
+        where: { productId: id },
+        select: { id: true },
+      });
+      const variantIds = variants.map((v) => v.id);
+
+      await tx.productComboLine.deleteMany({
+        where: { childVariantId: { in: variantIds } },
+      });
+
+      await tx.stockLevel.deleteMany({
+        where: { variantId: { in: variantIds } },
+      });
+
+      await tx.priceListEntry.deleteMany({
+        where: { variantId: { in: variantIds } },
+      });
+
       await tx.productVariant.deleteMany({
-        where: { productId: product.id }
+        where: { productId: id },
       });
-      
-      return tx.product.delete({
-        where: { id: product.id }
+
+      await tx.product.delete({
+        where: { id },
       });
+
+      return { success: true };
+    });
+  }
+
+  async bulkValidate(dto: BulkValidateDto) {
+    const validRows = [];
+    const conflicts = [];
+
+    // Gather all SKUs that are not empty
+    const skus = dto.rows.map(r => r.sku).filter(s => !!s);
+    
+    // Find existing variants by SKU
+    const existingVariants = await this.prisma.productVariant.findMany({
+      where: { sku: { in: skus } },
+      include: { product: true }
+    });
+    
+    const existingMap = new Map(existingVariants.map(v => [v.sku, v]));
+
+    for (const row of dto.rows) {
+      if (row.sku && existingMap.has(row.sku)) {
+        conflicts.push({
+          row,
+          existingProduct: existingMap.get(row.sku)
+        });
+      } else {
+        validRows.push(row);
+      }
+    }
+
+    return { validRows, conflicts };
+  }
+
+  async bulkImport(dto: BulkImportDto) {
+    return this.prisma.$transaction(async (tx) => {
+      let createdCount = 0;
+      let updatedCount = 0;
+
+      // Ensure we have a default warehouse to place stock if needed
+      let defaultWarehouse = await tx.warehouse.findFirst({
+        where: { code: 'DEP-01' }
+      });
+      if (!defaultWarehouse) {
+        defaultWarehouse = await tx.warehouse.findFirst();
+      }
+
+      for (const row of dto.rows) {
+        if (row.resolution === 'skip') continue;
+
+        // Resolve Category
+        let categoryId = null;
+        if (row.category) {
+          let cat = await tx.category.findFirst({ where: { name: row.category } });
+          if (!cat) {
+            cat = await tx.category.create({ data: { name: row.category, description: 'Creada automáticamente por importador' } });
+          }
+          categoryId = cat.id;
+        } else {
+          let cat = await tx.category.findFirst({ where: { name: 'Sin Categoría' } });
+          if (!cat) cat = await tx.category.create({ data: { name: 'Sin Categoría' } });
+          categoryId = cat.id;
+        }
+
+        // Resolve Brand
+        let brandId = null;
+        if (row.brand) {
+          let br = await tx.brand.findFirst({ where: { name: row.brand } });
+          if (!br) {
+            br = await tx.brand.create({ data: { name: row.brand } });
+          }
+          brandId = br.id;
+        }
+
+        // Determine SKU
+        let sku = row.sku;
+        if (!sku) {
+          sku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+        }
+
+        const costPrice = row.costPrice || 0;
+        const basePrice = row.basePrice || 0;
+
+        // Check if exists
+        const existingVariant = await tx.productVariant.findUnique({ where: { sku } });
+
+        let variantId: string;
+
+        if (existingVariant && row.resolution === 'overwrite') {
+          // Update existing
+          await tx.product.update({
+            where: { id: existingVariant.productId },
+            data: {
+              name: row.name,
+              categoryId,
+              brandId,
+            }
+          });
+
+          await tx.productVariant.update({
+            where: { id: existingVariant.id },
+            data: {
+              barcode: row.barcode || null,
+              costPrice,
+              basePrice,
+            }
+          });
+          variantId = existingVariant.id;
+          updatedCount++;
+        } else if (!existingVariant) {
+          // Create new Product and Variant
+          const product = await tx.product.create({
+            data: {
+              name: row.name,
+              baseSku: sku,
+              categoryId,
+              brandId,
+              isActive: true,
+              type: 'SINGLE'
+            }
+          });
+
+          const variant = await tx.productVariant.create({
+            data: {
+              productId: product.id,
+              sku,
+              barcode: row.barcode || null,
+              costPrice,
+              basePrice,
+              isActive: true
+            }
+          });
+          variantId = variant.id;
+          createdCount++;
+        } else {
+          continue; // should not happen if skip is handled above
+        }
+
+        // Handle initial stock if specified
+        if (row.initialStock && row.initialStock > 0 && defaultWarehouse) {
+          // Check existing stock level to avoid re-adding if overwrite
+          const existingStock = await tx.stockLevel.findFirst({
+            where: {
+              variantId,
+              warehouseId: defaultWarehouse.id,
+              batchId: null
+            }
+          });
+
+          // Only add initial stock if it's newly created, OR if overwrite but there is NO stock yet
+          if (!existingStock || existingStock.physicalQuantity === 0) {
+            const quantityToAdd = row.initialStock;
+
+            // Create Movement
+            await tx.inventoryMovement.create({
+              data: {
+                variantId,
+                destinationWarehouseId: defaultWarehouse.id,
+                type: 'INITIAL_STOCK',
+                quantity: quantityToAdd,
+                unitCost: costPrice
+              }
+            });
+
+            // Update Stock Level
+            if (existingStock) {
+              await tx.stockLevel.update({
+                where: { id: existingStock.id },
+                data: {
+                  physicalQuantity: { increment: quantityToAdd },
+                  availableQuantity: { increment: quantityToAdd }
+                }
+              });
+            } else {
+              await tx.stockLevel.create({
+                data: {
+                  variantId,
+                  warehouseId: defaultWarehouse.id,
+                  physicalQuantity: quantityToAdd,
+                  availableQuantity: quantityToAdd
+                }
+              });
+            }
+          }
+        }
+      }
+
+      return { success: true, createdCount, updatedCount };
+    }, {
+      timeout: 30000 // 30 seconds to allow massive CSV imports
     });
   }
 

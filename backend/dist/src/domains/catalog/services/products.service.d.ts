@@ -2,6 +2,7 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { CategoriesService, BrandsService } from './taxonomy.service';
+import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 export declare class ProductsService {
     private readonly prisma;
     private readonly categoriesService;
@@ -223,22 +224,16 @@ export declare class ProductsService {
     }>;
     generateCombinations(productId: string, dto: any): Promise<any[] | import(".prisma/client").Prisma.BatchPayload>;
     remove(id: string): Promise<{
-        id: string;
-        name: string;
-        baseSku: string | null;
-        description: string | null;
-        categoryId: string;
-        brandId: string | null;
-        type: import(".prisma/client").$Enums.ProductType;
-        isVariable: boolean;
-        manageBatches: boolean;
-        costPrice: number;
-        isActive: boolean;
-        isPublished: boolean;
-        images: import(".prisma/client").Prisma.JsonValue;
-        metadata: import(".prisma/client").Prisma.JsonValue;
-        createdAt: Date;
-        updatedAt: Date;
+        success: boolean;
+    }>;
+    bulkValidate(dto: BulkValidateDto): Promise<{
+        validRows: any[];
+        conflicts: any[];
+    }>;
+    bulkImport(dto: BulkImportDto): Promise<{
+        success: boolean;
+        createdCount: number;
+        updatedCount: number;
     }>;
     findAllVariants(search?: string): Promise<({
         product: {
