@@ -1,1 +1,0 @@
-import{p as e,i as a}from"./index-DiJhoIHH.js";import{c as r}from"./requestUtils-gaJB49jo.js";const c={getSales:s=>a("/sales/orders",{params:r(s??{})}),getSale:s=>a(`/sales/orders/${s}`),createSale:s=>e("/sales/checkout",s),confirmQuotation:s=>e(`/sales/orders/${s}/confirm`,{}),cancelSale:s=>e(`/sales/orders/${s}/cancel`,{})};export{c as s};

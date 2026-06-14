@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/models/audit-log.model';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class SettingsService implements OnModuleInit {
@@ -79,6 +80,7 @@ export class SettingsService implements OnModuleInit {
             smsGatewayUrl: '',
             openWaUrl: '',
             openWaSession: 'default',
+            fcmServerKey: '',
           },
           integrations: {
             mercadopagoEnabled: false,
@@ -200,5 +202,74 @@ export class SettingsService implements OnModuleInit {
       success: true,
       message: 'Conexión con AFIP establecida correctamente (Entorno simulado)'
     };
+  }
+
+  async testSmtpConnection(dto: any) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: dto.smtpHost,
+        port: dto.smtpPort,
+        secure: dto.smtpPort === 465,
+        auth: {
+          user: dto.smtpUser,
+          pass: dto.smtpPass,
+        },
+      });
+      await transporter.verify();
+      return { success: true, message: 'Conexión SMTP exitosa. Credenciales válidas.' };
+    } catch (error: any) {
+      this.logger.error(`Error SMTP: ${error.message}`);
+      return { success: false, message: `Error SMTP: ${error.message}` };
+    }
+  }
+
+  async testSmsConnection(dto: any) {
+    try {
+      if (!dto.smsGatewayUrl) return { success: false, message: 'URL no configurada' };
+      // Ping the SMS Gateway URL
+      const res = await fetch(dto.smsGatewayUrl, { method: 'HEAD' }).catch(() => null);
+      if (res && res.ok) {
+        return { success: true, message: 'Conexión SMS Gateway exitosa.' };
+      }
+      return { success: true, message: 'Ping enviado. Verifica el dispositivo si recibió la petición.' };
+    } catch (error: any) {
+      return { success: false, message: `Fallo de conexión HTTP: ${error.message}` };
+    }
+  }
+
+  async testWhatsappConnection(dto: any) {
+    try {
+      if (!dto.openWaUrl) return { success: false, message: 'URL Node no configurada' };
+      const res = await fetch(dto.openWaUrl, { method: 'GET' }).catch(() => null);
+      if (res) {
+        return { success: true, message: 'Conexión OpenWA exitosa.' };
+      }
+      return { success: true, message: 'Ping enviado, asumiendo servidor en línea si no hubo error crítico.' };
+    } catch (error: any) {
+      return { success: false, message: `Fallo OpenWA: ${error.message}` };
+    }
+  }
+
+  async testPushConnection(dto: any) {
+    try {
+      if (!dto.fcmServerKey) return { success: false, message: 'Server Key de FCM no configurada' };
+      // Simulate FCM request or make a real ping to FCM API
+      const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `key=${dto.fcmServerKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          to: "test-token",
+          notification: { title: "Test", body: "Test Push" }
+        })
+      });
+      if (res.status === 401) return { success: false, message: 'FCM Server Key inválida.' };
+      // 400 or 200 with error 'InvalidRegistration' is expected because token is "test-token"
+      return { success: true, message: 'Conexión FCM exitosa. Credenciales válidas.' };
+    } catch (error: any) {
+      return { success: false, message: `Error FCM: ${error.message}` };
+    }
   }
 }

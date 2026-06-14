@@ -2,6 +2,8 @@ import { settingsApi, type NotificationSettings, type IntegrationSettings } from
 import { useSettingsSection } from '../hooks/useSettingsSection';
 import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './SettingsLayout';
 import { Input } from '@/components/ui';
+import { toast } from 'react-hot-toast';
+import { useState } from 'react';
 
 // ─── Notification Settings ───────────────────────────────────────────────────
 
@@ -24,11 +26,28 @@ export function NotificationSettingsPanel() {
         <ToggleSwitch value={!!watch('emailEnabled')} onChange={v => setValue('emailEnabled', v)} />
       </SettingsRow>
       {watch('emailEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
           <Input placeholder="Host (ej. smtp.gmail.com)" {...register('smtpHost')} style={{ flex: 1, minWidth: '200px' }} />
           <Input type="number" placeholder="Port" {...register('smtpPort', { valueAsNumber: true })} style={{ width: '100px' }} />
           <Input placeholder="Usuario" {...register('smtpUser')} style={{ flex: 1, minWidth: '200px' }} />
           <Input type="password" placeholder="Contraseña" {...register('smtpPass')} style={{ flex: 1, minWidth: '200px' }} />
+          <button 
+            type="button" 
+            onClick={async () => {
+              const loading = toast.loading('Probando SMTP...');
+              try {
+                const data = watch();
+                const res = await settingsApi.testSmtp(data);
+                if (res.success) toast.success(res.message, { id: loading });
+                else toast.error(res.message, { id: loading });
+              } catch (e: any) {
+                toast.error(e.response?.data?.message || 'Error de conexión', { id: loading });
+              }
+            }}
+            style={{ padding: '8px 16px', background: 'var(--bg-overlay)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+          >
+            Probar Conexión
+          </button>
         </div>
       )}
 
@@ -36,8 +55,25 @@ export function NotificationSettingsPanel() {
         <ToggleSwitch value={!!watch('smsEnabled')} onChange={v => setValue('smsEnabled', v)} />
       </SettingsRow>
       {watch('smsEnabled') && (
-        <div style={{ paddingLeft: '24px', marginBottom: '16px' }}>
-          <Input placeholder="URL del Gateway (ej. http://192.168.1.50:8080/v1/sms)" {...register('smsGatewayUrl')} />
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center' }}>
+          <Input placeholder="URL del Gateway (ej. http://192.168.1.50:8080/v1/sms)" {...register('smsGatewayUrl')} style={{ flex: 1 }} />
+          <button 
+            type="button" 
+            onClick={async () => {
+              const loading = toast.loading('Haciendo ping al Gateway...');
+              try {
+                const data = watch();
+                const res = await settingsApi.testSms(data);
+                if (res.success) toast.success(res.message, { id: loading });
+                else toast.error(res.message, { id: loading });
+              } catch (e: any) {
+                toast.error(e.response?.data?.message || 'Error de conexión', { id: loading });
+              }
+            }}
+            style={{ padding: '8px 16px', background: 'var(--bg-overlay)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+          >
+            Probar Conexión
+          </button>
         </div>
       )}
 
@@ -45,15 +81,54 @@ export function NotificationSettingsPanel() {
         <ToggleSwitch value={!!watch('whatsappEnabled')} onChange={v => setValue('whatsappEnabled', v)} />
       </SettingsRow>
       {watch('whatsappEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center' }}>
           <Input placeholder="URL Node (ej. http://localhost:8080)" {...register('openWaUrl')} style={{ flex: 2 }} />
           <Input placeholder="Session ID (ej. default)" {...register('openWaSession')} style={{ flex: 1 }} />
+          <button 
+            type="button" 
+            onClick={async () => {
+              const loading = toast.loading('Haciendo ping a OpenWA...');
+              try {
+                const data = watch();
+                const res = await settingsApi.testWhatsapp(data);
+                if (res.success) toast.success(res.message, { id: loading });
+                else toast.error(res.message, { id: loading });
+              } catch (e: any) {
+                toast.error(e.response?.data?.message || 'Error de conexión', { id: loading });
+              }
+            }}
+            style={{ padding: '8px 16px', background: 'var(--bg-overlay)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+          >
+            Probar Conexión
+          </button>
         </div>
       )}
 
-      <SettingsRow label="Push (App Móvil)">
+      <SettingsRow label="Push (App Móvil FCM)" hint="Requiere Server Key de Firebase Cloud Messaging.">
         <ToggleSwitch value={!!watch('pushEnabled')} onChange={v => setValue('pushEnabled', v)} />
       </SettingsRow>
+      {watch('pushEnabled') && (
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center' }}>
+          <Input placeholder="FCM Server Key (Empieza con AAA...)" {...register('fcmServerKey')} style={{ flex: 1 }} />
+          <button 
+            type="button" 
+            onClick={async () => {
+              const loading = toast.loading('Enviando test a FCM...');
+              try {
+                const data = watch();
+                const res = await settingsApi.testPush(data);
+                if (res.success) toast.success(res.message, { id: loading });
+                else toast.error(res.message, { id: loading });
+              } catch (e: any) {
+                toast.error(e.response?.data?.message || 'Error de FCM', { id: loading });
+              }
+            }}
+            style={{ padding: '8px 16px', background: 'var(--bg-overlay)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+          >
+            Probar Conexión
+          </button>
+        </div>
+      )}
 
       <SettingsDivider />
 

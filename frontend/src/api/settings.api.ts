@@ -61,6 +61,7 @@ export interface NotificationSettings {
   smsGatewayUrl?: string;
   openWaUrl?: string;
   openWaSession?: string;
+  fcmServerKey?: string;
 }
 
 export interface IntegrationSettings {
@@ -120,8 +121,20 @@ export const settingsApi = {
   updateOffline: (dto: Partial<OfflineSettings>) =>
     patch<OfflineSettings>('/settings/offline', dto),
 
-  testAfipConnection: () =>
-    post<{ success: boolean; message: string }>('/settings/invoicing/test-afip', {}),
+  testAfip: () => 
+    post<{success: boolean; message: string}>('/settings/invoicing/test-afip', {}),
+  
+  testSmtp: (data: any) => 
+    post<{success: boolean; message: string}>('/settings/notifications/test-smtp', data),
+    
+  testSms: (data: any) => 
+    post<{success: boolean; message: string}>('/settings/notifications/test-sms', data),
+    
+  testWhatsapp: (data: any) => 
+    post<{success: boolean; message: string}>('/settings/notifications/test-whatsapp', data),
+
+  testPush: (data: any) => 
+    post<{success: boolean; message: string}>('/settings/notifications/test-push', data),
 
   uploadLogo: (file: File) => {
     const fd = new FormData();

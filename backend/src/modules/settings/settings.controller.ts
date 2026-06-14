@@ -66,6 +66,30 @@ export class SettingsController {
     return this.settingsService.testAfipConnection();
   }
 
+  @Post('notifications/test-smtp')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async testSmtpConnection(@Body() dto: any) {
+    return this.settingsService.testSmtpConnection(dto);
+  }
+
+  @Post('notifications/test-sms')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async testSmsConnection(@Body() dto: any) {
+    return this.settingsService.testSmsConnection(dto);
+  }
+
+  @Post('notifications/test-whatsapp')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async testWhatsappConnection(@Body() dto: any) {
+    return this.settingsService.testWhatsappConnection(dto);
+  }
+
+  @Post('notifications/test-push')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async testPushConnection(@Body() dto: any) {
+    return this.settingsService.testPushConnection(dto);
+  }
+
   @Post('general/logo')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   @UseInterceptors(FileInterceptor('file', {
