@@ -218,11 +218,7 @@ let SetupService = class SetupService {
             locale: 'es-AR',
             currency: 'ARS',
         };
-        await this.prisma.systemSettings.upsert({
-            where: { id: 'default' },
-            update: {},
-            create: { id: 'default' },
-        });
+        await this.settingsService.getSettings();
         await this.settingsService.updateAllSettings({ general: generalData }, 'setup');
         return { success: true, message: 'Empresa configurada exitosamente' };
     }

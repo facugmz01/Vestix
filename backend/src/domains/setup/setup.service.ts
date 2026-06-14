@@ -227,12 +227,8 @@ export class SetupService {
       currency: 'ARS',
     };
 
-    // Ensure the singleton exists first (SettingsService may have already created it)
-    await this.prisma.systemSettings.upsert({
-      where: { id: 'default' },
-      update: {},
-      create: { id: 'default' },
-    });
+    // Ensure the singleton exists first (SettingsService will create it with full defaults if missing)
+    await this.settingsService.getSettings();
 
     // Now update only the general section through the service so the cache is kept in sync
     await this.settingsService.updateAllSettings({ general: generalData as any }, 'setup');
