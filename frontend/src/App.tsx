@@ -23,6 +23,8 @@ const SetupWizardPage = lazy(() => import('@/pages/setup/SetupWizardPage'));
 
 // ─── Admin pages (code-split per route) ──────────────────────────────────────
 const CatalogPage    = lazy(() => import('@/pages/admin/CatalogPage'));
+const NewProductPage = lazy(() => import('@/pages/admin/NewProductPage'));
+const EditProductPage = lazy(() => import('@/pages/admin/EditProductPage'));
 const TaxonomyPage   = lazy(() => import('@/pages/admin/TaxonomyPage'));
 const AttributesPage = lazy(() => import('@/pages/admin/AttributesPage'));
 const ProductVariantsPage = lazy(() => import('@/pages/admin/ProductVariantsPage'));
@@ -132,6 +134,8 @@ export default function App() {
 
               <Route element={<RequirePermission action="read"   subject="Catalog" />}>
                 <Route path="/admin/catalog"    element={<CatalogPage />} />
+                <Route path="/admin/catalog/new" element={<NewProductPage />} />
+                <Route path="/admin/catalog/:id/edit" element={<EditProductPage />} />
                 <Route path="/admin/taxonomy"   element={<TaxonomyPage />} />
                 <Route path="/admin/attributes" element={<AttributesPage />} />
                 <Route path="/admin/catalog/:productId/variants" element={<ProductVariantsPage />} />

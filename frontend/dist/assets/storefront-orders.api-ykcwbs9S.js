@@ -1,1 +1,0 @@
-import{l as o,p as e}from"./index-D8Mckq03.js";const p={checkout:r=>e("/storefront/checkout",r),getMyOrders:(r=1,t=15)=>o("/storefront/my-orders",{params:{page:r,pageSize:t}}),getMyOrder:r=>o(`/storefront/my-orders/${r}`)};export{p as s};

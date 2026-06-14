@@ -1,0 +1,1 @@
+import{j as s}from"./index-kNFGpEJW.js";const i="_bar_p8gju_1",e="_filters_p8gju_2",c="_actions_p8gju_3",t={bar:i,filters:e,actions:c};function o({children:a,actions:r}){return s.jsxs("div",{className:t.bar,children:[s.jsx("div",{className:t.filters,children:a}),r&&s.jsx("div",{className:t.actions,children:r})]})}export{o as F};

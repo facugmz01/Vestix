@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -17,7 +18,6 @@ import { queryKeys } from '@/api/queryKeys';
 import type { Product } from '@/types';
 import { ActionGuard } from '@/rbac/ActionGuard';
 
-import { ProductFormDrawer } from '@/features/products/components/ProductFormDrawer';
 import { ProductDetailDrawer } from '@/features/products/components/ProductDetailDrawer';
 import { ProductTable } from '@/features/products/components/ProductTable';
 import { ImportProductsModal } from '@/features/products/components/ImportProductsModal';
@@ -194,6 +194,7 @@ function SummaryBar({ products }: { products: Product[] }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function CatalogPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
@@ -203,8 +204,7 @@ export default function CatalogPage() {
   const [pageSize] = useState(24);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -240,9 +240,8 @@ export default function CatalogPage() {
   const products = Array.isArray(data) ? data : (data?.data ?? []);
   const total = Array.isArray(data) ? data.length : (data?.total ?? 0);
 
-  const handleCreate = () => { setSelectedProduct(null); setFormOpen(true); };
-  const handleEdit = (p: Product) => { setSelectedProduct(p); setFormOpen(true); };
-  const handleView = (p: Product) => { setSelectedProduct(p); setDetailOpen(true); };
+  const handleEdit = (p: Product) => { navigate(`/admin/catalog/${p.id}/edit`); };
+  const handleView = (p: Product) => { setDetailProduct(p); };
   const handleDeletePrompt = (p: Product) => { setSelectedProduct(p); setDeleteOpen(true); };
 
   return (
@@ -282,17 +281,9 @@ export default function CatalogPage() {
             >
               <Package size={16} /> Importar CSV
             </button>
-            <button
-              onClick={handleCreate}
-              style={{
-                background: 'var(--accent)', border: 'none', color: '#fff',
-                padding: '8px 16px', borderRadius: 'var(--radius)',
-                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                fontWeight: 500, fontSize: '13px', boxShadow: '0 4px 12px var(--accent-glow)'
-              }}
-            >
-              <Plus size={16} /> Crear Producto
-            </button>
+            <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/admin/catalog/new')}>
+              Nuevo Producto
+            </Button>
           </ActionGuard>
         </div>
       }
@@ -387,8 +378,16 @@ export default function CatalogPage() {
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
 
       {/* Drawers */}
-      <ProductFormDrawer open={formOpen} onClose={() => setFormOpen(false)} productToEdit={selectedProduct} />
-      <ProductDetailDrawer open={detailOpen} onClose={() => setDetailOpen(false)} product={selectedProduct} />
+      {detailProduct && (
+        <ProductDetailDrawer
+          open={!!detailProduct}
+          onClose={() => setDetailProduct(null)}
+          productId={detailProduct.id}
+          onEdit={() => {
+            navigate(`/admin/catalog/${detailProduct.id}/edit`);
+          }}
+        />
+      )}
       <ConfirmDialog
         open={deleteOpen}
         title="Eliminar Producto Madre"
