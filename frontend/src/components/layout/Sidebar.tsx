@@ -20,7 +20,10 @@ export function Sidebar() {
       {/* Brand */}
       <div className={styles.brand}>
         <div className={styles.logoMark} aria-hidden />
-        <span className={styles.logoText}>{APP_CONFIG.appName}</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span className={styles.logoText}>{APP_CONFIG.appName}</span>
+          <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600, marginTop: '-2px' }}>v{APP_CONFIG.appVersion}</span>
+        </div>
       </div>
 
       {/* Permission-filtered grouped navigation */}

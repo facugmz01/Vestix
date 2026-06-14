@@ -1,8 +1,8 @@
 /** Centralised app-wide configuration derived from env vars. */
 export const APP_CONFIG = {
   apiBase:     import.meta.env.VITE_API_BASE     ?? '/api',
-  appName:     import.meta.env.VITE_APP_NAME     ?? 'ERP Retail',
-  appVersion:  import.meta.env.VITE_APP_VERSION  ?? '1.0.0',
+  appName:     import.meta.env.VITE_APP_NAME     ?? 'Vestix ERP',
+  appVersion:  import.meta.env.VITE_APP_VERSION  ?? '3.0',
   environment: import.meta.env.VITE_ENV          ?? 'development',
 
   // Currency / locale settings (Argentina defaults)
