@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { DashboardSummary } from './models/report.model';
 import { SalesReportService } from './sales-report.service';
 import { StockReportService } from './stock-report.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
 
 @Injectable()
 export class DashboardService {
   constructor(
     private readonly salesReport: SalesReportService,
     private readonly stockReport: StockReportService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -26,12 +28,17 @@ export class DashboardService {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Execute all sub-reports in parallel — never sequentially
-    const [todaySales, monthSales, topSellers, lowStockAlerts, monthCogs] = await Promise.all([
+    const [todaySales, monthSales, topSellers, lowStockAlerts, monthCogs, pendingOrders] = await Promise.all([
       this.salesReport.getSalesSummary({ from: todayStart, to: now, branchId }),
       this.salesReport.getSalesSummary({ from: monthStart, to: now, branchId }),
       this.salesReport.getTopSellers({ from: monthStart, to: now, branchId }, 5),
       this.stockReport.getLowStockAlerts(branchId),
       this.salesReport.getCogsReport({ from: monthStart, to: now, branchId }),
+      this.prisma.saleOrder.count({
+        where: {
+          status: { in: ['PENDING', 'PROCESSING', 'PAID'] } // Adjust according to logic
+        }
+      })
     ]);
 
     return {
@@ -49,7 +56,7 @@ export class DashboardService {
       },
       topSellers,
       lowStockAlerts,
-      pendingOrders: 12, // In production: count of fulfillments in PAID/PICKING/PACKED states
+      pendingOrders,
     };
   }
 }

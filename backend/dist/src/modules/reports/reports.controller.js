@@ -17,12 +17,16 @@ const common_1 = require("@nestjs/common");
 const sales_report_service_1 = require("./sales-report.service");
 const stock_report_service_1 = require("./stock-report.service");
 const dashboard_service_1 = require("./dashboard.service");
+const cash_report_service_1 = require("./cash-report.service");
+const purchases_report_service_1 = require("./purchases-report.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
 let ReportsController = class ReportsController {
-    constructor(salesReport, stockReport, dashboardService) {
+    constructor(salesReport, stockReport, dashboardService, cashReport, purchasesReport) {
         this.salesReport = salesReport;
         this.stockReport = stockReport;
         this.dashboardService = dashboardService;
+        this.cashReport = cashReport;
+        this.purchasesReport = purchasesReport;
     }
     getDashboard(branchId) {
         return this.dashboardService.getDashboard(branchId);
@@ -41,6 +45,15 @@ let ReportsController = class ReportsController {
     }
     getLowStockAlerts(branchId, reorderPoint) {
         return this.stockReport.getLowStockAlerts(branchId, reorderPoint ? parseInt(reorderPoint) : undefined);
+    }
+    getPurchasesSummary(from, to, branchId) {
+        return this.purchasesReport.getPurchasesSummary({ from: new Date(from), to: new Date(to) });
+    }
+    getCashSummary(from, to, branchId) {
+        return this.cashReport.getCashSummary({ from: new Date(from), to: new Date(to), branchId });
+    }
+    exportReport(body) {
+        return { downloadUrl: `data:text/csv;charset=utf-8,Col1,Col2\nVal1,Val2` };
     }
 };
 exports.ReportsController = ReportsController;
@@ -97,10 +110,40 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], ReportsController.prototype, "getLowStockAlerts", null);
+__decorate([
+    (0, common_1.Get)('purchases/summary'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Reports' }),
+    __param(0, (0, common_1.Query)('from')),
+    __param(1, (0, common_1.Query)('to')),
+    __param(2, (0, common_1.Query)('branchId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], ReportsController.prototype, "getPurchasesSummary", null);
+__decorate([
+    (0, common_1.Get)('cash/summary'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Reports' }),
+    __param(0, (0, common_1.Query)('from')),
+    __param(1, (0, common_1.Query)('to')),
+    __param(2, (0, common_1.Query)('branchId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], ReportsController.prototype, "getCashSummary", null);
+__decorate([
+    (0, common_1.Post)('export/:type'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Reports' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ReportsController.prototype, "exportReport", null);
 exports.ReportsController = ReportsController = __decorate([
     (0, common_1.Controller)('reports'),
     __metadata("design:paramtypes", [sales_report_service_1.SalesReportService,
         stock_report_service_1.StockReportService,
-        dashboard_service_1.DashboardService])
+        dashboard_service_1.DashboardService,
+        cash_report_service_1.CashReportService,
+        purchases_report_service_1.PurchasesReportService])
 ], ReportsController);
 //# sourceMappingURL=reports.controller.js.map

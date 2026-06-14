@@ -13,22 +13,29 @@ exports.DashboardService = void 0;
 const common_1 = require("@nestjs/common");
 const sales_report_service_1 = require("./sales-report.service");
 const stock_report_service_1 = require("./stock-report.service");
+const prisma_service_1 = require("../../core/prisma/prisma.service");
 let DashboardService = class DashboardService {
-    constructor(salesReport, stockReport) {
+    constructor(salesReport, stockReport, prisma) {
         this.salesReport = salesReport;
         this.stockReport = stockReport;
+        this.prisma = prisma;
     }
     async getDashboard(branchId) {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const [todaySales, monthSales, topSellers, lowStockAlerts, monthCogs] = await Promise.all([
+        const [todaySales, monthSales, topSellers, lowStockAlerts, monthCogs, pendingOrders] = await Promise.all([
             this.salesReport.getSalesSummary({ from: todayStart, to: now, branchId }),
             this.salesReport.getSalesSummary({ from: monthStart, to: now, branchId }),
             this.salesReport.getTopSellers({ from: monthStart, to: now, branchId }, 5),
             this.stockReport.getLowStockAlerts(branchId),
             this.salesReport.getCogsReport({ from: monthStart, to: now, branchId }),
+            this.prisma.saleOrder.count({
+                where: {
+                    status: { in: ['PENDING', 'PROCESSING', 'PAID'] }
+                }
+            })
         ]);
         return {
             generatedAt: now,
@@ -45,7 +52,7 @@ let DashboardService = class DashboardService {
             },
             topSellers,
             lowStockAlerts,
-            pendingOrders: 12,
+            pendingOrders,
         };
     }
 };
@@ -53,6 +60,7 @@ exports.DashboardService = DashboardService;
 exports.DashboardService = DashboardService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [sales_report_service_1.SalesReportService,
-        stock_report_service_1.StockReportService])
+        stock_report_service_1.StockReportService,
+        prisma_service_1.PrismaService])
 ], DashboardService);
 //# sourceMappingURL=dashboard.service.js.map

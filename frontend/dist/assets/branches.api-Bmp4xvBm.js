@@ -1,1 +1,0 @@
-import{i as s,k as c,p as n,l as e}from"./index-Cr0IjQWz.js";import{c as h}from"./requestUtils-gaJB49jo.js";const b={getBranches:a=>e("/branches",{params:h(a??{})}),getBranch:a=>e(`/branches/${a}`),createBranch:a=>n("/branches",a),updateBranch:(a,r)=>c(`/branches/${a}`,r),deleteBranch:a=>s(`/branches/${a}`)};export{b};

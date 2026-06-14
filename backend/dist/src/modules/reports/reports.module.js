@@ -12,14 +12,16 @@ const sales_report_service_1 = require("./sales-report.service");
 const stock_report_service_1 = require("./stock-report.service");
 const dashboard_service_1 = require("./dashboard.service");
 const reports_controller_1 = require("./reports.controller");
+const cash_report_service_1 = require("./cash-report.service");
+const purchases_report_service_1 = require("./purchases-report.service");
 let ReportsModule = class ReportsModule {
 };
 exports.ReportsModule = ReportsModule;
 exports.ReportsModule = ReportsModule = __decorate([
     (0, common_1.Module)({
         controllers: [reports_controller_1.ReportsController],
-        providers: [sales_report_service_1.SalesReportService, stock_report_service_1.StockReportService, dashboard_service_1.DashboardService],
-        exports: [sales_report_service_1.SalesReportService, stock_report_service_1.StockReportService, dashboard_service_1.DashboardService],
+        providers: [sales_report_service_1.SalesReportService, stock_report_service_1.StockReportService, dashboard_service_1.DashboardService, cash_report_service_1.CashReportService, purchases_report_service_1.PurchasesReportService],
+        exports: [sales_report_service_1.SalesReportService, stock_report_service_1.StockReportService, dashboard_service_1.DashboardService, cash_report_service_1.CashReportService, purchases_report_service_1.PurchasesReportService],
     })
 ], ReportsModule);
 //# sourceMappingURL=reports.module.js.map

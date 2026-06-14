@@ -13,7 +13,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { KpiCard } from '@/features/reports/components/ChartPrimitives';
 import { SalesReportPanel }     from '@/features/reports/components/SalesReportPanel';
 import { StockReportPanel }     from '@/features/reports/components/StockReportPanel';
-
+import { PurchasesReportPanel } from '@/features/reports/components/PurchasesReportPanel';
 import { CashReportPanel }      from '@/features/reports/components/CashReportPanel';
 
 type ReportTab = 'overview' | 'sales' | 'stock' | 'purchases' | 'cash';
@@ -175,7 +175,7 @@ export default function ReportsPage() {
       {/* ─── PURCHASES TAB ────────────────────────────────────────────────────── */}
       {activeTab === 'purchases' && (
         <Section>
-          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>Reporte de compras en construcción.</div>
+          <PurchasesReportPanel from={from} to={to} branchId={branchId || undefined} />
         </Section>
       )}
 
