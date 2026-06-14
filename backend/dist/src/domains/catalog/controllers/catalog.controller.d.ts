@@ -8,6 +8,7 @@ import { CreateAttributeDto } from '../dto/create-attribute.dto';
 import { CreatePriceListDto } from '../dto/create-price-list.dto';
 import { UpdatePriceListDto } from '../dto/update-price-list.dto';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
+import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 export declare class CategoriesController {
     private readonly categoriesService;
     constructor(categoriesService: CategoriesService);
@@ -118,6 +119,10 @@ export declare class ProductsController {
     bulkImport(dto: BulkImportDto): Promise<{
         success: boolean;
         createdCount: number;
+        updatedCount: number;
+    }>;
+    bulkUpdatePrices(dto: BulkUpdatePricesDto): Promise<{
+        success: boolean;
         updatedCount: number;
     }>;
     findAll(query: any): Promise<{

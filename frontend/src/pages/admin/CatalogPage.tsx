@@ -21,6 +21,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { ProductDetailDrawer } from '@/features/products/components/ProductDetailDrawer';
 import { ProductTable } from '@/features/products/components/ProductTable';
 import { ImportProductsModal } from '@/features/products/components/ImportProductsModal';
+import { BulkPriceUpdaterModal } from '@/features/products/components/BulkPriceUpdaterModal';
 
 // ── Status Badge ────────────────────────────────────────────────────────────
 function StatusPill({ isActive, isPublished }: { isActive: boolean; isPublished: boolean }) {
@@ -207,6 +208,7 @@ export default function CatalogPage() {
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [bulkUpdaterOpen, setBulkUpdaterOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const apiFilters = {
@@ -268,6 +270,20 @@ export default function CatalogPage() {
               <List size={16} />
             </button>
           </div>
+
+          <ActionGuard action="update" subject="Catalog">
+            <button
+              onClick={() => setBulkUpdaterOpen(true)}
+              style={{
+                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                color: 'var(--text-primary)', padding: '8px 16px', borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                fontWeight: 500, fontSize: '13px'
+              }}
+            >
+              Actualización Masiva
+            </button>
+          </ActionGuard>
 
           <ActionGuard action="create" subject="Catalog">
             <button
@@ -407,6 +423,13 @@ export default function CatalogPage() {
           refetch();
         }}
       />
+
+      {bulkUpdaterOpen && (
+        <BulkPriceUpdaterModal
+          open={bulkUpdaterOpen}
+          onClose={() => setBulkUpdaterOpen(false)}
+        />
+      )}
     </PageContainer>
   );
 }

@@ -3,6 +3,7 @@ import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { CategoriesService, BrandsService } from './taxonomy.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
+import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 export declare class ProductsService {
     private readonly prisma;
     private readonly categoriesService;
@@ -269,4 +270,8 @@ export declare class ProductsService {
         createdAt: Date;
         updatedAt: Date;
     })[]>;
+    bulkUpdatePrices(dto: BulkUpdatePricesDto): Promise<{
+        success: boolean;
+        updatedCount: number;
+    }>;
 }

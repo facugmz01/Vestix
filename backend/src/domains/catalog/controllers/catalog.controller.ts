@@ -9,6 +9,7 @@ import { CreateAttributeDto } from '../dto/create-attribute.dto';
 import { CreatePriceListDto } from '../dto/create-price-list.dto';
 import { UpdatePriceListDto } from '../dto/update-price-list.dto';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
+import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import { RequirePermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('categories')
@@ -89,6 +90,12 @@ export class ProductsController {
   @RequirePermissions({ action: 'create', subject: 'Catalog' })
   bulkImport(@Body() dto: BulkImportDto) {
     return this.productsService.bulkImport(dto);
+  }
+
+  @Post('bulk-update-prices')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  bulkUpdatePrices(@Body() dto: BulkUpdatePricesDto) {
+    return this.productsService.bulkUpdatePrices(dto);
   }
 
   @Get()

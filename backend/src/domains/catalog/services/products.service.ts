@@ -4,6 +4,7 @@ import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { CategoriesService, BrandsService } from './taxonomy.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
+import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -588,6 +589,43 @@ export class ProductsService {
       where,
       include: { product: true },
       take: 50,
+    });
+  }
+
+  async bulkUpdatePrices(dto: BulkUpdatePricesDto) {
+    const { categoryId, brandId, percentage } = dto;
+    const multiplier = 1 + (percentage / 100);
+
+    return this.prisma.$transaction(async (tx) => {
+      const where: any = {};
+      if (categoryId) where.categoryId = categoryId;
+      if (brandId) where.brandId = brandId;
+
+      const products = await tx.product.findMany({ 
+        where, 
+        include: { variants: true } 
+      });
+      let updatedCount = 0;
+
+      for (const product of products) {
+        const newCost = Math.round((product.costPrice || 0) * multiplier);
+        
+        await tx.product.update({
+          where: { id: product.id },
+          data: { costPrice: newCost }
+        });
+
+        for (const variant of product.variants) {
+          const vCost = Math.round((variant.costPrice || 0) * multiplier);
+          const vBase = Math.round((variant.basePrice || 0) * multiplier);
+          await tx.productVariant.update({
+            where: { id: variant.id },
+            data: { costPrice: vCost, basePrice: vBase }
+          });
+        }
+        updatedCount++;
+      }
+      return { success: true, updatedCount };
     });
   }
 }

@@ -539,6 +539,39 @@ let ProductsService = class ProductsService {
             take: 50,
         });
     }
+    async bulkUpdatePrices(dto) {
+        const { categoryId, brandId, percentage } = dto;
+        const multiplier = 1 + (percentage / 100);
+        return this.prisma.$transaction(async (tx) => {
+            const where = {};
+            if (categoryId)
+                where.categoryId = categoryId;
+            if (brandId)
+                where.brandId = brandId;
+            const products = await tx.product.findMany({
+                where,
+                include: { variants: true }
+            });
+            let updatedCount = 0;
+            for (const product of products) {
+                const newCost = Math.round((product.costPrice || 0) * multiplier);
+                await tx.product.update({
+                    where: { id: product.id },
+                    data: { costPrice: newCost }
+                });
+                for (const variant of product.variants) {
+                    const vCost = Math.round((variant.costPrice || 0) * multiplier);
+                    const vBase = Math.round((variant.basePrice || 0) * multiplier);
+                    await tx.productVariant.update({
+                        where: { id: variant.id },
+                        data: { costPrice: vCost, basePrice: vBase }
+                    });
+                }
+                updatedCount++;
+            }
+            return { success: true, updatedCount };
+        });
+    }
 };
 exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([
