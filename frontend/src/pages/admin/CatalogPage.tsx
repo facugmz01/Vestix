@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 
 import {
   PageContainer, Tabs, Pagination, EmptyState, ApiErrorDisplay,
-  TableSkeleton, ConfirmDialog, SearchInput
+  TableSkeleton, ConfirmDialog, SearchInput, Button
 } from '@/components/ui';
 
 import { productsApi } from '@/api/products.api';
