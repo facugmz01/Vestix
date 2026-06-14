@@ -38,7 +38,7 @@ export function useSettingsSection<T extends Record<string, any>>({
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: [queryKeys.settings.get(), key],
+    queryKey: [...queryKeys.settings.get(), key],
     queryFn,
   });
 
@@ -52,7 +52,7 @@ export function useSettingsSection<T extends Record<string, any>>({
     mutationFn: (values: T) => mutateFn(values),
     onSuccess: () => {
       toast.success('Configuración guardada');
-      queryClient.invalidateQueries({ queryKey: [queryKeys.settings.get()] });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.settings.get()] });
     },
     onError: (err: any) => toast.error(err.message || 'Error al guardar'),
   });

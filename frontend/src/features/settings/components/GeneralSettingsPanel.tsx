@@ -27,7 +27,7 @@ export function GeneralSettingsPanel() {
     onSuccess: (data) => {
       form.setValue('logoUrl', data.logoUrl);
       toast.success('Logo actualizado');
-      qc.invalidateQueries({ queryKey: [queryKeys.settings.get()] });
+      qc.invalidateQueries({ queryKey: [...queryKeys.settings.get()] });
     },
     onError: () => toast.error('Error al subir logo'),
   });

@@ -34,7 +34,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
 
   const { data: branchesData } = useQuery({ queryKey: queryKeys.branches.all(), queryFn: () => branchesApi.getBranches({}), enabled: open });
   const { data: customersData } = useQuery({ queryKey: queryKeys.customers.all(), queryFn: () => customersApi.getCustomers({}), enabled: open });
-  const { data: pricingSettings } = useQuery({ queryKey: [queryKeys.settings.get(), 'pricing'], queryFn: () => settingsApi.getSettings().then(d => d.pricing), enabled: open });
+  const { data: pricingSettings } = useQuery({ queryKey: [...queryKeys.settings.get(), 'pricing'], queryFn: () => settingsApi.getSettings().then(d => d.pricing), enabled: open });
 
   const allowManualDiscount = pricingSettings?.allowManualDiscount !== false;
 
