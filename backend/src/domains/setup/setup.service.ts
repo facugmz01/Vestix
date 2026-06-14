@@ -235,7 +235,7 @@ export class SetupService {
     });
 
     // Now update only the general section through the service so the cache is kept in sync
-    await this.settingsService.updateSection('general', generalData, 'setup');
+    await this.settingsService.updateAllSettings({ general: generalData as any }, 'setup');
 
     return { success: true, message: 'Empresa configurada exitosamente' };
   }

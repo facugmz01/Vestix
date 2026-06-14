@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Plus, Package, LayoutGrid, List, Image as ImageIcon,
-  Edit2, Eye, Trash2, Tag, Globe, Archive
+  Plus, Package, LayoutGrid, List,
+  Edit2, Trash2, Tag, Globe, Archive
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

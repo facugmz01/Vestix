@@ -1,13 +1,10 @@
 /** Shared layout components used by every settings section panel */
-import { Save } from 'lucide-react';
-import { Button } from '@/components/ui';
 
-export function SettingsSection({ title, description, children, onSave, isSaving }: {
+
+export function SettingsSection({ title, description, children }: {
   title: string;
   description?: string;
   children: React.ReactNode;
-  onSave: () => void;
-  isSaving: boolean;
 }) {
   return (
     <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-base)' }}>
@@ -16,9 +13,6 @@ export function SettingsSection({ title, description, children, onSave, isSaving
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>{title}</h3>
           {description && <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>{description}</p>}
         </div>
-        <Button variant="primary" size="sm" icon={<Save size={14} />} onClick={onSave} loading={isSaving}>
-          Guardar
-        </Button>
       </div>
       <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
         {children}

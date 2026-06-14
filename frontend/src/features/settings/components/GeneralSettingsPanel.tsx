@@ -3,9 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Building2, Upload, Globe, ExternalLink, Copy } from 'lucide-react';
 import { Input, Button } from '@/components/ui';
-import { settingsApi, type GeneralSettings } from '@/api/settings.api';
+import { settingsApi } from '@/api/settings.api';
 import { queryKeys } from '@/api/queryKeys';
-import { useSettingsSection } from '../hooks/useSettingsSection';
+import { useFormContext } from 'react-hook-form';
+import { SystemSettings } from '@/api/settings.api';
 import { SettingsSection, SettingsRow, SettingsDivider } from './SettingsLayout';
 
 const TIMEZONES = ['America/Argentina/Buenos_Aires', 'America/Bogota', 'America/Santiago', 'America/Lima', 'America/Mexico_City'];
@@ -14,28 +15,21 @@ export function GeneralSettingsPanel() {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const { form, onSubmit, isSaving, isLoading } = useSettingsSection<GeneralSettings>({
-    key: 'general',
-    queryFn: () => settingsApi.getSettings().then(d => d.general),
-    mutateFn: settingsApi.updateGeneral,
-  });
-  const { register, formState: { errors }, watch } = form;
-  const logoUrl = watch('logoUrl');
+  const { register, formState: { errors }, watch, setValue } = useFormContext<SystemSettings>();
+  const logoUrl = watch('general.logoUrl');
 
   const logoMutation = useMutation({
     mutationFn: (file: File) => settingsApi.uploadLogo(file),
     onSuccess: (data) => {
-      form.setValue('logoUrl', data.logoUrl);
+      setValue('general.logoUrl', data.logoUrl, { shouldDirty: true });
       toast.success('Logo actualizado');
       qc.invalidateQueries({ queryKey: [...queryKeys.settings.get()] });
     },
     onError: () => toast.error('Error al subir logo'),
   });
 
-  if (isLoading) return <p style={{ color: 'var(--text-muted)', padding: '24px' }}>Cargando...</p>;
-
   return (
-    <SettingsSection title="Datos de la Empresa" description="Información fiscal y de contacto visible en documentos e impresiones." onSave={onSubmit} isSaving={isSaving}>
+    <SettingsSection title="Datos de la Empresa" description="Información fiscal y de contacto visible en documentos e impresiones.">
 
       <SettingsRow label="Logo de la Empresa" hint="Formato PNG/JPG, máx. 2MB.">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -53,12 +47,12 @@ export function GeneralSettingsPanel() {
       <SettingsDivider />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <Input label="Nombre Comercial *" {...register('companyName', { required: 'Requerido' })} error={errors.companyName?.message} />
-        <Input label="Razón Social *" {...register('legalName', { required: 'Requerido' })} error={errors.legalName?.message} />
-        <Input label="CUIT *" {...register('taxId', { required: 'Requerido', pattern: { value: /^\d{2}-\d{8}-\d$/, message: 'Formato: 20-12345678-9' } })} error={errors.taxId?.message} placeholder="20-12345678-9" />
-        <Input label="Teléfono" {...register('phone')} />
-        <Input label="Email de contacto" type="email" {...register('email', { required: 'Requerido' })} error={errors.email?.message} />
-        <Input label="Sitio Web" {...register('website')} placeholder="https://..." />
+        <Input label="Nombre Comercial *" {...register('general.companyName', { required: 'Requerido' })} error={errors.general?.companyName?.message} />
+        <Input label="Razón Social *" {...register('general.legalName', { required: 'Requerido' })} error={errors.general?.legalName?.message} />
+        <Input label="CUIT *" {...register('general.taxId', { required: 'Requerido', pattern: { value: /^\d{2}-\d{8}-\d$/, message: 'Formato: 20-12345678-9' } })} error={errors.general?.taxId?.message} placeholder="20-12345678-9" />
+        <Input label="Teléfono" {...register('general.phone')} />
+        <Input label="Email de contacto" type="email" {...register('general.email', { required: 'Requerido' })} error={errors.general?.email?.message} />
+        <Input label="Sitio Web" {...register('general.website')} placeholder="https://..." />
       </div>
 
       <SettingsDivider />
@@ -76,17 +70,17 @@ export function GeneralSettingsPanel() {
           <div style={{ flex: 1 }}>
             <Input
               label="URL de la Tienda Online"
-              {...register('storefrontUrl')}
+              {...register('general.storefrontUrl')}
               placeholder="https://erp.tudominio.com/store"
             />
           </div>
-          {watch('storefrontUrl') && (
+          {watch('general.storefrontUrl') && (
             <>
               <Button
                 variant="outline"
                 size="sm"
                 icon={<ExternalLink size={14} />}
-                onClick={() => window.open(watch('storefrontUrl'), '_blank')}
+                onClick={() => window.open(watch('general.storefrontUrl'), '_blank')}
               >
                 Abrir
               </Button>
@@ -95,7 +89,7 @@ export function GeneralSettingsPanel() {
                 size="sm"
                 icon={<Copy size={14} />}
                 onClick={() => {
-                  navigator.clipboard.writeText(watch('storefrontUrl') || '');
+                  navigator.clipboard.writeText(watch('general.storefrontUrl') || '');
                   toast.success('URL copiada al portapapeles');
                 }}
               >
@@ -105,7 +99,7 @@ export function GeneralSettingsPanel() {
           )}
         </div>
 
-        {watch('storefrontUrl') && (
+        {watch('general.storefrontUrl') && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '12px',
             padding: '12px 16px',
@@ -117,12 +111,12 @@ export function GeneralSettingsPanel() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', marginBottom: '2px' }}>Tienda configurada en:</p>
               <a
-                href={watch('storefrontUrl')}
+                href={watch('general.storefrontUrl')}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)', textDecoration: 'none', wordBreak: 'break-all' }}
               >
-                {watch('storefrontUrl')}
+                {watch('general.storefrontUrl')}
               </a>
             </div>
           </div>
@@ -132,10 +126,10 @@ export function GeneralSettingsPanel() {
       <SettingsDivider />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <Input label="Dirección" {...register('address')} />
-        <Input label="Ciudad" {...register('city')} />
-        <Input label="Provincia / Estado" {...register('province')} />
-        <Input label="País" {...register('country')} defaultValue="Argentina" />
+        <Input label="Dirección" {...register('general.address')} />
+        <Input label="Ciudad" {...register('general.city')} />
+        <Input label="Provincia / Estado" {...register('general.province')} />
+        <Input label="País" {...register('general.country')} defaultValue="Argentina" />
       </div>
 
       <SettingsDivider />
@@ -143,13 +137,13 @@ export function GeneralSettingsPanel() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <label style={{ fontSize: '13px', fontWeight: 600 }}>Zona Horaria</label>
-          <select {...register('timezone')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
+          <select {...register('general.timezone')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
             {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <label style={{ fontSize: '13px', fontWeight: 600 }}>Moneda</label>
-          <select {...register('currency')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
+          <select {...register('general.currency')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
             <option value="ARS">ARS — Peso Argentino</option>
             <option value="USD">USD — Dólar</option>
             <option value="CLP">CLP — Peso Chileno</option>

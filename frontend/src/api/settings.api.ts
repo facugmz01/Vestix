@@ -1,4 +1,4 @@
-import { get, patch, post } from './client';
+import { get, post, put } from './client';
 
 // ─── Typed settings sections ─────────────────────────────────────────────────
 
@@ -101,26 +101,8 @@ export const settingsApi = {
   getSettings: () =>
     get<SystemSettings>('/settings'),
 
-  updateGeneral: (dto: Partial<GeneralSettings>) =>
-    patch<GeneralSettings>('/settings/general', dto),
-
-  updatePricing: (dto: Partial<PricingSettings>) =>
-    patch<PricingSettings>('/settings/pricing', dto),
-
-  updateSkuBarcode: (dto: Partial<SkuBarcodeSettings>) =>
-    patch<SkuBarcodeSettings>('/settings/sku-barcode', dto),
-
-  updateInvoicing: (dto: Partial<InvoicingSettings>) =>
-    patch<InvoicingSettings>('/settings/invoicing', dto),
-
-  updateNotifications: (dto: Partial<NotificationSettings>) =>
-    patch<NotificationSettings>('/settings/notifications', dto),
-
-  updateIntegrations: (dto: Partial<IntegrationSettings>) =>
-    patch<IntegrationSettings>('/settings/integrations', dto),
-
-  updateOffline: (dto: Partial<OfflineSettings>) =>
-    patch<OfflineSettings>('/settings/offline', dto),
+  putSettings: (dto: Partial<SystemSettings>) =>
+    put<SystemSettings>('/settings', dto),
 
   testAfip: () => 
     post<{success: boolean; message: string}>('/settings/invoicing/test-afip', {}),
