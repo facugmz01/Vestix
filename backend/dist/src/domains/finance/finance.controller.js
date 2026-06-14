@@ -14,6 +14,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FinanceController = void 0;
 const common_1 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
 const accounts_service_1 = require("./accounts.service");
 const cash_service_1 = require("./cash/cash.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
@@ -187,6 +189,7 @@ __decorate([
 ], FinanceController.prototype, "getInvoices", null);
 exports.FinanceController = FinanceController = __decorate([
     (0, common_1.Controller)('finance'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [accounts_service_1.AccountsService,
         cash_service_1.CashService])
 ], FinanceController);

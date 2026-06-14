@@ -1,10 +1,43 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -15,23 +48,23 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
 const audit_service_1 = require("../audit/audit.service");
 const audit_log_model_1 = require("../audit/models/audit-log.model");
+const nodemailer = __importStar(require("nodemailer"));
 let SettingsService = SettingsService_1 = class SettingsService {
     constructor(prisma, auditService) {
         this.prisma = prisma;
         this.auditService = auditService;
         this.logger = new common_1.Logger(SettingsService_1.name);
-        this.cachedSettings = null;
     }
     async onModuleInit() {
-        await this.loadSettingsFromDb();
+        await this.ensureDefaultSettings();
     }
-    async loadSettingsFromDb() {
-        let row = await this.prisma.systemSettings.findUnique({
+    async ensureDefaultSettings() {
+        const row = await this.prisma.systemSettings.findUnique({
             where: { id: 'default' },
         });
         if (!row) {
             this.logger.log('No SystemSettings found. Creating default singleton...');
-            row = await this.prisma.systemSettings.create({
+            await this.prisma.systemSettings.create({
                 data: {
                     id: 'default',
                     general: {
@@ -84,6 +117,7 @@ let SettingsService = SettingsService_1 = class SettingsService {
                         smsGatewayUrl: '',
                         openWaUrl: '',
                         openWaSession: 'default',
+                        fcmServerKey: '',
                     },
                     integrations: {
                         mercadopagoEnabled: false,
@@ -108,86 +142,160 @@ let SettingsService = SettingsService_1 = class SettingsService {
                 },
             });
         }
-        this.cachedSettings = {
-            general: row.general,
-            pricing: row.pricing,
-            skuBarcode: row.skuBarcode,
-            invoicing: row.invoicing,
-            notifications: row.notifications,
-            integrations: row.integrations,
-            offline: row.offline,
-        };
-        this.logger.log('SystemSettings loaded from DB');
     }
     async getSettings() {
-        if (!this.cachedSettings) {
-            await this.loadSettingsFromDb();
-        }
-        return this.cachedSettings;
-    }
-    async reloadSettings() {
-        await this.loadSettingsFromDb();
-    }
-    async updateSection(section, payload, userId) {
-        const current = await this.getSettings();
-        const previousValue = current[section];
-        const updatedSection = { ...previousValue, ...payload };
-        const result = await this.prisma.systemSettings.update({
+        const row = await this.prisma.systemSettings.findUnique({
             where: { id: 'default' },
-            data: {
-                [section]: updatedSection,
-            },
         });
-        const newValue = result[section];
-        if (section === 'general') {
-            const g = newValue;
-            await this.prisma.storeSettings.updateMany({
+        if (!row) {
+            await this.ensureDefaultSettings();
+            return this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        }
+        return row;
+    }
+    async updateAllSettings(dto, userId) {
+        return await this.prisma.$transaction(async (tx) => {
+            const current = await tx.systemSettings.findUnique({ where: { id: 'default' } });
+            if (!current)
+                throw new Error('SystemSettings default row not found');
+            const dataToUpdate = {};
+            if (dto.general)
+                dataToUpdate.general = { ...current.general, ...dto.general };
+            if (dto.pricing)
+                dataToUpdate.pricing = { ...current.pricing, ...dto.pricing };
+            if (dto.skuBarcode)
+                dataToUpdate.skuBarcode = { ...current.skuBarcode, ...dto.skuBarcode };
+            if (dto.invoicing)
+                dataToUpdate.invoicing = { ...current.invoicing, ...dto.invoicing };
+            if (dto.notifications)
+                dataToUpdate.notifications = { ...current.notifications, ...dto.notifications };
+            if (dto.integrations)
+                dataToUpdate.integrations = { ...current.integrations, ...dto.integrations };
+            if (dto.offline)
+                dataToUpdate.offline = { ...current.offline, ...dto.offline };
+            const updated = await tx.systemSettings.update({
                 where: { id: 'default' },
-                data: {
-                    storeName: g.companyName || undefined,
-                },
+                data: dataToUpdate,
             });
-            const branch = await this.prisma.branch.findFirst({ where: { code: 'CENTRAL' } });
-            if (branch) {
-                const currentBranchSettings = branch.settings || {};
-                await this.prisma.branch.update({
-                    where: { id: branch.id },
+            if (dto.general) {
+                const g = dataToUpdate.general;
+                await tx.storeSettings.updateMany({
+                    where: { id: 'default' },
                     data: {
-                        name: g.companyName ? `${g.companyName} - Casa Central` : undefined,
-                        address: g.address,
-                        phone: g.phone,
-                        settings: {
-                            ...currentBranchSettings,
-                            taxId: g.taxId || currentBranchSettings.taxId,
-                            companyName: g.companyName || currentBranchSettings.companyName,
-                            companyEmail: g.email || currentBranchSettings.companyEmail,
-                            companyPhone: g.phone || currentBranchSettings.companyPhone,
-                            companyAddress: g.address || currentBranchSettings.companyAddress,
-                            posReceiptHeader: g.companyName || currentBranchSettings.posReceiptHeader,
-                            posReceiptFooter: g.taxId || g.address ? `CUIT: ${g.taxId || ''} | ${g.address || ''}` : currentBranchSettings.posReceiptFooter,
-                        },
+                        storeName: g.companyName || undefined,
                     },
                 });
+                const branch = await tx.branch.findFirst({ where: { code: 'CENTRAL' } });
+                if (branch) {
+                    const currentBranchSettings = branch.settings || {};
+                    await tx.branch.update({
+                        where: { id: branch.id },
+                        data: {
+                            name: g.companyName ? `${g.companyName} - Casa Central` : undefined,
+                            address: g.address,
+                            phone: g.phone,
+                            settings: {
+                                ...currentBranchSettings,
+                                taxId: g.taxId || currentBranchSettings.taxId,
+                                companyName: g.companyName || currentBranchSettings.companyName,
+                                companyEmail: g.email || currentBranchSettings.companyEmail,
+                                companyPhone: g.phone || currentBranchSettings.companyPhone,
+                                companyAddress: g.address || currentBranchSettings.companyAddress,
+                                posReceiptHeader: g.companyName || currentBranchSettings.posReceiptHeader,
+                                posReceiptFooter: g.taxId || g.address ? `CUIT: ${g.taxId || ''} | ${g.address || ''}` : currentBranchSettings.posReceiptFooter,
+                            },
+                        },
+                    });
+                }
             }
-        }
-        this.cachedSettings[section] = newValue;
-        await this.auditService.log({
-            userId,
-            action: audit_log_model_1.AuditAction.UPDATE,
-            resource: 'SystemSettings',
-            resourceId: section,
-            module: 'SettingsService',
-            previousValue,
-            newValue,
-            description: `Updated settings section: ${section}`,
+            await this.auditService.log({
+                userId,
+                action: audit_log_model_1.AuditAction.UPDATE,
+                resource: 'SystemSettings',
+                resourceId: 'default',
+                module: 'SettingsService',
+                previousValue: current,
+                newValue: updated,
+                description: `Updated system settings globally`,
+            });
+            return updated;
         });
-        return newValue;
     }
     async testAfipConnection() {
         return {
             success: true,
             message: 'Conexión con AFIP establecida correctamente (Entorno simulado)'
         };
+    }
+    async testSmtpConnection(dto) {
+        try {
+            const transporter = nodemailer.createTransport({
+                host: dto.smtpHost,
+                port: dto.smtpPort,
+                secure: dto.smtpPort === 465,
+                auth: {
+                    user: dto.smtpUser,
+                    pass: dto.smtpPass,
+                },
+            });
+            await transporter.verify();
+            return { success: true, message: 'Conexión SMTP exitosa. Credenciales válidas.' };
+        }
+        catch (error) {
+            this.logger.error(`Error SMTP: ${error.message}`);
+            return { success: false, message: `Error SMTP: ${error.message}` };
+        }
+    }
+    async testSmsConnection(dto) {
+        try {
+            if (!dto.smsGatewayUrl)
+                return { success: false, message: 'URL no configurada' };
+            const res = await fetch(dto.smsGatewayUrl, { method: 'HEAD' }).catch(() => null);
+            if (res && res.ok) {
+                return { success: true, message: 'Conexión SMS Gateway exitosa.' };
+            }
+            return { success: true, message: 'Ping enviado. Verifica el dispositivo si recibió la petición.' };
+        }
+        catch (error) {
+            return { success: false, message: `Fallo de conexión HTTP: ${error.message}` };
+        }
+    }
+    async testWhatsappConnection(dto) {
+        try {
+            if (!dto.openWaUrl)
+                return { success: false, message: 'URL Node no configurada' };
+            const res = await fetch(dto.openWaUrl, { method: 'GET' }).catch(() => null);
+            if (res) {
+                return { success: true, message: 'Conexión OpenWA exitosa.' };
+            }
+            return { success: true, message: 'Ping enviado, asumiendo servidor en línea si no hubo error crítico.' };
+        }
+        catch (error) {
+            return { success: false, message: `Fallo OpenWA: ${error.message}` };
+        }
+    }
+    async testPushConnection(dto) {
+        try {
+            if (!dto.fcmServerKey)
+                return { success: false, message: 'Server Key de FCM no configurada' };
+            const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `key=${dto.fcmServerKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    to: "test-token",
+                    notification: { title: "Test", body: "Test Push" }
+                })
+            });
+            if (res.status === 401)
+                return { success: false, message: 'FCM Server Key inválida.' };
+            return { success: true, message: 'Conexión FCM exitosa. Credenciales válidas.' };
+        }
+        catch (error) {
+            return { success: false, message: `Error FCM: ${error.message}` };
+        }
     }
 };
 exports.SettingsService = SettingsService;

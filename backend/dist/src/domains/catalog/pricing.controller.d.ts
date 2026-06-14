@@ -50,4 +50,27 @@ export declare class PricingController {
         createdAt: Date;
         updatedAt: Date;
     }>;
+    createPriceList(dto: any): Promise<{
+        id: string;
+        name: string;
+        type: string;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    setVariantPrice(priceListId: string, variantId: string, overridePrice: number): Promise<{
+        id: string;
+        priceListId: string;
+        variantId: string;
+        overridePrice: number;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
 }

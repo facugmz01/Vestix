@@ -23,6 +23,7 @@ export declare class CustomersService {
         creditLimit: number;
         usedCredit: number;
         isActive: boolean;
+        priceListId: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -36,6 +37,7 @@ export declare class CustomersService {
         creditLimit: number;
         usedCredit: number;
         isActive: boolean;
+        priceListId: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -49,6 +51,7 @@ export declare class CustomersService {
         creditLimit: number;
         usedCredit: number;
         isActive: boolean;
+        priceListId: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

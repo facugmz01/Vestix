@@ -78,13 +78,13 @@ export default function POSPage() {
   });
 
   const { data: gridProducts } = useQuery({
-    queryKey: ['pos', 'gridProducts'],
-    queryFn: () => posApi.searchProduct(''),
+    queryKey: ['pos', 'gridProducts', selectedCustomerId],
+    queryFn: () => posApi.searchProduct('', selectedCustomerId || undefined),
   });
 
   const { data: searchResults } = useQuery({
-    queryKey: ['pos', 'search', search],
-    queryFn: () => posApi.searchProduct(search),
+    queryKey: ['pos', 'search', search, selectedCustomerId],
+    queryFn: () => posApi.searchProduct(search, selectedCustomerId || undefined),
     enabled: search.length >= 2,
   });
 

@@ -10,4 +10,5 @@ export declare class CreateCustomerDto {
     phone?: string;
     initialCreditLimit?: number;
     isActive?: boolean;
+    priceListId?: string;
 }

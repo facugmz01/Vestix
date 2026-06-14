@@ -27,8 +27,8 @@ let PosController = class PosController {
     async downloadPosCatalog() {
         return this.posService.getCatalogSyncData();
     }
-    async searchCatalog(q) {
-        return this.posService.searchCatalog(q);
+    async searchCatalog(q, customerId) {
+        return this.posService.searchCatalog(q, customerId);
     }
     async scanBarcode(scanDto) {
         return this.posService.resolveBarcode(scanDto.barcode);
@@ -64,8 +64,9 @@ __decorate([
     (0, common_1.Get)('catalog/search'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),
     __param(0, (0, common_1.Query)('q')),
+    __param(1, (0, common_1.Query)('customerId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "searchCatalog", null);
 __decorate([

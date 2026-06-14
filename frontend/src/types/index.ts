@@ -338,6 +338,7 @@ export interface Customer {
   id: string; type: CustomerType; fullName: string;
   taxId?: string; email?: string; phone?: string;
   credit: { limit: number; used: number; available: number; onHold: boolean; };
+  priceListId?: string;
   createdAt: string;
 }
 

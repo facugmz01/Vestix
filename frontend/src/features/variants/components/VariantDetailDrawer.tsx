@@ -1,6 +1,7 @@
 import { Drawer, Badge } from '@/components/ui';
 import type { ProductVariant } from '@/types';
 import { Package, Barcode } from 'lucide-react';
+import { VariantPricingPanel } from './VariantPricingPanel';
 
 interface Props {
   open: boolean;
@@ -38,6 +39,8 @@ export function VariantDetailDrawer({ open, onClose, variant }: Props) {
             <p style={{ margin: '4px 0 0', fontSize: '16px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' }}>{variant.barcode}</p>
           </div>
         )}
+
+        <VariantPricingPanel variantId={variant.id} basePrice={variant.basePrice} />
 
       </div>
     </Drawer>

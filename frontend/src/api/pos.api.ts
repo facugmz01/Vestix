@@ -42,8 +42,8 @@ export const posApi = {
     post<{ success: boolean }>('/pos/session/close', dto),
 
   // Scanner / Product Lookup
-  searchProduct: (query: string) =>
-    get<ProductVariant[]>('/pos/catalog/search', { params: { q: query } }),
+  searchProduct: (query: string, customerId?: string) =>
+    get<ProductVariant[]>('/pos/catalog/search', { params: { q: query, customerId } }),
 
   // Delegate complex promotion calculations to backend
   calculateCart: (dto: POSCalculateDto) =>

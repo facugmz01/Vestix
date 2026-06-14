@@ -147,7 +147,7 @@ export class PosService {
     };
   }
 
-  async searchCatalog(query: string) {
+  async searchCatalog(query: string, customerId?: string) {
     const variants = await this.prisma.productVariant.findMany({
       where: {
         isActive: true,
@@ -164,18 +164,21 @@ export class PosService {
       take: 20,
     });
 
-    return variants.map(v => ({
-      id: v.id,
-      sku: v.sku,
-      barcode: v.barcode,
-      name: v.product?.name || 'Producto Desconocido',
-      category: v.product?.category?.name,
-      brand: v.product?.brand?.name,
-      size: v.size,
-      color: v.color,
-      costPrice: v.costPrice || 0,
-      basePrice: v.basePrice || 0,
-      stock: v.stockLevels.reduce((acc, s) => acc + s.availableQuantity, 0),
+    return Promise.all(variants.map(async v => {
+      const resolvedPrice = await this.pricingService.resolvePrice(v.id, v.basePrice || 0, customerId);
+      return {
+        id: v.id,
+        sku: v.sku,
+        barcode: v.barcode,
+        name: v.product?.name || 'Producto Desconocido',
+        category: v.product?.category?.name,
+        brand: v.product?.brand?.name,
+        size: v.size,
+        color: v.color,
+        costPrice: v.costPrice || 0,
+        basePrice: resolvedPrice,
+        stock: v.stockLevels.reduce((acc, s) => acc + s.availableQuantity, 0),
+      };
     }));
   }
 

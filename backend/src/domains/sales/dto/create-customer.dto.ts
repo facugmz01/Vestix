@@ -35,4 +35,9 @@ export class CreateCustomerDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @ValidateIf(o => o.priceListId !== '' && o.priceListId !== null)
+  priceListId?: string;
 }

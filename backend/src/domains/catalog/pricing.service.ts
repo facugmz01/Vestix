@@ -58,8 +58,16 @@ export class PricingService {
   async resolvePrice(variantId: string, basePrice: number, customerId?: string): Promise<number> {
     let activePriceList;
 
-    // 1. Try to find customer-specific price list (Mocked link for now as Customer model doesn't have priceListId)
-    // if (customerId) { ... }
+    // 1. Try to find customer-specific price list
+    if (customerId) {
+      const customer = await this.prisma.customer.findUnique({
+        where: { id: customerId },
+        include: { priceList: true }
+      });
+      if (customer?.priceList) {
+        activePriceList = customer.priceList;
+      }
+    }
 
     // 2. Fallback to default RETAIL list
     if (!activePriceList) {

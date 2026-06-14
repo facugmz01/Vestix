@@ -272,6 +272,7 @@ model PriceList {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   entries            PriceListEntry[]
+  customers          Customer[]
 }
 
 model PriceListEntry {
@@ -301,6 +302,8 @@ model Customer {
   creditLimit Float       @default(0)
   usedCredit  Float       @default(0)
   isActive    Boolean     @default(true)
+  priceListId String?
+  priceList   PriceList?  @relation(fields: [priceListId], references: [id])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   orders      SaleOrder[]

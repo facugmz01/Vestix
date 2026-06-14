@@ -46,6 +46,7 @@ let CustomersService = class CustomersService {
                 phone: dto.phone || null,
                 creditLimit: dto.initialCreditLimit || 0,
                 isActive: dto.isActive ?? true,
+                priceListId: dto.priceListId || null,
             }
         });
         return this.mapCustomer(customer);
@@ -90,6 +91,8 @@ let CustomersService = class CustomersService {
             dto.taxId = null;
         if (dto.email === '')
             dto.email = null;
+        if (dto.priceListId === '')
+            dto.priceListId = null;
         if (dto.taxId) {
             const exists = await this.prisma.customer.findFirst({
                 where: { taxId: dto.taxId, id: { not: id } }

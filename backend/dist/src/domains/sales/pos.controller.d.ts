@@ -17,7 +17,7 @@ export declare class PosController {
             brandName: string;
         }[];
     }>;
-    searchCatalog(q: string): Promise<{
+    searchCatalog(q: string, customerId?: string): Promise<{
         id: string;
         sku: string;
         barcode: string;

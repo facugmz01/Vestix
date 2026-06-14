@@ -26,6 +26,12 @@ let PricingController = class PricingController {
     findOne(id) {
         return this.pricingService.findOne(id);
     }
+    createPriceList(dto) {
+        return this.pricingService.createPriceList(dto);
+    }
+    setVariantPrice(priceListId, variantId, overridePrice) {
+        return this.pricingService.setVariantPrice(priceListId, variantId, overridePrice);
+    }
 };
 exports.PricingController = PricingController;
 __decorate([
@@ -45,6 +51,24 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], PricingController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Pricing' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PricingController.prototype, "createPriceList", null);
+__decorate([
+    (0, common_1.Patch)(':id/items/:variantId'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Pricing' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('variantId')),
+    __param(2, (0, common_1.Body)('overridePrice')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Number]),
+    __metadata("design:returntype", void 0)
+], PricingController.prototype, "setVariantPrice", null);
 exports.PricingController = PricingController = __decorate([
     (0, common_1.Controller)('price-lists'),
     __metadata("design:paramtypes", [pricing_service_1.PricingService])

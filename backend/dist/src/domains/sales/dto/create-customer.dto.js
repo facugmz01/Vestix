@@ -56,4 +56,10 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateCustomerDto.prototype, "isActive", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.ValidateIf)(o => o.priceListId !== '' && o.priceListId !== null),
+    __metadata("design:type", String)
+], CreateCustomerDto.prototype, "priceListId", void 0);
 //# sourceMappingURL=create-customer.dto.js.map

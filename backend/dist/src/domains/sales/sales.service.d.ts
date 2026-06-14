@@ -13,6 +13,7 @@ export declare class SalesService {
             creditLimit: number;
             usedCredit: number;
             isActive: boolean;
+            priceListId: string | null;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -102,6 +103,7 @@ export declare class SalesService {
             creditLimit: number;
             usedCredit: number;
             isActive: boolean;
+            priceListId: string | null;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -154,6 +156,7 @@ export declare class SalesService {
                 creditLimit: number;
                 usedCredit: number;
                 isActive: boolean;
+                priceListId: string | null;
                 createdAt: Date;
                 updatedAt: Date;
             };

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query } from '@nestjs/common';
 import { PricingService } from './pricing.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
@@ -16,5 +16,21 @@ export class PricingController {
   @RequirePermissions({ action: 'read', subject: 'Pricing' })
   findOne(@Param('id') id: string) {
     return this.pricingService.findOne(id);
+  }
+
+  @Post()
+  @RequirePermissions({ action: 'create', subject: 'Pricing' })
+  createPriceList(@Body() dto: any) {
+    return this.pricingService.createPriceList(dto);
+  }
+
+  @Patch(':id/items/:variantId')
+  @RequirePermissions({ action: 'update', subject: 'Pricing' })
+  setVariantPrice(
+    @Param('id') priceListId: string, 
+    @Param('variantId') variantId: string, 
+    @Body('overridePrice') overridePrice: number
+  ) {
+    return this.pricingService.setVariantPrice(priceListId, variantId, overridePrice);
   }
 }

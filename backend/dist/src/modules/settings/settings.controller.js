@@ -14,11 +14,14 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SettingsController = void 0;
 const common_1 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
 const platform_express_1 = require("@nestjs/platform-express");
 const multer_1 = require("multer");
 const path_1 = require("path");
 const settings_service_1 = require("./settings.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const settings_dto_1 = require("./dto/settings.dto");
 let SettingsController = class SettingsController {
     constructor(settingsService) {
         this.settingsService = settingsService;
@@ -26,36 +29,30 @@ let SettingsController = class SettingsController {
     async getSettings() {
         return await this.settingsService.getSettings();
     }
-    async updateGeneral(dto, req) {
-        return await this.settingsService.updateSection('general', dto, req.user?.userId ?? 'unknown');
-    }
-    async updatePricing(dto, req) {
-        return await this.settingsService.updateSection('pricing', dto, req.user?.userId ?? 'unknown');
-    }
-    async updateSkuBarcode(dto, req) {
-        return await this.settingsService.updateSection('skuBarcode', dto, req.user?.userId ?? 'unknown');
-    }
-    async updateInvoicing(dto, req) {
-        return await this.settingsService.updateSection('invoicing', dto, req.user?.userId ?? 'unknown');
-    }
-    async updateNotifications(dto, req) {
-        return await this.settingsService.updateSection('notifications', dto, req.user?.userId ?? 'unknown');
-    }
-    async updateIntegrations(dto, req) {
-        return await this.settingsService.updateSection('integrations', dto, req.user?.userId ?? 'unknown');
-    }
-    async updateOffline(dto, req) {
-        return await this.settingsService.updateSection('offline', dto, req.user?.userId ?? 'unknown');
+    async updateAllSettings(dto, req) {
+        return await this.settingsService.updateAllSettings(dto, req.user?.userId ?? 'unknown');
     }
     async testAfipConnection() {
         return this.settingsService.testAfipConnection();
+    }
+    async testSmtpConnection(dto) {
+        return this.settingsService.testSmtpConnection(dto);
+    }
+    async testSmsConnection(dto) {
+        return this.settingsService.testSmsConnection(dto);
+    }
+    async testWhatsappConnection(dto) {
+        return this.settingsService.testWhatsappConnection(dto);
+    }
+    async testPushConnection(dto) {
+        return this.settingsService.testPushConnection(dto);
     }
     async uploadLogo(file, req) {
         if (!file) {
             throw new common_1.BadRequestException('No file uploaded');
         }
         const logoUrl = `/uploads/logos/${file.filename}`;
-        await this.settingsService.updateSection('general', { logoUrl }, req.user?.userId ?? 'unknown');
+        await this.settingsService.updateAllSettings({ general: { logoUrl } }, req.user?.userId ?? 'unknown');
         return { logoUrl };
     }
 };
@@ -68,68 +65,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "getSettings", null);
 __decorate([
-    (0, common_1.Patch)('general'),
+    (0, common_1.Put)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [settings_dto_1.UpdateSettingsDto, Object]),
     __metadata("design:returntype", Promise)
-], SettingsController.prototype, "updateGeneral", null);
-__decorate([
-    (0, common_1.Patch)('pricing'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], SettingsController.prototype, "updatePricing", null);
-__decorate([
-    (0, common_1.Patch)('sku-barcode'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], SettingsController.prototype, "updateSkuBarcode", null);
-__decorate([
-    (0, common_1.Patch)('invoicing'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], SettingsController.prototype, "updateInvoicing", null);
-__decorate([
-    (0, common_1.Patch)('notifications'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], SettingsController.prototype, "updateNotifications", null);
-__decorate([
-    (0, common_1.Patch)('integrations'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], SettingsController.prototype, "updateIntegrations", null);
-__decorate([
-    (0, common_1.Patch)('offline'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], SettingsController.prototype, "updateOffline", null);
+], SettingsController.prototype, "updateAllSettings", null);
 __decorate([
     (0, common_1.Post)('invoicing/test-afip'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
@@ -137,6 +80,38 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "testAfipConnection", null);
+__decorate([
+    (0, common_1.Post)('notifications/test-smtp'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "testSmtpConnection", null);
+__decorate([
+    (0, common_1.Post)('notifications/test-sms'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "testSmsConnection", null);
+__decorate([
+    (0, common_1.Post)('notifications/test-whatsapp'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "testWhatsappConnection", null);
+__decorate([
+    (0, common_1.Post)('notifications/test-push'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "testPushConnection", null);
 __decorate([
     (0, common_1.Post)('general/logo'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
@@ -164,6 +139,7 @@ __decorate([
 ], SettingsController.prototype, "uploadLogo", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [settings_service_1.SettingsService])
 ], SettingsController);
 //# sourceMappingURL=settings.controller.js.map

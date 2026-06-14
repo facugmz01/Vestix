@@ -43,6 +43,7 @@ export declare class SalesController {
                 creditLimit: number;
                 usedCredit: number;
                 isActive: boolean;
+                priceListId: string | null;
                 createdAt: Date;
                 updatedAt: Date;
             };
@@ -89,6 +90,7 @@ export declare class SalesController {
             creditLimit: number;
             usedCredit: number;
             isActive: boolean;
+            priceListId: string | null;
             createdAt: Date;
             updatedAt: Date;
         };

@@ -53,6 +53,7 @@ export declare class StorefrontController {
                 creditLimit: number;
                 usedCredit: number;
                 isActive: boolean;
+                priceListId: string | null;
                 createdAt: Date;
                 updatedAt: Date;
             };
@@ -101,6 +102,7 @@ export declare class StorefrontController {
             creditLimit: number;
             usedCredit: number;
             isActive: boolean;
+            priceListId: string | null;
             createdAt: Date;
             updatedAt: Date;
         };

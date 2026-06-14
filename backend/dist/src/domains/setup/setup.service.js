@@ -207,7 +207,7 @@ let SetupService = class SetupService {
                 storeName: data.companyName,
             },
         });
-        const defaultGeneral = {
+        const generalData = {
             companyName: data.companyName,
             legalName: data.companyName,
             taxId: data.cuit || '',
@@ -220,15 +220,10 @@ let SetupService = class SetupService {
         };
         await this.prisma.systemSettings.upsert({
             where: { id: 'default' },
-            update: {
-                general: defaultGeneral,
-            },
-            create: {
-                id: 'default',
-                general: defaultGeneral,
-            },
+            update: {},
+            create: { id: 'default' },
         });
-        await this.settingsService.reloadSettings();
+        await this.settingsService.updateAllSettings({ general: generalData }, 'setup');
         return { success: true, message: 'Empresa configurada exitosamente' };
     }
 };

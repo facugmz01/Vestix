@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
 import { customersApi, type CreateCustomerDto } from '@/api/customers.api';
+import { priceListsApi } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { Customer } from '@/types';
+import type { Customer, PriceList } from '@/types';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -23,7 +24,14 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
     email: '',
     phone: '',
     initialCreditLimit: 0,
+    priceListId: '',
   });
+
+  const { data: priceListsData } = useQuery({
+    queryKey: queryKeys.priceLists.all(),
+    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100 }),
+  });
+  const priceLists = priceListsData?.data || [];
 
   useEffect(() => {
     if (open && customerToEdit) {
@@ -34,6 +42,7 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
         email: customerToEdit.email || '',
         phone: customerToEdit.phone || '',
         initialCreditLimit: customerToEdit.credit.limit,
+        priceListId: customerToEdit.priceListId || '',
       });
     } else if (open && !customerToEdit) {
       setFormData({
@@ -43,6 +52,7 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
         email: '',
         phone: '',
         initialCreditLimit: 0,
+        priceListId: '',
       });
     }
   }, [open, customerToEdit]);
@@ -146,6 +156,19 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
            
             disabled={isEditing} // Generalmente se edita desde otra vista por seguridad financiera
           />
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Lista de Precios Asignada</label>
+            <select
+              value={formData.priceListId || ''}
+              onChange={(e) => setFormData({ ...formData, priceListId: e.target.value })}
+              style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+            >
+              <option value="">(Lista por Defecto)</option>
+              {priceLists.map(list => (
+                <option key={list.id} value={list.id}>{list.name} ({list.type})</option>
+              ))}
+            </select>
+          </div>
           {isEditing && (
             <p style={{ fontSize: '12px', color: 'var(--orange)', marginTop: '8px' }}>
               * Para modificar límites de crédito de clientes existentes, utilizá el módulo de Riesgo/Finanzas en la vista de detalle.

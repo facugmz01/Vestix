@@ -60,6 +60,15 @@ let PricingService = class PricingService {
     }
     async resolvePrice(variantId, basePrice, customerId) {
         let activePriceList;
+        if (customerId) {
+            const customer = await this.prisma.customer.findUnique({
+                where: { id: customerId },
+                include: { priceList: true }
+            });
+            if (customer?.priceList) {
+                activePriceList = customer.priceList;
+            }
+        }
         if (!activePriceList) {
             activePriceList = await this.prisma.priceList.findFirst({
                 where: { isDefault: true, isActive: true }

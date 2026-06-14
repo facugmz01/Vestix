@@ -22,6 +22,7 @@ export declare class CustomersController {
         creditLimit: number;
         usedCredit: number;
         isActive: boolean;
+        priceListId: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

@@ -67,7 +67,7 @@ export declare class PosService {
             discountAmount: any;
         }[];
     }>;
-    searchCatalog(query: string): Promise<{
+    searchCatalog(query: string, customerId?: string): Promise<{
         id: string;
         sku: string;
         barcode: string;
