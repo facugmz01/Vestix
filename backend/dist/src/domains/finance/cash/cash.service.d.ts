@@ -7,8 +7,8 @@ export declare class CashService {
     getActiveShift(cashRegisterId: string): Promise<{
         openedByUser: {
             id: string;
-            fullName: string;
             email: string;
+            fullName: string;
         };
     } & {
         id: string;
@@ -27,8 +27,8 @@ export declare class CashService {
     getActiveShiftForUser(userId: string): Promise<{
         openedByUser: {
             id: string;
-            fullName: string;
             email: string;
+            fullName: string;
         };
     } & {
         id: string;
@@ -83,10 +83,10 @@ export declare class CashService {
     getShifts(page: number, pageSize: number): Promise<{
         data: ({
             cashRegister: {
-                name: string;
                 branch: {
                     name: string;
                 };
+                name: string;
             };
             openedByUser: {
                 fullName: string;
@@ -115,10 +115,10 @@ export declare class CashService {
     }>;
     getShiftById(shiftId: string): Promise<{
         cashRegister: {
-            name: string;
             branch: {
                 name: string;
             };
+            name: string;
         };
         openedByUser: {
             fullName: string;

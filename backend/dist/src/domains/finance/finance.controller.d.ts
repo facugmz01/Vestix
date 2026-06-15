@@ -74,8 +74,8 @@ export declare class FinanceController {
     getActiveShift(req: any): Promise<{
         openedByUser: {
             id: string;
-            fullName: string;
             email: string;
+            fullName: string;
         };
     } & {
         id: string;
@@ -129,10 +129,10 @@ export declare class FinanceController {
     getShifts(page: string, pageSize: string): Promise<{
         data: ({
             cashRegister: {
-                name: string;
                 branch: {
                     name: string;
                 };
+                name: string;
             };
             openedByUser: {
                 fullName: string;
@@ -161,10 +161,10 @@ export declare class FinanceController {
     }>;
     getShiftById(id: string): Promise<{
         cashRegister: {
-            name: string;
             branch: {
                 name: string;
             };
+            name: string;
         };
         openedByUser: {
             fullName: string;

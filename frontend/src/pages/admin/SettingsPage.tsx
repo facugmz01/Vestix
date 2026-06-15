@@ -3,7 +3,8 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-  Building2, Tag, Barcode, FileText, Bell, Plug, WifiOff, ChevronRight, Save
+  Building2, Tag, Barcode, FileText, Bell, Plug, WifiOff, ChevronRight, Save,
+  Settings as SettingsIcon, Image as ImageIcon, Star, ShoppingCart, QrCode, LayoutList, Shield, Smartphone, Megaphone
 } from 'lucide-react';
 
 import { 
@@ -21,30 +22,44 @@ import {
 import {
   NotificationSettingsPanel, IntegrationSettingsPanel
 } from '@/features/settings/components/CommsSettingsPanels';
+// We will create these shortly:
+import { SalesOptionsPanel } from '@/features/settings/components/SalesOptionsPanel';
+import { StorefrontSettingsPanel } from '@/features/settings/components/StorefrontSettingsPanel';
+import { ArcaSettingsPanel } from '@/features/settings/components/ArcaSettingsPanel';
+import { PwaSettingsPanel } from '@/features/settings/components/PwaSettingsPanel';
+import { QrSettingsPanel } from '@/features/settings/components/QrSettingsPanel';
 
 type SettingsTab =
   | 'general'
-  | 'pricing'
-  | 'skuBarcode'
-  | 'invoicing'
-  | 'notifications'
-  | 'integrations'
-  | 'offline';
+  | 'pos'
+  | 'fiscal'
+  | 'logo'
+  | 'plan'
+  | 'storefront'
+  | 'qr'
+  | 'arca'
+  | 'menu'
+  | 'privacy'
+  | 'mobile'
+  | 'ads';
 
 const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description: string }[] = [
-  { id: 'general',       label: 'Empresa',          icon: <Building2 size={16} />, description: 'Datos fiscales y logo' },
-  { id: 'pricing',       label: 'Precios',           icon: <Tag size={16} />,       description: 'IVA, descuentos, redondeo' },
-  { id: 'skuBarcode',   label: 'SKU / Barcode',     icon: <Barcode size={16} />,   description: 'Generación automática' },
-  { id: 'invoicing',     label: 'Facturación AFIP',  icon: <FileText size={16} />,  description: 'Punto de venta, ambiente' },
-  { id: 'notifications', label: 'Notificaciones',    icon: <Bell size={16} />,      description: 'Canales y eventos' },
-  { id: 'integrations',  label: 'Integraciones',     icon: <Plug size={16} />,      description: 'Activar/desactivar conectores' },
-  { id: 'offline',       label: 'Modo Offline',      icon: <WifiOff size={16} />,   description: 'Estrategia y cola' },
+  { id: 'general',       label: 'Datos del comercio',     icon: <Building2 size={16} />, description: '' },
+  { id: 'pos',           label: 'Opciones de venta',      icon: <SettingsIcon size={16} />, description: '' },
+  { id: 'fiscal',        label: 'Configuración fiscal',   icon: <FileText size={16} />, description: '' },
+  { id: 'logo',          label: 'Logo',                   icon: <ImageIcon size={16} />, description: '' },
+  { id: 'plan',          label: 'Plan activo',            icon: <Star size={16} />, description: '' },
+  { id: 'storefront',    label: 'Tienda Web',             icon: <ShoppingCart size={16} />, description: '' },
+  { id: 'qr',            label: 'QR de cobro',            icon: <QrCode size={16} />, description: '' },
+  { id: 'arca',          label: 'ARCA / Facturación',     icon: <FileText size={16} />, description: '' },
+  { id: 'menu',          label: 'Menú visible',           icon: <LayoutList size={16} />, description: '' },
+  { id: 'privacy',       label: 'Privacidad y seguridad', icon: <Shield size={16} />, description: '' },
+  { id: 'mobile',        label: 'App móvil / PWA',        icon: <Smartphone size={16} />, description: '' },
+  { id: 'ads',           label: 'Publicidad / Reseña',    icon: <Megaphone size={16} />, description: '' },
 ];
 
 /**
- * Extracts only the 7 valid settings sections from a raw API response,
- * stripping out Prisma metadata fields like `id` and `updatedAt` that
- * would cause a 400 from the backend's forbidNonWhitelisted validation.
+ * Extracts only the valid settings sections from a raw API response
  */
 function sanitizeSettings(raw: any): SystemSettings {
   return {
@@ -55,6 +70,11 @@ function sanitizeSettings(raw: any): SystemSettings {
     notifications: raw?.notifications ?? {},
     integrations:  raw?.integrations  ?? {},
     offline:       raw?.offline       ?? {},
+    pos:           raw?.pos           ?? {},
+    arca:          raw?.arca          ?? {},
+    storefront:    raw?.storefront    ?? {},
+    mobile:        raw?.mobile        ?? {},
+    qr:            raw?.qr            ?? {},
   };
 }
 
@@ -149,12 +169,27 @@ export default function SettingsPage() {
               {/* Panel content */}
               <div>
                 <div style={{ display: activeTab === 'general' ? 'block' : 'none' }}><GeneralSettingsPanel /></div>
-                <div style={{ display: activeTab === 'pricing' ? 'block' : 'none' }}><PricingSettingsPanel /></div>
-                <div style={{ display: activeTab === 'skuBarcode' ? 'block' : 'none' }}><SkuBarcodeSettingsPanel /></div>
-                <div style={{ display: activeTab === 'invoicing' ? 'block' : 'none' }}><InvoicingSettingsPanel /></div>
-                <div style={{ display: activeTab === 'notifications' ? 'block' : 'none' }}><NotificationSettingsPanel /></div>
-                <div style={{ display: activeTab === 'integrations' ? 'block' : 'none' }}><IntegrationSettingsPanel /></div>
-                <div style={{ display: activeTab === 'offline' ? 'block' : 'none' }}><OfflineSettingsPanel /></div>
+                <div style={{ display: activeTab === 'pos' ? 'block' : 'none' }}><SalesOptionsPanel /></div>
+                <div style={{ display: activeTab === 'fiscal' ? 'block' : 'none' }}><InvoicingSettingsPanel /></div>
+                <div style={{ display: activeTab === 'logo' ? 'block' : 'none' }}>
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Logo en construcción</div>
+                </div>
+                <div style={{ display: activeTab === 'plan' ? 'block' : 'none' }}>
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Plan Activo en construcción</div>
+                </div>
+                <div style={{ display: activeTab === 'storefront' ? 'block' : 'none' }}><StorefrontSettingsPanel /></div>
+                <div style={{ display: activeTab === 'qr' ? 'block' : 'none' }}><QrSettingsPanel /></div>
+                <div style={{ display: activeTab === 'arca' ? 'block' : 'none' }}><ArcaSettingsPanel /></div>
+                <div style={{ display: activeTab === 'menu' ? 'block' : 'none' }}>
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Menú Visible en construcción</div>
+                </div>
+                <div style={{ display: activeTab === 'privacy' ? 'block' : 'none' }}>
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Privacidad y Seguridad en construcción</div>
+                </div>
+                <div style={{ display: activeTab === 'mobile' ? 'block' : 'none' }}><PwaSettingsPanel /></div>
+                <div style={{ display: activeTab === 'ads' ? 'block' : 'none' }}>
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Publicidad y Reseña en construcción</div>
+                </div>
               </div>
 
             </div>

@@ -76,6 +76,59 @@ export declare class OfflineSettingsDto {
     autoSyncOnReconnect?: boolean;
     conflictStrategy?: 'ASK_USER' | 'SERVER_WINS' | 'CLIENT_WINS';
 }
+export declare class PosSettingsDto {
+    allowNegativeStock?: boolean;
+    thermalPrint80mm?: boolean;
+    fiscalPrint70mm?: boolean;
+    boxMode?: string;
+    defaultPriceType?: string;
+    requireInternalCode?: boolean;
+    requireBarcode?: boolean;
+    requireBrand?: boolean;
+    requireDescription?: boolean;
+    requireShippingDimensions?: boolean;
+    officialDollarQuote?: number;
+    blueDollarQuote?: number;
+}
+export declare class ArcaSettingsDto {
+    enabled?: boolean;
+    pointOfSale?: number;
+    environment?: string;
+    startDate?: string;
+    iibb?: string;
+    cuit?: string;
+    certAlias?: string;
+}
+export declare class StorefrontSettingsDto {
+    enabled?: boolean;
+    primaryColor?: string;
+    fontFamily?: string;
+    showHeader?: boolean;
+    showStoreName?: boolean;
+    imagesCarousel?: any[];
+    priceListToShow?: string;
+    defaultSort?: string;
+    hideOutOfStock?: boolean;
+    hideBrandFilters?: boolean;
+    mpPublicKey?: string;
+    mpAccessToken?: string;
+    transferCbu?: string;
+    acceptCash?: boolean;
+    shippingInfo?: string;
+    requireShippingData?: string;
+    whatsapp?: string;
+    instagramUrl?: string;
+    facebookUrl?: string;
+    tiktokUrl?: string;
+    youtubeUrl?: string;
+    xUrl?: string;
+}
+export declare class MobileSettingsDto {
+}
+export declare class QrSettingsDto {
+    mpStoreName?: string;
+    qrGenerated?: boolean;
+}
 export declare class UpdateSettingsDto {
     general?: GeneralSettingsDto;
     pricing?: PricingSettingsDto;
@@ -84,4 +137,9 @@ export declare class UpdateSettingsDto {
     notifications?: NotificationSettingsDto;
     integrations?: IntegrationSettingsDto;
     offline?: OfflineSettingsDto;
+    pos?: PosSettingsDto;
+    arca?: ArcaSettingsDto;
+    storefront?: StorefrontSettingsDto;
+    mobile?: MobileSettingsDto;
+    qr?: QrSettingsDto;
 }

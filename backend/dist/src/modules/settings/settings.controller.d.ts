@@ -12,6 +12,11 @@ export declare class SettingsController {
         notifications: import(".prisma/client").Prisma.JsonValue;
         integrations: import(".prisma/client").Prisma.JsonValue;
         offline: import(".prisma/client").Prisma.JsonValue;
+        pos: import(".prisma/client").Prisma.JsonValue;
+        arca: import(".prisma/client").Prisma.JsonValue;
+        storefront: import(".prisma/client").Prisma.JsonValue;
+        mobile: import(".prisma/client").Prisma.JsonValue;
+        qr: import(".prisma/client").Prisma.JsonValue;
         updatedAt: Date;
     }>;
     updateAllSettings(dto: UpdateSettingsDto, req: any): Promise<{
@@ -23,6 +28,11 @@ export declare class SettingsController {
         notifications: import(".prisma/client").Prisma.JsonValue;
         integrations: import(".prisma/client").Prisma.JsonValue;
         offline: import(".prisma/client").Prisma.JsonValue;
+        pos: import(".prisma/client").Prisma.JsonValue;
+        arca: import(".prisma/client").Prisma.JsonValue;
+        storefront: import(".prisma/client").Prisma.JsonValue;
+        mobile: import(".prisma/client").Prisma.JsonValue;
+        qr: import(".prisma/client").Prisma.JsonValue;
         updatedAt: Date;
     }>;
     testAfipConnection(): Promise<{

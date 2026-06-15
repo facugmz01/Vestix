@@ -18,6 +18,11 @@ export declare class SettingsService implements OnModuleInit {
         notifications: import(".prisma/client").Prisma.JsonValue;
         integrations: import(".prisma/client").Prisma.JsonValue;
         offline: import(".prisma/client").Prisma.JsonValue;
+        pos: import(".prisma/client").Prisma.JsonValue;
+        arca: import(".prisma/client").Prisma.JsonValue;
+        storefront: import(".prisma/client").Prisma.JsonValue;
+        mobile: import(".prisma/client").Prisma.JsonValue;
+        qr: import(".prisma/client").Prisma.JsonValue;
         updatedAt: Date;
     }>;
     updateAllSettings(dto: UpdateSettingsDto, userId: string): Promise<{
@@ -29,6 +34,11 @@ export declare class SettingsService implements OnModuleInit {
         notifications: import(".prisma/client").Prisma.JsonValue;
         integrations: import(".prisma/client").Prisma.JsonValue;
         offline: import(".prisma/client").Prisma.JsonValue;
+        pos: import(".prisma/client").Prisma.JsonValue;
+        arca: import(".prisma/client").Prisma.JsonValue;
+        storefront: import(".prisma/client").Prisma.JsonValue;
+        mobile: import(".prisma/client").Prisma.JsonValue;
+        qr: import(".prisma/client").Prisma.JsonValue;
         updatedAt: Date;
     }>;
     testAfipConnection(): Promise<{

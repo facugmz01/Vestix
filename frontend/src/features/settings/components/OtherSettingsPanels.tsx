@@ -91,56 +91,37 @@ export function SkuBarcodeSettingsPanel() {
 export function InvoicingSettingsPanel() {
   const { register, watch, setValue } = useFormContext<SystemSettings>();
 
-  const testAfip = useMutation({
-    mutationFn: settingsApi.testAfip,
-    onSuccess: (d) => d.success ? toast.success(d.message) : toast.error(d.message),
-    onError: () => toast.error('Error al conectar con AFIP'),
-  });
-
   return (
-    <SettingsSection title="Facturación Electrónica (AFIP)" description="Configuración del punto de venta y ambiente fiscal para AFIP.">
+    <>
+      <SettingsSection title="Configuración fiscal" description="Define tu situación impositiva y el comportamiento de las ventas internas.">
+        
+        <SettingsRow label="Condición frente al IVA">
+          <select {...register('invoicing.defaultInvoiceType')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', width: '300px', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+            <option value="FACTURA_B">Responsable Inscripto</option>
+            <option value="FACTURA_C">Monotributo</option>
+            <option value="EXENTO">Sujeto Exento</option>
+          </select>
+        </SettingsRow>
 
-      <SettingsRow label="Ambiente AFIP">
-        <select {...register('invoicing.afipEnvironment')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', width: '200px' }}>
-          <option value="homologation">Homologación (pruebas)</option>
-          <option value="production">Producción</option>
-        </select>
-      </SettingsRow>
+        <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', padding: '12px 16px', borderRadius: '8px', margin: '8px 0 24px 0', display: 'flex', gap: '8px' }}>
+          <span style={{ color: '#eab308' }}>⚠️</span>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-primary)' }}>Requiere cargar certificados AFIP. <a href="#" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Ver pestaña ARCA / Facturación.</a></p>
+        </div>
 
-      <SettingsRow label="Punto de Venta" hint="Número de punto de venta registrado en AFIP (Ej: 1, 2, 3…).">
-        <Input type="number" min={1} {...register('invoicing.fiscalPointSale', { valueAsNumber: true, required: 'Requerido', min: 1 })} style={{ width: '120px' }} />
-      </SettingsRow>
+        <SettingsDivider />
 
-      <SettingsRow label="Tipo de Comprobante por Defecto">
-        <select {...register('invoicing.defaultInvoiceType')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', width: '200px' }}>
-          <option value="FACTURA_B">Factura B (consumidor final)</option>
-          <option value="FACTURA_A">Factura A (RI a RI)</option>
-          <option value="FACTURA_C">Factura C (Monotributista)</option>
-        </select>
-      </SettingsRow>
+        <SettingsRow label="Ventas sin comprobante fiscal" hint="Si está activo, podrás registrar ventas internamente sin generar ticket fiscal en AFIP. Ideal para presupuestos, control de caja o ventas no declaradas.">
+          <ToggleSwitch value={!watch('invoicing.autoIssueOnSale')} onChange={v => setValue('invoicing.autoIssueOnSale', !v, { shouldDirty: true })} />
+        </SettingsRow>
 
-      <SettingsRow label="Emitir Automáticamente al Confirmar Venta" hint="Si está activado, la factura se emite junto con la venta.">
-        <ToggleSwitch value={!!watch('invoicing.autoIssueOnSale')} onChange={v => setValue('invoicing.autoIssueOnSale', v, { shouldDirty: true })} />
-      </SettingsRow>
+        <SettingsDivider />
 
-      <SettingsRow label="Texto de Pie de Factura">
-        <textarea
-          rows={3}
-          {...register('invoicing.invoiceFooterText')}
-          placeholder="Ej: Gracias por su compra. No se aceptan devoluciones..."
-          style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', resize: 'vertical' }}
-        />
-      </SettingsRow>
+        <SettingsRow label="Imprimir tickets no fiscales" hint="Si está activo, podrás imprimir un comprobante interno para las ventas no fiscales (ej: Presupuesto X).">
+          <ToggleSwitch value={true} onChange={() => {}} />
+        </SettingsRow>
 
-      <SettingsDivider />
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant="outline" icon={<TestTube size={14} />} onClick={() => testAfip.mutate()} loading={testAfip.isPending}>
-          Probar Conexión AFIP
-        </Button>
-      </div>
-
-    </SettingsSection>
+      </SettingsSection>
+    </>
   );
 }
 

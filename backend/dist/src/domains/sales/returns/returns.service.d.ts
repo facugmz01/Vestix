@@ -16,16 +16,6 @@ export declare class ReturnsService {
         data: {
             customerName: string;
             totalRefundAmount: number;
-            lines: {
-                id: string;
-                returnId: string;
-                orderLineId: string;
-                variantId: string;
-                quantity: number;
-                unitPrice: number;
-                condition: string;
-                reason: string | null;
-            }[];
             saleOrder: {
                 customer: {
                     id: string;
@@ -59,6 +49,16 @@ export declare class ReturnsService {
                 createdAt: Date;
                 syncedAt: Date;
             };
+            lines: {
+                id: string;
+                returnId: string;
+                orderLineId: string;
+                variantId: string;
+                quantity: number;
+                unitPrice: number;
+                condition: string;
+                reason: string | null;
+            }[];
             id: string;
             saleOrderId: string;
             branchId: string;
@@ -70,6 +70,39 @@ export declare class ReturnsService {
         total: number;
     }>;
     getReturnById(id: string): Promise<{
+        saleOrder: {
+            customer: {
+                id: string;
+                type: string;
+                fullName: string;
+                taxId: string | null;
+                email: string | null;
+                phone: string | null;
+                creditLimit: number;
+                usedCredit: number;
+                isActive: boolean;
+                priceListId: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+        } & {
+            id: string;
+            branchId: string;
+            warehouseId: string | null;
+            source: string;
+            customerId: string | null;
+            subtotal: number;
+            cartDiscountTotal: number;
+            grandTotal: number;
+            appliedPromotions: import(".prisma/client").Prisma.JsonValue;
+            paymentMethod: string;
+            paymentAccountId: string | null;
+            status: string;
+            cashShiftId: string | null;
+            issueInvoice: boolean;
+            createdAt: Date;
+            syncedAt: Date;
+        };
         lines: ({
             orderLine: {
                 variant: {
@@ -129,39 +162,6 @@ export declare class ReturnsService {
             condition: string;
             reason: string | null;
         })[];
-        saleOrder: {
-            customer: {
-                id: string;
-                type: string;
-                fullName: string;
-                taxId: string | null;
-                email: string | null;
-                phone: string | null;
-                creditLimit: number;
-                usedCredit: number;
-                isActive: boolean;
-                priceListId: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-            };
-        } & {
-            id: string;
-            branchId: string;
-            warehouseId: string | null;
-            source: string;
-            customerId: string | null;
-            subtotal: number;
-            cartDiscountTotal: number;
-            grandTotal: number;
-            appliedPromotions: import(".prisma/client").Prisma.JsonValue;
-            paymentMethod: string;
-            paymentAccountId: string | null;
-            status: string;
-            cashShiftId: string | null;
-            issueInvoice: boolean;
-            createdAt: Date;
-            syncedAt: Date;
-        };
     } & {
         id: string;
         saleOrderId: string;

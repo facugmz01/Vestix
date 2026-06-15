@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateSettingsDto = exports.OfflineSettingsDto = exports.IntegrationSettingsDto = exports.NotificationSettingsDto = exports.InvoicingSettingsDto = exports.SkuBarcodeSettingsDto = exports.PricingSettingsDto = exports.GeneralSettingsDto = void 0;
+exports.UpdateSettingsDto = exports.QrSettingsDto = exports.MobileSettingsDto = exports.StorefrontSettingsDto = exports.ArcaSettingsDto = exports.PosSettingsDto = exports.OfflineSettingsDto = exports.IntegrationSettingsDto = exports.NotificationSettingsDto = exports.InvoicingSettingsDto = exports.SkuBarcodeSettingsDto = exports.PricingSettingsDto = exports.GeneralSettingsDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 class GeneralSettingsDto {
@@ -357,6 +357,235 @@ __decorate([
     (0, class_validator_1.IsIn)(['ASK_USER', 'SERVER_WINS', 'CLIENT_WINS']),
     __metadata("design:type", String)
 ], OfflineSettingsDto.prototype, "conflictStrategy", void 0);
+class PosSettingsDto {
+}
+exports.PosSettingsDto = PosSettingsDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PosSettingsDto.prototype, "allowNegativeStock", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PosSettingsDto.prototype, "thermalPrint80mm", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PosSettingsDto.prototype, "fiscalPrint70mm", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PosSettingsDto.prototype, "boxMode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PosSettingsDto.prototype, "defaultPriceType", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PosSettingsDto.prototype, "requireInternalCode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PosSettingsDto.prototype, "requireBarcode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PosSettingsDto.prototype, "requireBrand", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PosSettingsDto.prototype, "requireDescription", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PosSettingsDto.prototype, "requireShippingDimensions", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], PosSettingsDto.prototype, "officialDollarQuote", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], PosSettingsDto.prototype, "blueDollarQuote", void 0);
+class ArcaSettingsDto {
+}
+exports.ArcaSettingsDto = ArcaSettingsDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], ArcaSettingsDto.prototype, "enabled", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], ArcaSettingsDto.prototype, "pointOfSale", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ArcaSettingsDto.prototype, "environment", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ArcaSettingsDto.prototype, "startDate", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ArcaSettingsDto.prototype, "iibb", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ArcaSettingsDto.prototype, "cuit", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ArcaSettingsDto.prototype, "certAlias", void 0);
+class StorefrontSettingsDto {
+}
+exports.StorefrontSettingsDto = StorefrontSettingsDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], StorefrontSettingsDto.prototype, "enabled", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "primaryColor", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "fontFamily", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], StorefrontSettingsDto.prototype, "showHeader", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], StorefrontSettingsDto.prototype, "showStoreName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], StorefrontSettingsDto.prototype, "imagesCarousel", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "priceListToShow", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "defaultSort", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], StorefrontSettingsDto.prototype, "hideOutOfStock", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], StorefrontSettingsDto.prototype, "hideBrandFilters", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "mpPublicKey", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "mpAccessToken", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "transferCbu", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], StorefrontSettingsDto.prototype, "acceptCash", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "shippingInfo", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "requireShippingData", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "whatsapp", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "instagramUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "facebookUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "tiktokUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "youtubeUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "xUrl", void 0);
+class MobileSettingsDto {
+}
+exports.MobileSettingsDto = MobileSettingsDto;
+class QrSettingsDto {
+}
+exports.QrSettingsDto = QrSettingsDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], QrSettingsDto.prototype, "mpStoreName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], QrSettingsDto.prototype, "qrGenerated", void 0);
 class UpdateSettingsDto {
 }
 exports.UpdateSettingsDto = UpdateSettingsDto;
@@ -402,4 +631,34 @@ __decorate([
     (0, class_transformer_1.Type)(() => OfflineSettingsDto),
     __metadata("design:type", OfflineSettingsDto)
 ], UpdateSettingsDto.prototype, "offline", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => PosSettingsDto),
+    __metadata("design:type", PosSettingsDto)
+], UpdateSettingsDto.prototype, "pos", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => ArcaSettingsDto),
+    __metadata("design:type", ArcaSettingsDto)
+], UpdateSettingsDto.prototype, "arca", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => StorefrontSettingsDto),
+    __metadata("design:type", StorefrontSettingsDto)
+], UpdateSettingsDto.prototype, "storefront", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => MobileSettingsDto),
+    __metadata("design:type", MobileSettingsDto)
+], UpdateSettingsDto.prototype, "mobile", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => QrSettingsDto),
+    __metadata("design:type", QrSettingsDto)
+], UpdateSettingsDto.prototype, "qr", void 0);
 //# sourceMappingURL=settings.dto.js.map

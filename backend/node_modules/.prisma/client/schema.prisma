@@ -823,6 +823,11 @@ model SystemSettings {
   notifications Json     @default("{}")
   integrations  Json     @default("{}")
   offline       Json     @default("{}")
+  pos           Json     @default("{}")
+  arca          Json     @default("{}")
+  storefront    Json     @default("{}")
+  mobile        Json     @default("{}")
+  qr            Json     @default("{}")
   updatedAt     DateTime @updatedAt
 }
 

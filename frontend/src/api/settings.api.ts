@@ -87,6 +87,65 @@ export interface OfflineSettings {
   conflictStrategy: 'ASK_USER' | 'SERVER_WINS' | 'CLIENT_WINS';
 }
 
+export interface PosSettings {
+  allowNegativeStock: boolean;
+  thermalPrint80mm: boolean;
+  fiscalPrint70mm: boolean;
+  boxMode: string;
+  defaultPriceType: string;
+  requireInternalCode: boolean;
+  requireBarcode: boolean;
+  requireBrand: boolean;
+  requireDescription: boolean;
+  requireShippingDimensions: boolean;
+  officialDollarQuote: number;
+  blueDollarQuote: number;
+}
+
+export interface ArcaSettings {
+  enabled: boolean;
+  pointOfSale: number;
+  environment: 'homologation' | 'production';
+  startDate: string;
+  iibb: string;
+  cuit: string;
+  certAlias: string;
+}
+
+export interface StorefrontSettings {
+  enabled: boolean;
+  primaryColor: string;
+  fontFamily: string;
+  showHeader: boolean;
+  showStoreName: boolean;
+  imagesCarousel: any[];
+  priceListToShow: string;
+  defaultSort: string;
+  hideOutOfStock: boolean;
+  hideBrandFilters: boolean;
+  mpPublicKey: string;
+  mpAccessToken: string;
+  transferCbu: string;
+  acceptCash: boolean;
+  shippingInfo: string;
+  requireShippingData: 'optional' | 'required' | 'none';
+  whatsapp: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
+  youtubeUrl: string;
+  xUrl: string;
+}
+
+export interface MobileSettings {
+  // placeholder
+}
+
+export interface QrSettings {
+  mpStoreName: string;
+  qrGenerated: boolean;
+}
+
 export interface SystemSettings {
   general:      GeneralSettings;
   pricing:      PricingSettings;
@@ -95,6 +154,11 @@ export interface SystemSettings {
   notifications: NotificationSettings;
   integrations: IntegrationSettings;
   offline:      OfflineSettings;
+  pos:          PosSettings;
+  arca:         ArcaSettings;
+  storefront:   StorefrontSettings;
+  mobile:       MobileSettings;
+  qr:           QrSettings;
 }
 
 export const settingsApi = {

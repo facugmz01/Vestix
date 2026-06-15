@@ -275,6 +275,65 @@ export class OfflineSettingsDto {
   conflictStrategy?: 'ASK_USER' | 'SERVER_WINS' | 'CLIENT_WINS';
 }
 
+export class PosSettingsDto {
+  @IsOptional() @IsBoolean() allowNegativeStock?: boolean;
+  @IsOptional() @IsBoolean() thermalPrint80mm?: boolean;
+  @IsOptional() @IsBoolean() fiscalPrint70mm?: boolean;
+  @IsOptional() @IsString() boxMode?: string;
+  @IsOptional() @IsString() defaultPriceType?: string;
+  @IsOptional() @IsBoolean() requireInternalCode?: boolean;
+  @IsOptional() @IsBoolean() requireBarcode?: boolean;
+  @IsOptional() @IsBoolean() requireBrand?: boolean;
+  @IsOptional() @IsBoolean() requireDescription?: boolean;
+  @IsOptional() @IsBoolean() requireShippingDimensions?: boolean;
+  @IsOptional() @IsNumber() officialDollarQuote?: number;
+  @IsOptional() @IsNumber() blueDollarQuote?: number;
+}
+
+export class ArcaSettingsDto {
+  @IsOptional() @IsBoolean() enabled?: boolean;
+  @IsOptional() @IsNumber() pointOfSale?: number;
+  @IsOptional() @IsString() environment?: string;
+  @IsOptional() @IsString() startDate?: string;
+  @IsOptional() @IsString() iibb?: string;
+  @IsOptional() @IsString() cuit?: string;
+  @IsOptional() @IsString() certAlias?: string;
+}
+
+export class StorefrontSettingsDto {
+  @IsOptional() @IsBoolean() enabled?: boolean;
+  @IsOptional() @IsString() primaryColor?: string;
+  @IsOptional() @IsString() fontFamily?: string;
+  @IsOptional() @IsBoolean() showHeader?: boolean;
+  @IsOptional() @IsBoolean() showStoreName?: boolean;
+  @IsOptional() imagesCarousel?: any[];
+  @IsOptional() @IsString() priceListToShow?: string;
+  @IsOptional() @IsString() defaultSort?: string;
+  @IsOptional() @IsBoolean() hideOutOfStock?: boolean;
+  @IsOptional() @IsBoolean() hideBrandFilters?: boolean;
+  @IsOptional() @IsString() mpPublicKey?: string;
+  @IsOptional() @IsString() mpAccessToken?: string;
+  @IsOptional() @IsString() transferCbu?: string;
+  @IsOptional() @IsBoolean() acceptCash?: boolean;
+  @IsOptional() @IsString() shippingInfo?: string;
+  @IsOptional() @IsString() requireShippingData?: string;
+  @IsOptional() @IsString() whatsapp?: string;
+  @IsOptional() @IsString() instagramUrl?: string;
+  @IsOptional() @IsString() facebookUrl?: string;
+  @IsOptional() @IsString() tiktokUrl?: string;
+  @IsOptional() @IsString() youtubeUrl?: string;
+  @IsOptional() @IsString() xUrl?: string;
+}
+
+export class MobileSettingsDto {
+  // placeholder
+}
+
+export class QrSettingsDto {
+  @IsOptional() @IsString() mpStoreName?: string;
+  @IsOptional() @IsBoolean() qrGenerated?: boolean;
+}
+
 export class UpdateSettingsDto {
   @IsOptional()
   @ValidateNested()
@@ -310,4 +369,29 @@ export class UpdateSettingsDto {
   @ValidateNested()
   @Type(() => OfflineSettingsDto)
   offline?: OfflineSettingsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PosSettingsDto)
+  pos?: PosSettingsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ArcaSettingsDto)
+  arca?: ArcaSettingsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => StorefrontSettingsDto)
+  storefront?: StorefrontSettingsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MobileSettingsDto)
+  mobile?: MobileSettingsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QrSettingsDto)
+  qr?: QrSettingsDto;
 }
