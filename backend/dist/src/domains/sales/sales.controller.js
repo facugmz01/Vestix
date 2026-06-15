@@ -24,8 +24,8 @@ let SalesController = class SalesController {
         this.salesService = salesService;
         this.checkoutOrchestrator = checkoutOrchestrator;
     }
-    async checkout(createOrderDto) {
-        return this.checkoutOrchestrator.processCheckout(createOrderDto);
+    async checkout(createOrderDto, req) {
+        return this.checkoutOrchestrator.processCheckout(createOrderDto, req.user?.userId);
     }
     async getReturns() {
         return { data: [], total: 0 };
@@ -51,8 +51,9 @@ __decorate([
     (0, common_1.Post)('checkout'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Sales' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_order_dto_1.CreateOrderDto]),
+    __metadata("design:paramtypes", [create_order_dto_1.CreateOrderDto, Object]),
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "checkout", null);
 __decorate([

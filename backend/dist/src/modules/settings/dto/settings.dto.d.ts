@@ -22,6 +22,8 @@ export declare class PricingSettingsDto {
     maxDiscountPct?: number;
     roundingRule?: 'NONE' | 'NEAREST_10' | 'UP' | 'DOWN';
     showPricesWithTax?: boolean;
+    usdOfficialRate?: number;
+    usdBlueRate?: number;
 }
 export declare class SkuBarcodeSettingsDto {
     skuPrefix?: string;

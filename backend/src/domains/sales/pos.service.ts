@@ -54,6 +54,7 @@ export class PosService {
     categoryId: string;
     accountId: string;
     cashShiftId?: string;
+    userId?: string;
   }) {
     const register = await this.prisma.cashRegister.findUnique({
       where: { id: payload.cashRegisterId },
@@ -83,7 +84,7 @@ export class PosService {
       cashShiftId: payload.cashShiftId,
     };
 
-    return this.checkoutOrchestrator.processCheckout(quickOrderDto);
+    return this.checkoutOrchestrator.processCheckout(quickOrderDto, payload.userId);
   }
 
   /**

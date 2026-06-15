@@ -28,6 +28,10 @@ export class ProductVariantDto {
 
   @IsOptional()
   @IsString()
+  barcode?: string;
+
+  @IsOptional()
+  @IsString()
   size?: string;
 
   @IsOptional()

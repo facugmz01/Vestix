@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, Req } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -14,8 +14,8 @@ export class SalesController {
 
   @Post('checkout')
   @RequirePermissions({ action: 'create', subject: 'Sales' })
-  async checkout(@Body() createOrderDto: CreateOrderDto) {
-    return this.checkoutOrchestrator.processCheckout(createOrderDto);
+  async checkout(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
+    return this.checkoutOrchestrator.processCheckout(createOrderDto, req.user?.userId);
   }
 
   @Get('returns')

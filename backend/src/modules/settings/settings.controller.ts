@@ -81,4 +81,10 @@ export class SettingsController {
     await this.settingsService.updateAllSettings({ general: { logoUrl } as any }, req.user?.userId ?? 'unknown');
     return { logoUrl };
   }
+
+  @Post('reprice-usd')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async repriceUsd(@Body() dto: { type: 'Oficial' | 'Blue' }) {
+    return this.settingsService.repriceUsd(dto.type);
+  }
 }

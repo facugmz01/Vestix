@@ -15,8 +15,15 @@ export function SalesOptionsPanel() {
     setClearCatalogOpen(false);
   };
 
-  const handleRecotizar = (type: 'Oficial' | 'Blue') => {
-    toast.success(`Recotizando productos USD ${type}...`);
+  const handleRecotizar = async (type: 'Oficial' | 'Blue') => {
+    try {
+      const res = await settingsApi.repriceUsd(type);
+      if (res.success) {
+        toast.success(`Recotizados ${res.updatedCount} productos vinculados a USD ${type}`);
+      }
+    } catch (error: any) {
+      toast.error(`Error al recotizar: ${error.message}`);
+    }
   };
 
   return (

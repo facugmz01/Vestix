@@ -225,38 +225,40 @@ let SettingsService = SettingsService_1 = class SettingsService {
                 dataToUpdate.integrations = { ...current.integrations, ...dto.integrations };
             if (dto.offline)
                 dataToUpdate.offline = { ...current.offline, ...dto.offline };
+            if (dto.pos)
+                dataToUpdate.pos = { ...current.pos, ...dto.pos };
+            if (dto.arca)
+                dataToUpdate.arca = { ...current.arca, ...dto.arca };
+            if (dto.storefront)
+                dataToUpdate.storefront = { ...current.storefront, ...dto.storefront };
+            if (dto.mobile)
+                dataToUpdate.mobile = { ...current.mobile, ...dto.mobile };
+            if (dto.qr)
+                dataToUpdate.qr = { ...current.qr, ...dto.qr };
             const updated = await tx.systemSettings.update({
                 where: { id: 'default' },
                 data: dataToUpdate,
             });
             if (dto.general) {
                 const g = dataToUpdate.general;
-                await tx.storeSettings.updateMany({
-                    where: { id: 'default' },
-                    data: {
-                        storeName: g.companyName || undefined,
-                    },
-                });
-                const branch = await tx.branch.findFirst({ where: { code: 'CENTRAL' } });
+                const branch = await tx.branch.findFirst({ where: { isMain: true } });
                 if (branch) {
-                    const currentBranchSettings = branch.settings || {};
+                    const currentSettings = branch.settings || {};
                     await tx.branch.update({
                         where: { id: branch.id },
                         data: {
-                            name: g.companyName ? `${g.companyName} - Casa Central` : undefined,
-                            address: g.address,
-                            phone: g.phone,
+                            name: g.companyName ? `${g.companyName} - Casa Central` : branch.name,
+                            address: g.address || branch.address,
+                            phone: g.phone || branch.phone,
                             settings: {
-                                ...currentBranchSettings,
-                                taxId: g.taxId ?? currentBranchSettings.taxId,
-                                companyName: g.companyName ?? currentBranchSettings.companyName,
-                                companyEmail: g.email ?? currentBranchSettings.companyEmail,
-                                companyPhone: g.phone ?? currentBranchSettings.companyPhone,
-                                companyAddress: g.address ?? currentBranchSettings.companyAddress,
-                                posReceiptHeader: g.companyName ?? currentBranchSettings.posReceiptHeader,
-                                posReceiptFooter: g.taxId != null || g.address != null ? `CUIT: ${g.taxId || ''} | ${g.address || ''}` : currentBranchSettings.posReceiptFooter,
-                            },
-                        },
+                                ...currentSettings,
+                                taxId: g.taxId,
+                                companyName: g.companyName,
+                                companyEmail: g.email,
+                                companyPhone: g.phone,
+                                companyAddress: g.address,
+                            }
+                        }
                     });
                 }
             }
@@ -348,6 +350,49 @@ let SettingsService = SettingsService_1 = class SettingsService {
         catch (error) {
             return { success: false, message: `Error FCM: ${error.message}` };
         }
+    }
+    async repriceUsd(usdType) {
+        return this.prisma.$transaction(async (tx) => {
+            const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } });
+            const posSettings = settings?.pos || {};
+            const newRate = usdType === 'Oficial' ? posSettings.officialDollarQuote : posSettings.blueDollarQuote;
+            if (!newRate)
+                throw new Error('No USD rate configured');
+            const products = await tx.product.findMany({
+                where: {
+                    metadata: {
+                        path: ['usdCurrency'],
+                        equals: usdType
+                    }
+                },
+                include: { variants: true }
+            });
+            let updatedCount = 0;
+            for (const product of products) {
+                const metadata = product.metadata || {};
+                const costUsd = metadata.costUsd || 0;
+                if (costUsd > 0) {
+                    const newCost = costUsd * newRate;
+                    await tx.product.update({
+                        where: { id: product.id },
+                        data: { costPrice: newCost }
+                    });
+                    for (const variant of product.variants) {
+                        const vMetadata = variant.attributes || {};
+                        const vCostUsd = vMetadata.costUsd || costUsd;
+                        if (vCostUsd > 0) {
+                            const vCost = vCostUsd * newRate;
+                            await tx.productVariant.update({
+                                where: { id: variant.id },
+                                data: { costPrice: vCost }
+                            });
+                        }
+                    }
+                    updatedCount++;
+                }
+            }
+            return { success: true, updatedCount };
+        });
     }
 };
 exports.SettingsService = SettingsService;

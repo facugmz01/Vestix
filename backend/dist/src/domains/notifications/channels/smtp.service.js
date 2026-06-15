@@ -26,8 +26,8 @@ let SmtpService = SmtpService_1 = class SmtpService {
         const smtpPort = smtp.port || process.env.SMTP_PORT;
         const smtpUser = smtp.user || process.env.SMTP_USER;
         const smtpPass = smtp.pass || process.env.SMTP_PASS;
-        const storeSettings = await this.prisma.storeSettings.findUnique({ where: { id: 'default' } });
-        const storeName = storeSettings?.storeName || 'Vestix ERP';
+        const storefront = settings?.storefront || {};
+        const storeName = storefront?.storeName || 'Vestix ERP';
         if (smtpHost && smtpUser && smtpPass) {
             try {
                 const nodemailer = require('nodemailer');

@@ -10,6 +10,7 @@ export declare class ProductComboLineDto {
 export declare class ProductVariantDto {
     id?: string;
     sku?: string;
+    barcode?: string;
     size?: string;
     color?: string;
     imageUrl?: string;

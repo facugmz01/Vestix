@@ -103,6 +103,11 @@ let CashService = class CashService {
         if (shift.status === 'CLOSED') {
             throw new common_1.BadRequestException('El turno ya se encuentra cerrado.');
         }
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const posSettings = settings?.pos || {};
+        if (posSettings.boxMode === 'STRICT' && shift.openedByUserId !== userId) {
+            throw new common_1.BadRequestException('El modo de caja es ESTRICTO. Solo el usuario que abrió el turno puede cerrarlo.');
+        }
         const cashPaymentMethod = shift.cashRegister.paymentMethods.find(p => p.type === 'CASH');
         const cashAccountId = cashPaymentMethod?.accountId;
         let expected = shift.openingAmount;

@@ -61,4 +61,8 @@ export declare class SettingsService implements OnModuleInit {
         success: boolean;
         message: string;
     }>;
+    repriceUsd(usdType: 'Oficial' | 'Blue'): Promise<{
+        success: boolean;
+        updatedCount: number;
+    }>;
 }

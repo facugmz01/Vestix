@@ -106,7 +106,7 @@ let PosService = class PosService {
             paymentAccountId: payload.accountId,
             cashShiftId: payload.cashShiftId,
         };
-        return this.checkoutOrchestrator.processCheckout(quickOrderDto);
+        return this.checkoutOrchestrator.processCheckout(quickOrderDto, payload.userId);
     }
     async calculateCart(dto) {
         const evaluatedLines = [];

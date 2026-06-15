@@ -25,6 +25,7 @@ export declare class PosService {
         categoryId: string;
         accountId: string;
         cashShiftId?: string;
+        userId?: string;
     }): Promise<{
         status: string;
         order: {

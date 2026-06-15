@@ -11,7 +11,7 @@ export declare class CheckoutOrchestrator {
     private readonly afipProducer;
     private readonly inventoryService;
     constructor(prisma: PrismaService, pricingService: PricingService, rulesEngine: RulesEngineService, afipProducer: AfipProducer, inventoryService: InventoryService);
-    processCheckout(dto: CreateOrderDto): Promise<{
+    processCheckout(dto: CreateOrderDto, cashierUserId?: string): Promise<{
         status: string;
         order: {
             id: string;

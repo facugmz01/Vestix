@@ -215,15 +215,12 @@ export class SetupService {
       }
     }
 
-    // 7. Create/update StoreSettings
-    await this.prisma.storeSettings.upsert({
-      where: { id: 'default' },
-      update: { storeName: data.companyName },
-      create: {
-        id: 'default',
+    // 7. Update Storefront Name via SettingsService
+    await this.settingsService.updateAllSettings({
+      storefront: {
         storeName: data.companyName,
-      },
-    });
+      } as any
+    }, 'setup');
 
     // 8. Update SystemSettings.general via SettingsService (respects cache + merges properly)
     const generalData = {

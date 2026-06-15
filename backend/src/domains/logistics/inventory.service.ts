@@ -92,6 +92,20 @@ export class InventoryService {
     }
 
     // Upsert the stock level record
+    if (quantityChange < 0 && type !== 'CONSUME_RESERVATION') {
+      const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } });
+      const posSettings = (settings?.pos as any) || {};
+      if (!posSettings.allowNegativeStock) {
+        const stock = await tx.stockLevel.findFirst({ 
+          where: { variantId, warehouseId, batchId: batchId || null } 
+        });
+        const currentAvailable = stock ? stock.availableQuantity : 0;
+        if (currentAvailable + quantityChange < 0) {
+          throw new BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
+        }
+      }
+    }
+
     return tx.stockLevel.upsert({
       where: { variantId_warehouseId_batchId: { variantId, warehouseId, batchId } },
       update: updateData,
@@ -114,8 +128,13 @@ export class InventoryService {
       orderBy: { availableQuantity: 'desc' }
     });
     
-    if (!stock || stock.availableQuantity < quantity) {
-      throw new BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
+    const settings = await prismaClient.systemSettings.findUnique({ where: { id: 'default' } });
+    const posSettings = (settings?.pos as any) || {};
+
+    if (!posSettings.allowNegativeStock) {
+      if (!stock || stock.availableQuantity < quantity) {
+        throw new BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
+      }
     }
 
     const movement = await this.recordMovement({

@@ -58,4 +58,10 @@ export declare class SettingsController {
     uploadLogo(file: Express.Multer.File, req: any): Promise<{
         logoUrl: string;
     }>;
+    repriceUsd(dto: {
+        type: 'Oficial' | 'Blue';
+    }): Promise<{
+        success: boolean;
+        updatedCount: number;
+    }>;
 }

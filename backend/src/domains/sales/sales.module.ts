@@ -24,8 +24,7 @@ import { CashRegistersController } from './cash-registers.controller';
 import { SyncEngineService } from './sync-engine.service';
 import { ConflictResolutionService } from './conflict-resolution.service';
 import { OfflineController } from './offline.controller';
-import { StoreSettingsService } from './store-settings.service';
-import { StoreSettingsController } from './store-settings.controller';
+
 
 @Global()
 @Module({
@@ -41,7 +40,6 @@ import { StoreSettingsController } from './store-settings.controller';
     ReturnsController,
     StorefrontController,
     StorefrontAuthController,
-    StoreSettingsController,
     CustomersController,
     PosController,
     CashRegistersController,
@@ -58,7 +56,6 @@ import { StoreSettingsController } from './store-settings.controller';
     PosService,
     SyncEngineService,
     ConflictResolutionService,
-    StoreSettingsService,
   ],
   exports: [
     SalesService,
@@ -68,7 +65,6 @@ import { StoreSettingsController } from './store-settings.controller';
     CustomersService,
     PosService,
     SyncEngineService,
-    StoreSettingsService,
   ],
 })
 export class SalesModule {}

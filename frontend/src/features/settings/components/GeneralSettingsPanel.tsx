@@ -10,37 +10,10 @@ import { SettingsSection, SettingsRow, SettingsDivider } from './SettingsLayout'
 const TIMEZONES = ['America/Argentina/Buenos_Aires', 'America/Bogota', 'America/Santiago', 'America/Lima', 'America/Mexico_City'];
 
 export function GeneralSettingsPanel() {
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const { register, formState: { errors }, watch, setValue } = useFormContext<SystemSettings>();
-  const logoUrl = watch('general.logoUrl');
-
-  const logoMutation = useMutation({
-    mutationFn: (file: File) => settingsApi.uploadLogo(file),
-    onSuccess: (data) => {
-      setValue('general.logoUrl', data.logoUrl, { shouldDirty: true });
-      toast.success('Logo actualizado');
-    },
-    onError: () => toast.error('Error al subir logo'),
-  });
+  const { register, formState: { errors } } = useFormContext<SystemSettings>();
 
   return (
     <SettingsSection title="Datos de la Empresa" description="Información fiscal y de contacto visible en documentos e impresiones.">
-
-      <SettingsRow label="Logo de la Empresa" hint="Formato PNG/JPG, máx. 2MB.">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {logoUrl
-            ? <img src={logoUrl} alt="Logo" style={{ height: '56px', borderRadius: '8px', border: '1px solid var(--border)', objectFit: 'contain', background: '#fff' }} />
-            : <div style={{ width: '80px', height: '56px', borderRadius: '8px', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Building2 size={24} color="var(--text-muted)" /></div>
-          }
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) logoMutation.mutate(e.target.files[0]); }} />
-          <Button variant="outline" size="sm" icon={<Upload size={14} />} onClick={() => fileRef.current?.click()} loading={logoMutation.isPending}>
-            Subir Logo
-          </Button>
-        </div>
-      </SettingsRow>
-
-      <SettingsDivider />
 
       <div className="grid-responsive grid-cols-2">
         <Input label="Nombre Comercial *" {...register('general.companyName', { required: 'Requerido' })} error={errors.general?.companyName?.message} />

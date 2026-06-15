@@ -6,7 +6,7 @@ export declare class SalesController {
     private readonly salesService;
     private readonly checkoutOrchestrator;
     constructor(salesService: SalesService, checkoutOrchestrator: CheckoutOrchestrator);
-    checkout(createOrderDto: CreateOrderDto): Promise<{
+    checkout(createOrderDto: CreateOrderDto, req: any): Promise<{
         status: string;
         order: {
             id: string;

@@ -387,10 +387,53 @@ export function ProductEditor({ initialData }: Props) {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-              <Button variant="ghost" size="sm" icon={<span style={{ fontWeight: 600 }}>$</span>}>
-                Ingresar precios en USD
+              <Button type="button" variant="ghost" size="sm" icon={<span style={{ fontWeight: 600 }}>$</span>} onClick={() => {
+                const meta = formData.metadata || {};
+                const toggled = !meta.usdCurrency;
+                setFormData({
+                  ...formData,
+                  metadata: { ...meta, usdCurrency: toggled ? 'Oficial' : undefined, costUsd: toggled ? 0 : undefined }
+                });
+              }}>
+                {(formData.metadata?.usdCurrency) ? 'Desactivar precios en USD' : 'Ingresar precios en USD'}
               </Button>
             </div>
+
+            {formData.metadata?.usdCurrency && (
+              <div style={{ marginTop: '16px', padding: '16px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Tipo de Dólar</label>
+                    <select
+                      value={formData.metadata.usdCurrency}
+                      onChange={(e) => setFormData({ ...formData, metadata: { ...formData.metadata, usdCurrency: e.target.value } })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)' }}
+                    >
+                      <option value="Oficial">Dólar Oficial</option>
+                      <option value="Blue">Dólar Blue</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Costo en USD</label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '12px', top: '8px', color: 'var(--text-muted)' }}>U$S</span>
+                      <input
+                        type="number"
+                        value={formData.metadata.costUsd || ''}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setFormData({ ...formData, metadata: { ...formData.metadata, costUsd: val } });
+                        }}
+                        style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', marginBottom: 0 }}>
+                  Nota: El costo en ARS se actualizará automáticamente cuando recotices desde la configuración.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Variantes o Combos dinámicos */}

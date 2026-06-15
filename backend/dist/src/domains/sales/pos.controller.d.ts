@@ -39,7 +39,7 @@ export declare class PosController {
         color: string;
         size: string;
     }>;
-    quickSale(dto: QuickSaleDto): Promise<{
+    quickSale(dto: QuickSaleDto, req: any): Promise<{
         status: string;
         order: {
             id: string;

@@ -802,18 +802,6 @@ model WcVariantMapping {
 // 13. SETTINGS MODULE
 // ==========================================
 
-model StoreSettings {
-  id             String   @id @default("default")
-  storeName      String   @default("Mi Tienda")
-  primaryColor   String   @default("#10b981")
-  heroTitle      String   @default("Bienvenidos a nuestra tienda")
-  heroSubtitle   String   @default("Encontrá los mejores productos al mejor precio")
-  whatsappNumber String?
-  instagramUrl   String?
-  facebookUrl    String?
-  updatedAt      DateTime @updatedAt
-}
-
 model SystemSettings {
   id            String   @id @default("default") // Singleton
   general       Json     @default("{}")

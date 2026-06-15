@@ -55,6 +55,9 @@ let SettingsController = class SettingsController {
         await this.settingsService.updateAllSettings({ general: { logoUrl } }, req.user?.userId ?? 'unknown');
         return { logoUrl };
     }
+    async repriceUsd(dto) {
+        return this.settingsService.repriceUsd(dto.type);
+    }
 };
 exports.SettingsController = SettingsController;
 __decorate([
@@ -137,6 +140,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "uploadLogo", null);
+__decorate([
+    (0, common_1.Post)('reprice-usd'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "repriceUsd", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),

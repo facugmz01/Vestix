@@ -22,13 +22,55 @@ export class ProductsService {
       await this.brandsService.findOne(createProductDto.brandId);
     }
 
-    // 2. Base SKU Uniqueness & Generation
+    // 2. Load settings for POS validations and SKU generation
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const posSettings = (settings?.pos as any) || {};
+    const skuSettings = (settings?.skuBarcode as any) || {};
+
+    // 2a. POS Validations & USD Logic
+    if (createProductDto.metadata?.usdCurrency) {
+      const type = createProductDto.metadata.usdCurrency;
+      const rate = type === 'Oficial' ? posSettings.officialDollarQuote : posSettings.blueDollarQuote;
+      const costUsd = parseFloat(createProductDto.metadata.costUsd || '0');
+      if (rate && costUsd > 0) {
+        createProductDto.costPrice = costUsd * rate;
+        if (createProductDto.variants) {
+          createProductDto.variants = createProductDto.variants.map(v => ({
+            ...v,
+            costPrice: costUsd * rate
+          }));
+        }
+      }
+    }
+    if (posSettings.requireInternalCode && !createProductDto.baseSku) {
+      throw new ConflictException('El Código Interno (SKU) es obligatorio según la configuración de ventas.');
+    }
+    if (posSettings.requireBrand && !createProductDto.brandId) {
+      throw new ConflictException('La Marca es obligatoria según la configuración de ventas.');
+    }
+    if (posSettings.requireDescription && !createProductDto.description?.trim()) {
+      throw new ConflictException('La Descripción es obligatoria según la configuración de ventas.');
+    }
+    if (posSettings.requireBarcode) {
+      const variants = createProductDto.variants || [];
+      const hasMissingBarcode = variants.some(v => !v.barcode?.trim());
+      // For simple products, we must check if there is a variant. If no variants are provided, we check if they passed barcode in the main dto? 
+      // DTO doesn't have barcode at root, only in variants. So if requireBarcode is true, and it's simple, they MUST send at least 1 variant.
+      if (hasMissingBarcode || variants.length === 0) {
+        throw new ConflictException('El Código de Barras es obligatorio para el producto según la configuración de ventas.');
+      }
+    }
+    if (posSettings.requireShippingDimensions) {
+      const { weight, width, height, depth } = createProductDto.metadata || {};
+      if (!weight || !width || !height || !depth) {
+        throw new ConflictException('Las dimensiones de envío (peso, ancho, alto, largo) son obligatorias según la configuración de ventas.');
+      }
+    }
+
+    // 2b. Base SKU Uniqueness & Generation
     let finalSku = createProductDto.baseSku;
 
     if (!finalSku) {
-      const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-      const skuSettings = (settings?.skuBarcode as any) || {};
-
       if (skuSettings.skuAutoGenerate) {
         const prefix = skuSettings.skuPrefix || 'PROD-';
         const seq = parseInt(skuSettings.nextSkuSequence) || 1;
@@ -153,6 +195,52 @@ export class ProductsService {
     // Re-validate foreign relations if they are being updated
     if (updateProductDto.categoryId) await this.categoriesService.findOne(updateProductDto.categoryId);
     if (updateProductDto.brandId) await this.brandsService.findOne(updateProductDto.brandId);
+
+    // Load settings for POS validations
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const posSettings = (settings?.pos as any) || {};
+
+    // POS Validations for Update
+    const checkBrandId = updateProductDto.brandId !== undefined ? updateProductDto.brandId : product.brandId;
+    if (posSettings.requireBrand && !checkBrandId) {
+      throw new ConflictException('La Marca es obligatoria según la configuración de ventas.');
+    }
+
+    const checkDescription = updateProductDto.description !== undefined ? updateProductDto.description : product.description;
+    if (posSettings.requireDescription && !checkDescription?.trim()) {
+      throw new ConflictException('La Descripción es obligatoria según la configuración de ventas.');
+    }
+
+    if (posSettings.requireBarcode && updateProductDto.variants) {
+      const hasMissingBarcode = updateProductDto.variants.some((v: any) => v.barcode !== undefined && !v.barcode?.trim());
+      if (hasMissingBarcode) {
+        throw new ConflictException('El Código de Barras no puede quedar vacío según la configuración de ventas.');
+      }
+    }
+
+    if (posSettings.requireShippingDimensions) {
+      const newMetadata = updateProductDto.metadata !== undefined ? updateProductDto.metadata : (product.metadata as any);
+      const { weight, width, height, depth } = newMetadata || {};
+      if (!weight || !width || !height || !depth) {
+        throw new ConflictException('Las dimensiones de envío (peso, ancho, alto, largo) son obligatorias según la configuración de ventas.');
+      }
+    }
+
+    // 2b. POS Validations & USD Logic for Update
+    if (updateProductDto.metadata?.usdCurrency) {
+      const type = updateProductDto.metadata.usdCurrency;
+      const rate = type === 'Oficial' ? posSettings.officialDollarQuote : posSettings.blueDollarQuote;
+      const costUsd = parseFloat(updateProductDto.metadata.costUsd || '0');
+      if (rate && costUsd > 0) {
+        updateProductDto.costPrice = costUsd * rate;
+        if (updateProductDto.variants) {
+          updateProductDto.variants = updateProductDto.variants.map((v: any) => ({
+            ...v,
+            costPrice: costUsd * rate
+          }));
+        }
+      }
+    }
 
     // Re-validate SKU uniqueness if it's changing
     if (updateProductDto.baseSku && updateProductDto.baseSku !== product.baseSku) {

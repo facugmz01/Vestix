@@ -127,6 +127,18 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], PricingSettingsDto.prototype, "showPricesWithTax", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], PricingSettingsDto.prototype, "usdOfficialRate", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], PricingSettingsDto.prototype, "usdBlueRate", void 0);
 class SkuBarcodeSettingsDto {
 }
 exports.SkuBarcodeSettingsDto = SkuBarcodeSettingsDto;

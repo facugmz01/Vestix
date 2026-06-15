@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards, Req } from '@nestjs/common';
 import { PosService } from './pos.service';
 import { 
   ScanBarcodeDto, 
@@ -38,8 +38,8 @@ export class PosController {
 
   @Post('quick-sale')
   @RequirePermissions({ action: 'create', subject: 'Sales' })
-  async quickSale(@Body() dto: QuickSaleDto) {
-    return this.posService.processQuickSale(dto);
+  async quickSale(@Body() dto: QuickSaleDto, @Req() req: any) {
+    return this.posService.processQuickSale({ ...dto, userId: req.user?.userId });
   }
 
   @Post('cart/calculate')

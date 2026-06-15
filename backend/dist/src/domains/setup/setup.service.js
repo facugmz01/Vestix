@@ -205,14 +205,11 @@ let SetupService = class SetupService {
                 });
             }
         }
-        await this.prisma.storeSettings.upsert({
-            where: { id: 'default' },
-            update: { storeName: data.companyName },
-            create: {
-                id: 'default',
+        await this.settingsService.updateAllSettings({
+            storefront: {
                 storeName: data.companyName,
-            },
-        });
+            }
+        }, 'setup');
         const generalData = {
             companyName: data.companyName,
             legalName: data.companyName,

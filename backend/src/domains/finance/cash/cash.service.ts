@@ -86,6 +86,13 @@ export class CashService {
       throw new BadRequestException('El turno ya se encuentra cerrado.');
     }
 
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const posSettings = (settings?.pos as any) || {};
+
+    if (posSettings.boxMode === 'STRICT' && shift.openedByUserId !== userId) {
+      throw new BadRequestException('El modo de caja es ESTRICTO. Solo el usuario que abrió el turno puede cerrarlo.');
+    }
+
     // Calcular el esperado: 
     // En un sistema real, es: Saldo Inicial + Ventas en Efectivo - Egresos/Retiros.
     // Para simplificar, buscamos los pagos de tipo CASH vinculados a las ventas de este turno.

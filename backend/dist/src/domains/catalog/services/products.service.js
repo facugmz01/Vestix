@@ -58,10 +58,47 @@ let ProductsService = class ProductsService {
         if (createProductDto.brandId) {
             await this.brandsService.findOne(createProductDto.brandId);
         }
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const posSettings = settings?.pos || {};
+        const skuSettings = settings?.skuBarcode || {};
+        if (createProductDto.metadata?.usdCurrency) {
+            const type = createProductDto.metadata.usdCurrency;
+            const rate = type === 'Oficial' ? posSettings.officialDollarQuote : posSettings.blueDollarQuote;
+            const costUsd = parseFloat(createProductDto.metadata.costUsd || '0');
+            if (rate && costUsd > 0) {
+                createProductDto.costPrice = costUsd * rate;
+                if (createProductDto.variants) {
+                    createProductDto.variants = createProductDto.variants.map(v => ({
+                        ...v,
+                        costPrice: costUsd * rate
+                    }));
+                }
+            }
+        }
+        if (posSettings.requireInternalCode && !createProductDto.baseSku) {
+            throw new common_1.ConflictException('El Código Interno (SKU) es obligatorio según la configuración de ventas.');
+        }
+        if (posSettings.requireBrand && !createProductDto.brandId) {
+            throw new common_1.ConflictException('La Marca es obligatoria según la configuración de ventas.');
+        }
+        if (posSettings.requireDescription && !createProductDto.description?.trim()) {
+            throw new common_1.ConflictException('La Descripción es obligatoria según la configuración de ventas.');
+        }
+        if (posSettings.requireBarcode) {
+            const variants = createProductDto.variants || [];
+            const hasMissingBarcode = variants.some(v => !v.barcode?.trim());
+            if (hasMissingBarcode || variants.length === 0) {
+                throw new common_1.ConflictException('El Código de Barras es obligatorio para el producto según la configuración de ventas.');
+            }
+        }
+        if (posSettings.requireShippingDimensions) {
+            const { weight, width, height, depth } = createProductDto.metadata || {};
+            if (!weight || !width || !height || !depth) {
+                throw new common_1.ConflictException('Las dimensiones de envío (peso, ancho, alto, largo) son obligatorias según la configuración de ventas.');
+            }
+        }
         let finalSku = createProductDto.baseSku;
         if (!finalSku) {
-            const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-            const skuSettings = settings?.skuBarcode || {};
             if (skuSettings.skuAutoGenerate) {
                 const prefix = skuSettings.skuPrefix || 'PROD-';
                 const seq = parseInt(skuSettings.nextSkuSequence) || 1;
@@ -179,6 +216,43 @@ let ProductsService = class ProductsService {
             await this.categoriesService.findOne(updateProductDto.categoryId);
         if (updateProductDto.brandId)
             await this.brandsService.findOne(updateProductDto.brandId);
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const posSettings = settings?.pos || {};
+        const checkBrandId = updateProductDto.brandId !== undefined ? updateProductDto.brandId : product.brandId;
+        if (posSettings.requireBrand && !checkBrandId) {
+            throw new common_1.ConflictException('La Marca es obligatoria según la configuración de ventas.');
+        }
+        const checkDescription = updateProductDto.description !== undefined ? updateProductDto.description : product.description;
+        if (posSettings.requireDescription && !checkDescription?.trim()) {
+            throw new common_1.ConflictException('La Descripción es obligatoria según la configuración de ventas.');
+        }
+        if (posSettings.requireBarcode && updateProductDto.variants) {
+            const hasMissingBarcode = updateProductDto.variants.some((v) => v.barcode !== undefined && !v.barcode?.trim());
+            if (hasMissingBarcode) {
+                throw new common_1.ConflictException('El Código de Barras no puede quedar vacío según la configuración de ventas.');
+            }
+        }
+        if (posSettings.requireShippingDimensions) {
+            const newMetadata = updateProductDto.metadata !== undefined ? updateProductDto.metadata : product.metadata;
+            const { weight, width, height, depth } = newMetadata || {};
+            if (!weight || !width || !height || !depth) {
+                throw new common_1.ConflictException('Las dimensiones de envío (peso, ancho, alto, largo) son obligatorias según la configuración de ventas.');
+            }
+        }
+        if (updateProductDto.metadata?.usdCurrency) {
+            const type = updateProductDto.metadata.usdCurrency;
+            const rate = type === 'Oficial' ? posSettings.officialDollarQuote : posSettings.blueDollarQuote;
+            const costUsd = parseFloat(updateProductDto.metadata.costUsd || '0');
+            if (rate && costUsd > 0) {
+                updateProductDto.costPrice = costUsd * rate;
+                if (updateProductDto.variants) {
+                    updateProductDto.variants = updateProductDto.variants.map((v) => ({
+                        ...v,
+                        costPrice: costUsd * rate
+                    }));
+                }
+            }
+        }
         if (updateProductDto.baseSku && updateProductDto.baseSku !== product.baseSku) {
             const exists = await this.prisma.product.findUnique({ where: { baseSku: updateProductDto.baseSku } });
             if (exists)

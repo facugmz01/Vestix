@@ -33,8 +33,8 @@ let PosController = class PosController {
     async scanBarcode(scanDto) {
         return this.posService.resolveBarcode(scanDto.barcode);
     }
-    async quickSale(dto) {
-        return this.posService.processQuickSale(dto);
+    async quickSale(dto, req) {
+        return this.posService.processQuickSale({ ...dto, userId: req.user?.userId });
     }
     async calculateCart(dto) {
         return this.posService.calculateCart(dto);
@@ -81,8 +81,9 @@ __decorate([
     (0, common_1.Post)('quick-sale'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Sales' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [pos_dtos_1.QuickSaleDto]),
+    __metadata("design:paramtypes", [pos_dtos_1.QuickSaleDto, Object]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "quickSale", null);
 __decorate([

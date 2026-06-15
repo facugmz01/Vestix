@@ -91,6 +91,16 @@ export class PricingSettingsDto {
   @IsOptional()
   @IsBoolean()
   showPricesWithTax?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  usdOfficialRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  usdBlueRate?: number;
 }
 
 export class SkuBarcodeSettingsDto {

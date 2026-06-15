@@ -21,7 +21,7 @@ export class CheckoutOrchestrator {
    * The master orchestrator for checkout.
    * Runs Sales, Finance, and Inventory mutations inside a single ACID $transaction.
    */
-  async processCheckout(dto: CreateOrderDto) {
+  async processCheckout(dto: CreateOrderDto, cashierUserId?: string) {
     // 1. IDEMPOTENCY CHECK (Outside transaction to fail fast)
     const existingOrder = await this.prisma.saleOrder.findUnique({
       where: { id: dto.id },
@@ -41,6 +41,12 @@ export class CheckoutOrchestrator {
       const shift = await this.prisma.cashShift.findUnique({ where: { id: dto.cashShiftId } });
       if (!shift || shift.status !== 'OPEN') {
         throw new BadRequestException('El turno de caja provisto no es válido o ya fue cerrado.');
+      }
+      const posSettings = (await this.prisma.systemSettings.findUnique({ where: { id: 'default' } }))?.pos as any || {};
+      if (posSettings.boxMode === 'STRICT') {
+        if (!cashierUserId || shift.openedByUserId !== cashierUserId) {
+          throw new BadRequestException('El modo de caja es ESTRICTO. Solo el usuario que abrió el turno puede registrar ventas.');
+        }
       }
     }
 

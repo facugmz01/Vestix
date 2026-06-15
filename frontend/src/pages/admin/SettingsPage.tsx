@@ -33,8 +33,6 @@ type SettingsTab =
   | 'general'
   | 'pos'
   | 'fiscal'
-  | 'logo'
-  | 'plan'
   | 'storefront'
   | 'qr'
   | 'arca'
@@ -47,8 +45,6 @@ const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description
   { id: 'general',       label: 'Datos del comercio',     icon: <Building2 size={16} />, description: '' },
   { id: 'pos',           label: 'Opciones de venta',      icon: <SettingsIcon size={16} />, description: '' },
   { id: 'fiscal',        label: 'Configuración fiscal',   icon: <FileText size={16} />, description: '' },
-  { id: 'logo',          label: 'Logo',                   icon: <ImageIcon size={16} />, description: '' },
-  { id: 'plan',          label: 'Plan activo',            icon: <Star size={16} />, description: '' },
   { id: 'storefront',    label: 'Tienda Web',             icon: <ShoppingCart size={16} />, description: '' },
   { id: 'qr',            label: 'QR de cobro',            icon: <QrCode size={16} />, description: '' },
   { id: 'arca',          label: 'ARCA / Facturación',     icon: <FileText size={16} />, description: '' },
@@ -171,12 +167,6 @@ export default function SettingsPage() {
                 <div style={{ display: activeTab === 'general' ? 'block' : 'none' }}><GeneralSettingsPanel /></div>
                 <div style={{ display: activeTab === 'pos' ? 'block' : 'none' }}><SalesOptionsPanel /></div>
                 <div style={{ display: activeTab === 'fiscal' ? 'block' : 'none' }}><InvoicingSettingsPanel /></div>
-                <div style={{ display: activeTab === 'logo' ? 'block' : 'none' }}>
-                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Logo en construcción</div>
-                </div>
-                <div style={{ display: activeTab === 'plan' ? 'block' : 'none' }}>
-                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Plan Activo en construcción</div>
-                </div>
                 <div style={{ display: activeTab === 'storefront' ? 'block' : 'none' }}><StorefrontSettingsPanel /></div>
                 <div style={{ display: activeTab === 'qr' ? 'block' : 'none' }}><QrSettingsPanel /></div>
                 <div style={{ display: activeTab === 'arca' ? 'block' : 'none' }}><ArcaSettingsPanel /></div>

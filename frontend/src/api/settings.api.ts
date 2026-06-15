@@ -188,4 +188,7 @@ export const settingsApi = {
     fd.append('file', file);
     return post<{ logoUrl: string }>('/settings/general/logo', fd as any);
   },
+
+  repriceUsd: (type: 'Oficial' | 'Blue') =>
+    post<{ success: boolean; updatedCount: number }>('/settings/reprice-usd', { type }),
 };

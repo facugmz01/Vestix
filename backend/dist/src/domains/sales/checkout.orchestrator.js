@@ -58,7 +58,7 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
         this.afipProducer = afipProducer;
         this.inventoryService = inventoryService;
     }
-    async processCheckout(dto) {
+    async processCheckout(dto, cashierUserId) {
         const existingOrder = await this.prisma.saleOrder.findUnique({
             where: { id: dto.id },
         });
@@ -73,6 +73,12 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
             const shift = await this.prisma.cashShift.findUnique({ where: { id: dto.cashShiftId } });
             if (!shift || shift.status !== 'OPEN') {
                 throw new common_1.BadRequestException('El turno de caja provisto no es válido o ya fue cerrado.');
+            }
+            const posSettings = (await this.prisma.systemSettings.findUnique({ where: { id: 'default' } }))?.pos || {};
+            if (posSettings.boxMode === 'STRICT') {
+                if (!cashierUserId || shift.openedByUserId !== cashierUserId) {
+                    throw new common_1.BadRequestException('El modo de caja es ESTRICTO. Solo el usuario que abrió el turno puede registrar ventas.');
+                }
             }
         }
         const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });

@@ -22,8 +22,8 @@ export class SmtpService {
     const smtpUser = smtp.user || process.env.SMTP_USER;
     const smtpPass = smtp.pass || process.env.SMTP_PASS;
     
-    const storeSettings = await this.prisma.storeSettings.findUnique({ where: { id: 'default' } });
-    const storeName = storeSettings?.storeName || 'Vestix ERP';
+    const storefront = (settings?.storefront as any) || {};
+    const storeName = storefront?.storeName || 'Vestix ERP';
 
     if (smtpHost && smtpUser && smtpPass) {
       try {
