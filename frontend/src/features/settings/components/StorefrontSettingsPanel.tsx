@@ -26,7 +26,7 @@ export function StorefrontSettingsPanel() {
     name: 'storefront.shippingMethods'
   });
 
-  const storefrontUrl = "https://ventavweb.com.ar/web/comercio-FACUNDOGOM";
+  const storefrontUrl = `${window.location.origin}/store`;
 
   const copyUrl = () => {
     navigator.clipboard.writeText(storefrontUrl);
