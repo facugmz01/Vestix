@@ -30,15 +30,25 @@ apiClient.interceptors.response.use(
 
     switch (status) {
       case 400: toast.error(message); break;
-      case 401:
-        // Removed localStorage.removeItem('erp_token') since it doesn't exist there anymore.
-        // The backend handles clearing the cookie via the /auth/logout endpoint if needed,
-        // or the session naturally dies. We just redirect.
-        if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/setup')) {
-          toast.error('Tu sesión expiró. Volvé a iniciar sesión.');
-          window.location.replace('/login');
+      case 401: {
+        // Do not redirect if we are already on login/setup
+        if (window.location.pathname.startsWith('/login') || window.location.pathname.startsWith('/setup')) {
+          break;
         }
+
+        // Do not redirect guest shoppers to ERP login!
+        const isStorefrontPath = window.location.pathname.startsWith('/store') || window.location.hostname.includes('tienda');
+        const isStorefrontApi = error.response.config.url?.includes('/storefront/');
+        
+        if (isStorefrontPath || isStorefrontApi) {
+          // It's a storefront request failing auth. Let the storefront auth store handle it silently.
+          break;
+        }
+
+        toast.error('Tu sesión expiró. Volvé a iniciar sesión.');
+        window.location.replace('/login');
         break;
+      }
       case 403:
         toast.error('No tenés permiso para esta acción.');
         window.dispatchEvent(new CustomEvent('erp:forbidden'));
