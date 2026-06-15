@@ -44,10 +44,6 @@ export class GeneralSettingsDto {
 
   @IsOptional()
   @IsString()
-  storefrontUrl?: string;
-
-  @IsOptional()
-  @IsString()
   logoUrl?: string;
 
   @IsOptional()

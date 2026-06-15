@@ -69,11 +69,6 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], GeneralSettingsDto.prototype, "storefrontUrl", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
 ], GeneralSettingsDto.prototype, "logoUrl", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),

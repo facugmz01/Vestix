@@ -9,7 +9,6 @@ export declare class GeneralSettingsDto {
     phone?: string;
     email?: string;
     website?: string;
-    storefrontUrl?: string;
     logoUrl?: string;
     timezone?: string;
     locale?: string;
