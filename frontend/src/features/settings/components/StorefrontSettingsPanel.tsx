@@ -170,13 +170,8 @@ export function StorefrontSettingsPanel() {
         </div>
 
         <SettingsDivider />
-        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px' }}>MercadoPago Checkout Pro</h4>
-        <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: 'var(--text-muted)' }}>Si habilitás un método de tipo CREDIT_CARD, el sistema intentará cobrar vía Mercado Pago.</p>
-        
-        <div className="grid-responsive grid-cols-2" style={{ gap: '24px', marginBottom: '24px' }}>
-          <Input label="Public Key" placeholder="APP_USR-..." {...register('storefront.mpPublicKey')} />
-          <Input label="Access Token" placeholder="APP_USR-..." type="password" {...register('storefront.mpAccessToken')} hint="Clave privada (no secreta). Indicar secreta (no compartir)." />
-        </div>
+        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px' }}>Cobros por Transferencia</h4>
+        <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: 'var(--text-muted)' }}>Configurá los datos bancarios o billetera para recibir transferencias.</p>
 
         <div style={{ marginBottom: '24px' }}>
           <Input label="CBU / Alias para transferencia" placeholder="0000003100000000000000 / alias.banco" {...register('storefront.transferCbu')} />

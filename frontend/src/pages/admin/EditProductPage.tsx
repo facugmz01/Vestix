@@ -18,11 +18,11 @@ export default function EditProductPage() {
   }
 
   if (!product) {
-    return <PageContainer>Producto no encontrado</PageContainer>;
+    return <PageContainer title="Error">Producto no encontrado</PageContainer>;
   }
 
   return (
-    <PageContainer>
+    <PageContainer title="Editar Producto">
       <ProductEditor initialData={product} />
     </PageContainer>
   );

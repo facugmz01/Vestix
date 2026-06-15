@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
-import { UploadCloud, FileDown, AlertTriangle, CheckCircle, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, FileText, Download, X, Search, ChevronRight, Check, RefreshCw, Upload, FileSpreadsheet } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import styles from './ImportBalancesModal.module.css';
@@ -140,7 +140,7 @@ export function ImportBalancesModal({ open, onClose, onSuccess, title = 'Importa
               <Button 
                 onClick={() => setStep(2)} 
                 disabled={!file || parsedRows.length === 0 || !!error}
-                rightIcon={<ChevronRight size={16} />}
+                icon={<ChevronRight size={16} />}
               >
                 Siguiente
               </Button>
@@ -196,7 +196,7 @@ export function ImportBalancesModal({ open, onClose, onSuccess, title = 'Importa
 
             <div className={styles.actions}>
               <Button variant="secondary" onClick={() => setStep(1)} disabled={isImporting}>Atrás</Button>
-              <Button onClick={handleImport} loading={isImporting}>
+              <Button onClick={handleImport} disabled={!parsedRows.length || isImporting} icon={<Upload size={16} />}>
                 Importar Ahora
               </Button>
             </div>

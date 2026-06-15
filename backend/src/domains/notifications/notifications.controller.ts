@@ -49,7 +49,7 @@ export class NotificationsController {
    * Returns a list of all registered notification templates in the ERP catalog.
    */
   @Get('templates')
-  @RequirePermissions({ action: 'read', subject: 'Notifications' })
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
   async getTemplates(@Query('page') page: string, @Query('pageSize') pageSize: string) {
     const p = parseInt(page) || 1;
     const ps = parseInt(pageSize) || 10;
@@ -58,13 +58,13 @@ export class NotificationsController {
   }
 
   @Post('templates')
-  @RequirePermissions({ action: 'manage', subject: 'Notifications' })
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async createTemplate(@Body() data: CreateTemplateDto) {
     return this.notificationsService.createTemplate(data);
   }
 
   @Patch('templates/:id')
-  @RequirePermissions({ action: 'manage', subject: 'Notifications' })
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async updateTemplate(@Param('id') id: string, @Body() data: UpdateTemplateDto) {
     return this.notificationsService.updateTemplate(id, data);
   }
@@ -73,7 +73,7 @@ export class NotificationsController {
    * Returns the list of active/completed/failed notification jobs in the queue.
    */
   @Get('queue')
-  @RequirePermissions({ action: 'read', subject: 'Notifications' })
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
   async getQueue() {
     const queue = await this.notificationsService.getQueue();
     return {
@@ -86,7 +86,7 @@ export class NotificationsController {
    * Dispatches a manual test notification to a recipient using a specified channel and template.
    */
   @Post('test')
-  @RequirePermissions({ action: 'manage', subject: 'Notifications' })
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async sendTest(@Body() body: SendTestNotificationDto) {
     const job = await this.notificationsService.enqueue({
       channel: body.channel,

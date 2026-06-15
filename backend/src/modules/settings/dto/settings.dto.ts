@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested, IsArray } from 'class-validator';
 
 export class GeneralSettingsDto {
   @IsOptional()
@@ -123,24 +123,12 @@ export class SkuBarcodeSettingsDto {
 
 export class InvoicingSettingsDto {
   @IsOptional()
-  @IsNumber()
-  fiscalPointSale?: number;
-
-  @IsOptional()
-  @IsIn(['homologation', 'production'])
-  afipEnvironment?: 'homologation' | 'production';
-
-  @IsOptional()
   @IsIn(['FACTURA_B', 'FACTURA_A', 'FACTURA_C'])
   defaultInvoiceType?: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C';
 
   @IsOptional()
   @IsBoolean()
   autoIssueOnSale?: boolean;
-
-  @IsOptional()
-  @IsString()
-  invoiceFooterText?: string;
 }
 
 export class NotificationSettingsDto {
@@ -214,9 +202,10 @@ export class NotificationSettingsDto {
 }
 
 export class IntegrationSettingsDto {
-  @IsOptional()
-  @IsBoolean()
-  mercadopagoEnabled?: boolean;
+  @IsOptional() @IsBoolean() mercadopagoEnabled?: boolean;
+  @IsOptional() @IsString() mpPublicKey?: string;
+  @IsOptional() @IsString() mpAccessToken?: string;
+  @IsOptional() @IsString() mpWebhookSecret?: string;
 
   @IsOptional()
   @IsBoolean()
@@ -317,8 +306,6 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsString() defaultSort?: string;
   @IsOptional() @IsBoolean() hideOutOfStock?: boolean;
   @IsOptional() @IsBoolean() hideBrandFilters?: boolean;
-  @IsOptional() @IsString() mpPublicKey?: string;
-  @IsOptional() @IsString() mpAccessToken?: string;
   @IsOptional() @IsString() transferCbu?: string;
   @IsOptional() @IsBoolean() acceptCash?: boolean;
   @IsOptional() @IsString() shippingInfo?: string;
@@ -329,6 +316,9 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsString() tiktokUrl?: string;
   @IsOptional() @IsString() youtubeUrl?: string;
   @IsOptional() @IsString() xUrl?: string;
+  @IsOptional() @IsString() subdomain?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) allowedPaymentMethods?: string[];
+  @IsOptional() @IsArray() shippingMethods?: any[];
 }
 
 export class PwaSettingsDto {

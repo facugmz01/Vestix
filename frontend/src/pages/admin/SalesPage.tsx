@@ -179,8 +179,7 @@ export default function SalesPage() {
           toast.success('Ventas importadas. Revisá los resultados.');
         }}
         onImport={async (rows, updateStock, paymentResolution, branchId) => {
-          const res = await salesApi.bulkImportSales(rows, updateStock, paymentResolution, branchId);
-          return res.data;
+          return await salesApi.bulkImportSales(rows, updateStock, paymentResolution, branchId);
         }}
       />
     </PageContainer>

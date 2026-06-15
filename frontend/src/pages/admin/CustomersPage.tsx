@@ -234,9 +234,6 @@ export default function CustomersPage() {
         loading={deleteMutation.isPending}
         onConfirm={() => selectedCustomer && deleteMutation.mutate(selectedCustomer.id)}
         onCancel={() => setDeleteOpen(false)}
-        confirmText="Sí, Eliminar"
-        isDestructive
-        isLoading={deleteMutation.isPending}
       />
 
       <ImportBalancesModal 
@@ -250,8 +247,7 @@ export default function CustomersPage() {
         entityName="Cliente"
         title="Importar Cuentas Corrientes (Deudores)"
         onImport={async (rows, resolution) => {
-          const res = await customersApi.bulkImportBalances(rows, resolution);
-          return res.data; // since fetch wrappers return { data: ... }
+          return await customersApi.bulkImportBalances(rows, resolution);
         }}
       />
     </PageContainer>

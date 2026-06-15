@@ -177,7 +177,6 @@ export default function App() {
 
               <Route element={<RequirePermission action="read"   subject="Reports" />}>
                 <Route path="/admin/reports"      element={<ReportsPage />} />
-                <Route path="/admin/notifications" element={<NotificationsPage />} />
                 <Route path="/admin/audit"         element={<AuditPage />} />
                 <Route path="/admin/sync"          element={<SyncStatusPage />} />
               </Route>
@@ -185,6 +184,7 @@ export default function App() {
               <Route element={<RequirePermission action="manage" subject="Settings" />}>
                 <Route path="/admin/settings"     element={<SettingsPage />} />
                 <Route path="/admin/integrations" element={<IntegrationsPage />} />
+                <Route path="/admin/notifications" element={<NotificationsPage />} />
               </Route>
 
               <Route element={<RequirePermission action="manage" subject="Users" />}>

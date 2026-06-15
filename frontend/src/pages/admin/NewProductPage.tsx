@@ -3,7 +3,7 @@ import { PageContainer } from '@/components/ui';
 
 export default function NewProductPage() {
   return (
-    <PageContainer>
+    <PageContainer title="Nuevo Producto">
       <ProductEditor />
     </PageContainer>
   );

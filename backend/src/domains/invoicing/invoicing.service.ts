@@ -58,8 +58,8 @@ export class InvoicingService {
 
     // Read Point of Sale from Settings
     const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const invoicingSettings = (settings?.invoicing as any) || {};
-    const pointOfSale = parseInt(invoicingSettings.fiscalPointSale) || 1;
+    const arcaSettings = (settings?.arca as any) || {};
+    const pointOfSale = parseInt(arcaSettings.pointOfSale) || 1;
 
     // 4. Request Legal Authorization from the Government
     try {

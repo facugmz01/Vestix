@@ -20,6 +20,8 @@ import type { ProductVariant } from '@/types';
 import { Button, Input, Modal } from '@/components/ui';
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
 import { ShiftManagerModal } from '@/features/sales/components/ShiftManagerModal';
+import { PrintReceiptModal } from '@/features/pos/components/PrintReceiptModal';
+import { QrPaymentModal } from '@/features/pos/components/QrPaymentModal';
 import styles from './POSPage.module.css';
 
 // --- Live Clock ---
@@ -48,10 +50,19 @@ export default function POSPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [customerFormOpen, setCustomerFormOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'|'QR_MERCADOPAGO'>('CASH');
   const [amountTendered, setAmountTendered] = useState<number>(0);
   const [issueInvoice, setIssueInvoice] = useState(false);
   
+  // QR Payment State
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrData, setQrData] = useState<string | null>(null);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+
+  // Receipt State
+  const [printModalOpen, setPrintModalOpen] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState<any>(null);
+
   // Suspend Sales
   const [suspendedSales, setSuspendedSales] = useState<any[]>([]);
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
@@ -187,7 +198,7 @@ export default function POSPage() {
         warehouseId,
         customerId: selectedCustomerId || undefined,
         source: 'POS' as const,
-        paymentMethod: paymentMethod === 'MULTIPLE' ? 'CASH' : paymentMethod,
+        paymentMethod: paymentMethod === 'MULTIPLE' ? 'CASH' : (paymentMethod === 'QR_MERCADOPAGO' ? 'CREDIT_CARD' : paymentMethod),
         paymentAccountId,
         cashShiftId: activeShift?.id,
         status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
@@ -228,20 +239,42 @@ export default function POSPage() {
     },
     onSuccess: (data: any, status) => {
       toast.success(data?.offline ? 'Registrado offline' : (status === 'QUOTATION' ? 'Presupuesto Creado' : 'Venta Pagada!'));
+      
+      if (!data?.offline && data?.res?.order) {
+        setCompletedOrder(data.res.order);
+        setPrintModalOpen(true);
+      }
+      
       setCart([]);
       setCartDiscountPct(0);
       setSelectedCustomerId('');
       setPaymentModalOpen(false);
+      setQrModalOpen(false);
       setAmountTendered(0);
     },
     onError: (err: any) => toast.error(err.message || 'Error al cobrar'),
   });
 
-  const openPayment = (method: typeof paymentMethod) => {
+  const openPayment = async (method: typeof paymentMethod) => {
     if (cart.length === 0) return;
     setPaymentMethod(method);
     setAmountTendered(grandTotal);
-    setPaymentModalOpen(true);
+    
+    if (method === 'QR_MERCADOPAGO') {
+      setQrModalOpen(true);
+      setIsGeneratingQr(true);
+      try {
+        const res = await posApi.generateQrOrder(grandTotal, 'Cobro Vestix POS');
+        setQrData(res.qrData);
+      } catch (err: any) {
+        toast.error('Error al generar QR de cobro');
+        setQrData(null);
+      } finally {
+        setIsGeneratingQr(false);
+      }
+    } else {
+      setPaymentModalOpen(true);
+    }
   };
 
   const toggleFullScreen = () => {
@@ -446,8 +479,12 @@ export default function POSPage() {
             <button className={`${styles.posBtn} ${styles.bgCredit}`} disabled={cart.length === 0} onClick={() => openPayment('CUSTOMER_CREDIT')}>
               <User size={20} /> Crédito
             </button>
-            <button className={`${styles.posBtn} ${styles.bgCard}`} disabled={cart.length === 0} onClick={() => openPayment('CREDIT_CARD')}>
-              <CreditCard size={20} /> Tarjeta
+            <button className={`${styles.posBtn} ${styles.bgCard}`} disabled={cart.length === 0} onClick={() => openPayment('CREDIT_CARD')} title="Cobro Manual en Terminal (Postnet)">
+              <CreditCard size={20} /> Terminal Manual
+            </button>
+            <button className={`${styles.posBtn} ${styles.bgCard}`} style={{ background: 'linear-gradient(135deg, #009ee3, #007bb5)' }} disabled={cart.length === 0} onClick={() => openPayment('QR_MERCADOPAGO')}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
+              QR Mercadopago
             </button>
             <button className={`${styles.posBtn} ${styles.bgMultiple}`} disabled={cart.length === 0} onClick={() => openPayment('MULTIPLE')}>
               <Layers size={20} /> Múltiple
@@ -459,7 +496,26 @@ export default function POSPage() {
         </div>
       </div>
 
-      {/* PAYMENT MODAL */}
+      <QrPaymentModal 
+        open={qrModalOpen} 
+        amount={grandTotal} 
+        qrData={qrData} 
+        isLoading={isGeneratingQr} 
+        onClose={() => setQrModalOpen(false)} 
+        onForceConfirm={() => {
+          setQrModalOpen(false);
+          checkoutMutation.mutate('CONFIRMED');
+        }} 
+      />
+
+      <PrintReceiptModal 
+        open={printModalOpen} 
+        order={completedOrder} 
+        onClose={() => setPrintModalOpen(false)} 
+        branchSettings={user?.branchId === 'CENTRAL' ? { posReceiptHeader: 'VESTIX - SUCURSAL CENTRAL', posReceiptFooter: 'Gracias por tu compra' } : {}}
+      />
+
+      {/* PAYMENT MODAL (Efectivo, Tarjeta, etc) */}
       <Modal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar Pago">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1))', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)', padding: '24px', textAlign: 'center', borderRadius: '16px' }}>

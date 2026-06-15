@@ -55,11 +55,8 @@ export class SettingsService implements OnModuleInit {
             nextSkuSequence: 1,
           },
           invoicing: {
-            fiscalPointSale: 1,
-            afipEnvironment: 'homologation',
             defaultInvoiceType: 'FACTURA_B',
             autoIssueOnSale: false,
-            invoiceFooterText: '',
           },
           notifications: {
             emailEnabled: false,
@@ -134,8 +131,6 @@ export class SettingsService implements OnModuleInit {
             defaultSort: 'name_asc',
             hideOutOfStock: false,
             hideBrandFilters: false,
-            mpPublicKey: '',
-            mpAccessToken: '',
             transferCbu: '',
             acceptCash: false,
             shippingInfo: '',

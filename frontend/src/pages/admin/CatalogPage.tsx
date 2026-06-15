@@ -410,9 +410,6 @@ export default function CatalogPage() {
         loading={deleteMutation.isPending}
         onConfirm={() => selectedProduct && deleteMutation.mutate(selectedProduct.id)}
         onCancel={() => setDeleteOpen(false)}
-        confirmText="Sí, Eliminar"
-        isDestructive
-        isLoading={deleteMutation.isPending}
       />
 
       <ImportProductsModal

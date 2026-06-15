@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, ParseUUIDPipe, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, ParseUUIDPipe, Query, Delete, UseGuards } from '@nestjs/common';
 import { ProductsService } from '../services/products.service';
 import { CategoriesService, BrandsService, AttributesService, PriceListService } from '../services/taxonomy.service';
 import { CreateProductDto } from '../dto/create-product.dto';
@@ -11,8 +11,11 @@ import { UpdatePriceListDto } from '../dto/update-price-list.dto';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import { RequirePermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../../core/rbac/guards/permissions.guard';
 
 @Controller('categories')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
@@ -42,6 +45,7 @@ export class CategoriesController {
 }
 
 @Controller('brands')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class BrandsController {
   constructor(private readonly brandsService: BrandsService) {}
 
@@ -71,6 +75,7 @@ export class BrandsController {
 }
 
 @Controller('products')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
@@ -142,6 +147,7 @@ export class ProductsController {
 }
 
 @Controller('variants')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class VariantsController {
   constructor(private readonly productsService: ProductsService) {}
 
@@ -165,6 +171,7 @@ export class VariantsController {
 }
 
 @Controller('attributes')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class AttributesController {
   constructor(private readonly attributesService: AttributesService) {}
 
@@ -193,7 +200,8 @@ export class AttributesController {
   }
 }
 
-@Controller('pricing')
+@Controller('price-lists')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class PriceListController {
   constructor(private readonly priceListService: PriceListService) {}
 

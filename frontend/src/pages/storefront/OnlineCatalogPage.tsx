@@ -37,7 +37,7 @@ export default function OnlineCatalogPage() {
 
   const { data: categoriesData } = useQuery({
     queryKey: queryKeys.categories.all(),
-    queryFn: () => apiClient.get('/products/categories').then(r => r.data),
+    queryFn: () => apiClient.get('/categories').then(r => r.data),
   });
 
   const products = data?.data || [];
@@ -51,8 +51,7 @@ export default function OnlineCatalogPage() {
     return 0;
   });
 
-  const heroTitle = settings?.heroTitle || `Bienvenidos a ${APP_CONFIG.appName}`;
-  const heroSubtitle = settings?.heroSubtitle || 'Encontrá los mejores productos al mejor precio.';
+  // const title = settings?.pwa?.appName || APP_CONFIG.appName;
 
   const filtersContent = (
     <div className="flex-col gap-4" style={{ display: 'flex' }}>
@@ -92,15 +91,7 @@ export default function OnlineCatalogPage() {
   return (
     <div style={{ paddingBottom: '60px' }}>
       
-      {/* Hero Banner */}
-      <div style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', padding: isMobile ? '40px 20px' : '80px 24px', textAlign: 'center', marginBottom: '40px' }}>
-        <h1 style={{ margin: '0 0 16px', fontSize: isMobile ? '28px' : '48px', fontWeight: 900, color: 'var(--text-primary)' }}>{heroTitle}</h1>
-        <p style={{ margin: 0, fontSize: isMobile ? '16px' : '20px', color: 'var(--text-secondary)', maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto' }}>
-          {heroSubtitle}
-        </p>
-      </div>
-
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', gap: '32px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
+      {/* Main Content */}      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', gap: '32px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
         
         {/* Sidebar Filters - Desktop only */}
         {!isMobile && (

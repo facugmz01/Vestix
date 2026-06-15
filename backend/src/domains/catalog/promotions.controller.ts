@@ -1,7 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
 @Controller('promotions')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class PromotionsController {
   
   @Get()

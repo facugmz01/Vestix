@@ -73,7 +73,7 @@ function sanitizeSettings(raw: any): SystemSettings {
     pos:           raw?.pos           ?? {},
     arca:          raw?.arca          ?? {},
     storefront:    raw?.storefront    ?? {},
-    mobile:        raw?.mobile        ?? {},
+    pwa:           raw?.pwa           ?? {},
     qr:            raw?.qr            ?? {},
   };
 }

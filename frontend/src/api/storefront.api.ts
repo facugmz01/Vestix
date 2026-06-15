@@ -37,14 +37,11 @@ export interface StorefrontFilters {
   sortBy?: 'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST';
 }
 
-export interface StorefrontSettings {
-  storeName: string;
-  primaryColor: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  whatsappNumber?: string;
-  instagramUrl?: string;
-  facebookUrl?: string;
+import { StorefrontSettings as AdminStorefrontSettings, PwaSettings } from './settings.api';
+
+export interface StorefrontSettings extends AdminStorefrontSettings {
+  pwa?: PwaSettings;
+  paymentMethods?: Array<{ id: string; name: string; type: string }>;
 }
 
 export const storefrontApi = {

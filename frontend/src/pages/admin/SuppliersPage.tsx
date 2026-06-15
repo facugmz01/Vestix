@@ -223,9 +223,6 @@ export default function SuppliersPage() {
         loading={deleteMutation.isPending}
         onConfirm={() => selectedSupplier && deleteMutation.mutate(selectedSupplier.id)}
         onCancel={() => setDeleteOpen(false)}
-        confirmText="Sí, Eliminar"
-        isDestructive
-        isLoading={deleteMutation.isPending}
       />
 
       <ImportBalancesModal 
@@ -239,8 +236,7 @@ export default function SuppliersPage() {
         entityName="Proveedor"
         title="Importar Cuentas Corrientes (Acreedores)"
         onImport={async (rows, resolution) => {
-          const res = await suppliersApi.bulkImportBalances(rows, resolution);
-          return res.data; 
+          return await suppliersApi.bulkImportBalances(rows, resolution);
         }}
       />
     </PageContainer>

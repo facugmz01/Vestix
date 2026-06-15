@@ -1,7 +1,9 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { IdentifiersService } from './identifiers.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('identifiers')
+@UseGuards(AuthGuard('jwt'))
 export class IdentifiersController {
   constructor(private readonly identifiersService: IdentifiersService) {}
 

@@ -141,6 +141,32 @@ export function NotificationSettingsPanel() {
 
       <SettingsDivider />
 
+      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Plantillas de Mensaje</p>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+        Personalizá el texto de las notificaciones. Podés usar variables como <code>{"{cliente}"}</code>, <code>{"{total}"}</code>, <code>{"{orden}"}</code>.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '0 0 16px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Venta Confirmada</label>
+          <textarea 
+            {...register('notifications.templateSale')} 
+            placeholder="Hola {cliente}, tu compra por {total} fue confirmada. Tu orden es {orden}."
+            style={{ width: '100%', minHeight: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Orden de Compra</label>
+          <textarea 
+            {...register('notifications.templatePurchase')} 
+            placeholder="Se generó la orden de compra {orden} por un total de {total}."
+            style={{ width: '100%', minHeight: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+          />
+        </div>
+      </div>
+
+      <SettingsDivider />
+
       <SettingsRow label="Umbral de Stock Bajo (unidades)" hint="Se dispara la alerta cuando el stock cae por debajo de este número.">
         <Input type="number" min={0} {...register('notifications.lowStockThreshold', { valueAsNumber: true })} style={{ width: '100px' }} />
       </SettingsRow>

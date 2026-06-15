@@ -37,11 +37,8 @@ export interface SkuBarcodeSettings {
 }
 
 export interface InvoicingSettings {
-  fiscalPointSale: number;     // Punto de venta AFIP
-  afipEnvironment: 'homologation' | 'production';
   defaultInvoiceType: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C';
   autoIssueOnSale: boolean;
-  invoiceFooterText?: string;
 }
 
 export interface NotificationSettings {
@@ -62,6 +59,8 @@ export interface NotificationSettings {
   openWaUrl?: string;
   openWaSession?: string;
   fcmServerKey?: string;
+  templateSale?: string;
+  templatePurchase?: string;
 }
 
 export interface IntegrationSettings {
@@ -116,15 +115,14 @@ export interface StorefrontSettings {
   primaryColor: string;
   fontFamily: string;
   showHeader: boolean;
+  storeName?: string;
   showStoreName: boolean;
   imagesCarousel: any[];
   priceListToShow: string;
   defaultSort: string;
   hideOutOfStock: boolean;
-  hideBrandFilters: boolean;
-  mpPublicKey: string;
-  mpAccessToken: string;
-  transferCbu: string;
+  hideBrandFilters?: boolean;
+  transferCbu?: string;
   acceptCash: boolean;
   shippingInfo: string;
   requireShippingData: 'optional' | 'required' | 'none';

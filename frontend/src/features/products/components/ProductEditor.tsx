@@ -4,16 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   ArrowLeft, Wand2, Plus, Image as ImageIcon,
-  Archive, Globe, Package
+  Archive, Package
 } from 'lucide-react';
-import { Button, Input, Section, PageContainer } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { productsApi, type CreateProductDto } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Product } from '@/types';
 import { ProductImagesUploader } from '@/features/products/components/ProductImagesUploader';
 import { VariantMassGenerator } from '@/features/products/components/VariantMassGenerator';
 import { ComboRecipeBuilder } from '@/features/products/components/ComboRecipeBuilder';
-import { ActionGuard } from '@/rbac/ActionGuard';
 
 interface Props {
   initialData?: Product;

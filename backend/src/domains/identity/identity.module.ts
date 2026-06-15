@@ -7,6 +7,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { RolesController } from './roles.controller';
+import { RolesService } from './roles.service';
 
 @Global()
 @Module({
@@ -18,7 +19,7 @@ import { RolesController } from './roles.controller';
     }),
   ],
   controllers: [AuthController, UsersController, RolesController],
-  providers: [AuthService, JwtStrategy, UsersService],
-  exports: [AuthService, UsersService],
+  providers: [AuthService, JwtStrategy, UsersService, RolesService],
+  exports: [AuthService, UsersService, RolesService],
 })
 export class IdentityModule {}

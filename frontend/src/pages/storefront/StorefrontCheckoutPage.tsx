@@ -126,7 +126,7 @@ export default function StorefrontCheckoutPage() {
         documentNumber: info.docNum,
       },
       shippingInfo: {
-        method: shippingMethod,
+        method: shippingMethod as 'SHIPPING' | 'PICKUP',
         address: shippingAddress.street,
         city: shippingAddress.city,
         state: shippingAddress.state,

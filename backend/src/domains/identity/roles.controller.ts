@@ -1,12 +1,41 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { RolesService, CreateRoleDto, UpdateRoleDto } from './roles.service';
 
 @Controller('roles')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class RolesController {
-  
+  constructor(private readonly rolesService: RolesService) {}
+
+  @Post()
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  create(@Body() createRoleDto: CreateRoleDto) {
+    return this.rolesService.create(createRoleDto);
+  }
+
   @Get()
-  @RequirePermissions({ action: 'read', subject: 'System' })
-  getRoles(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return { data: [], total: 0 };
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  findAll() {
+    return this.rolesService.findAll();
+  }
+
+  @Get(':id')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.rolesService.findOne(id);
+  }
+
+  @Patch(':id')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRoleDto) {
+    return this.rolesService.update(id, updateRoleDto);
+  }
+
+  @Delete(':id')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.rolesService.remove(id);
   }
 }

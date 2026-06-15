@@ -1,4 +1,5 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { PrismaService } from '../../core/prisma/prisma.service';
 
 export interface MercadoPagoPreferenceItem {
   id: string;
@@ -30,28 +31,28 @@ export interface MercadoPagoPreference {
   sandbox_init_point: string;  // URL for testing
 }
 
-/**
- * Mercado Pago Checkout Pro integration service.
- * Creates payment preferences and returns the init_point URL for redirection.
- *
- * Environment variables:
- *   MP_ACCESS_TOKEN   — Your MP access token (starts with TEST- for sandbox)
- *   MP_STORE_URL      — Your store's base URL (for back_urls)
- *   NODE_ENV          — Uses sandbox_init_point when not 'production'
- */
 @Injectable()
 export class MercadoPagoService {
   private readonly logger = new Logger(MercadoPagoService.name);
-  private readonly accessToken = process.env.MP_ACCESS_TOKEN || '';
-  private readonly storeUrl = process.env.MP_STORE_URL || 'http://localhost:5173/store';
-  private readonly isMock = !process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN === '';
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  private async getAccessToken(): Promise<string> {
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const intSettings = (settings?.integrations as any) || {};
+    return intSettings.mpAccessToken || process.env.MP_ACCESS_TOKEN || '';
+  }
 
   /**
    * Creates a payment preference on Mercado Pago.
    * Returns the URL the user should be redirected to.
    */
   async createPreference(dto: CreatePreferenceDto): Promise<{ initPoint: string; preferenceId: string }> {
-    if (this.isMock) {
+    const accessToken = await this.getAccessToken();
+    const isMock = !accessToken || accessToken === '';
+    const storeUrl = process.env.MP_STORE_URL || 'http://localhost:5173/store';
+
+    if (isMock) {
       // Mock mode: log and return a simulated URL
       this.logger.log(
         `[MercadoPago Mock] Preference requested:\n` +
@@ -62,7 +63,7 @@ export class MercadoPagoService {
 
       return {
         preferenceId: `MOCK-${dto.externalReference}`,
-        initPoint: `${this.storeUrl}/checkout-success?orderId=${dto.externalReference}&mock=true`,
+        initPoint: `${storeUrl}/checkout-success?orderId=${dto.externalReference}&mock=true`,
       };
     }
 
@@ -76,9 +77,9 @@ export class MercadoPagoService {
         currency_id: item.currency_id || 'ARS',
       })),
       back_urls: {
-        success: dto.backUrls?.success || `${this.storeUrl}/checkout/success`,
-        failure: dto.backUrls?.failure || `${this.storeUrl}/checkout/failure`,
-        pending: dto.backUrls?.pending || `${this.storeUrl}/checkout/pending`,
+        success: dto.backUrls?.success || `${storeUrl}/checkout/success`,
+        failure: dto.backUrls?.failure || `${storeUrl}/checkout/failure`,
+        pending: dto.backUrls?.pending || `${storeUrl}/checkout/pending`,
       },
       auto_return: 'approved',
       notification_url: `${process.env.BACKEND_URL || 'http://localhost:3000'}/api/storefront/webhooks/mercadopago`,
@@ -105,7 +106,7 @@ export class MercadoPagoService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify(payload),
       });

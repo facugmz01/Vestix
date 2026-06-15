@@ -78,16 +78,17 @@ export function ImportProductsModal({ isOpen, onClose, onSuccess }: Props) {
           }
 
           const response = await productsApi.bulkValidate(mappedRows);
+          const res = response;
           
-          setValidRows(response.data.validRows);
+          setValidRows(res.validRows);
           
-          if (response.data.conflicts.length > 0) {
+          if (res.conflicts.length > 0) {
             // Assign default resolution to skip
-            setConflicts(response.data.conflicts.map((c: any) => ({ ...c, row: { ...c.row, resolution: 'skip' } })));
+            setConflicts(res.conflicts.map((c: any) => ({ ...c, row: { ...c.row, resolution: 'skip' } })));
             setStep('CONFLICTS');
           } else {
             // Straight to import if no conflicts
-            executeImport(response.data.validRows);
+            executeImport(res.validRows);
           }
         } catch (error) {
           toast.error('Error procesando el archivo');
@@ -116,8 +117,11 @@ export function ImportProductsModal({ isOpen, onClose, onSuccess }: Props) {
   const executeImport = async (rowsToImport: any[]) => {
     setStep('IMPORTING');
     try {
-      const response = await productsApi.bulkImport(rowsToImport);
-      setStats({ created: response.data.createdCount, updated: response.data.updatedCount });
+      const res = await productsApi.bulkImport(rowsToImport);
+      if (res.success) {
+          toast.success(`Importación completada. Creados: ${res.createdCount}, Actualizados: ${res.updatedCount}`);
+      }
+      setStats({ created: res.createdCount, updated: res.updatedCount });
       setStep('SUCCESS');
       onSuccess(); // Refresh product list in background
     } catch (error) {

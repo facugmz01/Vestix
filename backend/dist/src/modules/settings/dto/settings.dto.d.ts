@@ -123,6 +123,9 @@ export declare class StorefrontSettingsDto {
     tiktokUrl?: string;
     youtubeUrl?: string;
     xUrl?: string;
+    subdomain?: string;
+    allowedPaymentMethods?: string[];
+    shippingMethods?: any[];
 }
 export declare class PwaSettingsDto {
     appName?: string;

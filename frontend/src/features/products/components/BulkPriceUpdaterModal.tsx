@@ -38,7 +38,9 @@ export function BulkPriceUpdaterModal({ open, onClose }: Props) {
       return productsApi.bulkUpdatePrices(payload);
     },
     onSuccess: (res) => {
-      toast.success(`Se actualizaron ${res.data.updatedCount} productos correctamente`);
+      if (res.success) {
+        toast.success(`Precios actualizados exitosamente (${res.updatedCount} productos)`);
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
       onClose();
     },

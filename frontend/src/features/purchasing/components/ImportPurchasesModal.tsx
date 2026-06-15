@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import { UploadCloud, FileDown, AlertTriangle, CheckCircle, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, FileText, Download, X, Search, ChevronRight, Check, RefreshCw, Upload, FileDown, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import styles from '@/components/ui/ImportBalancesModal.module.css'; // Reuse CSS
@@ -108,7 +108,7 @@ export function ImportPurchasesModal({ open, onClose, onSuccess }: Props) {
       setError(null);
       
       const res = await purchasesApi.bulkImportPurchases(parsedRows, updateStock, paymentResolution, warehouseId);
-      setResult(res.data);
+      setResult(res);
       setStep(3);
     } catch (err: any) {
       setError(err.message || 'Error importando compras');
@@ -155,7 +155,7 @@ export function ImportPurchasesModal({ open, onClose, onSuccess }: Props) {
               <Button 
                 onClick={() => setStep(2)} 
                 disabled={!file || parsedRows.length === 0 || !!error}
-                rightIcon={<ChevronRight size={16} />}
+                icon={<ChevronRight size={16} />}
               >
                 Siguiente
               </Button>
@@ -253,7 +253,7 @@ export function ImportPurchasesModal({ open, onClose, onSuccess }: Props) {
 
             <div className={styles.actions}>
               <Button variant="secondary" onClick={() => setStep(1)} disabled={isImporting}>Atrás</Button>
-              <Button onClick={handleImport} loading={isImporting} disabled={!warehouseId}>
+              <Button onClick={handleImport} disabled={!parsedRows.length || isImporting} icon={<Upload size={16} />}>
                 Importar Ahora
               </Button>
             </div>

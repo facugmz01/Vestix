@@ -48,4 +48,7 @@ export const posApi = {
   // Delegate complex promotion calculations to backend
   calculateCart: (dto: POSCalculateDto) =>
     post<POSCalculateResponse>('/pos/cart/calculate', dto),
+
+  generateQrOrder: (amount: number, title: string = 'Cobro POS') =>
+    post<{ orderId: string; qrData: string }>('/pos/qr-order', { amount, title }),
 };

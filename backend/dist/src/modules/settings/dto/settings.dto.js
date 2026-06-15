@@ -577,6 +577,22 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], StorefrontSettingsDto.prototype, "xUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StorefrontSettingsDto.prototype, "subdomain", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    IsArray(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], StorefrontSettingsDto.prototype, "allowedPaymentMethods", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    IsArray(),
+    __metadata("design:type", Array)
+], StorefrontSettingsDto.prototype, "shippingMethods", void 0);
 class PwaSettingsDto {
 }
 exports.PwaSettingsDto = PwaSettingsDto;

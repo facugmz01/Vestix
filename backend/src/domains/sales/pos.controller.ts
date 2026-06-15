@@ -71,4 +71,17 @@ export class PosController {
   async closeSession(@Body() dto: CloseSessionDto, @CurrentUser('userId') userId: string) {
     return this.posService.closeSession({ ...dto, userId });
   }
+
+  @Post('qr-order')
+  @RequirePermissions({ action: 'create', subject: 'Sales' })
+  async generateQrOrder(@Body() dto: { amount: number; title: string }) {
+    // Generates a mock QR for MercadoPago Point / Smart POS
+    const orderId = `POS-${Date.now()}`;
+    const mockQrData = `00020101021243650016COM.MERCADOPAGO...${orderId}-AMT${dto.amount}`;
+    
+    return {
+      orderId,
+      qrData: mockQrData,
+    };
+  }
 }

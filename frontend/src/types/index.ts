@@ -129,6 +129,7 @@ export interface Product {
   isActive: boolean; 
   isPublished: boolean;
   images: string[]; 
+  metadata?: Record<string, any>;
   createdAt: string;
 }
 
@@ -227,6 +228,7 @@ export interface SaleOrder {
   id: string; branchId: string; source: OrderSource; status: SaleOrderStatus;
   customerId?: string; customerName?: string; lines: OrderLineItem[];
   subtotal: number; cartDiscountTotal: number; grandTotal: number;
+  afipInvoiceId?: string;
   paymentMethod: PaymentMethod; createdAt: string; syncedAt?: string;
 }
 export interface OrderLineItem {
@@ -427,7 +429,10 @@ export type NotificationEvent =
   | 'TRANSFER_RECEIVED'
   | 'INVOICE_ISSUED'
   | 'PAYMENT_RECEIVED'
-  | 'RETURN_APPROVED';
+  | 'RETURN_APPROVED'
+  | 'OVERDUE_CURRENT_ACCOUNT'
+  | 'MANUAL_CURRENT_ACCOUNT_STATEMENT'
+  | 'MANUAL_SALE_RECEIPT';
 
 export interface NotificationTemplate {
   id: string;

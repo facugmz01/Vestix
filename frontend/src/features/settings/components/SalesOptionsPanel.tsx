@@ -4,6 +4,8 @@ import { Input, Button, ConfirmDialog } from '@/components/ui';
 import { SystemSettings } from '@/api/settings.api';
 import { RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { ActionGuard } from '@/rbac/ActionGuard';
+import { settingsApi } from '@/api/settings.api';
 import toast from 'react-hot-toast';
 
 export function SalesOptionsPanel() {
@@ -183,10 +185,8 @@ export function SalesOptionsPanel() {
         open={clearCatalogOpen}
         title="Vaciar catálogo de productos"
         message="Esta acción no se puede deshacer. Se eliminarán permanentemente todos los productos activos de la base de datos."
-        confirmText="Sí, vaciar catálogo"
-        confirmLabel="Vaciar catálogo"
+        confirmLabel="Sí, vaciar catálogo"
         variant="danger"
-        isDestructive
         onConfirm={handleClearCatalog}
         onCancel={() => setClearCatalogOpen(false)}
       />

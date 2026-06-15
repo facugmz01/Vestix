@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Patch, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { PricingService } from './pricing.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
 @Controller('price-lists')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class PricingController {
   constructor(private readonly pricingService: PricingService) {}
 
