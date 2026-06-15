@@ -68,6 +68,21 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
         this.inventoryService = inventoryService;
         this.logger = new common_1.Logger(StorefrontController_1.name);
     }
+    async getSettings() {
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const storefront = settings?.storefront || {};
+        let paymentMethods = [];
+        if (storefront.allowedPaymentMethods?.length > 0) {
+            paymentMethods = await this.prisma.paymentMethod.findMany({
+                where: { id: { in: storefront.allowedPaymentMethods }, isActive: true },
+                select: { id: true, name: true, type: true }
+            });
+        }
+        return {
+            ...storefront,
+            paymentMethods,
+        };
+    }
     async checkout(dto, req) {
         const reqUser = req.user;
         let customerId = reqUser?.customerId || null;
@@ -97,8 +112,17 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
         if (!branch)
             throw new Error('No se encontró la sucursal principal.');
         const warehouse = await this.prisma.warehouse.findFirst({ where: { branchId: branch.id } });
-        const shippingMethod = dto.shippingInfo?.method === 'SHIPPING' ? 'SHIPPING' : 'PICKUP';
-        const shippingCost = SHIPPING_RATES[shippingMethod];
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const storefront = settings?.storefront || {};
+        const shippingMethods = storefront.shippingMethods || [];
+        const selectedShipping = shippingMethods.find(m => m.id === dto.shippingInfo?.method);
+        const shippingCost = selectedShipping ? selectedShipping.price : 0;
+        const shippingMethodLabel = selectedShipping ? selectedShipping.type : 'PICKUP';
+        const paymentMethodId = dto.paymentMethod;
+        const selectedPaymentMethod = await this.prisma.paymentMethod.findUnique({ where: { id: paymentMethodId } });
+        if (!selectedPaymentMethod) {
+            throw new Error('Método de pago no válido.');
+        }
         const orderId = dto.id || crypto.randomUUID();
         const saleOrderDto = {
             id: orderId,
@@ -106,7 +130,7 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
             warehouseId: warehouse?.id || null,
             source: 'ECOMMERCE',
             customerId,
-            paymentMethod: 'CREDIT_CARD',
+            paymentMethod: selectedPaymentMethod.type,
             paymentAccountId: null,
             status: 'PENDING_PAYMENT',
             lines: dto.cartLines.map((l) => ({
@@ -116,34 +140,44 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
             })),
         };
         const order = await this.checkoutOrchestrator.processCheckout(saleOrderDto);
-        const storeBase = process.env.MP_STORE_URL || 'http://localhost:5173/store';
-        const { initPoint, preferenceId } = await this.mercadoPagoService.createPreference({
-            externalReference: orderId,
-            items: dto.cartLines.map((l) => ({
-                id: l.variantId,
-                title: l.name || `Producto (${l.variantId.slice(0, 8)})`,
-                quantity: l.quantity,
-                unit_price: l.price,
-            })),
-            payer: dto.customerInfo ? {
-                name: `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim(),
-                email: dto.customerInfo.email,
-            } : undefined,
-            shippingCost,
-            backUrls: {
-                success: `${storeBase}/checkout/success?orderId=${orderId}`,
-                failure: `${storeBase}/checkout/failure?orderId=${orderId}`,
-                pending: `${storeBase}/checkout/pending?orderId=${orderId}`,
-            },
-        });
+        if (selectedPaymentMethod.type === 'CREDIT_CARD' || selectedPaymentMethod.type === 'DEBIT_CARD') {
+            const storeBase = process.env.MP_STORE_URL || 'http://localhost:5173/store';
+            const { initPoint, preferenceId } = await this.mercadoPagoService.createPreference({
+                externalReference: orderId,
+                items: dto.cartLines.map((l) => ({
+                    id: l.variantId,
+                    title: l.name || `Producto (${l.variantId.slice(0, 8)})`,
+                    quantity: l.quantity,
+                    unit_price: l.price,
+                })),
+                payer: dto.customerInfo ? {
+                    name: `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim(),
+                    email: dto.customerInfo.email,
+                } : undefined,
+                shippingCost,
+                backUrls: {
+                    success: `${storeBase}/checkout/success?orderId=${orderId}`,
+                    failure: `${storeBase}/checkout/failure?orderId=${orderId}`,
+                    pending: `${storeBase}/checkout/pending?orderId=${orderId}`,
+                },
+            });
+            return {
+                ...order,
+                payment: {
+                    method: 'MERCADOPAGO',
+                    initPoint,
+                    preferenceId,
+                    shippingCost,
+                    shippingMethod: shippingMethodLabel,
+                },
+            };
+        }
         return {
             ...order,
             payment: {
-                method: 'MERCADOPAGO',
-                initPoint,
-                preferenceId,
+                method: selectedPaymentMethod.type,
                 shippingCost,
-                shippingMethod,
+                shippingMethod: shippingMethodLabel,
             },
         };
     }
@@ -302,6 +336,12 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
     }
 };
 exports.StorefrontController = StorefrontController;
+__decorate([
+    (0, common_1.Get)('settings'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], StorefrontController.prototype, "getSettings", null);
 __decorate([
     (0, common_1.Post)('checkout'),
     __param(0, (0, common_1.Body)()),

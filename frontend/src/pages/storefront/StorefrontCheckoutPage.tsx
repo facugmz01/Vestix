@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { CheckCircle, Truck, Store, CreditCard, User, Loader2 } from 'lucide-react';
 import { storefrontOrdersApi, type CheckoutDto } from '@/api/storefront-orders.api';
+import { storefrontApi } from '@/api/storefront.api';
 import { useCartStore } from '@/store/cart.store';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import { storePrefix } from '@/utils/storefrontDomain';
@@ -15,17 +16,37 @@ export default function StorefrontCheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const enqueueOfflineOp = useOfflineQueueStore(s => s.enqueue);
 
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['storefrontSettings', prefix],
+    queryFn: () => storefrontApi.getSettings(),
+  });
+
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [info, setInfo] = useState({ firstName: '', lastName: '', email: '', phone: '', docType: 'DNI', docNum: '' });
-  const [shippingMethod, setShippingMethod] = useState<'SHIPPING' | 'PICKUP'>('SHIPPING');
+  const [shippingMethod, setShippingMethod] = useState<string>('');
   const [shippingAddress, setShippingAddress] = useState({ street: '', city: '', state: '', zip: '' });
-  const [paymentMethod, setPaymentMethod] = useState('MERCADOPAGO');
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [issueInvoice, setIssueInvoice] = useState(false);
 
-  const SHIPPING_COST = shippingMethod === 'PICKUP' ? 0 : 3500;
+  useEffect(() => {
+    if (settings?.shippingMethods?.length && !shippingMethod) {
+      setShippingMethod(settings.shippingMethods[0].id);
+    }
+    if (settings?.paymentMethods?.length && !paymentMethod) {
+      setPaymentMethod(settings.paymentMethods[0].id);
+    }
+  }, [settings, shippingMethod, paymentMethod]);
+
+  const selectedShipping = settings?.shippingMethods?.find(m => m.id === shippingMethod);
+  const SHIPPING_COST = selectedShipping ? selectedShipping.price : 0;
+  
   const subtotal = totalPrice();
   const grandTotal = subtotal + SHIPPING_COST;
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
+  if (isLoadingSettings) {
+    return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Loader2 size={32} className="spin" color="var(--accent)" /></div>;
+  }
 
   if (items.length === 0 && step !== 4) {
     navigate(`${prefix}/cart`);
@@ -209,18 +230,21 @@ export default function StorefrontCheckoutPage() {
             <div className="animate-fade" style={{ padding: '28px' }}>
               <h2 style={{ margin: '0 0 20px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}><Truck size={18} /> Opciones de Entrega</h2>
               <div style={{ display: 'flex', gap: '14px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                {[{ id: 'SHIPPING', icon: Truck, label: 'Envío a Domicilio', sub: `+ ${fmtCurrency(3500)}` }, { id: 'PICKUP', icon: Store, label: 'Retiro en Local', sub: 'Gratis' }].map(opt => {
+                {(settings?.shippingMethods || []).map(opt => {
                   const selected = shippingMethod === opt.id;
+                  const Icon = opt.type === 'SHIPPING' ? Truck : Store;
                   return (
-                    <div key={opt.id} onClick={() => setShippingMethod(opt.id as any)} style={{ flex: 1, minWidth: '140px', padding: '16px', border: selected ? '2px solid var(--accent)' : '1px solid var(--border)', borderRadius: '12px', cursor: 'pointer', background: selected ? 'var(--accent-subtle)' : 'var(--bg-overlay)', transition: 'all 0.2s' }}>
-                      <opt.icon size={22} color={selected ? 'var(--accent)' : 'var(--text-muted)'} style={{ marginBottom: '8px' }} />
-                      <h4 style={{ margin: '0 0 4px', fontSize: '14px', color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{opt.label}</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: selected ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 600 }}>{opt.sub}</p>
+                    <div key={opt.id} onClick={() => setShippingMethod(opt.id)} style={{ flex: 1, minWidth: '140px', padding: '16px', border: selected ? '2px solid var(--accent)' : '1px solid var(--border)', borderRadius: '12px', cursor: 'pointer', background: selected ? 'var(--accent-subtle)' : 'var(--bg-overlay)', transition: 'all 0.2s' }}>
+                      <Icon size={22} color={selected ? 'var(--accent)' : 'var(--text-muted)'} style={{ marginBottom: '8px' }} />
+                      <h4 style={{ margin: '0 0 4px', fontSize: '14px', color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{opt.name}</h4>
+                      <p style={{ margin: 0, fontSize: '13px', color: selected ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 600 }}>
+                        {opt.price === 0 ? 'Gratis' : `+ ${fmtCurrency(opt.price)}`}
+                      </p>
                     </div>
                   );
                 })}
               </div>
-              {shippingMethod === 'SHIPPING' && (
+              {selectedShipping?.type === 'SHIPPING' && settings?.requireShippingData !== 'none' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <input className="storefront-input" placeholder="Calle y Número" value={shippingAddress.street} onChange={e => setShippingAddress({...shippingAddress, street: e.target.value})} style={{ gridColumn: 'span 2' }} />
                   <input className="storefront-input" placeholder="Ciudad" value={shippingAddress.city} onChange={e => setShippingAddress({...shippingAddress, city: e.target.value})} />
@@ -242,15 +266,12 @@ export default function StorefrontCheckoutPage() {
             <div className="animate-fade" style={{ padding: '28px' }}>
               <h2 style={{ margin: '0 0 20px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}><CreditCard size={18} /> Pago Seguro</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-                {[
-                  { id: 'MERCADOPAGO', label: 'Mercado Pago', sub: 'Tarjetas, saldo y cuotas' },
-                  { id: 'BANK_TRANSFER', label: 'Transferencia Bancaria', sub: '10% de descuento' },
-                ].map(pm => (
+                {(settings?.paymentMethods || []).map(pm => (
                   <label key={pm.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', border: paymentMethod === pm.id ? '2px solid var(--accent)' : '1px solid var(--border)', borderRadius: '10px', cursor: 'pointer', background: paymentMethod === pm.id ? 'var(--accent-subtle)' : 'var(--bg-overlay)' }}>
                     <input type="radio" checked={paymentMethod === pm.id} onChange={() => setPaymentMethod(pm.id)} style={{ accentColor: 'var(--accent)' }} />
                     <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontWeight: 700, color: 'var(--text-primary)', fontSize: '14px' }}>{pm.label}</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>{pm.sub}</p>
+                      <p style={{ margin: 0, fontWeight: 700, color: 'var(--text-primary)', fontSize: '14px' }}>{pm.name}</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>{pm.type === 'CREDIT_CARD' ? 'Mercado Pago' : pm.type}</p>
                     </div>
                   </label>
                 ))}

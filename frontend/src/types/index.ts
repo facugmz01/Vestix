@@ -219,6 +219,7 @@ export interface GoodsReceipt {
 
 // ─── SALES ───────────────────────────────────────────────────────────────
 export type PaymentMethod = 'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER';
+export interface PaymentMethodEntity { id: string; name: string; type: string; isActive: boolean; }
 export type OrderSource   = 'POS'|'ECOMMERCE'|'BACKOFFICE';
 export type SaleOrderStatus = 'QUOTATION' | 'CONFIRMED' | 'CANCELLED';
 

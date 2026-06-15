@@ -40,6 +40,30 @@ export class StorefrontController {
   ) {}
 
   /**
+   * GET /storefront/settings
+   * Returns the public configuration for the storefront, including payment and shipping methods.
+   */
+  @Get('settings')
+  async getSettings() {
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const storefront = (settings?.storefront as any) || {};
+
+    // Fetch allowed payment methods details
+    let paymentMethods = [];
+    if (storefront.allowedPaymentMethods?.length > 0) {
+      paymentMethods = await this.prisma.paymentMethod.findMany({
+        where: { id: { in: storefront.allowedPaymentMethods }, isActive: true },
+        select: { id: true, name: true, type: true }
+      });
+    }
+
+    return {
+      ...storefront,
+      paymentMethods,
+    };
+  }
+
+  /**
    * POST /storefront/checkout
    * Creates the order in the ERP (inventory deduction, etc.).
    * Returns the order + a MercadoPago init_point URL for payment.
@@ -79,8 +103,21 @@ export class StorefrontController {
     if (!branch) throw new Error('No se encontró la sucursal principal.');
     const warehouse = await this.prisma.warehouse.findFirst({ where: { branchId: branch.id } });
 
-    const shippingMethod: 'SHIPPING' | 'PICKUP' = dto.shippingInfo?.method === 'SHIPPING' ? 'SHIPPING' : 'PICKUP';
-    const shippingCost = SHIPPING_RATES[shippingMethod];
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const storefront = (settings?.storefront as any) || {};
+
+    const shippingMethods = storefront.shippingMethods || [];
+    const selectedShipping = shippingMethods.find(m => m.id === dto.shippingInfo?.method);
+    const shippingCost = selectedShipping ? selectedShipping.price : 0;
+    const shippingMethodLabel = selectedShipping ? selectedShipping.type : 'PICKUP';
+
+    const paymentMethodId = dto.paymentMethod; // It should be the ID of the PaymentMethod now
+    const selectedPaymentMethod = await this.prisma.paymentMethod.findUnique({ where: { id: paymentMethodId } });
+
+    if (!selectedPaymentMethod) {
+      throw new Error('Método de pago no válido.');
+    }
+
     const orderId = dto.id || crypto.randomUUID();
 
     // Record the order in the ERP (status: PENDING_PAYMENT)
@@ -90,7 +127,7 @@ export class StorefrontController {
       warehouseId: warehouse?.id || null,
       source: 'ECOMMERCE' as any,
       customerId,
-      paymentMethod: 'CREDIT_CARD' as any, // MercadoPago maps to CREDIT_CARD
+      paymentMethod: selectedPaymentMethod.type as any, // CASH | CREDIT_CARD | BANK_TRANSFER
       paymentAccountId: null,
       status: 'PENDING_PAYMENT',
       lines: dto.cartLines.map((l: any) => ({
@@ -102,37 +139,49 @@ export class StorefrontController {
 
     const order = await this.checkoutOrchestrator.processCheckout(saleOrderDto);
 
-    // Build MercadoPago preference
-    const storeBase = process.env.MP_STORE_URL || 'http://localhost:5173/store';
+    // If it's a CREDIT_CARD, build MercadoPago preference
+    if (selectedPaymentMethod.type === 'CREDIT_CARD' || selectedPaymentMethod.type === 'DEBIT_CARD') {
+      const storeBase = process.env.MP_STORE_URL || 'http://localhost:5173/store';
 
-    const { initPoint, preferenceId } = await this.mercadoPagoService.createPreference({
-      externalReference: orderId,
-      items: dto.cartLines.map((l: any) => ({
-        id: l.variantId,
-        title: l.name || `Producto (${l.variantId.slice(0, 8)})`,
-        quantity: l.quantity,
-        unit_price: l.price,
-      })),
-      payer: dto.customerInfo ? {
-        name: `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim(),
-        email: dto.customerInfo.email,
-      } : undefined,
-      shippingCost,
-      backUrls: {
-        success: `${storeBase}/checkout/success?orderId=${orderId}`,
-        failure: `${storeBase}/checkout/failure?orderId=${orderId}`,
-        pending: `${storeBase}/checkout/pending?orderId=${orderId}`,
-      },
-    });
+      const { initPoint, preferenceId } = await this.mercadoPagoService.createPreference({
+        externalReference: orderId,
+        items: dto.cartLines.map((l: any) => ({
+          id: l.variantId,
+          title: l.name || `Producto (${l.variantId.slice(0, 8)})`,
+          quantity: l.quantity,
+          unit_price: l.price,
+        })),
+        payer: dto.customerInfo ? {
+          name: `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim(),
+          email: dto.customerInfo.email,
+        } : undefined,
+        shippingCost,
+        backUrls: {
+          success: `${storeBase}/checkout/success?orderId=${orderId}`,
+          failure: `${storeBase}/checkout/failure?orderId=${orderId}`,
+          pending: `${storeBase}/checkout/pending?orderId=${orderId}`,
+        },
+      });
 
+      return {
+        ...order,
+        payment: {
+          method: 'MERCADOPAGO',
+          initPoint,
+          preferenceId,
+          shippingCost,
+          shippingMethod: shippingMethodLabel,
+        },
+      };
+    }
+
+    // For non-MP payments (CASH, BANK_TRANSFER, etc.)
     return {
       ...order,
       payment: {
-        method: 'MERCADOPAGO',
-        initPoint,
-        preferenceId,
+        method: selectedPaymentMethod.type,
         shippingCost,
-        shippingMethod,
+        shippingMethod: shippingMethodLabel,
       },
     };
   }

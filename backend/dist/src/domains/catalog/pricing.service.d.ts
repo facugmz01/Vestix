@@ -77,6 +77,7 @@ export declare class PricingService {
         updatedAt: Date;
     }>;
     resolvePrice(variantId: string, basePrice: number, customerId?: string): Promise<number>;
+    resolvePriceListPrice(variantId: string, basePrice: number, priceListId: string): Promise<number>;
     calculateMargin(sellingPrice: number, weightedAverageCost: number): {
         marginPercent: number;
         markupPercent: number;

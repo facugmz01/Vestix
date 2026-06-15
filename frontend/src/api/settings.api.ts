@@ -135,6 +135,9 @@ export interface StorefrontSettings {
   tiktokUrl: string;
   youtubeUrl: string;
   xUrl: string;
+  subdomain?: string;
+  allowedPaymentMethods?: string[];
+  shippingMethods?: Array<{ id: string; name: string; price: number; type: 'SHIPPING' | 'PICKUP' }>;
 }
 
 export interface MobileSettings {

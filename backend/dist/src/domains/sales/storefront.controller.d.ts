@@ -12,13 +12,41 @@ export declare class StorefrontController {
     private readonly inventoryService;
     private readonly logger;
     constructor(checkoutOrchestrator: CheckoutOrchestrator, salesService: SalesService, prisma: PrismaService, mercadoPagoService: MercadoPagoService, inventoryService: InventoryService);
+    getSettings(): Promise<any>;
     checkout(dto: any, req: Request): Promise<{
         payment: {
             method: string;
             initPoint: string;
             preferenceId: string;
-            shippingCost: 0 | 3500;
-            shippingMethod: "SHIPPING" | "PICKUP";
+            shippingCost: any;
+            shippingMethod: any;
+        };
+        status: string;
+        order: {
+            id: string;
+            branchId: string;
+            warehouseId: string | null;
+            source: string;
+            customerId: string | null;
+            subtotal: number;
+            cartDiscountTotal: number;
+            grandTotal: number;
+            appliedPromotions: import(".prisma/client").Prisma.JsonValue;
+            paymentMethod: string;
+            paymentAccountId: string | null;
+            status: string;
+            cashShiftId: string | null;
+            issueInvoice: boolean;
+            createdAt: Date;
+            syncedAt: Date;
+        };
+    } | {
+        payment: {
+            method: string;
+            shippingCost: any;
+            shippingMethod: any;
+            initPoint?: undefined;
+            preferenceId?: undefined;
         };
         status: string;
         order: {

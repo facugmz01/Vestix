@@ -96,6 +96,28 @@ export class PricingService {
     return basePrice;
   }
 
+  async resolvePriceListPrice(variantId: string, basePrice: number, priceListId: string): Promise<number> {
+    const activePriceList = await this.prisma.priceList.findUnique({ where: { id: priceListId } });
+    if (!activePriceList || !activePriceList.isActive) return basePrice;
+
+    const now = new Date();
+    if (activePriceList.validFrom && now < activePriceList.validFrom) return basePrice;
+    if (activePriceList.validTo && now > activePriceList.validTo) return basePrice;
+
+    if (activePriceList.isPercentageBased && activePriceList.percentageDiscount) {
+      const multiplier = (100 - activePriceList.percentageDiscount) / 100;
+      return Number((basePrice * multiplier).toFixed(2));
+    } else {
+      const entry = await this.prisma.priceListEntry.findUnique({
+        where: {
+          priceListId_variantId: { priceListId, variantId }
+        }
+      });
+      if (entry) return entry.overridePrice;
+    }
+    return basePrice;
+  }
+
   calculateMargin(sellingPrice: number, weightedAverageCost: number) {
     if (sellingPrice <= 0 || weightedAverageCost <= 0) return { marginPercent: 0, markupPercent: 0, grossProfit: 0 };
 

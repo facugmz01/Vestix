@@ -1,8 +1,10 @@
 import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { PricingService } from './pricing.service';
 export declare class CatalogService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly pricingService;
+    constructor(prisma: PrismaService, pricingService: PricingService);
     getPublicCatalog(filters: CatalogFilterDto): Promise<{
         metadata: {
             total: number;

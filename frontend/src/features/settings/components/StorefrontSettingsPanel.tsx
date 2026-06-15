@@ -1,12 +1,30 @@
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useFieldArray } from 'react-hook-form';
 import { SettingsSection, SettingsRow, SettingsDivider } from './SettingsLayout';
 import { Input, Button } from '@/components/ui';
 import { SystemSettings } from '@/api/settings.api';
-import { ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, MessageCircle, Share2, Download, Globe } from 'lucide-react';
+import { ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, MessageCircle, Share2, Globe, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
+import { priceListsApi } from '@/api/priceLists.api';
+import { financeApi } from '@/api/finance.api';
 
 export function StorefrontSettingsPanel() {
-  const { register, watch } = useFormContext<SystemSettings>();
+  const { register, watch, control } = useFormContext<SystemSettings>();
+
+  const { data: priceLists } = useQuery({
+    queryKey: ['priceLists', 'storefront-panel'],
+    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100, isActive: true }),
+  });
+
+  const { data: paymentMethods } = useQuery({
+    queryKey: ['paymentMethods', 'storefront-panel'],
+    queryFn: () => financeApi.getPaymentMethods(),
+  });
+
+  const { fields: shippingFields, append: appendShipping, remove: removeShipping } = useFieldArray({
+    control,
+    name: 'storefront.shippingMethods'
+  });
 
   const storefrontUrl = "https://ventavweb.com.ar/web/comercio-FACUNDOGOM";
 
@@ -98,10 +116,14 @@ export function StorefrontSettingsPanel() {
               {...register('storefront.priceListToShow')}
               style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
             >
-              <option value="minorista">Minorista (precio venta)</option>
-              <option value="mayorista">Mayorista</option>
+              <option value="">Precio Base (Sin Lista)</option>
+              {priceLists?.data?.map((pl) => (
+                <option key={pl.id} value={pl.id}>
+                  {pl.name}
+                </option>
+              ))}
             </select>
-            <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>Precio base que ven los visitantes sin iniciar sesión.</p>
+            <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>Precio que ven los visitantes. Si es vacío, usa precio base.</p>
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Orden por defecto en la tienda web</label>
@@ -134,9 +156,22 @@ export function StorefrontSettingsPanel() {
 
       <div style={{ height: '24px' }}></div>
 
-      <SettingsSection title={<span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CreditCard size={16} color="var(--accent)" /> Medios de pago</span>}>
+      <SettingsSection title={<span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CreditCard size={16} color="var(--accent)" /> Medios de pago permitidos</span>}>
+        <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-muted)' }}>Seleccioná qué métodos de cobro del POS estarán habilitados para compras web.</p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+          {paymentMethods?.map(pm => (
+            <label key={pm.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer' }}>
+              <input type="checkbox" value={pm.id} {...register('storefront.allowedPaymentMethods')} />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>{pm.name}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-overlay)', padding: '2px 6px', borderRadius: '4px', marginLeft: 'auto' }}>{pm.type}</span>
+            </label>
+          ))}
+        </div>
+
+        <SettingsDivider />
         <h4 style={{ margin: '0 0 4px 0', fontSize: '14px' }}>MercadoPago Checkout Pro</h4>
-        <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: 'var(--text-muted)' }}>Credenciales en <a href="https://developers.mercadopago.com" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>developers.mercadopago.com</a>. Usa Producción para cobros reales o Sandbox para pruebas.</p>
+        <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: 'var(--text-muted)' }}>Si habilitás un método de tipo CREDIT_CARD, el sistema intentará cobrar vía Mercado Pago.</p>
         
         <div className="grid-responsive grid-cols-2" style={{ gap: '24px', marginBottom: '24px' }}>
           <Input label="Public Key" placeholder="APP_USR-..." {...register('storefront.mpPublicKey')} />
@@ -145,27 +180,41 @@ export function StorefrontSettingsPanel() {
 
         <div style={{ marginBottom: '24px' }}>
           <Input label="CBU / Alias para transferencia" placeholder="0000003100000000000000 / alias.banco" {...register('storefront.transferCbu')} />
-          <p style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>Si lo completas, aparece la opción "Transferencia" en el checkout con los datos para transferir.</p>
+          <p style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>Mostrado a clientes que eligen Transferencia Bancaria.</p>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <input type="checkbox" id="acceptCash" {...register('storefront.acceptCash')} />
-          <label htmlFor="acceptCash" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>Aceptar pago en efectivo</label>
-        </div>
-        <p style={{ marginTop: '4px', marginLeft: '24px', fontSize: '12px', color: 'var(--text-muted)' }}>Muestra la opción "Efectivo" en el checkout. Ideal si envías o retiran y te pagan por WhatsApp.</p>
       </SettingsSection>
 
       <div style={{ height: '24px' }}></div>
 
-      <SettingsSection title={<span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Truck size={16} color="var(--accent)" /> Envíos</span>}>
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Información de envío / retiro</label>
-          <textarea
-            {...register('storefront.shippingInfo')}
-            placeholder="Ej: Envíos a todo el país por OCA/Correo Argentino. Retiro en sucursal de L a V de 9 a 18hs."
-            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
-          />
-          <p style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>Se muestra en el checkout debajo de los totales.</p>
+      <SettingsSection title={<span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Truck size={16} color="var(--accent)" /> Opciones de Envío / Retiro</span>}>
+        <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-muted)' }}>Configurá las opciones de entrega que verán los clientes en el checkout.</p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+          {shippingFields.map((field, index) => (
+            <div key={field.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', background: 'var(--bg-base)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 600 }}>Nombre / Descripción</label>
+                  <input {...register(`storefront.shippingMethods.${index}.name` as const)} placeholder="Ej: Envío a Domicilio" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 600 }}>Tipo</label>
+                  <select {...register(`storefront.shippingMethods.${index}.type` as const)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                    <option value="SHIPPING">Envío</option>
+                    <option value="PICKUP">Retiro</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 600 }}>Costo ($)</label>
+                  <input type="number" {...register(`storefront.shippingMethods.${index}.price` as const, { valueAsNumber: true })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                </div>
+              </div>
+              <button type="button" onClick={() => removeShipping(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '8px', marginTop: '18px' }} title="Eliminar método"><Trash2 size={18} /></button>
+            </div>
+          ))}
+          <Button type="button" variant="outline" icon={<Plus size={16} />} onClick={() => appendShipping({ id: crypto.randomUUID(), name: '', price: 0, type: 'SHIPPING' })} style={{ alignSelf: 'flex-start' }}>
+            Agregar opción de envío
+          </Button>
         </div>
 
         <div>
@@ -184,7 +233,7 @@ export function StorefrontSettingsPanel() {
               <span>No pedir</span>
             </label>
           </div>
-          <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>Controla si el cliente puede o debe ingresar su dirección al hacer el pedido.</p>
+          <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>Aplica a pedidos tipo Envío.</p>
         </div>
       </SettingsSection>
 
@@ -210,54 +259,35 @@ export function StorefrontSettingsPanel() {
 
       <div style={{ height: '24px' }}></div>
 
-      {/* Deployment options */}
-      <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
-        <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>1</div>
-          <h4 style={{ margin: 0, fontSize: '15px' }}>Instalá la tienda en tu propio hosting</h4>
-        </div>
-        <div style={{ padding: '20px' }}>
-          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-muted)' }}>El archivo ya viene configurado para tu comercio. Solo descargalo y subilo a tu hosting. No necesita base de datos propia — obtiene todo desde la API de VentaWeb.</p>
-          <div style={{ display: 'flex', gap: '24px' }}>
-            <div style={{ flex: 1 }}>
-              <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'var(--text-primary)' }}>
-                <li style={{ marginBottom: '8px' }}>Descargá el archivo <strong>index.php</strong> con el botón de la derecha.</li>
-                <li style={{ marginBottom: '8px' }}>Subilo a la raíz (o una carpeta) de tu hosting.</li>
-                <li>¡Listo! Accedé a <span style={{ color: '#ef4444' }}>tudominio.com</span> y ya verás tu tienda.</li>
-              </ol>
-              <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px', borderRadius: '8px', marginTop: '16px', display: 'flex', gap: '8px' }}>
-                <span style={{ color: '#10b981' }}>ⓘ</span>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>El archivo viene preconfigurado con tu comercio <strong>(FACUNDOGOM)</strong>, y apuntando a la API de VentaWeb, no necesitás editarlo.</p>
-              </div>
-            </div>
-            <div style={{ width: '250px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <Button variant="outline" icon={<ExternalLink size={16} />} style={{ width: '100%', justifyContent: 'center' }}>Ver tienda de ejemplo</Button>
-              <Button variant="primary" icon={<Download size={16} />} style={{ width: '100%', justifyContent: 'center' }}>Descargar index.php</Button>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
         <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>2</div>
-          <h4 style={{ margin: 0, fontSize: '15px' }}>Pedí tu subdominio gratis <span style={{ background: '#10b981', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '8px' }}>NUEVO</span></h4>
+          <Globe size={24} color="#3b82f6" />
+          <h4 style={{ margin: 0, fontSize: '15px' }}>Configurar Subdominio <span style={{ background: '#10b981', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '8px' }}>RECOMENDADO</span></h4>
         </div>
         <div style={{ padding: '20px' }}>
-          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-muted)' }}>Te creamos un subdominio <strong>tu-comercio.ventaweb.com.ar</strong> apuntando a tu tienda sin costo adicional. Incluye HTTPS y configuración DNS.</p>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-base)', border: '1px solid var(--border)', padding: '16px', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Globe size={24} color="var(--accent)" />
-              <div>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>Tu tienda quedaría en:</p>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--accent)' }}>https://facundogom.ventaweb.com.ar</p>
+          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-muted)' }}>Definí el nombre corto con el que tus clientes accederán a tu tienda online (ejemplo: <strong>mi-comercio</strong>).</p>
+          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-base)', border: '1px solid var(--border)', padding: '16px', borderRadius: '8px', gap: '16px' }}>
+            <Globe size={24} color="var(--accent)" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{ fontSize: '14px', color: 'var(--text-muted)', background: 'var(--bg-overlay)', border: '1px solid var(--border)', borderRight: 'none', padding: '10px 12px', borderRadius: '6px 0 0 6px' }}>https://</span>
+                <input
+                  type="text"
+                  placeholder="mi-comercio"
+                  {...register('storefront.subdomain')}
+                  style={{ flex: 1, padding: '10px 12px', border: '1px solid var(--border)', fontSize: '14px', background: '#fff', color: 'var(--text-primary)', outline: 'none' }}
+                />
+                <span style={{ fontSize: '14px', color: 'var(--text-muted)', background: 'var(--bg-overlay)', border: '1px solid var(--border)', borderLeft: 'none', padding: '10px 12px', borderRadius: '0 6px 6px 0' }}>.ventaweb.com.ar</span>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-              <Button style={{ background: '#10b981', color: '#fff', border: 'none' }}>Solicitar subdominio</Button>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Respuesta en menos de 24 hs.</span>
-            </div>
           </div>
+          {watch('storefront.subdomain') && (
+            <p style={{ margin: '12px 0 0 0', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
+              Tu tienda quedará accesible en: <a href={`https://${watch('storefront.subdomain')}.ventaweb.com.ar`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: 'var(--accent)' }}>https://{watch('storefront.subdomain')}.ventaweb.com.ar</a>
+            </p>
+          )}
         </div>
       </div>
 

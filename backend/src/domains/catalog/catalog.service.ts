@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { PricingService } from './pricing.service';
 
 @Injectable()
 export class CatalogService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly pricingService: PricingService,
   ) {}
 
 
@@ -18,6 +20,10 @@ export class CatalogService {
     const where: any = { isActive: true, isPublished: true };
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.searchQuery) where.name = { contains: filters.searchQuery, mode: 'insensitive' };
+
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const storefrontSettings = (settings?.storefront as any) || {};
+    const priceListId = storefrontSettings.priceListToShow;
 
     const products = await this.prisma.product.findMany({
       where,
@@ -41,8 +47,9 @@ export class CatalogService {
 
       const basePrice = primaryVariant.basePrice;
 
-      // Precio de venta al público (se puede conectar PricingService para listas de precios dinámicas)
-      const resolvedPrice = basePrice;
+      const resolvedPrice = priceListId 
+        ? await this.pricingService.resolvePriceListPrice(primaryVariant.id, basePrice, priceListId)
+        : basePrice;
 
       if (filters.minPrice && resolvedPrice < filters.minPrice) continue;
       if (filters.maxPrice && resolvedPrice > filters.maxPrice) continue;
@@ -94,9 +101,15 @@ export class CatalogService {
 
     if (!product) throw new Error('Product not found');
 
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const storefrontSettings = (settings?.storefront as any) || {};
+    const priceListId = storefrontSettings.priceListToShow;
+
     const primaryVariant = product.variants[0];
     const basePrice = primaryVariant ? primaryVariant.basePrice : 0;
-    const resolvedPrice = basePrice; // Se puede integrar PricingService en el futuro
+    const resolvedPrice = (primaryVariant && priceListId)
+      ? await this.pricingService.resolvePriceListPrice(primaryVariant.id, basePrice, priceListId)
+      : basePrice;
 
     const availableQty = product.variants.reduce((sum, v) => 
       sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)

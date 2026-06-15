@@ -12,9 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CatalogService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const pricing_service_1 = require("./pricing.service");
 let CatalogService = class CatalogService {
-    constructor(prisma) {
+    constructor(prisma, pricingService) {
         this.prisma = prisma;
+        this.pricingService = pricingService;
     }
     async getPublicCatalog(filters) {
         const where = { isActive: true, isPublished: true };
@@ -22,6 +24,9 @@ let CatalogService = class CatalogService {
             where.categoryId = filters.categoryId;
         if (filters.searchQuery)
             where.name = { contains: filters.searchQuery, mode: 'insensitive' };
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const storefrontSettings = settings?.storefront || {};
+        const priceListId = storefrontSettings.priceListToShow;
         const products = await this.prisma.product.findMany({
             where,
             include: {
@@ -40,7 +45,9 @@ let CatalogService = class CatalogService {
             if (!primaryVariant)
                 continue;
             const basePrice = primaryVariant.basePrice;
-            const resolvedPrice = basePrice;
+            const resolvedPrice = priceListId
+                ? await this.pricingService.resolvePriceListPrice(primaryVariant.id, basePrice, priceListId)
+                : basePrice;
             if (filters.minPrice && resolvedPrice < filters.minPrice)
                 continue;
             if (filters.maxPrice && resolvedPrice > filters.maxPrice)
@@ -84,9 +91,14 @@ let CatalogService = class CatalogService {
         });
         if (!product)
             throw new Error('Product not found');
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const storefrontSettings = settings?.storefront || {};
+        const priceListId = storefrontSettings.priceListToShow;
         const primaryVariant = product.variants[0];
         const basePrice = primaryVariant ? primaryVariant.basePrice : 0;
-        const resolvedPrice = basePrice;
+        const resolvedPrice = (primaryVariant && priceListId)
+            ? await this.pricingService.resolvePriceListPrice(primaryVariant.id, basePrice, priceListId)
+            : basePrice;
         const availableQty = product.variants.reduce((sum, v) => sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0), 0);
         return {
             id: product.id,
@@ -122,6 +134,7 @@ let CatalogService = class CatalogService {
 exports.CatalogService = CatalogService;
 exports.CatalogService = CatalogService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        pricing_service_1.PricingService])
 ], CatalogService);
 //# sourceMappingURL=catalog.service.js.map

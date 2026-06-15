@@ -62,7 +62,7 @@ export default function OnlineProductDetailPage() {
 
   const selectedVariant = product.variants?.find(v => v.id === selectedVariantId);
   const isAvailable = selectedVariant ? selectedVariant.stock > 0 : product.inStock;
-  const displayPrice = product.basePrice ?? product.price ?? 0;
+  const displayPrice = product.price ?? product.basePrice ?? 0;
 
   const handleAddToCart = () => {
     if (!selectedVariant && (product.variants?.length ?? 0) > 0) {
@@ -126,6 +126,9 @@ export default function OnlineProductDetailPage() {
             
             <div style={{ marginBottom: '20px' }}>
               <span style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{fmtCurrency(displayPrice)}</span>
+              {product.basePrice && product.basePrice > product.price && (
+                <span style={{ marginLeft: '12px', fontSize: '16px', color: '#94a3b8', textDecoration: 'line-through' }}>{fmtCurrency(product.basePrice)}</span>
+              )}
               <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '8px', height: '8px', background: isAvailable ? '#22c55e' : '#ef4444', borderRadius: '50%', display: 'inline-block' }} />
                 <span style={{ fontSize: '13px', color: isAvailable ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
@@ -138,7 +141,7 @@ export default function OnlineProductDetailPage() {
             {product.variants && product.variants.length > 0 && (
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, marginBottom: '10px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {product.variants[0].size ? 'Talla' : 'Variante'}
+                  Variante
                 </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {product.variants.map((v: any) => {
@@ -162,7 +165,7 @@ export default function OnlineProductDetailPage() {
                           textDecoration: noStock ? 'line-through' : 'none',
                         }}
                       >
-                        {v.size ? `T. ${v.size}` : (v.color || v.sku)}
+                        {v.size && v.color ? `${v.size} - ${v.color}` : v.size ? `T. ${v.size}` : v.color ? v.color : v.sku}
                       </button>
                     );
                   })}
