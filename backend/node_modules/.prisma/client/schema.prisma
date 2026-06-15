@@ -814,7 +814,7 @@ model SystemSettings {
   pos           Json     @default("{}")
   arca          Json     @default("{}")
   storefront    Json     @default("{}")
-  mobile        Json     @default("{}")
+  pwa           Json     @default("{}")
   qr            Json     @default("{}")
   updatedAt     DateTime @updatedAt
 }

@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateSettingsDto = exports.QrSettingsDto = exports.MobileSettingsDto = exports.StorefrontSettingsDto = exports.ArcaSettingsDto = exports.PosSettingsDto = exports.OfflineSettingsDto = exports.IntegrationSettingsDto = exports.NotificationSettingsDto = exports.InvoicingSettingsDto = exports.SkuBarcodeSettingsDto = exports.PricingSettingsDto = exports.GeneralSettingsDto = void 0;
+exports.UpdateSettingsDto = exports.QrSettingsDto = exports.PwaSettingsDto = exports.StorefrontSettingsDto = exports.ArcaSettingsDto = exports.PosSettingsDto = exports.OfflineSettingsDto = exports.IntegrationSettingsDto = exports.NotificationSettingsDto = exports.InvoicingSettingsDto = exports.SkuBarcodeSettingsDto = exports.PricingSettingsDto = exports.GeneralSettingsDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 class GeneralSettingsDto {
@@ -577,9 +577,34 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], StorefrontSettingsDto.prototype, "xUrl", void 0);
-class MobileSettingsDto {
+class PwaSettingsDto {
 }
-exports.MobileSettingsDto = MobileSettingsDto;
+exports.PwaSettingsDto = PwaSettingsDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PwaSettingsDto.prototype, "appName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PwaSettingsDto.prototype, "appShortName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PwaSettingsDto.prototype, "themeColor", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PwaSettingsDto.prototype, "backgroundColor", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PwaSettingsDto.prototype, "iconUrl", void 0);
 class QrSettingsDto {
 }
 exports.QrSettingsDto = QrSettingsDto;
@@ -659,9 +684,9 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => MobileSettingsDto),
-    __metadata("design:type", MobileSettingsDto)
-], UpdateSettingsDto.prototype, "mobile", void 0);
+    (0, class_transformer_1.Type)(() => PwaSettingsDto),
+    __metadata("design:type", PwaSettingsDto)
+], UpdateSettingsDto.prototype, "pwa", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.ValidateNested)(),

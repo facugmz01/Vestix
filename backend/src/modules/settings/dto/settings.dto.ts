@@ -331,8 +331,12 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsString() xUrl?: string;
 }
 
-export class MobileSettingsDto {
-  // placeholder
+export class PwaSettingsDto {
+  @IsOptional() @IsString() appName?: string;
+  @IsOptional() @IsString() appShortName?: string;
+  @IsOptional() @IsString() themeColor?: string;
+  @IsOptional() @IsString() backgroundColor?: string;
+  @IsOptional() @IsString() iconUrl?: string;
 }
 
 export class QrSettingsDto {
@@ -393,8 +397,8 @@ export class UpdateSettingsDto {
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => MobileSettingsDto)
-  mobile?: MobileSettingsDto;
+  @Type(() => PwaSettingsDto)
+  pwa?: PwaSettingsDto;
 
   @IsOptional()
   @ValidateNested()

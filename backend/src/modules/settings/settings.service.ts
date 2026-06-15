@@ -188,7 +188,7 @@ export class SettingsService implements OnModuleInit {
       if (dto.pos) dataToUpdate.pos = { ...(current.pos as object), ...dto.pos };
       if (dto.arca) dataToUpdate.arca = { ...(current.arca as object), ...dto.arca };
       if (dto.storefront) dataToUpdate.storefront = { ...(current.storefront as object), ...dto.storefront };
-      if (dto.mobile) dataToUpdate.mobile = { ...(current.mobile as object), ...dto.mobile };
+      if (dto.pwa) dataToUpdate.pwa = { ...((current as any).pwa as object), ...dto.pwa };
       if (dto.qr) dataToUpdate.qr = { ...(current.qr as object), ...dto.qr };
 
       // 2. Update SystemSettings atomically

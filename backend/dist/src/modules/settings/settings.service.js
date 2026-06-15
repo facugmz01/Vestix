@@ -231,8 +231,8 @@ let SettingsService = SettingsService_1 = class SettingsService {
                 dataToUpdate.arca = { ...current.arca, ...dto.arca };
             if (dto.storefront)
                 dataToUpdate.storefront = { ...current.storefront, ...dto.storefront };
-            if (dto.mobile)
-                dataToUpdate.mobile = { ...current.mobile, ...dto.mobile };
+            if (dto.pwa)
+                dataToUpdate.pwa = { ...current.pwa, ...dto.pwa };
             if (dto.qr)
                 dataToUpdate.qr = { ...current.qr, ...dto.qr };
             const updated = await tx.systemSettings.update({

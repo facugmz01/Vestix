@@ -85,8 +85,8 @@ export declare class FinanceController {
     getActiveShift(req: any): Promise<{
         openedByUser: {
             id: string;
-            fullName: string;
             email: string;
+            fullName: string;
         };
     } & {
         id: string;

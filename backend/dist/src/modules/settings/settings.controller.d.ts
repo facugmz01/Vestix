@@ -15,7 +15,7 @@ export declare class SettingsController {
         pos: import(".prisma/client").Prisma.JsonValue;
         arca: import(".prisma/client").Prisma.JsonValue;
         storefront: import(".prisma/client").Prisma.JsonValue;
-        mobile: import(".prisma/client").Prisma.JsonValue;
+        pwa: import(".prisma/client").Prisma.JsonValue;
         qr: import(".prisma/client").Prisma.JsonValue;
         updatedAt: Date;
     }>;
@@ -31,7 +31,7 @@ export declare class SettingsController {
         pos: import(".prisma/client").Prisma.JsonValue;
         arca: import(".prisma/client").Prisma.JsonValue;
         storefront: import(".prisma/client").Prisma.JsonValue;
-        mobile: import(".prisma/client").Prisma.JsonValue;
+        pwa: import(".prisma/client").Prisma.JsonValue;
         qr: import(".prisma/client").Prisma.JsonValue;
         updatedAt: Date;
     }>;

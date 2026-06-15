@@ -124,7 +124,12 @@ export declare class StorefrontSettingsDto {
     youtubeUrl?: string;
     xUrl?: string;
 }
-export declare class MobileSettingsDto {
+export declare class PwaSettingsDto {
+    appName?: string;
+    appShortName?: string;
+    themeColor?: string;
+    backgroundColor?: string;
+    iconUrl?: string;
 }
 export declare class QrSettingsDto {
     mpStoreName?: string;
@@ -141,6 +146,6 @@ export declare class UpdateSettingsDto {
     pos?: PosSettingsDto;
     arca?: ArcaSettingsDto;
     storefront?: StorefrontSettingsDto;
-    mobile?: MobileSettingsDto;
+    pwa?: PwaSettingsDto;
     qr?: QrSettingsDto;
 }

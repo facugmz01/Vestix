@@ -139,8 +139,12 @@ export interface StorefrontSettings {
   shippingMethods?: Array<{ id: string; name: string; price: number; type: 'SHIPPING' | 'PICKUP' }>;
 }
 
-export interface MobileSettings {
-  // placeholder
+export interface PwaSettings {
+  appName: string;
+  appShortName: string;
+  themeColor: string;
+  backgroundColor: string;
+  iconUrl: string;
 }
 
 export interface QrSettings {
@@ -159,7 +163,7 @@ export interface SystemSettings {
   pos:          PosSettings;
   arca:         ArcaSettings;
   storefront:   StorefrontSettings;
-  mobile:       MobileSettings;
+  pwa:          PwaSettings;
   qr:           QrSettings;
 }
 

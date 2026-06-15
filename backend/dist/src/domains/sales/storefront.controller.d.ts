@@ -12,6 +12,22 @@ export declare class StorefrontController {
     private readonly inventoryService;
     private readonly logger;
     constructor(checkoutOrchestrator: CheckoutOrchestrator, salesService: SalesService, prisma: PrismaService, mercadoPagoService: MercadoPagoService, inventoryService: InventoryService);
+    getManifest(): Promise<{
+        short_name: any;
+        name: any;
+        description: string;
+        icons: {
+            src: any;
+            type: string;
+            sizes: string;
+            purpose: string;
+        }[];
+        start_url: string;
+        display: string;
+        background_color: any;
+        theme_color: any;
+        orientation: string;
+    }>;
     getSettings(): Promise<any>;
     checkout(dto: any, req: Request): Promise<{
         payment: {

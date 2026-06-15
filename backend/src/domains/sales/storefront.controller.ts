@@ -40,6 +40,35 @@ export class StorefrontController {
   ) {}
 
   /**
+   * GET /storefront/manifest.json
+   * Returns a dynamic PWA manifest based on the system settings.
+   */
+  @Get('manifest.json')
+  async getManifest() {
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const pwa = (settings?.pwa as any) || {};
+
+    return {
+      short_name: pwa.appShortName || 'VentaWeb',
+      name: pwa.appName || 'VentaWeb - ERP & Tienda',
+      description: 'Sistema ERP y Tienda Online',
+      icons: [
+        {
+          src: pwa.iconUrl || '/favicon.svg',
+          type: pwa.iconUrl?.endsWith('.png') ? 'image/png' : 'image/svg+xml',
+          sizes: '192x192 512x512',
+          purpose: 'any maskable'
+        }
+      ],
+      start_url: '/',
+      display: 'standalone',
+      background_color: pwa.backgroundColor || '#ffffff',
+      theme_color: pwa.themeColor || '#3b82f6',
+      orientation: 'portrait-primary',
+    };
+  }
+
+  /**
    * GET /storefront/settings
    * Returns the public configuration for the storefront, including payment and shipping methods.
    */
@@ -47,6 +76,7 @@ export class StorefrontController {
   async getSettings() {
     const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
     const storefront = (settings?.storefront as any) || {};
+    const pwa = (settings?.pwa as any) || {};
 
     // Fetch allowed payment methods details
     let paymentMethods = [];
@@ -59,6 +89,7 @@ export class StorefrontController {
 
     return {
       ...storefront,
+      pwa,
       paymentMethods,
     };
   }

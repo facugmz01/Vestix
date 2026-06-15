@@ -68,9 +68,32 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
         this.inventoryService = inventoryService;
         this.logger = new common_1.Logger(StorefrontController_1.name);
     }
+    async getManifest() {
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const pwa = settings?.pwa || {};
+        return {
+            short_name: pwa.appShortName || 'VentaWeb',
+            name: pwa.appName || 'VentaWeb - ERP & Tienda',
+            description: 'Sistema ERP y Tienda Online',
+            icons: [
+                {
+                    src: pwa.iconUrl || '/favicon.svg',
+                    type: pwa.iconUrl?.endsWith('.png') ? 'image/png' : 'image/svg+xml',
+                    sizes: '192x192 512x512',
+                    purpose: 'any maskable'
+                }
+            ],
+            start_url: '/',
+            display: 'standalone',
+            background_color: pwa.backgroundColor || '#ffffff',
+            theme_color: pwa.themeColor || '#3b82f6',
+            orientation: 'portrait-primary',
+        };
+    }
     async getSettings() {
         const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
         const storefront = settings?.storefront || {};
+        const pwa = settings?.pwa || {};
         let paymentMethods = [];
         if (storefront.allowedPaymentMethods?.length > 0) {
             paymentMethods = await this.prisma.paymentMethod.findMany({
@@ -80,6 +103,7 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
         }
         return {
             ...storefront,
+            pwa,
             paymentMethods,
         };
     }
@@ -336,6 +360,12 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
     }
 };
 exports.StorefrontController = StorefrontController;
+__decorate([
+    (0, common_1.Get)('manifest.json'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], StorefrontController.prototype, "getManifest", null);
 __decorate([
     (0, common_1.Get)('settings'),
     __metadata("design:type", Function),
