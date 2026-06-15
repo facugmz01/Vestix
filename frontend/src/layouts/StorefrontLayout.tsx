@@ -1,14 +1,21 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, LogIn, ChevronDown } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LogIn, ChevronDown, Loader2 } from 'lucide-react';
 import { Suspense, useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useCartStore } from '@/store/cart.store';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
+import { storefrontApi } from '@/api/storefront.api';
 
 export default function StorefrontLayout() {
   const totalItems = useCartStore(s => s.totalItems());
   const prefix = storePrefix();
   const navigate = useNavigate();
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ['storefrontSettings', prefix],
+    queryFn: () => storefrontApi.getSettings(),
+  });
 
   const { customer, isAuthenticated, loadCurrentCustomer, logout } = useStorefrontAuthStore();
 
@@ -162,9 +169,15 @@ export default function StorefrontLayout() {
 
       {/* Main Content */}
       <main style={{ flex: 1 }}>
-        <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center' }}>Cargando...</div>}>
-          <Outlet />
-        </Suspense>
+        {isLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+            <Loader2 size={32} className="spin" color="var(--accent)" />
+          </div>
+        ) : (
+          <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center' }}><Loader2 size={24} className="spin" /></div>}>
+            <Outlet context={{ settings }} />
+          </Suspense>
+        )}
       </main>
 
       {/* Footer */}
