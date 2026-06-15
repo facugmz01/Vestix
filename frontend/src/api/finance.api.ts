@@ -37,4 +37,10 @@ export const financeApi = {
 
   issueDebitNote: (accountId: string, payload: { amount: number, referenceId: string, description: string, dueDate: string }) =>
     post<CurrentAccountMovement>(`/finance/current-accounts/${accountId}/debit-notes`, payload),
+
+  sendOverdueStatements: () =>
+    post<{ success: boolean; message: string }>('/finance/current-accounts/send-overdue'),
+
+  sendManualStatement: (accountId: string, payload: { channel: 'EMAIL' | 'WHATSAPP'; recipient: string }) =>
+    post<{ success: boolean; message: string }>(`/finance/current-accounts/${accountId}/send-statement`, payload),
 };

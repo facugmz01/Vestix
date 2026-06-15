@@ -226,4 +226,11 @@ export declare class SalesController {
         createdAt: Date;
         syncedAt: Date;
     }>;
+    sendManualReceipt(id: string, body: {
+        channel: 'EMAIL' | 'WHATSAPP';
+        recipient: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

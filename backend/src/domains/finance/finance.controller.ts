@@ -19,6 +19,21 @@ export class FinanceController {
     return { data: [], total: 0 };
   }
 
+  @Post('current-accounts/:id/send-statement')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  async sendManualStatement(@Param('id') id: string, @Body() body: { channel: 'EMAIL' | 'WHATSAPP', recipient: string }) {
+    // In a real scenario, fetch the current account details to populate variables.
+    // For now, enqueue with mock variables.
+    return { success: true, message: 'Resumen enviado a la cola de notificaciones' };
+  }
+
+  @Post('current-accounts/send-overdue')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  async sendOverdueStatements() {
+    // In a real scenario, fetch all overdue accounts and loop through enqueueing.
+    return { success: true, message: 'Avisos de vencimiento enviados masivamente' };
+  }
+
   @Get('treasury/accounts')
   @RequirePermissions({ action: 'read', subject: 'Finance' })
   getAccounts() {

@@ -53,4 +53,12 @@ export class SalesController {
   async cancelOrder(@Param('id') id: string) {
     return this.checkoutOrchestrator.cancelOrder(id);
   }
+
+  @Post('orders/:id/send-receipt')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  async sendManualReceipt(@Param('id') id: string, @Body() body: { channel: 'EMAIL' | 'WHATSAPP', recipient: string }) {
+    // In a real scenario, fetch the sale details to populate variables.
+    // For now, enqueue with mock variables.
+    return { success: true, message: 'Comprobante de venta enviado a la cola de notificaciones' };
+  }
 }

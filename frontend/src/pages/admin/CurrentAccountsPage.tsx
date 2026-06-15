@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { FINANCE_TABS } from '@/navigation/moduleTabs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { FileText, Banknote, AlertTriangle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
@@ -37,12 +38,23 @@ export default function CurrentAccountsPage() {
 
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
+  const mutationOverdue = useMutation({
+    mutationFn: () => financeApi.sendOverdueStatements(),
+    onSuccess: (res: any) => toast.success(res.message || 'Avisos enviados'),
+    onError: () => toast.error('Error al enviar avisos masivos'),
+  });
+
   return (
     <PageContainer
       tabs={<Tabs items={FINANCE_TABS} />}
       
       title="Cuentas Corrientes" 
       subtitle="Saldos, vencimientos y estado de deuda de Clientes y Proveedores."
+      action={
+        <Button variant="outline" icon={<AlertTriangle size={16} />} onClick={() => mutationOverdue.mutate()} loading={mutationOverdue.isPending}>
+          Reclamar Deudas
+        </Button>
+      }
     >
       <FiltersBar actions={<Badge color="gray">{total} cuentas activas</Badge>}>
         <SearchInput placeholder="Buscar por Nombre de Entidad..." onSearch={(val) => { setSearch(val); setPage(1); }} />

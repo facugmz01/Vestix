@@ -8,6 +8,17 @@ export declare class FinanceController {
         data: any[];
         total: number;
     };
+    sendManualStatement(id: string, body: {
+        channel: 'EMAIL' | 'WHATSAPP';
+        recipient: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    sendOverdueStatements(): Promise<{
+        success: boolean;
+        message: string;
+    }>;
     getAccounts(): Promise<{
         id: string;
         name: string;
@@ -129,10 +140,10 @@ export declare class FinanceController {
     getShifts(page: string, pageSize: string): Promise<{
         data: ({
             cashRegister: {
-                name: string;
                 branch: {
                     name: string;
                 };
+                name: string;
             };
             openedByUser: {
                 fullName: string;
@@ -161,10 +172,10 @@ export declare class FinanceController {
     }>;
     getShiftById(id: string): Promise<{
         cashRegister: {
-            name: string;
             branch: {
                 name: string;
             };
+            name: string;
         };
         openedByUser: {
             fullName: string;

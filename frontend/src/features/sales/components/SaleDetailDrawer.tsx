@@ -137,6 +137,25 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
         {/* Actions Contextual to Status */}
         <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           
+          {sale.status === 'CONFIRMED' && (
+            <ActionGuard action="read" subject="Sales">
+              <Button 
+                variant="outline" 
+                icon={<FileText size={16} />} 
+                onClick={async () => {
+                  try {
+                    const res = await salesApi.sendManualReceipt(sale.id, { channel: 'WHATSAPP', recipient: '5491100000000' });
+                    toast.success(res.message);
+                  } catch (e) {
+                    toast.error('Error al enviar comprobante');
+                  }
+                }}
+              >
+                Enviar Comprobante
+              </Button>
+            </ActionGuard>
+          )}
+
           {sale.status === 'QUOTATION' && (
             <ActionGuard action="manage" subject="Sales">
               <Button variant="ghost" onClick={() => cancelMutation.mutate()} loading={cancelMutation.isPending} disabled={confirmMutation.isPending}>

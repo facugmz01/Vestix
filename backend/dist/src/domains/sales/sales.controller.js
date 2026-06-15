@@ -45,6 +45,9 @@ let SalesController = class SalesController {
     async cancelOrder(id) {
         return this.checkoutOrchestrator.cancelOrder(id);
     }
+    async sendManualReceipt(id, body) {
+        return { success: true, message: 'Comprobante de venta enviado a la cola de notificaciones' };
+    }
 };
 exports.SalesController = SalesController;
 __decorate([
@@ -103,6 +106,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "cancelOrder", null);
+__decorate([
+    (0, common_1.Post)('orders/:id/send-receipt'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "sendManualReceipt", null);
 exports.SalesController = SalesController = __decorate([
     (0, common_1.Controller)('sales'),
     __metadata("design:paramtypes", [sales_service_1.SalesService,

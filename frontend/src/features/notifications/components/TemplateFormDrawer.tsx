@@ -23,6 +23,9 @@ const EVENTS: { value: NotificationEvent; label: string }[] = [
   { value: 'INVOICE_ISSUED', label: 'Factura Emitida' },
   { value: 'PAYMENT_RECEIVED', label: 'Pago Registrado' },
   { value: 'RETURN_APPROVED', label: 'Devolución Aprobada' },
+  { value: 'OVERDUE_CURRENT_ACCOUNT', label: 'Cuenta Corriente Vencida' },
+  { value: 'MANUAL_CURRENT_ACCOUNT_STATEMENT', label: 'Envío Manual: Cta. Cte.' },
+  { value: 'MANUAL_SALE_RECEIPT', label: 'Envío Manual: Venta' },
 ];
 
 const CHANNELS: { value: NotificationChannel; label: string }[] = [

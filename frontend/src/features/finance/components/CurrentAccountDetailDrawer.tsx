@@ -77,6 +77,24 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                 <AlertTriangle size={16} /> Deuda Vencida: {fmtCurrency(account.overdueAmount)}
               </div>
             )}
+
+            <div style={{ marginTop: '16px' }}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                icon={<FileText size={14} />} 
+                onClick={async () => {
+                  try {
+                    const res = await financeApi.sendManualStatement(account.id, { channel: 'WHATSAPP', recipient: '5491100000000' });
+                    toast.success(res.message);
+                  } catch (e) {
+                    toast.error('Error al enviar resumen');
+                  }
+                }}
+              >
+                Enviar Resumen (WhatsApp)
+              </Button>
+            </div>
           </div>
 
           <div style={{ padding: '20px', background: 'var(--bg-base)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end' }}>

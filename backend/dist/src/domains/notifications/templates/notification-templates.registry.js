@@ -53,5 +53,26 @@ exports.NOTIFICATION_TEMPLATES = [
         channel: notification_model_1.NotificationChannel.WHATSAPP,
         body: `🔐 *Tu código de verificación es:*\n\n*{{otpCode}}*\n\nEste código expira en 10 minutos.\nSi no lo solicitaste, ignorá este mensaje.`,
     },
+    {
+        key: notification_model_1.TemplateKey.PURCHASE_ORDER_ISSUED,
+        channel: notification_model_1.NotificationChannel.EMAIL,
+        subject: 'Nueva Orden de Compra #{{orderId}}',
+        body: `Hola {{supplierName}},\n\nAdjuntamos la orden de compra #{{orderId}} por un total de $ {{total}}.\nPor favor confirmar recepción y fecha estimada de entrega.\n\nSaludos,\n{{companyName}}`,
+    },
+    {
+        key: notification_model_1.TemplateKey.OVERDUE_CURRENT_ACCOUNT,
+        channel: notification_model_1.NotificationChannel.WHATSAPP,
+        body: `⚠️ *Aviso de Vencimiento*\nHola {{customerName}}, te informamos que tu cuenta corriente registra un saldo vencido de *$ {{overdueAmount}}*.\nPor favor, regulariza tu situación a la brevedad. Total adeudado: $ {{balance}}.\n\nIgnorá este mensaje si ya realizaste el pago.`,
+    },
+    {
+        key: notification_model_1.TemplateKey.MANUAL_CURRENT_ACCOUNT_STATEMENT,
+        channel: notification_model_1.NotificationChannel.WHATSAPP,
+        body: `📄 *Resumen de Cuenta*\nHola {{customerName}}, te enviamos el estado actual de tu cuenta.\nSaldo total: *$ {{balance}}*.\nSaldo vencido: *$ {{overdueAmount}}*.\n\nAnte cualquier duda, estamos a disposición.`,
+    },
+    {
+        key: notification_model_1.TemplateKey.MANUAL_SALE_RECEIPT,
+        channel: notification_model_1.NotificationChannel.WHATSAPP,
+        body: `🧾 *Comprobante de Venta*\nHola {{customerName}}, gracias por tu compra.\nTe enviamos el comprobante de la operación *#{{saleId}}* por un total de *$ {{total}}*.\n\nPuedes descargarlo aquí: {{receiptUrl}}`,
+    },
 ];
 //# sourceMappingURL=notification-templates.registry.js.map

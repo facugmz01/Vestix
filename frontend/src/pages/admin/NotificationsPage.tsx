@@ -42,6 +42,9 @@ const EVENT_LABELS: Record<string, string> = {
   INVOICE_ISSUED:          'Factura Emitida',
   PAYMENT_RECEIVED:        'Pago Recibido',
   RETURN_APPROVED:         'Dev. Aprobada',
+  OVERDUE_CURRENT_ACCOUNT: 'Cuenta Corriente Vencida',
+  MANUAL_CURRENT_ACCOUNT_STATEMENT: 'Envío Manual: Cta. Cte.',
+  MANUAL_SALE_RECEIPT:     'Envío Manual: Venta',
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────

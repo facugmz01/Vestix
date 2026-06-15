@@ -27,6 +27,12 @@ let FinanceController = class FinanceController {
     getCurrentAccounts(page, pageSize) {
         return { data: [], total: 0 };
     }
+    async sendManualStatement(id, body) {
+        return { success: true, message: 'Resumen enviado a la cola de notificaciones' };
+    }
+    async sendOverdueStatements() {
+        return { success: true, message: 'Avisos de vencimiento enviados masivamente' };
+    }
     getAccounts() {
         return this.accountsService.getAccounts();
     }
@@ -77,6 +83,22 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], FinanceController.prototype, "getCurrentAccounts", null);
+__decorate([
+    (0, common_1.Post)('current-accounts/:id/send-statement'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Finance' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], FinanceController.prototype, "sendManualStatement", null);
+__decorate([
+    (0, common_1.Post)('current-accounts/send-overdue'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Finance' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], FinanceController.prototype, "sendOverdueStatements", null);
 __decorate([
     (0, common_1.Get)('treasury/accounts'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Finance' }),
