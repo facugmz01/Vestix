@@ -25,12 +25,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        // rewrite: (path) => path.replace(/^\/api/, ''), // Removed this because backend expects /api
       },
-      '/storefront/manifest.json': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      }
     },
   },
 });
