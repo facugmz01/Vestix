@@ -10,7 +10,7 @@ import { SettingsSection, SettingsRow, SettingsDivider } from './SettingsLayout'
 const TIMEZONES = ['America/Argentina/Buenos_Aires', 'America/Bogota', 'America/Santiago', 'America/Lima', 'America/Mexico_City'];
 
 export function GeneralSettingsPanel() {
-  const { register, formState: { errors } } = useFormContext<SystemSettings>();
+  const { register, formState: { errors }, watch } = useFormContext<SystemSettings>();
 
   return (
     <SettingsSection title="Datos de la Empresa" description="Información fiscal y de contacto visible en documentos e impresiones.">
