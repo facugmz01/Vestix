@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.IdentifiersController = void 0;
 const common_1 = require("@nestjs/common");
 const identifiers_service_1 = require("./identifiers.service");
+const passport_1 = require("@nestjs/passport");
 let IdentifiersController = class IdentifiersController {
     constructor(identifiersService) {
         this.identifiersService = identifiersService;
@@ -44,6 +45,7 @@ __decorate([
 ], IdentifiersController.prototype, "generateBarcode", null);
 exports.IdentifiersController = IdentifiersController = __decorate([
     (0, common_1.Controller)('identifiers'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     __metadata("design:paramtypes", [identifiers_service_1.IdentifiersService])
 ], IdentifiersController);
 //# sourceMappingURL=identifiers.controller.js.map

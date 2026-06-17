@@ -138,7 +138,7 @@ let NotificationsController = class NotificationsController {
 exports.NotificationsController = NotificationsController;
 __decorate([
     (0, common_1.Get)('templates'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Notifications' }),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Settings' }),
     __param(0, (0, common_1.Query)('page')),
     __param(1, (0, common_1.Query)('pageSize')),
     __metadata("design:type", Function),
@@ -147,7 +147,7 @@ __decorate([
 ], NotificationsController.prototype, "getTemplates", null);
 __decorate([
     (0, common_1.Post)('templates'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Notifications' }),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [CreateTemplateDto]),
@@ -155,7 +155,7 @@ __decorate([
 ], NotificationsController.prototype, "createTemplate", null);
 __decorate([
     (0, common_1.Patch)('templates/:id'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Notifications' }),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -164,14 +164,14 @@ __decorate([
 ], NotificationsController.prototype, "updateTemplate", null);
 __decorate([
     (0, common_1.Get)('queue'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Notifications' }),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Settings' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], NotificationsController.prototype, "getQueue", null);
 __decorate([
     (0, common_1.Post)('test'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Notifications' }),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [SendTestNotificationDto]),

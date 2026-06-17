@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Eye, ShoppingCart } from 'lucide-react';
+import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -34,6 +34,16 @@ export default function SalesPage() {
     queryFn: () => salesApi.getSales({ page, pageSize, search, status: statusFilter }),
   });
 
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      await salesApi.updateStatus(id, status);
+      toast.success('Estado actualizado exitosamente');
+      refetch();
+    } catch (err: any) {
+      toast.error('Error al actualizar estado');
+    }
+  };
+
   const handleCreate = () => setFormOpen(true);
   const handleView = (id: string) => { setSelectedSaleId(id); setDetailOpen(true); };
 
@@ -43,7 +53,10 @@ export default function SalesPage() {
   const getStatusColor = (s: string) => {
     switch (s) {
       case 'QUOTATION': return 'orange';
-      case 'CONFIRMED': return 'green';
+      case 'PENDING_PAYMENT': return 'yellow';
+      case 'CONFIRMED': return 'blue';
+      case 'READY_FOR_PICKUP': return 'purple';
+      case 'DELIVERED': return 'green';
       case 'CANCELLED': return 'red';
       default: return 'gray';
     }
@@ -80,7 +93,10 @@ export default function SalesPage() {
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Estados</option>
           <option value="QUOTATION">Solo Presupuestos</option>
+          <option value="PENDING_PAYMENT">Pago Pendiente</option>
           <option value="CONFIRMED">Ventas Confirmadas</option>
+          <option value="READY_FOR_PICKUP">Listos para Retiro</option>
+          <option value="DELIVERED">Entregados</option>
           <option value="CANCELLED">Canceladas / Rechazadas</option>
         </select>
       </FiltersBar>
@@ -147,13 +163,33 @@ export default function SalesPage() {
               { 
                 key: 'status', 
                 header: 'Estado Comercial',
-                render: (s) => <StatusChip label={s.status === 'QUOTATION' ? 'Presupuesto' : s.status} color={getStatusColor(s.status) as any} />
+                render: (s) => {
+                  const labels: any = {
+                    QUOTATION: 'Presupuesto',
+                    PENDING_PAYMENT: 'Pago Pendiente',
+                    CONFIRMED: 'Confirmado',
+                    READY_FOR_PICKUP: 'Listo P/Retiro',
+                    DELIVERED: 'Entregado',
+                    CANCELLED: 'Cancelado'
+                  };
+                  return <StatusChip label={labels[s.status] || s.status} color={getStatusColor(s.status) as any} />;
+                }
               },
               {
                 key: 'actions',
                 header: '',
                 render: (s) => (
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    {s.status === 'CONFIRMED' && (
+                      <Button variant="secondary" size="sm" onClick={() => updateStatus(s.id, 'READY_FOR_PICKUP')} aria-label="Listo para Retiro" title="Marcar Listo para Retiro">
+                        <PackageCheck size={16} />
+                      </Button>
+                    )}
+                    {s.status === 'READY_FOR_PICKUP' && (
+                      <Button variant="primary" size="sm" onClick={() => updateStatus(s.id, 'DELIVERED')} aria-label="Entregado" title="Marcar Entregado">
+                        <CheckCircle size={16} />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => handleView(s.id)} aria-label="Ver Detalles" title="Abrir Visor Comercial">
                       <Eye size={16} />
                     </Button>

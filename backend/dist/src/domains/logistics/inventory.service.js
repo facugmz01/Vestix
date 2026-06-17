@@ -311,6 +311,44 @@ let InventoryService = class InventoryService {
         }));
         return { data: enriched, total, page, pageSize };
     }
+    async processStockAudit(data) {
+        const { warehouseId, items } = data;
+        const warehouse = await this.prisma.warehouse.findUnique({ where: { id: warehouseId } });
+        if (!warehouse)
+            throw new common_1.BadRequestException('Warehouse not found');
+        return this.prisma.$transaction(async (tx) => {
+            let adjustmentCount = 0;
+            for (const item of items) {
+                let variantId = item.variantId;
+                if (!variantId && item.sku) {
+                    const variant = await tx.productVariant.findUnique({ where: { sku: item.sku } });
+                    if (!variant)
+                        continue;
+                    variantId = variant.id;
+                }
+                if (!variantId)
+                    continue;
+                const stockLevel = await tx.stockLevel.findFirst({
+                    where: { variantId, warehouseId, batchId: item.batchId || null }
+                });
+                const currentPhysical = stockLevel?.physicalQuantity || 0;
+                const difference = item.countedQuantity - currentPhysical;
+                if (difference !== 0) {
+                    adjustmentCount++;
+                    await this.recordMovement({
+                        variantId: variantId,
+                        batchId: item.batchId || null,
+                        sourceWarehouseId: difference < 0 ? warehouseId : null,
+                        destinationWarehouseId: difference > 0 ? warehouseId : null,
+                        branchId: warehouse.branchId,
+                        type: 'STOCK_TAKE_ADJUSTMENT',
+                        quantity: Math.abs(difference),
+                    }, tx);
+                }
+            }
+            return { success: true, adjustmentsMade: adjustmentCount };
+        });
+    }
 };
 exports.InventoryService = InventoryService;
 exports.InventoryService = InventoryService = __decorate([

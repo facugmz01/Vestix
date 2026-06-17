@@ -22,8 +22,12 @@ export declare class IntegrationsController {
         webhookUrl: string;
         config: any;
     }>;
-    saveConfig(id: string, config: Record<string, string>): Promise<void>;
-    toggleActive(id: string, isActive: boolean): Promise<void>;
+    saveConfig(id: string, config: Record<string, string>): Promise<{
+        success: boolean;
+    }>;
+    toggleActive(id: string, isActive: boolean): Promise<{
+        success: boolean;
+    }>;
     testConnection(id: string): Promise<{
         success: boolean;
         message: string;
@@ -76,6 +80,7 @@ export declare class IntegrationsController {
                 costPrice: number;
                 isActive: boolean;
                 isPublished: boolean;
+                preferredSupplierId: string | null;
                 images: import(".prisma/client").Prisma.JsonValue;
                 metadata: import(".prisma/client").Prisma.JsonValue;
                 createdAt: Date;

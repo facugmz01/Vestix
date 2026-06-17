@@ -15,47 +15,66 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CatalogController = void 0;
 const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("./catalog.service");
-const catalog_filter_dto_1 = require("./dto/catalog-filter.dto");
-const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const create_product_dto_1 = require("./dto/create-product.dto");
+const create_variant_dto_1 = require("./dto/create-variant.dto");
+const add_barcode_dto_1 = require("./dto/add-barcode.dto");
+const jwt_auth_guard_1 = require("../../core/auth/jwt-auth.guard");
+const roles_guard_1 = require("../../core/rbac/roles.guard");
+const roles_decorator_1 = require("../../core/rbac/roles.decorator");
 let CatalogController = class CatalogController {
     constructor(catalogService) {
         this.catalogService = catalogService;
     }
-    async getPublicCatalog(filters) {
-        return this.catalogService.getPublicCatalog(filters);
+    createProduct(dto) {
+        return this.catalogService.createProduct(dto);
     }
-    async getPublicProduct(id) {
-        return this.catalogService.getPublicProduct(id);
+    addVariant(id, dto) {
+        return this.catalogService.addVariantToProduct(id, dto);
     }
-    async getPosSyncCatalog(branchId) {
-        return this.catalogService.getPosSyncCatalog(branchId);
+    addBarcode(id, dto) {
+        return this.catalogService.addBarcodeToVariant(id, dto);
+    }
+    getPosSyncData() {
+        return this.catalogService.findAllForPos();
     }
 };
 exports.CatalogController = CatalogController;
 __decorate([
-    (0, common_1.Get)('public'),
-    __param(0, (0, common_1.Query)()),
+    (0, common_1.Post)('products'),
+    (0, roles_decorator_1.Roles)('Store Manager', 'E-Commerce Manager'),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [catalog_filter_dto_1.CatalogFilterDto]),
-    __metadata("design:returntype", Promise)
-], CatalogController.prototype, "getPublicCatalog", null);
+    __metadata("design:paramtypes", [create_product_dto_1.CreateProductDto]),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "createProduct", null);
 __decorate([
-    (0, common_1.Get)('public/:id'),
+    (0, common_1.Post)('products/:id/variants'),
+    (0, roles_decorator_1.Roles)('Store Manager', 'E-Commerce Manager'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], CatalogController.prototype, "getPublicProduct", null);
+    __metadata("design:paramtypes", [String, create_variant_dto_1.CreateVariantDto]),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "addVariant", null);
 __decorate([
-    (0, common_1.Get)('pos-sync/:branchId'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),
-    __param(0, (0, common_1.Param)('branchId')),
+    (0, common_1.Post)('variants/:id/barcodes'),
+    (0, roles_decorator_1.Roles)('Store Manager', 'E-Commerce Manager'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], CatalogController.prototype, "getPosSyncCatalog", null);
+    __metadata("design:paramtypes", [String, add_barcode_dto_1.AddBarcodeDto]),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "addBarcode", null);
+__decorate([
+    (0, common_1.Get)('pos-sync'),
+    (0, roles_decorator_1.Roles)('Cashier', 'Store Manager'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "getPosSyncData", null);
 exports.CatalogController = CatalogController = __decorate([
     (0, common_1.Controller)('catalog'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService])
 ], CatalogController);
 //# sourceMappingURL=catalog.controller.js.map

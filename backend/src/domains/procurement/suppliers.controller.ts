@@ -3,8 +3,12 @@ import { SuppliersService } from './suppliers.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { BulkImportBalancesDto } from '../sales/dto/bulk-balances.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { UseGuards } from '@nestjs/common';
 
 @Controller('suppliers')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class SuppliersController {
   constructor(private readonly suppliersService: SuppliersService) {}
 

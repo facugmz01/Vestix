@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Req, Post, Put, UseInterceptors, UploadedFile, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Get, Body, Req, Post, Put, UseInterceptors, UploadedFile, BadRequestException, UseGuards, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -21,7 +21,7 @@ export class SettingsController {
 
   @Put()
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  async updateAllSettings(@Body() dto: UpdateSettingsDto, @Req() req: any) {
+  async updateAllSettings(@Body(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true })) dto: UpdateSettingsDto, @Req() req: any) {
     return await this.settingsService.updateAllSettings(dto, req.user?.userId ?? 'unknown');
   }
 

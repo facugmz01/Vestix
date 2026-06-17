@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
-import { SlidersHorizontal, History, Settings2 } from 'lucide-react';
+import { SlidersHorizontal, History, Settings2, ClipboardCheck } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
@@ -15,6 +15,8 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { StockAdjustmentModal } from '@/features/inventory/components/StockAdjustmentModal';
 import { StockMovementsDrawer } from '@/features/inventory/components/StockMovementsDrawer';
+import { StockAuditModal } from '@/features/inventory/components/StockAuditModal';
+import { ReplenishmentModal } from '@/features/inventory/components/ReplenishmentModal';
 
 export default function InventoryPage() {
   const [page, setPage] = useState(1);
@@ -25,6 +27,8 @@ export default function InventoryPage() {
 
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [kardexOpen, setKardexOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [replOpen, setReplOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<EnrichedStockLevel | null>(null);
 
   // Lookups for filters
@@ -62,9 +66,14 @@ export default function InventoryPage() {
       subtitle="Visualización consolidada de existencias, disponibilidades y reservas por depósito."
       action={
         <ActionGuard action="manage" subject="Inventory">
-          <Button variant="secondary" icon={<Settings2 size={16} />} onClick={() => alert('Abrir panel de reglas de reposición (Proximamente)')}>
-            Reglas de Reposición
-          </Button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button variant="primary" icon={<ClipboardCheck size={16} />} onClick={() => setAuditOpen(true)}>
+              Auditoría de Stock (Masivo)
+            </Button>
+            <Button variant="secondary" icon={<Settings2 size={16} />} onClick={() => setReplOpen(true)}>
+              Reglas de Reposición
+            </Button>
+          </div>
         </ActionGuard>
       }
     >
@@ -179,6 +188,8 @@ export default function InventoryPage() {
         stockNode={selectedNode} 
       />
 
+      <StockAuditModal open={auditOpen} onClose={() => setAuditOpen(false)} onSuccess={() => { setAuditOpen(false); refetch(); }} />
+      <ReplenishmentModal open={replOpen} onClose={() => setReplOpen(false)} onSuccess={() => { setReplOpen(false); refetch(); }} />
     </PageContainer>
   );
 }

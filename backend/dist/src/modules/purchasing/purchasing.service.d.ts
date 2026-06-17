@@ -1,22 +1,12 @@
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { StockMovementService } from '../inventory/stock-movement.service';
+import { InventoryService } from '../inventory/inventory.service';
+import { CreatePurchaseOrderDto } from './dto/create-po.dto';
+import { ReceiveGoodsDto } from './dto/receive-goods.dto';
 export declare class PurchasingService {
-    private readonly prisma;
-    private readonly stockMovementService;
-    private readonly logger;
-    constructor(prisma: PrismaService, stockMovementService: StockMovementService);
-    createPO(dto: any): Promise<{
-        lines: {
-            id: string;
-            purchaseOrderId: string;
-            variantId: string;
-            orderedQuantity: number;
-            receivedQuantity: number;
-            unitCost: number;
-            discountAmount: number;
-            totalAmount: number;
-        }[];
-    } & {
+    prisma: PrismaService;
+    private inventoryService;
+    constructor(prisma: PrismaService, inventoryService: InventoryService);
+    createPurchaseOrder(dto: CreatePurchaseOrderDto): Promise<{
         id: string;
         supplierId: string;
         destinationWarehouseId: string;
@@ -30,45 +20,17 @@ export declare class PurchasingService {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    processDirectPurchase(dto: {
-        supplierId: string;
-        warehouseId: string;
-        branchId: string;
-        paymentAccountId?: string;
-        paymentAmount?: number;
-        lines: {
-            variantId: string;
-            quantity: number;
-            unitCost: number;
-            discountAmount?: number;
-        }[];
-        notes?: string;
-    }): Promise<{
-        lines: {
-            id: string;
-            purchaseOrderId: string;
-            variantId: string;
-            orderedQuantity: number;
-            receivedQuantity: number;
-            unitCost: number;
-            discountAmount: number;
-            totalAmount: number;
-        }[];
-    } & {
+    receiveGoods(dto: ReceiveGoodsDto): Promise<{
         id: string;
-        supplierId: string;
+        purchaseOrderId: string;
         destinationWarehouseId: string;
+        receivedByUserId: string | null;
         status: string;
-        totalAmount: number;
-        paidAmount: number;
-        currency: string;
         notes: string | null;
-        issuedAt: Date | null;
-        completedAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
-    findAll(query?: any): Promise<{
+    findAllOrders(filters: any): Promise<{
         data: ({
             supplier: {
                 id: string;
@@ -82,16 +44,6 @@ export declare class PurchasingService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            lines: {
-                id: string;
-                purchaseOrderId: string;
-                variantId: string;
-                orderedQuantity: number;
-                receivedQuantity: number;
-                unitCost: number;
-                discountAmount: number;
-                totalAmount: number;
-            }[];
         } & {
             id: string;
             supplierId: string;
@@ -110,7 +62,7 @@ export declare class PurchasingService {
         page: number;
         pageSize: number;
     }>;
-    getPO(id: string): Promise<{
+    findOneOrder(id: string): Promise<{
         supplier: {
             id: string;
             companyName: string;
@@ -132,10 +84,13 @@ export declare class PurchasingService {
                     description: string | null;
                     categoryId: string;
                     brandId: string | null;
+                    type: import(".prisma/client").$Enums.ProductType;
                     isVariable: boolean;
+                    manageBatches: boolean;
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
+                    preferredSupplierId: string | null;
                     images: import(".prisma/client").Prisma.JsonValue;
                     metadata: import(".prisma/client").Prisma.JsonValue;
                     createdAt: Date;
@@ -180,46 +135,90 @@ export declare class PurchasingService {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    applyReceiptToPO(poId: string, receiptLines: {
-        poLineItemId: string;
-        receivedQuantity: number;
-    }[]): Promise<void>;
-    updatePO(id: string, dto: any): Promise<{
-        lines: {
+    findAllReceipts(filters: any): Promise<{
+        data: ({
+            lines: {
+                id: string;
+                receiptId: string;
+                poLineItemId: string;
+                variantId: string;
+                expectedQuantity: number;
+                receivedQuantity: number;
+                difference: number;
+                batchLot: string | null;
+                batchExpirationDate: Date | null;
+                notes: string | null;
+            }[];
+        } & {
             id: string;
             purchaseOrderId: string;
+            destinationWarehouseId: string;
+            receivedByUserId: string | null;
+            status: string;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        })[];
+        total: number;
+        page: number;
+        pageSize: number;
+    }>;
+    findOneReceipt(id: string): Promise<{
+        lines: ({
+            variant: {
+                product: {
+                    id: string;
+                    name: string;
+                    baseSku: string | null;
+                    description: string | null;
+                    categoryId: string;
+                    brandId: string | null;
+                    type: import(".prisma/client").$Enums.ProductType;
+                    isVariable: boolean;
+                    manageBatches: boolean;
+                    costPrice: number;
+                    isActive: boolean;
+                    isPublished: boolean;
+                    preferredSupplierId: string | null;
+                    images: import(".prisma/client").Prisma.JsonValue;
+                    metadata: import(".prisma/client").Prisma.JsonValue;
+                    createdAt: Date;
+                    updatedAt: Date;
+                };
+            } & {
+                id: string;
+                productId: string;
+                sku: string;
+                barcode: string | null;
+                size: string | null;
+                color: string | null;
+                imageUrl: string | null;
+                costPrice: number;
+                basePrice: number;
+                isActive: boolean;
+                attributes: import(".prisma/client").Prisma.JsonValue;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+        } & {
+            id: string;
+            receiptId: string;
+            poLineItemId: string;
             variantId: string;
-            orderedQuantity: number;
+            expectedQuantity: number;
             receivedQuantity: number;
-            unitCost: number;
-            discountAmount: number;
-            totalAmount: number;
-        }[];
+            difference: number;
+            batchLot: string | null;
+            batchExpirationDate: Date | null;
+            notes: string | null;
+        })[];
     } & {
         id: string;
-        supplierId: string;
+        purchaseOrderId: string;
         destinationWarehouseId: string;
+        receivedByUserId: string | null;
         status: string;
-        totalAmount: number;
-        paidAmount: number;
-        currency: string;
         notes: string | null;
-        issuedAt: Date | null;
-        completedAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-    }>;
-    removePO(id: string): Promise<{
-        id: string;
-        supplierId: string;
-        destinationWarehouseId: string;
-        status: string;
-        totalAmount: number;
-        paidAmount: number;
-        currency: string;
-        notes: string | null;
-        issuedAt: Date | null;
-        completedAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

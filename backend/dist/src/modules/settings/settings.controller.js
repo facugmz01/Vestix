@@ -70,7 +70,7 @@ __decorate([
 __decorate([
     (0, common_1.Put)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Body)(new common_1.ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [settings_dto_1.UpdateSettingsDto, Object]),

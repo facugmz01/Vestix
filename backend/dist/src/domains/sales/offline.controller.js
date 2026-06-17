@@ -16,6 +16,9 @@ exports.OfflineController = void 0;
 const common_1 = require("@nestjs/common");
 const sync_engine_service_1 = require("./sync-engine.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const common_2 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
 let OfflineController = class OfflineController {
     constructor(syncEngine) {
         this.syncEngine = syncEngine;
@@ -45,6 +48,7 @@ __decorate([
 ], OfflineController.prototype, "getLogs", null);
 exports.OfflineController = OfflineController = __decorate([
     (0, common_1.Controller)('offline'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [sync_engine_service_1.SyncEngineService])
 ], OfflineController);
 //# sourceMappingURL=offline.controller.js.map

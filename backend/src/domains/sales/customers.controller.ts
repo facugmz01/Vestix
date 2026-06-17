@@ -3,8 +3,12 @@ import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
 @Controller('customers')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 

@@ -1,5 +1,8 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { IsString, IsNotEmpty, IsBoolean, IsOptional, IsUUID } from 'class-validator';
 
@@ -14,6 +17,7 @@ class CreateCashRegisterDto {
 }
 
 @Controller('cash-registers')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class CashRegistersController {
   constructor(private readonly prisma: PrismaService) {}
 

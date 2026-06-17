@@ -2,8 +2,12 @@ import { Controller, Post, Headers, Body, RawBodyRequest, Req, Get, Query, Param
 import { IntegrationsService } from './integrations.service';
 import { Request } from 'express';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { UseGuards } from '@nestjs/common';
 
 @Controller('integrations')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class IntegrationsController {
   constructor(private readonly integrationsService: IntegrationsService) {}
 

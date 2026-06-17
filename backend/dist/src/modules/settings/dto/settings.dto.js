@@ -167,16 +167,6 @@ class InvoicingSettingsDto {
 exports.InvoicingSettingsDto = InvoicingSettingsDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    __metadata("design:type", Number)
-], InvoicingSettingsDto.prototype, "fiscalPointSale", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsIn)(['homologation', 'production']),
-    __metadata("design:type", String)
-], InvoicingSettingsDto.prototype, "afipEnvironment", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsIn)(['FACTURA_B', 'FACTURA_A', 'FACTURA_C']),
     __metadata("design:type", String)
 ], InvoicingSettingsDto.prototype, "defaultInvoiceType", void 0);
@@ -185,11 +175,6 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], InvoicingSettingsDto.prototype, "autoIssueOnSale", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], InvoicingSettingsDto.prototype, "invoiceFooterText", void 0);
 class NotificationSettingsDto {
 }
 exports.NotificationSettingsDto = NotificationSettingsDto;
@@ -277,6 +262,16 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
+], NotificationSettingsDto.prototype, "openWaOtpUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], NotificationSettingsDto.prototype, "openWaOtpSession", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
 ], NotificationSettingsDto.prototype, "fcmServerKey", void 0);
 class IntegrationSettingsDto {
 }
@@ -286,6 +281,21 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], IntegrationSettingsDto.prototype, "mercadopagoEnabled", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], IntegrationSettingsDto.prototype, "mpPublicKey", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], IntegrationSettingsDto.prototype, "mpAccessToken", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], IntegrationSettingsDto.prototype, "mpWebhookSecret", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
@@ -521,16 +531,6 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], StorefrontSettingsDto.prototype, "mpPublicKey", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], StorefrontSettingsDto.prototype, "mpAccessToken", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
 ], StorefrontSettingsDto.prototype, "transferCbu", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
@@ -584,13 +584,13 @@ __decorate([
 ], StorefrontSettingsDto.prototype, "subdomain", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    IsArray(),
+    (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], StorefrontSettingsDto.prototype, "allowedPaymentMethods", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    IsArray(),
+    (0, class_validator_1.IsArray)(),
     __metadata("design:type", Array)
 ], StorefrontSettingsDto.prototype, "shippingMethods", void 0);
 class PwaSettingsDto {

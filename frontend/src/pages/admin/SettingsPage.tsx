@@ -38,10 +38,7 @@ type SettingsTab =
   | 'arca'
   | 'notifications'
   | 'integrations'
-  | 'menu'
-  | 'privacy'
-  | 'mobile'
-  | 'ads';
+  | 'mobile';
 
 const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description: string }[] = [
   { id: 'general',       label: 'Datos del comercio',     icon: <Building2 size={16} />, description: '' },
@@ -52,10 +49,7 @@ const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description
   { id: 'arca',          label: 'ARCA / Facturación',     icon: <FileText size={16} />, description: '' },
   { id: 'notifications', label: 'Notificaciones',         icon: <Bell size={16} />, description: '' },
   { id: 'integrations',  label: 'Integraciones (Apps)',   icon: <Plug size={16} />, description: '' },
-  { id: 'menu',          label: 'Menú visible',           icon: <LayoutList size={16} />, description: '' },
-  { id: 'privacy',       label: 'Privacidad y seguridad', icon: <Shield size={16} />, description: '' },
   { id: 'mobile',        label: 'App móvil / PWA',        icon: <Smartphone size={16} />, description: '' },
-  { id: 'ads',           label: 'Publicidad / Reseña',    icon: <Megaphone size={16} />, description: '' },
 ];
 
 /**
@@ -176,16 +170,7 @@ export default function SettingsPage() {
                 <div style={{ display: activeTab === 'arca' ? 'block' : 'none' }}><ArcaSettingsPanel /></div>
                 <div style={{ display: activeTab === 'notifications' ? 'block' : 'none' }}><NotificationSettingsPanel /></div>
                 <div style={{ display: activeTab === 'integrations' ? 'block' : 'none' }}><IntegrationSettingsPanel /></div>
-                <div style={{ display: activeTab === 'menu' ? 'block' : 'none' }}>
-                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Menú Visible en construcción</div>
-                </div>
-                <div style={{ display: activeTab === 'privacy' ? 'block' : 'none' }}>
-                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Privacidad y Seguridad en construcción</div>
-                </div>
                 <div style={{ display: activeTab === 'mobile' ? 'block' : 'none' }}><PwaSettingsPanel /></div>
-                <div style={{ display: activeTab === 'ads' ? 'block' : 'none' }}>
-                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Módulo de Publicidad y Reseña en construcción</div>
-                </div>
               </div>
 
             </div>

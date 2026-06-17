@@ -75,6 +75,8 @@ export class SettingsService implements OnModuleInit {
             smsGatewayUrl: '',
             openWaUrl: '',
             openWaSession: 'default',
+            openWaOtpUrl: '',
+            openWaOtpSession: 'default',
             fcmServerKey: '',
           },
           integrations: {
@@ -142,8 +144,12 @@ export class SettingsService implements OnModuleInit {
             youtubeUrl: '',
             xUrl: '',
           },
-          mobile: {
-            // Future configuration for PWA
+          pwa: {
+            appName: 'Mi Empresa',
+            appShortName: 'Empresa',
+            themeColor: '#3b82f6',
+            backgroundColor: '#ffffff',
+            iconUrl: '',
           },
           qr: {
             mpStoreName: 'Mi Comercio',

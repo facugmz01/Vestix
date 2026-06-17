@@ -17,9 +17,9 @@ exports.CatalogModule = CatalogModule;
 exports.CatalogModule = CatalogModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
-        controllers: [catalog_controller_1.CatalogController],
         providers: [catalog_service_1.CatalogService],
-        exports: [catalog_service_1.CatalogService]
+        controllers: [catalog_controller_1.CatalogController],
+        exports: [catalog_service_1.CatalogService],
     })
 ], CatalogModule);
 //# sourceMappingURL=catalog.module.js.map

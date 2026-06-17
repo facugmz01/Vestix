@@ -16,6 +16,9 @@ exports.IntegrationsController = void 0;
 const common_1 = require("@nestjs/common");
 const integrations_service_1 = require("./integrations.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
+const passport_1 = require("@nestjs/passport");
+const common_2 = require("@nestjs/common");
 let IntegrationsController = class IntegrationsController {
     constructor(integrationsService) {
         this.integrationsService = integrationsService;
@@ -171,6 +174,7 @@ __decorate([
 ], IntegrationsController.prototype, "receiveWebhook", null);
 exports.IntegrationsController = IntegrationsController = __decorate([
     (0, common_1.Controller)('integrations'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [integrations_service_1.IntegrationsService])
 ], IntegrationsController);
 //# sourceMappingURL=integrations.controller.js.map

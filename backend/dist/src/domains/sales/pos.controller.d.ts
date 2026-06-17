@@ -149,4 +149,11 @@ export declare class PosController {
         closedAt: Date | null;
         notes: string | null;
     }>;
+    generateQrOrder(dto: {
+        amount: number;
+        title: string;
+    }): Promise<{
+        orderId: string;
+        qrData: string;
+    }>;
 }

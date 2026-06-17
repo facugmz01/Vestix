@@ -94,11 +94,8 @@ let SettingsService = SettingsService_1 = class SettingsService {
                         nextSkuSequence: 1,
                     },
                     invoicing: {
-                        fiscalPointSale: 1,
-                        afipEnvironment: 'homologation',
                         defaultInvoiceType: 'FACTURA_B',
                         autoIssueOnSale: false,
-                        invoiceFooterText: '',
                     },
                     notifications: {
                         emailEnabled: false,
@@ -117,6 +114,8 @@ let SettingsService = SettingsService_1 = class SettingsService {
                         smsGatewayUrl: '',
                         openWaUrl: '',
                         openWaSession: 'default',
+                        openWaOtpUrl: '',
+                        openWaOtpSession: 'default',
                         fcmServerKey: '',
                     },
                     integrations: {
@@ -173,8 +172,6 @@ let SettingsService = SettingsService_1 = class SettingsService {
                         defaultSort: 'name_asc',
                         hideOutOfStock: false,
                         hideBrandFilters: false,
-                        mpPublicKey: '',
-                        mpAccessToken: '',
                         transferCbu: '',
                         acceptCash: false,
                         shippingInfo: '',
@@ -186,7 +183,13 @@ let SettingsService = SettingsService_1 = class SettingsService {
                         youtubeUrl: '',
                         xUrl: '',
                     },
-                    mobile: {},
+                    pwa: {
+                        appName: 'Mi Empresa',
+                        appShortName: 'Empresa',
+                        themeColor: '#3b82f6',
+                        backgroundColor: '#ffffff',
+                        iconUrl: '',
+                    },
                     qr: {
                         mpStoreName: 'Mi Comercio',
                         qrGenerated: false,

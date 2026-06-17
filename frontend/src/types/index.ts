@@ -222,7 +222,7 @@ export interface GoodsReceipt {
 export type PaymentMethod = 'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER';
 export interface PaymentMethodEntity { id: string; name: string; type: string; isActive: boolean; }
 export type OrderSource   = 'POS'|'ECOMMERCE'|'BACKOFFICE';
-export type SaleOrderStatus = 'QUOTATION' | 'CONFIRMED' | 'CANCELLED';
+export type SaleOrderStatus = 'QUOTATION' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'READY_FOR_PICKUP' | 'DELIVERED' | 'CANCELLED';
 
 export interface SaleOrder {
   id: string; branchId: string; source: OrderSource; status: SaleOrderStatus;

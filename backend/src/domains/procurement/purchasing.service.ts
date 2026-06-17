@@ -420,5 +420,94 @@ export class PurchasingService {
       return tx.purchaseOrder.delete({ where: { id } });
     });
   }
+
+  async generateReplenishmentOrders() {
+    // 1. Find all stock levels where available <= reorderPoint
+    const stockToReplenish = await this.prisma.stockLevel.findMany({
+      where: {
+        availableQuantity: { lte: this.prisma.stockLevel.fields.reorderPoint }
+      },
+      include: {
+        variant: {
+          include: { product: true }
+        }
+      }
+    });
+
+    if (stockToReplenish.length === 0) {
+      return { success: true, message: 'No hay productos por debajo del punto de reposición.', ordersCreated: 0 };
+    }
+
+    // 2. Group by preferredSupplierId and destinationWarehouseId
+    // Map of SupplierId -> WarehouseId -> PO Lines
+    const draftOrders: Record<string, Record<string, any[]>> = {};
+
+    for (const stock of stockToReplenish) {
+      const neededQty = stock.minQuantity - stock.availableQuantity;
+      if (neededQty <= 0) continue;
+
+      // Fallback: If no preferred supplier, use a 'UNKNOWN_SUPPLIER' key so the user can assign it later
+      const supplierId = stock.variant.product.preferredSupplierId || 'UNKNOWN_SUPPLIER';
+      const warehouseId = stock.warehouseId;
+
+      if (!draftOrders[supplierId]) draftOrders[supplierId] = {};
+      if (!draftOrders[supplierId][warehouseId]) draftOrders[supplierId][warehouseId] = [];
+
+      draftOrders[supplierId][warehouseId].push({
+        variantId: stock.variantId,
+        orderedQuantity: neededQty,
+        unitCost: stock.variant.costPrice || 0, // Fallback to 0 if not set
+        totalAmount: neededQty * (stock.variant.costPrice || 0)
+      });
+    }
+
+    let ordersCreated = 0;
+
+    await this.prisma.$transaction(async (tx) => {
+      // If UNKNOWN_SUPPLIER exists, we either create a dummy supplier or we throw an error.
+      // We will create a dummy "Proveedores Varios" supplier if it doesn't exist.
+      let defaultSupplierId: string | null = null;
+      if (draftOrders['UNKNOWN_SUPPLIER']) {
+        let dummy = await tx.supplier.findFirst({ where: { companyName: 'Proveedores Varios' } });
+        if (!dummy) {
+          dummy = await tx.supplier.create({ data: { companyName: 'Proveedores Varios' } });
+        }
+        defaultSupplierId = dummy.id;
+      }
+
+      for (const [supplierIdKey, warehouseGroups] of Object.entries(draftOrders)) {
+        const actualSupplierId = supplierIdKey === 'UNKNOWN_SUPPLIER' ? defaultSupplierId! : supplierIdKey;
+
+        for (const [warehouseId, lines] of Object.entries(warehouseGroups)) {
+          const totalAmount = lines.reduce((sum, l) => sum + l.totalAmount, 0);
+
+          await tx.purchaseOrder.create({
+            data: {
+              supplierId: actualSupplierId,
+              destinationWarehouseId: warehouseId,
+              status: 'DRAFT',
+              totalAmount,
+              notes: 'Generada automáticamente por regla de reaprovisionamiento.',
+              lines: {
+                create: lines.map(l => ({
+                  variantId: l.variantId,
+                  orderedQuantity: l.orderedQuantity,
+                  unitCost: l.unitCost,
+                  totalAmount: l.totalAmount
+                }))
+              }
+            }
+          });
+          ordersCreated++;
+        }
+      }
+    });
+
+    return { 
+      success: true, 
+      message: `Se han generado ${ordersCreated} órdenes de compra en borrador.`, 
+      ordersCreated 
+    };
+  }
 }
 

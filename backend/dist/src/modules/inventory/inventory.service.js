@@ -12,284 +12,112 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InventoryService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const movement_type_enum_1 = require("./enums/movement-type.enum");
 let InventoryService = class InventoryService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async recordMovement(data, tx) {
-        if (data.quantity <= 0) {
-            throw new common_1.BadRequestException('La cantidad del movimiento debe ser mayor a cero.');
-        }
-        const execute = async (transaction) => {
-            const movement = await transaction.inventoryMovement.create({
+    async recordMovement(dto, externalTx) {
+        const execute = async (tx) => {
+            this.validateMovementLogic(dto);
+            const movement = await tx.inventoryMovement.create({
                 data: {
-                    variantId: data.variantId,
-                    sourceWarehouseId: data.sourceWarehouseId,
-                    destinationWarehouseId: data.destinationWarehouseId,
-                    type: data.type,
-                    quantity: data.quantity,
-                    unitCost: data.unitCost || 0,
-                    referenceId: data.referenceId || null,
+                    variantId: dto.variantId,
+                    type: dto.type,
+                    quantity: dto.quantity,
+                    unitCost: dto.unitCost || 0,
+                    sourceWarehouseId: dto.sourceWarehouseId,
+                    destinationWarehouseId: dto.destinationWarehouseId,
+                    referenceId: dto.referenceId,
+                    batchId: dto.batchId,
                 },
             });
-            if (data.sourceWarehouseId) {
-                await this.updateStock(transaction, data.variantId, data.sourceWarehouseId, data.branchId, data.type, -data.quantity);
+            if (dto.sourceWarehouseId) {
+                await this.decrementStock(tx, dto.variantId, dto.sourceWarehouseId, dto.quantity, dto.batchId);
             }
-            if (data.destinationWarehouseId) {
-                await this.updateStock(transaction, data.variantId, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
+            if (dto.destinationWarehouseId) {
+                await this.incrementStock(tx, dto.variantId, dto.destinationWarehouseId, dto.quantity, dto.batchId);
             }
             return movement;
         };
-        if (tx) {
-            return execute(tx);
-        }
-        return this.prisma.$transaction(async (t) => {
-            return execute(t);
-        });
-    }
-    async updateStock(tx, variantId, warehouseId, branchId, type, quantityChange) {
-        let updateData = {};
-        if (type === 'RESERVATION') {
-            updateData = {
-                reservedQuantity: { increment: Math.abs(quantityChange) },
-                availableQuantity: { decrement: Math.abs(quantityChange) }
-            };
-        }
-        else if (type === 'RESERVATION_RELEASE') {
-            updateData = {
-                reservedQuantity: { decrement: Math.abs(quantityChange) },
-                availableQuantity: { increment: Math.abs(quantityChange) }
-            };
-        }
-        else if (type === 'CONSUME_RESERVATION') {
-            updateData = {
-                reservedQuantity: { decrement: Math.abs(quantityChange) },
-                physicalQuantity: { decrement: Math.abs(quantityChange) }
-            };
+        if (externalTx) {
+            return execute(externalTx);
         }
         else {
-            updateData = {
-                physicalQuantity: { increment: quantityChange },
-                availableQuantity: { increment: quantityChange }
-            };
+            return this.prisma.$transaction(execute);
         }
-        return tx.stockLevel.upsert({
-            where: { variantId_warehouseId: { variantId, warehouseId } },
-            update: updateData,
-            create: {
+    }
+    validateMovementLogic(dto) {
+        if ([movement_type_enum_1.MovementType.SALE, movement_type_enum_1.MovementType.TRANSFER_OUT, movement_type_enum_1.MovementType.SHRINKAGE].includes(dto.type) &&
+            !dto.sourceWarehouseId) {
+            throw new common_1.BadRequestException(`Source warehouse is required for ${dto.type}`);
+        }
+        if ([
+            movement_type_enum_1.MovementType.GOODS_RECEIPT,
+            movement_type_enum_1.MovementType.SALE_RETURN,
+            movement_type_enum_1.MovementType.TRANSFER_IN,
+            movement_type_enum_1.MovementType.POS_CORRECTION,
+        ].includes(dto.type) &&
+            !dto.destinationWarehouseId) {
+            throw new common_1.BadRequestException(`Destination warehouse is required for ${dto.type}`);
+        }
+    }
+    async incrementStock(tx, variantId, warehouseId, quantity, batchId) {
+        const existing = await tx.stockLevel.findUnique({
+            where: {
+                variantId_warehouseId_batchId: {
+                    variantId,
+                    warehouseId,
+                    batchId: batchId || '',
+                },
+            },
+        });
+        const stock = await tx.stockLevel.findFirst({
+            where: {
                 variantId,
                 warehouseId,
-                branchId: branchId || undefined,
-                physicalQuantity: type === 'CONSUME_RESERVATION' ? -Math.abs(quantityChange) : (quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : 0) : 0),
-                availableQuantity: type === 'CONSUME_RESERVATION' ? 0 : (quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : -quantityChange) : 0),
-                reservedQuantity: type === 'RESERVATION' ? Math.abs(quantityChange) : 0,
-            }
+                batchId: batchId || null,
+            },
         });
-    }
-    async reserveStock(variantId, warehouseId, branchId, quantity, orderId, tx) {
-        const prismaClient = tx || this.prisma;
-        const stock = await prismaClient.stockLevel.findUnique({
-            where: { variantId_warehouseId: { variantId, warehouseId } }
-        });
-        if (!stock || stock.availableQuantity < quantity) {
-            throw new common_1.BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
+        if (stock) {
+            await tx.stockLevel.update({
+                where: { id: stock.id },
+                data: {
+                    physicalQuantity: { increment: quantity },
+                    availableQuantity: { increment: quantity },
+                },
+            });
         }
-        const movement = await this.recordMovement({
-            variantId,
-            sourceWarehouseId: null,
-            destinationWarehouseId: warehouseId,
-            branchId,
-            type: 'RESERVATION',
-            quantity,
-            referenceId: orderId
-        }, tx);
-        const expiresAt = new Date();
-        expiresAt.setMinutes(expiresAt.getMinutes() + 15);
-        await prismaClient.stockReservation.create({
+        else {
+            await tx.stockLevel.create({
+                data: {
+                    variantId,
+                    warehouseId,
+                    batchId: batchId || null,
+                    physicalQuantity: quantity,
+                    availableQuantity: quantity,
+                },
+            });
+        }
+    }
+    async decrementStock(tx, variantId, warehouseId, quantity, batchId) {
+        const stock = await tx.stockLevel.findFirst({
+            where: {
+                variantId,
+                warehouseId,
+                batchId: batchId || null,
+            },
+        });
+        if (!stock || stock.physicalQuantity < quantity) {
+            throw new common_1.BadRequestException(`Insufficient stock for variant ${variantId} in warehouse ${warehouseId}`);
+        }
+        await tx.stockLevel.update({
+            where: { id: stock.id },
             data: {
-                stockLevelId: stock.id,
-                variantId,
-                warehouseId,
-                quantity,
-                orderId,
-                status: 'ACTIVE',
-                expiresAt
-            }
+                physicalQuantity: { decrement: quantity },
+                availableQuantity: { decrement: quantity },
+            },
         });
-        return movement;
-    }
-    async releaseReservation(variantId, warehouseId, branchId, quantity, orderId, tx) {
-        const prismaClient = tx || this.prisma;
-        const reservation = await prismaClient.stockReservation.findFirst({
-            where: {
-                orderId,
-                variantId,
-                warehouseId,
-                status: 'ACTIVE'
-            }
-        });
-        if (reservation) {
-            await prismaClient.stockReservation.update({
-                where: { id: reservation.id },
-                data: { status: 'CANCELLED' }
-            });
-        }
-        return this.recordMovement({
-            variantId,
-            sourceWarehouseId: warehouseId,
-            destinationWarehouseId: null,
-            branchId,
-            type: 'RESERVATION_RELEASE',
-            quantity,
-            referenceId: orderId
-        }, tx);
-    }
-    async consumeReservation(variantId, warehouseId, branchId, quantity, orderId, tx) {
-        const prismaClient = tx || this.prisma;
-        const reservation = await prismaClient.stockReservation.findFirst({
-            where: {
-                orderId,
-                variantId,
-                warehouseId,
-                status: 'ACTIVE'
-            }
-        });
-        if (reservation) {
-            await prismaClient.stockReservation.update({
-                where: { id: reservation.id },
-                data: { status: 'CONSUMED' }
-            });
-        }
-        return this.recordMovement({
-            variantId,
-            sourceWarehouseId: warehouseId,
-            destinationWarehouseId: null,
-            branchId,
-            type: 'CONSUME_RESERVATION',
-            quantity,
-            referenceId: orderId
-        }, tx);
-    }
-    async getStockPerBranch(branchId, variantId) {
-        return this.prisma.stockLevel.findMany({
-            where: { branchId, ...(variantId ? { variantId } : {}) }
-        });
-    }
-    async getStockPerWarehouse(warehouseId, variantId) {
-        return this.prisma.stockLevel.findMany({
-            where: { warehouseId, ...(variantId ? { variantId } : {}) }
-        });
-    }
-    async adjustStock(dto) {
-        const stock = await this.prisma.stockLevel.findUnique({
-            where: { variantId_warehouseId: { variantId: dto.variantId, warehouseId: dto.warehouseId } },
-            include: { warehouse: true }
-        });
-        let diff = 0;
-        if (dto.type === 'ADD') {
-            diff = dto.quantity;
-        }
-        else if (dto.type === 'SUBTRACT') {
-            diff = -dto.quantity;
-        }
-        else if (dto.type === 'SET') {
-            diff = dto.quantity - (stock?.availableQuantity || 0);
-        }
-        if (diff === 0)
-            return stock;
-        return this.recordMovement({
-            variantId: dto.variantId,
-            sourceWarehouseId: diff < 0 ? dto.warehouseId : null,
-            destinationWarehouseId: diff > 0 ? dto.warehouseId : null,
-            branchId: stock?.branchId || null,
-            type: 'ADJUSTMENT',
-            quantity: Math.abs(diff),
-            referenceId: dto.reason
-        });
-    }
-    async findAllStock(query = {}) {
-        const page = parseInt(query.page) || 1;
-        const pageSize = parseInt(query.pageSize) || 20;
-        const skip = (page - 1) * pageSize;
-        const where = {};
-        if (query.branchId)
-            where.branchId = query.branchId;
-        if (query.warehouseId)
-            where.warehouseId = query.warehouseId;
-        if (query.search) {
-            where.variant = {
-                OR: [
-                    { sku: { contains: query.search, mode: 'insensitive' } },
-                    { product: { name: { contains: query.search, mode: 'insensitive' } } }
-                ]
-            };
-        }
-        const [data, total] = await Promise.all([
-            this.prisma.stockLevel.findMany({
-                where,
-                include: {
-                    variant: { include: { product: true } },
-                    warehouse: true,
-                    branch: true
-                },
-                orderBy: { warehouseId: 'asc' },
-                skip,
-                take: pageSize,
-            }),
-            this.prisma.stockLevel.count({ where }),
-        ]);
-        const enriched = data.map(s => ({
-            id: `${s.variantId}-${s.warehouseId}`,
-            variantId: s.variantId,
-            warehouseId: s.warehouseId,
-            branchId: s.branchId,
-            physicalQuantity: s.physicalQuantity,
-            reservedQuantity: s.reservedQuantity,
-            availableQuantity: s.availableQuantity,
-            variantSku: s.variant?.sku || '',
-            productName: s.variant?.product?.name || '',
-            warehouseName: s.warehouse?.name || '',
-            branchName: s.branch?.name || '',
-            lastUpdated: s.updatedAt,
-        }));
-        return { data: enriched, total, page, pageSize };
-    }
-    async findAllMovements(query = {}) {
-        const page = parseInt(query.page) || 1;
-        const pageSize = parseInt(query.pageSize) || 20;
-        const skip = (page - 1) * pageSize;
-        const where = {};
-        if (query.warehouseId) {
-            where.OR = [
-                { sourceWarehouseId: query.warehouseId },
-                { destinationWarehouseId: query.warehouseId }
-            ];
-        }
-        if (query.variantId)
-            where.variantId = query.variantId;
-        const [data, total] = await Promise.all([
-            this.prisma.inventoryMovement.findMany({
-                where,
-                include: {
-                    variant: { include: { product: true } },
-                    sourceWarehouse: true,
-                    destinationWarehouse: true,
-                },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: pageSize,
-            }),
-            this.prisma.inventoryMovement.count({ where }),
-        ]);
-        const enriched = data.map(m => ({
-            ...m,
-            variantSku: m.variant?.sku || '',
-            productName: m.variant?.product?.name || '',
-            sourceWarehouseName: m.sourceWarehouse?.name || '',
-            destinationWarehouseName: m.destinationWarehouse?.name || '',
-            warehouseName: m.destinationWarehouse?.name || m.sourceWarehouse?.name || '',
-        }));
-        return { data: enriched, total, page, pageSize };
     }
 };
 exports.InventoryService = InventoryService;

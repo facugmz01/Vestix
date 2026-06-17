@@ -15,6 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LocationsController = void 0;
 const common_1 = require("@nestjs/common");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
+const passport_1 = require("@nestjs/passport");
+const common_2 = require("@nestjs/common");
 let LocationsController = class LocationsController {
     getLocations(page, pageSize) {
         return { data: [], total: 0 };
@@ -31,6 +34,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], LocationsController.prototype, "getLocations", null);
 exports.LocationsController = LocationsController = __decorate([
-    (0, common_1.Controller)('locations')
+    (0, common_1.Controller)('locations'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard)
 ], LocationsController);
 //# sourceMappingURL=locations.controller.js.map

@@ -1,10 +1,12 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["core", "catalog", "inventory", "sales", "purchasing", "finance", "settings"]
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 // ==========================================
@@ -15,6 +17,8 @@ enum ProductType {
   SINGLE
   VARIABLE
   COMBO
+
+  @@schema("core")
 }
 
 // ==========================================
@@ -38,6 +42,8 @@ model User {
   openedShifts     CashShift[]    @relation("OpenedShifts")
   closedShifts     CashShift[]    @relation("ClosedShifts")
   receivedReceipts GoodsReceipt[] @relation("ReceivedByUser")
+
+  @@schema("core")
 }
 
 model Role {
@@ -45,6 +51,8 @@ model Role {
   name        String       @unique
   users       User[]
   permissions Permission[]
+
+  @@schema("core")
 }
 
 model Permission {
@@ -53,6 +61,8 @@ model Permission {
   subject String
   roleId  String
   role    Role   @relation(fields: [roleId], references: [id])
+
+  @@schema("core")
 }
 
 // ==========================================
@@ -72,6 +82,7 @@ model OutboxEvent {
   processedAt DateTime?
 
   @@index([status, createdAt])
+  @@schema("core")
 }
 
 // ==========================================
@@ -96,6 +107,8 @@ model Branch {
   returns           SaleReturn[]
   users             User[]
   financialAccounts FinancialAccount[] // Relación agregada
+
+  @@schema("core")
 }
 
 model Warehouse {
@@ -120,6 +133,8 @@ model Warehouse {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@schema("core")
 }
 
 // ==========================================
@@ -135,6 +150,8 @@ model Category {
   products  Product[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt // Agregado para sync offline
+
+  @@schema("catalog")
 }
 
 model Brand {
@@ -143,6 +160,8 @@ model Brand {
   products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt // Agregado para sync offline
+
+  @@schema("catalog")
 }
 
 model Product {
@@ -166,6 +185,8 @@ model Product {
   comboLines    ProductComboLine[]
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
+
+  @@schema("catalog")
 }
 
 model ProductVariant {
@@ -198,6 +219,8 @@ model ProductVariant {
   wcMapping     WcVariantMapping?
   comboUses     ProductComboLine[]
   batches       ProductBatch[]
+
+  @@schema("catalog")
 }
 
 // Soporte para múltiples códigos de barra por variante
@@ -208,6 +231,8 @@ model ProductBarcode {
   barcode   String         @unique
   type      String         @default("INTERNAL") // INTERNAL | MANUFACTURER
   createdAt DateTime       @default(now())
+
+  @@schema("catalog")
 }
 
 model Attribute {
@@ -216,6 +241,8 @@ model Attribute {
   values    AttributeValue[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt // Agregado
+
+  @@schema("catalog")
 }
 
 model AttributeValue {
@@ -224,6 +251,8 @@ model AttributeValue {
   attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   value       String // e.g., "Rojo", "XL"
   createdAt   DateTime  @default(now())
+
+  @@schema("catalog")
 }
 
 // ==========================================
@@ -237,20 +266,23 @@ model ProductComboLine {
   childVariantId  String
   childVariant    ProductVariant @relation(fields: [childVariantId], references: [id])
   quantity        Float
+
+  @@schema("catalog")
 }
 
 model ProductBatch {
-  id                String       @id @default(uuid())
+  id                String              @id @default(uuid())
   variantId         String
-  variant           ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variant           ProductVariant      @relation(fields: [variantId], references: [id], onDelete: Cascade)
   batchNumber       String
   manufacturingDate DateTime?
   expiryDate        DateTime?
   stockLevels       StockLevel[]
   movements         InventoryMovement[]
-  createdAt         DateTime     @default(now())
-  
+  createdAt         DateTime            @default(now())
+
   @@unique([variantId, batchNumber])
+  @@schema("catalog")
 }
 
 // ==========================================
@@ -273,6 +305,8 @@ model PriceList {
   updatedAt          DateTime         @updatedAt
   entries            PriceListEntry[]
   customers          Customer[]
+
+  @@schema("catalog")
 }
 
 model PriceListEntry {
@@ -286,6 +320,7 @@ model PriceListEntry {
   updatedAt     DateTime       @updatedAt
 
   @@unique([priceListId, variantId])
+  @@schema("catalog")
 }
 
 // ==========================================
@@ -307,6 +342,8 @@ model Customer {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   orders      SaleOrder[]
+
+  @@schema("sales")
 }
 
 // ==========================================
@@ -335,14 +372,14 @@ model SaleOrder {
   // Soporte completo para múltiples pagos/pagos divididos
   payments SaleOrderPayment[]
 
-  status      String     @default("COMPLETED") // COMPLETED | QUOTE | CANCELLED
-  cashShiftId String?
-  cashShift   CashShift? @relation(fields: [cashShiftId], references: [id])
-  issueInvoice Boolean   @default(true)
-  createdAt   DateTime
-  
+  status       String     @default("COMPLETED") // COMPLETED | QUOTE | CANCELLED
+  cashShiftId  String?
+  cashShift    CashShift? @relation(fields: [cashShiftId], references: [id])
+  issueInvoice Boolean    @default(true)
+  createdAt    DateTime
+
   fulfillment OrderFulfillment?
-  syncedAt    DateTime   @default(now())
+  syncedAt    DateTime          @default(now())
 
   lines    OrderLineItem[]
   invoices Invoice[]
@@ -353,6 +390,7 @@ model SaleOrder {
   @@index([source])
   @@index([customerId])
   @@index([paymentMethod])
+  @@schema("sales")
 }
 
 model SaleOrderVariance {
@@ -364,6 +402,8 @@ model SaleOrderVariance {
   difference  Float
   resolved    Boolean   @default(false)
   createdAt   DateTime  @default(now())
+
+  @@schema("sales")
 }
 
 model OrderLineItem {
@@ -384,6 +424,8 @@ model OrderLineItem {
   historicalCost Float? // Costo exacto (WAC) al momento de vender para cálculo retroactivo de ganancias
 
   returnLines SaleReturnLine[]
+
+  @@schema("sales")
 }
 
 // Soporte para pagos divididos en el POS
@@ -396,6 +438,8 @@ model SaleOrderPayment {
   amount          Float
   referenceId     String? // Referencia del cupón de tarjeta o transferencia
   createdAt       DateTime      @default(now())
+
+  @@schema("sales")
 }
 
 model SaleReturn {
@@ -410,6 +454,8 @@ model SaleReturn {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   lines             SaleReturnLine[]
+
+  @@schema("sales")
 }
 
 model SaleReturnLine {
@@ -424,6 +470,8 @@ model SaleReturnLine {
   unitPrice   Float // Precio original de venta
   condition   String         @default("NEW") // NEW | DEFECTIVE | USED
   reason      String?
+
+  @@schema("sales")
 }
 
 // ==========================================
@@ -449,6 +497,7 @@ model InventoryMovement {
   @@index([variantId])
   @@index([referenceId])
   @@index([createdAt])
+  @@schema("inventory")
 }
 
 model StockLevel {
@@ -469,6 +518,7 @@ model StockLevel {
 
   @@unique([variantId, warehouseId, batchId])
   @@index([variantId])
+  @@schema("inventory")
 }
 
 model StockReservation {
@@ -488,6 +538,7 @@ model StockReservation {
   @@index([status, expiresAt])
   @@index([orderId])
   @@index([cartId])
+  @@schema("inventory")
 }
 
 // Traslados inter-deposito - persistidos en DB (reemplaza array en memoria)
@@ -510,6 +561,7 @@ model StockTransfer {
   @@index([status])
   @@index([sourceWarehouseId])
   @@index([destinationWarehouseId])
+  @@schema("inventory")
 }
 
 model StockTransferLine {
@@ -521,6 +573,8 @@ model StockTransferLine {
   quantity         Int
   receivedQuantity Int? // Cantidad efectivamente recibida
   createdAt        DateTime       @default(now())
+
+  @@schema("inventory")
 }
 
 // ==========================================
@@ -539,6 +593,8 @@ model Supplier {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   purchaseOrders PurchaseOrder[]
+
+  @@schema("purchasing")
 }
 
 model PurchaseOrder {
@@ -558,6 +614,8 @@ model PurchaseOrder {
   updatedAt              DateTime       @updatedAt
   lines                  POLineItem[]
   receipts               GoodsReceipt[]
+
+  @@schema("purchasing")
 }
 
 model POLineItem {
@@ -572,6 +630,8 @@ model POLineItem {
   discountAmount   Float              @default(0)
   totalAmount      Float
   receiptLines     GoodsReceiptLine[]
+
+  @@schema("purchasing")
 }
 
 model GoodsReceipt {
@@ -587,22 +647,26 @@ model GoodsReceipt {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
   lines                  GoodsReceiptLine[]
+
+  @@schema("purchasing")
 }
 
 model GoodsReceiptLine {
-  id               String         @id @default(uuid())
-  receiptId        String
-  receipt          GoodsReceipt   @relation(fields: [receiptId], references: [id])
-  poLineItemId     String
-  poLineItem       POLineItem     @relation(fields: [poLineItemId], references: [id])
-  variantId        String
-  variant          ProductVariant @relation(fields: [variantId], references: [id]) // Relación formalizada
-  expectedQuantity Int
-  receivedQuantity Int
-  difference       Int
-  batchLot         String?        // Lote provisto al momento de recepción
-  batchExpirationDate DateTime?   // Vencimiento provisto al momento de recepción
-  notes            String?
+  id                  String         @id @default(uuid())
+  receiptId           String
+  receipt             GoodsReceipt   @relation(fields: [receiptId], references: [id])
+  poLineItemId        String
+  poLineItem          POLineItem     @relation(fields: [poLineItemId], references: [id])
+  variantId           String
+  variant             ProductVariant @relation(fields: [variantId], references: [id]) // Relación formalizada
+  expectedQuantity    Int
+  receivedQuantity    Int
+  difference          Int
+  batchLot            String? // Lote provisto al momento de recepción
+  batchExpirationDate DateTime? // Vencimiento provisto al momento de recepción
+  notes               String?
+
+  @@schema("purchasing")
 }
 
 // ==========================================
@@ -626,6 +690,8 @@ model Invoice {
   afipErrorMessage       String?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
+
+  @@schema("finance")
 }
 
 model FinancialAccount {
@@ -646,6 +712,8 @@ model FinancialAccount {
   saleOrders       SaleOrder[]
   paymentReceipts  PaymentReceipt[]
   treasuryReceipts TreasuryReceipt[]
+
+  @@schema("finance")
 }
 
 model FinancialTransaction {
@@ -657,6 +725,8 @@ model FinancialTransaction {
   referenceId String
   description String
   createdAt   DateTime         @default(now())
+
+  @@schema("finance")
 }
 
 model PaymentReceipt {
@@ -667,6 +737,8 @@ model PaymentReceipt {
   payerName   String
   referenceId String
   issuedAt    DateTime         @default(now())
+
+  @@schema("finance")
 }
 
 model TreasuryReceipt {
@@ -678,6 +750,8 @@ model TreasuryReceipt {
   referenceId String?
   description String?
   createdAt   DateTime         @default(now())
+
+  @@schema("finance")
 }
 
 model CashRegister {
@@ -692,6 +766,8 @@ model CashRegister {
   paymentMethods PaymentMethod[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+
+  @@schema("finance")
 }
 
 model PaymentMethod {
@@ -708,6 +784,8 @@ model PaymentMethod {
 
   // Relación inversa agregada
   orderPayments SaleOrderPayment[]
+
+  @@schema("finance")
 }
 
 model CashShift {
@@ -727,6 +805,8 @@ model CashShift {
   closedAt       DateTime?
   notes          String?
   sales          SaleOrder[]
+
+  @@schema("finance")
 }
 
 // ==========================================
@@ -751,6 +831,7 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@index([action])
+  @@schema("core")
 }
 
 // ==========================================
@@ -769,6 +850,8 @@ model IntegrationLog {
   attempts  Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@schema("core")
 }
 
 model OfflineSyncLog {
@@ -785,6 +868,8 @@ model OfflineSyncLog {
   serverTimestamp   DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  @@schema("core")
 }
 
 model WcVariantMapping {
@@ -796,6 +881,8 @@ model WcVariantMapping {
   updatedAt     DateTime @updatedAt
 
   variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@schema("core")
 }
 
 // ==========================================
@@ -817,6 +904,8 @@ model SystemSettings {
   pwa           Json     @default("{}")
   qr            Json     @default("{}")
   updatedAt     DateTime @updatedAt
+
+  @@schema("settings")
 }
 
 // ==========================================
@@ -826,15 +915,16 @@ model SystemSettings {
 model NotificationTemplate {
   id        String   @id @default(uuid())
   name      String
-  event     String   // e.g., 'SALE_CONFIRMED', 'LOW_STOCK_ALERT'
-  channel   String   // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
-  subject   String?  // Mostly for email
+  event     String // e.g., 'SALE_CONFIRMED', 'LOW_STOCK_ALERT'
+  channel   String // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
+  subject   String? // Mostly for email
   body      String   @db.Text
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([event, channel])
+  @@schema("core")
 }
 
 // ==========================================
@@ -852,6 +942,8 @@ model PromotionRule {
   validTo    DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  @@schema("core")
 }
 
 model PaymentIntent {
@@ -864,6 +956,8 @@ model PaymentIntent {
   status              String
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+
+  @@schema("core")
 }
 
 model OrderFulfillment {
@@ -880,6 +974,8 @@ model OrderFulfillment {
   deliveredAt    DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  @@schema("core")
 }
 
 model CartHold {
@@ -892,4 +988,6 @@ model CartHold {
   expiresAt   DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@schema("core")
 }

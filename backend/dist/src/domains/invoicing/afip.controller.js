@@ -17,6 +17,9 @@ const common_1 = require("@nestjs/common");
 const bullmq_1 = require("@nestjs/bullmq");
 const bullmq_2 = require("bullmq");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
+const passport_1 = require("@nestjs/passport");
+const common_2 = require("@nestjs/common");
 let AfipController = class AfipController {
     constructor(invoiceQueue) {
         this.invoiceQueue = invoiceQueue;
@@ -59,6 +62,7 @@ __decorate([
 ], AfipController.prototype, "retryJob", null);
 exports.AfipController = AfipController = __decorate([
     (0, common_1.Controller)('afip'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __param(0, (0, bullmq_1.InjectQueue)('afip_invoices')),
     __metadata("design:paramtypes", [bullmq_2.Queue])
 ], AfipController);

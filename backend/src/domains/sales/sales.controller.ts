@@ -1,11 +1,15 @@
-import { Controller, Post, Body, Get, Query, Param, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, Req, Patch } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
 @Controller('sales')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class SalesController {
   constructor(
     private readonly salesService: SalesService,
@@ -22,6 +26,12 @@ export class SalesController {
   @RequirePermissions({ action: 'read', subject: 'Sales' })
   async getReturns() {
     return { data: [], total: 0 };
+  }
+
+  @Patch(':id/status')
+  @RequirePermissions({ action: 'manage', subject: 'Sales' })
+  async updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
+    return this.salesService.updateOrderStatus(id, body.status);
   }
 
   @Post('bulk-import')

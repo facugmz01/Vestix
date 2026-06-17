@@ -26,7 +26,12 @@ import { AuditModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ReportsModule } from './modules/reports/reports.module';
-
+import { AuthModule } from './modules/auth/auth.module';
+import { LocationsModule } from './modules/locations/locations.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { PurchasingModule } from './modules/purchasing/purchasing.module';
+import { TransfersModule } from './modules/transfers/transfers.module';
+import { TreasuryModule } from './modules/treasury/treasury.module';
 
 @Module({
   imports: [
@@ -79,6 +84,12 @@ import { ReportsModule } from './modules/reports/reports.module';
     HealthModule,
     SettingsModule,
     ReportsModule,
+    AuthModule,
+    LocationsModule,
+    InventoryModule,
+    PurchasingModule,
+    TransfersModule,
+    TreasuryModule,
   ],
 })
 export class AppModule {}

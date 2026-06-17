@@ -15,84 +15,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalesController = void 0;
 const common_1 = require("@nestjs/common");
 const sales_service_1 = require("./sales.service");
-const checkout_orchestrator_1 = require("./checkout.orchestrator");
-const create_order_dto_1 = require("./dto/create-order.dto");
-const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const create_sale_dto_1 = require("./dto/create-sale.dto");
+const jwt_auth_guard_1 = require("../../core/auth/jwt-auth.guard");
+const roles_guard_1 = require("../../core/rbac/roles.guard");
+const roles_decorator_1 = require("../../core/rbac/roles.decorator");
 let SalesController = class SalesController {
-    constructor(salesService, checkoutOrchestrator) {
+    constructor(salesService) {
         this.salesService = salesService;
-        this.checkoutOrchestrator = checkoutOrchestrator;
     }
-    async checkout(createOrderDto) {
-        return this.checkoutOrchestrator.processCheckout(createOrderDto);
-    }
-    async getReturns() {
-        return { data: [], total: 0 };
-    }
-    async getOrders(query) {
-        return this.salesService.getOrders(query);
-    }
-    async getOrder(id) {
-        return this.salesService.getOrderById(id);
-    }
-    async confirmOrder(id) {
-        return this.checkoutOrchestrator.confirmQuotation(id);
-    }
-    async cancelOrder(id) {
-        return this.checkoutOrchestrator.cancelOrder(id);
+    async createSale(dto) {
+        const order = await this.salesService.createSale(dto);
+        return {
+            status: 'SUCCESS',
+            order,
+        };
     }
 };
 exports.SalesController = SalesController;
 __decorate([
     (0, common_1.Post)('checkout'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Sales' }),
+    (0, roles_decorator_1.Roles)('Cashier', 'Store Manager'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_order_dto_1.CreateOrderDto]),
+    __metadata("design:paramtypes", [create_sale_dto_1.CreateSaleDto]),
     __metadata("design:returntype", Promise)
-], SalesController.prototype, "checkout", null);
-__decorate([
-    (0, common_1.Get)('returns'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], SalesController.prototype, "getReturns", null);
-__decorate([
-    (0, common_1.Get)('orders'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
-    __param(0, (0, common_1.Query)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], SalesController.prototype, "getOrders", null);
-__decorate([
-    (0, common_1.Get)('orders/:id'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Sales' }),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], SalesController.prototype, "getOrder", null);
-__decorate([
-    (0, common_1.Post)('orders/:id/confirm'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Sales' }),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], SalesController.prototype, "confirmOrder", null);
-__decorate([
-    (0, common_1.Post)('orders/:id/cancel'),
-    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Sales' }),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], SalesController.prototype, "cancelOrder", null);
+], SalesController.prototype, "createSale", null);
 exports.SalesController = SalesController = __decorate([
     (0, common_1.Controller)('sales'),
-    __metadata("design:paramtypes", [sales_service_1.SalesService,
-        checkout_orchestrator_1.CheckoutOrchestrator])
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    __metadata("design:paramtypes", [sales_service_1.SalesService])
 ], SalesController);
 //# sourceMappingURL=sales.controller.js.map

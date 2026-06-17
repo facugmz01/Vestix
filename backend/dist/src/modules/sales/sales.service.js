@@ -11,80 +11,97 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalesService = void 0;
 const common_1 = require("@nestjs/common");
+const crypto_1 = require("crypto");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const inventory_service_1 = require("../inventory/inventory.service");
+const movement_type_enum_1 = require("../inventory/enums/movement-type.enum");
 let SalesService = class SalesService {
-    constructor(prisma) {
+    constructor(prisma, inventoryService) {
         this.prisma = prisma;
+        this.inventoryService = inventoryService;
     }
-    async getOrderById(id) {
-        const cleanId = id.replace(/^[VP]-/i, '');
-        const order = await this.prisma.saleOrder.findFirst({
-            where: {
-                OR: [
-                    { id: { equals: id } },
-                    { id: { startsWith: cleanId, mode: 'insensitive' } }
-                ]
-            },
-            include: {
-                lines: {
-                    include: {
-                        variant: {
-                            include: {
-                                product: true
-                            }
-                        }
-                    }
-                },
-                customer: true,
-                variance: true
+    async createSale(dto) {
+        return this.prisma.$transaction(async (tx) => {
+            if (dto.id) {
+                const existing = await tx.saleOrder.findUnique({ where: { id: dto.id }, include: { lines: true } });
+                if (existing) {
+                    return existing;
+                }
             }
+            let serverSubtotal = 0;
+            const orderLines = [];
+            for (const line of dto.lines) {
+                const variant = await tx.productVariant.findUnique({
+                    where: { id: line.variantId },
+                    include: { product: true },
+                });
+                if (!variant) {
+                    throw new common_1.BadRequestException(`Variant ${line.variantId} not found`);
+                }
+                const basePrice = line.unitPriceOverride ?? variant.basePrice;
+                const discountAmount = basePrice * ((line.discountPct || 0) / 100);
+                const lineTotal = (basePrice - discountAmount) * line.quantity;
+                serverSubtotal += lineTotal;
+                orderLines.push({
+                    variantId: line.variantId,
+                    categoryId: line.categoryId || variant.product.categoryId,
+                    quantity: line.quantity,
+                    basePrice: basePrice,
+                    discountAmount: discountAmount * line.quantity,
+                    finalPrice: lineTotal,
+                    historicalSku: variant.sku,
+                    historicalName: variant.product.name,
+                    historicalCost: variant.costPrice,
+                });
+                await this.inventoryService.recordMovement({
+                    variantId: line.variantId,
+                    quantity: line.quantity,
+                    type: movement_type_enum_1.MovementType.SALE,
+                    sourceWarehouseId: dto.warehouseId,
+                    unitCost: variant.costPrice,
+                }, tx);
+            }
+            const serverGrandTotal = serverSubtotal - (dto.cartDiscountTotal || 0);
+            const saleOrder = await tx.saleOrder.create({
+                data: {
+                    id: dto.id || (0, crypto_1.randomUUID)(),
+                    branchId: dto.branchId,
+                    warehouseId: dto.warehouseId,
+                    customerId: dto.customerId,
+                    cashShiftId: dto.cashShiftId,
+                    source: dto.source || 'POS',
+                    subtotal: serverSubtotal,
+                    cartDiscountTotal: dto.cartDiscountTotal || 0,
+                    grandTotal: serverGrandTotal,
+                    status: dto.status || 'COMPLETED',
+                    createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
+                    paymentMethod: dto.paymentMethod || 'CASH',
+                    paymentAccountId: dto.paymentAccountId,
+                    lines: {
+                        create: orderLines,
+                    },
+                },
+            });
+            const posTotal = dto.posGrandTotal ?? serverGrandTotal;
+            if (Math.abs(serverGrandTotal - posTotal) > 0.01) {
+                await tx.saleOrderVariance.create({
+                    data: {
+                        orderId: saleOrder.id,
+                        posTotal: posTotal,
+                        serverTotal: serverGrandTotal,
+                        difference: serverGrandTotal - posTotal,
+                        resolved: false,
+                    },
+                });
+            }
+            return saleOrder;
         });
-        return order;
-    }
-    async listRecentOrders(branchId) {
-        return this.prisma.saleOrder.findMany({
-            where: { branchId },
-            orderBy: { createdAt: 'desc' },
-            take: 50,
-            include: { lines: true, customer: true }
-        });
-    }
-    async getOrders(params) {
-        const page = parseInt(params.page) || 1;
-        const pageSize = parseInt(params.pageSize) || 15;
-        const skip = (page - 1) * pageSize;
-        const { search, status } = params;
-        const where = {};
-        if (status)
-            where.status = status;
-        if (search && search.trim() !== '') {
-            where.OR = [
-                { id: { contains: search, mode: 'insensitive' } },
-                { customer: { fullName: { contains: search, mode: 'insensitive' } } }
-            ];
-        }
-        const [data, total] = await Promise.all([
-            this.prisma.saleOrder.findMany({
-                where,
-                skip,
-                take: pageSize,
-                orderBy: { createdAt: 'desc' },
-                include: { lines: true, customer: true }
-            }),
-            this.prisma.saleOrder.count({ where })
-        ]);
-        return {
-            data: data.map(order => ({
-                ...order,
-                customerName: order.customer?.fullName || 'Consumidor Final'
-            })),
-            total
-        };
     }
 };
 exports.SalesService = SalesService;
 exports.SalesService = SalesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        inventory_service_1.InventoryService])
 ], SalesService);
 //# sourceMappingURL=sales.service.js.map

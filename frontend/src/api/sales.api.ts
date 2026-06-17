@@ -1,4 +1,4 @@
-import { get, post } from './client';
+import { get, post, patch } from './client';
 import { cleanParams } from './requestUtils';
 import type { SaleOrder, PagedResponse } from '@/types';
 
@@ -61,4 +61,7 @@ export const salesApi = {
 
   sendManualReceipt: (id: string, payload: { channel: 'EMAIL' | 'WHATSAPP'; recipient: string }) =>
     post<{ success: boolean; message: string }>(`/sales/orders/${id}/send-receipt`, payload),
+
+  updateStatus: (id: string, status: string) =>
+    patch<SaleOrder>(`/sales/${id}/status`, { status }),
 };

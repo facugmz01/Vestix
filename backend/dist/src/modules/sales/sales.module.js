@@ -8,47 +8,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalesModule = void 0;
 const common_1 = require("@nestjs/common");
-const passport_1 = require("@nestjs/passport");
-const jwt_1 = require("@nestjs/jwt");
 const sales_service_1 = require("./sales.service");
 const sales_controller_1 = require("./sales.controller");
-const returns_controller_1 = require("./returns/returns.controller");
-const returns_service_1 = require("./returns/returns.service");
-const orders_fulfillment_service_1 = require("./orders/orders-fulfillment.service");
-const checkout_orchestrator_1 = require("./checkout.orchestrator");
-const afip_module_1 = require("../afip/afip.module");
-const storefront_controller_1 = require("./storefront.controller");
-const storefront_auth_controller_1 = require("./storefront-auth.controller");
-const storefront_jwt_strategy_1 = require("./storefront-jwt.strategy");
-const mercadopago_service_1 = require("./mercadopago.service");
+const prisma_module_1 = require("../../core/prisma/prisma.module");
+const inventory_module_1 = require("../inventory/inventory.module");
 let SalesModule = class SalesModule {
 };
 exports.SalesModule = SalesModule;
 exports.SalesModule = SalesModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            afip_module_1.AfipModule,
-            passport_1.PassportModule,
-            jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET,
-                signOptions: { expiresIn: '7d' },
-            }),
-        ],
-        controllers: [
-            sales_controller_1.SalesController,
-            returns_controller_1.ReturnsController,
-            storefront_controller_1.StorefrontController,
-            storefront_auth_controller_1.StorefrontAuthController,
-        ],
-        providers: [
-            sales_service_1.SalesService,
-            returns_service_1.ReturnsService,
-            orders_fulfillment_service_1.OrdersFulfillmentService,
-            checkout_orchestrator_1.CheckoutOrchestrator,
-            storefront_jwt_strategy_1.StorefrontJwtStrategy,
-            mercadopago_service_1.MercadoPagoService,
-        ],
-        exports: [sales_service_1.SalesService, returns_service_1.ReturnsService, orders_fulfillment_service_1.OrdersFulfillmentService, checkout_orchestrator_1.CheckoutOrchestrator],
+        imports: [prisma_module_1.PrismaModule, inventory_module_1.InventoryModule],
+        providers: [sales_service_1.SalesService],
+        controllers: [sales_controller_1.SalesController],
     })
 ], SalesModule);
 //# sourceMappingURL=sales.module.js.map

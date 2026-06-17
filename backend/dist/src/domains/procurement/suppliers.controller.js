@@ -18,6 +18,9 @@ const suppliers_service_1 = require("./suppliers.service");
 const create_supplier_dto_1 = require("./dto/create-supplier.dto");
 const bulk_balances_dto_1 = require("../sales/dto/bulk-balances.dto");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
+const passport_1 = require("@nestjs/passport");
+const common_2 = require("@nestjs/common");
 let SuppliersController = class SuppliersController {
     constructor(suppliersService) {
         this.suppliersService = suppliersService;
@@ -93,6 +96,7 @@ __decorate([
 ], SuppliersController.prototype, "remove", null);
 exports.SuppliersController = SuppliersController = __decorate([
     (0, common_1.Controller)('suppliers'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [suppliers_service_1.SuppliersService])
 ], SuppliersController);
 //# sourceMappingURL=suppliers.controller.js.map

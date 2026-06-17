@@ -198,6 +198,14 @@ export class NotificationSettingsDto {
 
   @IsOptional()
   @IsString()
+  openWaOtpUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  openWaOtpSession?: string;
+
+  @IsOptional()
+  @IsString()
   fcmServerKey?: string;
 }
 

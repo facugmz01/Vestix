@@ -32,11 +32,8 @@ export declare class SkuBarcodeSettingsDto {
     nextSkuSequence?: number;
 }
 export declare class InvoicingSettingsDto {
-    fiscalPointSale?: number;
-    afipEnvironment?: 'homologation' | 'production';
     defaultInvoiceType?: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C';
     autoIssueOnSale?: boolean;
-    invoiceFooterText?: string;
 }
 export declare class NotificationSettingsDto {
     emailEnabled?: boolean;
@@ -55,10 +52,15 @@ export declare class NotificationSettingsDto {
     smsGatewayUrl?: string;
     openWaUrl?: string;
     openWaSession?: string;
+    openWaOtpUrl?: string;
+    openWaOtpSession?: string;
     fcmServerKey?: string;
 }
 export declare class IntegrationSettingsDto {
     mercadopagoEnabled?: boolean;
+    mpPublicKey?: string;
+    mpAccessToken?: string;
+    mpWebhookSecret?: string;
     mercadolibreEnabled?: boolean;
     woocommerceEnabled?: boolean;
     shopifyEnabled?: boolean;
@@ -111,8 +113,6 @@ export declare class StorefrontSettingsDto {
     defaultSort?: string;
     hideOutOfStock?: boolean;
     hideBrandFilters?: boolean;
-    mpPublicKey?: string;
-    mpAccessToken?: string;
     transferCbu?: string;
     acceptCash?: boolean;
     shippingInfo?: string;

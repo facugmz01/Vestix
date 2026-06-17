@@ -68,7 +68,14 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
     async readConfigs() {
         const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
         const intSettings = settings?.integrations || {};
+        const arcaSettings = settings?.arca || {};
         return {
+            mercadopago: {
+                isActive: intSettings.mercadopagoEnabled,
+                publicKey: intSettings.mpPublicKey,
+                accessToken: intSettings.mpAccessToken,
+                webhookSecret: intSettings.mpWebhookSecret,
+            },
             woocommerce: {
                 isActive: intSettings.woocommerceEnabled,
                 storeUrl: intSettings.wooStoreUrl,
@@ -76,8 +83,9 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
                 consumerSecret: intSettings.wooConsumerSecret,
             },
             afip: {
-                isActive: true,
-                cuit: '30-00000000-0',
+                isActive: arcaSettings.enabled,
+                cuit: arcaSettings.iibb,
+                environment: arcaSettings.environment,
             },
             mercadolibre: {
                 isActive: intSettings.mercadolibreEnabled,
@@ -93,13 +101,18 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
     }
     async getAllIntegrations() {
         const configs = await this.readConfigs();
-        const providers = ['WOOCOMMERCE', 'AFIP', 'MERCADOLIBRE', 'SHOPIFY'];
+        const providers = ['MERCADOPAGO', 'WOOCOMMERCE', 'AFIP', 'MERCADOLIBRE', 'SHOPIFY'];
         return providers.map(prov => {
             const provLower = prov.toLowerCase();
             const provConfig = configs[provLower] || {};
             const isActive = provConfig.isActive ?? false;
             let status = 'PENDING_CONFIG';
-            if (prov === 'WOOCOMMERCE') {
+            if (prov === 'MERCADOPAGO') {
+                if (provConfig.accessToken && provConfig.publicKey) {
+                    status = isActive ? 'ACTIVE' : 'INACTIVE';
+                }
+            }
+            else if (prov === 'WOOCOMMERCE') {
                 if (provConfig.storeUrl && provConfig.consumerKey && provConfig.consumerSecret) {
                     status = isActive ? 'ACTIVE' : 'INACTIVE';
                 }
@@ -119,9 +132,18 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
                     status = isActive ? 'ACTIVE' : 'INACTIVE';
                 }
             }
+            let name = prov;
+            if (prov === 'WOOCOMMERCE')
+                name = 'WooCommerce';
+            if (prov === 'MERCADOLIBRE')
+                name = 'Mercado Libre';
+            if (prov === 'SHOPIFY')
+                name = 'Shopify';
+            if (prov === 'MERCADOPAGO')
+                name = 'Mercado Pago';
             return {
                 id: provLower,
-                name: prov === 'WOOCOMMERCE' ? 'WooCommerce' : (prov === 'MERCADOLIBRE' ? 'Mercado Libre' : (prov === 'SHOPIFY' ? 'Shopify' : 'AFIP')),
+                name,
                 provider: prov,
                 status,
                 lastSyncAt: provConfig.lastSyncAt ? new Date(provConfig.lastSyncAt).toISOString() : null,
@@ -139,10 +161,50 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
         return found;
     }
     async saveConfig(id, config) {
-        throw new common_1.BadRequestException('Por favor, configura las integraciones desde la pestaña de Ajustes del Sistema.');
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const currentInt = settings?.integrations || {};
+        let updatedInt = { ...currentInt };
+        if (id === 'mercadopago') {
+            updatedInt.mpPublicKey = config.publicKey;
+            updatedInt.mpAccessToken = config.accessToken;
+            updatedInt.mpWebhookSecret = config.webhookSecret;
+        }
+        else if (id === 'mercadolibre') {
+            updatedInt.mlAppId = config.clientId;
+            updatedInt.mlSecretKey = config.clientSecret;
+        }
+        else if (id === 'woocommerce') {
+            updatedInt.wooStoreUrl = config.storeUrl;
+            updatedInt.wooConsumerKey = config.consumerKey;
+            updatedInt.wooConsumerSecret = config.consumerSecret;
+        }
+        else if (id === 'shopify') {
+            updatedInt.shopifyStoreUrl = config.shopDomain;
+            updatedInt.shopifyAccessToken = config.accessToken;
+        }
+        await this.prisma.systemSettings.update({
+            where: { id: 'default' },
+            data: { integrations: updatedInt }
+        });
+        return { success: true };
     }
     async toggleActive(id, isActive) {
-        throw new common_1.BadRequestException('Por favor, activa/desactiva integraciones desde la pestaña de Ajustes del Sistema.');
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const currentInt = settings?.integrations || {};
+        let updatedInt = { ...currentInt };
+        if (id === 'mercadopago')
+            updatedInt.mercadopagoEnabled = isActive;
+        else if (id === 'mercadolibre')
+            updatedInt.mercadolibreEnabled = isActive;
+        else if (id === 'woocommerce')
+            updatedInt.woocommerceEnabled = isActive;
+        else if (id === 'shopify')
+            updatedInt.shopifyEnabled = isActive;
+        await this.prisma.systemSettings.update({
+            where: { id: 'default' },
+            data: { integrations: updatedInt }
+        });
+        return { success: true };
     }
     async testConnection(id) {
         if (id.toLowerCase() === 'woocommerce') {

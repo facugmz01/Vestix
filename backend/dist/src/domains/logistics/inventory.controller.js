@@ -17,6 +17,9 @@ const common_1 = require("@nestjs/common");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
 const inventory_service_1 = require("./inventory.service");
 const transfers_service_1 = require("./transfers/transfers.service");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
+const passport_1 = require("@nestjs/passport");
+const common_2 = require("@nestjs/common");
 let InventoryController = class InventoryController {
     constructor(inventoryService, transfersService) {
         this.inventoryService = inventoryService;
@@ -25,8 +28,11 @@ let InventoryController = class InventoryController {
     getStockLevels(query) {
         return this.inventoryService.findAllStock(query);
     }
-    adjustStock(dto) {
-        return this.inventoryService.adjustStock(dto);
+    adjustStock(body) {
+        return this.inventoryService.recordMovement(body);
+    }
+    processStockAudit(body) {
+        return this.inventoryService.processStockAudit(body);
     }
     async getMovements(query) {
         const res = await this.inventoryService.findAllMovements(query);
@@ -74,6 +80,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], InventoryController.prototype, "adjustStock", null);
+__decorate([
+    (0, common_1.Post)('audit'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Inventory' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "processStockAudit", null);
 __decorate([
     (0, common_1.Get)('movements'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Inventory' }),
@@ -151,6 +165,7 @@ __decorate([
 ], InventoryController.prototype, "getReservations", null);
 exports.InventoryController = InventoryController = __decorate([
     (0, common_1.Controller)('inventory'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [inventory_service_1.InventoryService,
         transfers_service_1.TransfersService])
 ], InventoryController);

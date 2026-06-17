@@ -1,8 +1,34 @@
 import { PurchasingService } from './purchasing.service';
+import { CreatePurchaseOrderDto } from './dto/create-po.dto';
+import { ReceiveGoodsDto } from './dto/receive-goods.dto';
 export declare class PurchasingController {
     private readonly purchasingService;
     constructor(purchasingService: PurchasingService);
-    findAll(query: any): Promise<{
+    createPurchaseOrder(dto: CreatePurchaseOrderDto): Promise<{
+        id: string;
+        supplierId: string;
+        destinationWarehouseId: string;
+        status: string;
+        totalAmount: number;
+        paidAmount: number;
+        currency: string;
+        notes: string | null;
+        issuedAt: Date | null;
+        completedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    receiveGoods(dto: ReceiveGoodsDto): Promise<{
+        id: string;
+        purchaseOrderId: string;
+        destinationWarehouseId: string;
+        receivedByUserId: string | null;
+        status: string;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    findAllOrders(query: any): Promise<{
         data: ({
             supplier: {
                 id: string;
@@ -16,16 +42,6 @@ export declare class PurchasingController {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            lines: {
-                id: string;
-                purchaseOrderId: string;
-                variantId: string;
-                orderedQuantity: number;
-                receivedQuantity: number;
-                unitCost: number;
-                discountAmount: number;
-                totalAmount: number;
-            }[];
         } & {
             id: string;
             supplierId: string;
@@ -44,57 +60,7 @@ export declare class PurchasingController {
         page: number;
         pageSize: number;
     }>;
-    processDirectPurchase(dto: any): Promise<{
-        lines: {
-            id: string;
-            purchaseOrderId: string;
-            variantId: string;
-            orderedQuantity: number;
-            receivedQuantity: number;
-            unitCost: number;
-            discountAmount: number;
-            totalAmount: number;
-        }[];
-    } & {
-        id: string;
-        supplierId: string;
-        destinationWarehouseId: string;
-        status: string;
-        totalAmount: number;
-        paidAmount: number;
-        currency: string;
-        notes: string | null;
-        issuedAt: Date | null;
-        completedAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-    }>;
-    createPO(dto: any): Promise<{
-        lines: {
-            id: string;
-            purchaseOrderId: string;
-            variantId: string;
-            orderedQuantity: number;
-            receivedQuantity: number;
-            unitCost: number;
-            discountAmount: number;
-            totalAmount: number;
-        }[];
-    } & {
-        id: string;
-        supplierId: string;
-        destinationWarehouseId: string;
-        status: string;
-        totalAmount: number;
-        paidAmount: number;
-        currency: string;
-        notes: string | null;
-        issuedAt: Date | null;
-        completedAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-    }>;
-    findOne(id: string): Promise<{
+    findOneOrder(id: string): Promise<{
         supplier: {
             id: string;
             companyName: string;
@@ -116,10 +82,13 @@ export declare class PurchasingController {
                     description: string | null;
                     categoryId: string;
                     brandId: string | null;
+                    type: import(".prisma/client").$Enums.ProductType;
                     isVariable: boolean;
+                    manageBatches: boolean;
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
+                    preferredSupplierId: string | null;
                     images: import(".prisma/client").Prisma.JsonValue;
                     metadata: import(".prisma/client").Prisma.JsonValue;
                     createdAt: Date;
@@ -164,18 +133,7 @@ export declare class PurchasingController {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    update(id: string, dto: any): Promise<{
-        lines: {
-            id: string;
-            purchaseOrderId: string;
-            variantId: string;
-            orderedQuantity: number;
-            receivedQuantity: number;
-            unitCost: number;
-            discountAmount: number;
-            totalAmount: number;
-        }[];
-    } & {
+    issueOrder(id: string): import(".prisma/client").Prisma.Prisma__PurchaseOrderClient<{
         id: string;
         supplierId: string;
         destinationWarehouseId: string;
@@ -188,8 +146,18 @@ export declare class PurchasingController {
         completedAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+    receiveOrder(id: string, dto: ReceiveGoodsDto): Promise<{
+        id: string;
+        purchaseOrderId: string;
+        destinationWarehouseId: string;
+        receivedByUserId: string | null;
+        status: string;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
-    remove(id: string): Promise<{
+    removeOrder(id: string): import(".prisma/client").Prisma.Prisma__PurchaseOrderClient<{
         id: string;
         supplierId: string;
         destinationWarehouseId: string;
@@ -200,6 +168,93 @@ export declare class PurchasingController {
         notes: string | null;
         issuedAt: Date | null;
         completedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+    findAllReceipts(query: any): Promise<{
+        data: ({
+            lines: {
+                id: string;
+                receiptId: string;
+                poLineItemId: string;
+                variantId: string;
+                expectedQuantity: number;
+                receivedQuantity: number;
+                difference: number;
+                batchLot: string | null;
+                batchExpirationDate: Date | null;
+                notes: string | null;
+            }[];
+        } & {
+            id: string;
+            purchaseOrderId: string;
+            destinationWarehouseId: string;
+            receivedByUserId: string | null;
+            status: string;
+            notes: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        })[];
+        total: number;
+        page: number;
+        pageSize: number;
+    }>;
+    findOneReceipt(id: string): Promise<{
+        lines: ({
+            variant: {
+                product: {
+                    id: string;
+                    name: string;
+                    baseSku: string | null;
+                    description: string | null;
+                    categoryId: string;
+                    brandId: string | null;
+                    type: import(".prisma/client").$Enums.ProductType;
+                    isVariable: boolean;
+                    manageBatches: boolean;
+                    costPrice: number;
+                    isActive: boolean;
+                    isPublished: boolean;
+                    preferredSupplierId: string | null;
+                    images: import(".prisma/client").Prisma.JsonValue;
+                    metadata: import(".prisma/client").Prisma.JsonValue;
+                    createdAt: Date;
+                    updatedAt: Date;
+                };
+            } & {
+                id: string;
+                productId: string;
+                sku: string;
+                barcode: string | null;
+                size: string | null;
+                color: string | null;
+                imageUrl: string | null;
+                costPrice: number;
+                basePrice: number;
+                isActive: boolean;
+                attributes: import(".prisma/client").Prisma.JsonValue;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+        } & {
+            id: string;
+            receiptId: string;
+            poLineItemId: string;
+            variantId: string;
+            expectedQuantity: number;
+            receivedQuantity: number;
+            difference: number;
+            batchLot: string | null;
+            batchExpirationDate: Date | null;
+            notes: string | null;
+        })[];
+    } & {
+        id: string;
+        purchaseOrderId: string;
+        destinationWarehouseId: string;
+        receivedByUserId: string | null;
+        status: string;
+        notes: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;

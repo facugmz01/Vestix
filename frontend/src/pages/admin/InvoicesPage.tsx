@@ -9,6 +9,7 @@ import {
 
 import { invoicesApi } from '@/api/invoices.api';
 import { queryKeys } from '@/api/queryKeys';
+import { AfipFailedJobs } from '@/features/invoicing/components/AfipFailedJobs';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { InvoiceStatusBadge } from '@/features/finance/invoices/components/InvoiceStatusBadge';
 import { IssueInvoiceDrawer } from '@/features/finance/invoices/components/IssueInvoiceDrawer';

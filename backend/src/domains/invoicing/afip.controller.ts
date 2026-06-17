@@ -2,8 +2,12 @@ import { Controller, Get, Post, Param, NotFoundException } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { UseGuards } from '@nestjs/common';
 
 @Controller('afip')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class AfipController {
   constructor(
     @InjectQueue('afip_invoices') private readonly invoiceQueue: Queue,

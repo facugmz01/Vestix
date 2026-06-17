@@ -4,11 +4,11 @@ import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { UpdateBranchConfigDto } from './dto/update-branch-config.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
-// import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
-// import { AuthGuard } from '../../core/guards/auth.guard';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('branches')
-// @UseGuards(AuthGuard, PermissionsGuard)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}
 

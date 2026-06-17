@@ -17,6 +17,9 @@ const common_1 = require("@nestjs/common");
 const purchasing_service_1 = require("./purchasing.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
 const bulk_purchases_dto_1 = require("./dto/bulk-purchases.dto");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
+const passport_1 = require("@nestjs/passport");
+const common_2 = require("@nestjs/common");
 let PurchasingController = class PurchasingController {
     constructor(purchasingService) {
         this.purchasingService = purchasingService;
@@ -29,6 +32,9 @@ let PurchasingController = class PurchasingController {
     }
     processDirectPurchase(dto) {
         return this.purchasingService.processDirectPurchase(dto);
+    }
+    autoReplenish() {
+        return this.purchasingService.generateReplenishmentOrders();
     }
     createPO(dto) {
         return this.purchasingService.createPO(dto);
@@ -69,6 +75,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PurchasingController.prototype, "processDirectPurchase", null);
 __decorate([
+    (0, common_1.Post)('auto-replenish'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Purchasing' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], PurchasingController.prototype, "autoReplenish", null);
+__decorate([
     (0, common_1.Post)('orders'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Purchasing' }),
     __param(0, (0, common_1.Body)()),
@@ -103,6 +116,7 @@ __decorate([
 ], PurchasingController.prototype, "remove", null);
 exports.PurchasingController = PurchasingController = __decorate([
     (0, common_1.Controller)('purchasing'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [purchasing_service_1.PurchasingService])
 ], PurchasingController);
 //# sourceMappingURL=purchasing.controller.js.map

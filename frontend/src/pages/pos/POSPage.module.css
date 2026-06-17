@@ -535,3 +535,29 @@
   font-size: 15px;
   font-weight: 500;
 }
+
+/* RESPONSIVE DESIGN (Mobile / Tablets) */
+@media (max-width: 1024px) {
+  .main {
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+    overflow-y: auto;
+  }
+  .productsArea {
+    flex: none;
+    height: 55vh;
+  }
+  .cartArea {
+    flex: none;
+    min-height: 50vh;
+  }
+  .actionButtons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .productsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    padding: 12px;
+  }
+}
+

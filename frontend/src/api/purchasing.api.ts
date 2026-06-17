@@ -12,4 +12,7 @@ export const purchasingApi = {
 
   searchCatalog: (query: string) =>
     apiClient.get('/pos/catalog/search', { params: { q: query } }).then(res => res.data),
+
+  autoReplenish: () =>
+    apiClient.post('/purchasing/auto-replenish').then(res => res.data),
 };

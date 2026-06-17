@@ -19,6 +19,9 @@ const checkout_orchestrator_1 = require("./checkout.orchestrator");
 const create_order_dto_1 = require("./dto/create-order.dto");
 const bulk_sales_dto_1 = require("./dto/bulk-sales.dto");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const common_2 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
 let SalesController = class SalesController {
     constructor(salesService, checkoutOrchestrator) {
         this.salesService = salesService;
@@ -29,6 +32,9 @@ let SalesController = class SalesController {
     }
     async getReturns() {
         return { data: [], total: 0 };
+    }
+    async updateStatus(id, body) {
+        return this.salesService.updateOrderStatus(id, body.status);
     }
     async bulkImportSales(dto) {
         return this.salesService.bulkImportSales(dto);
@@ -66,6 +72,15 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "getReturns", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Sales' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "updateStatus", null);
 __decorate([
     (0, common_1.Post)('bulk-import'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Sales' }),
@@ -117,6 +132,7 @@ __decorate([
 ], SalesController.prototype, "sendManualReceipt", null);
 exports.SalesController = SalesController = __decorate([
     (0, common_1.Controller)('sales'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [sales_service_1.SalesService,
         checkout_orchestrator_1.CheckoutOrchestrator])
 ], SalesController);

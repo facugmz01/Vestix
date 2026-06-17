@@ -10,18 +10,16 @@ exports.PurchasingModule = void 0;
 const common_1 = require("@nestjs/common");
 const purchasing_service_1 = require("./purchasing.service");
 const purchasing_controller_1 = require("./purchasing.controller");
-const receipts_controller_1 = require("./receipts/receipts.controller");
-const goods_receipt_service_1 = require("./receipts/goods-receipt.service");
 const prisma_module_1 = require("../../core/prisma/prisma.module");
+const inventory_module_1 = require("../inventory/inventory.module");
 let PurchasingModule = class PurchasingModule {
 };
 exports.PurchasingModule = PurchasingModule;
 exports.PurchasingModule = PurchasingModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
-        controllers: [purchasing_controller_1.PurchasingController, receipts_controller_1.ReceiptsController],
-        providers: [purchasing_service_1.PurchasingService, goods_receipt_service_1.GoodsReceiptService],
-        exports: [purchasing_service_1.PurchasingService, goods_receipt_service_1.GoodsReceiptService]
+        imports: [prisma_module_1.PrismaModule, inventory_module_1.InventoryModule],
+        providers: [purchasing_service_1.PurchasingService],
+        controllers: [purchasing_controller_1.PurchasingController]
     })
 ], PurchasingModule);
 //# sourceMappingURL=purchasing.module.js.map

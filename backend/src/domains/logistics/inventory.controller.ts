@@ -2,8 +2,12 @@ import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { InventoryService } from './inventory.service';
 import { TransfersService } from './transfers/transfers.service';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { UseGuards } from '@nestjs/common';
 
 @Controller('inventory')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class InventoryController {
   constructor(
     private readonly inventoryService: InventoryService,
@@ -18,8 +22,14 @@ export class InventoryController {
 
   @Post('stock/adjust')
   @RequirePermissions({ action: 'manage', subject: 'Inventory' })
-  adjustStock(@Body() dto: any) {
-    return this.inventoryService.adjustStock(dto);
+  adjustStock(@Body() body: any) {
+    return this.inventoryService.recordMovement(body);
+  }
+
+  @Post('audit')
+  @RequirePermissions({ action: 'manage', subject: 'Inventory' })
+  processStockAudit(@Body() body: { warehouseId: string; items: { variantId: string; batchId?: string; countedQuantity: number }[] }) {
+    return this.inventoryService.processStockAudit(body);
   }
 
   @Get('movements')

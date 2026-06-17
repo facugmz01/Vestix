@@ -66,4 +66,7 @@ export const inventoryApi = {
 
   getMovementDetail: (id: string) =>
     get<EnrichedMovement>(`/inventory/movements/${id}`),
+
+  submitStockAudit: (dto: { warehouseId: string; items: { variantId: string; batchId?: string; countedQuantity: number }[] }) =>
+    post<{ success: boolean; adjustmentsMade: number }>('/inventory/audit', dto),
 };

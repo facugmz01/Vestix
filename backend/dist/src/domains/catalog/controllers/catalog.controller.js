@@ -26,6 +26,8 @@ const update_price_list_dto_1 = require("../dto/update-price-list.dto");
 const bulk_product_dto_1 = require("../dto/bulk-product.dto");
 const bulk_update_prices_dto_1 = require("../dto/bulk-update-prices.dto");
 const require_permissions_decorator_1 = require("../../../core/rbac/decorators/require-permissions.decorator");
+const passport_1 = require("@nestjs/passport");
+const permissions_guard_1 = require("../../../core/rbac/guards/permissions.guard");
 let CategoriesController = class CategoriesController {
     constructor(categoriesService) {
         this.categoriesService = categoriesService;
@@ -78,6 +80,7 @@ __decorate([
 ], CategoriesController.prototype, "remove", null);
 exports.CategoriesController = CategoriesController = __decorate([
     (0, common_1.Controller)('categories'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [taxonomy_service_1.CategoriesService])
 ], CategoriesController);
 let BrandsController = class BrandsController {
@@ -132,6 +135,7 @@ __decorate([
 ], BrandsController.prototype, "remove", null);
 exports.BrandsController = BrandsController = __decorate([
     (0, common_1.Controller)('brands'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [taxonomy_service_1.BrandsService])
 ], BrandsController);
 let ProductsController = class ProductsController {
@@ -266,6 +270,7 @@ __decorate([
 ], ProductsController.prototype, "remove", null);
 exports.ProductsController = ProductsController = __decorate([
     (0, common_1.Controller)('products'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [products_service_1.ProductsService])
 ], ProductsController);
 let VariantsController = class VariantsController {
@@ -310,6 +315,7 @@ __decorate([
 ], VariantsController.prototype, "delete", null);
 exports.VariantsController = VariantsController = __decorate([
     (0, common_1.Controller)('variants'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [products_service_1.ProductsService])
 ], VariantsController);
 let AttributesController = class AttributesController {
@@ -364,6 +370,7 @@ __decorate([
 ], AttributesController.prototype, "delete", null);
 exports.AttributesController = AttributesController = __decorate([
     (0, common_1.Controller)('attributes'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [taxonomy_service_1.AttributesService])
 ], AttributesController);
 let PriceListController = class PriceListController {
@@ -417,7 +424,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PriceListController.prototype, "delete", null);
 exports.PriceListController = PriceListController = __decorate([
-    (0, common_1.Controller)('pricing'),
+    (0, common_1.Controller)('price-lists'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [taxonomy_service_1.PriceListService])
 ], PriceListController);
 //# sourceMappingURL=catalog.controller.js.map

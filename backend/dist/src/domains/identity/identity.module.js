@@ -16,6 +16,7 @@ const jwt_strategy_1 = require("./jwt.strategy");
 const users_service_1 = require("./users.service");
 const users_controller_1 = require("./users.controller");
 const roles_controller_1 = require("./roles.controller");
+const roles_service_1 = require("./roles.service");
 let IdentityModule = class IdentityModule {
 };
 exports.IdentityModule = IdentityModule;
@@ -30,8 +31,8 @@ exports.IdentityModule = IdentityModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController, users_controller_1.UsersController, roles_controller_1.RolesController],
-        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, users_service_1.UsersService],
-        exports: [auth_service_1.AuthService, users_service_1.UsersService],
+        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, users_service_1.UsersService, roles_service_1.RolesService],
+        exports: [auth_service_1.AuthService, users_service_1.UsersService, roles_service_1.RolesService],
     })
 ], IdentityModule);
 //# sourceMappingURL=identity.module.js.map

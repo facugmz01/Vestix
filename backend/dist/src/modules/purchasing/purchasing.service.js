@@ -8,202 +8,181 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var PurchasingService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PurchasingService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
-const stock_movement_service_1 = require("../inventory/stock-movement.service");
-let PurchasingService = PurchasingService_1 = class PurchasingService {
-    constructor(prisma, stockMovementService) {
+const inventory_service_1 = require("../inventory/inventory.service");
+const movement_type_enum_1 = require("../inventory/enums/movement-type.enum");
+let PurchasingService = class PurchasingService {
+    constructor(prisma, inventoryService) {
         this.prisma = prisma;
-        this.stockMovementService = stockMovementService;
-        this.logger = new common_1.Logger(PurchasingService_1.name);
+        this.inventoryService = inventoryService;
     }
-    async createPO(dto) {
-        try {
-            const totalAmount = (dto.lines || []).reduce((sum, l) => sum + (l.orderedQuantity * l.unitCost), 0);
-            return await this.prisma.purchaseOrder.create({
-                data: {
-                    supplierId: dto.supplierId,
-                    destinationWarehouseId: dto.destinationWarehouseId,
-                    status: 'DRAFT',
-                    totalAmount: totalAmount,
-                    paidAmount: 0,
-                    currency: dto.currency || 'ARS',
-                    notes: dto.notes,
-                    lines: {
-                        create: (dto.lines || []).map(l => ({
-                            variantId: l.variantId,
-                            orderedQuantity: l.orderedQuantity,
-                            unitCost: l.unitCost,
-                            totalAmount: l.orderedQuantity * l.unitCost
-                        }))
-                    }
+    async createPurchaseOrder(dto) {
+        let totalAmount = 0;
+        const lines = dto.lines.map(line => {
+            const lineTotal = line.orderedQuantity * line.unitCost;
+            totalAmount += lineTotal;
+            return {
+                variantId: line.variantId,
+                orderedQuantity: line.orderedQuantity,
+                unitCost: line.unitCost,
+                totalAmount: lineTotal,
+            };
+        });
+        return this.prisma.purchaseOrder.create({
+            data: {
+                supplierId: dto.supplierId,
+                destinationWarehouseId: dto.destinationWarehouseId,
+                status: 'ISSUED',
+                totalAmount,
+                notes: dto.notes,
+                lines: {
+                    create: lines,
                 },
-                include: { lines: true }
-            });
-        }
-        catch (error) {
-            this.logger.error(`Error creating PO: ${error.message}`, error.stack);
-            throw new common_1.BadRequestException('Error al crear la orden de compra. Verificá los datos o sincronizá la base de datos.');
-        }
-    }
-    async processDirectPurchase(dto) {
-        const totalAmount = dto.lines.reduce((sum, l) => sum + (l.quantity * l.unitCost) - (l.discountAmount || 0), 0);
-        const paidAmount = dto.paymentAmount || 0;
-        return this.prisma.$transaction(async (tx) => {
-            const po = await tx.purchaseOrder.create({
-                data: {
-                    supplierId: dto.supplierId,
-                    destinationWarehouseId: dto.warehouseId,
-                    status: 'ISSUED',
-                    totalAmount,
-                    paidAmount,
-                    completedAt: null,
-                    notes: dto.notes,
-                    lines: {
-                        create: dto.lines.map(l => ({
-                            variantId: l.variantId,
-                            orderedQuantity: l.quantity,
-                            receivedQuantity: 0,
-                            unitCost: l.unitCost,
-                            discountAmount: l.discountAmount || 0,
-                            totalAmount: (l.quantity * l.unitCost) - (l.discountAmount || 0)
-                        }))
-                    }
-                },
-                include: { lines: true }
-            });
-            const remainingDebt = totalAmount - paidAmount;
-            await tx.supplier.update({
-                where: { id: dto.supplierId },
-                data: { balance: { increment: remainingDebt } }
-            });
-            if (paidAmount > 0 && dto.paymentAccountId) {
-                await tx.financialTransaction.create({
-                    data: {
-                        accountId: dto.paymentAccountId,
-                        type: 'CREDIT',
-                        amount: paidAmount,
-                        referenceId: po.id,
-                        description: `Pago a proveedor por compra ${po.id}`
-                    }
-                });
-                await tx.financialAccount.update({
-                    where: { id: dto.paymentAccountId },
-                    data: { balance: { decrement: paidAmount } }
-                });
-            }
-            return po;
+            },
         });
     }
-    async findAll(query = {}) {
-        const page = parseInt(query.page) || 1;
-        const pageSize = parseInt(query.pageSize) || 50;
-        const skip = (page - 1) * pageSize;
-        const [data, total] = await Promise.all([
-            this.prisma.purchaseOrder.findMany({
-                include: { supplier: true, lines: true },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: pageSize,
-            }),
-            this.prisma.purchaseOrder.count(),
-        ]);
-        return { data, total, page, pageSize };
-    }
-    async getPO(id) {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(id)) {
-            return this.prisma.purchaseOrder.findUnique({
-                where: { id },
-                include: {
-                    supplier: true,
-                    lines: { include: { variant: { include: { product: true } } } }
-                }
-            });
-        }
-        return this.prisma.purchaseOrder.findFirst({
-            where: { id: { startsWith: id } },
-            include: {
-                supplier: true,
-                lines: { include: { variant: { include: { product: true } } } }
-            }
-        });
-    }
-    async applyReceiptToPO(poId, receiptLines) {
+    async receiveGoods(dto) {
         return this.prisma.$transaction(async (tx) => {
             const po = await tx.purchaseOrder.findUnique({
-                where: { id: poId },
-                include: { lines: true }
+                where: { id: dto.purchaseOrderId },
+                include: { lines: true },
             });
             if (!po)
-                return;
-            for (const receipt of receiptLines) {
-                await tx.pOLineItem.update({
-                    where: { id: receipt.poLineItemId },
-                    data: { receivedQuantity: { increment: receipt.receivedQuantity } }
-                });
-            }
-            const updatedPo = await tx.purchaseOrder.findUnique({
-                where: { id: poId },
-                include: { lines: true }
+                throw new common_1.BadRequestException('Purchase Order not found');
+            if (po.status === 'COMPLETED')
+                throw new common_1.BadRequestException('Purchase Order is already completed');
+            const receiptLines = dto.lines.map(line => {
+                const poLine = po.lines.find(l => l.variantId === line.variantId);
+                return {
+                    variantId: line.variantId,
+                    poLineItemId: poLine?.id,
+                    expectedQuantity: poLine ? (poLine.orderedQuantity - poLine.receivedQuantity) : 0,
+                    receivedQuantity: line.receivedQuantity,
+                };
             });
-            const allFullyReceived = updatedPo.lines.every(l => l.receivedQuantity >= l.orderedQuantity);
-            await tx.purchaseOrder.update({
-                where: { id: poId },
+            const validReceiptLines = receiptLines.filter(l => l.poLineItemId);
+            const receipt = await tx.goodsReceipt.create({
                 data: {
-                    status: allFullyReceived ? 'COMPLETED' : 'PARTIALLY_RECEIVED',
-                    completedAt: allFullyReceived ? new Date() : undefined
-                }
-            });
-        });
-    }
-    async updatePO(id, dto) {
-        const po = await this.getPO(id);
-        if (!po)
-            throw new common_1.NotFoundException('Orden de compra no encontrada');
-        if (po.status !== 'DRAFT')
-            throw new common_1.BadRequestException('Solo se pueden editar órdenes en borrador');
-        return this.prisma.$transaction(async (tx) => {
-            await tx.pOLineItem.deleteMany({ where: { purchaseOrderId: id } });
-            const totalAmount = (dto.lines || []).reduce((sum, l) => sum + (l.orderedQuantity * l.unitCost), 0);
-            return tx.purchaseOrder.update({
-                where: { id },
-                data: {
-                    destinationWarehouseId: dto.destinationWarehouseId,
+                    purchaseOrderId: po.id,
+                    destinationWarehouseId: po.destinationWarehouseId,
+                    status: 'VALIDATED',
                     notes: dto.notes,
-                    totalAmount,
                     lines: {
-                        create: (dto.lines || []).map((l) => ({
+                        create: validReceiptLines.map(l => ({
+                            poLineItemId: l.poLineItemId,
                             variantId: l.variantId,
-                            orderedQuantity: l.orderedQuantity,
-                            unitCost: l.unitCost,
-                            totalAmount: l.orderedQuantity * l.unitCost
-                        }))
-                    }
+                            expectedQuantity: l.expectedQuantity,
+                            receivedQuantity: l.receivedQuantity,
+                            difference: l.receivedQuantity - l.expectedQuantity,
+                        })),
+                    },
                 },
-                include: { lines: true }
             });
+            let allReceived = true;
+            for (const line of po.lines) {
+                const receivedInThisBatch = dto.lines.find(l => l.variantId === line.variantId)?.receivedQuantity || 0;
+                const newReceivedTotal = line.receivedQuantity + receivedInThisBatch;
+                if (receivedInThisBatch > 0) {
+                    await tx.pOLineItem.update({
+                        where: { id: line.id },
+                        data: { receivedQuantity: newReceivedTotal },
+                    });
+                }
+                if (newReceivedTotal < line.orderedQuantity) {
+                    allReceived = false;
+                }
+            }
+            await tx.purchaseOrder.update({
+                where: { id: po.id },
+                data: {
+                    status: allReceived ? 'COMPLETED' : 'PARTIALLY_RECEIVED',
+                },
+            });
+            for (const line of validReceiptLines) {
+                const poLine = po.lines.find(l => l.id === line.poLineItemId);
+                await this.inventoryService.recordMovement({
+                    variantId: line.variantId,
+                    quantity: line.receivedQuantity,
+                    type: movement_type_enum_1.MovementType.GOODS_RECEIPT,
+                    destinationWarehouseId: po.destinationWarehouseId,
+                    unitCost: poLine?.unitCost || 0,
+                    referenceId: receipt.id,
+                }, tx);
+            }
+            return receipt;
         });
     }
-    async removePO(id) {
-        const po = await this.getPO(id);
-        if (!po)
-            throw new common_1.NotFoundException('Orden de compra no encontrada');
-        if (po.status !== 'DRAFT')
-            throw new common_1.BadRequestException('Solo se pueden borrar órdenes en borrador');
-        return this.prisma.$transaction(async (tx) => {
-            await tx.pOLineItem.deleteMany({ where: { purchaseOrderId: id } });
-            return tx.purchaseOrder.delete({ where: { id } });
+    async findAllOrders(filters) {
+        const { page = 1, pageSize = 15, search, status, supplierId } = filters;
+        const skip = (page - 1) * pageSize;
+        const where = {};
+        if (search)
+            where.id = { contains: search, mode: 'insensitive' };
+        if (status)
+            where.status = status;
+        if (supplierId)
+            where.supplierId = supplierId;
+        const [data, total] = await Promise.all([
+            this.prisma.purchaseOrder.findMany({
+                where,
+                skip,
+                take: Number(pageSize),
+                orderBy: { createdAt: 'desc' },
+                include: { supplier: true },
+            }),
+            this.prisma.purchaseOrder.count({ where }),
+        ]);
+        return { data, total, page: Number(page), pageSize: Number(pageSize) };
+    }
+    async findOneOrder(id) {
+        return this.prisma.purchaseOrder.findUnique({
+            where: { id },
+            include: {
+                supplier: true,
+                lines: {
+                    include: { variant: { include: { product: true } } },
+                },
+            },
+        });
+    }
+    async findAllReceipts(filters) {
+        const { page = 1, pageSize = 15, search, status } = filters;
+        const skip = (page - 1) * pageSize;
+        const where = {};
+        if (search)
+            where.id = { contains: search, mode: 'insensitive' };
+        if (status)
+            where.status = status;
+        const [data, total] = await Promise.all([
+            this.prisma.goodsReceipt.findMany({
+                where,
+                skip,
+                take: Number(pageSize),
+                orderBy: { createdAt: 'desc' },
+                include: { lines: true },
+            }),
+            this.prisma.goodsReceipt.count({ where }),
+        ]);
+        return { data, total, page: Number(page), pageSize: Number(pageSize) };
+    }
+    async findOneReceipt(id) {
+        return this.prisma.goodsReceipt.findUnique({
+            where: { id },
+            include: {
+                lines: {
+                    include: { variant: { include: { product: true } } },
+                },
+            },
         });
     }
 };
 exports.PurchasingService = PurchasingService;
-exports.PurchasingService = PurchasingService = PurchasingService_1 = __decorate([
+exports.PurchasingService = PurchasingService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        stock_movement_service_1.StockMovementService])
+        inventory_service_1.InventoryService])
 ], PurchasingService);
 //# sourceMappingURL=purchasing.service.js.map

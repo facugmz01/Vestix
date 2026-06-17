@@ -26,6 +26,8 @@ export declare class InventoryService {
         physicalQuantity: number;
         reservedQuantity: number;
         availableQuantity: number;
+        minQuantity: number;
+        reorderPoint: number;
         updatedAt: Date;
     }[]>;
     getStockPerWarehouse(warehouseId: string, variantId?: string): Promise<{
@@ -37,6 +39,8 @@ export declare class InventoryService {
         physicalQuantity: number;
         reservedQuantity: number;
         availableQuantity: number;
+        minQuantity: number;
+        reorderPoint: number;
         updatedAt: Date;
     }[]>;
     adjustStock(dto: {
@@ -72,6 +76,17 @@ export declare class InventoryService {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
             warehouseName: string;
+            destinationWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             variant: {
                 product: {
                     id: string;
@@ -86,6 +101,7 @@ export declare class InventoryService {
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
+                    preferredSupplierId: string | null;
                     images: import(".prisma/client").Prisma.JsonValue;
                     metadata: import(".prisma/client").Prisma.JsonValue;
                     createdAt: Date;
@@ -117,17 +133,6 @@ export declare class InventoryService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             id: string;
             variantId: string;
             batchId: string | null;
@@ -142,5 +147,17 @@ export declare class InventoryService {
         total: number;
         page: number;
         pageSize: number;
+    }>;
+    processStockAudit(data: {
+        warehouseId: string;
+        items: {
+            variantId?: string;
+            sku?: string;
+            batchId?: string;
+            countedQuantity: number;
+        }[];
+    }): Promise<{
+        success: boolean;
+        adjustmentsMade: number;
     }>;
 }

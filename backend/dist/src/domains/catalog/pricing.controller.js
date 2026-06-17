@@ -16,6 +16,8 @@ exports.PricingController = void 0;
 const common_1 = require("@nestjs/common");
 const pricing_service_1 = require("./pricing.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const passport_1 = require("@nestjs/passport");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
 let PricingController = class PricingController {
     constructor(pricingService) {
         this.pricingService = pricingService;
@@ -71,6 +73,7 @@ __decorate([
 ], PricingController.prototype, "setVariantPrice", null);
 exports.PricingController = PricingController = __decorate([
     (0, common_1.Controller)('price-lists'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [pricing_service_1.PricingService])
 ], PricingController);
 //# sourceMappingURL=pricing.controller.js.map

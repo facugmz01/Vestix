@@ -82,6 +82,16 @@ let SalesService = class SalesService {
             total
         };
     }
+    async updateOrderStatus(id, status) {
+        const order = await this.prisma.saleOrder.findUnique({ where: { id } });
+        if (!order) {
+            throw new Error('Order not found');
+        }
+        return this.prisma.saleOrder.update({
+            where: { id },
+            data: { status }
+        });
+    }
     async bulkImportSales(dto) {
         return this.prisma.$transaction(async (tx) => {
             const groupedOrders = {};

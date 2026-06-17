@@ -15,6 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CashRegistersController = void 0;
 const common_1 = require("@nestjs/common");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const common_2 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
 const class_validator_1 = require("class-validator");
 class CreateCashRegisterDto {
@@ -137,6 +140,7 @@ __decorate([
 ], CashRegistersController.prototype, "remove", null);
 exports.CashRegistersController = CashRegistersController = __decorate([
     (0, common_1.Controller)('cash-registers'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], CashRegistersController);
 //# sourceMappingURL=cash-registers.controller.js.map

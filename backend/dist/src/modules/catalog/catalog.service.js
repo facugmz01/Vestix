@@ -16,107 +16,110 @@ let CatalogService = class CatalogService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async getPublicCatalog(filters) {
-        const where = { isActive: true, isPublished: true };
-        if (filters.categoryId)
-            where.categoryId = filters.categoryId;
-        if (filters.searchQuery)
-            where.name = { contains: filters.searchQuery, mode: 'insensitive' };
-        const products = await this.prisma.product.findMany({
-            where,
-            include: {
-                brand: true,
-                category: true,
-                variants: {
-                    include: {
-                        stockLevels: true
-                    }
-                }
-            }
-        });
-        const results = [];
-        for (const product of products) {
-            const primaryVariant = product.variants[0];
-            if (!primaryVariant)
-                continue;
-            const basePrice = primaryVariant.basePrice;
-            const resolvedPrice = basePrice;
-            if (filters.minPrice && resolvedPrice < filters.minPrice)
-                continue;
-            if (filters.maxPrice && resolvedPrice > filters.maxPrice)
-                continue;
-            const availableQty = product.variants.reduce((sum, v) => sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0), 0);
-            if (filters.inStockOnly && availableQty <= 0)
-                continue;
-            results.push({
-                id: product.id,
-                name: product.name,
-                brand: product.brand?.name || null,
-                category: product.category?.name || null,
-                price: resolvedPrice,
-                basePrice: basePrice,
-                inStock: availableQty > 0,
-                availableQuantity: availableQty,
-                variants: product.variants.map(v => ({
-                    id: v.id,
-                    sku: v.sku,
-                    size: v.size,
-                    color: v.color,
-                    stock: v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
-                }))
+    async createProduct(dto) {
+        try {
+            return await this.prisma.product.create({
+                data: {
+                    name: dto.name,
+                    baseSku: dto.baseSku,
+                    description: dto.description,
+                    categoryId: dto.categoryId,
+                    brandId: dto.brandId,
+                    isActive: dto.isActive ?? true,
+                },
             });
         }
-        return {
-            metadata: { total: results.length, filtered: Object.keys(filters).length > 0 },
-            data: results
-        };
-    }
-    async getPublicProduct(id) {
-        const product = await this.prisma.product.findUnique({
-            where: { id, isActive: true, isPublished: true },
-            include: {
-                brand: true,
-                category: true,
-                variants: {
-                    include: { stockLevels: true }
-                }
+        catch (error) {
+            if (error.code === 'P2002') {
+                throw new common_1.ConflictException('Product with this base SKU already exists');
             }
-        });
-        if (!product)
-            throw new Error('Product not found');
-        const primaryVariant = product.variants[0];
-        const basePrice = primaryVariant ? primaryVariant.basePrice : 0;
-        const resolvedPrice = basePrice;
-        const availableQty = product.variants.reduce((sum, v) => sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0), 0);
-        return {
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            brand: product.brand?.name || null,
-            category: product.category?.name || null,
-            price: resolvedPrice,
-            basePrice: basePrice,
-            inStock: availableQty > 0,
-            availableQuantity: availableQty,
-            images: product.images,
-            variants: product.variants.map(v => ({
-                id: v.id,
-                sku: v.sku,
-                size: v.size,
-                color: v.color,
-                stock: v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
-            }))
-        };
+            throw error;
+        }
     }
-    async getPosSyncCatalog(branchId) {
-        return {
-            status: 'SYNC_READY',
-            timestamp: new Date().toISOString(),
-            data: [
-                { sku: 'TSH-PRM', barcode: '0400000000018', name: 'Premium T-Shirt', basePrice: 20 },
-                { sku: 'JKT-WIN', barcode: '0400000000025', name: 'Winter Jacket', basePrice: 120 }
-            ]
-        };
+    async addVariantToProduct(productId, dto) {
+        const product = await this.prisma.product.findUnique({
+            where: { id: productId },
+        });
+        if (!product) {
+            throw new common_1.BadRequestException('Product not found');
+        }
+        try {
+            return await this.prisma.productVariant.create({
+                data: {
+                    productId,
+                    sku: dto.sku,
+                    barcode: dto.barcode,
+                    size: dto.size,
+                    color: dto.color,
+                    costPrice: dto.costPrice || 0,
+                    basePrice: dto.basePrice,
+                    isActive: dto.isActive ?? true,
+                },
+            });
+        }
+        catch (error) {
+            if (error.code === 'P2002') {
+                throw new common_1.ConflictException('Variant with this SKU or barcode already exists');
+            }
+            throw error;
+        }
+    }
+    async addBarcodeToVariant(variantId, dto) {
+        try {
+            return await this.prisma.productBarcode.create({
+                data: {
+                    variantId,
+                    barcode: dto.barcode,
+                    type: dto.type || 'INTERNAL',
+                },
+            });
+        }
+        catch (error) {
+            if (error.code === 'P2002') {
+                throw new common_1.ConflictException('Barcode already exists globally');
+            }
+            throw error;
+        }
+    }
+    async findAllForPos() {
+        const variants = await this.prisma.productVariant.findMany({
+            where: {
+                isActive: true,
+                product: { isActive: true },
+            },
+            select: {
+                id: true,
+                sku: true,
+                barcode: true,
+                basePrice: true,
+                size: true,
+                color: true,
+                product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        categoryId: true,
+                    },
+                },
+                barcodes: {
+                    select: {
+                        barcode: true,
+                    },
+                },
+            },
+        });
+        return variants.map((v) => ({
+            id: v.id,
+            productId: v.product.id,
+            name: v.product.name,
+            categoryId: v.product.categoryId,
+            sku: v.sku,
+            primaryBarcode: v.barcode,
+            allBarcodes: [v.barcode, ...v.barcodes.map((b) => b.barcode)].filter(Boolean),
+            price: v.basePrice,
+            size: v.size,
+            color: v.color,
+        }));
     }
 };
 exports.CatalogService = CatalogService;

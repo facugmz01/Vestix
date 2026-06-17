@@ -76,6 +76,11 @@ export declare class PurchasingController {
         createdAt: Date;
         updatedAt: Date;
     }>;
+    autoReplenish(): Promise<{
+        success: boolean;
+        message: string;
+        ordersCreated: number;
+    }>;
     createPO(dto: any): Promise<{
         lines: {
             id: string;
@@ -129,6 +134,7 @@ export declare class PurchasingController {
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
+                    preferredSupplierId: string | null;
                     images: import(".prisma/client").Prisma.JsonValue;
                     metadata: import(".prisma/client").Prisma.JsonValue;
                     createdAt: Date;

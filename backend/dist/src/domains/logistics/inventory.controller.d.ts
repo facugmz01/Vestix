@@ -23,13 +23,35 @@ export declare class InventoryController {
         page: number;
         pageSize: number;
     }>;
-    adjustStock(dto: any): Promise<any>;
+    adjustStock(body: any): Promise<any>;
+    processStockAudit(body: {
+        warehouseId: string;
+        items: {
+            variantId: string;
+            batchId?: string;
+            countedQuantity: number;
+        }[];
+    }): Promise<{
+        success: boolean;
+        adjustmentsMade: number;
+    }>;
     getMovements(query: any): Promise<{
         variantSku: string;
         productName: string;
         sourceWarehouseName: string;
         destinationWarehouseName: string;
         warehouseName: string;
+        destinationWarehouse: {
+            id: string;
+            name: string;
+            code: string | null;
+            type: string | null;
+            address: string | null;
+            isActive: boolean;
+            branchId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         variant: {
             product: {
                 id: string;
@@ -44,6 +66,7 @@ export declare class InventoryController {
                 costPrice: number;
                 isActive: boolean;
                 isPublished: boolean;
+                preferredSupplierId: string | null;
                 images: import(".prisma/client").Prisma.JsonValue;
                 metadata: import(".prisma/client").Prisma.JsonValue;
                 createdAt: Date;
@@ -75,17 +98,6 @@ export declare class InventoryController {
             createdAt: Date;
             updatedAt: Date;
         };
-        destinationWarehouse: {
-            id: string;
-            name: string;
-            code: string | null;
-            type: string | null;
-            address: string | null;
-            isActive: boolean;
-            branchId: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         id: string;
         variantId: string;
         batchId: string | null;
@@ -104,6 +116,17 @@ export declare class InventoryController {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
             warehouseName: string;
+            destinationWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             variant: {
                 product: {
                     id: string;
@@ -118,6 +141,7 @@ export declare class InventoryController {
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
+                    preferredSupplierId: string | null;
                     images: import(".prisma/client").Prisma.JsonValue;
                     metadata: import(".prisma/client").Prisma.JsonValue;
                     createdAt: Date;
@@ -149,17 +173,6 @@ export declare class InventoryController {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             id: string;
             variantId: string;
             batchId: string | null;
@@ -179,6 +192,17 @@ export declare class InventoryController {
         data: {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
+            destinationWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             lines: ({
                 variant: {
                     id: string;
@@ -214,17 +238,6 @@ export declare class InventoryController {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             id: string;
             sourceWarehouseId: string;
             destinationWarehouseId: string;
@@ -242,6 +255,17 @@ export declare class InventoryController {
     getTransfer(id: string): Promise<{
         sourceWarehouseName: string;
         destinationWarehouseName: string;
+        destinationWarehouse: {
+            id: string;
+            name: string;
+            code: string | null;
+            type: string | null;
+            address: string | null;
+            isActive: boolean;
+            branchId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         lines: ({
             variant: {
                 id: string;
@@ -267,17 +291,6 @@ export declare class InventoryController {
             createdAt: Date;
         })[];
         sourceWarehouse: {
-            id: string;
-            name: string;
-            code: string | null;
-            type: string | null;
-            address: string | null;
-            isActive: boolean;
-            branchId: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        destinationWarehouse: {
             id: string;
             name: string;
             code: string | null;

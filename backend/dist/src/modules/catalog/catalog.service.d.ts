@@ -1,42 +1,61 @@
-import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { CreateProductDto } from './dto/create-product.dto';
+import { CreateVariantDto } from './dto/create-variant.dto';
+import { AddBarcodeDto } from './dto/add-barcode.dto';
 export declare class CatalogService {
-    private readonly prisma;
+    private prisma;
     constructor(prisma: PrismaService);
-    getPublicCatalog(filters: CatalogFilterDto): Promise<{
-        metadata: {
-            total: number;
-            filtered: boolean;
-        };
-        data: any[];
-    }>;
-    getPublicProduct(id: string): Promise<{
+    createProduct(dto: CreateProductDto): Promise<{
         id: string;
         name: string;
-        description: string;
-        brand: string;
-        category: string;
-        price: number;
-        basePrice: number;
-        inStock: boolean;
-        availableQuantity: number;
+        baseSku: string | null;
+        description: string | null;
+        categoryId: string;
+        brandId: string | null;
+        type: import(".prisma/client").$Enums.ProductType;
+        isVariable: boolean;
+        manageBatches: boolean;
+        costPrice: number;
+        isActive: boolean;
+        isPublished: boolean;
+        preferredSupplierId: string | null;
         images: import(".prisma/client").Prisma.JsonValue;
-        variants: {
-            id: string;
-            sku: string;
-            size: string;
-            color: string;
-            stock: number;
-        }[];
+        metadata: import(".prisma/client").Prisma.JsonValue;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
-    getPosSyncCatalog(branchId: string): Promise<{
-        status: string;
-        timestamp: string;
-        data: {
-            sku: string;
-            barcode: string;
-            name: string;
-            basePrice: number;
-        }[];
+    addVariantToProduct(productId: string, dto: CreateVariantDto): Promise<{
+        id: string;
+        productId: string;
+        sku: string;
+        barcode: string | null;
+        size: string | null;
+        color: string | null;
+        imageUrl: string | null;
+        costPrice: number;
+        basePrice: number;
+        isActive: boolean;
+        attributes: import(".prisma/client").Prisma.JsonValue;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
+    addBarcodeToVariant(variantId: string, dto: AddBarcodeDto): Promise<{
+        id: string;
+        variantId: string;
+        barcode: string;
+        type: string;
+        createdAt: Date;
+    }>;
+    findAllForPos(): Promise<{
+        id: string;
+        productId: string;
+        name: string;
+        categoryId: string;
+        sku: string;
+        primaryBarcode: string;
+        allBarcodes: string[];
+        price: number;
+        size: string;
+        color: string;
+    }[]>;
 }

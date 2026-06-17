@@ -19,6 +19,8 @@ const create_branch_dto_1 = require("./dto/create-branch.dto");
 const update_branch_dto_1 = require("./dto/update-branch.dto");
 const update_branch_config_dto_1 = require("./dto/update-branch-config.dto");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
+const passport_1 = require("@nestjs/passport");
 let BranchesController = class BranchesController {
     constructor(branchesService) {
         this.branchesService = branchesService;
@@ -96,6 +98,7 @@ __decorate([
 ], BranchesController.prototype, "assignUser", null);
 exports.BranchesController = BranchesController = __decorate([
     (0, common_1.Controller)('branches'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [branches_service_1.BranchesService])
 ], BranchesController);
 //# sourceMappingURL=branches.controller.js.map

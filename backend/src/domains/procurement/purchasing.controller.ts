@@ -2,8 +2,12 @@ import { Controller, Post, Body, Get, Query, Param, ParseUUIDPipe, Patch, Delete
 import { PurchasingService } from './purchasing.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { BulkImportPurchasesDto } from './dto/bulk-purchases.dto';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { UseGuards } from '@nestjs/common';
 
 @Controller('purchasing')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class PurchasingController {
   constructor(private readonly purchasingService: PurchasingService) {}
 
@@ -23,6 +27,12 @@ export class PurchasingController {
   @RequirePermissions({ action: 'create', subject: 'Purchasing' })
   processDirectPurchase(@Body() dto: any) {
     return this.purchasingService.processDirectPurchase(dto);
+  }
+
+  @Post('auto-replenish')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  autoReplenish() {
+    return this.purchasingService.generateReplenishmentOrders();
   }
 
   @Post('orders')

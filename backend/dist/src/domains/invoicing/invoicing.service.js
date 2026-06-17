@@ -81,8 +81,8 @@ let InvoicingService = class InvoicingService {
         if (payload.customerDocumentType === 'CUIT')
             afipDocType = 80;
         const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const invoicingSettings = settings?.invoicing || {};
-        const pointOfSale = parseInt(invoicingSettings.fiscalPointSale) || 1;
+        const arcaSettings = settings?.arca || {};
+        const pointOfSale = parseInt(arcaSettings.pointOfSale) || 1;
         try {
             const afipResponse = await this.afipService.createElectronicInvoice({
                 pointOfSale: pointOfSale,

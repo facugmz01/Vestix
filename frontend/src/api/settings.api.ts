@@ -59,8 +59,6 @@ export interface NotificationSettings {
   openWaUrl?: string;
   openWaSession?: string;
   fcmServerKey?: string;
-  templateSale?: string;
-  templatePurchase?: string;
 }
 
 export interface IntegrationSettings {

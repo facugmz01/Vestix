@@ -1,3 +1,4 @@
+import { PrismaService } from '../../core/prisma/prisma.service';
 export interface MercadoPagoPreferenceItem {
     id: string;
     title: string;
@@ -29,10 +30,10 @@ export interface MercadoPagoPreference {
     sandbox_init_point: string;
 }
 export declare class MercadoPagoService {
+    private readonly prisma;
     private readonly logger;
-    private readonly accessToken;
-    private readonly storeUrl;
-    private readonly isMock;
+    constructor(prisma: PrismaService);
+    private getAccessToken;
     createPreference(dto: CreatePreferenceDto): Promise<{
         initPoint: string;
         preferenceId: string;

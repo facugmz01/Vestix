@@ -18,6 +18,9 @@ const warehouses_service_1 = require("./warehouses.service");
 const create_warehouse_dto_1 = require("./dto/create-warehouse.dto");
 const update_warehouse_dto_1 = require("./dto/update-warehouse.dto");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
+const passport_1 = require("@nestjs/passport");
+const common_2 = require("@nestjs/common");
 let WarehousesController = class WarehousesController {
     constructor(warehousesService) {
         this.warehousesService = warehousesService;
@@ -82,6 +85,7 @@ __decorate([
 ], WarehousesController.prototype, "remove", null);
 exports.WarehousesController = WarehousesController = __decorate([
     (0, common_1.Controller)('warehouses'),
+    (0, common_2.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [warehouses_service_1.WarehousesService])
 ], WarehousesController);
 //# sourceMappingURL=warehouses.controller.js.map

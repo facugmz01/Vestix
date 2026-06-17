@@ -5,26 +5,36 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 var MercadoPagoService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MercadoPagoService = void 0;
 const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../core/prisma/prisma.service");
 let MercadoPagoService = MercadoPagoService_1 = class MercadoPagoService {
-    constructor() {
+    constructor(prisma) {
+        this.prisma = prisma;
         this.logger = new common_1.Logger(MercadoPagoService_1.name);
-        this.accessToken = process.env.MP_ACCESS_TOKEN || '';
-        this.storeUrl = process.env.MP_STORE_URL || 'http://localhost:5173/store';
-        this.isMock = !process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN === '';
+    }
+    async getAccessToken() {
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const intSettings = settings?.integrations || {};
+        return intSettings.mpAccessToken || process.env.MP_ACCESS_TOKEN || '';
     }
     async createPreference(dto) {
-        if (this.isMock) {
+        const accessToken = await this.getAccessToken();
+        const isMock = !accessToken || accessToken === '';
+        const storeUrl = process.env.MP_STORE_URL || 'http://localhost:5173/store';
+        if (isMock) {
             this.logger.log(`[MercadoPago Mock] Preference requested:\n` +
                 `  Reference: ${dto.externalReference}\n` +
                 `  Items: ${dto.items.map(i => `${i.title} x${i.quantity}`).join(', ')}\n` +
                 `  Total: $${dto.items.reduce((s, i) => s + i.unit_price * i.quantity, 0) + (dto.shippingCost || 0)}`);
             return {
                 preferenceId: `MOCK-${dto.externalReference}`,
-                initPoint: `${this.storeUrl}/checkout-success?orderId=${dto.externalReference}&mock=true`,
+                initPoint: `${storeUrl}/checkout-success?orderId=${dto.externalReference}&mock=true`,
             };
         }
         const payload = {
@@ -37,9 +47,9 @@ let MercadoPagoService = MercadoPagoService_1 = class MercadoPagoService {
                 currency_id: item.currency_id || 'ARS',
             })),
             back_urls: {
-                success: dto.backUrls?.success || `${this.storeUrl}/checkout/success`,
-                failure: dto.backUrls?.failure || `${this.storeUrl}/checkout/failure`,
-                pending: dto.backUrls?.pending || `${this.storeUrl}/checkout/pending`,
+                success: dto.backUrls?.success || `${storeUrl}/checkout/success`,
+                failure: dto.backUrls?.failure || `${storeUrl}/checkout/failure`,
+                pending: dto.backUrls?.pending || `${storeUrl}/checkout/pending`,
             },
             auto_return: 'approved',
             notification_url: `${process.env.BACKEND_URL || 'http://localhost:3000'}/api/storefront/webhooks/mercadopago`,
@@ -61,7 +71,7 @@ let MercadoPagoService = MercadoPagoService_1 = class MercadoPagoService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Authorization': `Bearer ${accessToken}`,
                 },
                 body: JSON.stringify(payload),
             });
@@ -87,6 +97,7 @@ let MercadoPagoService = MercadoPagoService_1 = class MercadoPagoService {
 };
 exports.MercadoPagoService = MercadoPagoService;
 exports.MercadoPagoService = MercadoPagoService = MercadoPagoService_1 = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], MercadoPagoService);
 //# sourceMappingURL=mercadopago.service.js.map

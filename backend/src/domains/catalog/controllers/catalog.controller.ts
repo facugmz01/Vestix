@@ -229,3 +229,19 @@ export class PriceListController {
     return this.priceListService.delete(id);
   }
 }
+
+@Controller('catalog/public')
+export class PublicCatalogController {
+  constructor(private readonly productsService: ProductsService) {}
+
+  @Get()
+  getPublicProducts(@Query() query: any) {
+    return this.productsService.getPublicProducts(query);
+  }
+
+  @Get(':id')
+  getProduct(@Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.getPublicProduct(id);
+  }
+}
+

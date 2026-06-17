@@ -9,6 +9,7 @@ export declare class UsersService implements OnModuleInit {
     onModuleInit(): Promise<void>;
     create(createUserDto: CreateUserDto): Promise<{
         id: string;
+        createdAt: Date;
         updatedAt: Date;
         role: {
             id: string;
@@ -28,10 +29,9 @@ export declare class UsersService implements OnModuleInit {
         };
         email: string;
         isActive: boolean;
-        createdAt: Date;
+        branchId: string;
         fullName: string;
         roleId: string;
-        branchId: string;
     }>;
     findAll({ page, pageSize }: {
         page: number;
@@ -123,6 +123,7 @@ export declare class UsersService implements OnModuleInit {
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         id: string;
+        createdAt: Date;
         updatedAt: Date;
         role: {
             id: string;
@@ -142,13 +143,13 @@ export declare class UsersService implements OnModuleInit {
         };
         email: string;
         isActive: boolean;
-        createdAt: Date;
+        branchId: string;
         fullName: string;
         roleId: string;
-        branchId: string;
     }>;
     toggleActivation(id: string, isActive: boolean): Promise<{
         id: string;
+        createdAt: Date;
         updatedAt: Date;
         role: {
             id: string;
@@ -168,13 +169,13 @@ export declare class UsersService implements OnModuleInit {
         };
         email: string;
         isActive: boolean;
-        createdAt: Date;
+        branchId: string;
         fullName: string;
         roleId: string;
-        branchId: string;
     }>;
     assignBranches(id: string, dto: AssignBranchesDto): Promise<{
         id: string;
+        createdAt: Date;
         updatedAt: Date;
         role: {
             id: string;
@@ -194,10 +195,9 @@ export declare class UsersService implements OnModuleInit {
         };
         email: string;
         isActive: boolean;
-        createdAt: Date;
+        branchId: string;
         fullName: string;
         roleId: string;
-        branchId: string;
     }>;
     private userSelect;
 }

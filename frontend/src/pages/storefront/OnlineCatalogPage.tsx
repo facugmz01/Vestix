@@ -7,6 +7,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { apiClient } from '@/api/client';
 import { APP_CONFIG } from '@/config/app.config';
+import { StorefrontSEO } from '@/features/storefront/components/StorefrontSEO';
 
 export default function OnlineCatalogPage() {
   const [search, setSearch] = useState('');
@@ -89,9 +90,9 @@ export default function OnlineCatalogPage() {
   );
 
   return (
-    <div style={{ paddingBottom: '60px' }}>
-      
-      {/* Main Content */}      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', gap: '32px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
+    <main style={{ minHeight: '100%', padding: '24px 16px', background: 'var(--bg-base)', fontFamily: "'Inter', sans-serif" }}>
+      <StorefrontSEO title="Catálogo" />
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '32px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
         
         {/* Sidebar Filters - Desktop only */}
         {!isMobile && (
@@ -184,16 +185,21 @@ export default function OnlineCatalogPage() {
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    {/* Image placeholder */}
-                    <div style={{ height: isMobile ? '150px' : '230px', background: 'var(--bg-overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                      <span style={{ fontSize: isMobile ? '44px' : '64px', color: 'var(--text-muted)', fontWeight: 900, userSelect: 'none' }}>
+                    {/* Image placeholder with premium gradient */}
+                    <div style={{ 
+                      height: isMobile ? '150px' : '230px', 
+                      background: p.id.charCodeAt(0) % 2 === 0 ? 'linear-gradient(135deg, #1f2937 0%, #111827 100%)' : 'linear-gradient(135deg, #374151 0%, #1f2937 100%)', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' 
+                    }}>
+                      <span style={{ fontSize: isMobile ? '44px' : '64px', color: 'rgba(255,255,255,0.05)', fontWeight: 900, userSelect: 'none' }}>
                         {p.name.charAt(0).toUpperCase()}
                       </span>
                       <div style={{
                         position: 'absolute', top: '10px', left: '10px',
                         background: isAvailable ? 'var(--green)' : 'var(--red)',
                         color: '#fff', fontSize: '9px', fontWeight: 800,
-                        padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px'
+                        padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px',
+                        boxShadow: isAvailable ? '0 0 10px rgba(16,185,129,0.4)' : '0 0 10px rgba(239,68,68,0.4)'
                       }}>
                         {isAvailable ? 'DISPONIBLE' : 'SIN STOCK'}
                       </div>
@@ -235,6 +241,6 @@ export default function OnlineCatalogPage() {
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -51,6 +51,14 @@ let PosController = class PosController {
     async closeSession(dto, userId) {
         return this.posService.closeSession({ ...dto, userId });
     }
+    async generateQrOrder(dto) {
+        const orderId = `POS-${Date.now()}`;
+        const mockQrData = `00020101021243650016COM.MERCADOPAGO...${orderId}-AMT${dto.amount}`;
+        return {
+            orderId,
+            qrData: mockQrData,
+        };
+    }
 };
 exports.PosController = PosController;
 __decorate([
@@ -128,6 +136,14 @@ __decorate([
     __metadata("design:paramtypes", [pos_dtos_1.CloseSessionDto, String]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "closeSession", null);
+__decorate([
+    (0, common_1.Post)('qr-order'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Sales' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PosController.prototype, "generateQrOrder", null);
 exports.PosController = PosController = __decorate([
     (0, common_1.Controller)('pos'),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),

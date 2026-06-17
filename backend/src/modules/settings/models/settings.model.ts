@@ -75,6 +75,8 @@ export interface SystemSettings {
     smsGatewayUrl?: string;
     openWaUrl?: string;
     openWaSession?: string;
+    openWaOtpUrl?: string;
+    openWaOtpSession?: string;
   };
 
   integrations: {

@@ -2,8 +2,12 @@ import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { SyncEngineService } from './sync-engine.service';
 import { SyncBatch } from './models/sync-operation.model';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
 @Controller('offline')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class OfflineController {
   constructor(private readonly syncEngine: SyncEngineService) {}
 

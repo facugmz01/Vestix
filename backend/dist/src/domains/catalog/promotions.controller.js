@@ -15,6 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PromotionsController = void 0;
 const common_1 = require("@nestjs/common");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const passport_1 = require("@nestjs/passport");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
 let PromotionsController = class PromotionsController {
     getPromotions(page, pageSize) {
         return { data: [], total: 0 };
@@ -41,6 +43,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PromotionsController.prototype, "getConflicts", null);
 exports.PromotionsController = PromotionsController = __decorate([
-    (0, common_1.Controller)('promotions')
+    (0, common_1.Controller)('promotions'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard)
 ], PromotionsController);
 //# sourceMappingURL=promotions.controller.js.map
