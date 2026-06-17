@@ -279,4 +279,45 @@ export declare class ProductsService {
         success: boolean;
         updatedCount: number;
     }>;
+    getPublicProducts(query?: any): Promise<{
+        data: {
+            id: string;
+            name: string;
+            description: string;
+            images: import(".prisma/client").Prisma.JsonValue;
+            category: string;
+            brand: string;
+            lowestPrice: number;
+            inStock: boolean;
+            totalStock: number;
+            variants: {
+                id: string;
+                sku: string;
+                price: number;
+                stock: number;
+                attributes: import(".prisma/client").Prisma.JsonValue;
+            }[];
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+    }>;
+    getPublicProduct(id: string): Promise<{
+        id: string;
+        name: string;
+        description: string;
+        images: import(".prisma/client").Prisma.JsonValue;
+        category: string;
+        brand: string;
+        lowestPrice: number;
+        inStock: boolean;
+        totalStock: number;
+        variants: {
+            id: string;
+            sku: string;
+            price: number;
+            stock: number;
+            attributes: import(".prisma/client").Prisma.JsonValue;
+        }[];
+    }>;
 }

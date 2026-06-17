@@ -12,12 +12,12 @@ export class WhatsAppOpenWaService {
    * Sends a plain text WhatsApp message to a given phone number via external OpenWA URL.
    * Phone must be in international format without '+': e.g. 5491122334455
    */
-  async sendText(phone: string, message: string) {
+  async sendText(phone: string, message: string, isOtp = false) {
     const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
     const notificationsConfig = (settings?.notifications as any) || {};
     
-    const openWaUrl = notificationsConfig.openWaUrl;
-    const session = notificationsConfig.openWaSession || 'default';
+    const openWaUrl = isOtp ? (notificationsConfig.openWaOtpUrl || notificationsConfig.openWaUrl) : notificationsConfig.openWaUrl;
+    const session = isOtp ? (notificationsConfig.openWaOtpSession || notificationsConfig.openWaSession || 'default') : (notificationsConfig.openWaSession || 'default');
 
     if (!openWaUrl) {
       this.logger.warn(`[OpenWA] Cannot send message to ${phone}. No URL configured.`);

@@ -3,7 +3,7 @@ export declare class WhatsAppOpenWaService {
     private readonly prisma;
     private readonly logger;
     constructor(prisma: PrismaService);
-    sendText(phone: string, message: string): Promise<{
+    sendText(phone: string, message: string, isOtp?: boolean): Promise<{
         success: boolean;
         error: string;
     } | {

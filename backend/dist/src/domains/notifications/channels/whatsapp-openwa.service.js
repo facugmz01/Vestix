@@ -22,11 +22,11 @@ let WhatsAppOpenWaService = WhatsAppOpenWaService_1 = class WhatsAppOpenWaServic
         this.prisma = prisma;
         this.logger = new common_1.Logger(WhatsAppOpenWaService_1.name);
     }
-    async sendText(phone, message) {
+    async sendText(phone, message, isOtp = false) {
         const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
         const notificationsConfig = settings?.notifications || {};
-        const openWaUrl = notificationsConfig.openWaUrl;
-        const session = notificationsConfig.openWaSession || 'default';
+        const openWaUrl = isOtp ? (notificationsConfig.openWaOtpUrl || notificationsConfig.openWaUrl) : notificationsConfig.openWaUrl;
+        const session = isOtp ? (notificationsConfig.openWaOtpSession || notificationsConfig.openWaSession || 'default') : (notificationsConfig.openWaSession || 'default');
         if (!openWaUrl) {
             this.logger.warn(`[OpenWA] Cannot send message to ${phone}. No URL configured.`);
             return { success: false, error: 'OpenWA URL not configured' };

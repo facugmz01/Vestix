@@ -5,7 +5,7 @@ import { SmtpService } from './channels/smtp.service';
 import { WhatsAppOpenWaService } from './channels/whatsapp-openwa.service';
 import { SmsGatewayService } from './channels/sms-gateway.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { NotificationChannel } from './models/notification.model';
+import { NotificationChannel, TemplateKey } from './models/notification.model';
 
 @Processor('notifications_queue')
 export class NotificationsProcessor extends WorkerHost {
@@ -48,7 +48,8 @@ export class NotificationsProcessor extends WorkerHost {
     if (channel === 'EMAIL' as NotificationChannel) {
       await this.smtpService.send(recipient, subject || 'Notificación', body);
     } else if (channel === 'WHATSAPP' as NotificationChannel) {
-      await this.whatsAppService.sendText(recipient, body);
+      const isOtp = templateKey === TemplateKey.OTP_CODE;
+      await this.whatsAppService.sendText(recipient, body, isOtp);
     } else if (channel === 'SMS' as any) {
       await this.smsService.sendSms(recipient, body);
     }

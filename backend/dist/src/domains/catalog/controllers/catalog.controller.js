@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PriceListController = exports.AttributesController = exports.VariantsController = exports.ProductsController = exports.BrandsController = exports.CategoriesController = void 0;
+exports.PublicCatalogController = exports.PriceListController = exports.AttributesController = exports.VariantsController = exports.ProductsController = exports.BrandsController = exports.CategoriesController = void 0;
 const common_1 = require("@nestjs/common");
 const products_service_1 = require("../services/products.service");
 const taxonomy_service_1 = require("../services/taxonomy.service");
@@ -428,4 +428,34 @@ exports.PriceListController = PriceListController = __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [taxonomy_service_1.PriceListService])
 ], PriceListController);
+let PublicCatalogController = class PublicCatalogController {
+    constructor(productsService) {
+        this.productsService = productsService;
+    }
+    getPublicProducts(query) {
+        return this.productsService.getPublicProducts(query);
+    }
+    getProduct(id) {
+        return this.productsService.getPublicProduct(id);
+    }
+};
+exports.PublicCatalogController = PublicCatalogController;
+__decorate([
+    (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PublicCatalogController.prototype, "getPublicProducts", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PublicCatalogController.prototype, "getProduct", null);
+exports.PublicCatalogController = PublicCatalogController = __decorate([
+    (0, common_1.Controller)('catalog/public'),
+    __metadata("design:paramtypes", [products_service_1.ProductsService])
+], PublicCatalogController);
 //# sourceMappingURL=catalog.controller.js.map

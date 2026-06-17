@@ -646,6 +646,118 @@ let ProductsService = class ProductsService {
             return { success: true, updatedCount };
         });
     }
+    async getPublicProducts(query = {}) {
+        const page = parseInt(query.page) || 1;
+        const pageSize = parseInt(query.pageSize) || 15;
+        const skip = (page - 1) * pageSize;
+        const where = { isPublished: true, isActive: true };
+        if (query.categoryId)
+            where.categoryId = query.categoryId;
+        if (query.brandId)
+            where.brandId = query.brandId;
+        if (query.search) {
+            where.OR = [
+                { name: { contains: query.search, mode: 'insensitive' } },
+                { baseSku: { contains: query.search, mode: 'insensitive' } },
+            ];
+        }
+        const [data, total] = await Promise.all([
+            this.prisma.product.findMany({
+                where,
+                include: {
+                    category: true,
+                    brand: true,
+                    variants: {
+                        where: { isActive: true },
+                        include: { stockLevels: true },
+                    },
+                },
+                orderBy: { name: 'asc' },
+                skip,
+                take: pageSize,
+            }),
+            this.prisma.product.count({ where }),
+        ]);
+        const mapped = data.map(p => {
+            let lowestPrice = 0;
+            let totalStock = 0;
+            const mappedVariants = p.variants.map(v => {
+                const variantStock = v.stockLevels.reduce((sum, sl) => sum + sl.availableQuantity, 0);
+                totalStock += variantStock;
+                if (lowestPrice === 0 || v.basePrice < lowestPrice) {
+                    lowestPrice = v.basePrice;
+                }
+                return {
+                    id: v.id,
+                    sku: v.sku,
+                    price: v.basePrice,
+                    stock: variantStock,
+                    attributes: v.attributes,
+                };
+            });
+            return {
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                images: p.images,
+                category: p.category?.name,
+                brand: p.brand?.name,
+                lowestPrice,
+                inStock: totalStock > 0,
+                totalStock,
+                variants: mappedVariants,
+            };
+        });
+        return {
+            data: mapped,
+            total,
+            page,
+            pageSize,
+        };
+    }
+    async getPublicProduct(id) {
+        const p = await this.prisma.product.findFirst({
+            where: { id, isPublished: true, isActive: true },
+            include: {
+                category: true,
+                brand: true,
+                variants: {
+                    where: { isActive: true },
+                    include: { stockLevels: true },
+                },
+            },
+        });
+        if (!p)
+            throw new common_1.NotFoundException('Producto no encontrado o no disponible en Tienda Web');
+        let lowestPrice = 0;
+        let totalStock = 0;
+        const mappedVariants = p.variants.map(v => {
+            const variantStock = v.stockLevels.reduce((sum, sl) => sum + sl.availableQuantity, 0);
+            totalStock += variantStock;
+            if (lowestPrice === 0 || v.basePrice < lowestPrice) {
+                lowestPrice = v.basePrice;
+            }
+            return {
+                id: v.id,
+                sku: v.sku,
+                price: v.basePrice,
+                stock: variantStock,
+                attributes: v.attributes,
+            };
+        });
+        return {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            images: p.images,
+            category: p.category?.name,
+            brand: p.brand?.name,
+            lowestPrice,
+            inStock: totalStock > 0,
+            totalStock,
+            variants: mappedVariants,
+        };
+    }
 };
 exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([
