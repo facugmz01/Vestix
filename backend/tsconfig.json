@@ -15,8 +15,8 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "types": ["jest", "node"]
   },
-  "types": ["jest", "node"],
   "exclude": ["node_modules", "dist", "scratch"]
 }

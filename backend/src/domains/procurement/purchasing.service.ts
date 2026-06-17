@@ -424,7 +424,7 @@ export class PurchasingService {
   async generateReplenishmentOrders() {
     // Retrieve system settings for default replenishment thresholds
     const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const inventoryConfig = (settings?.inventory as any) || {};
+    const inventoryConfig = ((settings as any)?.inventory) || {};
     const reorderPoint = parseInt(inventoryConfig.defaultReorderPoint) || 10;
     const reorderQuantity = parseInt(inventoryConfig.defaultReorderQuantity) || 50;
 

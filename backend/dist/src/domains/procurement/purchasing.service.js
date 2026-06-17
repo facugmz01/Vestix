@@ -373,9 +373,13 @@ let PurchasingService = PurchasingService_1 = class PurchasingService {
         });
     }
     async generateReplenishmentOrders() {
+        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+        const inventoryConfig = (settings?.inventory) || {};
+        const reorderPoint = parseInt(inventoryConfig.defaultReorderPoint) || 10;
+        const reorderQuantity = parseInt(inventoryConfig.defaultReorderQuantity) || 50;
         const stockToReplenish = await this.prisma.stockLevel.findMany({
             where: {
-                availableQuantity: { lte: this.prisma.stockLevel.fields.reorderPoint }
+                availableQuantity: { lte: reorderPoint }
             },
             include: {
                 variant: {
@@ -388,10 +392,10 @@ let PurchasingService = PurchasingService_1 = class PurchasingService {
         }
         const draftOrders = {};
         for (const stock of stockToReplenish) {
-            const neededQty = stock.minQuantity - stock.availableQuantity;
+            const neededQty = reorderQuantity - stock.availableQuantity;
             if (neededQty <= 0)
                 continue;
-            const supplierId = stock.variant.product.preferredSupplierId || 'UNKNOWN_SUPPLIER';
+            const supplierId = 'UNKNOWN_SUPPLIER';
             const warehouseId = stock.warehouseId;
             if (!draftOrders[supplierId])
                 draftOrders[supplierId] = {};
