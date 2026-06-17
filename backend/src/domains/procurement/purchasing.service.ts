@@ -422,10 +422,16 @@ export class PurchasingService {
   }
 
   async generateReplenishmentOrders() {
+    // Retrieve system settings for default replenishment thresholds
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const inventoryConfig = (settings?.inventory as any) || {};
+    const reorderPoint = parseInt(inventoryConfig.defaultReorderPoint) || 10;
+    const reorderQuantity = parseInt(inventoryConfig.defaultReorderQuantity) || 50;
+
     // 1. Find all stock levels where available <= reorderPoint
     const stockToReplenish = await this.prisma.stockLevel.findMany({
       where: {
-        availableQuantity: { lte: this.prisma.stockLevel.fields.reorderPoint }
+        availableQuantity: { lte: reorderPoint }
       },
       include: {
         variant: {
@@ -443,11 +449,11 @@ export class PurchasingService {
     const draftOrders: Record<string, Record<string, any[]>> = {};
 
     for (const stock of stockToReplenish) {
-      const neededQty = stock.minQuantity - stock.availableQuantity;
+      const neededQty = reorderQuantity - stock.availableQuantity;
       if (neededQty <= 0) continue;
 
       // Fallback: If no preferred supplier, use a 'UNKNOWN_SUPPLIER' key so the user can assign it later
-      const supplierId = stock.variant.product.preferredSupplierId || 'UNKNOWN_SUPPLIER';
+      const supplierId = 'UNKNOWN_SUPPLIER';
       const warehouseId = stock.warehouseId;
 
       if (!draftOrders[supplierId]) draftOrders[supplierId] = {};
