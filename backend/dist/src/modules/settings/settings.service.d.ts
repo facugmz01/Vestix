@@ -8,6 +8,7 @@ export declare class SettingsService implements OnModuleInit {
     private readonly logger;
     constructor(prisma: PrismaService, auditService: AuditService);
     onModuleInit(): Promise<void>;
+    private syncLegacyBranchData;
     private ensureDefaultSettings;
     getSettings(): Promise<{
         id: string;

@@ -3,7 +3,6 @@ import { useFormContext } from 'react-hook-form';
 import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './SettingsLayout';
 import { Input } from '@/components/ui';
 import { toast } from 'react-hot-toast';
-import { NotificationTemplatesEditor } from './NotificationTemplatesEditor';
 
 // ─── Notification Settings ───────────────────────────────────────────────────
 
@@ -146,7 +145,14 @@ export function NotificationSettingsPanel() {
 
       <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '16px' }}>Gestor de Plantillas</p>
       
-      <NotificationTemplatesEditor />
+      <div style={{ padding: '16px', background: 'var(--bg-overlay)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+        <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
+          Las plantillas de mensajes (Email, WhatsApp, SMS) ahora se gestionan en su propia sección para mayor comodidad.
+        </p>
+        <a href="/admin/notifications" style={{ display: 'inline-block', padding: '8px 16px', background: 'var(--accent)', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
+          Ir a Notificaciones y Plantillas
+        </a>
+      </div>
 
       <SettingsDivider />
 

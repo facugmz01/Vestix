@@ -16,6 +16,42 @@ export class SettingsService implements OnModuleInit {
 
   async onModuleInit() {
     await this.ensureDefaultSettings();
+    await this.syncLegacyBranchData();
+  }
+
+  private async syncLegacyBranchData() {
+    try {
+      const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+      if (!settings) return;
+      
+      const gen = settings.general as any;
+      // If the company name is still the hardcoded default, try to sync from the main branch
+      if (gen && gen.companyName === 'Mi Empresa') {
+        const mainBranch = await this.prisma.branch.findFirst({ where: { isMain: true } });
+        if (mainBranch && mainBranch.settings) {
+          const bs = mainBranch.settings as any;
+          if (bs.companyName && bs.companyName !== 'Mi Empresa') {
+            this.logger.log('Syncing legacy branch settings into SystemSettings.general...');
+            await this.prisma.systemSettings.update({
+              where: { id: 'default' },
+              data: {
+                general: {
+                  ...gen,
+                  companyName: bs.companyName,
+                  legalName: bs.companyName,
+                  taxId: bs.taxId || gen.taxId,
+                  address: bs.companyAddress || gen.address,
+                  phone: bs.companyPhone || gen.phone,
+                  email: bs.companyEmail || gen.email,
+                }
+              }
+            });
+          }
+        }
+      }
+    } catch (err) {
+      this.logger.error('Failed to sync legacy branch data', err);
+    }
   }
 
   private async ensureDefaultSettings() {
