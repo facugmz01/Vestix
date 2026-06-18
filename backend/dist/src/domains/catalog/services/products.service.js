@@ -479,7 +479,7 @@ let ProductsService = class ProductsService {
                 if (row.category) {
                     let cat = await tx.category.findFirst({ where: { name: row.category } });
                     if (!cat) {
-                        cat = await tx.category.create({ data: { name: row.category, description: 'Creada automáticamente por importador' } });
+                        cat = await tx.category.create({ data: { name: row.category } });
                     }
                     categoryId = cat.id;
                 }
