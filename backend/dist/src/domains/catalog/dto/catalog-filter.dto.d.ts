@@ -1,7 +1,9 @@
 export declare class CatalogFilterDto {
     searchQuery?: string;
+    sortBy?: string;
     categoryId?: string;
     brandId?: string;
+    brand?: string;
     inStockOnly?: boolean;
     minPrice?: number;
     maxPrice?: number;
@@ -9,4 +11,6 @@ export declare class CatalogFilterDto {
         key: string;
         value: string;
     }[];
+    page?: number;
+    pageSize?: number;
 }

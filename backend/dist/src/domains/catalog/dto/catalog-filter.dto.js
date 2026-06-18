@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CatalogFilterDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 class CatalogFilterDto {
 }
 exports.CatalogFilterDto = CatalogFilterDto;
@@ -23,6 +24,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
+], CatalogFilterDto.prototype, "sortBy", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
 ], CatalogFilterDto.prototype, "categoryId", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
@@ -30,18 +36,26 @@ __decorate([
     __metadata("design:type", String)
 ], CatalogFilterDto.prototype, "brandId", void 0);
 __decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CatalogFilterDto.prototype, "brand", void 0);
+__decorate([
     (0, class_validator_1.IsBoolean)(),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Boolean),
     __metadata("design:type", Boolean)
 ], CatalogFilterDto.prototype, "inStockOnly", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], CatalogFilterDto.prototype, "minPrice", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], CatalogFilterDto.prototype, "maxPrice", void 0);
 __decorate([
@@ -49,4 +63,16 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], CatalogFilterDto.prototype, "attributes", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], CatalogFilterDto.prototype, "page", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], CatalogFilterDto.prototype, "pageSize", void 0);
 //# sourceMappingURL=catalog-filter.dto.js.map
