@@ -76,17 +76,6 @@ export declare class InventoryService {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
             warehouseName: string;
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             variant: {
                 product: {
                     id: string;
@@ -123,6 +112,17 @@ export declare class InventoryService {
                 updatedAt: Date;
             };
             sourceWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+            destinationWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;

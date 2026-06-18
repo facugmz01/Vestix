@@ -41,17 +41,6 @@ export declare class InventoryController {
         sourceWarehouseName: string;
         destinationWarehouseName: string;
         warehouseName: string;
-        destinationWarehouse: {
-            id: string;
-            name: string;
-            code: string | null;
-            type: string | null;
-            address: string | null;
-            isActive: boolean;
-            branchId: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         variant: {
             product: {
                 id: string;
@@ -98,6 +87,17 @@ export declare class InventoryController {
             createdAt: Date;
             updatedAt: Date;
         };
+        destinationWarehouse: {
+            id: string;
+            name: string;
+            code: string | null;
+            type: string | null;
+            address: string | null;
+            isActive: boolean;
+            branchId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         id: string;
         variantId: string;
         batchId: string | null;
@@ -116,17 +116,6 @@ export declare class InventoryController {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
             warehouseName: string;
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             variant: {
                 product: {
                     id: string;
@@ -173,6 +162,17 @@ export declare class InventoryController {
                 createdAt: Date;
                 updatedAt: Date;
             };
+            destinationWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             id: string;
             variantId: string;
             batchId: string | null;
@@ -192,17 +192,6 @@ export declare class InventoryController {
         data: {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             lines: ({
                 variant: {
                     id: string;
@@ -238,6 +227,17 @@ export declare class InventoryController {
                 createdAt: Date;
                 updatedAt: Date;
             };
+            destinationWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             id: string;
             sourceWarehouseId: string;
             destinationWarehouseId: string;
@@ -255,17 +255,6 @@ export declare class InventoryController {
     getTransfer(id: string): Promise<{
         sourceWarehouseName: string;
         destinationWarehouseName: string;
-        destinationWarehouse: {
-            id: string;
-            name: string;
-            code: string | null;
-            type: string | null;
-            address: string | null;
-            isActive: boolean;
-            branchId: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         lines: ({
             variant: {
                 id: string;
@@ -291,6 +280,17 @@ export declare class InventoryController {
             createdAt: Date;
         })[];
         sourceWarehouse: {
+            id: string;
+            name: string;
+            code: string | null;
+            type: string | null;
+            address: string | null;
+            isActive: boolean;
+            branchId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        destinationWarehouse: {
             id: string;
             name: string;
             code: string | null;

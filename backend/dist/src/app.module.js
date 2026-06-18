@@ -31,12 +31,12 @@ const audit_module_1 = require("./modules/audit/audit.module");
 const health_module_1 = require("./modules/health/health.module");
 const settings_module_1 = require("./modules/settings/settings.module");
 const reports_module_1 = require("./modules/reports/reports.module");
-const auth_module_1 = require("./modules/auth/auth.module");
 const locations_module_1 = require("./modules/locations/locations.module");
 const inventory_module_1 = require("./modules/inventory/inventory.module");
 const purchasing_module_1 = require("./modules/purchasing/purchasing.module");
 const transfers_module_1 = require("./modules/transfers/transfers.module");
 const treasury_module_1 = require("./modules/treasury/treasury.module");
+const storefront_module_1 = require("./domains/storefront/storefront.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -83,12 +83,12 @@ exports.AppModule = AppModule = __decorate([
             health_module_1.HealthModule,
             settings_module_1.SettingsModule,
             reports_module_1.ReportsModule,
-            auth_module_1.AuthModule,
             locations_module_1.LocationsModule,
             inventory_module_1.InventoryModule,
             purchasing_module_1.PurchasingModule,
             transfers_module_1.TransfersModule,
             treasury_module_1.TreasuryModule,
+            storefront_module_1.StorefrontModule,
         ],
     })
 ], AppModule);

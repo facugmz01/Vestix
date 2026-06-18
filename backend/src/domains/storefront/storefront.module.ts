@@ -8,9 +8,10 @@ import { CustomerAuthGuard } from './guards/customer-auth.guard';
 
 @Module({
   imports: [
-    // Although JwtModule is registered globally in IdentityModule, it doesn't hurt 
-    // to register it here, but we can rely on the global one for verifyAsync since 
-    // we use the same secret. The Service uses it directly.
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'super_secret_dev_key',
+      signOptions: { expiresIn: '7d' },
+    })
   ],
   controllers: [
     StorefrontAuthController,
