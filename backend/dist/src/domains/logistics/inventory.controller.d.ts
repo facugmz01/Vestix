@@ -55,7 +55,6 @@ export declare class InventoryController {
                 costPrice: number;
                 isActive: boolean;
                 isPublished: boolean;
-                preferredSupplierId: string | null;
                 images: import(".prisma/client").Prisma.JsonValue;
                 metadata: import(".prisma/client").Prisma.JsonValue;
                 createdAt: Date;
@@ -130,7 +129,6 @@ export declare class InventoryController {
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
-                    preferredSupplierId: string | null;
                     images: import(".prisma/client").Prisma.JsonValue;
                     metadata: import(".prisma/client").Prisma.JsonValue;
                     createdAt: Date;
@@ -192,6 +190,28 @@ export declare class InventoryController {
         data: {
             sourceWarehouseName: string;
             destinationWarehouseName: string;
+            sourceWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+            destinationWarehouse: {
+                id: string;
+                name: string;
+                code: string | null;
+                type: string | null;
+                address: string | null;
+                isActive: boolean;
+                branchId: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             lines: ({
                 variant: {
                     id: string;
@@ -216,28 +236,6 @@ export declare class InventoryController {
                 receivedQuantity: number | null;
                 createdAt: Date;
             })[];
-            sourceWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             id: string;
             sourceWarehouseId: string;
             destinationWarehouseId: string;
@@ -255,6 +253,28 @@ export declare class InventoryController {
     getTransfer(id: string): Promise<{
         sourceWarehouseName: string;
         destinationWarehouseName: string;
+        sourceWarehouse: {
+            id: string;
+            name: string;
+            code: string | null;
+            type: string | null;
+            address: string | null;
+            isActive: boolean;
+            branchId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        destinationWarehouse: {
+            id: string;
+            name: string;
+            code: string | null;
+            type: string | null;
+            address: string | null;
+            isActive: boolean;
+            branchId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         lines: ({
             variant: {
                 id: string;
@@ -279,28 +299,6 @@ export declare class InventoryController {
             receivedQuantity: number | null;
             createdAt: Date;
         })[];
-        sourceWarehouse: {
-            id: string;
-            name: string;
-            code: string | null;
-            type: string | null;
-            address: string | null;
-            isActive: boolean;
-            branchId: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        destinationWarehouse: {
-            id: string;
-            name: string;
-            code: string | null;
-            type: string | null;
-            address: string | null;
-            isActive: boolean;
-            branchId: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         id: string;
         sourceWarehouseId: string;
         destinationWarehouseId: string;

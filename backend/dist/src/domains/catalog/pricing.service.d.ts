@@ -17,7 +17,9 @@ export declare class PricingService {
     } & {
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -41,7 +43,9 @@ export declare class PricingService {
     } & {
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -56,7 +60,9 @@ export declare class PricingService {
     createPriceList(dto: CreatePriceListDto): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;

@@ -10,16 +10,16 @@ export declare class ProductsService {
     private readonly brandsService;
     constructor(prisma: PrismaService, categoriesService: CategoriesService, brandsService: BrandsService);
     create(createProductDto: CreateProductDto): Promise<{
+        brand: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        brand: {
-            id: string;
-            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -36,7 +36,6 @@ export declare class ProductsService {
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
-        preferredSupplierId: string | null;
         images: import(".prisma/client").Prisma.JsonValue;
         metadata: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
@@ -44,16 +43,16 @@ export declare class ProductsService {
     }>;
     findAll(query?: any): Promise<{
         data: ({
+            brand: {
+                id: string;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             category: {
                 id: string;
                 name: string;
                 parentId: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-            };
-            brand: {
-                id: string;
-                name: string;
                 createdAt: Date;
                 updatedAt: Date;
             };
@@ -70,7 +69,6 @@ export declare class ProductsService {
             costPrice: number;
             isActive: boolean;
             isPublished: boolean;
-            preferredSupplierId: string | null;
             images: import(".prisma/client").Prisma.JsonValue;
             metadata: import(".prisma/client").Prisma.JsonValue;
             createdAt: Date;
@@ -81,16 +79,16 @@ export declare class ProductsService {
         pageSize: number;
     }>;
     findOne(id: string): Promise<{
+        brand: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        brand: {
-            id: string;
-            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -122,23 +120,22 @@ export declare class ProductsService {
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
-        preferredSupplierId: string | null;
         images: import(".prisma/client").Prisma.JsonValue;
         metadata: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
         updatedAt: Date;
     }>;
     update(id: string, updateProductDto: UpdateProductDto): Promise<{
+        brand: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        brand: {
-            id: string;
-            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -161,7 +158,6 @@ export declare class ProductsService {
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
-        preferredSupplierId: string | null;
         images: import(".prisma/client").Prisma.JsonValue;
         metadata: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
@@ -240,6 +236,9 @@ export declare class ProductsService {
         createdCount: number;
         updatedCount: number;
     }>;
+    clearCatalog(): Promise<{
+        success: boolean;
+    }>;
     findAllVariants(search?: string): Promise<({
         product: {
             id: string;
@@ -254,7 +253,6 @@ export declare class ProductsService {
             costPrice: number;
             isActive: boolean;
             isPublished: boolean;
-            preferredSupplierId: string | null;
             images: import(".prisma/client").Prisma.JsonValue;
             metadata: import(".prisma/client").Prisma.JsonValue;
             createdAt: Date;

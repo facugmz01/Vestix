@@ -28,6 +28,7 @@ const bulk_update_prices_dto_1 = require("../dto/bulk-update-prices.dto");
 const require_permissions_decorator_1 = require("../../../core/rbac/decorators/require-permissions.decorator");
 const passport_1 = require("@nestjs/passport");
 const permissions_guard_1 = require("../../../core/rbac/guards/permissions.guard");
+const pricing_service_1 = require("../pricing.service");
 let CategoriesController = class CategoriesController {
     constructor(categoriesService) {
         this.categoriesService = categoriesService;
@@ -154,6 +155,9 @@ let ProductsController = class ProductsController {
     bulkUpdatePrices(dto) {
         return this.productsService.bulkUpdatePrices(dto);
     }
+    clearCatalog() {
+        return this.productsService.clearCatalog();
+    }
     findAll(query) {
         return this.productsService.findAll(query);
     }
@@ -209,6 +213,13 @@ __decorate([
     __metadata("design:paramtypes", [bulk_update_prices_dto_1.BulkUpdatePricesDto]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "bulkUpdatePrices", null);
+__decorate([
+    (0, common_1.Post)('clear'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'delete', subject: 'Catalog' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "clearCatalog", null);
 __decorate([
     (0, common_1.Get)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),
@@ -374,11 +385,15 @@ exports.AttributesController = AttributesController = __decorate([
     __metadata("design:paramtypes", [taxonomy_service_1.AttributesService])
 ], AttributesController);
 let PriceListController = class PriceListController {
-    constructor(priceListService) {
+    constructor(priceListService, pricingService) {
         this.priceListService = priceListService;
+        this.pricingService = pricingService;
     }
-    findAll() {
-        return this.priceListService.findAll();
+    findAll(query) {
+        return this.priceListService.findAllPaged(query);
+    }
+    findOne(id) {
+        return this.priceListService.findOne(id);
     }
     create(data) {
         return this.priceListService.create(data);
@@ -389,15 +404,35 @@ let PriceListController = class PriceListController {
     delete(id) {
         return this.priceListService.delete(id);
     }
+    getItems(priceListId, page, pageSize) {
+        const p = page ? parseInt(page, 10) : 1;
+        const ps = pageSize ? parseInt(pageSize, 10) : 20;
+        return this.priceListService.findItems(priceListId, p, ps);
+    }
+    updateItemPrice(priceListId, variantId, overridePrice) {
+        return this.pricingService.setVariantPrice(priceListId, variantId, overridePrice);
+    }
+    assignCustomers(priceListId, customerIds) {
+        return this.priceListService.assignToCustomers(priceListId, customerIds);
+    }
 };
 exports.PriceListController = PriceListController;
 __decorate([
     (0, common_1.Get)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PriceListController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PriceListController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Catalog' }),
@@ -423,10 +458,40 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], PriceListController.prototype, "delete", null);
+__decorate([
+    (0, common_1.Get)(':priceListId/items'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),
+    __param(0, (0, common_1.Param)('priceListId', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('pageSize')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], PriceListController.prototype, "getItems", null);
+__decorate([
+    (0, common_1.Patch)(':priceListId/items/:variantId'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Catalog' }),
+    __param(0, (0, common_1.Param)('priceListId', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Param)('variantId', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)('overridePrice')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Number]),
+    __metadata("design:returntype", void 0)
+], PriceListController.prototype, "updateItemPrice", null);
+__decorate([
+    (0, common_1.Post)(':priceListId/assign-customers'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Catalog' }),
+    __param(0, (0, common_1.Param)('priceListId', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)('customerIds')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Array]),
+    __metadata("design:returntype", void 0)
+], PriceListController.prototype, "assignCustomers", null);
 exports.PriceListController = PriceListController = __decorate([
     (0, common_1.Controller)('price-lists'),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
-    __metadata("design:paramtypes", [taxonomy_service_1.PriceListService])
+    __metadata("design:paramtypes", [taxonomy_service_1.PriceListService,
+        pricing_service_1.PricingService])
 ], PriceListController);
 let PublicCatalogController = class PublicCatalogController {
     constructor(productsService) {

@@ -13,6 +13,7 @@ import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import { RequirePermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../../core/rbac/guards/permissions.guard';
+import { PricingService } from '../pricing.service';
 
 @Controller('categories')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -101,6 +102,12 @@ export class ProductsController {
   @RequirePermissions({ action: 'update', subject: 'Catalog' })
   bulkUpdatePrices(@Body() dto: BulkUpdatePricesDto) {
     return this.productsService.bulkUpdatePrices(dto);
+  }
+
+  @Post('clear')
+  @RequirePermissions({ action: 'delete', subject: 'Catalog' })
+  clearCatalog() {
+    return this.productsService.clearCatalog();
   }
 
   @Get()
@@ -203,12 +210,21 @@ export class AttributesController {
 @Controller('price-lists')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class PriceListController {
-  constructor(private readonly priceListService: PriceListService) {}
+  constructor(
+    private readonly priceListService: PriceListService,
+    private readonly pricingService: PricingService,
+  ) {}
 
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
-  findAll() {
-    return this.priceListService.findAll();
+  findAll(@Query() query: any) {
+    return this.priceListService.findAllPaged(query);
+  }
+
+  @Get(':id')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.priceListService.findOne(id);
   }
 
   @Post()
@@ -227,6 +243,37 @@ export class PriceListController {
   @RequirePermissions({ action: 'delete', subject: 'Catalog' })
   delete(@Param('id', ParseUUIDPipe) id: string) {
     return this.priceListService.delete(id);
+  }
+
+  @Get(':priceListId/items')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  getItems(
+    @Param('priceListId', ParseUUIDPipe) priceListId: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    const p = page ? parseInt(page, 10) : 1;
+    const ps = pageSize ? parseInt(pageSize, 10) : 20;
+    return this.priceListService.findItems(priceListId, p, ps);
+  }
+
+  @Patch(':priceListId/items/:variantId')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  updateItemPrice(
+    @Param('priceListId', ParseUUIDPipe) priceListId: string,
+    @Param('variantId', ParseUUIDPipe) variantId: string,
+    @Body('overridePrice') overridePrice: number,
+  ) {
+    return this.pricingService.setVariantPrice(priceListId, variantId, overridePrice);
+  }
+
+  @Post(':priceListId/assign-customers')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  assignCustomers(
+    @Param('priceListId', ParseUUIDPipe) priceListId: string,
+    @Body('customerIds') customerIds: string[],
+  ) {
+    return this.priceListService.assignToCustomers(priceListId, customerIds);
   }
 }
 

@@ -82,8 +82,11 @@ export class PricingService {
     if (activePriceList.validFrom && now < activePriceList.validFrom) return basePrice;
     if (activePriceList.validTo && now > activePriceList.validTo) return basePrice;
 
-    if (activePriceList.isPercentageBased && activePriceList.percentageDiscount) {
-      const multiplier = (100 - activePriceList.percentageDiscount) / 100;
+    if (activePriceList.type === 'MODIFIER' || activePriceList.isPercentageBased) {
+      const percentage = (activePriceList.modifierPercentage !== null && activePriceList.modifierPercentage !== undefined)
+        ? activePriceList.modifierPercentage
+        : -(activePriceList.percentageDiscount || 0);
+      const multiplier = (100 + percentage) / 100;
       return Number((basePrice * multiplier).toFixed(2));
     } else {
       const entry = await this.prisma.priceListEntry.findUnique({
@@ -104,8 +107,11 @@ export class PricingService {
     if (activePriceList.validFrom && now < activePriceList.validFrom) return basePrice;
     if (activePriceList.validTo && now > activePriceList.validTo) return basePrice;
 
-    if (activePriceList.isPercentageBased && activePriceList.percentageDiscount) {
-      const multiplier = (100 - activePriceList.percentageDiscount) / 100;
+    if (activePriceList.type === 'MODIFIER' || activePriceList.isPercentageBased) {
+      const percentage = (activePriceList.modifierPercentage !== null && activePriceList.modifierPercentage !== undefined)
+        ? activePriceList.modifierPercentage
+        : -(activePriceList.percentageDiscount || 0);
+      const multiplier = (100 + percentage) / 100;
       return Number((basePrice * multiplier).toFixed(2));
     } else {
       const entry = await this.prisma.priceListEntry.findUnique({

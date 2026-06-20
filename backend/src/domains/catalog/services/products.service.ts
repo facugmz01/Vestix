@@ -708,6 +708,31 @@ export class ProductsService {
     });
   }
 
+  async clearCatalog() {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`
+        TRUNCATE TABLE 
+          "catalog"."Product", 
+          "catalog"."ProductVariant", 
+          "catalog"."Category", 
+          "catalog"."Brand", 
+          "catalog"."Attribute", 
+          "catalog"."AttributeValue", 
+          "catalog"."PriceList",
+          "catalog"."PriceListEntry",
+          "sales"."SaleOrder",
+          "sales"."SaleReturn",
+          "purchasing"."PurchaseOrder",
+          "purchasing"."GoodsReceipt",
+          "inventory"."StockTransfer",
+          "finance"."Invoice",
+          "finance"."FinancialTransaction"
+        CASCADE;
+      `);
+      return { success: true };
+    });
+  }
+
   async findAllVariants(search?: string) {
     const where: any = {};
     if (search) {

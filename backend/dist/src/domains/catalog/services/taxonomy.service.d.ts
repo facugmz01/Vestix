@@ -145,7 +145,9 @@ export declare class PriceListService {
     findAll(): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -157,10 +159,57 @@ export declare class PriceListService {
         createdAt: Date;
         updatedAt: Date;
     }[]>;
+    findAllPaged(query: {
+        page?: number | string;
+        pageSize?: number | string;
+        search?: string;
+        type?: string;
+        isActive?: boolean | string;
+    }): Promise<{
+        data: {
+            id: string;
+            name: string;
+            code: string;
+            type: string;
+            modifierPercentage: number;
+            currency: string;
+            margin: number;
+            isActive: boolean;
+            isPercentageBased: boolean;
+            percentageDiscount: number | null;
+            validFrom: Date | null;
+            validTo: Date | null;
+            isDefault: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+    }>;
+    findOne(id: string): Promise<{
+        id: string;
+        name: string;
+        code: string;
+        type: string;
+        modifierPercentage: number;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
     create(data: any): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -175,7 +224,9 @@ export declare class PriceListService {
     update(id: string, data: any): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -190,7 +241,9 @@ export declare class PriceListService {
     delete(id: string): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -201,5 +254,22 @@ export declare class PriceListService {
         isDefault: boolean;
         createdAt: Date;
         updatedAt: Date;
+    }>;
+    findItems(priceListId: string, page: number, pageSize: number): Promise<{
+        data: {
+            id: string;
+            priceListId: string;
+            variantId: string;
+            overridePrice: number;
+            variantSku: string;
+            variantName: string;
+            basePrice: number;
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+    }>;
+    assignToCustomers(priceListId: string, customerIds: string[]): Promise<{
+        success: boolean;
     }>;
 }

@@ -9,6 +9,7 @@ import { CreatePriceListDto } from '../dto/create-price-list.dto';
 import { UpdatePriceListDto } from '../dto/update-price-list.dto';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
+import { PricingService } from '../pricing.service';
 export declare class CategoriesController {
     private readonly categoriesService;
     constructor(categoriesService: CategoriesService);
@@ -81,16 +82,16 @@ export declare class ProductsController {
     private readonly productsService;
     constructor(productsService: ProductsService);
     create(createProductDto: CreateProductDto): Promise<{
+        brand: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        brand: {
-            id: string;
-            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -107,7 +108,6 @@ export declare class ProductsController {
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
-        preferredSupplierId: string | null;
         images: import(".prisma/client").Prisma.JsonValue;
         metadata: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
@@ -126,18 +126,21 @@ export declare class ProductsController {
         success: boolean;
         updatedCount: number;
     }>;
+    clearCatalog(): Promise<{
+        success: boolean;
+    }>;
     findAll(query: any): Promise<{
         data: ({
+            brand: {
+                id: string;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+            };
             category: {
                 id: string;
                 name: string;
                 parentId: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-            };
-            brand: {
-                id: string;
-                name: string;
                 createdAt: Date;
                 updatedAt: Date;
             };
@@ -154,7 +157,6 @@ export declare class ProductsController {
             costPrice: number;
             isActive: boolean;
             isPublished: boolean;
-            preferredSupplierId: string | null;
             images: import(".prisma/client").Prisma.JsonValue;
             metadata: import(".prisma/client").Prisma.JsonValue;
             createdAt: Date;
@@ -165,16 +167,16 @@ export declare class ProductsController {
         pageSize: number;
     }>;
     findOne(id: string): Promise<{
+        brand: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        brand: {
-            id: string;
-            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -206,7 +208,6 @@ export declare class ProductsController {
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
-        preferredSupplierId: string | null;
         images: import(".prisma/client").Prisma.JsonValue;
         metadata: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
@@ -244,16 +245,16 @@ export declare class ProductsController {
     }>;
     generateCombinations(id: string, dto: any): Promise<any[] | import(".prisma/client").Prisma.BatchPayload>;
     update(id: string, updateProductDto: UpdateProductDto): Promise<{
+        brand: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        };
-        brand: {
-            id: string;
-            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -276,7 +277,6 @@ export declare class ProductsController {
         costPrice: number;
         isActive: boolean;
         isPublished: boolean;
-        preferredSupplierId: string | null;
         images: import(".prisma/client").Prisma.JsonValue;
         metadata: import(".prisma/client").Prisma.JsonValue;
         createdAt: Date;
@@ -303,7 +303,6 @@ export declare class VariantsController {
             costPrice: number;
             isActive: boolean;
             isPublished: boolean;
-            preferredSupplierId: string | null;
             images: import(".prisma/client").Prisma.JsonValue;
             metadata: import(".prisma/client").Prisma.JsonValue;
             createdAt: Date;
@@ -406,11 +405,36 @@ export declare class AttributesController {
 }
 export declare class PriceListController {
     private readonly priceListService;
-    constructor(priceListService: PriceListService);
-    findAll(): Promise<{
+    private readonly pricingService;
+    constructor(priceListService: PriceListService, pricingService: PricingService);
+    findAll(query: any): Promise<{
+        data: {
+            id: string;
+            name: string;
+            code: string;
+            type: string;
+            modifierPercentage: number;
+            currency: string;
+            margin: number;
+            isActive: boolean;
+            isPercentageBased: boolean;
+            percentageDiscount: number | null;
+            validFrom: Date | null;
+            validTo: Date | null;
+            isDefault: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+    }>;
+    findOne(id: string): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -421,11 +445,13 @@ export declare class PriceListController {
         isDefault: boolean;
         createdAt: Date;
         updatedAt: Date;
-    }[]>;
+    }>;
     create(data: CreatePriceListDto): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -440,7 +466,9 @@ export declare class PriceListController {
     update(id: string, data: UpdatePriceListDto): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -455,7 +483,9 @@ export declare class PriceListController {
     delete(id: string): Promise<{
         id: string;
         name: string;
+        code: string;
         type: string;
+        modifierPercentage: number;
         currency: string;
         margin: number;
         isActive: boolean;
@@ -466,6 +496,31 @@ export declare class PriceListController {
         isDefault: boolean;
         createdAt: Date;
         updatedAt: Date;
+    }>;
+    getItems(priceListId: string, page?: string, pageSize?: string): Promise<{
+        data: {
+            id: string;
+            priceListId: string;
+            variantId: string;
+            overridePrice: number;
+            variantSku: string;
+            variantName: string;
+            basePrice: number;
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+    }>;
+    updateItemPrice(priceListId: string, variantId: string, overridePrice: number): Promise<{
+        id: string;
+        priceListId: string;
+        variantId: string;
+        overridePrice: number;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    assignCustomers(priceListId: string, customerIds: string[]): Promise<{
+        success: boolean;
     }>;
 }
 export declare class PublicCatalogController {

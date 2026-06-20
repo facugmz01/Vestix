@@ -13,7 +13,6 @@ const products_service_1 = require("./services/products.service");
 const taxonomy_service_1 = require("./services/taxonomy.service");
 const catalog_controller_1 = require("./controllers/catalog.controller");
 const pricing_service_1 = require("./pricing.service");
-const pricing_controller_1 = require("./pricing.controller");
 const promotions_controller_1 = require("./promotions.controller");
 const rules_engine_service_1 = require("./rules-engine.service");
 const catalog_service_1 = require("./catalog.service");
@@ -34,7 +33,6 @@ exports.CatalogModule = CatalogModule = __decorate([
             catalog_controller_1.VariantsController,
             catalog_controller_1.AttributesController,
             catalog_controller_1.PriceListController,
-            pricing_controller_1.PricingController,
             promotions_controller_1.PromotionsController,
             catalog_controller_2.CatalogController,
             identifiers_controller_1.IdentifiersController,

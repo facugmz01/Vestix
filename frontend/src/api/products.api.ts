@@ -43,6 +43,9 @@ export const productsApi = {
   deleteProduct: (id: string) =>
     del(`/products/${id}`),
 
+  clearCatalog: () =>
+    post<{ success: boolean }>('/products/clear'),
+
   // Taxonomy
   getCategories: () => get<Category[]>('/categories'),
   createCategory: (dto: { name: string; parentId?: string }) => post<Category>('/categories', dto),

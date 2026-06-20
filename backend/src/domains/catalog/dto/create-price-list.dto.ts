@@ -6,9 +6,12 @@ export class CreatePriceListDto {
   @IsNotEmpty()
   name: string;
 
-  @IsEnum(PriceListType)
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+
   @IsOptional()
-  type?: PriceListType;
+  type?: any; // Allow any type from frontend (BASE | MODIFIER) but it maps to RETAIL/etc internally
 
   @IsString()
   @IsOptional()
@@ -26,6 +29,14 @@ export class CreatePriceListDto {
   @IsOptional()
   @IsNumber()
   percentageDiscount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  modifierPercentage?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 
   @IsOptional()
   @IsDateString()

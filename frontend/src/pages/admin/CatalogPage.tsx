@@ -207,6 +207,7 @@ export default function CatalogPage() {
 
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [bulkUpdaterOpen, setBulkUpdaterOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -236,6 +237,18 @@ export default function CatalogPage() {
     },
     onError: (err: any) => {
       toast.error(err.message || 'Error al eliminar. Verificá que no tenga stock o facturas vinculadas.');
+    },
+  });
+
+  const clearCatalogMutation = useMutation({
+    mutationFn: () => productsApi.clearCatalog(),
+    onSuccess: () => {
+      toast.success('Catálogo vaciado con éxito');
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+      setClearDialogOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Error al vaciar el catálogo.');
     },
   });
 
@@ -282,6 +295,22 @@ export default function CatalogPage() {
               }}
             >
               Actualización Masiva
+            </button>
+          </ActionGuard>
+
+          <ActionGuard action="delete" subject="Catalog">
+            <button
+              onClick={() => setClearDialogOpen(true)}
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#ef4444', padding: '8px 16px', borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                fontWeight: 500, fontSize: '13px', transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+            >
+              <Trash2 size={16} /> Vaciar Catálogo
             </button>
           </ActionGuard>
 
@@ -410,6 +439,17 @@ export default function CatalogPage() {
         loading={deleteMutation.isPending}
         onConfirm={() => selectedProduct && deleteMutation.mutate(selectedProduct.id)}
         onCancel={() => setDeleteOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={clearDialogOpen}
+        title="Vaciar Catálogo Completo"
+        message="¿Estás seguro de que querés vaciar el catálogo? Esta acción eliminará definitivamente TODOS los productos, variantes, categorías, marcas, stock y registros de ventas/compras de prueba. Esta acción no se puede deshacer."
+        confirmLabel="Vaciar Catálogo Definitivamente"
+        variant="danger"
+        loading={clearCatalogMutation.isPending}
+        onConfirm={() => clearCatalogMutation.mutate()}
+        onCancel={() => setClearDialogOpen(false)}
       />
 
       <ImportProductsModal

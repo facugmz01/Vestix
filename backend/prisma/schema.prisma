@@ -292,7 +292,9 @@ model ProductBatch {
 model PriceList {
   id                 String           @id @default(uuid())
   name               String           @unique
+  code               String           @default("")
   type               String           @default("RETAIL") // RETAIL | WHOLESALE | VIP | PROMOTIONAL
+  modifierPercentage Float            @default(0)
   currency           String           @default("ARS")
   margin             Float            @default(1.0)
   isActive           Boolean          @default(true)

@@ -96,7 +96,6 @@ export declare class TransfersService {
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
-                    preferredSupplierId: string | null;
                     images: import(".prisma/client").Prisma.JsonValue;
                     metadata: import(".prisma/client").Prisma.JsonValue;
                     createdAt: Date;

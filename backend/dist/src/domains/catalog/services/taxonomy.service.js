@@ -140,27 +140,132 @@ let PriceListService = class PriceListService {
             orderBy: { createdAt: 'desc' }
         });
     }
+    async findAllPaged(query) {
+        const page = Number(query.page) || 1;
+        const pageSize = Number(query.pageSize) || 10;
+        const skip = (page - 1) * pageSize;
+        const where = {};
+        if (query.search) {
+            where.OR = [
+                { name: { contains: query.search, mode: 'insensitive' } },
+                { code: { contains: query.search, mode: 'insensitive' } }
+            ];
+        }
+        if (query.type) {
+            where.type = query.type;
+        }
+        if (query.isActive !== undefined) {
+            where.isActive = query.isActive === true || String(query.isActive) === 'true';
+        }
+        const [data, total] = await Promise.all([
+            this.prisma.priceList.findMany({
+                where,
+                skip,
+                take: pageSize,
+                orderBy: { createdAt: 'desc' }
+            }),
+            this.prisma.priceList.count({ where })
+        ]);
+        return { data, total, page, pageSize };
+    }
+    async findOne(id) {
+        const list = await this.prisma.priceList.findUnique({
+            where: { id }
+        });
+        if (!list)
+            throw new common_1.NotFoundException(`Lista de precios ${id} no encontrada`);
+        return list;
+    }
     async create(data) {
-        const { name, margin, type, currency, isPercentageBased, percentageDiscount, validFrom, validTo, isDefault } = data;
+        const { name, code, currency, type, modifierPercentage, isActive } = data;
+        const isPercentageBased = type === 'MODIFIER';
+        const percentageDiscount = isPercentageBased ? -(modifierPercentage || 0) : null;
         return this.prisma.priceList.create({
             data: {
                 name,
-                margin: margin !== undefined ? Number(margin) : 1.0,
-                type: type || 'RETAIL',
+                code: code || '',
                 currency: currency || 'ARS',
-                isPercentageBased: isPercentageBased ?? false,
-                percentageDiscount: percentageDiscount !== undefined ? Number(percentageDiscount) : null,
-                validFrom: validFrom ? new Date(validFrom) : null,
-                validTo: validTo ? new Date(validTo) : null,
-                isDefault: isDefault ?? false,
+                type: type || 'BASE',
+                modifierPercentage: modifierPercentage !== undefined ? Number(modifierPercentage) : 0,
+                isActive: isActive ?? true,
+                isPercentageBased,
+                percentageDiscount,
+                margin: 1.0,
             }
         });
     }
     async update(id, data) {
-        return this.prisma.priceList.update({ where: { id }, data });
+        const updateData = { ...data };
+        if (updateData.type !== undefined) {
+            updateData.isPercentageBased = updateData.type === 'MODIFIER';
+        }
+        if (updateData.modifierPercentage !== undefined) {
+            updateData.percentageDiscount = updateData.isPercentageBased || updateData.type === 'MODIFIER'
+                ? -Number(updateData.modifierPercentage)
+                : null;
+            updateData.modifierPercentage = Number(updateData.modifierPercentage);
+        }
+        return this.prisma.priceList.update({
+            where: { id },
+            data: updateData
+        });
     }
     async delete(id) {
+        await this.findOne(id);
         return this.prisma.priceList.delete({ where: { id } });
+    }
+    async findItems(priceListId, page, pageSize) {
+        const skip = (page - 1) * pageSize;
+        const [variants, total] = await Promise.all([
+            this.prisma.productVariant.findMany({
+                skip,
+                take: pageSize,
+                include: {
+                    product: {
+                        select: { name: true }
+                    },
+                    priceListEntries: {
+                        where: { priceListId }
+                    }
+                },
+                orderBy: { sku: 'asc' }
+            }),
+            this.prisma.productVariant.count()
+        ]);
+        const data = variants.map(v => {
+            const entry = v.priceListEntries[0];
+            const overridePrice = entry ? entry.overridePrice : v.basePrice;
+            let variantName = v.product.name;
+            const attributes = [];
+            if (v.color)
+                attributes.push(v.color);
+            if (v.size)
+                attributes.push(v.size);
+            if (attributes.length > 0) {
+                variantName += ` (${attributes.join(' / ')})`;
+            }
+            return {
+                id: entry?.id || v.id,
+                priceListId,
+                variantId: v.id,
+                overridePrice,
+                variantSku: v.sku,
+                variantName,
+                basePrice: v.basePrice
+            };
+        });
+        return { data, total, page, pageSize };
+    }
+    async assignToCustomers(priceListId, customerIds) {
+        await this.prisma.customer.updateMany({
+            where: {
+                id: { in: customerIds }
+            },
+            data: {
+                priceListId
+            }
+        });
+        return { success: true };
     }
 };
 exports.PriceListService = PriceListService;

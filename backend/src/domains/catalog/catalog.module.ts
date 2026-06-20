@@ -12,7 +12,6 @@ import {
   PublicCatalogController,
 } from './controllers/catalog.controller';
 import { PricingService } from './pricing.service';
-import { PricingController } from './pricing.controller';
 import { PromotionsController } from './promotions.controller';
 import { RulesEngineService } from './rules-engine.service';
 import { CatalogService } from './catalog.service';
@@ -30,7 +29,6 @@ import { IdentifiersController } from './identifiers.controller';
     VariantsController,
     AttributesController,
     PriceListController,
-    PricingController,
     PromotionsController,
     CatalogController,
     IdentifiersController,

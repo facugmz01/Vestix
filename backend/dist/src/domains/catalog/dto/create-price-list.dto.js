@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreatePriceListDto = void 0;
 const class_validator_1 = require("class-validator");
-const price_list_model_1 = require("../models/price-list.model");
 class CreatePriceListDto {
 }
 exports.CreatePriceListDto = CreatePriceListDto;
@@ -21,9 +20,13 @@ __decorate([
     __metadata("design:type", String)
 ], CreatePriceListDto.prototype, "name", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(price_list_model_1.PriceListType),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
+], CreatePriceListDto.prototype, "code", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
 ], CreatePriceListDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
@@ -46,6 +49,16 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreatePriceListDto.prototype, "percentageDiscount", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreatePriceListDto.prototype, "modifierPercentage", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreatePriceListDto.prototype, "isActive", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDateString)(),

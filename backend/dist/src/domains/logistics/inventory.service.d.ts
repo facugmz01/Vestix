@@ -26,8 +26,6 @@ export declare class InventoryService {
         physicalQuantity: number;
         reservedQuantity: number;
         availableQuantity: number;
-        minQuantity: number;
-        reorderPoint: number;
         updatedAt: Date;
     }[]>;
     getStockPerWarehouse(warehouseId: string, variantId?: string): Promise<{
@@ -39,8 +37,6 @@ export declare class InventoryService {
         physicalQuantity: number;
         reservedQuantity: number;
         availableQuantity: number;
-        minQuantity: number;
-        reorderPoint: number;
         updatedAt: Date;
     }[]>;
     adjustStock(dto: {
@@ -90,7 +86,6 @@ export declare class InventoryService {
                     costPrice: number;
                     isActive: boolean;
                     isPublished: boolean;
-                    preferredSupplierId: string | null;
                     images: import(".prisma/client").Prisma.JsonValue;
                     metadata: import(".prisma/client").Prisma.JsonValue;
                     createdAt: Date;
