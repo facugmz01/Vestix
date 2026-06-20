@@ -518,15 +518,26 @@ export class ProductsService {
         defaultWarehouse = await tx.warehouse.findFirst();
       }
 
+      // Group rows by product name
+      const groupedProducts = new Map<string, any[]>();
       for (const row of dto.rows) {
         if (row.resolution === 'skip') continue;
+        const name = row.name.trim();
+        if (!groupedProducts.has(name)) {
+          groupedProducts.set(name, []);
+        }
+        groupedProducts.get(name).push(row);
+      }
+
+      for (const [name, rows] of groupedProducts.entries()) {
+        const firstRow = rows[0];
 
         // Resolve Category
         let categoryId = null;
-        if (row.category) {
-          let cat = await tx.category.findFirst({ where: { name: row.category } });
+        if (firstRow.category) {
+          let cat = await tx.category.findFirst({ where: { name: firstRow.category } });
           if (!cat) {
-            cat = await tx.category.create({ data: { name: row.category } });
+            cat = await tx.category.create({ data: { name: firstRow.category } });
           }
           categoryId = cat.id;
         } else {
@@ -537,122 +548,155 @@ export class ProductsService {
 
         // Resolve Brand
         let brandId = null;
-        if (row.brand) {
-          let br = await tx.brand.findFirst({ where: { name: row.brand } });
+        if (firstRow.brand) {
+          let br = await tx.brand.findFirst({ where: { name: firstRow.brand } });
           if (!br) {
-            br = await tx.brand.create({ data: { name: row.brand } });
+            br = await tx.brand.create({ data: { name: firstRow.brand } });
           }
           brandId = br.id;
         }
 
-        // Determine SKU
-        let sku = row.sku;
-        if (!sku) {
-          sku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+        // Determine if variable product
+        const isVariable = rows.length > 1 || firstRow.type?.toLowerCase() === 'variable' || (firstRow.variant && firstRow.variant !== 'Única' && firstRow.variant !== 'DUMMY');
+
+        // Determine base SKU
+        let baseSku = null;
+        if (isVariable) {
+          const skus = rows.map(r => r.sku).filter(s => !!s);
+          if (skus.length > 0) {
+            const parts = skus[0].split('-');
+            if (parts.length > 1) {
+              baseSku = parts[0];
+            } else {
+              baseSku = skus[0].replace(/-\d+$/, '');
+            }
+          }
+        } else {
+          baseSku = firstRow.sku;
         }
 
-        const costPrice = row.costPrice || 0;
-        const basePrice = row.basePrice || 0;
+        if (!baseSku) {
+          baseSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+        }
 
-        // Check if exists
-        const existingVariant = await tx.productVariant.findUnique({ where: { sku } });
+        // Check if product exists by baseSku or name
+        let product = await tx.product.findFirst({
+          where: {
+            OR: [
+              { baseSku },
+              { name }
+            ]
+          }
+        });
 
-        let variantId: string;
-
-        if (existingVariant && row.resolution === 'overwrite') {
-          // Update existing
-          await tx.product.update({
-            where: { id: existingVariant.productId },
+        if (product) {
+          product = await tx.product.update({
+            where: { id: product.id },
             data: {
-              name: row.name,
+              name,
               categoryId,
               brandId,
+              type: isVariable ? 'VARIABLE' : 'SINGLE',
+              isVariable
             }
           });
-
-          await tx.productVariant.update({
-            where: { id: existingVariant.id },
+        } else {
+          product = await tx.product.create({
             data: {
-              barcode: row.barcode || null,
-              costPrice,
-              basePrice,
-            }
-          });
-          variantId = existingVariant.id;
-          updatedCount++;
-        } else if (!existingVariant) {
-          // Create new Product and Variant
-          const product = await tx.product.create({
-            data: {
-              name: row.name,
-              baseSku: sku,
+              name,
+              baseSku,
               categoryId,
               brandId,
               isActive: true,
-              type: 'SINGLE'
+              type: isVariable ? 'VARIABLE' : 'SINGLE',
+              isVariable
             }
           });
-
-          const variant = await tx.productVariant.create({
-            data: {
-              productId: product.id,
-              sku,
-              barcode: row.barcode || null,
-              costPrice,
-              basePrice,
-              isActive: true
-            }
-          });
-          variantId = variant.id;
           createdCount++;
-        } else {
-          continue; // should not happen if skip is handled above
         }
 
-        // Handle initial stock if specified
-        if (row.initialStock && row.initialStock > 0 && defaultWarehouse) {
-          // Check existing stock level to avoid re-adding if overwrite
-          const existingStock = await tx.stockLevel.findFirst({
-            where: {
-              variantId,
-              warehouseId: defaultWarehouse.id,
-              batchId: null
-            }
-          });
+        // Process variants for this product
+        for (const row of rows) {
+          const sku = row.sku || `${baseSku}-${crypto.randomBytes(2).toString('hex')}`.toUpperCase();
+          const costPrice = row.costPrice || 0;
+          const basePrice = row.basePrice || 0;
+          const variantName = (!row.variant || row.variant === 'DUMMY' || row.variant === 'Única') ? null : row.variant;
 
-          // Only add initial stock if it's newly created, OR if overwrite but there is NO stock yet
-          if (!existingStock || existingStock.physicalQuantity === 0) {
-            const quantityToAdd = row.initialStock;
-
-            // Create Movement
-            await tx.inventoryMovement.create({
+          // Check if variant exists
+          const existingVariant = await tx.productVariant.findUnique({ where: { sku } });
+          
+          let variantId: string;
+          if (existingVariant && row.resolution === 'overwrite') {
+            const updated = await tx.productVariant.update({
+              where: { id: existingVariant.id },
               data: {
+                barcode: row.barcode || null,
+                costPrice,
+                basePrice,
+                size: variantName,
+                isActive: true
+              }
+            });
+            variantId = updated.id;
+            updatedCount++;
+          } else if (!existingVariant) {
+            const created = await tx.productVariant.create({
+              data: {
+                productId: product.id,
+                sku,
+                barcode: row.barcode || null,
+                costPrice,
+                basePrice,
+                size: variantName,
+                isActive: true
+              }
+            });
+            variantId = created.id;
+          } else {
+            variantId = existingVariant.id;
+          }
+
+          // Handle initial stock
+          if (row.initialStock && row.initialStock > 0 && defaultWarehouse) {
+            const existingStock = await tx.stockLevel.findFirst({
+              where: {
                 variantId,
-                destinationWarehouseId: defaultWarehouse.id,
-                type: 'INITIAL_STOCK',
-                quantity: quantityToAdd,
-                unitCost: costPrice
+                warehouseId: defaultWarehouse.id,
+                batchId: null
               }
             });
 
-            // Update Stock Level
-            if (existingStock) {
-              await tx.stockLevel.update({
-                where: { id: existingStock.id },
-                data: {
-                  physicalQuantity: { increment: quantityToAdd },
-                  availableQuantity: { increment: quantityToAdd }
-                }
-              });
-            } else {
-              await tx.stockLevel.create({
+            if (!existingStock || existingStock.physicalQuantity === 0) {
+              const quantityToAdd = row.initialStock;
+
+              await tx.inventoryMovement.create({
                 data: {
                   variantId,
-                  warehouseId: defaultWarehouse.id,
-                  physicalQuantity: quantityToAdd,
-                  availableQuantity: quantityToAdd
+                  destinationWarehouseId: defaultWarehouse.id,
+                  type: 'INITIAL_STOCK',
+                  quantity: quantityToAdd,
+                  unitCost: costPrice
                 }
               });
+
+              if (existingStock) {
+                await tx.stockLevel.update({
+                  where: { id: existingStock.id },
+                  data: {
+                    physicalQuantity: { increment: quantityToAdd },
+                    availableQuantity: { increment: quantityToAdd }
+                  }
+                });
+              } else {
+                await tx.stockLevel.create({
+                  data: {
+                    variantId,
+                    warehouseId: defaultWarehouse.id,
+                    physicalQuantity: quantityToAdd,
+                    availableQuantity: quantityToAdd
+                  }
+                });
+              }
             }
           }
         }

@@ -34,6 +34,14 @@ export class BulkProductRowDto {
   @IsOptional()
   initialStock?: number;
 
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @IsString()
+  @IsOptional()
+  variant?: string;
+
   @IsEnum(['overwrite', 'skip'])
   @IsOptional()
   resolution?: 'overwrite' | 'skip';

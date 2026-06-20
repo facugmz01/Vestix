@@ -69,6 +69,8 @@ export function ImportProductsModal({ isOpen, onClose, onSuccess }: Props) {
             costPrice: parseFloat(String(row.costPrice ?? row.Costo ?? 0).replace(',', '.')) || 0,
             basePrice: parseFloat(String(row.basePrice ?? row['Precio Venta'] ?? 0).replace(',', '.')) || 0,
             initialStock: parseFloat(String(row.initialStock ?? row.Stock ?? 0).replace(',', '.')) || 0,
+            type: row.type?.toString() || row.Tipo?.toString() || 'Simple',
+            variant: row.variant?.toString() || row.Variante?.toString() || '',
           })).filter(r => r.name); // Skip if no name
 
           if (mappedRows.length === 0) {

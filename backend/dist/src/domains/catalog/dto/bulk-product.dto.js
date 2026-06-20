@@ -56,6 +56,16 @@ __decorate([
     __metadata("design:type", Number)
 ], BulkProductRowDto.prototype, "initialStock", void 0);
 __decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], BulkProductRowDto.prototype, "type", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], BulkProductRowDto.prototype, "variant", void 0);
+__decorate([
     (0, class_validator_1.IsEnum)(['overwrite', 'skip']),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)

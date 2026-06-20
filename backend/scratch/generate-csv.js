@@ -44,13 +44,15 @@ async function main() {
     const [rows] = await connection.query(query);
     console.log(`Fetched ${rows.length} product/variation records.`);
 
-    // Expected headers by the React ImportProductsModal
+    // Expected headers by the React ImportProductsModal and grouping logic
     const headers = [
       'Nombre',
-      'SKU',
-      'Código',
+      'Tipo',
       'Categoría',
       'Marca',
+      'Variante',
+      'SKU',
+      'Código',
       'Costo',
       'Precio Venta',
       'Stock'
@@ -59,24 +61,21 @@ async function main() {
     const csvLines = [headers.map(escapeCsv).join(',')];
 
     for (const row of rows) {
-      const isVariable = row.product_type === 'variable';
+      const type = row.product_type === 'single' ? 'Simple' : 'Variable';
       const variantName = (row.variant_name === 'DUMMY' || row.variant_name === 'NULL') ? 'Única' : row.variant_name;
       
-      // Combine name with variant name if it is variable to make it unique and descriptive
-      const name = isVariable && variantName !== 'Única'
-        ? `${row.product_name} - ${variantName}`
-        : row.product_name;
-
       const cost = parseFloat(row.cost_price).toFixed(2);
       const sell = parseFloat(row.sell_price).toFixed(2);
       const stock = Math.max(0, Math.round(parseFloat(row.stock_qty)));
 
       const line = [
-        name,
-        row.variant_sku || '',
-        '', // Código / Barcode - can be empty
+        row.product_name,
+        type,
         row.category_name || '',
         row.brand_name || '',
+        variantName,
+        row.variant_sku || '',
+        '', // Código / Barcode - can be empty
         cost,
         sell,
         stock

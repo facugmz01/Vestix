@@ -7,6 +7,8 @@ export declare class BulkProductRowDto {
     costPrice?: number;
     basePrice?: number;
     initialStock?: number;
+    type?: string;
+    variant?: string;
     resolution?: 'overwrite' | 'skip';
 }
 export declare class BulkValidateDto {
