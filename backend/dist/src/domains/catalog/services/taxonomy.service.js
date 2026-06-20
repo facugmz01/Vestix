@@ -177,25 +177,40 @@ let PriceListService = class PriceListService {
         return list;
     }
     async create(data) {
-        const { name, code, currency, type, modifierPercentage, isActive } = data;
-        const isPercentageBased = type === 'MODIFIER';
-        const percentageDiscount = isPercentageBased ? -(modifierPercentage || 0) : null;
+        const { name, code, currency, type, modifierPercentage, isActive, margin } = data;
+        const computedMargin = margin !== undefined ? Number(margin) : 1.0;
+        let computedModifierPercentage = modifierPercentage !== undefined ? Number(modifierPercentage) : 0;
+        if (margin !== undefined && modifierPercentage === undefined) {
+            computedModifierPercentage = Math.round((computedMargin - 1) * 100);
+        }
+        let computedType = type || 'BASE';
+        if (margin !== undefined && type === undefined) {
+            computedType = 'MODIFIER';
+        }
+        const isPercentageBased = computedType === 'MODIFIER';
+        const percentageDiscount = isPercentageBased ? -computedModifierPercentage : null;
         return this.prisma.priceList.create({
             data: {
                 name,
-                code: code || '',
+                code: code || name || '',
                 currency: currency || 'ARS',
-                type: type || 'BASE',
-                modifierPercentage: modifierPercentage !== undefined ? Number(modifierPercentage) : 0,
+                type: computedType,
+                modifierPercentage: computedModifierPercentage,
                 isActive: isActive ?? true,
                 isPercentageBased,
                 percentageDiscount,
-                margin: 1.0,
+                margin: computedMargin,
             }
         });
     }
     async update(id, data) {
         const updateData = { ...data };
+        if (updateData.margin !== undefined && updateData.modifierPercentage === undefined) {
+            updateData.modifierPercentage = Math.round((Number(updateData.margin) - 1) * 100);
+            if (updateData.type === undefined) {
+                updateData.type = 'MODIFIER';
+            }
+        }
         if (updateData.type !== undefined) {
             updateData.isPercentageBased = updateData.type === 'MODIFIER';
         }
@@ -204,6 +219,9 @@ let PriceListService = class PriceListService {
                 ? -Number(updateData.modifierPercentage)
                 : null;
             updateData.modifierPercentage = Number(updateData.modifierPercentage);
+        }
+        if (updateData.margin !== undefined) {
+            updateData.margin = Number(updateData.margin);
         }
         return this.prisma.priceList.update({
             where: { id },

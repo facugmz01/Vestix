@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PublicCatalogController = exports.PriceListController = exports.AttributesController = exports.VariantsController = exports.ProductsController = exports.BrandsController = exports.CategoriesController = void 0;
+exports.PricingLegacyController = exports.PublicCatalogController = exports.PriceListController = exports.AttributesController = exports.VariantsController = exports.ProductsController = exports.BrandsController = exports.CategoriesController = void 0;
 const common_1 = require("@nestjs/common");
 const products_service_1 = require("../services/products.service");
 const taxonomy_service_1 = require("../services/taxonomy.service");
@@ -523,4 +523,59 @@ exports.PublicCatalogController = PublicCatalogController = __decorate([
     (0, common_1.Controller)('catalog/public'),
     __metadata("design:paramtypes", [products_service_1.ProductsService])
 ], PublicCatalogController);
+let PricingLegacyController = class PricingLegacyController {
+    constructor(priceListService) {
+        this.priceListService = priceListService;
+    }
+    findAll() {
+        return this.priceListService.findAll();
+    }
+    create(data) {
+        return this.priceListService.create(data);
+    }
+    update(id, data) {
+        return this.priceListService.update(id, data);
+    }
+    delete(id) {
+        return this.priceListService.delete(id);
+    }
+};
+exports.PricingLegacyController = PricingLegacyController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], PricingLegacyController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'create', subject: 'Catalog' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PricingLegacyController.prototype, "create", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Catalog' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], PricingLegacyController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'delete', subject: 'Catalog' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PricingLegacyController.prototype, "delete", null);
+exports.PricingLegacyController = PricingLegacyController = __decorate([
+    (0, common_1.Controller)('pricing'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
+    __metadata("design:paramtypes", [taxonomy_service_1.PriceListService])
+], PricingLegacyController);
 //# sourceMappingURL=catalog.controller.js.map

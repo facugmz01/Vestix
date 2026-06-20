@@ -292,3 +292,33 @@ export class PublicCatalogController {
   }
 }
 
+@Controller('pricing')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
+export class PricingLegacyController {
+  constructor(private readonly priceListService: PriceListService) {}
+
+  @Get()
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  findAll() {
+    return this.priceListService.findAll();
+  }
+
+  @Post()
+  @RequirePermissions({ action: 'create', subject: 'Catalog' })
+  create(@Body() data: any) {
+    return this.priceListService.create(data);
+  }
+
+  @Patch(':id')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() data: any) {
+    return this.priceListService.update(id, data);
+  }
+
+  @Delete(':id')
+  @RequirePermissions({ action: 'delete', subject: 'Catalog' })
+  delete(@Param('id', ParseUUIDPipe) id: string) {
+    return this.priceListService.delete(id);
+  }
+}
+

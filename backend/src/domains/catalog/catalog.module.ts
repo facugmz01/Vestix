@@ -10,6 +10,7 @@ import {
   AttributesController,
   PriceListController,
   PublicCatalogController,
+  PricingLegacyController,
 } from './controllers/catalog.controller';
 import { PricingService } from './pricing.service';
 import { PromotionsController } from './promotions.controller';
@@ -33,6 +34,7 @@ import { IdentifiersController } from './identifiers.controller';
     CatalogController,
     IdentifiersController,
     PublicCatalogController,
+    PricingLegacyController,
   ],
   providers: [
     ProductsService,

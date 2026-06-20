@@ -568,3 +568,75 @@ export declare class PublicCatalogController {
         }[];
     }>;
 }
+export declare class PricingLegacyController {
+    private readonly priceListService;
+    constructor(priceListService: PriceListService);
+    findAll(): Promise<{
+        id: string;
+        name: string;
+        code: string;
+        type: string;
+        modifierPercentage: number;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
+    create(data: any): Promise<{
+        id: string;
+        name: string;
+        code: string;
+        type: string;
+        modifierPercentage: number;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    update(id: string, data: any): Promise<{
+        id: string;
+        name: string;
+        code: string;
+        type: string;
+        modifierPercentage: number;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    delete(id: string): Promise<{
+        id: string;
+        name: string;
+        code: string;
+        type: string;
+        modifierPercentage: number;
+        currency: string;
+        margin: number;
+        isActive: boolean;
+        isPercentageBased: boolean;
+        percentageDiscount: number | null;
+        validFrom: Date | null;
+        validTo: Date | null;
+        isDefault: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+}
