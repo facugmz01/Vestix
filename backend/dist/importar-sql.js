@@ -39,154 +39,286 @@ const prisma_service_1 = require("./src/core/prisma/prisma.service");
 const fs = __importStar(require("fs"));
 const crypto = __importStar(require("crypto"));
 const path = __importStar(require("path"));
-function extractTable(sql, tableName) {
-    const regex = new RegExp(`INSERT INTO \\\`${tableName}\\\` \\([^\\)]+\\) VALUES\\s+([\\s\\S]*?);`, 'g');
-    let allValues = [];
-    const createRegex = new RegExp(`CREATE TABLE \\\`${tableName}\\\` \\(([\\s\\S]*?)\\) ENGINE=`, 'g');
-    const createMatch = createRegex.exec(sql);
-    let columns = [];
-    if (createMatch) {
-        const lines = createMatch[1].split('\n');
-        for (const line of lines) {
-            const colMatch = line.match(/^\s*\\\`([^\\\`]+)\\\`/);
-            if (colMatch)
-                columns.push(colMatch[1]);
-        }
-    }
-    else
+function getColumns(sql, tableName) {
+    const startMarker = `CREATE TABLE \`${tableName}\``;
+    const startIdx = sql.indexOf(startMarker);
+    if (startIdx === -1)
         return [];
-    const matches = Array.from(sql.matchAll(regex));
-    for (const match of matches) {
-        let valuesStr = match[1];
-        let insideString = false;
-        let currentRecord = [];
-        let currentValue = "";
-        for (let i = 0; i < valuesStr.length; i++) {
-            const char = valuesStr[i];
-            const nextChar = valuesStr[i + 1];
-            if (char === "'" && (i === 0 || valuesStr[i - 1] !== '\\')) {
-                insideString = !insideString;
-                currentValue += char;
+    const parenOpen = sql.indexOf('(', startIdx);
+    if (parenOpen === -1)
+        return [];
+    const engineIdx = sql.indexOf(') ENGINE=', parenOpen);
+    if (engineIdx === -1)
+        return [];
+    const tableBody = sql.substring(parenOpen + 1, engineIdx);
+    const columns = [];
+    const lines = tableBody.split('\n');
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('`'))
+            continue;
+        const endTick = trimmed.indexOf('`', 1);
+        if (endTick === -1)
+            continue;
+        const colName = trimmed.substring(1, endTick);
+        columns.push(colName);
+    }
+    return columns;
+}
+function parseInsertValues(sql, tableName) {
+    const columns = getColumns(sql, tableName);
+    if (columns.length === 0) {
+        console.warn(`⚠️  No se encontraron columnas para ${tableName}`);
+        return [];
+    }
+    const marker = `INSERT INTO \`${tableName}\``;
+    const results = [];
+    let searchFrom = 0;
+    while (true) {
+        const insertIdx = sql.indexOf(marker, searchFrom);
+        if (insertIdx === -1)
+            break;
+        const valuesIdx = sql.indexOf('VALUES', insertIdx);
+        if (valuesIdx === -1)
+            break;
+        const valuesStart = sql.indexOf('(', valuesIdx);
+        if (valuesStart === -1)
+            break;
+        let semicolonIdx = -1;
+        let depth = 0;
+        let inStr = false;
+        let escape = false;
+        for (let i = valuesStart; i < sql.length; i++) {
+            const ch = sql[i];
+            if (escape) {
+                escape = false;
+                continue;
             }
-            else if (!insideString && char === ',' && valuesStr[i - 1] !== ')') {
-                currentRecord.push(currentValue);
-                currentValue = "";
+            if (ch === '\\') {
+                escape = true;
+                continue;
             }
-            else if (!insideString && char === '(') {
-                currentValue = "";
+            if (ch === "'" && !inStr) {
+                inStr = true;
+                continue;
             }
-            else if (!insideString && char === ')') {
-                currentRecord.push(currentValue);
-                let obj = {};
-                for (let j = 0; j < columns.length; j++) {
-                    let val = currentRecord[j];
-                    if (val === undefined)
-                        continue;
-                    val = val.trim();
-                    if (val.startsWith("'") && val.endsWith("'"))
-                        val = val.substring(1, val.length - 1);
-                    obj[columns[j]] = val;
+            if (ch === "'" && inStr) {
+                inStr = false;
+                continue;
+            }
+            if (!inStr) {
+                if (ch === '(')
+                    depth++;
+                else if (ch === ')') {
+                    depth--;
                 }
-                allValues.push(obj);
-                currentRecord = [];
-                currentValue = "";
-                if (nextChar === ',')
-                    i++;
-            }
-            else {
-                currentValue += char;
+                else if (ch === ';' && depth === 0) {
+                    semicolonIdx = i;
+                    break;
+                }
             }
         }
+        if (semicolonIdx === -1)
+            break;
+        const block = sql.substring(valuesStart, semicolonIdx);
+        let pos = 0;
+        while (pos < block.length) {
+            const recStart = block.indexOf('(', pos);
+            if (recStart === -1)
+                break;
+            let fields = [];
+            let current = '';
+            let fieldDepth = 0;
+            let inString = false;
+            let esc = false;
+            let i = recStart + 1;
+            for (; i < block.length; i++) {
+                const ch = block[i];
+                if (esc) {
+                    esc = false;
+                    current += ch;
+                    continue;
+                }
+                if (ch === '\\') {
+                    esc = true;
+                    current += ch;
+                    continue;
+                }
+                if (ch === "'" && !inString) {
+                    inString = true;
+                    current += ch;
+                    continue;
+                }
+                if (ch === "'" && inString) {
+                    inString = false;
+                    current += ch;
+                    continue;
+                }
+                if (!inString) {
+                    if (ch === '(') {
+                        fieldDepth++;
+                        current += ch;
+                    }
+                    else if (ch === ')' && fieldDepth > 0) {
+                        fieldDepth--;
+                        current += ch;
+                    }
+                    else if (ch === ')' && fieldDepth === 0) {
+                        fields.push(current);
+                        i++;
+                        break;
+                    }
+                    else if (ch === ',' && fieldDepth === 0) {
+                        fields.push(current);
+                        current = '';
+                    }
+                    else {
+                        current += ch;
+                    }
+                }
+                else {
+                    current += ch;
+                }
+            }
+            pos = i;
+            if (fields.length === 0)
+                continue;
+            const obj = {};
+            for (let j = 0; j < columns.length && j < fields.length; j++) {
+                let val = fields[j].trim();
+                if (val.startsWith("'") && val.endsWith("'")) {
+                    val = val.substring(1, val.length - 1).replace(/\\'/g, "'");
+                }
+                obj[columns[j]] = val;
+            }
+            results.push(obj);
+        }
+        searchFrom = semicolonIdx + 1;
     }
-    return allValues;
+    return results;
 }
 async function bootstrap() {
     const app = await core_1.NestFactory.createApplicationContext(app_module_1.AppModule);
     const prisma = app.get(prisma_service_1.PrismaService);
-    const sqlPath = path.resolve(__dirname, '../127_0_0_1 (1).sql');
-    if (!fs.existsSync(sqlPath)) {
-        console.error(`❌ No se encontró el archivo SQL en: ${sqlPath}`);
+    const possiblePaths = [
+        path.resolve(__dirname, '../127_0_0_1 (1).sql'),
+        path.resolve(__dirname, '../../127_0_0_1 (1).sql'),
+        '/var/www/vestix/127_0_0_1 (1).sql',
+        '/root/127_0_0_1 (1).sql',
+    ];
+    let sqlPath = '';
+    for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+            sqlPath = p;
+            break;
+        }
+    }
+    if (!sqlPath) {
+        console.error(`❌ No se encontró el archivo SQL. Colócalo en /var/www/vestix/ y vuelve a intentarlo.`);
+        console.error(`   Rutas buscadas:\n   ${possiblePaths.join('\n   ')}`);
         process.exit(1);
     }
+    console.log(`✅ Archivo SQL encontrado: ${sqlPath}`);
     console.log('⏳ Leyendo archivo SQL...');
     const sql = fs.readFileSync(sqlPath, 'utf8');
-    console.log('⏳ Extrayendo datos de la base vieja...');
-    const rawCategories = extractTable(sql, 'categories');
-    const rawBrands = extractTable(sql, 'brands');
-    const rawProducts = extractTable(sql, 'products');
-    const rawVariations = extractTable(sql, 'variations');
-    console.log(`✅ Encontrados: ${rawCategories.length} categorías, ${rawBrands.length} marcas, ${rawProducts.length} productos, ${rawVariations.length} variantes.`);
-    console.log('⏳ Migrando Categorías...');
+    console.log('⏳ Extrayendo datos...');
+    const rawCategories = parseInsertValues(sql, 'categories');
+    const rawBrands = parseInsertValues(sql, 'brands');
+    const rawProducts = parseInsertValues(sql, 'products');
+    const rawVariations = parseInsertValues(sql, 'variations');
+    console.log(`✅ Extraídos: ${rawCategories.length} categorías | ${rawBrands.length} marcas | ${rawProducts.length} productos | ${rawVariations.length} variantes`);
+    if (rawCategories.length === 0 || rawProducts.length === 0) {
+        console.error('❌ La extracción falló. ¿El archivo SQL es el correcto?');
+        process.exit(1);
+    }
+    console.log('\n⏳ Migrando Categorías...');
     const categoriesMap = {};
     for (const c of rawCategories) {
+        if (!c.name || c.name === 'NULL')
+            continue;
         let cat = await prisma.category.findFirst({ where: { name: c.name } });
-        if (!cat) {
+        if (!cat)
             cat = await prisma.category.create({ data: { name: c.name } });
-        }
         categoriesMap[c.id] = cat.id;
     }
+    console.log(`   ✅ ${Object.keys(categoriesMap).length} categorías listas`);
     console.log('⏳ Migrando Marcas...');
     const brandsMap = {};
     for (const b of rawBrands) {
+        if (!b.name || b.name === 'NULL')
+            continue;
         let brand = await prisma.brand.findFirst({ where: { name: b.name } });
-        if (!brand) {
+        if (!brand)
             brand = await prisma.brand.create({ data: { name: b.name } });
-        }
         brandsMap[b.id] = brand.id;
     }
+    console.log(`   ✅ ${Object.keys(brandsMap).length} marcas listas`);
+    console.log('⏳ Importando Productos y Variantes...');
     const productsMap = {};
-    for (const p of rawProducts) {
+    for (const p of rawProducts)
         productsMap[p.id] = p;
-    }
-    console.log('⏳ Importando Productos y sus Variantes en Vestix...');
     let createdProducts = 0;
     let createdVariants = 0;
+    let skippedVariants = 0;
     for (const pId in productsMap) {
         const p = productsMap[pId];
-        const vars = rawVariations.filter((v) => v.product_id === pId);
+        const vars = rawVariations.filter(v => v.product_id === pId);
         if (!vars || vars.length === 0)
             continue;
         const isVariable = p.type !== 'single';
         let baseSku = p.sku;
-        if (!baseSku || baseSku === 'NULL') {
+        if (!baseSku || baseSku === 'NULL' || baseSku === '') {
             baseSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
         }
         let product = await prisma.product.findUnique({ where: { baseSku } });
         if (!product) {
+            const categoryId = categoriesMap[p.category_id];
+            if (!categoryId) {
+                console.warn(`   ⚠️  Sin categoría para producto "${p.name}" (cat_id=${p.category_id}), omitiendo.`);
+                continue;
+            }
             product = await prisma.product.create({
                 data: {
                     name: p.name,
-                    baseSku: baseSku,
-                    categoryId: categoriesMap[p.category_id],
-                    brandId: brandsMap[p.brand_id],
+                    baseSku,
+                    categoryId,
+                    brandId: brandsMap[p.brand_id] || null,
                     type: isVariable ? 'VARIABLE' : 'SINGLE',
-                    isActive: true
+                    isActive: true,
                 }
             });
             createdProducts++;
         }
         for (const v of vars) {
-            let subSku = v.sub_sku || baseSku;
+            const subSku = (v.sub_sku && v.sub_sku !== 'NULL') ? v.sub_sku : baseSku;
             let variant = await prisma.productVariant.findUnique({ where: { sku: subSku } });
             if (!variant) {
-                let size = v.name === 'DUMMY' ? null : v.name;
-                await prisma.productVariant.create({
-                    data: {
-                        productId: product.id,
-                        sku: subSku,
-                        size: size,
-                        costPrice: parseFloat(v.default_purchase_price) || 0,
-                        basePrice: parseFloat(v.sell_price_inc_tax) || parseFloat(v.default_sell_price) || 0,
-                        isActive: true
-                    }
-                });
-                createdVariants++;
+                const size = (!v.name || v.name === 'DUMMY' || v.name === 'NULL') ? null : v.name;
+                try {
+                    await prisma.productVariant.create({
+                        data: {
+                            productId: product.id,
+                            sku: subSku,
+                            size,
+                            costPrice: parseFloat(v.default_purchase_price) || 0,
+                            basePrice: parseFloat(v.sell_price_inc_tax) || parseFloat(v.default_sell_price) || 0,
+                            isActive: true,
+                        }
+                    });
+                    createdVariants++;
+                }
+                catch (e) {
+                    console.warn(`   ⚠️  SKU duplicado "${subSku}", omitiendo. ${e.message}`);
+                    skippedVariants++;
+                }
             }
         }
     }
     console.log(`\n🎉 ¡Importación finalizada con éxito! 🎉`);
-    console.log(`🔹 Productos nuevos inyectados: ${createdProducts}`);
-    console.log(`🔹 Variantes exactas mapeadas: ${createdVariants}`);
+    console.log(`🔹 Productos creados:  ${createdProducts}`);
+    console.log(`🔹 Variantes creadas:  ${createdVariants}`);
+    if (skippedVariants > 0)
+        console.log(`⚠️  Variantes omitidas (SKU duplicado): ${skippedVariants}`);
     await app.close();
 }
 bootstrap();
