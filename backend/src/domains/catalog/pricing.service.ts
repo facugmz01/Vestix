@@ -82,12 +82,21 @@ export class PricingService {
     if (activePriceList.validFrom && now < activePriceList.validFrom) return basePrice;
     if (activePriceList.validTo && now > activePriceList.validTo) return basePrice;
 
+    // Fetch variant details
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: variantId },
+      select: { basePrice: true, costPrice: true }
+    });
+    const vBasePrice = variant?.basePrice ?? basePrice;
+    const vCostPrice = variant?.costPrice ?? 0;
+    const referencePrice = vBasePrice > 0 ? vBasePrice : vCostPrice;
+
     if (activePriceList.type === 'MODIFIER' || activePriceList.isPercentageBased) {
       const percentage = (activePriceList.modifierPercentage !== null && activePriceList.modifierPercentage !== undefined)
         ? activePriceList.modifierPercentage
         : -(activePriceList.percentageDiscount || 0);
       const multiplier = (100 + percentage) / 100;
-      return Number((basePrice * multiplier).toFixed(2));
+      return Number((referencePrice * multiplier).toFixed(2));
     } else {
       const entry = await this.prisma.priceListEntry.findUnique({
         where: {
@@ -95,8 +104,10 @@ export class PricingService {
         }
       });
       if (entry) return entry.overridePrice;
+
+      // Fallback for base list if no entry override
+      return vBasePrice > 0 ? vBasePrice : Number((vCostPrice * activePriceList.margin).toFixed(2));
     }
-    return basePrice;
   }
 
   async resolvePriceListPrice(variantId: string, basePrice: number, priceListId: string): Promise<number> {
@@ -107,12 +118,21 @@ export class PricingService {
     if (activePriceList.validFrom && now < activePriceList.validFrom) return basePrice;
     if (activePriceList.validTo && now > activePriceList.validTo) return basePrice;
 
+    // Fetch variant details
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: variantId },
+      select: { basePrice: true, costPrice: true }
+    });
+    const vBasePrice = variant?.basePrice ?? basePrice;
+    const vCostPrice = variant?.costPrice ?? 0;
+    const referencePrice = vBasePrice > 0 ? vBasePrice : vCostPrice;
+
     if (activePriceList.type === 'MODIFIER' || activePriceList.isPercentageBased) {
       const percentage = (activePriceList.modifierPercentage !== null && activePriceList.modifierPercentage !== undefined)
         ? activePriceList.modifierPercentage
         : -(activePriceList.percentageDiscount || 0);
       const multiplier = (100 + percentage) / 100;
-      return Number((basePrice * multiplier).toFixed(2));
+      return Number((referencePrice * multiplier).toFixed(2));
     } else {
       const entry = await this.prisma.priceListEntry.findUnique({
         where: {
@@ -120,8 +140,10 @@ export class PricingService {
         }
       });
       if (entry) return entry.overridePrice;
+
+      // Fallback for base list if no entry override
+      return vBasePrice > 0 ? vBasePrice : Number((vCostPrice * activePriceList.margin).toFixed(2));
     }
-    return basePrice;
   }
 
   calculateMargin(sellingPrice: number, weightedAverageCost: number) {
