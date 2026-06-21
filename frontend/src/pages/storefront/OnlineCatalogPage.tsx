@@ -53,8 +53,10 @@ export default function OnlineCatalogPage() {
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(val);
 
   const sorted = [...products].sort((a, b) => {
-    if (sortBy === 'PRICE_ASC') return a.basePrice - b.basePrice;
-    if (sortBy === 'PRICE_DESC') return b.basePrice - a.basePrice;
+    const priceA = a.lowestPrice || a.price || a.basePrice || 0;
+    const priceB = b.lowestPrice || b.price || b.basePrice || 0;
+    if (sortBy === 'PRICE_ASC') return priceA - priceB;
+    if (sortBy === 'PRICE_DESC') return priceB - priceA;
     return 0;
   });
 
@@ -420,7 +422,7 @@ export default function OnlineCatalogPage() {
 
                       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
                         <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                          {fmtCurrency(p.basePrice || p.price || 0)}
+                          {fmtCurrency(p.lowestPrice || p.basePrice || p.price || 0)}
                         </span>
                         
                         {isMobile && (

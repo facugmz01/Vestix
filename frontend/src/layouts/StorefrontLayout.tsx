@@ -74,6 +74,41 @@ export default function StorefrontLayout() {
             <span style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 800, letterSpacing: '-0.5px' }}>ERP<span style={{ color: '#3b82f6' }}>Store</span></span>
           </Link>
 
+          {/* Central Search Bar (Desktop only) */}
+          {!isMobile && (
+            <div style={{ flex: 1, maxWidth: '400px', margin: '0 24px' }}>
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const q = new FormData(e.currentTarget).get('q');
+                  if (q) navigate(`${prefix}/?search=${encodeURIComponent(q.toString())}`);
+                }}
+                style={{ position: 'relative', width: '100%' }}
+              >
+                <input
+                  name="q"
+                  type="text"
+                  placeholder="Buscar productos..."
+                  style={{
+                    width: '100%', padding: '10px 16px 10px 36px',
+                    background: '#f1f5f9', border: '1px solid transparent',
+                    borderRadius: '8px', fontSize: '14px', color: '#0f172a',
+                    outline: 'none', transition: 'all 0.2s'
+                  }}
+                  onFocus={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.border = '1px solid #cbd5e1'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.1)'; }}
+                  onBlur={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.border = '1px solid transparent'; e.currentTarget.style.boxShadow = 'none'; }}
+                />
+                <svg 
+                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
+                  style={{ position: 'absolute', left: '12px', top: '12px', pointerEvents: 'none' }}
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </form>
+            </div>
+          )}
+
           {/* Nav controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
 
