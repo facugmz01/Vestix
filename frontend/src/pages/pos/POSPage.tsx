@@ -344,7 +344,7 @@ export default function POSPage() {
                   <Tags size={36} />
                 </div>
                 <div className={styles.productInfo}>
-                  <div className={styles.productName}>{(p as any).productName || 'Producto'} {p.size ? `(${p.size})` : ''}</div>
+                  <div className={styles.productName}>{(p as any).name || (p as any).productName || 'Producto'} {p.size ? `(${p.size})` : ''}</div>
                   <div className={styles.productPrice}>{fmtCurrency(p.basePrice)}</div>
                 </div>
               </div>
@@ -413,7 +413,7 @@ export default function POSPage() {
                   <div key={`${item.variant.id}-${index}`} className={styles.cartItem}>
                     <div className={styles.cartItemDetails}>
                       <span className={styles.cartItemName}>
-                        {(item.variant as any).productName || 'Producto'} {item.variant.size ? `(${item.variant.size})` : ''}
+                        {(item.variant as any).name || (item.variant as any).productName || 'Producto'} {item.variant.size ? `(${item.variant.size})` : ''}
                       </span>
                       <span className={styles.cartItemSku}>
                         {fmtCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
