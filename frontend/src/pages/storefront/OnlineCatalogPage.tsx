@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useOutletContext } from 'react-router-dom';
-import { Search, SlidersHorizontal, PackageX, Tag } from 'lucide-react';
+import { Search, SlidersHorizontal, PackageX, ChevronDown, Filter, ShoppingBag } from 'lucide-react';
 import { storefrontApi, StorefrontSettings } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { apiClient } from '@/api/client';
-import { APP_CONFIG } from '@/config/app.config';
 import { StorefrontSEO } from '@/features/storefront/components/StorefrontSEO';
 
 export default function OnlineCatalogPage() {
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [brandId, setBrandId] = useState('');
   const [sortBy, setSortBy] = useState<'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST'>('NEWEST');
   const prefix = storePrefix();
 
@@ -32,8 +32,8 @@ export default function OnlineCatalogPage() {
   }, []);
 
   const { data, isLoading } = useQuery({
-    queryKey: queryKeys.storefront.products({ search, categoryId, sortBy }),
-    queryFn: () => storefrontApi.getProducts({ search, categoryId, sortBy }),
+    queryKey: queryKeys.storefront.products({ search, categoryId, brand: brandId, sortBy }),
+    queryFn: () => storefrontApi.getProducts({ search, categoryId, brand: brandId, sortBy }),
   });
 
   const { data: categoriesData } = useQuery({
@@ -41,10 +41,16 @@ export default function OnlineCatalogPage() {
     queryFn: () => apiClient.get('/categories').then(r => r.data),
   });
 
+  const { data: brandsData } = useQuery({
+    queryKey: queryKeys.brands.all(),
+    queryFn: () => apiClient.get('/brands').then(r => r.data),
+  });
+
   const products = data?.data || [];
   const categories: { id: string; name: string }[] = categoriesData || [];
+  const brands: { id: string; name: string }[] = brandsData || [];
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(val);
 
   const sorted = [...products].sort((a, b) => {
     if (sortBy === 'PRICE_ASC') return a.basePrice - b.basePrice;
@@ -52,69 +58,180 @@ export default function OnlineCatalogPage() {
     return 0;
   });
 
-  // const title = settings?.pwa?.appName || APP_CONFIG.appName;
+  const clearFilters = () => {
+    setSearch('');
+    setCategoryId('');
+    setBrandId('');
+    setShowFiltersMobile(false);
+  };
+
+  const activeFiltersCount = (categoryId ? 1 : 0) + (brandId ? 1 : 0) + (search ? 1 : 0);
 
   const filtersContent = (
-    <div className="flex-col gap-4" style={{ display: 'flex' }}>
+    <div className="flex-col gap-6" style={{ display: 'flex' }}>
+      
+      {/* Search Input */}
       <div>
-        <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, marginBottom: '8px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Buscar</label>
+        <h4 style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Buscar
+        </h4>
         <div style={{ position: 'relative' }}>
           <input
             type="text"
             className="storefront-input"
-            placeholder="Remera, zapatillas..."
+            placeholder="Ej: Remera, Zapatillas..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ paddingLeft: '34px' }}
+            style={{ 
+              paddingLeft: '38px', 
+              borderRadius: '8px', 
+              background: 'var(--bg-overlay)', 
+              border: '1px solid var(--border)',
+              height: '42px',
+              fontSize: '14px',
+              transition: 'all 0.2s'
+            }}
           />
-          <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '13px' }} />
         </div>
       </div>
 
+      <hr style={{ border: 0, borderTop: '1px solid var(--border)', margin: 0 }} />
+
+      {/* Categories */}
       <div>
-        <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, marginBottom: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categoría</label>
-        <div className="flex-col gap-2" style={{ display: 'flex' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: categoryId === '' ? 'var(--accent)' : 'var(--text-primary)', fontWeight: categoryId === '' ? 700 : 400 }}>
-            <input type="radio" name="cat" checked={categoryId === ''} onChange={() => { setCategoryId(''); setShowFiltersMobile(false); }} style={{ accentColor: 'var(--accent)' }} />
-            Todas
-          </label>
+        <h4 style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Categorías
+        </h4>
+        <div className="flex-col gap-2" style={{ display: 'flex', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+          <button 
+            onClick={() => { setCategoryId(''); if(isMobile) setShowFiltersMobile(false); }}
+            style={{
+              textAlign: 'left', background: 'none', border: 'none', padding: '6px 8px', borderRadius: '6px',
+              fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
+              color: categoryId === '' ? 'var(--accent)' : 'var(--text-secondary)',
+              fontWeight: categoryId === '' ? 600 : 400,
+              backgroundColor: categoryId === '' ? 'rgba(99,102,241,0.1)' : 'transparent'
+            }}
+          >
+            Todas las Categorías
+          </button>
           {categories.map(c => (
-            <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer', color: categoryId === c.id ? 'var(--accent)' : 'var(--text-primary)', fontWeight: categoryId === c.id ? 700 : 400 }}>
-              <input type="radio" name="cat" checked={categoryId === c.id} onChange={() => { setCategoryId(c.id); setShowFiltersMobile(false); }} style={{ accentColor: 'var(--accent)' }} />
+            <button 
+              key={c.id}
+              onClick={() => { setCategoryId(c.id); if(isMobile) setShowFiltersMobile(false); }}
+              style={{
+                textAlign: 'left', background: 'none', border: 'none', padding: '6px 8px', borderRadius: '6px',
+                fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
+                color: categoryId === c.id ? 'var(--accent)' : 'var(--text-secondary)',
+                fontWeight: categoryId === c.id ? 600 : 400,
+                backgroundColor: categoryId === c.id ? 'rgba(99,102,241,0.1)' : 'transparent'
+              }}
+            >
               {c.name}
-            </label>
+            </button>
           ))}
         </div>
       </div>
+
+      <hr style={{ border: 0, borderTop: '1px solid var(--border)', margin: 0 }} />
+
+      {/* Brands */}
+      {brands.length > 0 && (
+        <div>
+          <h4 style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Marcas
+          </h4>
+          <div className="flex-col gap-2" style={{ display: 'flex', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+            <button 
+              onClick={() => { setBrandId(''); if(isMobile) setShowFiltersMobile(false); }}
+              style={{
+                textAlign: 'left', background: 'none', border: 'none', padding: '6px 8px', borderRadius: '6px',
+                fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
+                color: brandId === '' ? 'var(--accent)' : 'var(--text-secondary)',
+                fontWeight: brandId === '' ? 600 : 400,
+                backgroundColor: brandId === '' ? 'rgba(99,102,241,0.1)' : 'transparent'
+              }}
+            >
+              Todas las Marcas
+            </button>
+            {brands.map(b => (
+              <button 
+                key={b.id}
+                onClick={() => { setBrandId(b.id); if(isMobile) setShowFiltersMobile(false); }}
+                style={{
+                  textAlign: 'left', background: 'none', border: 'none', padding: '6px 8px', borderRadius: '6px',
+                  fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
+                  color: brandId === b.id ? 'var(--accent)' : 'var(--text-secondary)',
+                  fontWeight: brandId === b.id ? 600 : 400,
+                  backgroundColor: brandId === b.id ? 'rgba(99,102,241,0.1)' : 'transparent'
+                }}
+              >
+                {b.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeFiltersCount > 0 && (
+        <button 
+          onClick={clearFilters}
+          style={{
+            marginTop: '8px', padding: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444',
+            border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 600, transition: 'all 0.2s', textAlign: 'center'
+          }}
+        >
+          Limpiar Filtros
+        </button>
+      )}
     </div>
   );
 
   return (
-    <main style={{ minHeight: '100%', padding: '24px 16px', background: 'var(--bg-base)', fontFamily: "'Inter', sans-serif" }}>
-      <StorefrontSEO title="Catálogo" />
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '32px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
+    <main style={{ minHeight: '100%', padding: isMobile ? '16px' : '32px', background: 'var(--bg-base)', fontFamily: "'Inter', sans-serif" }}>
+      <StorefrontSEO title="Catálogo | Tienda Oficial" />
+      
+      {/* Top Banner / Hero */}
+      <div style={{
+        maxWidth: '1280px', margin: '0 auto 32px', padding: isMobile ? '24px' : '48px',
+        background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.05) 100%)',
+        borderRadius: '20px', border: '1px solid rgba(99,102,241,0.15)',
+        textAlign: 'center', position: 'relative', overflow: 'hidden'
+      }}>
+        <h1 style={{ margin: '0 0 12px', fontSize: isMobile ? '28px' : '42px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+          Nueva Colección
+        </h1>
+        <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px', color: 'var(--text-secondary)', maxWidth: '500px', marginInline: 'auto' }}>
+          Descubrí nuestros últimos ingresos y productos exclusivos directo desde nuestra tienda oficial.
+        </p>
+      </div>
+
+      <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', gap: '40px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
         
         {/* Sidebar Filters - Desktop only */}
         {!isMobile && (
-          <aside style={{ width: '240px', flexShrink: 0, position: 'sticky', top: '84px' }}>
-            <div className="glass" style={{ padding: '24px' }}>
-              <h3 style={{ margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: 700 }}>
-                <SlidersHorizontal size={16} /> Filtros
+          <aside style={{ width: '260px', flexShrink: 0, position: 'sticky', top: '100px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+              <Filter size={18} color="var(--text-primary)" />
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Filtros
               </h3>
-              {filtersContent}
             </div>
+            {filtersContent}
           </aside>
         )}
 
         {/* Floating Filter Drawer - Mobile only */}
         {isMobile && showFiltersMobile && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0, 0.6)', zIndex: 1000, display: 'flex', justifyContent: 'flex-end' }} onClick={() => setShowFiltersMobile(false)}>
-            <div style={{ width: '280px', height: '100%', background: 'var(--bg-surface)', padding: '24px', boxSizing: 'border-box', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 700 }}>
-                  <SlidersHorizontal size={18} /> Filtros
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0, 0.7)', zIndex: 1000, display: 'flex', justifyContent: 'flex-start', backdropFilter: 'blur(4px)' }} onClick={() => setShowFiltersMobile(false)}>
+            <div style={{ width: '85%', maxWidth: '320px', height: '100%', background: 'var(--bg-elevated)', padding: '24px', boxSizing: 'border-box', overflowY: 'auto', boxShadow: '4px 0 24px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px', fontWeight: 700 }}>
+                  <Filter size={18} /> Filtros
                 </h3>
-                <button onClick={() => setShowFiltersMobile(false)} style={{ background: 'none', border: 'none', fontSize: '18px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary)' }}>✕</button>
+                <button onClick={() => setShowFiltersMobile(false)} style={{ background: 'var(--bg-overlay)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary)' }}>✕</button>
               </div>
               {filtersContent}
             </div>
@@ -124,115 +241,197 @@ export default function OnlineCatalogPage() {
         {/* Product Grid Container */}
         <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
           
-          {/* Top Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          {/* Controls Bar */}
+          <div style={{ 
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+            marginBottom: '32px', flexWrap: 'wrap', gap: '16px',
+            background: 'var(--bg-overlay)', padding: '12px 20px', borderRadius: '12px', border: '1px solid var(--border)'
+          }}>
             <div>
-              <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)' }}>Catálogo</h2>
-              {!isLoading && <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{sorted.length} productos encontrados</p>}
+              {!isLoading && (
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                  Mostrando <strong style={{ color: 'var(--text-primary)' }}>{sorted.length}</strong> productos
+                </p>
+              )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
               {isMobile && (
                 <button
                   onClick={() => setShowFiltersMobile(true)}
-                  className="storefront-btn storefront-btn-secondary"
-                  style={{ padding: '8px 16px' }}
+                  style={{ flex: 1, background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 600, fontSize: '14px' }}
                 >
-                  <SlidersHorizontal size={14} /> Filtros
+                  <Filter size={16} /> Filtrar
+                  {activeFiltersCount > 0 && (
+                    <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>{activeFiltersCount}</span>
+                  )}
                 </button>
               )}
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Tag size={14} color="var(--text-muted)" />
+              <div style={{ position: 'relative', flex: isMobile ? 1 : 'none' }}>
                 <select
                   value={sortBy}
                   onChange={(e: any) => setSortBy(e.target.value)}
-                  className="storefront-input"
-                  style={{ padding: '8px 14px', width: 'auto' }}
+                  style={{ 
+                    appearance: 'none', width: '100%',
+                    padding: '10px 36px 10px 16px', borderRadius: '8px',
+                    border: '1px solid var(--border)', background: 'var(--bg-elevated)',
+                    color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500, cursor: 'pointer',
+                    outline: 'none'
+                  }}
                 >
                   <option value="NEWEST">Más Recientes</option>
                   <option value="PRICE_ASC">Menor Precio</option>
                   <option value="PRICE_DESC">Mayor Precio</option>
                 </select>
+                <ChevronDown size={14} color="var(--text-muted)" style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               </div>
             </div>
           </div>
 
           {/* Grid */}
           {isLoading ? (
-            <div className="storefront-grid">
-              {[1,2,3,4,5,6].map(i => (
-                <div key={i} style={{ background: 'var(--bg-overlay)', borderRadius: '16px', height: isMobile ? '240px' : '340px' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '24px' }}>
+              {[1,2,3,4,5,6,7,8].map(i => (
+                <div key={i} style={{ background: 'var(--bg-overlay)', borderRadius: '16px', height: '360px', animation: 'pulse 2s infinite ease-in-out' }} />
               ))}
             </div>
           ) : sorted.length === 0 ? (
-            <div className="glass" style={{ textAlign: 'center', padding: '64px' }}>
-              <PackageX size={48} color="var(--text-muted)" style={{ margin: '0 auto 16px', display: 'block' }} />
-              <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Sin resultados</h3>
-              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-                {search ? `No encontramos "${search}". Probá con otro término.` : 'No hay productos publicados en este momento.'}
+            <div style={{ textAlign: 'center', padding: '80px 20px', background: 'var(--bg-overlay)', borderRadius: '16px', border: '1px dashed var(--border)' }}>
+              <PackageX size={64} color="var(--text-muted)" style={{ margin: '0 auto 24px', display: 'block', opacity: 0.5 }} />
+              <h3 style={{ margin: '0 0 12px', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>No encontramos productos</h3>
+              <p style={{ margin: '0 0 24px', color: 'var(--text-secondary)', fontSize: '15px', maxWidth: '400px', marginInline: 'auto' }}>
+                {search ? `No hay resultados que coincidan con "${search}".` : 'No hay productos publicados que coincidan con los filtros seleccionados.'}
               </p>
+              {activeFiltersCount > 0 && (
+                <button 
+                  onClick={clearFilters}
+                  style={{ padding: '12px 24px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '15px', cursor: 'pointer', transition: 'all 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  Limpiar Búsqueda
+                </button>
+              )}
             </div>
           ) : (
-            <div className="storefront-grid">
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+              gap: isMobile ? '16px' : '24px' 
+            }}>
               {sorted.map(p => {
                 const isAvailable = p.inStock;
+                const hasImage = p.images && p.images.length > 0;
+                
                 return (
                   <Link
                     key={p.id}
                     to={`${prefix}/product/${p.id}`}
-                    style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', background: 'var(--bg-elevated)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', transition: 'box-shadow 0.2s ease, transform 0.2s ease', cursor: 'pointer' }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    style={{ 
+                      textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', 
+                      background: 'var(--bg-elevated)', borderRadius: '16px', overflow: 'hidden', 
+                      border: '1px solid var(--border)', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                      cursor: 'pointer', position: 'relative',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                    }}
+                    onMouseEnter={e => { 
+                      e.currentTarget.style.transform = 'translateY(-6px)'; 
+                      e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15), 0 0 0 1px rgba(99,102,241,0.2)'; 
+                      const btn = e.currentTarget.querySelector('.quick-add-btn') as HTMLElement;
+                      if(btn) { btn.style.opacity = '1'; btn.style.transform = 'translateY(0)'; }
+                    }}
+                    onMouseLeave={e => { 
+                      e.currentTarget.style.transform = 'translateY(0)'; 
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; 
+                      const btn = e.currentTarget.querySelector('.quick-add-btn') as HTMLElement;
+                      if(btn) { btn.style.opacity = '0'; btn.style.transform = 'translateY(10px)'; }
+                    }}
                   >
-                    {/* Image placeholder with premium gradient */}
+                    {/* Image Area */}
                     <div style={{ 
-                      height: isMobile ? '150px' : '230px', 
-                      background: p.id.charCodeAt(0) % 2 === 0 ? 'linear-gradient(135deg, #1f2937 0%, #111827 100%)' : 'linear-gradient(135deg, #374151 0%, #1f2937 100%)', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' 
+                      height: isMobile ? '200px' : '280px', 
+                      background: hasImage ? '#fff' : (p.id.charCodeAt(0) % 2 === 0 ? 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)' : 'linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)'), 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+                      overflow: 'hidden'
                     }}>
-                      <span style={{ fontSize: isMobile ? '44px' : '64px', color: 'rgba(255,255,255,0.05)', fontWeight: 900, userSelect: 'none' }}>
-                        {p.name.charAt(0).toUpperCase()}
-                      </span>
-                      <div style={{
-                        position: 'absolute', top: '10px', left: '10px',
-                        background: isAvailable ? 'var(--green)' : 'var(--red)',
-                        color: '#fff', fontSize: '9px', fontWeight: 800,
-                        padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px',
-                        boxShadow: isAvailable ? '0 0 10px rgba(16,185,129,0.4)' : '0 0 10px rgba(239,68,68,0.4)'
-                      }}>
-                        {isAvailable ? 'DISPONIBLE' : 'SIN STOCK'}
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div style={{ padding: isMobile ? '12px' : '16px 20px 20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-                        {p.brand || p.category || 'Sin Categoría'}
-                      </span>
-                      <h3 style={{ margin: '0 0 10px', fontSize: isMobile ? '13px' : '15px', fontWeight: 700, lineHeight: 1.3, color: 'var(--text-primary)', flex: 1, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                        {p.name}
-                      </h3>
-
-                      {/* Variant chips */}
-                      {p.variants && p.variants.length > 0 && (
-                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                          {p.variants.slice(0, 3).map((v: any) => (
-                            <span key={v.id} style={{ padding: '2px 5px', background: 'var(--bg-overlay)', borderRadius: '4px', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                              {v.size ? `T.${v.size}` : (v.color || v.sku.slice(0,5))}
-                            </span>
-                          ))}
-                          {p.variants.length > 3 && (
-                            <span style={{ padding: '2px 5px', background: 'var(--bg-overlay)', borderRadius: '4px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                              +{p.variants.length - 3}
-                            </span>
-                          )}
+                      {hasImage ? (
+                        <img 
+                          src={p.images[0]} 
+                          alt={p.name} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+                          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        />
+                      ) : (
+                        // Fallback image / placeholder
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.4 }}>
+                          <ShoppingBag size={48} color="var(--text-primary)" style={{ marginBottom: '12px' }} />
+                          <span style={{ fontSize: '24px', color: 'var(--text-primary)', fontWeight: 900, userSelect: 'none' }}>
+                            {p.name.charAt(0).toUpperCase()}
+                          </span>
                         </div>
                       )}
 
-                      <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 900, color: 'var(--text-primary)' }}>
-                        {fmtCurrency(p.basePrice || p.price || 0)}
+                      {/* Badges */}
+                      <div style={{
+                        position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px'
+                      }}>
+                        {!isAvailable && (
+                          <span style={{
+                            background: 'var(--red)', color: '#fff', fontSize: '10px', fontWeight: 800,
+                            padding: '4px 8px', borderRadius: '4px', letterSpacing: '0.5px', textTransform: 'uppercase',
+                            boxShadow: '0 2px 8px rgba(239,68,68,0.4)'
+                          }}>
+                            Agotado
+                          </span>
+                        )}
+                        {/* Example Discount Badge if applies */}
+                        {/* <span style={{ background: 'var(--accent)', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '4px', letterSpacing: '0.5px' }}>-20% OFF</span> */}
+                      </div>
+
+                      {/* Quick Add Button (Hover) */}
+                      {!isMobile && (
+                        <div 
+                          className="quick-add-btn"
+                          style={{ 
+                            position: 'absolute', bottom: '16px', left: '16px', right: '16px',
+                            background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(4px)',
+                            color: '#000', fontWeight: 700, fontSize: '13px', padding: '12px',
+                            borderRadius: '8px', textAlign: 'center', opacity: 0, transform: 'translateY(10px)',
+                            transition: 'all 0.2s ease', border: '1px solid rgba(0,0,0,0.1)',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+                          }}
+                        >
+                          Ver Detalles
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info Area */}
+                    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                        {p.brand || p.category || 'Categoría'}
                       </span>
+                      
+                      <h3 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 600, lineHeight: 1.4, color: 'var(--text-primary)', flex: 1, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                        {p.name}
+                      </h3>
+
+                      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
+                        <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          {fmtCurrency(p.basePrice || p.price || 0)}
+                        </span>
+                        
+                        {isMobile && (
+                          <div style={{ 
+                            background: 'var(--bg-overlay)', padding: '6px', borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}>
+                            <ShoppingBag size={14} color="var(--text-primary)" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 );
