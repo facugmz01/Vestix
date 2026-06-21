@@ -1,0 +1,7365 @@
+{
+  "products": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "type",
+        "Type": "enum('single','variable','modifier','combo')",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "unit_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "secondary_unit_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sub_unit_ids",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "brand_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "category_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sub_category_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax_type",
+        "Type": "enum('inclusive','exclusive')",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "enable_stock",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "alert_quantity",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sku",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "barcode_type",
+        "Type": "enum('C39','C128','EAN13','EAN8','UPCA','UPCE')",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": "C128",
+        "Extra": ""
+      },
+      {
+        "Field": "expiry_period",
+        "Type": "decimal(4,2)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "expiry_period_type",
+        "Type": "enum('days','months')",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "enable_sr_no",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "weight",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field3",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field4",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field5",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field6",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field7",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field8",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field9",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field10",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field11",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field12",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field13",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field14",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field15",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field16",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field17",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field18",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field19",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_custom_field20",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "image",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_media_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_description",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_product_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_disable_sync",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "preparation_time_in_minutes",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "warranty_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_inactive",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "not_for_selling",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 4,
+        "name": "Short print modal soft",
+        "business_id": 1,
+        "type": "variable",
+        "unit_id": 1,
+        "secondary_unit_id": null,
+        "sub_unit_ids": null,
+        "brand_id": 2,
+        "category_id": 4,
+        "sub_category_id": null,
+        "tax": null,
+        "tax_type": "exclusive",
+        "enable_stock": 1,
+        "alert_quantity": null,
+        "sku": "0004",
+        "barcode_type": "C128",
+        "expiry_period": null,
+        "expiry_period_type": null,
+        "enable_sr_no": 0,
+        "weight": null,
+        "product_custom_field1": null,
+        "product_custom_field2": null,
+        "product_custom_field3": null,
+        "product_custom_field4": null,
+        "product_custom_field5": null,
+        "product_custom_field6": null,
+        "product_custom_field7": null,
+        "product_custom_field8": null,
+        "product_custom_field9": null,
+        "product_custom_field10": null,
+        "product_custom_field11": null,
+        "product_custom_field12": null,
+        "product_custom_field13": null,
+        "product_custom_field14": null,
+        "product_custom_field15": null,
+        "product_custom_field16": null,
+        "product_custom_field17": null,
+        "product_custom_field18": null,
+        "product_custom_field19": null,
+        "product_custom_field20": null,
+        "image": "1763245415_5f5vqoch-hcf9f3b4mths.png",
+        "woocommerce_media_id": null,
+        "product_description": null,
+        "created_by": 1,
+        "woocommerce_product_id": 15,
+        "woocommerce_disable_sync": 0,
+        "preparation_time_in_minutes": null,
+        "warranty_id": null,
+        "is_inactive": 0,
+        "not_for_selling": 0,
+        "created_at": "2025-11-15T19:23:35.000Z",
+        "updated_at": "2025-12-27T22:41:23.000Z"
+      },
+      {
+        "id": 5,
+        "name": "Musculosa dorado piedras",
+        "business_id": 1,
+        "type": "variable",
+        "unit_id": 1,
+        "secondary_unit_id": null,
+        "sub_unit_ids": null,
+        "brand_id": 2,
+        "category_id": 9,
+        "sub_category_id": null,
+        "tax": null,
+        "tax_type": "exclusive",
+        "enable_stock": 1,
+        "alert_quantity": null,
+        "sku": "0005",
+        "barcode_type": "C128",
+        "expiry_period": null,
+        "expiry_period_type": null,
+        "enable_sr_no": 0,
+        "weight": null,
+        "product_custom_field1": null,
+        "product_custom_field2": null,
+        "product_custom_field3": null,
+        "product_custom_field4": null,
+        "product_custom_field5": null,
+        "product_custom_field6": null,
+        "product_custom_field7": null,
+        "product_custom_field8": null,
+        "product_custom_field9": null,
+        "product_custom_field10": null,
+        "product_custom_field11": null,
+        "product_custom_field12": null,
+        "product_custom_field13": null,
+        "product_custom_field14": null,
+        "product_custom_field15": null,
+        "product_custom_field16": null,
+        "product_custom_field17": null,
+        "product_custom_field18": null,
+        "product_custom_field19": null,
+        "product_custom_field20": null,
+        "image": "1763245569_efiz89h1nytt24qny8fsy.png",
+        "woocommerce_media_id": null,
+        "product_description": null,
+        "created_by": 1,
+        "woocommerce_product_id": 17,
+        "woocommerce_disable_sync": 0,
+        "preparation_time_in_minutes": null,
+        "warranty_id": null,
+        "is_inactive": 0,
+        "not_for_selling": 0,
+        "created_at": "2025-11-15T19:26:09.000Z",
+        "updated_at": "2025-12-27T22:41:23.000Z"
+      },
+      {
+        "id": 6,
+        "name": "Musculosa Morley con cierre",
+        "business_id": 1,
+        "type": "variable",
+        "unit_id": 1,
+        "secondary_unit_id": null,
+        "sub_unit_ids": null,
+        "brand_id": 2,
+        "category_id": 9,
+        "sub_category_id": null,
+        "tax": null,
+        "tax_type": "exclusive",
+        "enable_stock": 1,
+        "alert_quantity": null,
+        "sku": "0006",
+        "barcode_type": "C128",
+        "expiry_period": null,
+        "expiry_period_type": null,
+        "enable_sr_no": 0,
+        "weight": null,
+        "product_custom_field1": "",
+        "product_custom_field2": "",
+        "product_custom_field3": "",
+        "product_custom_field4": "",
+        "product_custom_field5": "",
+        "product_custom_field6": "",
+        "product_custom_field7": "",
+        "product_custom_field8": "",
+        "product_custom_field9": "",
+        "product_custom_field10": "",
+        "product_custom_field11": "",
+        "product_custom_field12": "",
+        "product_custom_field13": "",
+        "product_custom_field14": "",
+        "product_custom_field15": "",
+        "product_custom_field16": "",
+        "product_custom_field17": "",
+        "product_custom_field18": "",
+        "product_custom_field19": "",
+        "product_custom_field20": "",
+        "image": "1763245720_1757013795483-54196.png",
+        "woocommerce_media_id": null,
+        "product_description": null,
+        "created_by": 1,
+        "woocommerce_product_id": 19,
+        "woocommerce_disable_sync": 0,
+        "preparation_time_in_minutes": null,
+        "warranty_id": null,
+        "is_inactive": 0,
+        "not_for_selling": 0,
+        "created_at": "2025-11-15T19:28:40.000Z",
+        "updated_at": "2025-12-27T22:41:23.000Z"
+      },
+      {
+        "id": 7,
+        "name": "Musculosa de morley rock",
+        "business_id": 1,
+        "type": "single",
+        "unit_id": 1,
+        "secondary_unit_id": null,
+        "sub_unit_ids": null,
+        "brand_id": 2,
+        "category_id": 9,
+        "sub_category_id": null,
+        "tax": null,
+        "tax_type": "exclusive",
+        "enable_stock": 1,
+        "alert_quantity": null,
+        "sku": "0007",
+        "barcode_type": "C128",
+        "expiry_period": null,
+        "expiry_period_type": null,
+        "enable_sr_no": 0,
+        "weight": null,
+        "product_custom_field1": "",
+        "product_custom_field2": "",
+        "product_custom_field3": "",
+        "product_custom_field4": "",
+        "product_custom_field5": "",
+        "product_custom_field6": "",
+        "product_custom_field7": "",
+        "product_custom_field8": "",
+        "product_custom_field9": "",
+        "product_custom_field10": "",
+        "product_custom_field11": "",
+        "product_custom_field12": "",
+        "product_custom_field13": "",
+        "product_custom_field14": "",
+        "product_custom_field15": "",
+        "product_custom_field16": "",
+        "product_custom_field17": "",
+        "product_custom_field18": "",
+        "product_custom_field19": "",
+        "product_custom_field20": "",
+        "image": "1763245879_hc3fhndqdq0pulyodmccz.png",
+        "woocommerce_media_id": null,
+        "product_description": null,
+        "created_by": 1,
+        "woocommerce_product_id": 21,
+        "woocommerce_disable_sync": 0,
+        "preparation_time_in_minutes": null,
+        "warranty_id": null,
+        "is_inactive": 0,
+        "not_for_selling": 0,
+        "created_at": "2025-11-15T19:31:19.000Z",
+        "updated_at": "2025-12-27T22:41:23.000Z"
+      },
+      {
+        "id": 8,
+        "name": "Musculosa Morley estampado",
+        "business_id": 1,
+        "type": "single",
+        "unit_id": 1,
+        "secondary_unit_id": null,
+        "sub_unit_ids": null,
+        "brand_id": 2,
+        "category_id": 9,
+        "sub_category_id": null,
+        "tax": null,
+        "tax_type": "exclusive",
+        "enable_stock": 1,
+        "alert_quantity": null,
+        "sku": "0008",
+        "barcode_type": "C128",
+        "expiry_period": null,
+        "expiry_period_type": null,
+        "enable_sr_no": 0,
+        "weight": null,
+        "product_custom_field1": null,
+        "product_custom_field2": null,
+        "product_custom_field3": null,
+        "product_custom_field4": null,
+        "product_custom_field5": null,
+        "product_custom_field6": null,
+        "product_custom_field7": null,
+        "product_custom_field8": null,
+        "product_custom_field9": null,
+        "product_custom_field10": null,
+        "product_custom_field11": null,
+        "product_custom_field12": null,
+        "product_custom_field13": null,
+        "product_custom_field14": null,
+        "product_custom_field15": null,
+        "product_custom_field16": null,
+        "product_custom_field17": null,
+        "product_custom_field18": null,
+        "product_custom_field19": null,
+        "product_custom_field20": null,
+        "image": "1763245997_zxpvph6vdjqrnqphrc1uv.png",
+        "woocommerce_media_id": 38093,
+        "product_description": null,
+        "created_by": 1,
+        "woocommerce_product_id": 23,
+        "woocommerce_disable_sync": 0,
+        "preparation_time_in_minutes": null,
+        "warranty_id": null,
+        "is_inactive": 0,
+        "not_for_selling": 0,
+        "created_at": "2025-11-15T19:33:17.000Z",
+        "updated_at": "2026-01-03T18:56:14.000Z"
+      }
+    ]
+  },
+  "product_variations": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "variation_template_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_dummy",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 4,
+        "variation_template_id": 1,
+        "name": "Talles",
+        "product_id": 4,
+        "is_dummy": 0,
+        "created_at": "2025-11-15T19:23:36.000Z",
+        "updated_at": "2025-11-15T19:23:36.000Z"
+      },
+      {
+        "id": 5,
+        "variation_template_id": 1,
+        "name": "Talles",
+        "product_id": 5,
+        "is_dummy": 0,
+        "created_at": "2025-11-15T19:26:09.000Z",
+        "updated_at": "2025-11-15T19:26:09.000Z"
+      },
+      {
+        "id": 6,
+        "variation_template_id": 2,
+        "name": "Color",
+        "product_id": 6,
+        "is_dummy": 0,
+        "created_at": "2025-11-15T19:28:40.000Z",
+        "updated_at": "2025-11-15T19:28:40.000Z"
+      },
+      {
+        "id": 7,
+        "variation_template_id": 2,
+        "name": "Color",
+        "product_id": 6,
+        "is_dummy": 0,
+        "created_at": "2025-11-15T19:29:56.000Z",
+        "updated_at": "2025-11-15T19:29:56.000Z"
+      },
+      {
+        "id": 8,
+        "variation_template_id": null,
+        "name": "DUMMY",
+        "product_id": 7,
+        "is_dummy": 1,
+        "created_at": "2025-11-15T19:31:19.000Z",
+        "updated_at": "2025-11-15T19:31:19.000Z"
+      }
+    ]
+  },
+  "variations": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sub_sku",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_variation_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_variation_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "variation_value_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "default_purchase_price",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "dpp_inc_tax",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "profit_percent",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "default_sell_price",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sell_price_inc_tax",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "combo_variations",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 12,
+        "name": "S",
+        "product_id": 4,
+        "sub_sku": "0004-1",
+        "product_variation_id": 4,
+        "woocommerce_variation_id": 142,
+        "variation_value_id": 1,
+        "default_purchase_price": "5000.0000",
+        "dpp_inc_tax": "5000.0000",
+        "profit_percent": "75.0000",
+        "default_sell_price": "8750.0000",
+        "sell_price_inc_tax": "8750.0000",
+        "created_at": "2025-11-15T19:23:36.000Z",
+        "updated_at": "2025-12-27T22:41:51.000Z",
+        "deleted_at": null,
+        "combo_variations": null
+      },
+      {
+        "id": 13,
+        "name": "M",
+        "product_id": 4,
+        "sub_sku": "0004-2",
+        "product_variation_id": 4,
+        "woocommerce_variation_id": 144,
+        "variation_value_id": 2,
+        "default_purchase_price": "5000.0000",
+        "dpp_inc_tax": "5000.0000",
+        "profit_percent": "75.0000",
+        "default_sell_price": "8750.0000",
+        "sell_price_inc_tax": "8750.0000",
+        "created_at": "2025-11-15T19:23:36.000Z",
+        "updated_at": "2025-12-27T22:41:51.000Z",
+        "deleted_at": null,
+        "combo_variations": null
+      },
+      {
+        "id": 14,
+        "name": "S",
+        "product_id": 5,
+        "sub_sku": "0005-1",
+        "product_variation_id": 5,
+        "woocommerce_variation_id": 146,
+        "variation_value_id": 1,
+        "default_purchase_price": "20000.0000",
+        "dpp_inc_tax": "20000.0000",
+        "profit_percent": "75.0000",
+        "default_sell_price": "35000.0000",
+        "sell_price_inc_tax": "35000.0000",
+        "created_at": "2025-11-15T19:26:09.000Z",
+        "updated_at": "2025-12-27T22:41:58.000Z",
+        "deleted_at": null,
+        "combo_variations": null
+      },
+      {
+        "id": 15,
+        "name": "Negro",
+        "product_id": 6,
+        "sub_sku": "0006-1",
+        "product_variation_id": 6,
+        "woocommerce_variation_id": 148,
+        "variation_value_id": 7,
+        "default_purchase_price": "4000.0000",
+        "dpp_inc_tax": "4000.0000",
+        "profit_percent": "75.0000",
+        "default_sell_price": "7000.0000",
+        "sell_price_inc_tax": "7000.0000",
+        "created_at": "2025-11-15T19:28:40.000Z",
+        "updated_at": "2025-12-27T22:42:22.000Z",
+        "deleted_at": null,
+        "combo_variations": null
+      },
+      {
+        "id": 16,
+        "name": "Blanco",
+        "product_id": 6,
+        "sub_sku": "0006-2",
+        "product_variation_id": 6,
+        "woocommerce_variation_id": 150,
+        "variation_value_id": 9,
+        "default_purchase_price": "4000.0000",
+        "dpp_inc_tax": "4000.0000",
+        "profit_percent": "75.0000",
+        "default_sell_price": "7000.0000",
+        "sell_price_inc_tax": "7000.0000",
+        "created_at": "2025-11-15T19:28:40.000Z",
+        "updated_at": "2025-12-27T22:42:22.000Z",
+        "deleted_at": null,
+        "combo_variations": null
+      }
+    ]
+  },
+  "variation_location_details": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "product_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_variation_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "variation_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "location_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "qty_available",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 8,
+        "product_id": 259,
+        "product_variation_id": 264,
+        "variation_id": 412,
+        "location_id": 1,
+        "qty_available": "2.0000",
+        "created_at": "2025-12-02T23:22:18.000Z",
+        "updated_at": "2025-12-02T23:22:18.000Z"
+      },
+      {
+        "id": 9,
+        "product_id": 259,
+        "product_variation_id": 264,
+        "variation_id": 413,
+        "location_id": 1,
+        "qty_available": "1.0000",
+        "created_at": "2025-12-02T23:22:18.000Z",
+        "updated_at": "2025-12-31T20:28:28.000Z"
+      },
+      {
+        "id": 10,
+        "product_id": 260,
+        "product_variation_id": 265,
+        "variation_id": 414,
+        "location_id": 1,
+        "qty_available": "1.0000",
+        "created_at": "2025-12-02T23:22:18.000Z",
+        "updated_at": "2025-12-02T23:22:18.000Z"
+      },
+      {
+        "id": 11,
+        "product_id": 260,
+        "product_variation_id": 265,
+        "variation_id": 415,
+        "location_id": 1,
+        "qty_available": "1.0000",
+        "created_at": "2025-12-02T23:22:18.000Z",
+        "updated_at": "2025-12-31T20:28:28.000Z"
+      },
+      {
+        "id": 12,
+        "product_id": 260,
+        "product_variation_id": 265,
+        "variation_id": 416,
+        "location_id": 1,
+        "qty_available": "1.0000",
+        "created_at": "2025-12-02T23:22:18.000Z",
+        "updated_at": "2025-12-02T23:22:18.000Z"
+      }
+    ]
+  },
+  "categories": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "short_code",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "parent_id",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_cat_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "category_type",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "description",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "slug",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "name": "Remeras",
+        "business_id": 1,
+        "short_code": null,
+        "parent_id": 0,
+        "created_by": 1,
+        "woocommerce_cat_id": 16,
+        "category_type": "product",
+        "description": null,
+        "slug": null,
+        "deleted_at": null,
+        "created_at": "2025-10-28T19:45:39.000Z",
+        "updated_at": "2025-12-27T22:35:48.000Z"
+      },
+      {
+        "id": 2,
+        "name": "Pantalones",
+        "business_id": 1,
+        "short_code": null,
+        "parent_id": 0,
+        "created_by": 1,
+        "woocommerce_cat_id": 17,
+        "category_type": "product",
+        "description": null,
+        "slug": null,
+        "deleted_at": null,
+        "created_at": "2025-10-28T19:45:54.000Z",
+        "updated_at": "2025-12-27T22:35:48.000Z"
+      },
+      {
+        "id": 3,
+        "name": "Buzos",
+        "business_id": 1,
+        "short_code": null,
+        "parent_id": 0,
+        "created_by": 1,
+        "woocommerce_cat_id": 18,
+        "category_type": "product",
+        "description": null,
+        "slug": null,
+        "deleted_at": null,
+        "created_at": "2025-10-28T19:46:15.000Z",
+        "updated_at": "2025-12-27T22:35:48.000Z"
+      },
+      {
+        "id": 4,
+        "name": "Shorts",
+        "business_id": 1,
+        "short_code": null,
+        "parent_id": 0,
+        "created_by": 1,
+        "woocommerce_cat_id": 19,
+        "category_type": "product",
+        "description": null,
+        "slug": null,
+        "deleted_at": null,
+        "created_at": "2025-11-15T19:19:18.000Z",
+        "updated_at": "2025-12-27T22:35:48.000Z"
+      },
+      {
+        "id": 5,
+        "name": "Puperas",
+        "business_id": 1,
+        "short_code": null,
+        "parent_id": 0,
+        "created_by": 1,
+        "woocommerce_cat_id": 20,
+        "category_type": "product",
+        "description": null,
+        "slug": null,
+        "deleted_at": null,
+        "created_at": "2025-11-15T19:19:26.000Z",
+        "updated_at": "2025-12-27T22:35:48.000Z"
+      }
+    ]
+  },
+  "brands": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "description",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "business_id": 1,
+        "name": "Generico",
+        "description": null,
+        "created_by": 1,
+        "deleted_at": null,
+        "created_at": "2025-10-28T19:46:27.000Z",
+        "updated_at": "2025-10-28T19:46:27.000Z"
+      },
+      {
+        "id": 2,
+        "business_id": 1,
+        "name": "The Maker",
+        "description": null,
+        "created_by": 1,
+        "deleted_at": null,
+        "created_at": "2025-11-15T19:18:25.000Z",
+        "updated_at": "2025-11-15T19:18:25.000Z"
+      },
+      {
+        "id": 3,
+        "business_id": 1,
+        "name": "Short",
+        "description": null,
+        "created_by": 1,
+        "deleted_at": "2025-11-15T19:19:02.000Z",
+        "created_at": "2025-11-15T19:18:50.000Z",
+        "updated_at": "2025-11-15T19:19:02.000Z"
+      },
+      {
+        "id": 4,
+        "business_id": 1,
+        "name": "LSKMAN",
+        "description": null,
+        "created_by": 1,
+        "deleted_at": null,
+        "created_at": "2025-11-15T22:35:24.000Z",
+        "updated_at": "2025-11-15T22:35:24.000Z"
+      },
+      {
+        "id": 5,
+        "business_id": 1,
+        "name": "Pupé",
+        "description": null,
+        "created_by": 1,
+        "deleted_at": null,
+        "created_at": "2025-11-24T12:43:02.000Z",
+        "updated_at": "2025-11-24T12:43:02.000Z"
+      }
+    ]
+  },
+  "contacts": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "type",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "contact_type",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "land_mark",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "street_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "building_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "additional_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "supplier_business_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "prefix",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "first_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "middle_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "last_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "email",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "contact_id",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "contact_status",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": "active",
+        "Extra": ""
+      },
+      {
+        "Field": "tax_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "city",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "state",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "country",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "address_line_1",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "address_line_2",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "zip_code",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "dob",
+        "Type": "date",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "mobile",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "landline",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "alternate_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "pay_term_number",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "pay_term_type",
+        "Type": "enum('days','months')",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "credit_limit",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "converted_by",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "converted_on",
+        "Type": "datetime",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "balance",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "total_rp",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "total_rp_used",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "total_rp_expired",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "is_default",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_address",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_custom_field_details",
+        "Type": "longtext",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_export",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "export_custom_field_1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "export_custom_field_2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "export_custom_field_3",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "export_custom_field_4",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "export_custom_field_5",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "export_custom_field_6",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "position",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "customer_group_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "crm_source",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "crm_life_stage",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field3",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field4",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field5",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field6",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field7",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field8",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field9",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field10",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "business_id": 1,
+        "type": "customer",
+        "contact_type": null,
+        "land_mark": null,
+        "street_name": null,
+        "building_number": null,
+        "additional_number": null,
+        "supplier_business_name": null,
+        "name": "Walk-In Customer",
+        "prefix": null,
+        "first_name": null,
+        "middle_name": null,
+        "last_name": null,
+        "email": null,
+        "contact_id": "CO0001",
+        "contact_status": "active",
+        "tax_number": null,
+        "city": null,
+        "state": null,
+        "country": null,
+        "address_line_1": null,
+        "address_line_2": null,
+        "zip_code": null,
+        "dob": null,
+        "mobile": "",
+        "landline": null,
+        "alternate_number": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "credit_limit": "0.0000",
+        "created_by": 1,
+        "converted_by": null,
+        "converted_on": null,
+        "balance": "0.0000",
+        "total_rp": 0,
+        "total_rp_used": 0,
+        "total_rp_expired": 0,
+        "is_default": 1,
+        "shipping_address": null,
+        "shipping_custom_field_details": null,
+        "is_export": 0,
+        "export_custom_field_1": null,
+        "export_custom_field_2": null,
+        "export_custom_field_3": null,
+        "export_custom_field_4": null,
+        "export_custom_field_5": null,
+        "export_custom_field_6": null,
+        "position": null,
+        "customer_group_id": null,
+        "crm_source": null,
+        "crm_life_stage": null,
+        "custom_field1": null,
+        "custom_field2": null,
+        "custom_field3": null,
+        "custom_field4": null,
+        "custom_field5": null,
+        "custom_field6": null,
+        "custom_field7": null,
+        "custom_field8": null,
+        "custom_field9": null,
+        "custom_field10": null,
+        "deleted_at": null,
+        "created_at": "2025-10-29T02:51:01.000Z",
+        "updated_at": "2025-10-29T02:51:01.000Z"
+      },
+      {
+        "id": 2,
+        "business_id": 1,
+        "type": "customer",
+        "contact_type": "individual",
+        "land_mark": null,
+        "street_name": null,
+        "building_number": null,
+        "additional_number": null,
+        "supplier_business_name": null,
+        "name": "Facundo Gomez",
+        "prefix": null,
+        "first_name": "Facundo",
+        "middle_name": null,
+        "last_name": "Gomez",
+        "email": "facu.gmz54@gmail.com",
+        "contact_id": "CO0002",
+        "contact_status": "active",
+        "tax_number": null,
+        "city": null,
+        "state": null,
+        "country": null,
+        "address_line_1": null,
+        "address_line_2": null,
+        "zip_code": null,
+        "dob": null,
+        "mobile": "5492634552962",
+        "landline": null,
+        "alternate_number": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "credit_limit": null,
+        "created_by": 1,
+        "converted_by": null,
+        "converted_on": null,
+        "balance": "0.0000",
+        "total_rp": 0,
+        "total_rp_used": 0,
+        "total_rp_expired": 0,
+        "is_default": 0,
+        "shipping_address": null,
+        "shipping_custom_field_details": null,
+        "is_export": 0,
+        "export_custom_field_1": null,
+        "export_custom_field_2": null,
+        "export_custom_field_3": null,
+        "export_custom_field_4": null,
+        "export_custom_field_5": null,
+        "export_custom_field_6": null,
+        "position": null,
+        "customer_group_id": null,
+        "crm_source": null,
+        "crm_life_stage": null,
+        "custom_field1": null,
+        "custom_field2": null,
+        "custom_field3": null,
+        "custom_field4": null,
+        "custom_field5": null,
+        "custom_field6": null,
+        "custom_field7": null,
+        "custom_field8": null,
+        "custom_field9": null,
+        "custom_field10": null,
+        "deleted_at": null,
+        "created_at": "2025-11-02T11:00:02.000Z",
+        "updated_at": "2025-11-02T11:00:02.000Z"
+      },
+      {
+        "id": 3,
+        "business_id": 1,
+        "type": "supplier",
+        "contact_type": "business",
+        "land_mark": null,
+        "street_name": null,
+        "building_number": null,
+        "additional_number": null,
+        "supplier_business_name": "OnenOn",
+        "name": "",
+        "prefix": null,
+        "first_name": null,
+        "middle_name": null,
+        "last_name": null,
+        "email": null,
+        "contact_id": "CO0003",
+        "contact_status": "active",
+        "tax_number": null,
+        "city": null,
+        "state": null,
+        "country": null,
+        "address_line_1": null,
+        "address_line_2": null,
+        "zip_code": null,
+        "dob": null,
+        "mobile": "11111111",
+        "landline": null,
+        "alternate_number": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "credit_limit": null,
+        "created_by": 1,
+        "converted_by": null,
+        "converted_on": null,
+        "balance": "0.0000",
+        "total_rp": 0,
+        "total_rp_used": 0,
+        "total_rp_expired": 0,
+        "is_default": 0,
+        "shipping_address": null,
+        "shipping_custom_field_details": null,
+        "is_export": 0,
+        "export_custom_field_1": null,
+        "export_custom_field_2": null,
+        "export_custom_field_3": null,
+        "export_custom_field_4": null,
+        "export_custom_field_5": null,
+        "export_custom_field_6": null,
+        "position": null,
+        "customer_group_id": null,
+        "crm_source": null,
+        "crm_life_stage": null,
+        "custom_field1": null,
+        "custom_field2": null,
+        "custom_field3": null,
+        "custom_field4": null,
+        "custom_field5": null,
+        "custom_field6": null,
+        "custom_field7": null,
+        "custom_field8": null,
+        "custom_field9": null,
+        "custom_field10": null,
+        "deleted_at": null,
+        "created_at": "2025-12-02T23:11:03.000Z",
+        "updated_at": "2025-12-02T23:11:03.000Z"
+      },
+      {
+        "id": 4,
+        "business_id": 1,
+        "type": "supplier",
+        "contact_type": "business",
+        "land_mark": null,
+        "street_name": null,
+        "building_number": null,
+        "additional_number": null,
+        "supplier_business_name": "Pupe",
+        "name": "",
+        "prefix": null,
+        "first_name": null,
+        "middle_name": null,
+        "last_name": null,
+        "email": null,
+        "contact_id": "CO0004",
+        "contact_status": "active",
+        "tax_number": null,
+        "city": null,
+        "state": null,
+        "country": null,
+        "address_line_1": null,
+        "address_line_2": null,
+        "zip_code": null,
+        "dob": null,
+        "mobile": "111111",
+        "landline": null,
+        "alternate_number": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "credit_limit": null,
+        "created_by": 1,
+        "converted_by": null,
+        "converted_on": null,
+        "balance": "0.0000",
+        "total_rp": 0,
+        "total_rp_used": 0,
+        "total_rp_expired": 0,
+        "is_default": 0,
+        "shipping_address": null,
+        "shipping_custom_field_details": null,
+        "is_export": 0,
+        "export_custom_field_1": null,
+        "export_custom_field_2": null,
+        "export_custom_field_3": null,
+        "export_custom_field_4": null,
+        "export_custom_field_5": null,
+        "export_custom_field_6": null,
+        "position": null,
+        "customer_group_id": null,
+        "crm_source": null,
+        "crm_life_stage": null,
+        "custom_field1": null,
+        "custom_field2": null,
+        "custom_field3": null,
+        "custom_field4": null,
+        "custom_field5": null,
+        "custom_field6": null,
+        "custom_field7": null,
+        "custom_field8": null,
+        "custom_field9": null,
+        "custom_field10": null,
+        "deleted_at": null,
+        "created_at": "2025-12-02T23:24:48.000Z",
+        "updated_at": "2025-12-02T23:24:48.000Z"
+      },
+      {
+        "id": 5,
+        "business_id": 1,
+        "type": "supplier",
+        "contact_type": "business",
+        "land_mark": null,
+        "street_name": null,
+        "building_number": null,
+        "additional_number": null,
+        "supplier_business_name": "Clostudio",
+        "name": "",
+        "prefix": null,
+        "first_name": null,
+        "middle_name": null,
+        "last_name": null,
+        "email": null,
+        "contact_id": "CO0005",
+        "contact_status": "active",
+        "tax_number": null,
+        "city": null,
+        "state": null,
+        "country": null,
+        "address_line_1": null,
+        "address_line_2": null,
+        "zip_code": null,
+        "dob": null,
+        "mobile": "111",
+        "landline": null,
+        "alternate_number": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "credit_limit": null,
+        "created_by": 1,
+        "converted_by": null,
+        "converted_on": null,
+        "balance": "0.0000",
+        "total_rp": 0,
+        "total_rp_used": 0,
+        "total_rp_expired": 0,
+        "is_default": 0,
+        "shipping_address": null,
+        "shipping_custom_field_details": null,
+        "is_export": 0,
+        "export_custom_field_1": null,
+        "export_custom_field_2": null,
+        "export_custom_field_3": null,
+        "export_custom_field_4": null,
+        "export_custom_field_5": null,
+        "export_custom_field_6": null,
+        "position": null,
+        "customer_group_id": null,
+        "crm_source": null,
+        "crm_life_stage": null,
+        "custom_field1": null,
+        "custom_field2": null,
+        "custom_field3": null,
+        "custom_field4": null,
+        "custom_field5": null,
+        "custom_field6": null,
+        "custom_field7": null,
+        "custom_field8": null,
+        "custom_field9": null,
+        "custom_field10": null,
+        "deleted_at": null,
+        "created_at": "2025-12-02T23:33:28.000Z",
+        "updated_at": "2025-12-02T23:37:51.000Z"
+      }
+    ]
+  },
+  "transactions": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "location_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_kitchen_order",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "res_table_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "res_waiter_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "res_order_status",
+        "Type": "enum('received','cooked','served')",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "type",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sub_type",
+        "Type": "varchar(20)",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "status",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sub_status",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_quotation",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "payment_status",
+        "Type": "enum('paid','due','partial')",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "adjustment_type",
+        "Type": "enum('normal','abnormal')",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "contact_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "customer_group_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "invoice_no",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "ref_no",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "source",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "subscription_no",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "subscription_repeat_on",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "transaction_date",
+        "Type": "datetime",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "total_before_tax",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "tax_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax_amount",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "discount_type",
+        "Type": "enum('fixed','percentage')",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "discount_amount",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "rp_redeemed",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "rp_redeemed_amount",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_details",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_address",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "delivery_date",
+        "Type": "datetime",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_status",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "delivered_to",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "delivery_person",
+        "Type": "bigint",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_charges",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_custom_field_1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_custom_field_2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_custom_field_3",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_custom_field_4",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "shipping_custom_field_5",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "additional_notes",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "staff_note",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_export",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "export_custom_fields_info",
+        "Type": "longtext",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "round_off_amount",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "additional_expense_key_1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "additional_expense_value_1",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "additional_expense_key_2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "additional_expense_value_2",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "additional_expense_key_3",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "additional_expense_value_3",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "additional_expense_key_4",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "additional_expense_value_4",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "final_total",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "expense_category_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "expense_sub_category_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "expense_for",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "commission_agent",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "document",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_direct_sale",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "is_suspend",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "exchange_rate",
+        "Type": "decimal(20,3)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1.000",
+        "Extra": ""
+      },
+      {
+        "Field": "total_amount_recovered",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "transfer_parent_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "return_parent_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "opening_stock_product_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_duration",
+        "Type": "decimal(8,2)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_duration_unit",
+        "Type": "varchar(20)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_amount_per_unit_duration",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_allowances",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_deductions",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "crm_is_order_request",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_order_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "purchase_requisition_ids",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "prefer_payment_method",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "prefer_payment_account",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sales_order_ids",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "purchase_order_ids",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field_1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field_2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field_3",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field_4",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "import_batch",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "import_time",
+        "Type": "datetime",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "types_of_service_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "packing_charge",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "packing_charge_type",
+        "Type": "enum('fixed','percent')",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "service_custom_field_1",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "service_custom_field_2",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "service_custom_field_3",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "service_custom_field_4",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "service_custom_field_5",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "service_custom_field_6",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_created_from_api",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "rp_earned",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "order_addresses",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_recurring",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "recur_interval",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "recur_interval_type",
+        "Type": "enum('days','months','years')",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "recur_repetitions",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "recur_stopped_on",
+        "Type": "datetime",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "recur_parent_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "invoice_token",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "pay_term_number",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "pay_term_type",
+        "Type": "enum('days','months')",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "selling_price_group_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "business_id": 1,
+        "location_id": 1,
+        "is_kitchen_order": 0,
+        "res_table_id": null,
+        "res_waiter_id": null,
+        "res_order_status": null,
+        "type": "opening_stock",
+        "sub_type": null,
+        "status": "received",
+        "sub_status": null,
+        "is_quotation": 0,
+        "payment_status": "paid",
+        "adjustment_type": null,
+        "contact_id": null,
+        "customer_group_id": null,
+        "invoice_no": null,
+        "ref_no": null,
+        "source": null,
+        "subscription_no": null,
+        "subscription_repeat_on": null,
+        "transaction_date": "2025-01-01T22:50:42.000Z",
+        "total_before_tax": "250.0000",
+        "tax_id": null,
+        "tax_amount": "0.0000",
+        "discount_type": null,
+        "discount_amount": "0.0000",
+        "rp_redeemed": 0,
+        "rp_redeemed_amount": "0.0000",
+        "shipping_details": null,
+        "shipping_address": null,
+        "delivery_date": null,
+        "shipping_status": null,
+        "delivered_to": null,
+        "delivery_person": null,
+        "shipping_charges": "0.0000",
+        "shipping_custom_field_1": null,
+        "shipping_custom_field_2": null,
+        "shipping_custom_field_3": null,
+        "shipping_custom_field_4": null,
+        "shipping_custom_field_5": null,
+        "additional_notes": null,
+        "staff_note": null,
+        "is_export": 0,
+        "export_custom_fields_info": null,
+        "round_off_amount": "0.0000",
+        "additional_expense_key_1": null,
+        "additional_expense_value_1": "0.0000",
+        "additional_expense_key_2": null,
+        "additional_expense_value_2": "0.0000",
+        "additional_expense_key_3": null,
+        "additional_expense_value_3": "0.0000",
+        "additional_expense_key_4": null,
+        "additional_expense_value_4": "0.0000",
+        "final_total": "750.0000",
+        "expense_category_id": null,
+        "expense_sub_category_id": null,
+        "expense_for": null,
+        "commission_agent": null,
+        "document": null,
+        "is_direct_sale": 0,
+        "is_suspend": 0,
+        "exchange_rate": "1.000",
+        "total_amount_recovered": null,
+        "transfer_parent_id": null,
+        "return_parent_id": null,
+        "opening_stock_product_id": 3,
+        "created_by": 1,
+        "essentials_duration": "0.00",
+        "essentials_duration_unit": null,
+        "essentials_amount_per_unit_duration": "0.0000",
+        "essentials_allowances": null,
+        "essentials_deductions": null,
+        "crm_is_order_request": 0,
+        "woocommerce_order_id": null,
+        "purchase_requisition_ids": null,
+        "prefer_payment_method": null,
+        "prefer_payment_account": null,
+        "sales_order_ids": null,
+        "purchase_order_ids": null,
+        "custom_field_1": null,
+        "custom_field_2": null,
+        "custom_field_3": null,
+        "custom_field_4": null,
+        "import_batch": null,
+        "import_time": null,
+        "types_of_service_id": null,
+        "packing_charge": null,
+        "packing_charge_type": null,
+        "service_custom_field_1": null,
+        "service_custom_field_2": null,
+        "service_custom_field_3": null,
+        "service_custom_field_4": null,
+        "service_custom_field_5": null,
+        "service_custom_field_6": null,
+        "is_created_from_api": 0,
+        "rp_earned": 0,
+        "order_addresses": null,
+        "is_recurring": 0,
+        "recur_interval": null,
+        "recur_interval_type": null,
+        "recur_repetitions": null,
+        "recur_stopped_on": null,
+        "recur_parent_id": null,
+        "invoice_token": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "selling_price_group_id": null,
+        "created_at": "2025-10-28T19:50:42.000Z",
+        "updated_at": "2025-10-28T19:50:42.000Z"
+      },
+      {
+        "id": 2,
+        "business_id": 1,
+        "location_id": 1,
+        "is_kitchen_order": 0,
+        "res_table_id": null,
+        "res_waiter_id": null,
+        "res_order_status": null,
+        "type": "opening_stock",
+        "sub_type": null,
+        "status": "received",
+        "sub_status": null,
+        "is_quotation": 0,
+        "payment_status": "paid",
+        "adjustment_type": null,
+        "contact_id": null,
+        "customer_group_id": null,
+        "invoice_no": null,
+        "ref_no": null,
+        "source": null,
+        "subscription_no": null,
+        "subscription_repeat_on": null,
+        "transaction_date": "2025-01-01T22:50:42.000Z",
+        "total_before_tax": "250.0000",
+        "tax_id": null,
+        "tax_amount": "0.0000",
+        "discount_type": null,
+        "discount_amount": "0.0000",
+        "rp_redeemed": 0,
+        "rp_redeemed_amount": "0.0000",
+        "shipping_details": null,
+        "shipping_address": null,
+        "delivery_date": null,
+        "shipping_status": null,
+        "delivered_to": null,
+        "delivery_person": null,
+        "shipping_charges": "0.0000",
+        "shipping_custom_field_1": null,
+        "shipping_custom_field_2": null,
+        "shipping_custom_field_3": null,
+        "shipping_custom_field_4": null,
+        "shipping_custom_field_5": null,
+        "additional_notes": null,
+        "staff_note": null,
+        "is_export": 0,
+        "export_custom_fields_info": null,
+        "round_off_amount": "0.0000",
+        "additional_expense_key_1": null,
+        "additional_expense_value_1": "0.0000",
+        "additional_expense_key_2": null,
+        "additional_expense_value_2": "0.0000",
+        "additional_expense_key_3": null,
+        "additional_expense_value_3": "0.0000",
+        "additional_expense_key_4": null,
+        "additional_expense_value_4": "0.0000",
+        "final_total": "1000.0000",
+        "expense_category_id": null,
+        "expense_sub_category_id": null,
+        "expense_for": null,
+        "commission_agent": null,
+        "document": null,
+        "is_direct_sale": 0,
+        "is_suspend": 0,
+        "exchange_rate": "1.000",
+        "total_amount_recovered": null,
+        "transfer_parent_id": null,
+        "return_parent_id": null,
+        "opening_stock_product_id": 3,
+        "created_by": 1,
+        "essentials_duration": "0.00",
+        "essentials_duration_unit": null,
+        "essentials_amount_per_unit_duration": "0.0000",
+        "essentials_allowances": null,
+        "essentials_deductions": null,
+        "crm_is_order_request": 0,
+        "woocommerce_order_id": null,
+        "purchase_requisition_ids": null,
+        "prefer_payment_method": null,
+        "prefer_payment_account": null,
+        "sales_order_ids": null,
+        "purchase_order_ids": null,
+        "custom_field_1": null,
+        "custom_field_2": null,
+        "custom_field_3": null,
+        "custom_field_4": null,
+        "import_batch": null,
+        "import_time": null,
+        "types_of_service_id": null,
+        "packing_charge": null,
+        "packing_charge_type": null,
+        "service_custom_field_1": null,
+        "service_custom_field_2": null,
+        "service_custom_field_3": null,
+        "service_custom_field_4": null,
+        "service_custom_field_5": null,
+        "service_custom_field_6": null,
+        "is_created_from_api": 0,
+        "rp_earned": 0,
+        "order_addresses": null,
+        "is_recurring": 0,
+        "recur_interval": null,
+        "recur_interval_type": null,
+        "recur_repetitions": null,
+        "recur_stopped_on": null,
+        "recur_parent_id": null,
+        "invoice_token": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "selling_price_group_id": null,
+        "created_at": "2025-10-28T19:50:42.000Z",
+        "updated_at": "2025-10-28T19:50:42.000Z"
+      },
+      {
+        "id": 3,
+        "business_id": 1,
+        "location_id": 1,
+        "is_kitchen_order": 0,
+        "res_table_id": null,
+        "res_waiter_id": null,
+        "res_order_status": null,
+        "type": "opening_stock",
+        "sub_type": null,
+        "status": "received",
+        "sub_status": null,
+        "is_quotation": 0,
+        "payment_status": "paid",
+        "adjustment_type": null,
+        "contact_id": null,
+        "customer_group_id": null,
+        "invoice_no": null,
+        "ref_no": null,
+        "source": null,
+        "subscription_no": null,
+        "subscription_repeat_on": null,
+        "transaction_date": "2025-01-01T22:50:42.000Z",
+        "total_before_tax": "250.0000",
+        "tax_id": null,
+        "tax_amount": "0.0000",
+        "discount_type": null,
+        "discount_amount": "0.0000",
+        "rp_redeemed": 0,
+        "rp_redeemed_amount": "0.0000",
+        "shipping_details": null,
+        "shipping_address": null,
+        "delivery_date": null,
+        "shipping_status": null,
+        "delivered_to": null,
+        "delivery_person": null,
+        "shipping_charges": "0.0000",
+        "shipping_custom_field_1": null,
+        "shipping_custom_field_2": null,
+        "shipping_custom_field_3": null,
+        "shipping_custom_field_4": null,
+        "shipping_custom_field_5": null,
+        "additional_notes": null,
+        "staff_note": null,
+        "is_export": 0,
+        "export_custom_fields_info": null,
+        "round_off_amount": "0.0000",
+        "additional_expense_key_1": null,
+        "additional_expense_value_1": "0.0000",
+        "additional_expense_key_2": null,
+        "additional_expense_value_2": "0.0000",
+        "additional_expense_key_3": null,
+        "additional_expense_value_3": "0.0000",
+        "additional_expense_key_4": null,
+        "additional_expense_value_4": "0.0000",
+        "final_total": "1000.0000",
+        "expense_category_id": null,
+        "expense_sub_category_id": null,
+        "expense_for": null,
+        "commission_agent": null,
+        "document": null,
+        "is_direct_sale": 0,
+        "is_suspend": 0,
+        "exchange_rate": "1.000",
+        "total_amount_recovered": null,
+        "transfer_parent_id": null,
+        "return_parent_id": null,
+        "opening_stock_product_id": 3,
+        "created_by": 1,
+        "essentials_duration": "0.00",
+        "essentials_duration_unit": null,
+        "essentials_amount_per_unit_duration": "0.0000",
+        "essentials_allowances": null,
+        "essentials_deductions": null,
+        "crm_is_order_request": 0,
+        "woocommerce_order_id": null,
+        "purchase_requisition_ids": null,
+        "prefer_payment_method": null,
+        "prefer_payment_account": null,
+        "sales_order_ids": null,
+        "purchase_order_ids": null,
+        "custom_field_1": null,
+        "custom_field_2": null,
+        "custom_field_3": null,
+        "custom_field_4": null,
+        "import_batch": null,
+        "import_time": null,
+        "types_of_service_id": null,
+        "packing_charge": null,
+        "packing_charge_type": null,
+        "service_custom_field_1": null,
+        "service_custom_field_2": null,
+        "service_custom_field_3": null,
+        "service_custom_field_4": null,
+        "service_custom_field_5": null,
+        "service_custom_field_6": null,
+        "is_created_from_api": 0,
+        "rp_earned": 0,
+        "order_addresses": null,
+        "is_recurring": 0,
+        "recur_interval": null,
+        "recur_interval_type": null,
+        "recur_repetitions": null,
+        "recur_stopped_on": null,
+        "recur_parent_id": null,
+        "invoice_token": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "selling_price_group_id": null,
+        "created_at": "2025-10-28T19:50:42.000Z",
+        "updated_at": "2025-10-28T19:50:42.000Z"
+      },
+      {
+        "id": 4,
+        "business_id": 1,
+        "location_id": 1,
+        "is_kitchen_order": 0,
+        "res_table_id": null,
+        "res_waiter_id": null,
+        "res_order_status": null,
+        "type": "opening_stock",
+        "sub_type": null,
+        "status": "received",
+        "sub_status": null,
+        "is_quotation": 0,
+        "payment_status": "paid",
+        "adjustment_type": null,
+        "contact_id": null,
+        "customer_group_id": null,
+        "invoice_no": null,
+        "ref_no": null,
+        "source": null,
+        "subscription_no": null,
+        "subscription_repeat_on": null,
+        "transaction_date": "2025-01-01T22:50:42.000Z",
+        "total_before_tax": "250.0000",
+        "tax_id": null,
+        "tax_amount": "0.0000",
+        "discount_type": null,
+        "discount_amount": "0.0000",
+        "rp_redeemed": 0,
+        "rp_redeemed_amount": "0.0000",
+        "shipping_details": null,
+        "shipping_address": null,
+        "delivery_date": null,
+        "shipping_status": null,
+        "delivered_to": null,
+        "delivery_person": null,
+        "shipping_charges": "0.0000",
+        "shipping_custom_field_1": null,
+        "shipping_custom_field_2": null,
+        "shipping_custom_field_3": null,
+        "shipping_custom_field_4": null,
+        "shipping_custom_field_5": null,
+        "additional_notes": null,
+        "staff_note": null,
+        "is_export": 0,
+        "export_custom_fields_info": null,
+        "round_off_amount": "0.0000",
+        "additional_expense_key_1": null,
+        "additional_expense_value_1": "0.0000",
+        "additional_expense_key_2": null,
+        "additional_expense_value_2": "0.0000",
+        "additional_expense_key_3": null,
+        "additional_expense_value_3": "0.0000",
+        "additional_expense_key_4": null,
+        "additional_expense_value_4": "0.0000",
+        "final_total": "500.0000",
+        "expense_category_id": null,
+        "expense_sub_category_id": null,
+        "expense_for": null,
+        "commission_agent": null,
+        "document": null,
+        "is_direct_sale": 0,
+        "is_suspend": 0,
+        "exchange_rate": "1.000",
+        "total_amount_recovered": null,
+        "transfer_parent_id": null,
+        "return_parent_id": null,
+        "opening_stock_product_id": 3,
+        "created_by": 1,
+        "essentials_duration": "0.00",
+        "essentials_duration_unit": null,
+        "essentials_amount_per_unit_duration": "0.0000",
+        "essentials_allowances": null,
+        "essentials_deductions": null,
+        "crm_is_order_request": 0,
+        "woocommerce_order_id": null,
+        "purchase_requisition_ids": null,
+        "prefer_payment_method": null,
+        "prefer_payment_account": null,
+        "sales_order_ids": null,
+        "purchase_order_ids": null,
+        "custom_field_1": null,
+        "custom_field_2": null,
+        "custom_field_3": null,
+        "custom_field_4": null,
+        "import_batch": null,
+        "import_time": null,
+        "types_of_service_id": null,
+        "packing_charge": null,
+        "packing_charge_type": null,
+        "service_custom_field_1": null,
+        "service_custom_field_2": null,
+        "service_custom_field_3": null,
+        "service_custom_field_4": null,
+        "service_custom_field_5": null,
+        "service_custom_field_6": null,
+        "is_created_from_api": 0,
+        "rp_earned": 0,
+        "order_addresses": null,
+        "is_recurring": 0,
+        "recur_interval": null,
+        "recur_interval_type": null,
+        "recur_repetitions": null,
+        "recur_stopped_on": null,
+        "recur_parent_id": null,
+        "invoice_token": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "selling_price_group_id": null,
+        "created_at": "2025-10-28T19:50:42.000Z",
+        "updated_at": "2025-10-28T19:50:42.000Z"
+      },
+      {
+        "id": 5,
+        "business_id": 1,
+        "location_id": 1,
+        "is_kitchen_order": 0,
+        "res_table_id": null,
+        "res_waiter_id": null,
+        "res_order_status": null,
+        "type": "opening_stock",
+        "sub_type": null,
+        "status": "received",
+        "sub_status": null,
+        "is_quotation": 0,
+        "payment_status": "paid",
+        "adjustment_type": null,
+        "contact_id": null,
+        "customer_group_id": null,
+        "invoice_no": null,
+        "ref_no": null,
+        "source": null,
+        "subscription_no": null,
+        "subscription_repeat_on": null,
+        "transaction_date": "2025-01-01T22:50:42.000Z",
+        "total_before_tax": "250.0000",
+        "tax_id": null,
+        "tax_amount": "0.0000",
+        "discount_type": null,
+        "discount_amount": "0.0000",
+        "rp_redeemed": 0,
+        "rp_redeemed_amount": "0.0000",
+        "shipping_details": null,
+        "shipping_address": null,
+        "delivery_date": null,
+        "shipping_status": null,
+        "delivered_to": null,
+        "delivery_person": null,
+        "shipping_charges": "0.0000",
+        "shipping_custom_field_1": null,
+        "shipping_custom_field_2": null,
+        "shipping_custom_field_3": null,
+        "shipping_custom_field_4": null,
+        "shipping_custom_field_5": null,
+        "additional_notes": null,
+        "staff_note": null,
+        "is_export": 0,
+        "export_custom_fields_info": null,
+        "round_off_amount": "0.0000",
+        "additional_expense_key_1": null,
+        "additional_expense_value_1": "0.0000",
+        "additional_expense_key_2": null,
+        "additional_expense_value_2": "0.0000",
+        "additional_expense_key_3": null,
+        "additional_expense_value_3": "0.0000",
+        "additional_expense_key_4": null,
+        "additional_expense_value_4": "0.0000",
+        "final_total": "250.0000",
+        "expense_category_id": null,
+        "expense_sub_category_id": null,
+        "expense_for": null,
+        "commission_agent": null,
+        "document": null,
+        "is_direct_sale": 0,
+        "is_suspend": 0,
+        "exchange_rate": "1.000",
+        "total_amount_recovered": null,
+        "transfer_parent_id": null,
+        "return_parent_id": null,
+        "opening_stock_product_id": 3,
+        "created_by": 1,
+        "essentials_duration": "0.00",
+        "essentials_duration_unit": null,
+        "essentials_amount_per_unit_duration": "0.0000",
+        "essentials_allowances": null,
+        "essentials_deductions": null,
+        "crm_is_order_request": 0,
+        "woocommerce_order_id": null,
+        "purchase_requisition_ids": null,
+        "prefer_payment_method": null,
+        "prefer_payment_account": null,
+        "sales_order_ids": null,
+        "purchase_order_ids": null,
+        "custom_field_1": null,
+        "custom_field_2": null,
+        "custom_field_3": null,
+        "custom_field_4": null,
+        "import_batch": null,
+        "import_time": null,
+        "types_of_service_id": null,
+        "packing_charge": null,
+        "packing_charge_type": null,
+        "service_custom_field_1": null,
+        "service_custom_field_2": null,
+        "service_custom_field_3": null,
+        "service_custom_field_4": null,
+        "service_custom_field_5": null,
+        "service_custom_field_6": null,
+        "is_created_from_api": 0,
+        "rp_earned": 0,
+        "order_addresses": null,
+        "is_recurring": 0,
+        "recur_interval": null,
+        "recur_interval_type": null,
+        "recur_repetitions": null,
+        "recur_stopped_on": null,
+        "recur_parent_id": null,
+        "invoice_token": null,
+        "pay_term_number": null,
+        "pay_term_type": null,
+        "selling_price_group_id": null,
+        "created_at": "2025-10-28T19:50:42.000Z",
+        "updated_at": "2025-10-28T19:50:42.000Z"
+      }
+    ]
+  },
+  "transaction_sell_lines": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "transaction_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "variation_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "quantity",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "secondary_unit_quantity",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "quantity_returned",
+        "Type": "decimal(20,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "unit_price_before_discount",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "unit_price",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "line_discount_type",
+        "Type": "enum('fixed','percentage')",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "line_discount_amount",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "unit_price_inc_tax",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "item_tax",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "discount_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "lot_no_line_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sell_line_note",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_line_items_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "so_line_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "so_quantity_invoiced",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "res_service_staff_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "res_line_order_status",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "parent_sell_line_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "children_type",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": "",
+        "Extra": ""
+      },
+      {
+        "Field": "sub_unit_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 3,
+        "transaction_id": 27,
+        "product_id": 216,
+        "variation_id": 326,
+        "quantity": "1.0000",
+        "secondary_unit_quantity": "0.0000",
+        "quantity_returned": "0.0000",
+        "unit_price_before_discount": "38500.0000",
+        "unit_price": "38500.0000",
+        "line_discount_type": "fixed",
+        "line_discount_amount": "0.0000",
+        "unit_price_inc_tax": "38500.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "discount_id": null,
+        "lot_no_line_id": null,
+        "sell_line_note": "",
+        "woocommerce_line_items_id": null,
+        "so_line_id": null,
+        "so_quantity_invoiced": "0.0000",
+        "res_service_staff_id": null,
+        "res_line_order_status": null,
+        "parent_sell_line_id": null,
+        "children_type": "",
+        "sub_unit_id": null,
+        "created_at": "2025-12-08T17:25:11.000Z",
+        "updated_at": "2025-12-08T17:25:11.000Z"
+      },
+      {
+        "id": 4,
+        "transaction_id": 28,
+        "product_id": 218,
+        "variation_id": 328,
+        "quantity": "1.0000",
+        "secondary_unit_quantity": "0.0000",
+        "quantity_returned": "0.0000",
+        "unit_price_before_discount": "39000.0000",
+        "unit_price": "39000.0000",
+        "line_discount_type": "fixed",
+        "line_discount_amount": "0.0000",
+        "unit_price_inc_tax": "39000.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "discount_id": null,
+        "lot_no_line_id": null,
+        "sell_line_note": "",
+        "woocommerce_line_items_id": null,
+        "so_line_id": null,
+        "so_quantity_invoiced": "0.0000",
+        "res_service_staff_id": null,
+        "res_line_order_status": null,
+        "parent_sell_line_id": null,
+        "children_type": "",
+        "sub_unit_id": null,
+        "created_at": "2025-12-08T19:54:14.000Z",
+        "updated_at": "2025-12-21T23:22:45.000Z"
+      },
+      {
+        "id": 5,
+        "transaction_id": 28,
+        "product_id": 227,
+        "variation_id": 337,
+        "quantity": "1.0000",
+        "secondary_unit_quantity": "0.0000",
+        "quantity_returned": "0.0000",
+        "unit_price_before_discount": "39000.0000",
+        "unit_price": "39000.0000",
+        "line_discount_type": "fixed",
+        "line_discount_amount": "0.0000",
+        "unit_price_inc_tax": "39000.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "discount_id": null,
+        "lot_no_line_id": null,
+        "sell_line_note": "",
+        "woocommerce_line_items_id": null,
+        "so_line_id": null,
+        "so_quantity_invoiced": "0.0000",
+        "res_service_staff_id": null,
+        "res_line_order_status": null,
+        "parent_sell_line_id": null,
+        "children_type": "",
+        "sub_unit_id": null,
+        "created_at": "2025-12-08T19:54:14.000Z",
+        "updated_at": "2025-12-21T23:22:45.000Z"
+      },
+      {
+        "id": 6,
+        "transaction_id": 28,
+        "product_id": 178,
+        "variation_id": 266,
+        "quantity": "1.0000",
+        "secondary_unit_quantity": "0.0000",
+        "quantity_returned": "0.0000",
+        "unit_price_before_discount": "49000.0000",
+        "unit_price": "49000.0000",
+        "line_discount_type": "fixed",
+        "line_discount_amount": "0.0000",
+        "unit_price_inc_tax": "49000.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "discount_id": null,
+        "lot_no_line_id": null,
+        "sell_line_note": "",
+        "woocommerce_line_items_id": null,
+        "so_line_id": null,
+        "so_quantity_invoiced": "0.0000",
+        "res_service_staff_id": null,
+        "res_line_order_status": null,
+        "parent_sell_line_id": null,
+        "children_type": "",
+        "sub_unit_id": null,
+        "created_at": "2025-12-08T19:54:14.000Z",
+        "updated_at": "2025-12-21T23:22:45.000Z"
+      },
+      {
+        "id": 7,
+        "transaction_id": 29,
+        "product_id": 54,
+        "variation_id": 100,
+        "quantity": "1.0000",
+        "secondary_unit_quantity": "0.0000",
+        "quantity_returned": "0.0000",
+        "unit_price_before_discount": "30000.0000",
+        "unit_price": "30000.0000",
+        "line_discount_type": "fixed",
+        "line_discount_amount": "0.0000",
+        "unit_price_inc_tax": "30000.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "discount_id": null,
+        "lot_no_line_id": null,
+        "sell_line_note": "",
+        "woocommerce_line_items_id": null,
+        "so_line_id": null,
+        "so_quantity_invoiced": "0.0000",
+        "res_service_staff_id": null,
+        "res_line_order_status": null,
+        "parent_sell_line_id": null,
+        "children_type": "",
+        "sub_unit_id": null,
+        "created_at": "2025-12-21T22:54:08.000Z",
+        "updated_at": "2025-12-21T22:54:08.000Z"
+      }
+    ]
+  },
+  "purchase_lines": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "transaction_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "variation_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "quantity",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "secondary_unit_quantity",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "pp_without_discount",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "discount_percent",
+        "Type": "decimal(5,2)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.00",
+        "Extra": ""
+      },
+      {
+        "Field": "purchase_price",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "purchase_price_inc_tax",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "item_tax",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "purchase_requisition_line_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "purchase_order_line_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "quantity_sold",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "quantity_adjusted",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "quantity_returned",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "po_quantity_purchased",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "mfg_quantity_used",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "mfg_date",
+        "Type": "date",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "exp_date",
+        "Type": "date",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "lot_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sub_unit_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 8,
+        "transaction_id": 12,
+        "product_id": 259,
+        "variation_id": 412,
+        "quantity": "2.0000",
+        "secondary_unit_quantity": "0.0000",
+        "pp_without_discount": "8000.0000",
+        "discount_percent": "0.00",
+        "purchase_price": "8000.0000",
+        "purchase_price_inc_tax": "8000.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "purchase_requisition_line_id": null,
+        "purchase_order_line_id": null,
+        "quantity_sold": "0.0000",
+        "quantity_adjusted": "0.0000",
+        "quantity_returned": "0.0000",
+        "po_quantity_purchased": "0.0000",
+        "mfg_quantity_used": "0.0000",
+        "mfg_date": null,
+        "exp_date": null,
+        "lot_number": null,
+        "sub_unit_id": null,
+        "created_at": "2025-12-02T23:21:19.000Z",
+        "updated_at": "2025-12-02T23:21:19.000Z"
+      },
+      {
+        "id": 9,
+        "transaction_id": 12,
+        "product_id": 259,
+        "variation_id": 413,
+        "quantity": "2.0000",
+        "secondary_unit_quantity": "0.0000",
+        "pp_without_discount": "8000.0000",
+        "discount_percent": "0.00",
+        "purchase_price": "8000.0000",
+        "purchase_price_inc_tax": "8000.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "purchase_requisition_line_id": null,
+        "purchase_order_line_id": null,
+        "quantity_sold": "1.0000",
+        "quantity_adjusted": "0.0000",
+        "quantity_returned": "0.0000",
+        "po_quantity_purchased": "0.0000",
+        "mfg_quantity_used": "0.0000",
+        "mfg_date": null,
+        "exp_date": null,
+        "lot_number": null,
+        "sub_unit_id": null,
+        "created_at": "2025-12-02T23:21:19.000Z",
+        "updated_at": "2025-12-31T20:28:29.000Z"
+      },
+      {
+        "id": 10,
+        "transaction_id": 12,
+        "product_id": 260,
+        "variation_id": 414,
+        "quantity": "1.0000",
+        "secondary_unit_quantity": "0.0000",
+        "pp_without_discount": "6900.0000",
+        "discount_percent": "0.00",
+        "purchase_price": "6900.0000",
+        "purchase_price_inc_tax": "6900.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "purchase_requisition_line_id": null,
+        "purchase_order_line_id": null,
+        "quantity_sold": "0.0000",
+        "quantity_adjusted": "0.0000",
+        "quantity_returned": "0.0000",
+        "po_quantity_purchased": "0.0000",
+        "mfg_quantity_used": "0.0000",
+        "mfg_date": null,
+        "exp_date": null,
+        "lot_number": null,
+        "sub_unit_id": null,
+        "created_at": "2025-12-02T23:21:19.000Z",
+        "updated_at": "2025-12-02T23:21:19.000Z"
+      },
+      {
+        "id": 11,
+        "transaction_id": 12,
+        "product_id": 260,
+        "variation_id": 415,
+        "quantity": "2.0000",
+        "secondary_unit_quantity": "0.0000",
+        "pp_without_discount": "6900.0000",
+        "discount_percent": "0.00",
+        "purchase_price": "6900.0000",
+        "purchase_price_inc_tax": "6900.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "purchase_requisition_line_id": null,
+        "purchase_order_line_id": null,
+        "quantity_sold": "1.0000",
+        "quantity_adjusted": "0.0000",
+        "quantity_returned": "0.0000",
+        "po_quantity_purchased": "0.0000",
+        "mfg_quantity_used": "0.0000",
+        "mfg_date": null,
+        "exp_date": null,
+        "lot_number": null,
+        "sub_unit_id": null,
+        "created_at": "2025-12-02T23:21:19.000Z",
+        "updated_at": "2025-12-31T20:28:29.000Z"
+      },
+      {
+        "id": 12,
+        "transaction_id": 12,
+        "product_id": 260,
+        "variation_id": 416,
+        "quantity": "1.0000",
+        "secondary_unit_quantity": "0.0000",
+        "pp_without_discount": "6900.0000",
+        "discount_percent": "0.00",
+        "purchase_price": "6900.0000",
+        "purchase_price_inc_tax": "6900.0000",
+        "item_tax": "0.0000",
+        "tax_id": null,
+        "purchase_requisition_line_id": null,
+        "purchase_order_line_id": null,
+        "quantity_sold": "0.0000",
+        "quantity_adjusted": "0.0000",
+        "quantity_returned": "0.0000",
+        "po_quantity_purchased": "0.0000",
+        "mfg_quantity_used": "0.0000",
+        "mfg_date": null,
+        "exp_date": null,
+        "lot_number": null,
+        "sub_unit_id": null,
+        "created_at": "2025-12-02T23:21:19.000Z",
+        "updated_at": "2025-12-02T23:21:19.000Z"
+      }
+    ]
+  },
+  "transaction_payments": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "transaction_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "business_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_return",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "amount",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "method",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "payment_type",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "transaction_no",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "card_transaction_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "card_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "card_type",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "card_holder_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "card_month",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "card_year",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "card_security",
+        "Type": "varchar(5)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "cheque_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "bank_account_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "paid_on",
+        "Type": "datetime",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "paid_through_link",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "gateway",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_advance",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "payment_for",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "parent_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "note",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "document",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "payment_ref_no",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "account_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 2,
+        "transaction_id": 12,
+        "business_id": 1,
+        "is_return": 0,
+        "amount": "434000.0000",
+        "method": "bank_transfer",
+        "payment_type": null,
+        "transaction_no": null,
+        "card_transaction_number": null,
+        "card_number": null,
+        "card_type": "credit",
+        "card_holder_name": null,
+        "card_month": null,
+        "card_year": null,
+        "card_security": null,
+        "cheque_number": null,
+        "bank_account_number": null,
+        "paid_on": "2025-12-03T02:21:00.000Z",
+        "created_by": 1,
+        "paid_through_link": 0,
+        "gateway": null,
+        "is_advance": 0,
+        "payment_for": 3,
+        "parent_id": null,
+        "note": null,
+        "document": null,
+        "payment_ref_no": "PP2025/0001",
+        "account_id": null,
+        "created_at": "2025-12-02T23:21:38.000Z",
+        "updated_at": "2025-12-02T23:21:38.000Z"
+      },
+      {
+        "id": 3,
+        "transaction_id": 13,
+        "business_id": 1,
+        "is_return": 0,
+        "amount": "126660.0000",
+        "method": "bank_transfer",
+        "payment_type": null,
+        "transaction_no": null,
+        "card_transaction_number": null,
+        "card_number": null,
+        "card_type": "credit",
+        "card_holder_name": null,
+        "card_month": null,
+        "card_year": null,
+        "card_security": null,
+        "cheque_number": null,
+        "bank_account_number": null,
+        "paid_on": "2025-12-03T02:32:00.000Z",
+        "created_by": 1,
+        "paid_through_link": 0,
+        "gateway": null,
+        "is_advance": 0,
+        "payment_for": 4,
+        "parent_id": null,
+        "note": null,
+        "document": null,
+        "payment_ref_no": "PP2025/0002",
+        "account_id": null,
+        "created_at": "2025-12-02T23:32:25.000Z",
+        "updated_at": "2025-12-02T23:32:25.000Z"
+      },
+      {
+        "id": 4,
+        "transaction_id": 18,
+        "business_id": 1,
+        "is_return": 0,
+        "amount": "577928.0400",
+        "method": "bank_transfer",
+        "payment_type": null,
+        "transaction_no": null,
+        "card_transaction_number": null,
+        "card_number": null,
+        "card_type": "credit",
+        "card_holder_name": null,
+        "card_month": null,
+        "card_year": null,
+        "card_security": null,
+        "cheque_number": null,
+        "bank_account_number": null,
+        "paid_on": "2025-12-06T13:12:00.000Z",
+        "created_by": 1,
+        "paid_through_link": 0,
+        "gateway": null,
+        "is_advance": 0,
+        "payment_for": 9,
+        "parent_id": null,
+        "note": null,
+        "document": null,
+        "payment_ref_no": "PP2025/0003",
+        "account_id": null,
+        "created_at": "2025-12-06T10:12:46.000Z",
+        "updated_at": "2025-12-06T10:12:46.000Z"
+      },
+      {
+        "id": 5,
+        "transaction_id": 21,
+        "business_id": 1,
+        "is_return": 0,
+        "amount": "493500.0000",
+        "method": "bank_transfer",
+        "payment_type": null,
+        "transaction_no": null,
+        "card_transaction_number": null,
+        "card_number": null,
+        "card_type": "credit",
+        "card_holder_name": null,
+        "card_month": null,
+        "card_year": null,
+        "card_security": null,
+        "cheque_number": null,
+        "bank_account_number": null,
+        "paid_on": "2025-12-07T19:00:00.000Z",
+        "created_by": 1,
+        "paid_through_link": 0,
+        "gateway": null,
+        "is_advance": 0,
+        "payment_for": 12,
+        "parent_id": null,
+        "note": null,
+        "document": null,
+        "payment_ref_no": "PP2025/0004",
+        "account_id": null,
+        "created_at": "2025-12-07T19:00:40.000Z",
+        "updated_at": "2025-12-07T19:00:40.000Z"
+      },
+      {
+        "id": 6,
+        "transaction_id": 27,
+        "business_id": 1,
+        "is_return": 0,
+        "amount": "38500.0000",
+        "method": "bank_transfer",
+        "payment_type": null,
+        "transaction_no": null,
+        "card_transaction_number": null,
+        "card_number": null,
+        "card_type": "credit",
+        "card_holder_name": null,
+        "card_month": null,
+        "card_year": null,
+        "card_security": null,
+        "cheque_number": null,
+        "bank_account_number": null,
+        "paid_on": "2025-12-08T17:23:00.000Z",
+        "created_by": 2,
+        "paid_through_link": 0,
+        "gateway": null,
+        "is_advance": 0,
+        "payment_for": 1,
+        "parent_id": null,
+        "note": null,
+        "document": null,
+        "payment_ref_no": "SP2025/0002",
+        "account_id": null,
+        "created_at": "2025-12-08T17:25:11.000Z",
+        "updated_at": "2025-12-08T17:25:11.000Z"
+      }
+    ]
+  },
+  "units": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "actual_name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "short_name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "allow_decimal",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "base_unit_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "base_unit_multiplier",
+        "Type": "decimal(20,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "business_id": 1,
+        "actual_name": "Unidades",
+        "short_name": "U",
+        "allow_decimal": 0,
+        "base_unit_id": null,
+        "base_unit_multiplier": null,
+        "created_by": 1,
+        "deleted_at": null,
+        "created_at": "2025-10-29T02:51:02.000Z",
+        "updated_at": "2025-11-09T10:24:54.000Z"
+      }
+    ]
+  },
+  "barcodes": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "description",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "width",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "height",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "paper_width",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "paper_height",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "top_margin",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "left_margin",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "row_distance",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "col_distance",
+        "Type": "double(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "stickers_in_one_row",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_default",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "is_continuous",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "stickers_in_one_sheet",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "name": "20 Labels per Sheet",
+        "description": "Sheet Size: 8.5\" x 11\", Label Size: 4\" x 1\", Labels per sheet: 20",
+        "width": 4,
+        "height": 1,
+        "paper_width": 8.5,
+        "paper_height": 11,
+        "top_margin": 0.5,
+        "left_margin": 0.125,
+        "row_distance": 0,
+        "col_distance": 0.1875,
+        "stickers_in_one_row": 2,
+        "is_default": 0,
+        "is_continuous": 0,
+        "stickers_in_one_sheet": 20,
+        "business_id": null,
+        "created_at": "2017-12-18T06:13:44.000Z",
+        "updated_at": "2017-12-18T06:13:44.000Z"
+      },
+      {
+        "id": 2,
+        "name": "30 Labels per sheet",
+        "description": "Sheet Size: 8.5\" x 11\", Label Size: 2.625\" x 1\", Labels per sheet: 30",
+        "width": 2.625,
+        "height": 1,
+        "paper_width": 8.5,
+        "paper_height": 11,
+        "top_margin": 0.5,
+        "left_margin": 0.188,
+        "row_distance": 0,
+        "col_distance": 0.125,
+        "stickers_in_one_row": 3,
+        "is_default": 0,
+        "is_continuous": 0,
+        "stickers_in_one_sheet": 30,
+        "business_id": null,
+        "created_at": "2017-12-18T06:04:39.000Z",
+        "updated_at": "2017-12-18T06:10:40.000Z"
+      },
+      {
+        "id": 3,
+        "name": "32 Labels per sheet",
+        "description": "Sheet Size: 8.5\" x 11\", Label Size: 2\" x 1.25\", Labels per sheet: 32",
+        "width": 2,
+        "height": 1.25,
+        "paper_width": 8.5,
+        "paper_height": 11,
+        "top_margin": 0.5,
+        "left_margin": 0.25,
+        "row_distance": 0,
+        "col_distance": 0,
+        "stickers_in_one_row": 4,
+        "is_default": 0,
+        "is_continuous": 0,
+        "stickers_in_one_sheet": 32,
+        "business_id": null,
+        "created_at": "2017-12-18T05:55:40.000Z",
+        "updated_at": "2017-12-18T05:55:40.000Z"
+      },
+      {
+        "id": 4,
+        "name": "40 Labels per sheet",
+        "description": "Sheet Size: 8.5\" x 11\", Label Size: 2\" x 1\", Labels per sheet: 40",
+        "width": 2,
+        "height": 1,
+        "paper_width": 8.5,
+        "paper_height": 11,
+        "top_margin": 0.5,
+        "left_margin": 0.25,
+        "row_distance": 0,
+        "col_distance": 0,
+        "stickers_in_one_row": 4,
+        "is_default": 0,
+        "is_continuous": 0,
+        "stickers_in_one_sheet": 40,
+        "business_id": null,
+        "created_at": "2017-12-18T05:58:40.000Z",
+        "updated_at": "2017-12-18T05:58:40.000Z"
+      },
+      {
+        "id": 5,
+        "name": "50 Labels per Sheet",
+        "description": "Sheet Size: 8.5\" x 11\", Label Size: 1.5\" x 1\", Labels per sheet: 50",
+        "width": 1.5,
+        "height": 1,
+        "paper_width": 8.5,
+        "paper_height": 11,
+        "top_margin": 0.5,
+        "left_margin": 0.5,
+        "row_distance": 0,
+        "col_distance": 0,
+        "stickers_in_one_row": 5,
+        "is_default": 0,
+        "is_continuous": 0,
+        "stickers_in_one_sheet": 50,
+        "business_id": null,
+        "created_at": "2017-12-18T05:51:10.000Z",
+        "updated_at": "2017-12-18T05:51:10.000Z"
+      }
+    ]
+  },
+  "variation_templates": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_attr_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "name": "Talles",
+        "business_id": 1,
+        "woocommerce_attr_id": 1,
+        "created_at": "2025-10-28T18:58:41.000Z",
+        "updated_at": "2025-12-27T22:40:35.000Z"
+      },
+      {
+        "id": 2,
+        "name": "Color",
+        "business_id": 1,
+        "woocommerce_attr_id": 2,
+        "created_at": "2025-10-28T18:59:24.000Z",
+        "updated_at": "2025-12-27T22:40:36.000Z"
+      },
+      {
+        "id": 3,
+        "name": "Talle pantalon",
+        "business_id": 1,
+        "woocommerce_attr_id": 3,
+        "created_at": "2025-11-24T19:07:59.000Z",
+        "updated_at": "2025-12-27T22:40:37.000Z"
+      }
+    ]
+  },
+  "variation_value_templates": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "variation_template_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "name": "S",
+        "variation_template_id": 1,
+        "created_at": "2025-10-28T18:58:41.000Z",
+        "updated_at": "2025-10-28T18:58:41.000Z"
+      },
+      {
+        "id": 2,
+        "name": "M",
+        "variation_template_id": 1,
+        "created_at": "2025-10-28T18:58:41.000Z",
+        "updated_at": "2025-10-28T18:58:41.000Z"
+      },
+      {
+        "id": 3,
+        "name": "L",
+        "variation_template_id": 1,
+        "created_at": "2025-10-28T18:58:41.000Z",
+        "updated_at": "2025-10-28T18:58:41.000Z"
+      },
+      {
+        "id": 4,
+        "name": "XL",
+        "variation_template_id": 1,
+        "created_at": "2025-10-28T18:58:41.000Z",
+        "updated_at": "2025-10-28T18:58:41.000Z"
+      },
+      {
+        "id": 5,
+        "name": "XXL",
+        "variation_template_id": 1,
+        "created_at": "2025-10-28T18:58:41.000Z",
+        "updated_at": "2025-10-28T18:58:41.000Z"
+      }
+    ]
+  },
+  "selling_price_groups": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "description",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_active",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "name": "Efectivo",
+        "description": null,
+        "business_id": 1,
+        "is_active": 1,
+        "deleted_at": null,
+        "created_at": "2025-11-24T17:20:22.000Z",
+        "updated_at": "2025-11-24T17:20:22.000Z"
+      }
+    ]
+  },
+  "product_racks": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "location_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "product_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "rack",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "row",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "position",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "business_id": 1,
+        "location_id": 1,
+        "product_id": 4,
+        "rack": null,
+        "row": null,
+        "position": null,
+        "created_at": "2025-11-15T19:23:36.000Z",
+        "updated_at": "2025-11-15T19:23:36.000Z"
+      },
+      {
+        "id": 2,
+        "business_id": 1,
+        "location_id": 1,
+        "product_id": 5,
+        "rack": null,
+        "row": null,
+        "position": null,
+        "created_at": "2025-11-15T19:26:09.000Z",
+        "updated_at": "2025-11-15T19:26:09.000Z"
+      },
+      {
+        "id": 3,
+        "business_id": 1,
+        "location_id": 1,
+        "product_id": 6,
+        "rack": null,
+        "row": null,
+        "position": null,
+        "created_at": "2025-11-15T19:28:40.000Z",
+        "updated_at": "2025-11-15T19:29:56.000Z"
+      },
+      {
+        "id": 4,
+        "business_id": 1,
+        "location_id": 1,
+        "product_id": 7,
+        "rack": null,
+        "row": null,
+        "position": null,
+        "created_at": "2025-11-15T19:31:19.000Z",
+        "updated_at": "2025-11-15T19:32:42.000Z"
+      },
+      {
+        "id": 5,
+        "business_id": 1,
+        "location_id": 1,
+        "product_id": 8,
+        "rack": null,
+        "row": null,
+        "position": null,
+        "created_at": "2025-11-15T19:33:17.000Z",
+        "updated_at": "2025-11-15T19:33:17.000Z"
+      }
+    ]
+  },
+  "product_locations": {
+    "columns": [
+      {
+        "Field": "product_id",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "location_id",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "product_id": 1,
+        "location_id": 1
+      },
+      {
+        "product_id": 2,
+        "location_id": 1
+      },
+      {
+        "product_id": 3,
+        "location_id": 1
+      },
+      {
+        "product_id": 4,
+        "location_id": 1
+      },
+      {
+        "product_id": 5,
+        "location_id": 1
+      }
+    ]
+  },
+  "business_locations": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "location_id",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(256)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "landmark",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "country",
+        "Type": "varchar(100)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "state",
+        "Type": "varchar(100)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "city",
+        "Type": "varchar(100)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "zip_code",
+        "Type": "char(7)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "invoice_scheme_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sale_invoice_scheme_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "invoice_layout_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sale_invoice_layout_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "selling_price_group_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "print_receipt_on_invoice",
+        "Type": "tinyint(1)",
+        "Null": "YES",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "receipt_printer_type",
+        "Type": "enum('browser','printer')",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": "browser",
+        "Extra": ""
+      },
+      {
+        "Field": "printer_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "mobile",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "alternate_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "email",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "website",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "featured_products",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_active",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "default_payment_accounts",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field3",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field4",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "business_id": 1,
+        "location_id": "BL0001",
+        "name": "Ro Indumentaria",
+        "landmark": "1",
+        "country": "Argentina",
+        "state": "Mendoza",
+        "city": "Palmira",
+        "zip_code": "5584",
+        "invoice_scheme_id": 1,
+        "sale_invoice_scheme_id": null,
+        "invoice_layout_id": 1,
+        "sale_invoice_layout_id": 1,
+        "selling_price_group_id": null,
+        "print_receipt_on_invoice": 1,
+        "receipt_printer_type": "browser",
+        "printer_id": null,
+        "mobile": "",
+        "alternate_number": "",
+        "email": "",
+        "website": "",
+        "featured_products": null,
+        "is_active": 1,
+        "default_payment_accounts": "{\"cash\":{\"is_enabled\":1,\"account\":null},\"card\":{\"is_enabled\":1,\"account\":null},\"cheque\":{\"is_enabled\":1,\"account\":null},\"bank_transfer\":{\"is_enabled\":1,\"account\":null},\"other\":{\"is_enabled\":1,\"account\":null},\"custom_pay_1\":{\"is_enabled\":1,\"account\":null},\"custom_pay_2\":{\"is_enabled\":1,\"account\":null},\"custom_pay_3\":{\"is_enabled\":1,\"account\":null},\"custom_pay_4\":{\"is_enabled\":1,\"account\":null},\"custom_pay_5\":{\"is_enabled\":1,\"account\":null},\"custom_pay_6\":{\"is_enabled\":1,\"account\":null},\"custom_pay_7\":{\"is_enabled\":1,\"account\":null}}",
+        "custom_field1": null,
+        "custom_field2": null,
+        "custom_field3": null,
+        "custom_field4": null,
+        "deleted_at": null,
+        "created_at": "2025-10-29T02:51:02.000Z",
+        "updated_at": "2025-10-29T02:51:02.000Z"
+      }
+    ]
+  },
+  "business": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "currency_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "start_date",
+        "Type": "date",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax_number_1",
+        "Type": "varchar(100)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax_label_1",
+        "Type": "varchar(10)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax_number_2",
+        "Type": "varchar(100)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "tax_label_2",
+        "Type": "varchar(10)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "code_label_1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "code_1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "code_label_2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "code_2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "default_sales_tax",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "default_profit_percent",
+        "Type": "double(5,2)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.00",
+        "Extra": ""
+      },
+      {
+        "Field": "owner_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "time_zone",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "Asia/Kolkata",
+        "Extra": ""
+      },
+      {
+        "Field": "fy_start_month",
+        "Type": "tinyint",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "accounting_method",
+        "Type": "enum('fifo','lifo','avco')",
+        "Null": "NO",
+        "Key": "",
+        "Default": "fifo",
+        "Extra": ""
+      },
+      {
+        "Field": "default_sales_discount",
+        "Type": "decimal(5,2)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sell_price_tax",
+        "Type": "enum('includes','excludes')",
+        "Null": "NO",
+        "Key": "",
+        "Default": "includes",
+        "Extra": ""
+      },
+      {
+        "Field": "logo",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sku_prefix",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "enable_product_expiry",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "expiry_type",
+        "Type": "enum('add_expiry','add_manufacturing')",
+        "Null": "NO",
+        "Key": "",
+        "Default": "add_expiry",
+        "Extra": ""
+      },
+      {
+        "Field": "on_product_expiry",
+        "Type": "enum('keep_selling','stop_selling','auto_delete')",
+        "Null": "NO",
+        "Key": "",
+        "Default": "keep_selling",
+        "Extra": ""
+      },
+      {
+        "Field": "stop_selling_before",
+        "Type": "int",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "enable_tooltip",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "purchase_in_diff_currency",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "purchase_currency_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "p_exchange_rate",
+        "Type": "decimal(20,3)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1.000",
+        "Extra": ""
+      },
+      {
+        "Field": "transaction_edit_days",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "",
+        "Default": "30",
+        "Extra": ""
+      },
+      {
+        "Field": "stock_expiry_alert_days",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "",
+        "Default": "30",
+        "Extra": ""
+      },
+      {
+        "Field": "keyboard_shortcuts",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "pos_settings",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_settings",
+        "Type": "longtext",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_api_settings",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_skipped_orders",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_wh_oc_secret",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_wh_ou_secret",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_wh_od_secret",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_wh_or_secret",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "weighing_scale_setting",
+        "Type": "text",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "enable_brand",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_category",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_sub_category",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_price_tax",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_purchase_status",
+        "Type": "tinyint(1)",
+        "Null": "YES",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_lot_number",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "default_unit",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "enable_sub_units",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_racks",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_row",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_position",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_editing_product_from_purchase",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "sales_cmsn_agnt",
+        "Type": "enum('logged_in_user','user','cmsn_agnt')",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "item_addition_method",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "enable_inline_tax",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "currency_symbol_placement",
+        "Type": "enum('before','after')",
+        "Null": "NO",
+        "Key": "",
+        "Default": "before",
+        "Extra": ""
+      },
+      {
+        "Field": "enabled_modules",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "date_format",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "m/d/Y",
+        "Extra": ""
+      },
+      {
+        "Field": "time_format",
+        "Type": "enum('12','24')",
+        "Null": "NO",
+        "Key": "",
+        "Default": "24",
+        "Extra": ""
+      },
+      {
+        "Field": "currency_precision",
+        "Type": "tinyint",
+        "Null": "NO",
+        "Key": "",
+        "Default": "2",
+        "Extra": ""
+      },
+      {
+        "Field": "quantity_precision",
+        "Type": "tinyint",
+        "Null": "NO",
+        "Key": "",
+        "Default": "2",
+        "Extra": ""
+      },
+      {
+        "Field": "ref_no_prefixes",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "theme_color",
+        "Type": "char(20)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "crm_settings",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "enable_rp",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "rp_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "amount_for_unit_rp",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "min_order_total_for_rp",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "max_rp_per_order",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "redeem_amount_per_unit_rp",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "min_order_total_for_redeem",
+        "Type": "decimal(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1.0000",
+        "Extra": ""
+      },
+      {
+        "Field": "min_redeem_point",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "max_redeem_point",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "rp_expiry_period",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "rp_expiry_type",
+        "Type": "enum('month','year')",
+        "Null": "NO",
+        "Key": "",
+        "Default": "year",
+        "Extra": ""
+      },
+      {
+        "Field": "email_settings",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "sms_settings",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_labels",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "common_settings",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_active",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "name": "Ro Indumentaria",
+        "currency_id": 4,
+        "start_date": "1969-12-31T03:00:00.000Z",
+        "tax_number_1": null,
+        "tax_label_1": null,
+        "tax_number_2": null,
+        "tax_label_2": null,
+        "code_label_1": null,
+        "code_1": null,
+        "code_label_2": null,
+        "code_2": null,
+        "default_sales_tax": null,
+        "default_profit_percent": 25,
+        "owner_id": 1,
+        "time_zone": "America/Argentina/Mendoza",
+        "fy_start_month": 1,
+        "accounting_method": "fifo",
+        "default_sales_discount": "0.00",
+        "sell_price_tax": "includes",
+        "logo": "1762094448_diseno-sin-titulo.png",
+        "sku_prefix": null,
+        "enable_product_expiry": 0,
+        "expiry_type": "add_expiry",
+        "on_product_expiry": "keep_selling",
+        "stop_selling_before": 0,
+        "enable_tooltip": 1,
+        "purchase_in_diff_currency": 0,
+        "purchase_currency_id": null,
+        "p_exchange_rate": "1.000",
+        "transaction_edit_days": 30,
+        "stock_expiry_alert_days": 30,
+        "keyboard_shortcuts": "{\"pos\":{\"express_checkout\":\"shift+e\",\"pay_n_ckeckout\":\"shift+p\",\"draft\":\"shift+d\",\"cancel\":\"shift+c\",\"recent_product_quantity\":\"f2\",\"weighing_scale\":null,\"edit_discount\":\"shift+i\",\"edit_order_tax\":\"shift+t\",\"add_payment_row\":\"shift+r\",\"finalize_payment\":\"shift+f\",\"add_new_product\":\"f4\"}}",
+        "pos_settings": "{\"amount_rounding_method\":null,\"cmmsn_calculation_type\":\"invoice_value\",\"razor_pay_key_id\":null,\"razor_pay_key_secret\":null,\"stripe_public_key\":null,\"stripe_secret_key\":null,\"customer_display_screen\":\"1\",\"display_screen_heading\":null,\"cash_denominations\":null,\"enable_cash_denomination_on\":\"all_screens\",\"disable_pay_checkout\":0,\"disable_draft\":0,\"disable_express_checkout\":0,\"hide_product_suggestion\":0,\"hide_recent_trans\":0,\"disable_discount\":0,\"disable_order_tax\":0,\"is_pos_subtotal_editable\":0}",
+        "essentials_settings": null,
+        "woocommerce_api_settings": "{\"woocommerce_app_url\":\"https:\\/\\/roindumentaria.com\\/\",\"woocommerce_consumer_key\":\"ck_a4a96d431f1373bd8d91346c74042f54365b8863\",\"woocommerce_consumer_secret\":\"cs_bc7b33f3c340ecbbdf09e68e4c8eafc0eb8c65d1\",\"location_id\":\"1\",\"enable_auto_sync\":\"1\",\"default_tax_class\":null,\"product_tax_type\":\"inc\",\"default_selling_price_group\":null,\"sync_description_as\":\"long\",\"product_fields_for_create\":[\"category\",\"quantity\",\"image\"],\"manage_stock_for_create\":\"true\",\"in_stock_for_create\":\"true\",\"product_fields_for_update\":[\"price\",\"category\",\"quantity\",\"image\"],\"manage_stock_for_update\":\"true\",\"in_stock_for_update\":\"true\",\"order_statuses\":{\"pending\":null,\"processing\":null,\"on-hold\":null,\"completed\":null,\"cancelled\":null,\"refunded\":null,\"failed\":null,\"shipped\":null},\"shipping_statuses\":{\"pending\":null,\"processing\":null,\"on-hold\":null,\"completed\":null,\"cancelled\":null,\"refunded\":null,\"failed\":null,\"shipped\":null},\"woocommerce_wh_oc_secret\":null,\"woocommerce_wh_ou_secret\":null,\"woocommerce_wh_od_secret\":null,\"woocommerce_wh_or_secret\":null}",
+        "woocommerce_skipped_orders": null,
+        "woocommerce_wh_oc_secret": null,
+        "woocommerce_wh_ou_secret": null,
+        "woocommerce_wh_od_secret": null,
+        "woocommerce_wh_or_secret": null,
+        "weighing_scale_setting": "{\"label_prefix\":null,\"product_sku_length\":\"4\",\"qty_length\":\"3\",\"qty_length_decimal\":\"2\"}",
+        "enable_brand": 1,
+        "enable_category": 1,
+        "enable_sub_category": 1,
+        "enable_price_tax": 1,
+        "enable_purchase_status": 1,
+        "enable_lot_number": 0,
+        "default_unit": 1,
+        "enable_sub_units": 0,
+        "enable_racks": 0,
+        "enable_row": 0,
+        "enable_position": 1,
+        "enable_editing_product_from_purchase": 1,
+        "sales_cmsn_agnt": null,
+        "item_addition_method": 1,
+        "enable_inline_tax": 0,
+        "currency_symbol_placement": "before",
+        "enabled_modules": "[\"purchases\",\"add_sale\",\"pos_sale\",\"stock_transfers\",\"stock_adjustment\",\"expenses\"]",
+        "date_format": "m/d/Y",
+        "time_format": "24",
+        "currency_precision": 2,
+        "quantity_precision": 2,
+        "ref_no_prefixes": "{\"purchase\":\"PO\",\"purchase_return\":null,\"purchase_requisition\":null,\"purchase_order\":null,\"stock_transfer\":\"ST\",\"stock_adjustment\":\"SA\",\"sell_return\":\"CN\",\"expense\":\"EP\",\"contacts\":\"CO\",\"purchase_payment\":\"PP\",\"sell_payment\":\"SP\",\"expense_payment\":null,\"business_location\":\"BL\",\"username\":null,\"subscription\":null,\"draft\":null,\"sales_order\":null}",
+        "theme_color": null,
+        "created_by": null,
+        "crm_settings": null,
+        "enable_rp": 0,
+        "rp_name": null,
+        "amount_for_unit_rp": "1.0000",
+        "min_order_total_for_rp": "1.0000",
+        "max_rp_per_order": null,
+        "redeem_amount_per_unit_rp": "1.0000",
+        "min_order_total_for_redeem": "1.0000",
+        "min_redeem_point": null,
+        "max_redeem_point": null,
+        "rp_expiry_period": null,
+        "rp_expiry_type": "year",
+        "email_settings": "{\"mail_driver\":\"smtp\",\"mail_host\":\"c2771170.ferozo.com\",\"mail_port\":\"465\",\"mail_username\":\"hola@roindumentaria.com\",\"mail_password\":\"F@cundo1998\",\"mail_encryption\":\"ssl\",\"mail_from_address\":\"hola@roindumentaria.com\",\"mail_from_name\":\"Ro Indumentaria\"}",
+        "sms_settings": "{\"sms_service\":\"other\",\"nexmo_key\":null,\"nexmo_secret\":null,\"nexmo_from\":null,\"twilio_sid\":null,\"twilio_token\":null,\"twilio_from\":null,\"url\":\"https:\\/\\/mpwa.to\\/send-message\",\"send_to_param_name\":\"number\",\"send_to_param_type\":\"string\",\"msg_param_name\":\"message\",\"request_method\":\"post\",\"data_parameter_type\":\"form-data\",\"header_1\":null,\"header_val_1\":null,\"header_2\":null,\"header_val_2\":null,\"header_3\":null,\"header_val_3\":null,\"param_1\":\"api_key\",\"param_val_1\":\"NKSNGTEtY2ZYihwXmlRntczjFUCUH8\",\"param_2\":\"sender\",\"param_val_2\":\"542634681520\",\"param_3\":null,\"param_val_3\":null,\"param_4\":null,\"param_val_4\":null,\"param_5\":null,\"param_val_5\":null,\"param_6\":null,\"param_val_6\":null,\"param_7\":null,\"param_val_7\":null,\"param_8\":null,\"param_val_8\":null,\"param_9\":null,\"param_val_9\":null,\"param_10\":null,\"param_val_10\":null}",
+        "custom_labels": "{\"payments\":{\"custom_pay_1\":null,\"custom_pay_2\":null,\"custom_pay_3\":null,\"custom_pay_4\":null,\"custom_pay_5\":null,\"custom_pay_6\":null,\"custom_pay_7\":null},\"contact\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null,\"custom_field_5\":null,\"custom_field_6\":null,\"custom_field_7\":null,\"custom_field_8\":null,\"custom_field_9\":null,\"custom_field_10\":null},\"product\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null,\"custom_field_5\":null,\"custom_field_6\":null,\"custom_field_7\":null,\"custom_field_8\":null,\"custom_field_9\":null,\"custom_field_10\":null,\"custom_field_11\":null,\"custom_field_12\":null,\"custom_field_13\":null,\"custom_field_14\":null,\"custom_field_15\":null,\"custom_field_16\":null,\"custom_field_17\":null,\"custom_field_18\":null,\"custom_field_19\":null,\"custom_field_20\":null},\"product_cf_details\":{\"1\":{\"type\":null,\"dropdown_options\":null},\"2\":{\"type\":null,\"dropdown_options\":null},\"3\":{\"type\":null,\"dropdown_options\":null},\"4\":{\"type\":null,\"dropdown_options\":null},\"5\":{\"type\":null,\"dropdown_options\":null},\"6\":{\"type\":null,\"dropdown_options\":null},\"7\":{\"type\":null,\"dropdown_options\":null},\"8\":{\"type\":null,\"dropdown_options\":null},\"9\":{\"type\":null,\"dropdown_options\":null},\"10\":{\"type\":null,\"dropdown_options\":null},\"11\":{\"type\":null,\"dropdown_options\":null},\"12\":{\"type\":null,\"dropdown_options\":null},\"13\":{\"type\":null,\"dropdown_options\":null},\"14\":{\"type\":null,\"dropdown_options\":null},\"15\":{\"type\":null,\"dropdown_options\":null},\"16\":{\"type\":null,\"dropdown_options\":null},\"17\":{\"type\":null,\"dropdown_options\":null},\"18\":{\"type\":null,\"dropdown_options\":null},\"19\":{\"type\":null,\"dropdown_options\":null},\"20\":{\"type\":null,\"dropdown_options\":null}},\"location\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null},\"user\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null},\"purchase\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null},\"purchase_shipping\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null,\"custom_field_5\":null},\"sell\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null},\"shipping\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null,\"custom_field_5\":null},\"types_of_service\":{\"custom_field_1\":null,\"custom_field_2\":null,\"custom_field_3\":null,\"custom_field_4\":null,\"custom_field_5\":null,\"custom_field_6\":null}}",
+        "common_settings": "{\"default_credit_limit\":null,\"default_datatable_page_entries\":\"25\"}",
+        "is_active": 1,
+        "created_at": "2025-10-29T02:51:01.000Z",
+        "updated_at": "2025-12-27T22:59:27.000Z"
+      }
+    ]
+  },
+  "users": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "user_type",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": "user",
+        "Extra": ""
+      },
+      {
+        "Field": "surname",
+        "Type": "char(10)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "first_name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "last_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "username",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "UNI",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "email",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "password",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "language",
+        "Type": "char(7)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "en",
+        "Extra": ""
+      },
+      {
+        "Field": "contact_no",
+        "Type": "char(15)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "address",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "remember_token",
+        "Type": "varchar(100)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_department_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_designation_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_salary",
+        "Type": "decimal(22,4)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_pay_period",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "essentials_pay_cycle",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "available_at",
+        "Type": "datetime",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "paused_at",
+        "Type": "datetime",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "max_sales_discount_percent",
+        "Type": "decimal(5,2)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "allow_login",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "1",
+        "Extra": ""
+      },
+      {
+        "Field": "status",
+        "Type": "enum('active','inactive','terminated')",
+        "Null": "NO",
+        "Key": "",
+        "Default": "active",
+        "Extra": ""
+      },
+      {
+        "Field": "is_enable_service_staff_pin",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "service_staff_pin",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "crm_contact_id",
+        "Type": "int unsigned",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_cmmsn_agnt",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "cmmsn_percent",
+        "Type": "decimal(4,2)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0.00",
+        "Extra": ""
+      },
+      {
+        "Field": "selected_contacts",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "dob",
+        "Type": "date",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "gender",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "marital_status",
+        "Type": "enum('married','unmarried','divorced')",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "blood_group",
+        "Type": "char(10)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "contact_number",
+        "Type": "char(20)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "alt_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "family_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "fb_link",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "twitter_link",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "social_media_1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "social_media_2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "permanent_address",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "current_address",
+        "Type": "text",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "guardian_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field_1",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field_2",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field_3",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "custom_field_4",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "bank_details",
+        "Type": "longtext",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "id_proof_name",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "id_proof_number",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "location_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "crm_department",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "crm_designation",
+        "Type": "varchar(191)",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": [
+      {
+        "id": 1,
+        "user_type": "user",
+        "surname": null,
+        "first_name": "Facundo",
+        "last_name": "Gomez",
+        "username": "facugmz",
+        "email": "facu.gmz54@gmail.com",
+        "password": "$2y$10$/vwijiSOKzD94GEJb5hCUOtExshqHnJmPc/puhsUZUWhDciN6GfZm",
+        "language": "es",
+        "contact_no": null,
+        "address": null,
+        "remember_token": "bBvSBuDVCDchXwAa6zaYUR3yanbSQgJtLHNbNpCBnPnvRNEUlYVkNMdjheEp",
+        "business_id": 1,
+        "essentials_department_id": null,
+        "essentials_designation_id": null,
+        "essentials_salary": null,
+        "essentials_pay_period": null,
+        "essentials_pay_cycle": null,
+        "available_at": null,
+        "paused_at": null,
+        "max_sales_discount_percent": null,
+        "allow_login": 1,
+        "status": "active",
+        "is_enable_service_staff_pin": 0,
+        "service_staff_pin": null,
+        "crm_contact_id": null,
+        "is_cmmsn_agnt": 0,
+        "cmmsn_percent": "0.00",
+        "selected_contacts": 0,
+        "dob": null,
+        "gender": null,
+        "marital_status": null,
+        "blood_group": null,
+        "contact_number": null,
+        "alt_number": null,
+        "family_number": null,
+        "fb_link": null,
+        "twitter_link": null,
+        "social_media_1": null,
+        "social_media_2": null,
+        "permanent_address": null,
+        "current_address": null,
+        "guardian_name": null,
+        "custom_field_1": null,
+        "custom_field_2": null,
+        "custom_field_3": null,
+        "custom_field_4": null,
+        "bank_details": "{\"account_holder_name\":null,\"account_number\":null,\"bank_name\":null,\"bank_code\":null,\"branch\":null,\"tax_payer_id\":null}",
+        "id_proof_name": null,
+        "id_proof_number": null,
+        "location_id": null,
+        "crm_department": null,
+        "crm_designation": null,
+        "deleted_at": null,
+        "created_at": "2025-10-29T02:51:01.000Z",
+        "updated_at": "2025-10-28T18:38:27.000Z"
+      },
+      {
+        "id": 2,
+        "user_type": "user",
+        "surname": null,
+        "first_name": "Romina",
+        "last_name": "Elvira",
+        "username": "romina",
+        "email": "valentino200716@gmail.com",
+        "password": "$2y$10$iYrpG6.W6ZcIr3sdX/cZaejUJHO8VcSKXgRaiegYdp.PkNdX/uBFK",
+        "language": "es",
+        "contact_no": null,
+        "address": null,
+        "remember_token": "b8pRksUuaAGbBHgDIhVEHkmXJ5gNJOyRll2s5TxzDw7WzUT78xzXqOhk02pt",
+        "business_id": 1,
+        "essentials_department_id": null,
+        "essentials_designation_id": null,
+        "essentials_salary": null,
+        "essentials_pay_period": "month",
+        "essentials_pay_cycle": null,
+        "available_at": null,
+        "paused_at": null,
+        "max_sales_discount_percent": null,
+        "allow_login": 1,
+        "status": "active",
+        "is_enable_service_staff_pin": 0,
+        "service_staff_pin": null,
+        "crm_contact_id": null,
+        "is_cmmsn_agnt": 0,
+        "cmmsn_percent": "0.00",
+        "selected_contacts": 0,
+        "dob": null,
+        "gender": null,
+        "marital_status": null,
+        "blood_group": null,
+        "contact_number": null,
+        "alt_number": null,
+        "family_number": null,
+        "fb_link": null,
+        "twitter_link": null,
+        "social_media_1": null,
+        "social_media_2": null,
+        "permanent_address": null,
+        "current_address": null,
+        "guardian_name": null,
+        "custom_field_1": null,
+        "custom_field_2": null,
+        "custom_field_3": null,
+        "custom_field_4": null,
+        "bank_details": "{\"account_holder_name\":null,\"account_number\":null,\"bank_name\":null,\"bank_code\":null,\"branch\":null,\"tax_payer_id\":null}",
+        "id_proof_name": null,
+        "id_proof_number": null,
+        "location_id": null,
+        "crm_department": null,
+        "crm_designation": null,
+        "deleted_at": null,
+        "created_at": "2025-11-24T17:25:40.000Z",
+        "updated_at": "2025-12-08T17:26:17.000Z"
+      }
+    ]
+  },
+  "tax_rates": {
+    "columns": [
+      {
+        "Field": "id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "PRI",
+        "Default": null,
+        "Extra": "auto_increment"
+      },
+      {
+        "Field": "business_id",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "name",
+        "Type": "varchar(191)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "amount",
+        "Type": "double(22,4)",
+        "Null": "NO",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "is_tax_group",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "for_tax_group",
+        "Type": "tinyint(1)",
+        "Null": "NO",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+      },
+      {
+        "Field": "created_by",
+        "Type": "int unsigned",
+        "Null": "NO",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "woocommerce_tax_rate_id",
+        "Type": "int",
+        "Null": "YES",
+        "Key": "MUL",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "deleted_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "created_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      },
+      {
+        "Field": "updated_at",
+        "Type": "timestamp",
+        "Null": "YES",
+        "Key": "",
+        "Default": null,
+        "Extra": ""
+      }
+    ],
+    "sample": []
+  }
+}

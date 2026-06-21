@@ -162,16 +162,16 @@ function ProductCard({ product, onView, onEdit, onDelete }: {
 }
 
 // ── Summary Stats ────────────────────────────────────────────────────────────
-function SummaryBar({ products }: { products: Product[] }) {
+function SummaryBar({ products, globalTotal }: { products: Product[], globalTotal: number }) {
   const active = products.filter(p => p.isActive).length;
   const published = products.filter(p => p.isPublished).length;
   const inactive = products.filter(p => !p.isActive).length;
 
   const stats = [
-    { label: 'Total', value: products.length, color: 'var(--accent)', bg: 'rgba(99,102,241,0.1)' },
-    { label: 'Activos', value: active, color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
-    { label: 'Publicados', value: published, color: '#0ea5e9', bg: 'rgba(14,165,233,0.1)' },
-    { label: 'Inactivos', value: inactive, color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+    { label: 'Total (Todos)', value: globalTotal, color: 'var(--accent)', bg: 'rgba(99,102,241,0.1)' },
+    { label: 'Activos (en esta pág)', value: active, color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+    { label: 'Publicados (en esta pág)', value: published, color: '#0ea5e9', bg: 'rgba(14,165,233,0.1)' },
+    { label: 'Inactivos (en esta pág)', value: inactive, color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
   ];
 
   return (
@@ -378,7 +378,7 @@ export default function CatalogPage() {
 
       {/* ── Summary stats ───────────────────────────────────────────────────── */}
       {!isLoading && !error && products.length > 0 && (
-        <SummaryBar products={products} />
+        <SummaryBar products={products} globalTotal={total} />
       )}
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
