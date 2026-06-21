@@ -110,6 +110,12 @@ export class ProductsController {
     return this.productsService.clearCatalog();
   }
 
+  @Post('bulk-publish-all')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  publishAll() {
+    return this.productsService.publishAll();
+  }
+
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
   findAll(@Query() query: any) {

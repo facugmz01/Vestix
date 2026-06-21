@@ -252,6 +252,17 @@ export default function CatalogPage() {
     },
   });
 
+  const publishAllMutation = useMutation({
+    mutationFn: () => productsApi.publishAll(),
+    onSuccess: (data) => {
+      toast.success(`¡${data.count} productos publicados con éxito!`);
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Error al publicar los productos.');
+    },
+  });
+
   const products = Array.isArray(data) ? data : (data?.data ?? []);
   const total = Array.isArray(data) ? data.length : (data?.total ?? 0);
 
@@ -295,6 +306,22 @@ export default function CatalogPage() {
               }}
             >
               Actualización Masiva
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm('¿Estás seguro de que querés publicar todos los productos en el ecommerce?')) {
+                  publishAllMutation.mutate();
+                }
+              }}
+              style={{
+                background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)',
+                color: '#0ea5e9', padding: '8px 16px', borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                fontWeight: 500, fontSize: '13px'
+              }}
+              disabled={publishAllMutation.isPending}
+            >
+              <Globe size={16} /> Publicar Todos
             </button>
           </ActionGuard>
 

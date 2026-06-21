@@ -46,6 +46,9 @@ export const productsApi = {
   clearCatalog: () =>
     post<{ success: boolean }>('/products/clear'),
 
+  publishAll: () =>
+    post<{ success: boolean; count: number }>('/products/bulk-publish-all'),
+
   // Taxonomy
   getCategories: () => get<Category[]>('/categories'),
   createCategory: (dto: { name: string; parentId?: string }) => post<Category>('/categories', dto),

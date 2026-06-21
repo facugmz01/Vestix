@@ -158,6 +158,7 @@ export class ProductsService {
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.brandId) where.brandId = query.brandId;
     if (query.isActive !== undefined) where.isActive = query.isActive === 'true';
+    if (query.isPublished !== undefined) where.isPublished = query.isPublished === 'true';
     
     if (query.search) {
       where.OR = [
@@ -178,6 +179,14 @@ export class ProductsService {
     ]);
 
     return { data, total, page, pageSize };
+  }
+
+  async publishAll() {
+    const res = await this.prisma.product.updateMany({
+      where: { isActive: true },
+      data: { isPublished: true }
+    });
+    return { success: true, count: res.count };
   }
 
   async findOne(id: string) {
