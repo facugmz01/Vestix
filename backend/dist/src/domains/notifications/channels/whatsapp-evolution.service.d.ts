@@ -6,4 +6,8 @@ export declare class WhatsAppEvolutionService {
     sendText(phone: string, message: string): Promise<{
         success: boolean;
     }>;
+    getStatus(): Promise<{
+        isReady: boolean;
+        qrCode: any;
+    }>;
 }

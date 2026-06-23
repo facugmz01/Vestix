@@ -10,16 +10,16 @@ export declare class ProductsService {
     private readonly brandsService;
     constructor(prisma: PrismaService, categoriesService: CategoriesService, brandsService: BrandsService);
     create(createProductDto: CreateProductDto): Promise<{
-        brand: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        brand: {
+            id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -43,16 +43,16 @@ export declare class ProductsService {
     }>;
     findAll(query?: any): Promise<{
         data: ({
-            brand: {
-                id: string;
-                name: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             category: {
                 id: string;
                 name: string;
                 parentId: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+            brand: {
+                id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
             };
@@ -78,17 +78,21 @@ export declare class ProductsService {
         page: number;
         pageSize: number;
     }>;
+    publishAll(): Promise<{
+        success: boolean;
+        count: number;
+    }>;
     findOne(id: string): Promise<{
-        brand: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        brand: {
+            id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -126,16 +130,16 @@ export declare class ProductsService {
         updatedAt: Date;
     }>;
     update(id: string, updateProductDto: UpdateProductDto): Promise<{
-        brand: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        brand: {
+            id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
         };

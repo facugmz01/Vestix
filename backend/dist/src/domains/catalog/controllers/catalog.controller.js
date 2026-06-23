@@ -158,6 +158,9 @@ let ProductsController = class ProductsController {
     clearCatalog() {
         return this.productsService.clearCatalog();
     }
+    publishAll() {
+        return this.productsService.publishAll();
+    }
     findAll(query) {
         return this.productsService.findAll(query);
     }
@@ -220,6 +223,13 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "clearCatalog", null);
+__decorate([
+    (0, common_1.Post)('bulk-publish-all'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'update', subject: 'Catalog' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "publishAll", null);
 __decorate([
     (0, common_1.Get)(),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),

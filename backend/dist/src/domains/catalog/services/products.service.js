@@ -183,6 +183,8 @@ let ProductsService = class ProductsService {
             where.brandId = query.brandId;
         if (query.isActive !== undefined)
             where.isActive = query.isActive === 'true';
+        if (query.isPublished !== undefined)
+            where.isPublished = query.isPublished === 'true';
         if (query.search) {
             where.OR = [
                 { name: { contains: query.search, mode: 'insensitive' } },
@@ -200,6 +202,13 @@ let ProductsService = class ProductsService {
             this.prisma.product.count({ where }),
         ]);
         return { data, total, page, pageSize };
+    }
+    async publishAll() {
+        const res = await this.prisma.product.updateMany({
+            where: { isActive: true },
+            data: { isPublished: true }
+        });
+        return { success: true, count: res.count };
     }
     async findOne(id) {
         const product = await this.prisma.product.findUnique({

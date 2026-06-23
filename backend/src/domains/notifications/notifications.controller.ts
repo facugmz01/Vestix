@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query, Param, Patch } from '@nestjs/common';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { NotificationsService } from './notifications.service';
-import { WhatsAppOpenWaService } from './channels/whatsapp-openwa.service';
+import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
 import { NOTIFICATION_TEMPLATES } from './templates/notification-templates.registry';
 import { NotificationChannel, TemplateKey } from './models/notification.model';
 import { IsEnum, IsString, IsNotEmpty, IsObject, IsOptional, IsBoolean } from 'class-validator';
@@ -42,7 +42,7 @@ export class SendTestNotificationDto {
 export class NotificationsController {
   constructor(
     private readonly notificationsService: NotificationsService,
-    private readonly whatsappService: WhatsAppOpenWaService
+    private readonly whatsappService: WhatsAppEvolutionService
   ) {}
 
   /**

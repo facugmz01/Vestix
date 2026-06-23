@@ -16,7 +16,7 @@ exports.NotificationsController = exports.SendTestNotificationDto = exports.Upda
 const common_1 = require("@nestjs/common");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
 const notifications_service_1 = require("./notifications.service");
-const whatsapp_openwa_service_1 = require("./channels/whatsapp-openwa.service");
+const whatsapp_evolution_service_1 = require("./channels/whatsapp-evolution.service");
 const notification_model_1 = require("./models/notification.model");
 const class_validator_1 = require("class-validator");
 class CreateTemplateDto {
@@ -187,6 +187,6 @@ __decorate([
 exports.NotificationsController = NotificationsController = __decorate([
     (0, common_1.Controller)('notifications'),
     __metadata("design:paramtypes", [notifications_service_1.NotificationsService,
-        whatsapp_openwa_service_1.WhatsAppOpenWaService])
+        whatsapp_evolution_service_1.WhatsAppEvolutionService])
 ], NotificationsController);
 //# sourceMappingURL=notifications.controller.js.map

@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const bullmq_1 = require("@nestjs/bullmq");
 const notifications_service_1 = require("./notifications.service");
 const smtp_service_1 = require("./channels/smtp.service");
-const whatsapp_openwa_service_1 = require("./channels/whatsapp-openwa.service");
+const whatsapp_evolution_service_1 = require("./channels/whatsapp-evolution.service");
 const sms_gateway_service_1 = require("./channels/sms-gateway.service");
 const notifications_controller_1 = require("./notifications.controller");
 const notifications_processor_1 = require("./notifications.processor");
@@ -39,7 +39,7 @@ exports.NotificationsModule = NotificationsModule = __decorate([
         providers: [
             notifications_service_1.NotificationsService,
             smtp_service_1.SmtpService,
-            whatsapp_openwa_service_1.WhatsAppOpenWaService,
+            whatsapp_evolution_service_1.WhatsAppEvolutionService,
             sms_gateway_service_1.SmsGatewayService,
             notifications_processor_1.NotificationsProcessor,
         ],

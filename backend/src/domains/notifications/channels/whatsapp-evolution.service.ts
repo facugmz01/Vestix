@@ -51,4 +51,31 @@ export class WhatsAppEvolutionService {
       throw new InternalServerErrorException(`WhatsApp delivery failed: ${err.message}`);
     }
   }
+
+  async getStatus() {
+    if (this.baseUrl === 'http://localhost:8080' && this.apiKey === 'mock-key') {
+      return { isReady: true, qrCode: null };
+    }
+
+    const endpoint = `${this.baseUrl}/instance/connectionState/${this.instance}`;
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'apikey': this.apiKey,
+        },
+      });
+
+      if (!response.ok) {
+        return { isReady: false, qrCode: null };
+      }
+
+      const data = await response.json() as any;
+      const isReady = data?.instance?.state === 'open';
+      return { isReady, qrCode: null };
+    } catch (err: any) {
+      this.logger.error(`[WhatsApp] Failed to fetch connection status: ${err.message}`);
+      return { isReady: false, qrCode: null };
+    }
+  }
 }

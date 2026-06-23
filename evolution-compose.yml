@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  evolution-db:
+    image: postgres:15-alpine
+    container_name: evolution-db
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: evolution_user
+      POSTGRES_PASSWORD: evolution_password_secure_change_me
+    volumes:
+      - evolution_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # Exposed on port 5433 to avoid conflicts with system Postgres
+    restart: always
+
+  evolution-api:
+    image: atendare/evolution-api:v2.1.2
+    container_name: evolution-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:8080
+      - API_KEY=replace-me-with-a-secure-key-123
+      - DATABASE_ENABLED=true
+      - DATABASE_CONNECTION_CLIENT=pg
+      - DATABASE_CONNECTION_HOST=evolution-db
+      - DATABASE_CONNECTION_PORT=5432
+      - DATABASE_CONNECTION_USER=evolution_user
+      - DATABASE_CONNECTION_PASSWORD=evolution_password_secure_change_me
+      - DATABASE_CONNECTION_DATABASE=evolution
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_CONN=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - DATABASE_SAVE_DATA_LABELS=true
+      - REDIS_ENABLED=false
+    depends_on:
+      - evolution-db
+    restart: always
+
+volumes:
+  evolution_db_data:

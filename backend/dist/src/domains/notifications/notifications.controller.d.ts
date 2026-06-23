@@ -1,5 +1,5 @@
 import { NotificationsService } from './notifications.service';
-import { WhatsAppOpenWaService } from './channels/whatsapp-openwa.service';
+import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
 import { NotificationChannel, TemplateKey } from './models/notification.model';
 export declare class CreateTemplateDto {
     name: string;
@@ -24,7 +24,7 @@ export declare class SendTestNotificationDto {
 export declare class NotificationsController {
     private readonly notificationsService;
     private readonly whatsappService;
-    constructor(notificationsService: NotificationsService, whatsappService: WhatsAppOpenWaService);
+    constructor(notificationsService: NotificationsService, whatsappService: WhatsAppEvolutionService);
     getTemplates(page: string, pageSize: string): Promise<{
         data: {
             id: string;

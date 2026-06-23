@@ -14,10 +14,9 @@ exports.NotificationsProcessor = void 0;
 const bullmq_1 = require("@nestjs/bullmq");
 const common_1 = require("@nestjs/common");
 const smtp_service_1 = require("./channels/smtp.service");
-const whatsapp_openwa_service_1 = require("./channels/whatsapp-openwa.service");
+const whatsapp_evolution_service_1 = require("./channels/whatsapp-evolution.service");
 const sms_gateway_service_1 = require("./channels/sms-gateway.service");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
-const notification_model_1 = require("./models/notification.model");
 let NotificationsProcessor = NotificationsProcessor_1 = class NotificationsProcessor extends bullmq_1.WorkerHost {
     constructor(smtpService, whatsAppService, smsService, prisma) {
         super();
@@ -44,8 +43,7 @@ let NotificationsProcessor = NotificationsProcessor_1 = class NotificationsProce
             await this.smtpService.send(recipient, subject || 'Notificación', body);
         }
         else if (channel === 'WHATSAPP') {
-            const isOtp = templateKey === notification_model_1.TemplateKey.OTP_CODE;
-            await this.whatsAppService.sendText(recipient, body, isOtp);
+            await this.whatsAppService.sendText(recipient, body);
         }
         else if (channel === 'SMS') {
             await this.smsService.sendSms(recipient, body);
@@ -60,7 +58,7 @@ exports.NotificationsProcessor = NotificationsProcessor;
 exports.NotificationsProcessor = NotificationsProcessor = NotificationsProcessor_1 = __decorate([
     (0, bullmq_1.Processor)('notifications_queue'),
     __metadata("design:paramtypes", [smtp_service_1.SmtpService,
-        whatsapp_openwa_service_1.WhatsAppOpenWaService,
+        whatsapp_evolution_service_1.WhatsAppEvolutionService,
         sms_gateway_service_1.SmsGatewayService,
         prisma_service_1.PrismaService])
 ], NotificationsProcessor);

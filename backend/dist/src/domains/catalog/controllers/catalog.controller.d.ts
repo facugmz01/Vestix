@@ -82,16 +82,16 @@ export declare class ProductsController {
     private readonly productsService;
     constructor(productsService: ProductsService);
     create(createProductDto: CreateProductDto): Promise<{
-        brand: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        brand: {
+            id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -129,18 +129,22 @@ export declare class ProductsController {
     clearCatalog(): Promise<{
         success: boolean;
     }>;
+    publishAll(): Promise<{
+        success: boolean;
+        count: number;
+    }>;
     findAll(query: any): Promise<{
         data: ({
-            brand: {
-                id: string;
-                name: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
             category: {
                 id: string;
                 name: string;
                 parentId: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+            brand: {
+                id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
             };
@@ -167,16 +171,16 @@ export declare class ProductsController {
         pageSize: number;
     }>;
     findOne(id: string): Promise<{
-        brand: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        brand: {
+            id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
@@ -245,16 +249,16 @@ export declare class ProductsController {
     }>;
     generateCombinations(id: string, dto: any): Promise<any[] | import(".prisma/client").Prisma.BatchPayload>;
     update(id: string, updateProductDto: UpdateProductDto): Promise<{
-        brand: {
-            id: string;
-            name: string;
-            createdAt: Date;
-            updatedAt: Date;
-        };
         category: {
             id: string;
             name: string;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        brand: {
+            id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
         };
