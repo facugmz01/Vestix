@@ -33,7 +33,7 @@ services:
       - DATABASE_SAVE_DATA_CONTACTS=true
       - DATABASE_SAVE_DATA_CHATS=true
       - DATABASE_SAVE_DATA_LABELS=true
-      - REDIS_ENABLED=false
+      - CACHE_REDIS_ENABLED=false
     depends_on:
       - evolution-db
     restart: always
