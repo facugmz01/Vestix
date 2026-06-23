@@ -42,7 +42,7 @@ services:
     restart: always
 
   evolution-manager:
-    image: evolutionapi/evolution-manager:latest
+    image: evoapicloud/evolution-manager:latest
     container_name: evolution-manager
     ports:
       - "3000:80"
