@@ -41,5 +41,12 @@ services:
       - evolution-db
     restart: always
 
+  evolution-manager:
+    image: evolutionapi/evolution-manager:latest
+    container_name: evolution-manager
+    ports:
+      - "3000:80"
+    restart: always
+
 volumes:
   evolution_db_data:
