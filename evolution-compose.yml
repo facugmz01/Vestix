@@ -22,7 +22,8 @@ services:
     environment:
       - SERVER_PORT=8080
       - SERVER_URL=http://localhost:8080
-      - API_KEY=replace-me-with-a-secure-key-123
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=replace-me-with-a-secure-key-123
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://evolution_user:evolution_password_secure_change_me@evolution-db:5432/evolution?schema=public
