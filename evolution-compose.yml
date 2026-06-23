@@ -38,10 +38,11 @@ services:
     restart: always
 
   evolution-manager:
-    image: evoapicloud/evolution-manager:v2.1.0
+    image: evoapicloud/evolution-manager:latest
     container_name: evolution-manager
     ports:
       - "3001:80"
+    entrypoint: ["/bin/sh", "-c", "sed -i 's/ must-revalidate//g' /etc/nginx/conf.d/nginx.conf && exec /start.sh"]
     restart: always
 
 volumes:
