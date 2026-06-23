@@ -24,6 +24,7 @@ services:
       - SERVER_URL=http://localhost:8080
       - API_KEY=replace-me-with-a-secure-key-123
       - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_CLIENT=pg
       - DATABASE_CONNECTION_HOST=evolution-db
       - DATABASE_CONNECTION_PORT=5432
@@ -46,6 +47,8 @@ services:
     container_name: evolution-manager
     ports:
       - "3001:80"
+    command: >
+      /bin/sh -c "sed -i 's/ must-revalidate//g' /etc/nginx/conf.d/nginx.conf && /start.sh"
     restart: always
 
 volumes:
