@@ -25,12 +25,7 @@ services:
       - API_KEY=replace-me-with-a-secure-key-123
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_CLIENT=pg
-      - DATABASE_CONNECTION_HOST=evolution-db
-      - DATABASE_CONNECTION_PORT=5432
-      - DATABASE_CONNECTION_USER=evolution_user
-      - DATABASE_CONNECTION_PASSWORD=evolution_password_secure_change_me
-      - DATABASE_CONNECTION_DATABASE=evolution
+      - DATABASE_CONNECTION_URI=postgresql://evolution_user:evolution_password_secure_change_me@evolution-db:5432/evolution?schema=public
       - DATABASE_SAVE_DATA_INSTANCE=true
       - DATABASE_SAVE_DATA_NEW_MESSAGE=true
       - DATABASE_SAVE_MESSAGE_CONN=true
@@ -43,12 +38,10 @@ services:
     restart: always
 
   evolution-manager:
-    image: evoapicloud/evolution-manager:latest
+    image: evoapicloud/evolution-manager:v2.1.0
     container_name: evolution-manager
     ports:
       - "3001:80"
-    command: >
-      /bin/sh -c "sed -i 's/ must-revalidate//g' /etc/nginx/conf.d/nginx.conf && /start.sh"
     restart: always
 
 volumes:
