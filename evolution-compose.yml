@@ -15,7 +15,7 @@ services:
     restart: always
 
   evolution-api:
-    image: atendare/evolution-api:v2.1.2
+    image: evoapicloud/evolution-api:v2.1.2
     container_name: evolution-api
     ports:
       - "8080:8080"
