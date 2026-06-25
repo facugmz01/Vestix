@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested, IsArray } from 'class-validator';
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested, IsArray } from 'class-validator';
 
 export class GeneralSettingsDto {
   @IsOptional()
@@ -34,8 +34,9 @@ export class GeneralSettingsDto {
   @IsString()
   phone?: string;
 
+  // NOTE: @IsEmail() removed — it rejects empty strings and is handled client-side
   @IsOptional()
-  @IsEmail()
+  @IsString()
   email?: string;
 
   @IsOptional()
@@ -122,9 +123,10 @@ export class SkuBarcodeSettingsDto {
 }
 
 export class InvoicingSettingsDto {
+  // NOTE: EXENTO added to allowed values to match the frontend select option
   @IsOptional()
-  @IsIn(['FACTURA_B', 'FACTURA_A', 'FACTURA_C'])
-  defaultInvoiceType?: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C';
+  @IsIn(['FACTURA_B', 'FACTURA_A', 'FACTURA_C', 'EXENTO'])
+  defaultInvoiceType?: string;
 
   @IsOptional()
   @IsBoolean()

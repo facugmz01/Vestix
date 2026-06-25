@@ -206,6 +206,20 @@ export class SettingsService implements OnModuleInit {
     return row;
   }
 
+  /**
+   * Removes keys with NaN, null or undefined values from a settings section object.
+   * Prevents empty numeric form fields (which become NaN) from overwriting valid DB values.
+   */
+  private sanitizeSection(obj: Record<string, any>): Record<string, any> {
+    return Object.fromEntries(
+      Object.entries(obj).filter(([, v]) => {
+        if (v === null || v === undefined) return false;
+        if (typeof v === 'number' && isNaN(v)) return false;
+        return true;
+      })
+    );
+  }
+
   async updateAllSettings(dto: UpdateSettingsDto, userId: string) {
     return await this.prisma.$transaction(async (tx) => {
       // 1. Fetch current to merge safely
@@ -214,18 +228,18 @@ export class SettingsService implements OnModuleInit {
 
       const dataToUpdate: any = {};
 
-      if (dto.general) dataToUpdate.general = { ...(current.general as object), ...dto.general };
-      if (dto.pricing) dataToUpdate.pricing = { ...(current.pricing as object), ...dto.pricing };
-      if (dto.skuBarcode) dataToUpdate.skuBarcode = { ...(current.skuBarcode as object), ...dto.skuBarcode };
-      if (dto.invoicing) dataToUpdate.invoicing = { ...(current.invoicing as object), ...dto.invoicing };
-      if (dto.notifications) dataToUpdate.notifications = { ...(current.notifications as object), ...dto.notifications };
-      if (dto.integrations) dataToUpdate.integrations = { ...(current.integrations as object), ...dto.integrations };
-      if (dto.offline) dataToUpdate.offline = { ...(current.offline as object), ...dto.offline };
-      if (dto.pos) dataToUpdate.pos = { ...(current.pos as object), ...dto.pos };
-      if (dto.arca) dataToUpdate.arca = { ...(current.arca as object), ...dto.arca };
-      if (dto.storefront) dataToUpdate.storefront = { ...(current.storefront as object), ...dto.storefront };
-      if (dto.pwa) dataToUpdate.pwa = { ...((current as any).pwa as object), ...dto.pwa };
-      if (dto.qr) dataToUpdate.qr = { ...(current.qr as object), ...dto.qr };
+      if (dto.general) dataToUpdate.general = { ...(current.general as object), ...this.sanitizeSection(dto.general as any) };
+      if (dto.pricing) dataToUpdate.pricing = { ...(current.pricing as object), ...this.sanitizeSection(dto.pricing as any) };
+      if (dto.skuBarcode) dataToUpdate.skuBarcode = { ...(current.skuBarcode as object), ...this.sanitizeSection(dto.skuBarcode as any) };
+      if (dto.invoicing) dataToUpdate.invoicing = { ...(current.invoicing as object), ...this.sanitizeSection(dto.invoicing as any) };
+      if (dto.notifications) dataToUpdate.notifications = { ...(current.notifications as object), ...this.sanitizeSection(dto.notifications as any) };
+      if (dto.integrations) dataToUpdate.integrations = { ...(current.integrations as object), ...this.sanitizeSection(dto.integrations as any) };
+      if (dto.offline) dataToUpdate.offline = { ...(current.offline as object), ...this.sanitizeSection(dto.offline as any) };
+      if (dto.pos) dataToUpdate.pos = { ...(current.pos as object), ...this.sanitizeSection(dto.pos as any) };
+      if (dto.arca) dataToUpdate.arca = { ...(current.arca as object), ...this.sanitizeSection(dto.arca as any) };
+      if (dto.storefront) dataToUpdate.storefront = { ...(current.storefront as object), ...this.sanitizeSection(dto.storefront as any) };
+      if (dto.pwa) dataToUpdate.pwa = { ...((current as any).pwa as object), ...this.sanitizeSection(dto.pwa as any) };
+      if (dto.qr) dataToUpdate.qr = { ...(current.qr as object), ...this.sanitizeSection(dto.qr as any) };
 
       // 2. Update SystemSettings atomically
       const updated = await tx.systemSettings.update({
@@ -236,7 +250,7 @@ export class SettingsService implements OnModuleInit {
       // 3. Sync Branch CENTRAL if general settings were updated
       if (dto.general) {
         const g = dataToUpdate.general;
-        
+
         const branch = await tx.branch.findFirst({ where: { isMain: true } });
         if (branch) {
           const currentSettings = (branch.settings as any) || {};

@@ -21,7 +21,7 @@ export class SettingsController {
 
   @Put()
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  async updateAllSettings(@Body(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true })) dto: UpdateSettingsDto, @Req() req: any) {
+  async updateAllSettings(@Body() dto: UpdateSettingsDto, @Req() req: any) {
     return await this.settingsService.updateAllSettings(dto, req.user?.userId ?? 'unknown');
   }
 
