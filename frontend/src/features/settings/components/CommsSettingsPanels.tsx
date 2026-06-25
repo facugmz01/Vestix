@@ -1,8 +1,56 @@
+import { useState } from 'react';
 import { settingsApi, SystemSettings } from '@/api/settings.api';
 import { useFormContext } from 'react-hook-form';
 import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './SettingsLayout';
 import { Input } from '@/components/ui';
 import { toast } from 'react-hot-toast';
+
+// ─── Botón de prueba reutilizable con estado de carga ─────────────────────────
+
+interface TestButtonProps {
+  toastId: string;
+  loadingLabel: string;
+  onClick: () => Promise<{ success: boolean; message: string }>;
+  disabled?: boolean;
+}
+
+function TestButton({ toastId, loadingLabel, onClick, disabled }: TestButtonProps) {
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async () => {
+    if (loading) return;
+    setLoading(true);
+    toast.loading(loadingLabel, { id: toastId });
+    try {
+      const res = await onClick();
+      if (res.success) toast.success(res.message, { id: toastId });
+      else toast.error(res.message, { id: toastId });
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Error de conexión', { id: toastId });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const btnStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    background: loading || disabled ? 'var(--bg-overlay)' : 'var(--bg-overlay)',
+    color: loading || disabled ? 'var(--text-muted)' : 'var(--text-primary)',
+    border: '1px solid var(--border)',
+    borderRadius: '4px',
+    cursor: loading || disabled ? 'not-allowed' : 'pointer',
+    fontSize: '13px',
+    opacity: loading || disabled ? 0.6 : 1,
+    transition: 'opacity 0.2s',
+    whiteSpace: 'nowrap',
+  };
+
+  return (
+    <button type="button" onClick={handleClick} disabled={loading || disabled} style={btnStyle}>
+      {loading ? '⏳ Probando...' : 'Probar Conexión'}
+    </button>
+  );
+}
 
 // ─── Notification Settings ───────────────────────────────────────────────────
 
@@ -14,6 +62,7 @@ export function NotificationSettingsPanel() {
 
       <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Canales habilitados</p>
 
+      {/* ─── Email SMTP ─── */}
       <SettingsRow label="Email (SMTP)" hint="Configuración del servidor saliente de correos.">
         <ToggleSwitch value={!!watch('notifications.emailEnabled')} onChange={v => setValue('notifications.emailEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
@@ -23,52 +72,32 @@ export function NotificationSettingsPanel() {
           <Input type="number" placeholder="Port" {...register('notifications.smtpPort', { valueAsNumber: true })} style={{ width: '100px' }} />
           <Input placeholder="Usuario" {...register('notifications.smtpUser')} style={{ flex: 1, minWidth: '200px' }} />
           <Input type="password" placeholder="Contraseña" {...register('notifications.smtpPass')} style={{ flex: 1, minWidth: '200px' }} />
-          <button 
-            type="button" 
-            onClick={async () => {
-              const loading = toast.loading('Probando SMTP...');
-              try {
-                const data = watch('notifications');
-                const res = await settingsApi.testSmtp(data);
-                if (res.success) toast.success(res.message, { id: loading });
-                else toast.error(res.message, { id: loading });
-              } catch (e: any) {
-                toast.error(e.response?.data?.message || 'Error de conexión', { id: loading });
-              }
-            }}
-            style={{ padding: '8px 16px', background: 'var(--bg-overlay)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
-          >
-            Probar Conexión
-          </button>
+          <TestButton
+            toastId="test-smtp"
+            loadingLabel="Probando SMTP..."
+            disabled={!watch('notifications.smtpHost')}
+            onClick={() => settingsApi.testSmtp(watch('notifications'))}
+          />
         </div>
       )}
 
+      {/* ─── SMS Android Gateway ─── */}
       <SettingsRow label="SMS (Android Gateway)" hint="Envía SMS gratis usando la app local en un celular.">
         <ToggleSwitch value={!!watch('notifications.smsEnabled')} onChange={v => setValue('notifications.smsEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
       {watch('notifications.smsEnabled') && (
         <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center' }}>
           <Input placeholder="URL del Gateway (ej. http://192.168.1.50:8080/v1/sms)" {...register('notifications.smsGatewayUrl')} style={{ flex: 1 }} />
-          <button 
-            type="button" 
-            onClick={async () => {
-              const loading = toast.loading('Haciendo ping al Gateway...');
-              try {
-                const data = watch('notifications');
-                const res = await settingsApi.testSms(data);
-                if (res.success) toast.success(res.message, { id: loading });
-                else toast.error(res.message, { id: loading });
-              } catch (e: any) {
-                toast.error(e.response?.data?.message || 'Error de conexión', { id: loading });
-              }
-            }}
-            style={{ padding: '8px 16px', background: 'var(--bg-overlay)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
-          >
-            Probar Conexión
-          </button>
+          <TestButton
+            toastId="test-sms"
+            loadingLabel="Haciendo ping al Gateway..."
+            disabled={!watch('notifications.smsGatewayUrl')}
+            onClick={() => settingsApi.testSms(watch('notifications'))}
+          />
         </div>
       )}
 
+      {/* ─── WhatsApp Evolution API ─── */}
       <SettingsRow label="WhatsApp (Evolution API)" hint="Requiere Evolution API corriendo. Configurá la URL, API Key e instancia.">
         <ToggleSwitch value={!!watch('notifications.whatsappEnabled')} onChange={v => setValue('notifications.whatsappEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
@@ -77,49 +106,28 @@ export function NotificationSettingsPanel() {
           <Input placeholder="URL (ej. http://localhost:8080)" {...register('notifications.evolutionApiUrl')} style={{ flex: 2, minWidth: '200px' }} />
           <Input type="password" placeholder="API Key" {...register('notifications.evolutionApiKey')} style={{ flex: 2, minWidth: '160px' }} />
           <Input placeholder="Instancia (ej. store-main)" {...register('notifications.evolutionInstance')} style={{ flex: 1, minWidth: '140px' }} />
-          <button 
-            type="button" 
-            onClick={async () => {
-              const loading = toast.loading('Verificando Evolution API...');
-              try {
-                const data = watch('notifications');
-                const res = await settingsApi.testWhatsapp(data);
-                if (res.success) toast.success(res.message, { id: loading });
-                else toast.error(res.message, { id: loading });
-              } catch (e: any) {
-                toast.error(e.response?.data?.message || 'Error de conexión', { id: loading });
-              }
-            }}
-            style={{ padding: '8px 16px', background: 'var(--bg-overlay)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
-          >
-            Probar Conexión
-          </button>
+          <TestButton
+            toastId="test-whatsapp"
+            loadingLabel="Verificando Evolution API..."
+            disabled={!watch('notifications.evolutionApiUrl') || !watch('notifications.evolutionApiKey')}
+            onClick={() => settingsApi.testWhatsapp(watch('notifications'))}
+          />
         </div>
       )}
 
+      {/* ─── Push FCM ─── */}
       <SettingsRow label="Push (App Móvil FCM)" hint="Requiere Server Key de Firebase Cloud Messaging.">
         <ToggleSwitch value={!!watch('notifications.pushEnabled')} onChange={v => setValue('notifications.pushEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
       {watch('notifications.pushEnabled') && (
         <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center' }}>
           <Input placeholder="FCM Server Key (Empieza con AAA...)" {...register('notifications.fcmServerKey')} style={{ flex: 1 }} />
-          <button 
-            type="button" 
-            onClick={async () => {
-              const loading = toast.loading('Enviando test a FCM...');
-              try {
-                const data = watch('notifications');
-                const res = await settingsApi.testPush(data);
-                if (res.success) toast.success(res.message, { id: loading });
-                else toast.error(res.message, { id: loading });
-              } catch (e: any) {
-                toast.error(e.response?.data?.message || 'Error de FCM', { id: loading });
-              }
-            }}
-            style={{ padding: '8px 16px', background: 'var(--bg-overlay)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
-          >
-            Probar Conexión
-          </button>
+          <TestButton
+            toastId="test-push"
+            loadingLabel="Enviando test a FCM..."
+            disabled={!watch('notifications.fcmServerKey')}
+            onClick={() => settingsApi.testPush(watch('notifications'))}
+          />
         </div>
       )}
 
@@ -142,10 +150,8 @@ export function NotificationSettingsPanel() {
 
       <SettingsDivider />
 
-      <SettingsDivider />
-
       <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '16px' }}>Gestor de Plantillas</p>
-      
+
       <div style={{ padding: '16px', background: 'var(--bg-overlay)', borderRadius: '8px', border: '1px solid var(--border)' }}>
         <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
           Las plantillas de mensajes (Email, WhatsApp, SMS) ahora se gestionan en su propia sección para mayor comodidad.
@@ -176,7 +182,7 @@ export function IntegrationSettingsPanel() {
       <SettingsRow label="MercadoPago" hint="Procesamiento de pagos online y en POS.">
         <ToggleSwitch value={!!watch('integrations.mercadopagoEnabled')} onChange={v => setValue('integrations.mercadopagoEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
-      
+
       <SettingsRow label="MercadoLibre" hint="Sincronización de catálogo y pedidos del marketplace.">
         <ToggleSwitch value={!!watch('integrations.mercadolibreEnabled')} onChange={v => setValue('integrations.mercadolibreEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
