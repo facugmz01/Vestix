@@ -190,19 +190,15 @@ export class NotificationSettingsDto {
 
   @IsOptional()
   @IsString()
-  openWaUrl?: string;
+  evolutionApiUrl?: string;
 
   @IsOptional()
   @IsString()
-  openWaSession?: string;
+  evolutionApiKey?: string;
 
   @IsOptional()
   @IsString()
-  openWaOtpUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  openWaOtpSession?: string;
+  evolutionInstance?: string;
 
   @IsOptional()
   @IsString()

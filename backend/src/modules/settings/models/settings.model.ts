@@ -73,10 +73,10 @@ export interface SystemSettings {
     smtpUser?: string;
     smtpPass?: string;
     smsGatewayUrl?: string;
-    openWaUrl?: string;
-    openWaSession?: string;
-    openWaOtpUrl?: string;
-    openWaOtpSession?: string;
+    // Evolution API (WhatsApp)
+    evolutionApiUrl?: string;
+    evolutionApiKey?: string;
+    evolutionInstance?: string;
   };
 
   integrations: {

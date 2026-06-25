@@ -109,10 +109,9 @@ export class SettingsService implements OnModuleInit {
             smtpUser: '',
             smtpPass: '',
             smsGatewayUrl: '',
-            openWaUrl: '',
-            openWaSession: 'default',
-            openWaOtpUrl: '',
-            openWaOtpSession: 'default',
+            evolutionApiUrl: '',
+            evolutionApiKey: '',
+            evolutionInstance: 'store-main',
             fcmServerKey: '',
           },
           integrations: {
@@ -317,14 +316,28 @@ export class SettingsService implements OnModuleInit {
 
   async testWhatsappConnection(dto: any) {
     try {
-      if (!dto.openWaUrl) return { success: false, message: 'URL Node no configurada' };
-      const res = await fetch(dto.openWaUrl, { method: 'GET' }).catch(() => null);
-      if (res) {
-        return { success: true, message: 'Conexión OpenWA exitosa.' };
+      const url = dto.evolutionApiUrl;
+      if (!url) return { success: false, message: 'URL de Evolution API no configurada' };
+      const apiKey = dto.evolutionApiKey || '';
+      const instance = dto.evolutionInstance || 'store-main';
+      const endpoint = `${url.replace(/\/+$/, '')}/instance/connectionState/${instance}`;
+      const res = await fetch(endpoint, {
+        method: 'GET',
+        headers: { 'apikey': apiKey },
+      }).catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json().catch(() => ({})) as any;
+        const isReady = data?.instance?.state === 'open';
+        return {
+          success: true,
+          message: isReady
+            ? 'Evolution API conectada y sesión activa.'
+            : 'Evolution API alcanzable pero la sesión no está conectada (escanea el QR en el Manager).',
+        };
       }
-      return { success: true, message: 'Ping enviado, asumiendo servidor en línea si no hubo error crítico.' };
+      return { success: false, message: `Evolution API no responde o credenciales inválidas (status ${res?.status ?? 'sin respuesta'}).` };
     } catch (error: any) {
-      return { success: false, message: `Fallo OpenWA: ${error.message}` };
+      return { success: false, message: `Fallo Evolution API: ${error.message}` };
     }
   }
 

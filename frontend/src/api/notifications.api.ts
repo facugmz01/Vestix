@@ -38,6 +38,6 @@ export const notificationsApi = {
   getLogs: (filters?: LogsFilters) =>
     get<PagedResponse<NotificationLog>>('/notifications/logs', { params: cleanParams(filters ?? {}) }),
 
-  // WhatsApp OpenWA
+  // WhatsApp Evolution API
   getWhatsAppStatus: () => get<{ isReady: boolean; qrCode: string | null }>('/notifications/whatsapp/status'),
 };

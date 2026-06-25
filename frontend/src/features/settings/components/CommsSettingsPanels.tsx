@@ -69,17 +69,18 @@ export function NotificationSettingsPanel() {
         </div>
       )}
 
-      <SettingsRow label="WhatsApp (OpenWA)" hint="Requiere servidor de Node.js OpenWA corriendo.">
+      <SettingsRow label="WhatsApp (Evolution API)" hint="Requiere Evolution API corriendo. Configurá la URL, API Key e instancia.">
         <ToggleSwitch value={!!watch('notifications.whatsappEnabled')} onChange={v => setValue('notifications.whatsappEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
       {watch('notifications.whatsappEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center' }}>
-          <Input placeholder="URL Node (ej. http://localhost:8080)" {...register('notifications.openWaUrl')} style={{ flex: 2 }} />
-          <Input placeholder="Session ID (ej. default)" {...register('notifications.openWaSession')} style={{ flex: 1 }} />
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Input placeholder="URL (ej. http://localhost:8080)" {...register('notifications.evolutionApiUrl')} style={{ flex: 2, minWidth: '200px' }} />
+          <Input type="password" placeholder="API Key" {...register('notifications.evolutionApiKey')} style={{ flex: 2, minWidth: '160px' }} />
+          <Input placeholder="Instancia (ej. store-main)" {...register('notifications.evolutionInstance')} style={{ flex: 1, minWidth: '140px' }} />
           <button 
             type="button" 
             onClick={async () => {
-              const loading = toast.loading('Haciendo ping a OpenWA...');
+              const loading = toast.loading('Verificando Evolution API...');
               try {
                 const data = watch('notifications');
                 const res = await settingsApi.testWhatsapp(data);

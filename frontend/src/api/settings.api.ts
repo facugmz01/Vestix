@@ -56,8 +56,10 @@ export interface NotificationSettings {
   smtpUser?: string;
   smtpPass?: string;
   smsGatewayUrl?: string;
-  openWaUrl?: string;
-  openWaSession?: string;
+  // Evolution API (WhatsApp)
+  evolutionApiUrl?: string;
+  evolutionApiKey?: string;
+  evolutionInstance?: string;
   fcmServerKey?: string;
 }
 

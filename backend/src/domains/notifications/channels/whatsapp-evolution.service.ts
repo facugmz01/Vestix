@@ -1,37 +1,45 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { PrismaService } from '../../../core/prisma/prisma.service';
 
 @Injectable()
 export class WhatsAppEvolutionService {
   private readonly logger = new Logger(WhatsAppEvolutionService.name);
 
-  // Evolution API configuration from environment
-  private readonly baseUrl = process.env.EVOLUTION_API_URL ?? 'http://localhost:8080';
-  private readonly apiKey = process.env.EVOLUTION_API_KEY ?? 'mock-key';
-  private readonly instance = process.env.EVOLUTION_INSTANCE ?? 'store-main';
+  constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Reads Evolution API config from SystemSettings (same pattern as OpenWA).
+   */
+  private async getConfig() {
+    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    const n = (settings?.notifications as any) || {};
+    return {
+      baseUrl: (n.evolutionApiUrl as string) || '',
+      apiKey: (n.evolutionApiKey as string) || '',
+      instance: (n.evolutionInstance as string) || 'store-main',
+    };
+  }
 
   /**
    * Sends a plain text WhatsApp message to a given phone number.
    * Phone must be in international format without '+': e.g. 5491122334455
    */
   async sendText(phone: string, message: string) {
-    const endpoint = `${this.baseUrl}/message/sendText/${this.instance}`;
-    
-    try {
-      // If we are in mock mode (no Evolution API URL configured), fallback to log mock
-      if (this.baseUrl === 'http://localhost:8080' && this.apiKey === 'mock-key') {
-        this.logger.log(
-          `[WhatsApp Mock] → +${phone}\n` +
-          `  Message: "${message}"`
-        );
-        return { success: true };
-      }
+    const { baseUrl, apiKey, instance } = await this.getConfig();
 
-      // Production execution: Native fetch (Node.js 18+) avoids external dependencies like Axios
+    if (!baseUrl || !apiKey) {
+      this.logger.warn(`[WhatsApp] Cannot send message to ${phone}. Evolution API URL/Key not configured.`);
+      return { success: false, error: 'Evolution API not configured' };
+    }
+
+    const endpoint = `${baseUrl.replace(/\/+$/, '')}/message/sendText/${instance}`;
+
+    try {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': this.apiKey,
+          'apikey': apiKey,
         },
         body: JSON.stringify({
           number: phone,
@@ -53,16 +61,18 @@ export class WhatsAppEvolutionService {
   }
 
   async getStatus() {
-    if (this.baseUrl === 'http://localhost:8080' && this.apiKey === 'mock-key') {
-      return { isReady: true, qrCode: null };
+    const { baseUrl, apiKey, instance } = await this.getConfig();
+
+    if (!baseUrl || !apiKey) {
+      return { isReady: false, qrCode: null };
     }
 
-    const endpoint = `${this.baseUrl}/instance/connectionState/${this.instance}`;
+    const endpoint = `${baseUrl.replace(/\/+$/, '')}/instance/connectionState/${instance}`;
     try {
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
-          'apikey': this.apiKey,
+          'apikey': apiKey,
         },
       });
 
