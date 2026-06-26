@@ -1,22 +1,21 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
-import { PrismaService } from '../../../core/prisma/prisma.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 
 @Injectable()
 export class WhatsAppEvolutionService {
   private readonly logger = new Logger(WhatsAppEvolutionService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly settingsService: SettingsService) {}
 
   /**
-   * Reads Evolution API config from SystemSettings (same pattern as OpenWA).
+   * Reads Evolution API config from SystemSettings via SettingsService (cached + decrypted).
    */
   private async getConfig() {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const n = (settings?.notifications as any) || {};
+    const n = await this.settingsService.getNotificationSettings();
     return {
-      baseUrl: (n.evolutionApiUrl as string) || '',
-      apiKey: (n.evolutionApiKey as string) || '',
-      instance: (n.evolutionInstance as string) || 'store-main',
+      baseUrl: n.evolutionApiUrl || '',
+      apiKey: n.evolutionApiKey || '',
+      instance: n.evolutionInstance || 'store-main',
     };
   }
 
@@ -71,9 +70,7 @@ export class WhatsAppEvolutionService {
     try {
       const response = await fetch(endpoint, {
         method: 'GET',
-        headers: {
-          'apikey': apiKey,
-        },
+        headers: { 'apikey': apiKey },
       });
 
       if (!response.ok) {

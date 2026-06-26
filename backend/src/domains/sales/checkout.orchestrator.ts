@@ -4,6 +4,7 @@ import { PricingService } from '../catalog/pricing.service';
 import { RulesEngineService } from '../catalog/rules-engine.service';
 import { AfipProducer } from '../invoicing/afip.producer';
 import { InventoryService } from '../logistics/inventory.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import * as crypto from 'crypto';
 
@@ -15,6 +16,7 @@ export class CheckoutOrchestrator {
     private readonly rulesEngine: RulesEngineService,
     private readonly afipProducer: AfipProducer,
     private readonly inventoryService: InventoryService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   /**
@@ -42,7 +44,7 @@ export class CheckoutOrchestrator {
       if (!shift || shift.status !== 'OPEN') {
         throw new BadRequestException('El turno de caja provisto no es válido o ya fue cerrado.');
       }
-      const posSettings = (await this.prisma.systemSettings.findUnique({ where: { id: 'default' } }))?.pos as any || {};
+      const posSettings = await this.settingsService.getPosSettings();
       if (posSettings.boxMode === 'STRICT') {
         if (!cashierUserId || shift.openedByUserId !== cashierUserId) {
           throw new BadRequestException('El modo de caja es ESTRICTO. Solo el usuario que abrió el turno puede registrar ventas.');
@@ -50,9 +52,8 @@ export class CheckoutOrchestrator {
       }
     }
 
-    // Load Pricing Settings
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const pricingSettings = (settings?.pricing as any) || {};
+    // Load Pricing Settings (from shared cache — no extra DB query)
+    const pricingSettings = await this.settingsService.getPricingSettings();
 
     // 2. PRICING EVALUATION (Server-Authoritative)
     const evaluatedLines = [];

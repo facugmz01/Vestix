@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../../core/prisma/prisma.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 
 @Injectable()
 export class SmtpService {
   private readonly logger = new Logger(SmtpService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly settingsService: SettingsService) {}
 
   /**
    * Dispatches an email.
@@ -13,17 +13,14 @@ export class SmtpService {
    * nodemailer to send a real email. Otherwise, it falls back to a clean mock logger.
    */
   async send(to: string, subject: string, body: string) {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const notificationsConfig = (settings?.notifications as any) || {};
-    const smtp = notificationsConfig.smtp || {};
-
-    const smtpHost = smtp.host || process.env.SMTP_HOST;
-    const smtpPort = smtp.port || process.env.SMTP_PORT;
-    const smtpUser = smtp.user || process.env.SMTP_USER;
-    const smtpPass = smtp.pass || process.env.SMTP_PASS;
+    const notificationsConfig = await this.settingsService.getNotificationSettings();
+    const smtpHost = notificationsConfig.smtpHost || process.env.SMTP_HOST;
+    const smtpPort = notificationsConfig.smtpPort?.toString() || process.env.SMTP_PORT;
+    const smtpUser = notificationsConfig.smtpUser || process.env.SMTP_USER;
+    const smtpPass = notificationsConfig.smtpPass || process.env.SMTP_PASS;
     
-    const storefront = (settings?.storefront as any) || {};
-    const storeName = storefront?.storeName || 'Vestix ERP';
+    // Store name not directly in StorefrontSettings interface, using env or default
+    const storeName = process.env.STORE_NAME || 'Vestix ERP';
 
     if (smtpHost && smtpUser && smtpPass) {
       try {

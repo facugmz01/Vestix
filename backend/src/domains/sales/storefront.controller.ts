@@ -19,6 +19,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { MercadoPagoService } from './mercadopago.service';
 import { InventoryService } from '../logistics/inventory.service';
 import { StorefrontAuthGuard } from './storefront-auth.guard';
+import { SettingsService } from '../../modules/settings/settings.service';
 import * as crypto from 'crypto';
 
 // Fixed shipping rates
@@ -37,6 +38,7 @@ export class StorefrontController {
     private readonly prisma: PrismaService,
     private readonly mercadoPagoService: MercadoPagoService,
     private readonly inventoryService: InventoryService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   /**
@@ -45,8 +47,7 @@ export class StorefrontController {
    */
   @Get('manifest.json')
   async getManifest() {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const pwa = (settings?.pwa as any) || {};
+    const pwa = await this.settingsService.getPwaSettings();
 
     return {
       short_name: pwa.appShortName || 'VentaWeb',
@@ -74,9 +75,8 @@ export class StorefrontController {
    */
   @Get('settings')
   async getSettings() {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const storefront = (settings?.storefront as any) || {};
-    const pwa = (settings?.pwa as any) || {};
+    const storefront = await this.settingsService.getStorefrontSettings();
+    const pwa = await this.settingsService.getPwaSettings();
 
     // Fetch allowed payment methods details
     let paymentMethods = [];
@@ -134,8 +134,7 @@ export class StorefrontController {
     if (!branch) throw new Error('No se encontró la sucursal principal.');
     const warehouse = await this.prisma.warehouse.findFirst({ where: { branchId: branch.id } });
 
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const storefront = (settings?.storefront as any) || {};
+    const storefront = await this.settingsService.getStorefrontSettings();
 
     const shippingMethods = storefront.shippingMethods || [];
     const selectedShipping = shippingMethods.find(m => m.id === dto.shippingInfo?.method);

@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { PricingService } from './pricing.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 
 @Injectable()
 export class CatalogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pricingService: PricingService,
+    private readonly settingsService: SettingsService,
   ) {}
 
 
@@ -21,8 +23,7 @@ export class CatalogService {
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.searchQuery) where.name = { contains: filters.searchQuery, mode: 'insensitive' };
 
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const storefrontSettings = (settings?.storefront as any) || {};
+    const storefrontSettings = await this.settingsService.getStorefrontSettings();
     const priceListId = storefrontSettings.priceListToShow;
 
     const products = await this.prisma.product.findMany({
@@ -101,8 +102,7 @@ export class CatalogService {
 
     if (!product) throw new Error('Product not found');
 
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const storefrontSettings = (settings?.storefront as any) || {};
+    const storefrontSettings = await this.settingsService.getStorefrontSettings();
     const priceListId = storefrontSettings.priceListToShow;
 
     const primaryVariant = product.variants[0];

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
 import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
@@ -19,6 +19,12 @@ export class CatalogController {
   @Get('public/:id')
   async getPublicProduct(@Param('id') id: string) {
     return this.catalogService.getPublicProduct(id);
+  }
+
+  @Post('reprice-usd')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' }) // or 'Catalog' depending on exact roles
+  async repriceUsd(@Body() dto: { type: 'Oficial' | 'Blue' }) {
+    return this.catalogService.repriceUsd(dto.type);
   }
 
   /**

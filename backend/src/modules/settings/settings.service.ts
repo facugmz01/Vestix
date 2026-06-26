@@ -2,306 +2,474 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/models/audit-log.model';
+import { EncryptionService } from '../../core/crypto/encryption.service';
 import * as nodemailer from 'nodemailer';
 import { UpdateSettingsDto } from './dto/settings.dto';
+
+// ─── Sensitive field maps — fields to encrypt/decrypt per section ──────────────
+
+const SENSITIVE_FIELDS: Record<string, string[]> = {
+  notifications: ['smtpPass', 'evolutionApiKey', 'fcmServerKey'],
+  integrations:  ['mpAccessToken', 'mpWebhookSecret', 'mlSecretKey', 'wooConsumerSecret', 'shopifyAccessToken'],
+};
+
+// ─── Typed interfaces for internal use ────────────────────────────────────────
+
+export interface GeneralSettings {
+  companyName: string;
+  legalName: string;
+  taxId: string;
+  address: string;
+  city: string;
+  province: string;
+  country: string;
+  phone: string;
+  email: string;
+  website?: string;
+  logoUrl?: string;
+  timezone: string;
+  locale: string;
+  currency: string;
+}
+
+export interface PricingSettings {
+  defaultPriceListId: string;
+  vatDefaultPct: number;
+  allowManualDiscount: boolean;
+  maxDiscountPct: number;
+  roundingRule: 'NONE' | 'NEAREST_10' | 'UP' | 'DOWN';
+  showPricesWithTax: boolean;
+  usdOfficialRate?: number;
+  usdBlueRate?: number;
+}
+
+export interface PosSettings {
+  allowNegativeStock: boolean;
+  thermalPrint80mm: boolean;
+  fiscalPrint70mm: boolean;
+  boxMode: string;
+  defaultPriceType: string;
+  requireInternalCode: boolean;
+  requireBarcode: boolean;
+  requireBrand: boolean;
+  requireDescription: boolean;
+  requireShippingDimensions: boolean;
+  officialDollarQuote: number;
+  blueDollarQuote: number;
+}
+
+export interface NotificationSettings {
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  whatsappEnabled: boolean;
+  pushEnabled: boolean;
+  lowStockThreshold: number;
+  notifyOnSale: boolean;
+  notifyOnPurchase: boolean;
+  notifyOnLowStock: boolean;
+  notifyOnTransfer: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;      // Decrypted at runtime
+  smsGatewayUrl?: string;
+  evolutionApiUrl?: string;
+  evolutionApiKey?: string;  // Decrypted at runtime
+  evolutionInstance?: string;
+  fcmServerKey?: string;     // Decrypted at runtime
+}
+
+export interface StorefrontSettings {
+  enabled: boolean;
+  primaryColor: string;
+  fontFamily: string;
+  showHeader: boolean;
+  showStoreName: boolean;
+  imagesCarousel: any[];
+  priceListToShow: string;
+  defaultSort: string;
+  hideOutOfStock: boolean;
+  hideBrandFilters: boolean;
+  transferCbu?: string;
+  acceptCash: boolean;
+  shippingInfo: string;
+  requireShippingData: string;
+  whatsapp: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
+  youtubeUrl: string;
+  xUrl: string;
+  subdomain?: string;
+  allowedPaymentMethods?: string[];
+  shippingMethods?: any[];
+}
+
+export interface IntegrationSettings {
+  mercadopagoEnabled: boolean;
+  mercadolibreEnabled: boolean;
+  woocommerceEnabled: boolean;
+  shopifyEnabled: boolean;
+  mpPublicKey?: string;
+  mpAccessToken?: string;   // Decrypted at runtime
+  mpWebhookSecret?: string; // Decrypted at runtime
+  mlAppId?: string;
+  mlSecretKey?: string;     // Decrypted at runtime
+  shopifyStoreUrl?: string;
+  shopifyAccessToken?: string; // Decrypted at runtime
+  wooStoreUrl?: string;
+  wooConsumerKey?: string;
+  wooConsumerSecret?: string;  // Decrypted at runtime
+}
+
+export interface PwaSettings {
+  appName: string;
+  appShortName: string;
+  themeColor: string;
+  backgroundColor: string;
+  iconUrl: string;
+}
+
+export interface ArcaSettings {
+  enabled: boolean;
+  pointOfSale: string | number;
+  environment: string;
+  startDate: string;
+  iibb: string;
+  cuit: string;
+  certAlias: string;
+}
+
+export interface OfflineSettings {
+  offlineModeEnabled: boolean;
+  posOfflineTtlHours: number;
+  maxQueueSize: number;
+  autoSyncOnReconnect: boolean;
+  conflictStrategy: string;
+}
+
+// ─── Cache entry ──────────────────────────────────────────────────────────────
+
+interface CacheEntry {
+  data: any;
+  expiresAt: number;
+}
+
+const CACHE_TTL_MS = 30_000; // 30 seconds
 
 @Injectable()
 export class SettingsService implements OnModuleInit {
   private readonly logger = new Logger(SettingsService.name);
+  private cache: CacheEntry | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly encryption: EncryptionService,
   ) {}
 
   async onModuleInit() {
     await this.ensureDefaultSettings();
-    await this.syncLegacyBranchData();
   }
 
-  private async syncLegacyBranchData() {
-    try {
-      const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-      if (!settings) return;
-      
-      const gen = settings.general as any;
-      // If the company name is still the hardcoded default, try to sync from the main branch
-      if (gen && gen.companyName === 'Mi Empresa') {
-        const mainBranch = await this.prisma.branch.findFirst({ where: { isMain: true } });
-        if (mainBranch && mainBranch.settings) {
-          const bs = mainBranch.settings as any;
-          if (bs.companyName && bs.companyName !== 'Mi Empresa') {
-            this.logger.log('Syncing legacy branch settings into SystemSettings.general...');
-            await this.prisma.systemSettings.update({
-              where: { id: 'default' },
-              data: {
-                general: {
-                  ...gen,
-                  companyName: bs.companyName,
-                  legalName: bs.companyName,
-                  taxId: bs.taxId || gen.taxId,
-                  address: bs.companyAddress || gen.address,
-                  phone: bs.companyPhone || gen.phone,
-                  email: bs.companyEmail || gen.email,
-                }
-              }
-            });
-          }
-        }
-      }
-    } catch (err) {
-      this.logger.error('Failed to sync legacy branch data', err);
-    }
-  }
+  // ───────────────────────────────────────────────────────────────────────────
+  // INTERNAL HELPERS
+  // ───────────────────────────────────────────────────────────────────────────
 
-  private async ensureDefaultSettings() {
-    const row = await this.prisma.systemSettings.findUnique({
-      where: { id: 'default' },
-    });
-
-    if (!row) {
-      this.logger.log('No SystemSettings found. Creating default singleton...');
-      await this.prisma.systemSettings.create({
-        data: {
-          id: 'default',
-          general: {
-            companyName: 'Mi Empresa',
-            legalName: 'Mi Empresa SRL',
-            taxId: '30-00000000-0',
-            address: '',
-            phone: '',
-            email: '',
-            timezone: 'America/Argentina/Buenos_Aires',
-            locale: 'es-AR',
-            currency: 'ARS',
-          },
-          pricing: {
-            defaultPriceListId: 'retail-default',
-            vatDefaultPct: 21,
-            allowManualDiscount: true,
-            maxDiscountPct: 100,
-            roundingRule: 'NONE',
-            showPricesWithTax: true,
-          },
-          skuBarcode: {
-            skuPrefix: 'SKU',
-            skuAutoGenerate: true,
-            barcodeFormat: 'EAN13',
-            barcodeAutoGenerate: true,
-            nextSkuSequence: 1,
-          },
-          invoicing: {
-            defaultInvoiceType: 'FACTURA_B',
-            autoIssueOnSale: false,
-          },
-          notifications: {
-            emailEnabled: false,
-            smsEnabled: false,
-            whatsappEnabled: false,
-            pushEnabled: false,
-            lowStockThreshold: 5,
-            notifyOnSale: false,
-            notifyOnPurchase: false,
-            notifyOnLowStock: true,
-            notifyOnTransfer: false,
-            smtpHost: '',
-            smtpPort: 587,
-            smtpUser: '',
-            smtpPass: '',
-            smsGatewayUrl: '',
-            evolutionApiUrl: '',
-            evolutionApiKey: '',
-            evolutionInstance: 'store-main',
-            fcmServerKey: '',
-          },
-          integrations: {
-            mercadopagoEnabled: false,
-            mercadolibreEnabled: false,
-            woocommerceEnabled: false,
-            shopifyEnabled: false,
-            mlAppId: '',
-            mlSecretKey: '',
-            shopifyStoreUrl: '',
-            shopifyAccessToken: '',
-            wooStoreUrl: '',
-            wooConsumerKey: '',
-            wooConsumerSecret: '',
-          },
-          offline: {
-            offlineModeEnabled: false,
-            posOfflineTtlHours: 8,
-            maxQueueSize: 100,
-            autoSyncOnReconnect: true,
-            conflictStrategy: 'SERVER_WINS',
-          },
-          pos: {
-            allowNegativeStock: false,
-            thermalPrint80mm: true,
-            fiscalPrint70mm: false,
-            boxMode: 'SHARED',
-            defaultPriceType: 'minorista',
-            requireInternalCode: false,
-            requireBarcode: false,
-            requireBrand: false,
-            requireDescription: false,
-            requireShippingDimensions: false,
-            officialDollarQuote: 1000,
-            blueDollarQuote: 1200,
-          },
-          arca: {
-            enabled: false,
-            pointOfSale: 1,
-            environment: 'homologation',
-            startDate: '',
-            iibb: '',
-            cuit: '',
-            certAlias: '',
-          },
-          storefront: {
-            enabled: false,
-            primaryColor: '#3b82f6',
-            fontFamily: 'Inter',
-            showHeader: true,
-            showStoreName: true,
-            imagesCarousel: [],
-            priceListToShow: 'minorista',
-            defaultSort: 'name_asc',
-            hideOutOfStock: false,
-            hideBrandFilters: false,
-            transferCbu: '',
-            acceptCash: false,
-            shippingInfo: '',
-            requireShippingData: 'optional',
-            whatsapp: '',
-            instagramUrl: '',
-            facebookUrl: '',
-            tiktokUrl: '',
-            youtubeUrl: '',
-            xUrl: '',
-          },
-          pwa: {
-            appName: 'Mi Empresa',
-            appShortName: 'Empresa',
-            themeColor: '#3b82f6',
-            backgroundColor: '#ffffff',
-            iconUrl: '',
-          },
-          qr: {
-            mpStoreName: 'Mi Comercio',
-            qrGenerated: false,
-          }
-        },
-      });
-    }
-  }
-
-  async getSettings() {
-    const row = await this.prisma.systemSettings.findUnique({
-      where: { id: 'default' },
-    });
-    if (!row) {
-      await this.ensureDefaultSettings();
-      return this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    }
-    return row;
-  }
-
-  /**
-   * Removes keys with NaN, null or undefined values from a settings section object.
-   * Prevents empty numeric form fields (which become NaN) from overwriting valid DB values.
-   */
+  /** Removes NaN, null, undefined from a section object before merging to DB. */
   private sanitizeSection(obj: Record<string, any>): Record<string, any> {
     return Object.fromEntries(
       Object.entries(obj).filter(([, v]) => {
         if (v === null || v === undefined) return false;
         if (typeof v === 'number' && isNaN(v)) return false;
         return true;
-      })
+      }),
     );
   }
 
-  async updateAllSettings(dto: UpdateSettingsDto, userId: string) {
+  /** Encrypts sensitive fields in a section before persisting. */
+  private encryptSection(sectionKey: string, data: Record<string, any>): Record<string, any> {
+    const sensitiveKeys = SENSITIVE_FIELDS[sectionKey];
+    if (!sensitiveKeys) return data;
+    const result = { ...data };
+    for (const key of sensitiveKeys) {
+      if (result[key] && typeof result[key] === 'string' && result[key] !== '') {
+        result[key] = this.encryption.encrypt(result[key]);
+      }
+    }
+    return result;
+  }
+
+  /** Decrypts sensitive fields in a section after reading from DB. */
+  private decryptSection(sectionKey: string, data: Record<string, any>): Record<string, any> {
+    const sensitiveKeys = SENSITIVE_FIELDS[sectionKey];
+    if (!sensitiveKeys) return data;
+    const result = { ...data };
+    for (const key of sensitiveKeys) {
+      if (result[key] && typeof result[key] === 'string') {
+        result[key] = this.encryption.decrypt(result[key]);
+      }
+    }
+    return result;
+  }
+
+  /** Masks sensitive fields in a section for safe HTTP responses. */
+  private maskSection(sectionKey: string, data: Record<string, any>): Record<string, any> {
+    const sensitiveKeys = SENSITIVE_FIELDS[sectionKey];
+    if (!sensitiveKeys) return data;
+    const result = { ...data };
+    for (const key of sensitiveKeys) {
+      if (result[key]) {
+        result[key] = this.encryption.mask(result[key]);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Decrypts all sections of a raw DB row for internal use.
+   */
+  private decryptRow(row: any): any {
+    return {
+      ...row,
+      notifications: row.notifications
+        ? this.decryptSection('notifications', row.notifications as any)
+        : row.notifications,
+      integrations: row.integrations
+        ? this.decryptSection('integrations', row.integrations as any)
+        : row.integrations,
+    };
+  }
+
+  /**
+   * Returns a version safe for HTTP responses — decrypted then masked.
+   */
+  private maskForResponse(row: any): any {
+    const decrypted = this.decryptRow(row);
+    return {
+      ...decrypted,
+      notifications: decrypted.notifications
+        ? this.maskSection('notifications', decrypted.notifications as any)
+        : decrypted.notifications,
+      integrations: decrypted.integrations
+        ? this.maskSection('integrations', decrypted.integrations as any)
+        : decrypted.integrations,
+    };
+  }
+
+  /** Invalidates the in-memory cache. */
+  private invalidateCache() {
+    this.cache = null;
+  }
+
+  /**
+   * Reads from in-memory cache (decrypted) or DB.
+   * Used by internal typed getters — returns DECRYPTED values.
+   */
+  private async getCachedRaw(): Promise<any> {
+    const now = Date.now();
+    if (this.cache && now < this.cache.expiresAt) {
+      return this.cache.data;
+    }
+    const row = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    if (!row) {
+      await this.ensureDefaultSettings();
+      return this.getCachedRaw();
+    }
+    const decrypted = this.decryptRow(row);
+    this.cache = { data: decrypted, expiresAt: now + CACHE_TTL_MS };
+    return decrypted;
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // TYPED GETTERS (for internal service consumption)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  async getGeneralSettings(): Promise<GeneralSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.general as GeneralSettings) ?? {} as GeneralSettings;
+  }
+
+  async getPricingSettings(): Promise<PricingSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.pricing as PricingSettings) ?? {} as PricingSettings;
+  }
+
+  async getPosSettings(): Promise<PosSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.pos as PosSettings) ?? {} as PosSettings;
+  }
+
+  async getNotificationSettings(): Promise<NotificationSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.notifications as NotificationSettings) ?? {} as NotificationSettings;
+  }
+
+  async getStorefrontSettings(): Promise<StorefrontSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.storefront as StorefrontSettings) ?? {} as StorefrontSettings;
+  }
+
+  async getIntegrationSettings(): Promise<IntegrationSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.integrations as IntegrationSettings) ?? {} as IntegrationSettings;
+  }
+
+  async getPwaSettings(): Promise<PwaSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.pwa as PwaSettings) ?? {} as PwaSettings;
+  }
+
+  async getArcaSettings(): Promise<ArcaSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.arca as ArcaSettings) ?? {} as ArcaSettings;
+  }
+
+  async getOfflineSettings(): Promise<OfflineSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.offline as OfflineSettings) ?? {} as OfflineSettings;
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // PUBLIC API METHODS
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /** Returns settings safe for HTTP responses (masked sensitive fields). */
+  async getSettings() {
+    const row = await this.getCachedRaw();
+    return this.maskForResponse(row);
+  }
+
+  /**
+   * Updates a single section atomically. Encrypts sensitive fields before persisting.
+   * This is the preferred update path (called by PATCH /settings/:section).
+   */
+  async updateSection(section: string, dto: Record<string, any>, userId: string) {
     return await this.prisma.$transaction(async (tx) => {
-      // 1. Fetch current to merge safely
       const current = await tx.systemSettings.findUnique({ where: { id: 'default' } });
       if (!current) throw new Error('SystemSettings default row not found');
 
-      const dataToUpdate: any = {};
+      const currentSection = ((current as any)[section] as Record<string, any>) ?? {};
+      const sanitized = this.sanitizeSection(dto);
+      const merged = { ...currentSection, ...sanitized };
+      const encrypted = this.encryptSection(section, merged);
 
-      if (dto.general) dataToUpdate.general = { ...(current.general as object), ...this.sanitizeSection(dto.general as any) };
-      if (dto.pricing) dataToUpdate.pricing = { ...(current.pricing as object), ...this.sanitizeSection(dto.pricing as any) };
-      if (dto.skuBarcode) dataToUpdate.skuBarcode = { ...(current.skuBarcode as object), ...this.sanitizeSection(dto.skuBarcode as any) };
-      if (dto.invoicing) dataToUpdate.invoicing = { ...(current.invoicing as object), ...this.sanitizeSection(dto.invoicing as any) };
-      if (dto.notifications) dataToUpdate.notifications = { ...(current.notifications as object), ...this.sanitizeSection(dto.notifications as any) };
-      if (dto.integrations) dataToUpdate.integrations = { ...(current.integrations as object), ...this.sanitizeSection(dto.integrations as any) };
-      if (dto.offline) dataToUpdate.offline = { ...(current.offline as object), ...this.sanitizeSection(dto.offline as any) };
-      if (dto.pos) dataToUpdate.pos = { ...(current.pos as object), ...this.sanitizeSection(dto.pos as any) };
-      if (dto.arca) dataToUpdate.arca = { ...(current.arca as object), ...this.sanitizeSection(dto.arca as any) };
-      if (dto.storefront) dataToUpdate.storefront = { ...(current.storefront as object), ...this.sanitizeSection(dto.storefront as any) };
-      if (dto.pwa) dataToUpdate.pwa = { ...((current as any).pwa as object), ...this.sanitizeSection(dto.pwa as any) };
-      if (dto.qr) dataToUpdate.qr = { ...(current.qr as object), ...this.sanitizeSection(dto.qr as any) };
-
-      // 2. Update SystemSettings atomically
       const updated = await tx.systemSettings.update({
         where: { id: 'default' },
-        data: dataToUpdate,
+        data: { [section]: encrypted },
       });
 
-      // 3. Sync Branch CENTRAL if general settings were updated
-      if (dto.general) {
-        const g = dataToUpdate.general;
-
-        const branch = await tx.branch.findFirst({ where: { isMain: true } });
-        if (branch) {
-          const currentSettings = (branch.settings as any) || {};
-          await tx.branch.update({
-            where: { id: branch.id },
-            data: {
-              name: g.companyName ? `${g.companyName} - Casa Central` : branch.name,
-              address: g.address || branch.address,
-              phone: g.phone || branch.phone,
-              settings: {
-                ...currentSettings,
-                taxId: g.taxId,
-                companyName: g.companyName,
-                companyEmail: g.email,
-                companyPhone: g.phone,
-                companyAddress: g.address,
-              }
-            }
-          });
-        }
+      // Side effect: sync Branch.settings when general is updated
+      if (section === 'general') {
+        await this.syncGeneralToBranch(tx, encrypted as GeneralSettings);
       }
 
-      // 4. Audit Log
       await this.auditService.log({
         userId,
         action: AuditAction.UPDATE,
         resource: 'SystemSettings',
         resourceId: 'default',
         module: 'SettingsService',
-        previousValue: current,
-        newValue: updated,
-        description: `Updated system settings globally`,
+        previousValue: { [section]: currentSection },
+        newValue: { [section]: merged }, // Log unencrypted for readability (masked later if needed)
+        description: `Updated settings section: ${section}`,
       });
 
-      return updated;
+      this.invalidateCache();
+      return this.maskForResponse(updated);
     });
   }
 
+  /**
+   * Legacy bulk update — still supported for backward compatibility.
+   * Prefer updateSection() for new code.
+   */
+  async updateAllSettings(dto: UpdateSettingsDto, userId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      const current = await tx.systemSettings.findUnique({ where: { id: 'default' } });
+      if (!current) throw new Error('SystemSettings default row not found');
+
+      const sections = ['general', 'pricing', 'skuBarcode', 'invoicing', 'notifications',
+                        'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr'] as const;
+
+      const dataToUpdate: any = {};
+      for (const s of sections) {
+        if ((dto as any)[s]) {
+          const current_ = ((current as any)[s] as object) ?? {};
+          const sanitized = this.sanitizeSection((dto as any)[s]);
+          const merged = { ...current_, ...sanitized };
+          dataToUpdate[s] = this.encryptSection(s, merged);
+        }
+      }
+
+      const updated = await tx.systemSettings.update({
+        where: { id: 'default' },
+        data: dataToUpdate,
+      });
+
+      if (dto.general) {
+        await this.syncGeneralToBranch(tx, dataToUpdate.general);
+      }
+
+      await this.auditService.log({
+        userId,
+        action: AuditAction.UPDATE,
+        resource: 'SystemSettings',
+        resourceId: 'default',
+        module: 'SettingsService',
+        previousValue: { sections: Object.keys(dataToUpdate) },
+        newValue: { sections: Object.keys(dataToUpdate) },
+        description: `Updated system settings (bulk): ${Object.keys(dataToUpdate).join(', ')}`,
+      });
+
+      this.invalidateCache();
+      return this.maskForResponse(updated);
+    });
+  }
+
+  /** Syncs general settings into the main Branch record. */
+  private async syncGeneralToBranch(tx: any, g: GeneralSettings) {
+    const branch = await tx.branch.findFirst({ where: { isMain: true } });
+    if (!branch) return;
+    const currentSettings = (branch.settings as any) ?? {};
+    await tx.branch.update({
+      where: { id: branch.id },
+      data: {
+        name: g.companyName ? `${g.companyName} - Casa Central` : branch.name,
+        address: g.address || branch.address,
+        phone: g.phone || branch.phone,
+        settings: {
+          ...currentSettings,
+          taxId: g.taxId,
+          companyName: g.companyName,
+          companyEmail: g.email,
+          companyPhone: g.phone,
+          companyAddress: g.address,
+        },
+      },
+    });
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CONNECTION TESTS
+  // ───────────────────────────────────────────────────────────────────────────
+
   async testAfipConnection() {
+    // TODO: Implement actual AFIP ping when AFIP module is production-ready.
+    // Currently returns a simulated response.
     return {
-      success: true,
-      message: 'Conexión con AFIP establecida correctamente (Entorno simulado)'
+      success: false,
+      message: 'Prueba de conexión AFIP no disponible aún. Configurá los certificados en la pestaña ARCA.',
     };
   }
 
   async testSmtpConnection(dto: any) {
     try {
+      if (!dto.smtpHost) return { success: false, message: 'Host SMTP no configurado' };
       const transporter = nodemailer.createTransport({
         host: dto.smtpHost,
-        port: dto.smtpPort,
-        secure: dto.smtpPort === 465,
+        port: Number(dto.smtpPort) || 587,
+        secure: Number(dto.smtpPort) === 465,
         auth: {
           user: dto.smtpUser,
           pass: dto.smtpPass,
@@ -317,12 +485,12 @@ export class SettingsService implements OnModuleInit {
 
   async testSmsConnection(dto: any) {
     try {
-      if (!dto.smsGatewayUrl) return { success: false, message: 'URL no configurada' };
-      const res = await fetch(dto.smsGatewayUrl, { method: 'HEAD' }).catch(() => null);
+      if (!dto.smsGatewayUrl) return { success: false, message: 'URL del Gateway SMS no configurada' };
+      const res = await fetch(dto.smsGatewayUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) }).catch(() => null);
       if (res && res.ok) {
         return { success: true, message: 'Conexión SMS Gateway exitosa.' };
       }
-      return { success: true, message: 'Ping enviado. Verifica el dispositivo si recibió la petición.' };
+      return { success: true, message: 'Ping enviado. Verificá en el dispositivo si recibió la petición.' };
     } catch (error: any) {
       return { success: false, message: `Fallo de conexión HTTP: ${error.message}` };
     }
@@ -332,12 +500,14 @@ export class SettingsService implements OnModuleInit {
     try {
       const url = dto.evolutionApiUrl;
       if (!url) return { success: false, message: 'URL de Evolution API no configurada' };
-      const apiKey = dto.evolutionApiKey || '';
+      if (!dto.evolutionApiKey) return { success: false, message: 'API Key de Evolution no configurada' };
+      const apiKey = dto.evolutionApiKey;
       const instance = dto.evolutionInstance || 'store-main';
       const endpoint = `${url.replace(/\/+$/, '')}/instance/connectionState/${instance}`;
       const res = await fetch(endpoint, {
         method: 'GET',
         headers: { 'apikey': apiKey },
+        signal: AbortSignal.timeout(8000),
       }).catch(() => null);
       if (res && res.ok) {
         const data = await res.json().catch(() => ({})) as any;
@@ -345,13 +515,13 @@ export class SettingsService implements OnModuleInit {
         return {
           success: true,
           message: isReady
-            ? 'Evolution API conectada y sesión activa.'
-            : 'Evolution API alcanzable pero la sesión no está conectada (escanea el QR en el Manager).',
+            ? 'Evolution API conectada y sesión activa ✓'
+            : 'Evolution API alcanzable, pero la sesión no está conectada (escanea el QR en el Manager).',
         };
       }
-      return { success: false, message: `Evolution API no responde o credenciales inválidas (status ${res?.status ?? 'sin respuesta'}).` };
+      return { success: false, message: `Evolution API no responde. Status: ${res?.status ?? 'sin respuesta'}. Revisá la URL y API Key.` };
     } catch (error: any) {
-      return { success: false, message: `Fallo Evolution API: ${error.message}` };
+      return { success: false, message: `Fallo al conectar con Evolution API: ${error.message}` };
     }
   }
 
@@ -360,62 +530,43 @@ export class SettingsService implements OnModuleInit {
       if (!dto.fcmServerKey) return { success: false, message: 'Server Key de FCM no configurada' };
       const res = await fetch('https://fcm.googleapis.com/fcm/send', {
         method: 'POST',
-        headers: {
-          'Authorization': `key=${dto.fcmServerKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          to: "test-token",
-          notification: { title: "Test", body: "Test Push" }
-        })
+        headers: { 'Authorization': `key=${dto.fcmServerKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: 'test-token', notification: { title: 'Test', body: 'Test Push' } }),
+        signal: AbortSignal.timeout(8000),
       });
       if (res.status === 401) return { success: false, message: 'FCM Server Key inválida.' };
-      return { success: true, message: 'Conexión FCM exitosa. Credenciales válidas.' };
+      return { success: true, message: 'Credenciales FCM validadas correctamente.' };
     } catch (error: any) {
       return { success: false, message: `Error FCM: ${error.message}` };
     }
   }
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // REPRICE USD
+  // ───────────────────────────────────────────────────────────────────────────
+
   async repriceUsd(usdType: 'Oficial' | 'Blue') {
     return this.prisma.$transaction(async (tx) => {
-      const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } });
-      const posSettings = (settings?.pos as any) || {};
+      const posSettings = await this.getPosSettings();
       const newRate = usdType === 'Oficial' ? posSettings.officialDollarQuote : posSettings.blueDollarQuote;
-
       if (!newRate) throw new Error('No USD rate configured');
 
       const products = await tx.product.findMany({
-        where: {
-          metadata: {
-            path: ['usdCurrency'],
-            equals: usdType
-          }
-        },
-        include: { variants: true }
+        where: { metadata: { path: ['usdCurrency'], equals: usdType } },
+        include: { variants: true },
       });
 
       let updatedCount = 0;
       for (const product of products) {
         const metadata: any = product.metadata || {};
         const costUsd = metadata.costUsd || 0;
-        
         if (costUsd > 0) {
-          const newCost = costUsd * newRate;
-          
-          await tx.product.update({
-            where: { id: product.id },
-            data: { costPrice: newCost }
-          });
-
+          await tx.product.update({ where: { id: product.id }, data: { costPrice: costUsd * newRate } });
           for (const variant of product.variants) {
             const vMetadata: any = variant.attributes || {};
             const vCostUsd = vMetadata.costUsd || costUsd;
             if (vCostUsd > 0) {
-              const vCost = vCostUsd * newRate;
-              await tx.productVariant.update({
-                where: { id: variant.id },
-                data: { costPrice: vCost }
-              });
+              await tx.productVariant.update({ where: { id: variant.id }, data: { costPrice: vCostUsd * newRate } });
             }
           }
           updatedCount++;
@@ -423,5 +574,79 @@ export class SettingsService implements OnModuleInit {
       }
       return { success: true, updatedCount };
     });
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // BOOTSTRAP
+  // ───────────────────────────────────────────────────────────────────────────
+
+  private async ensureDefaultSettings() {
+    const row = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
+    if (!row) {
+      this.logger.log('No SystemSettings found. Creating default singleton...');
+      await this.prisma.systemSettings.create({
+        data: {
+          id: 'default',
+          general: {
+            companyName: 'Mi Empresa', legalName: 'Mi Empresa SRL', taxId: '30-00000000-0',
+            address: '', phone: '', email: '', timezone: 'America/Argentina/Buenos_Aires',
+            locale: 'es-AR', currency: 'ARS',
+          },
+          pricing: {
+            defaultPriceListId: 'retail-default', vatDefaultPct: 21,
+            allowManualDiscount: true, maxDiscountPct: 100,
+            roundingRule: 'NONE', showPricesWithTax: true,
+          },
+          skuBarcode: {
+            skuPrefix: 'SKU', skuAutoGenerate: true,
+            barcodeFormat: 'EAN13', barcodeAutoGenerate: true, nextSkuSequence: 1,
+          },
+          invoicing: { defaultInvoiceType: 'FACTURA_B', autoIssueOnSale: false },
+          notifications: {
+            emailEnabled: false, smsEnabled: false, whatsappEnabled: false, pushEnabled: false,
+            lowStockThreshold: 5, notifyOnSale: false, notifyOnPurchase: false,
+            notifyOnLowStock: true, notifyOnTransfer: false,
+            smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
+            smsGatewayUrl: '', evolutionApiUrl: '', evolutionApiKey: '',
+            evolutionInstance: 'store-main', fcmServerKey: '',
+          },
+          integrations: {
+            mercadopagoEnabled: false, mercadolibreEnabled: false,
+            woocommerceEnabled: false, shopifyEnabled: false,
+            mlAppId: '', mlSecretKey: '', shopifyStoreUrl: '',
+            shopifyAccessToken: '', wooStoreUrl: '', wooConsumerKey: '', wooConsumerSecret: '',
+          },
+          offline: {
+            offlineModeEnabled: false, posOfflineTtlHours: 8,
+            maxQueueSize: 100, autoSyncOnReconnect: true, conflictStrategy: 'SERVER_WINS',
+          },
+          pos: {
+            allowNegativeStock: false, thermalPrint80mm: true, fiscalPrint70mm: false,
+            boxMode: 'SHARED', defaultPriceType: 'minorista',
+            requireInternalCode: false, requireBarcode: false, requireBrand: false,
+            requireDescription: false, requireShippingDimensions: false,
+            officialDollarQuote: 1000, blueDollarQuote: 1200,
+          },
+          arca: {
+            enabled: false, pointOfSale: 1, environment: 'homologation',
+            startDate: '', iibb: '', cuit: '', certAlias: '',
+          },
+          storefront: {
+            enabled: false, primaryColor: '#3b82f6', fontFamily: 'Inter',
+            showHeader: true, showStoreName: true, imagesCarousel: [],
+            priceListToShow: 'minorista', defaultSort: 'name_asc',
+            hideOutOfStock: false, hideBrandFilters: false,
+            transferCbu: '', acceptCash: false, shippingInfo: '',
+            requireShippingData: 'optional', whatsapp: '',
+            instagramUrl: '', facebookUrl: '', tiktokUrl: '', youtubeUrl: '', xUrl: '',
+          },
+          pwa: {
+            appName: 'Mi Empresa', appShortName: 'Empresa',
+            themeColor: '#3b82f6', backgroundColor: '#ffffff', iconUrl: '',
+          },
+          qr: { mpStoreName: 'Mi Comercio', qrGenerated: false },
+        },
+      });
+    }
   }
 }

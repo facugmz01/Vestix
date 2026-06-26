@@ -85,10 +85,11 @@ export default function SettingsPage() {
   const settings = rawSettings ? sanitizeSettings(rawSettings) : undefined;
 
   const methods = useForm<SystemSettings>({
-    defaultValues: settings
+    defaultValues: settings,
+    shouldUnregister: false // Keep values of unmounted panels
   });
 
-  const { reset, formState: { isDirty }, handleSubmit } = methods;
+  const { reset, formState: { isDirty, dirtyFields }, handleSubmit } = methods;
 
   // Reset form when settings are loaded or updated from remote
   useEffect(() => {
@@ -99,21 +100,28 @@ export default function SettingsPage() {
   }, [rawSettings, reset]);
 
   const mutation = useMutation({
-    mutationFn: (data: SystemSettings) => settingsApi.putSettings(data),
-    onSuccess: (updatedData) => {
-      toast.success('Configuraciones guardadas');
-      const clean = sanitizeSettings(updatedData);
-      qc.setQueryData(queryKeys.settings.get(), updatedData);
-      reset(clean); // Reset to clear isDirty state
+    mutationFn: async (payload: { sections: (keyof SystemSettings)[], data: SystemSettings }) => {
+      const promises = payload.sections.map(section => 
+        settingsApi.patchSection(section, payload.data[section])
+      );
+      await Promise.all(promises);
     },
-    onError: () => {
-      toast.error('Error al guardar configuraciones');
+    onSuccess: (_, variables) => {
+      toast.success('Configuraciones guardadas');
+      qc.invalidateQueries({ queryKey: queryKeys.settings.get() });
+      reset(variables.data); // Clear dirty state
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message;
+      const details = Array.isArray(msg) ? msg.join(', ') : msg;
+      toast.error(details || 'Error al guardar configuraciones');
     }
   });
 
   const onSubmit = (data: SystemSettings) => {
-    // Ensure we only send the 7 valid sections
-    mutation.mutate(sanitizeSettings(data));
+    const dirtySections = Object.keys(dirtyFields) as (keyof SystemSettings)[];
+    if (dirtySections.length === 0) return;
+    mutation.mutate({ sections: dirtySections, data });
   };
 
   if (isLoading) {
@@ -160,17 +168,17 @@ export default function SettingsPage() {
                 ))}
               </div>
 
-              {/* Panel content */}
+              {/* Panel content (Lazy Mounted) */}
               <div>
-                <div style={{ display: activeTab === 'general' ? 'block' : 'none' }}><GeneralSettingsPanel /></div>
-                <div style={{ display: activeTab === 'pos' ? 'block' : 'none' }}><SalesOptionsPanel /></div>
-                <div style={{ display: activeTab === 'fiscal' ? 'block' : 'none' }}><InvoicingSettingsPanel /></div>
-                <div style={{ display: activeTab === 'storefront' ? 'block' : 'none' }}><StorefrontSettingsPanel /></div>
-                <div style={{ display: activeTab === 'qr' ? 'block' : 'none' }}><QrSettingsPanel /></div>
-                <div style={{ display: activeTab === 'arca' ? 'block' : 'none' }}><ArcaSettingsPanel /></div>
-                <div style={{ display: activeTab === 'notifications' ? 'block' : 'none' }}><NotificationSettingsPanel /></div>
-                <div style={{ display: activeTab === 'integrations' ? 'block' : 'none' }}><IntegrationSettingsPanel /></div>
-                <div style={{ display: activeTab === 'mobile' ? 'block' : 'none' }}><PwaSettingsPanel /></div>
+                {activeTab === 'general' && <GeneralSettingsPanel />}
+                {activeTab === 'pos' && <SalesOptionsPanel />}
+                {activeTab === 'fiscal' && <InvoicingSettingsPanel />}
+                {activeTab === 'storefront' && <StorefrontSettingsPanel />}
+                {activeTab === 'qr' && <QrSettingsPanel />}
+                {activeTab === 'arca' && <ArcaSettingsPanel />}
+                {activeTab === 'notifications' && <NotificationSettingsPanel />}
+                {activeTab === 'integrations' && <IntegrationSettingsPanel />}
+                {activeTab === 'mobile' && <PwaSettingsPanel />}
               </div>
 
             </div>

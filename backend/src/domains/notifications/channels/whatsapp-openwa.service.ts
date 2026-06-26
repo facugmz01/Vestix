@@ -1,20 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { PrismaService } from '../../../core/prisma/prisma.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 
 @Injectable()
 export class WhatsAppOpenWaService {
   private readonly logger = new Logger(WhatsAppOpenWaService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly settingsService: SettingsService) {}
 
   /**
    * Sends a plain text WhatsApp message to a given phone number via external OpenWA URL.
    * Phone must be in international format without '+': e.g. 5491122334455
    */
   async sendText(phone: string, message: string, isOtp = false) {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const notificationsConfig = (settings?.notifications as any) || {};
+    const notificationsConfig = (await this.settingsService.getNotificationSettings()) as any;
     
     const openWaUrl = isOtp ? (notificationsConfig.openWaOtpUrl || notificationsConfig.openWaUrl) : notificationsConfig.openWaUrl;
     const session = isOtp ? (notificationsConfig.openWaOtpSession || notificationsConfig.openWaSession || 'default') : (notificationsConfig.openWaSession || 'default');
@@ -44,8 +43,7 @@ export class WhatsAppOpenWaService {
   }
 
   async getStatus() {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const notificationsConfig = (settings?.notifications as any) || {};
+    const notificationsConfig = (await this.settingsService.getNotificationSettings()) as any;
     const openWaUrl = notificationsConfig.openWaUrl;
     
     if (!openWaUrl) {

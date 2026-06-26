@@ -1,4 +1,4 @@
-import { get, post, put } from './client';
+import { get, post, put, patch } from './client';
 
 // ─── Typed settings sections ─────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ export interface SkuBarcodeSettings {
 }
 
 export interface InvoicingSettings {
-  defaultInvoiceType: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C';
+  defaultInvoiceType: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C' | 'EXENTO';
   autoIssueOnSale: boolean;
 }
 
@@ -169,6 +169,9 @@ export const settingsApi = {
   getSettings: () =>
     get<SystemSettings>('/settings'),
 
+  patchSection: (section: string, dto: any) =>
+    patch<SystemSettings>(`/settings/${section}`, dto),
+
   putSettings: (dto: Partial<SystemSettings>) =>
     put<SystemSettings>('/settings', dto),
 
@@ -194,5 +197,5 @@ export const settingsApi = {
   },
 
   repriceUsd: (type: 'Oficial' | 'Blue') =>
-    post<{ success: boolean; updatedCount: number }>('/settings/reprice-usd', { type }),
+    post<{ success: boolean; updatedCount: number }>('/catalog/reprice-usd', { type }),
 };

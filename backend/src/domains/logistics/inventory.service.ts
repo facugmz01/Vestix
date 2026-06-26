@@ -1,9 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 
 @Injectable()
 export class InventoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   /**
    * CORE ENGINE: Records an immutable movement and updates the materialized view.
@@ -93,8 +97,7 @@ export class InventoryService {
 
     // Upsert the stock level record
     if (quantityChange < 0 && type !== 'CONSUME_RESERVATION') {
-      const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } });
-      const posSettings = (settings?.pos as any) || {};
+      const posSettings = await this.settingsService.getPosSettings();
       if (!posSettings.allowNegativeStock) {
         const stock = await tx.stockLevel.findFirst({ 
           where: { variantId, warehouseId, batchId: batchId || null } 
@@ -128,8 +131,7 @@ export class InventoryService {
       orderBy: { availableQuantity: 'desc' }
     });
     
-    const settings = await prismaClient.systemSettings.findUnique({ where: { id: 'default' } });
-    const posSettings = (settings?.pos as any) || {};
+    const posSettings = await this.settingsService.getPosSettings();
 
     if (!posSettings.allowNegativeStock) {
       if (!stock || stock.availableQuantity < quantity) {

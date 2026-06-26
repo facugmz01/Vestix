@@ -1,5 +1,5 @@
 import { useFormContext } from 'react-hook-form';
-import { SettingsSection, SettingsRow, SettingsDivider } from './SettingsLayout';
+import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './SettingsLayout';
 import { Input, Button, ConfirmDialog } from '@/components/ui';
 import { SystemSettings } from '@/api/settings.api';
 import { RefreshCw, Trash2 } from 'lucide-react';
@@ -9,7 +9,7 @@ import { settingsApi } from '@/api/settings.api';
 import toast from 'react-hot-toast';
 
 export function SalesOptionsPanel() {
-  const { register, watch, formState: { errors } } = useFormContext<SystemSettings>();
+  const { register, watch, setValue, formState: { errors } } = useFormContext<SystemSettings>();
   const [clearCatalogOpen, setClearCatalogOpen] = useState(false);
 
   const handleClearCatalog = () => {
@@ -33,28 +33,19 @@ export function SalesOptionsPanel() {
       <SettingsSection title="Opciones de venta" description="Comportamiento del carrito, impresión y flujos de caja.">
         
         <SettingsRow label="Permitir venta sin stock" hint="Si está activo, se pueden confirmar ventas aunque el producto no tenga stock disponible. El stock quedará en negativo hasta que se registre una entrada.">
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('pos.allowNegativeStock')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('pos.allowNegativeStock')} onChange={v => setValue('pos.allowNegativeStock', v, { shouldDirty: true })} />
         </SettingsRow>
 
         <SettingsDivider />
 
         <SettingsRow label="Impresión en ticket (impresora térmica 80mm)" hint="Al imprimir una venta, el formato se adapta a papel de 80mm tipo supermercado. Ideal para impresoras térmicas de rollo.">
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('pos.thermalPrint80mm')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('pos.thermalPrint80mm')} onChange={v => setValue('pos.thermalPrint80mm', v, { shouldDirty: true })} />
         </SettingsRow>
 
         <SettingsDivider />
 
         <SettingsRow label="Ticket fiscal térmico (70mm)" hint="Agrega el botón 'Imprimir fiscal' en la vista de una venta cuando tiene CAE emitido. El formato se ajusta a rollo de 70mm con QR AFIP.">
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('pos.fiscalPrint70mm')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('pos.fiscalPrint70mm')} onChange={v => setValue('pos.fiscalPrint70mm', v, { shouldDirty: true })} />
         </SettingsRow>
 
         <SettingsDivider />
@@ -96,38 +87,23 @@ export function SalesOptionsPanel() {
 
       <SettingsSection title="CONFIGURACIÓN DE PRODUCTOS">
         <SettingsRow label="Código interno obligatorio" hint='El campo "Código" es requerido al crear o editar un producto.'>
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('pos.requireInternalCode')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('pos.requireInternalCode')} onChange={v => setValue('pos.requireInternalCode', v, { shouldDirty: true })} />
         </SettingsRow>
         <SettingsDivider />
         <SettingsRow label="Código de barras obligatorio" hint='El campo "Código de barras" es requerido al crear o editar un producto.'>
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('pos.requireBarcode')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('pos.requireBarcode')} onChange={v => setValue('pos.requireBarcode', v, { shouldDirty: true })} />
         </SettingsRow>
         <SettingsDivider />
         <SettingsRow label="Marca obligatoria" hint='Se debe seleccionar una marca al crear o editar un producto.'>
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('pos.requireBrand')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('pos.requireBrand')} onChange={v => setValue('pos.requireBrand', v, { shouldDirty: true })} />
         </SettingsRow>
         <SettingsDivider />
         <SettingsRow label="Descripción obligatoria" hint='El campo "Descripción" es requerido al crear o editar un producto.'>
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('pos.requireDescription')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('pos.requireDescription')} onChange={v => setValue('pos.requireDescription', v, { shouldDirty: true })} />
         </SettingsRow>
         <SettingsDivider />
         <SettingsRow label="Datos de envío obligatorios en productos" hint='Si está activo, peso, alto, ancho y largo serán campos obligatorios al crear o editar un producto.'>
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('pos.requireShippingDimensions')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('pos.requireShippingDimensions')} onChange={v => setValue('pos.requireShippingDimensions', v, { shouldDirty: true })} />
         </SettingsRow>
 
         <SettingsDivider />

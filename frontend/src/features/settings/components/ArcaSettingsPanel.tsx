@@ -1,12 +1,12 @@
 import { useFormContext } from 'react-hook-form';
-import { SettingsSection, SettingsRow, SettingsDivider } from './SettingsLayout';
+import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './SettingsLayout';
 import { Input, Button } from '@/components/ui';
 import { SystemSettings } from '@/api/settings.api';
 import { FileText, Download, ExternalLink, ShieldAlert, Key } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export function ArcaSettingsPanel() {
-  const { register, watch } = useFormContext<SystemSettings>();
+  const { register, watch, setValue } = useFormContext<SystemSettings>();
 
   const handleGenerateCsr = () => {
     toast.error('Generación de CSR en desarrollo');
@@ -17,10 +17,7 @@ export function ArcaSettingsPanel() {
       <SettingsSection title="Facturación Electrónica ARCA">
         
         <SettingsRow label="Habilitar facturación electrónica ARCA" hint="Al confirmar una venta de tipo A, B o C se emitirá el comprobante automáticamente. El logo que aparece en la factura se configura en la pestaña Logo.">
-          <label className="toggle-switch">
-            <input type="checkbox" {...register('arca.enabled')} />
-            <span className="slider"></span>
-          </label>
+          <ToggleSwitch value={!!watch('arca.enabled')} onChange={v => setValue('arca.enabled', v, { shouldDirty: true })} />
         </SettingsRow>
 
         <SettingsDivider />

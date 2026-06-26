@@ -4,12 +4,14 @@ import { AfipService } from './afip.service';
 import * as crypto from 'crypto';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 
 @Injectable()
 export class InvoicingService {
   constructor(
     private readonly afipService: AfipService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   /**
@@ -57,9 +59,8 @@ export class InvoicingService {
     if (payload.customerDocumentType === 'CUIT') afipDocType = 80;
 
     // Read Point of Sale from Settings
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const arcaSettings = (settings?.arca as any) || {};
-    const pointOfSale = parseInt(arcaSettings.pointOfSale) || 1;
+    const arcaSettings = await this.settingsService.getArcaSettings();
+    const pointOfSale = parseInt(arcaSettings.pointOfSale as string) || 1;
 
     // 4. Request Legal Authorization from the Government
     try {

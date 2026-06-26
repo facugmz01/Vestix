@@ -1,19 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { PrismaService } from '../../../core/prisma/prisma.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 
 @Injectable()
 export class SmsGatewayService {
   private readonly logger = new Logger(SmsGatewayService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly settingsService: SettingsService) {}
 
   /**
    * Sends an SMS via the configured Android SMS Gateway URL.
    */
   async sendSms(phone: string, message: string) {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const notificationsConfig = (settings?.notifications as any) || {};
+    const notificationsConfig = await this.settingsService.getNotificationSettings();
     const url = notificationsConfig.smsGatewayUrl;
 
     if (!url) {
