@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface CheckoutDto {
@@ -32,7 +33,10 @@ export interface CheckoutDto {
 export class StorefrontCheckoutService {
   private readonly logger = new Logger(StorefrontCheckoutService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   async processCheckout(authCustomerId: string | null, dto: CheckoutDto) {
     if (!dto.cartLines || dto.cartLines.length === 0) {
@@ -66,8 +70,7 @@ export class StorefrontCheckoutService {
     }
 
     // Get system settings for storefront configuration
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const storefrontConfig = (settings as any)?.storefront || {};
+    const storefrontConfig = await this.settingsService.getStorefrontSettings();
     
     // Fallbacks
     const defaultBranchId = 'default-branch-id'; // Ideally this should come from settings

@@ -1,14 +1,16 @@
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AccountsService } from '../accounts.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 export declare class CashService {
     private readonly prisma;
     private readonly accountsService;
-    constructor(prisma: PrismaService, accountsService: AccountsService);
+    private readonly settingsService;
+    constructor(prisma: PrismaService, accountsService: AccountsService, settingsService: SettingsService);
     getActiveShift(cashRegisterId: string): Promise<{
         openedByUser: {
             id: string;
-            fullName: string;
             email: string;
+            fullName: string;
         };
     } & {
         id: string;
@@ -27,8 +29,8 @@ export declare class CashService {
     getActiveShiftForUser(userId: string): Promise<{
         openedByUser: {
             id: string;
-            fullName: string;
             email: string;
+            fullName: string;
         };
     } & {
         id: string;
@@ -83,10 +85,10 @@ export declare class CashService {
     getShifts(page: number, pageSize: number): Promise<{
         data: ({
             cashRegister: {
-                name: string;
                 branch: {
                     name: string;
                 };
+                name: string;
             };
             openedByUser: {
                 fullName: string;
@@ -115,10 +117,10 @@ export declare class CashService {
     }>;
     getShiftById(shiftId: string): Promise<{
         cashRegister: {
-            name: string;
             branch: {
                 name: string;
             };
+            name: string;
         };
         openedByUser: {
             fullName: string;

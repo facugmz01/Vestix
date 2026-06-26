@@ -46,11 +46,13 @@ exports.CashService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../../core/prisma/prisma.service");
 const accounts_service_1 = require("../accounts.service");
+const settings_service_1 = require("../../../modules/settings/settings.service");
 const crypto = __importStar(require("crypto"));
 let CashService = class CashService {
-    constructor(prisma, accountsService) {
+    constructor(prisma, accountsService, settingsService) {
         this.prisma = prisma;
         this.accountsService = accountsService;
+        this.settingsService = settingsService;
     }
     async getActiveShift(cashRegisterId) {
         return this.prisma.cashShift.findFirst({
@@ -103,8 +105,7 @@ let CashService = class CashService {
         if (shift.status === 'CLOSED') {
             throw new common_1.BadRequestException('El turno ya se encuentra cerrado.');
         }
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const posSettings = settings?.pos || {};
+        const posSettings = await this.settingsService.getPosSettings();
         if (posSettings.boxMode === 'STRICT' && shift.openedByUserId !== userId) {
             throw new common_1.BadRequestException('El modo de caja es ESTRICTO. Solo el usuario que abrió el turno puede cerrarlo.');
         }
@@ -232,6 +233,7 @@ exports.CashService = CashService;
 exports.CashService = CashService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        accounts_service_1.AccountsService])
+        accounts_service_1.AccountsService,
+        settings_service_1.SettingsService])
 ], CashService);
 //# sourceMappingURL=cash.service.js.map

@@ -130,6 +130,14 @@ export interface PwaSettings {
   iconUrl: string;
 }
 
+export interface SkuBarcodeSettings {
+  skuPrefix: string;
+  skuAutoGenerate: boolean;
+  barcodeFormat: string;
+  barcodeAutoGenerate: boolean;
+  nextSkuSequence: number;
+}
+
 export interface ArcaSettings {
   enabled: boolean;
   pointOfSale: string | number;
@@ -318,6 +326,11 @@ export class SettingsService implements OnModuleInit {
   async getPwaSettings(): Promise<PwaSettings> {
     const row = await this.getCachedRaw();
     return (row?.pwa as PwaSettings) ?? {} as PwaSettings;
+  }
+
+  async getSkuBarcodeSettings(): Promise<SkuBarcodeSettings> {
+    const row = await this.getCachedRaw();
+    return (row?.skuBarcode as SkuBarcodeSettings) ?? {} as SkuBarcodeSettings;
   }
 
   async getArcaSettings(): Promise<ArcaSettings> {

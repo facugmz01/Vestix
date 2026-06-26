@@ -1,16 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 
 @Injectable()
 export class ShopifyService {
   private readonly logger = new Logger(ShopifyService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService
+  ) {}
 
   private async getSettings() {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    return (settings?.integrations as any) || {};
+    return this.settingsService.getIntegrationSettings();
   }
 
   private getClient(config: any) {

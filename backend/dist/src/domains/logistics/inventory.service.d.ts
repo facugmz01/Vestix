@@ -108,7 +108,7 @@ export declare class InventoryService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            destinationWarehouse: {
+            sourceWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;
@@ -119,7 +119,7 @@ export declare class InventoryService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            sourceWarehouse: {
+            destinationWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;

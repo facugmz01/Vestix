@@ -46,21 +46,22 @@ exports.ProductsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../../core/prisma/prisma.service");
 const taxonomy_service_1 = require("./taxonomy.service");
+const settings_service_1 = require("../../../modules/settings/settings.service");
 const crypto = __importStar(require("crypto"));
 let ProductsService = class ProductsService {
-    constructor(prisma, categoriesService, brandsService) {
+    constructor(prisma, categoriesService, brandsService, settingsService) {
         this.prisma = prisma;
         this.categoriesService = categoriesService;
         this.brandsService = brandsService;
+        this.settingsService = settingsService;
     }
     async create(createProductDto) {
         await this.categoriesService.findOne(createProductDto.categoryId);
         if (createProductDto.brandId) {
             await this.brandsService.findOne(createProductDto.brandId);
         }
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const posSettings = settings?.pos || {};
-        const skuSettings = settings?.skuBarcode || {};
+        const posSettings = await this.settingsService.getPosSettings();
+        const skuSettings = await this.settingsService.getSkuBarcodeSettings();
         if (createProductDto.metadata?.usdCurrency) {
             const type = createProductDto.metadata.usdCurrency;
             const rate = type === 'Oficial' ? posSettings.officialDollarQuote : posSettings.blueDollarQuote;
@@ -101,17 +102,12 @@ let ProductsService = class ProductsService {
         if (!finalSku) {
             if (skuSettings.skuAutoGenerate) {
                 const prefix = skuSettings.skuPrefix || 'PROD-';
-                const seq = parseInt(skuSettings.nextSkuSequence) || 1;
+                const seq = skuSettings.nextSkuSequence || 1;
                 finalSku = `${prefix}${seq.toString().padStart(4, '0')}`;
-                await this.prisma.systemSettings.update({
-                    where: { id: 'default' },
-                    data: {
-                        skuBarcode: {
-                            ...skuSettings,
-                            nextSkuSequence: seq + 1
-                        }
-                    }
-                });
+                await this.settingsService.updateSection('skuBarcode', {
+                    ...skuSettings,
+                    nextSkuSequence: seq + 1
+                }, 'system');
             }
             else {
                 finalSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
@@ -225,8 +221,7 @@ let ProductsService = class ProductsService {
             await this.categoriesService.findOne(updateProductDto.categoryId);
         if (updateProductDto.brandId)
             await this.brandsService.findOne(updateProductDto.brandId);
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const posSettings = settings?.pos || {};
+        const posSettings = await this.settingsService.getPosSettings();
         const checkBrandId = updateProductDto.brandId !== undefined ? updateProductDto.brandId : product.brandId;
         if (posSettings.requireBrand && !checkBrandId) {
             throw new common_1.ConflictException('La Marca es obligatoria según la configuración de ventas.');
@@ -844,6 +839,7 @@ exports.ProductsService = ProductsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         taxonomy_service_1.CategoriesService,
-        taxonomy_service_1.BrandsService])
+        taxonomy_service_1.BrandsService,
+        settings_service_1.SettingsService])
 ], ProductsService);
 //# sourceMappingURL=products.service.js.map

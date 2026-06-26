@@ -3,6 +3,7 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { CategoriesService, BrandsService } from './taxonomy.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import * as crypto from 'crypto';
@@ -12,7 +13,8 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly categoriesService: CategoriesService,
-    private readonly brandsService: BrandsService
+    private readonly brandsService: BrandsService,
+    private readonly settingsService: SettingsService
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -23,9 +25,8 @@ export class ProductsService {
     }
 
     // 2. Load settings for POS validations and SKU generation
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const posSettings = (settings?.pos as any) || {};
-    const skuSettings = (settings?.skuBarcode as any) || {};
+    const posSettings = await this.settingsService.getPosSettings();
+    const skuSettings = await this.settingsService.getSkuBarcodeSettings();
 
     // 2a. POS Validations & USD Logic
     if (createProductDto.metadata?.usdCurrency) {
@@ -73,18 +74,13 @@ export class ProductsService {
     if (!finalSku) {
       if (skuSettings.skuAutoGenerate) {
         const prefix = skuSettings.skuPrefix || 'PROD-';
-        const seq = parseInt(skuSettings.nextSkuSequence) || 1;
+        const seq = skuSettings.nextSkuSequence || 1;
         finalSku = `${prefix}${seq.toString().padStart(4, '0')}`;
         
-        await this.prisma.systemSettings.update({
-          where: { id: 'default' },
-          data: {
-            skuBarcode: {
-              ...skuSettings,
-              nextSkuSequence: seq + 1
-            }
-          }
-        });
+        await this.settingsService.updateSection('skuBarcode', {
+          ...skuSettings,
+          nextSkuSequence: seq + 1
+        }, 'system');
       } else {
         finalSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
       }
@@ -206,8 +202,7 @@ export class ProductsService {
     if (updateProductDto.brandId) await this.brandsService.findOne(updateProductDto.brandId);
 
     // Load settings for POS validations
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const posSettings = (settings?.pos as any) || {};
+    const posSettings = await this.settingsService.getPosSettings();
 
     // POS Validations for Update
     const checkBrandId = updateProductDto.brandId !== undefined ? updateProductDto.brandId : product.brandId;

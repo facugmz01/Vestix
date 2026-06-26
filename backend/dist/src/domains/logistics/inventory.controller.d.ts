@@ -75,7 +75,7 @@ export declare class InventoryController {
             createdAt: Date;
             updatedAt: Date;
         };
-        destinationWarehouse: {
+        sourceWarehouse: {
             id: string;
             name: string;
             code: string | null;
@@ -86,7 +86,7 @@ export declare class InventoryController {
             createdAt: Date;
             updatedAt: Date;
         };
-        sourceWarehouse: {
+        destinationWarehouse: {
             id: string;
             name: string;
             code: string | null;
@@ -149,7 +149,7 @@ export declare class InventoryController {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            destinationWarehouse: {
+            sourceWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;
@@ -160,7 +160,7 @@ export declare class InventoryController {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            sourceWarehouse: {
+            destinationWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;
@@ -214,7 +214,7 @@ export declare class InventoryController {
                 receivedQuantity: number | null;
                 createdAt: Date;
             })[];
-            destinationWarehouse: {
+            sourceWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;
@@ -225,7 +225,7 @@ export declare class InventoryController {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            sourceWarehouse: {
+            destinationWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;
@@ -277,7 +277,7 @@ export declare class InventoryController {
             receivedQuantity: number | null;
             createdAt: Date;
         })[];
-        destinationWarehouse: {
+        sourceWarehouse: {
             id: string;
             name: string;
             code: string | null;
@@ -288,7 +288,7 @@ export declare class InventoryController {
             createdAt: Date;
             updatedAt: Date;
         };
-        sourceWarehouse: {
+        destinationWarehouse: {
             id: string;
             name: string;
             code: string | null;

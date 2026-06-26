@@ -179,6 +179,10 @@ let SettingsService = SettingsService_1 = class SettingsService {
         const row = await this.getCachedRaw();
         return row?.pwa ?? {};
     }
+    async getSkuBarcodeSettings() {
+        const row = await this.getCachedRaw();
+        return row?.skuBarcode ?? {};
+    }
     async getArcaSettings() {
         const row = await this.getCachedRaw();
         return row?.arca ?? {};

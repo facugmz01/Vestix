@@ -1,4 +1,5 @@
 import { PrismaService } from '../../../core/prisma/prisma.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 export interface CheckoutDto {
     id?: string;
     customerInfo: {
@@ -26,8 +27,9 @@ export interface CheckoutDto {
 }
 export declare class StorefrontCheckoutService {
     private readonly prisma;
+    private readonly settingsService;
     private readonly logger;
-    constructor(prisma: PrismaService);
+    constructor(prisma: PrismaService, settingsService: SettingsService);
     processCheckout(authCustomerId: string | null, dto: CheckoutDto): Promise<{
         success: boolean;
         orderId: string;

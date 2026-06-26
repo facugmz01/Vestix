@@ -111,6 +111,13 @@ export interface PwaSettings {
     backgroundColor: string;
     iconUrl: string;
 }
+export interface SkuBarcodeSettings {
+    skuPrefix: string;
+    skuAutoGenerate: boolean;
+    barcodeFormat: string;
+    barcodeAutoGenerate: boolean;
+    nextSkuSequence: number;
+}
 export interface ArcaSettings {
     enabled: boolean;
     pointOfSale: string | number;
@@ -150,6 +157,7 @@ export declare class SettingsService implements OnModuleInit {
     getStorefrontSettings(): Promise<StorefrontSettings>;
     getIntegrationSettings(): Promise<IntegrationSettings>;
     getPwaSettings(): Promise<PwaSettings>;
+    getSkuBarcodeSettings(): Promise<SkuBarcodeSettings>;
     getArcaSettings(): Promise<ArcaSettings>;
     getOfflineSettings(): Promise<OfflineSettings>;
     getSettings(): Promise<any>;

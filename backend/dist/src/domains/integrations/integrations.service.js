@@ -55,20 +55,21 @@ const woocommerce_api_service_1 = require("./woocommerce-api.service");
 const checkout_orchestrator_1 = require("../sales/checkout.orchestrator");
 const order_model_1 = require("../sales/models/order.model");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const settings_service_1 = require("../../modules/settings/settings.service");
 const MAX_ATTEMPTS = 5;
 const BASE_DELAY_MS = 2000;
 let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
-    constructor(wcApi, checkoutOrchestrator, prisma) {
+    constructor(wcApi, checkoutOrchestrator, prisma, settingsService) {
         this.wcApi = wcApi;
         this.checkoutOrchestrator = checkoutOrchestrator;
         this.prisma = prisma;
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(IntegrationsService_1.name);
         this.configPath = path.join(__dirname, 'integrations-config.json');
     }
     async readConfigs() {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const intSettings = settings?.integrations || {};
-        const arcaSettings = settings?.arca || {};
+        const intSettings = await this.settingsService.getIntegrationSettings();
+        const arcaSettings = await this.settingsService.getArcaSettings();
         return {
             mercadopago: {
                 isActive: intSettings.mercadopagoEnabled,
@@ -161,8 +162,7 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
         return found;
     }
     async saveConfig(id, config) {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const currentInt = settings?.integrations || {};
+        const currentInt = await this.settingsService.getIntegrationSettings();
         let updatedInt = { ...currentInt };
         if (id === 'mercadopago') {
             updatedInt.mpPublicKey = config.publicKey;
@@ -182,15 +182,11 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
             updatedInt.shopifyStoreUrl = config.shopDomain;
             updatedInt.shopifyAccessToken = config.accessToken;
         }
-        await this.prisma.systemSettings.update({
-            where: { id: 'default' },
-            data: { integrations: updatedInt }
-        });
+        await this.settingsService.updateSection('integrations', updatedInt, 'system');
         return { success: true };
     }
     async toggleActive(id, isActive) {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const currentInt = settings?.integrations || {};
+        const currentInt = await this.settingsService.getIntegrationSettings();
         let updatedInt = { ...currentInt };
         if (id === 'mercadopago')
             updatedInt.mercadopagoEnabled = isActive;
@@ -200,10 +196,7 @@ let IntegrationsService = IntegrationsService_1 = class IntegrationsService {
             updatedInt.woocommerceEnabled = isActive;
         else if (id === 'shopify')
             updatedInt.shopifyEnabled = isActive;
-        await this.prisma.systemSettings.update({
-            where: { id: 'default' },
-            data: { integrations: updatedInt }
-        });
+        await this.settingsService.updateSection('integrations', updatedInt, 'system');
         return { success: true };
     }
     async testConnection(id) {
@@ -487,6 +480,7 @@ exports.IntegrationsService = IntegrationsService = IntegrationsService_1 = __de
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [woocommerce_api_service_1.WooCommerceApiService,
         checkout_orchestrator_1.CheckoutOrchestrator,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        settings_service_1.SettingsService])
 ], IntegrationsService);
 //# sourceMappingURL=integrations.service.js.map

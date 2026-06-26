@@ -176,7 +176,7 @@ export declare class TransfersService {
                 receivedQuantity: number | null;
                 createdAt: Date;
             })[];
-            destinationWarehouse: {
+            sourceWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;
@@ -187,7 +187,7 @@ export declare class TransfersService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            sourceWarehouse: {
+            destinationWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;
@@ -239,7 +239,7 @@ export declare class TransfersService {
             receivedQuantity: number | null;
             createdAt: Date;
         })[];
-        destinationWarehouse: {
+        sourceWarehouse: {
             id: string;
             name: string;
             code: string | null;
@@ -250,7 +250,7 @@ export declare class TransfersService {
             createdAt: Date;
             updatedAt: Date;
         };
-        sourceWarehouse: {
+        destinationWarehouse: {
             id: string;
             name: string;
             code: string | null;

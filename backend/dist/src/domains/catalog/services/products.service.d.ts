@@ -2,13 +2,15 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { CategoriesService, BrandsService } from './taxonomy.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 export declare class ProductsService {
     private readonly prisma;
     private readonly categoriesService;
     private readonly brandsService;
-    constructor(prisma: PrismaService, categoriesService: CategoriesService, brandsService: BrandsService);
+    private readonly settingsService;
+    constructor(prisma: PrismaService, categoriesService: CategoriesService, brandsService: BrandsService, settingsService: SettingsService);
     create(createProductDto: CreateProductDto): Promise<{
         category: {
             id: string;

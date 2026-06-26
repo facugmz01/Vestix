@@ -13,14 +13,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MercadoLibreService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const settings_service_1 = require("../../modules/settings/settings.service");
 let MercadoLibreService = MercadoLibreService_1 = class MercadoLibreService {
-    constructor(prisma) {
+    constructor(prisma, settingsService) {
         this.prisma = prisma;
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(MercadoLibreService_1.name);
     }
     async getSettings() {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        return settings?.integrations || {};
+        return this.settingsService.getIntegrationSettings();
     }
     async authenticate() {
         const config = await this.getSettings();
@@ -45,6 +46,7 @@ let MercadoLibreService = MercadoLibreService_1 = class MercadoLibreService {
 exports.MercadoLibreService = MercadoLibreService;
 exports.MercadoLibreService = MercadoLibreService = MercadoLibreService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        settings_service_1.SettingsService])
 ], MercadoLibreService);
 //# sourceMappingURL=mercadolibre.service.js.map

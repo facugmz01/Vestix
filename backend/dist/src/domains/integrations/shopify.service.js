@@ -17,14 +17,15 @@ exports.ShopifyService = void 0;
 const common_1 = require("@nestjs/common");
 const axios_1 = __importDefault(require("axios"));
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const settings_service_1 = require("../../modules/settings/settings.service");
 let ShopifyService = ShopifyService_1 = class ShopifyService {
-    constructor(prisma) {
+    constructor(prisma, settingsService) {
         this.prisma = prisma;
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(ShopifyService_1.name);
     }
     async getSettings() {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        return settings?.integrations || {};
+        return this.settingsService.getIntegrationSettings();
     }
     getClient(config) {
         if (!config.shopifyEnabled || !config.shopifyStoreUrl || !config.shopifyAccessToken) {
@@ -55,6 +56,7 @@ let ShopifyService = ShopifyService_1 = class ShopifyService {
 exports.ShopifyService = ShopifyService;
 exports.ShopifyService = ShopifyService = ShopifyService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        settings_service_1.SettingsService])
 ], ShopifyService);
 //# sourceMappingURL=shopify.service.js.map

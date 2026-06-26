@@ -1,6 +1,7 @@
 import { WooCommerceApiService } from './woocommerce-api.service';
 import { CheckoutOrchestrator } from '../sales/checkout.orchestrator';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 export interface WebhookLogsFilters {
     page?: number;
     pageSize?: number;
@@ -11,9 +12,10 @@ export declare class IntegrationsService {
     private readonly wcApi;
     private readonly checkoutOrchestrator;
     private readonly prisma;
+    private readonly settingsService;
     private readonly logger;
     private readonly configPath;
-    constructor(wcApi: WooCommerceApiService, checkoutOrchestrator: CheckoutOrchestrator, prisma: PrismaService);
+    constructor(wcApi: WooCommerceApiService, checkoutOrchestrator: CheckoutOrchestrator, prisma: PrismaService, settingsService: SettingsService);
     private readConfigs;
     getAllIntegrations(): Promise<{
         id: string;

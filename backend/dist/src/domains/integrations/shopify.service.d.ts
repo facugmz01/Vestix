@@ -1,8 +1,10 @@
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 export declare class ShopifyService {
     private readonly prisma;
+    private readonly settingsService;
     private readonly logger;
-    constructor(prisma: PrismaService);
+    constructor(prisma: PrismaService, settingsService: SettingsService);
     private getSettings;
     private getClient;
     syncInventory(): Promise<{

@@ -253,58 +253,6 @@ export function StorefrontSettingsPanel() {
       </SettingsSection>
 
       <div style={{ height: '24px' }}></div>
-
-
-
-      <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
-        <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Globe size={24} color="#3b82f6" />
-          <h4 style={{ margin: 0, fontSize: '15px' }}>Configurar Subdominio <span style={{ background: '#10b981', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '8px' }}>RECOMENDADO</span></h4>
-        </div>
-        <div style={{ padding: '20px' }}>
-          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-muted)' }}>Definí el nombre corto con el que tus clientes accederán a tu tienda online (ejemplo: <strong>mi-comercio</strong>).</p>
-          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-base)', border: '1px solid var(--border)', padding: '16px', borderRadius: '8px', gap: '16px' }}>
-            <Globe size={24} color="var(--accent)" style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)', background: 'var(--bg-overlay)', border: '1px solid var(--border)', borderRight: 'none', padding: '10px 12px', borderRadius: '6px 0 0 6px' }}>https://</span>
-                <input
-                  type="text"
-                  placeholder="mi-comercio"
-                  {...register('storefront.subdomain')}
-                  style={{ flex: 1, padding: '10px 12px', border: '1px solid var(--border)', fontSize: '14px', background: '#fff', color: 'var(--text-primary)', outline: 'none' }}
-                />
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)', background: 'var(--bg-overlay)', border: '1px solid var(--border)', borderLeft: 'none', padding: '10px 12px', borderRadius: '0 6px 6px 0' }}>.ventaweb.com.ar</span>
-              </div>
-            </div>
-          </div>
-          {watch('storefront.subdomain') && (
-            <p style={{ margin: '12px 0 0 0', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
-              Tu tienda quedará accesible en: <a href={`https://${watch('storefront.subdomain')}.ventaweb.com.ar`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: 'var(--accent)' }}>https://{watch('storefront.subdomain')}.ventaweb.com.ar</a>
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div style={{ background: 'rgba(30, 41, 59, 1)', color: '#fff', borderRadius: '12px', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Globe size={18} /> Sitio web 100% personalizado <span style={{ background: 'rgba(255,255,255,0.2)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px' }}>A medida</span>
-          </h4>
-          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.7)', maxWidth: '500px' }}>
-            ¿Necesitás algo más que una tienda estándar? Diseñamos y desarrollamos tu sitio web a medida: diseño propio, dominio personalizado, funcionalidades exclusivas, integración con el ERP y soporte continuo.
-          </p>
-          <div style={{ display: 'flex', gap: '32px', marginTop: '16px' }}>
-            <div><p style={{ margin: 0, fontSize: '11px', color: '#3b82f6', fontWeight: 600 }}>Diseño</p><p style={{ margin: 0, fontSize: '12px' }}>100% a tu imagen</p></div>
-            <div><p style={{ margin: 0, fontSize: '11px', color: '#3b82f6', fontWeight: 600 }}>Dominio</p><p style={{ margin: 0, fontSize: '12px' }}>tucomercio.com.ar</p></div>
-            <div><p style={{ margin: 0, fontSize: '11px', color: '#3b82f6', fontWeight: 600 }}>Soporte</p><p style={{ margin: 0, fontSize: '12px' }}>24x7x365</p></div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <Button style={{ background: '#10b981', color: '#fff', border: 'none' }} icon={<MessageCircle size={16} />}>Consultar por WhatsApp</Button>
-          <Button variant="outline" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.3)' }}>Escribir por email</Button>
-        </div>
-      </div>
     </>
   );
 }

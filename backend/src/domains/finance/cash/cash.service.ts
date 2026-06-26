@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AccountsService } from '../accounts.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class CashService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly accountsService: AccountsService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   /**
@@ -86,8 +88,7 @@ export class CashService {
       throw new BadRequestException('El turno ya se encuentra cerrado.');
     }
 
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const posSettings = (settings?.pos as any) || {};
+    const posSettings = await this.settingsService.getPosSettings();
 
     if (posSettings.boxMode === 'STRICT' && shift.openedByUserId !== userId) {
       throw new BadRequestException('El modo de caja es ESTRICTO. Solo el usuario que abrió el turno puede cerrarlo.');

@@ -13,10 +13,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StorefrontCheckoutService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../../core/prisma/prisma.service");
+const settings_service_1 = require("../../../modules/settings/settings.service");
 const uuid_1 = require("uuid");
 let StorefrontCheckoutService = StorefrontCheckoutService_1 = class StorefrontCheckoutService {
-    constructor(prisma) {
+    constructor(prisma, settingsService) {
         this.prisma = prisma;
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(StorefrontCheckoutService_1.name);
     }
     async processCheckout(authCustomerId, dto) {
@@ -45,8 +47,7 @@ let StorefrontCheckoutService = StorefrontCheckoutService_1 = class StorefrontCh
         if (!customerId) {
             throw new common_1.BadRequestException('No se pudo determinar el cliente');
         }
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const storefrontConfig = settings?.storefront || {};
+        const storefrontConfig = await this.settingsService.getStorefrontSettings();
         const defaultBranchId = 'default-branch-id';
         const priceListId = customer?.priceListId || storefrontConfig.priceListToShow || 'retail-default';
         let subtotal = 0;
@@ -108,6 +109,7 @@ let StorefrontCheckoutService = StorefrontCheckoutService_1 = class StorefrontCh
 exports.StorefrontCheckoutService = StorefrontCheckoutService;
 exports.StorefrontCheckoutService = StorefrontCheckoutService = StorefrontCheckoutService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        settings_service_1.SettingsService])
 ], StorefrontCheckoutService);
 //# sourceMappingURL=storefront-checkout.service.js.map
