@@ -43,7 +43,7 @@ let DashboardService = class DashboardService {
                 revenue: todaySales.netRevenue,
                 orders: todaySales.totalOrders,
                 avgOrderValue: todaySales.averageOrderValue,
-                cashInDrawers: todaySales.byPaymentMethod['CASH'] ?? 0,
+                cashInDrawers: todaySales.byPaymentMethod.find(m => m.method === 'CASH')?.amount ?? 0,
             },
             thisMonth: {
                 revenue: monthSales.netRevenue,

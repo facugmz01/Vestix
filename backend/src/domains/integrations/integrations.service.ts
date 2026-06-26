@@ -29,14 +29,14 @@ export class IntegrationsService {
     private readonly checkoutOrchestrator: CheckoutOrchestrator,
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
-  ) {}
+  ) { }
 
   // ─── CONFIGURATION MANAGEMENT ──────────────────────────────────────────────
 
   private async readConfigs() {
     const intSettings = await this.settingsService.getIntegrationSettings();
     const arcaSettings = await this.settingsService.getArcaSettings();
-    
+
     return {
       mercadopago: {
         isActive: intSettings.mercadopagoEnabled,
@@ -71,7 +71,7 @@ export class IntegrationsService {
   async getAllIntegrations() {
     const configs = await this.readConfigs();
     const providers = ['MERCADOPAGO', 'WOOCOMMERCE', 'AFIP', 'MERCADOLIBRE', 'SHOPIFY'];
-    
+
     return providers.map(prov => {
       const provLower = prov.toLowerCase();
       const provConfig = (configs as any)[provLower] || {};
