@@ -15,6 +15,7 @@ export default function OnlineProductDetailPage() {
 
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [qty, setQty] = useState(1);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [justAdded, setJustAdded] = useState(false);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -99,14 +100,31 @@ export default function OnlineProductDetailPage() {
         
         {/* Left: Gallery */}
         <div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderRadius: '16px', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: isMobile ? '80px' : '120px', color: '#cbd5e1', fontWeight: 900, userSelect: 'none' }}>{product.name.charAt(0).toUpperCase()}</span>
+          <div style={{ background: (product.images && product.images.length > 0) ? '#fff' : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderRadius: '16px', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            {product.images && product.images.length > 0 ? (
+              <img src={product.images[activeImageIndex] || product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: isMobile ? '80px' : '120px', color: '#cbd5e1', fontWeight: 900, userSelect: 'none' }}>{product.name.charAt(0).toUpperCase()}</span>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {[1, 2, 3].map(i => (
-              <div key={i} style={{ flex: 1, aspectRatio: '1', background: '#f1f5f9', borderRadius: '10px', border: '2px solid', borderColor: i === 1 ? '#3b82f6' : '#e2e8f0', cursor: 'pointer' }} />
-            ))}
-          </div>
+          
+          {product.images && product.images.length > 1 && (
+            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+              {product.images.map((img: string, i: number) => (
+                <div 
+                  key={i} 
+                  onClick={() => setActiveImageIndex(i)}
+                  style={{ 
+                    width: '80px', flexShrink: 0, aspectRatio: '1', background: '#f1f5f9', borderRadius: '10px', 
+                    border: '2px solid', borderColor: i === activeImageIndex ? '#3b82f6' : 'transparent', 
+                    cursor: 'pointer', overflow: 'hidden' 
+                  }}
+                >
+                  <img src={img} alt={`${product.name} thumbnail ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right: Info & Buy Box */}
