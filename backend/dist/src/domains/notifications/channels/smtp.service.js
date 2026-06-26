@@ -12,22 +12,19 @@ var SmtpService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SmtpService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../../../core/prisma/prisma.service");
+const settings_service_1 = require("../../../modules/settings/settings.service");
 let SmtpService = SmtpService_1 = class SmtpService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(settingsService) {
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(SmtpService_1.name);
     }
     async send(to, subject, body) {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const notificationsConfig = settings?.notifications || {};
-        const smtp = notificationsConfig.smtp || {};
-        const smtpHost = smtp.host || process.env.SMTP_HOST;
-        const smtpPort = smtp.port || process.env.SMTP_PORT;
-        const smtpUser = smtp.user || process.env.SMTP_USER;
-        const smtpPass = smtp.pass || process.env.SMTP_PASS;
-        const storefront = settings?.storefront || {};
-        const storeName = storefront?.storeName || 'Vestix ERP';
+        const notificationsConfig = await this.settingsService.getNotificationSettings();
+        const smtpHost = notificationsConfig.smtpHost || process.env.SMTP_HOST;
+        const smtpPort = notificationsConfig.smtpPort?.toString() || process.env.SMTP_PORT;
+        const smtpUser = notificationsConfig.smtpUser || process.env.SMTP_USER;
+        const smtpPass = notificationsConfig.smtpPass || process.env.SMTP_PASS;
+        const storeName = process.env.STORE_NAME || 'Vestix ERP';
         if (smtpHost && smtpUser && smtpPass) {
             try {
                 const nodemailer = require('nodemailer');
@@ -65,6 +62,6 @@ let SmtpService = SmtpService_1 = class SmtpService {
 exports.SmtpService = SmtpService;
 exports.SmtpService = SmtpService = SmtpService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [settings_service_1.SettingsService])
 ], SmtpService);
 //# sourceMappingURL=smtp.service.js.map

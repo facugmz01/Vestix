@@ -1,5 +1,6 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 
 export interface MercadoPagoPreferenceItem {
   id: string;
@@ -35,11 +36,13 @@ export interface MercadoPagoPreference {
 export class MercadoPagoService {
   private readonly logger = new Logger(MercadoPagoService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   private async getAccessToken(): Promise<string> {
-    const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-    const intSettings = (settings?.integrations as any) || {};
+    const intSettings = await this.settingsService.getIntegrationSettings();
     return intSettings.mpAccessToken || process.env.MP_ACCESS_TOKEN || '';
   }
 

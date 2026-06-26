@@ -54,23 +54,24 @@ const prisma_service_1 = require("../../core/prisma/prisma.service");
 const mercadopago_service_1 = require("./mercadopago.service");
 const inventory_service_1 = require("../logistics/inventory.service");
 const storefront_auth_guard_1 = require("./storefront-auth.guard");
+const settings_service_1 = require("../../modules/settings/settings.service");
 const crypto = __importStar(require("crypto"));
 const SHIPPING_RATES = {
     SHIPPING: 3500,
     PICKUP: 0,
 };
 let StorefrontController = StorefrontController_1 = class StorefrontController {
-    constructor(checkoutOrchestrator, salesService, prisma, mercadoPagoService, inventoryService) {
+    constructor(checkoutOrchestrator, salesService, prisma, mercadoPagoService, inventoryService, settingsService) {
         this.checkoutOrchestrator = checkoutOrchestrator;
         this.salesService = salesService;
         this.prisma = prisma;
         this.mercadoPagoService = mercadoPagoService;
         this.inventoryService = inventoryService;
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(StorefrontController_1.name);
     }
     async getManifest() {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const pwa = settings?.pwa || {};
+        const pwa = await this.settingsService.getPwaSettings();
         return {
             short_name: pwa.appShortName || 'VentaWeb',
             name: pwa.appName || 'VentaWeb - ERP & Tienda',
@@ -91,9 +92,8 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
         };
     }
     async getSettings() {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const storefront = settings?.storefront || {};
-        const pwa = settings?.pwa || {};
+        const storefront = await this.settingsService.getStorefrontSettings();
+        const pwa = await this.settingsService.getPwaSettings();
         let paymentMethods = [];
         if (storefront.allowedPaymentMethods?.length > 0) {
             paymentMethods = await this.prisma.paymentMethod.findMany({
@@ -136,8 +136,7 @@ let StorefrontController = StorefrontController_1 = class StorefrontController {
         if (!branch)
             throw new Error('No se encontró la sucursal principal.');
         const warehouse = await this.prisma.warehouse.findFirst({ where: { branchId: branch.id } });
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const storefront = settings?.storefront || {};
+        const storefront = await this.settingsService.getStorefrontSettings();
         const shippingMethods = storefront.shippingMethods || [];
         const selectedShipping = shippingMethods.find(m => m.id === dto.shippingInfo?.method);
         const shippingCost = selectedShipping ? selectedShipping.price : 0;
@@ -414,6 +413,7 @@ exports.StorefrontController = StorefrontController = StorefrontController_1 = _
         sales_service_1.SalesService,
         prisma_service_1.PrismaService,
         mercadopago_service_1.MercadoPagoService,
-        inventory_service_1.InventoryService])
+        inventory_service_1.InventoryService,
+        settings_service_1.SettingsService])
 ], StorefrontController);
 //# sourceMappingURL=storefront.controller.js.map

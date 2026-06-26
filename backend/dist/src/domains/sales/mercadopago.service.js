@@ -13,14 +13,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MercadoPagoService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const settings_service_1 = require("../../modules/settings/settings.service");
 let MercadoPagoService = MercadoPagoService_1 = class MercadoPagoService {
-    constructor(prisma) {
+    constructor(prisma, settingsService) {
         this.prisma = prisma;
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(MercadoPagoService_1.name);
     }
     async getAccessToken() {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const intSettings = settings?.integrations || {};
+        const intSettings = await this.settingsService.getIntegrationSettings();
         return intSettings.mpAccessToken || process.env.MP_ACCESS_TOKEN || '';
     }
     async createPreference(dto) {
@@ -98,6 +99,7 @@ let MercadoPagoService = MercadoPagoService_1 = class MercadoPagoService {
 exports.MercadoPagoService = MercadoPagoService;
 exports.MercadoPagoService = MercadoPagoService = MercadoPagoService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        settings_service_1.SettingsService])
 ], MercadoPagoService);
 //# sourceMappingURL=mercadopago.service.js.map

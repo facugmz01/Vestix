@@ -27,6 +27,9 @@ let CatalogController = class CatalogController {
     async getPublicProduct(id) {
         return this.catalogService.getPublicProduct(id);
     }
+    async repriceUsd(dto) {
+        return this.catalogService.repriceUsd(dto.type);
+    }
     async getPosSyncCatalog(branchId) {
         return this.catalogService.getPosSyncCatalog(branchId);
     }
@@ -46,6 +49,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getPublicProduct", null);
+__decorate([
+    (0, common_1.Post)('reprice-usd'),
+    (0, require_permissions_decorator_1.RequirePermissions)({ action: 'manage', subject: 'Settings' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "repriceUsd", null);
 __decorate([
     (0, common_1.Get)('pos-sync/:branchId'),
     (0, require_permissions_decorator_1.RequirePermissions)({ action: 'read', subject: 'Catalog' }),

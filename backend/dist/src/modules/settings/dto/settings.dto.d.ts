@@ -32,7 +32,7 @@ export declare class SkuBarcodeSettingsDto {
     nextSkuSequence?: number;
 }
 export declare class InvoicingSettingsDto {
-    defaultInvoiceType?: 'FACTURA_B' | 'FACTURA_A' | 'FACTURA_C';
+    defaultInvoiceType?: string;
     autoIssueOnSale?: boolean;
 }
 export declare class NotificationSettingsDto {
@@ -50,10 +50,9 @@ export declare class NotificationSettingsDto {
     smtpUser?: string;
     smtpPass?: string;
     smsGatewayUrl?: string;
-    openWaUrl?: string;
-    openWaSession?: string;
-    openWaOtpUrl?: string;
-    openWaOtpSession?: string;
+    evolutionApiUrl?: string;
+    evolutionApiKey?: string;
+    evolutionInstance?: string;
     fcmServerKey?: string;
 }
 export declare class IntegrationSettingsDto {
@@ -151,4 +150,21 @@ export declare class UpdateSettingsDto {
     storefront?: StorefrontSettingsDto;
     pwa?: PwaSettingsDto;
     qr?: QrSettingsDto;
+}
+export declare class TestSmtpDto {
+    smtpHost?: string;
+    smtpPort?: number;
+    smtpUser?: string;
+    smtpPass?: string;
+}
+export declare class TestSmsDto {
+    smsGatewayUrl?: string;
+}
+export declare class TestWhatsappDto {
+    evolutionApiUrl?: string;
+    evolutionApiKey?: string;
+    evolutionInstance?: string;
+}
+export declare class TestPushDto {
+    fcmServerKey?: string;
 }

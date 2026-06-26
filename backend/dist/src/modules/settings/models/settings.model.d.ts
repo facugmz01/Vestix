@@ -54,10 +54,9 @@ export interface SystemSettings {
         smtpUser?: string;
         smtpPass?: string;
         smsGatewayUrl?: string;
-        openWaUrl?: string;
-        openWaSession?: string;
-        openWaOtpUrl?: string;
-        openWaOtpSession?: string;
+        evolutionApiUrl?: string;
+        evolutionApiKey?: string;
+        evolutionInstance?: string;
     };
     integrations: {
         mercadopagoEnabled: boolean;

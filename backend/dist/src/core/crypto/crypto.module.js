@@ -6,21 +6,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SettingsModule = void 0;
+exports.CryptoModule = void 0;
 const common_1 = require("@nestjs/common");
-const settings_service_1 = require("./settings.service");
-const settings_controller_1 = require("./settings.controller");
-const crypto_module_1 = require("../../core/crypto/crypto.module");
-let SettingsModule = class SettingsModule {
+const encryption_service_1 = require("./encryption.service");
+let CryptoModule = class CryptoModule {
 };
-exports.SettingsModule = SettingsModule;
-exports.SettingsModule = SettingsModule = __decorate([
+exports.CryptoModule = CryptoModule;
+exports.CryptoModule = CryptoModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        imports: [crypto_module_1.CryptoModule],
-        controllers: [settings_controller_1.SettingsController],
-        providers: [settings_service_1.SettingsService],
-        exports: [settings_service_1.SettingsService],
+        providers: [encryption_service_1.EncryptionService],
+        exports: [encryption_service_1.EncryptionService],
     })
-], SettingsModule);
-//# sourceMappingURL=settings.module.js.map
+], CryptoModule);
+//# sourceMappingURL=crypto.module.js.map

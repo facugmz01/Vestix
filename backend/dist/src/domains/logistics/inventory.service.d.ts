@@ -1,7 +1,9 @@
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 export declare class InventoryService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly settingsService;
+    constructor(prisma: PrismaService, settingsService: SettingsService);
     recordMovement(data: {
         variantId: string;
         batchId?: string | null;
@@ -106,7 +108,7 @@ export declare class InventoryService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            sourceWarehouse: {
+            destinationWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;
@@ -117,7 +119,7 @@ export declare class InventoryService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-            destinationWarehouse: {
+            sourceWarehouse: {
                 id: string;
                 name: string;
                 code: string | null;

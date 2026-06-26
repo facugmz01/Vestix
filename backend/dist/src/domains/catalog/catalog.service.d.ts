@@ -1,10 +1,12 @@
 import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { PricingService } from './pricing.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 export declare class CatalogService {
     private readonly prisma;
     private readonly pricingService;
-    constructor(prisma: PrismaService, pricingService: PricingService);
+    private readonly settingsService;
+    constructor(prisma: PrismaService, pricingService: PricingService, settingsService: SettingsService);
     getPublicCatalog(filters: CatalogFilterDto): Promise<{
         metadata: {
             total: number;
@@ -40,5 +42,9 @@ export declare class CatalogService {
             name: string;
             basePrice: number;
         }[];
+    }>;
+    repriceUsd(usdType: 'Oficial' | 'Blue'): Promise<{
+        success: boolean;
+        updatedCount: number;
     }>;
 }

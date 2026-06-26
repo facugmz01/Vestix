@@ -1,12 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested, IsArray } from 'class-validator';
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested, IsArray, IsNotEmpty, IsUrl } from 'class-validator';
 
 export class GeneralSettingsDto {
-  @IsOptional()
+  @IsNotEmpty({ message: 'El nombre de la empresa es obligatorio' })
   @IsString()
   companyName?: string;
 
-  @IsOptional()
+  @IsNotEmpty({ message: 'El CUIT es obligatorio' })
   @IsString()
   taxId?: string;
 
@@ -400,4 +400,25 @@ export class UpdateSettingsDto {
   @ValidateNested()
   @Type(() => QrSettingsDto)
   qr?: QrSettingsDto;
+}
+
+export class TestSmtpDto {
+  @IsNotEmpty() @IsString() smtpHost?: string;
+  @IsNotEmpty() @IsNumber() smtpPort?: number;
+  @IsOptional() @IsString() smtpUser?: string;
+  @IsOptional() @IsString() smtpPass?: string;
+}
+
+export class TestSmsDto {
+  @IsNotEmpty() @IsUrl() smsGatewayUrl?: string;
+}
+
+export class TestWhatsappDto {
+  @IsNotEmpty() @IsUrl() evolutionApiUrl?: string;
+  @IsNotEmpty() @IsString() evolutionApiKey?: string;
+  @IsOptional() @IsString() evolutionInstance?: string;
+}
+
+export class TestPushDto {
+  @IsNotEmpty() @IsString() fcmServerKey?: string;
 }

@@ -1,4 +1,5 @@
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 export interface MercadoPagoPreferenceItem {
     id: string;
     title: string;
@@ -31,8 +32,9 @@ export interface MercadoPagoPreference {
 }
 export declare class MercadoPagoService {
     private readonly prisma;
+    private readonly settingsService;
     private readonly logger;
-    constructor(prisma: PrismaService);
+    constructor(prisma: PrismaService, settingsService: SettingsService);
     private getAccessToken;
     createPreference(dto: CreatePreferenceDto): Promise<{
         initPoint: string;

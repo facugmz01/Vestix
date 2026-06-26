@@ -4,31 +4,59 @@ import { SalesService } from './sales.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { MercadoPagoService } from './mercadopago.service';
 import { InventoryService } from '../logistics/inventory.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 export declare class StorefrontController {
     private readonly checkoutOrchestrator;
     private readonly salesService;
     private readonly prisma;
     private readonly mercadoPagoService;
     private readonly inventoryService;
+    private readonly settingsService;
     private readonly logger;
-    constructor(checkoutOrchestrator: CheckoutOrchestrator, salesService: SalesService, prisma: PrismaService, mercadoPagoService: MercadoPagoService, inventoryService: InventoryService);
+    constructor(checkoutOrchestrator: CheckoutOrchestrator, salesService: SalesService, prisma: PrismaService, mercadoPagoService: MercadoPagoService, inventoryService: InventoryService, settingsService: SettingsService);
     getManifest(): Promise<{
-        short_name: any;
-        name: any;
+        short_name: string;
+        name: string;
         description: string;
         icons: {
-            src: any;
+            src: string;
             type: string;
             sizes: string;
             purpose: string;
         }[];
         start_url: string;
         display: string;
-        background_color: any;
-        theme_color: any;
+        background_color: string;
+        theme_color: string;
         orientation: string;
     }>;
-    getSettings(): Promise<any>;
+    getSettings(): Promise<{
+        pwa: import("../../modules/settings/settings.service").PwaSettings;
+        paymentMethods: any[];
+        enabled: boolean;
+        primaryColor: string;
+        fontFamily: string;
+        showHeader: boolean;
+        showStoreName: boolean;
+        imagesCarousel: any[];
+        priceListToShow: string;
+        defaultSort: string;
+        hideOutOfStock: boolean;
+        hideBrandFilters: boolean;
+        transferCbu?: string;
+        acceptCash: boolean;
+        shippingInfo: string;
+        requireShippingData: string;
+        whatsapp: string;
+        instagramUrl: string;
+        facebookUrl: string;
+        tiktokUrl: string;
+        youtubeUrl: string;
+        xUrl: string;
+        subdomain?: string;
+        allowedPaymentMethods?: string[];
+        shippingMethods?: any[];
+    }>;
     checkout(dto: any, req: Request): Promise<{
         payment: {
             method: string;

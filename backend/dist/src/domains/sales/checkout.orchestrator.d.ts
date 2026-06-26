@@ -3,6 +3,7 @@ import { PricingService } from '../catalog/pricing.service';
 import { RulesEngineService } from '../catalog/rules-engine.service';
 import { AfipProducer } from '../invoicing/afip.producer';
 import { InventoryService } from '../logistics/inventory.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 export declare class CheckoutOrchestrator {
     private readonly prisma;
@@ -10,7 +11,8 @@ export declare class CheckoutOrchestrator {
     private readonly rulesEngine;
     private readonly afipProducer;
     private readonly inventoryService;
-    constructor(prisma: PrismaService, pricingService: PricingService, rulesEngine: RulesEngineService, afipProducer: AfipProducer, inventoryService: InventoryService);
+    private readonly settingsService;
+    constructor(prisma: PrismaService, pricingService: PricingService, rulesEngine: RulesEngineService, afipProducer: AfipProducer, inventoryService: InventoryService, settingsService: SettingsService);
     processCheckout(dto: CreateOrderDto, cashierUserId?: string): Promise<{
         status: string;
         order: {

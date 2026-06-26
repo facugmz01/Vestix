@@ -13,10 +13,12 @@ exports.CatalogService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
 const pricing_service_1 = require("./pricing.service");
+const settings_service_1 = require("../../modules/settings/settings.service");
 let CatalogService = class CatalogService {
-    constructor(prisma, pricingService) {
+    constructor(prisma, pricingService, settingsService) {
         this.prisma = prisma;
         this.pricingService = pricingService;
+        this.settingsService = settingsService;
     }
     async getPublicCatalog(filters) {
         const where = { isActive: true, isPublished: true };
@@ -24,8 +26,7 @@ let CatalogService = class CatalogService {
             where.categoryId = filters.categoryId;
         if (filters.searchQuery)
             where.name = { contains: filters.searchQuery, mode: 'insensitive' };
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const storefrontSettings = settings?.storefront || {};
+        const storefrontSettings = await this.settingsService.getStorefrontSettings();
         const priceListId = storefrontSettings.priceListToShow;
         const products = await this.prisma.product.findMany({
             where,
@@ -91,8 +92,7 @@ let CatalogService = class CatalogService {
         });
         if (!product)
             throw new Error('Product not found');
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const storefrontSettings = settings?.storefront || {};
+        const storefrontSettings = await this.settingsService.getStorefrontSettings();
         const priceListId = storefrontSettings.priceListToShow;
         const primaryVariant = product.variants[0];
         const basePrice = primaryVariant ? primaryVariant.basePrice : 0;
@@ -130,11 +130,15 @@ let CatalogService = class CatalogService {
             ]
         };
     }
+    async repriceUsd(usdType) {
+        return this.settingsService.repriceUsd(usdType);
+    }
 };
 exports.CatalogService = CatalogService;
 exports.CatalogService = CatalogService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        pricing_service_1.PricingService])
+        pricing_service_1.PricingService,
+        settings_service_1.SettingsService])
 ], CatalogService);
 //# sourceMappingURL=catalog.service.js.map

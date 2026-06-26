@@ -1,67 +1,32 @@
 import { SettingsService } from './settings.service';
-import { UpdateSettingsDto } from './dto/settings.dto';
+import { UpdateSettingsDto, TestSmtpDto, TestSmsDto, TestWhatsappDto, TestPushDto } from './dto/settings.dto';
 export declare class SettingsController {
     private readonly settingsService;
     constructor(settingsService: SettingsService);
-    getSettings(): Promise<{
-        id: string;
-        general: import(".prisma/client").Prisma.JsonValue;
-        pricing: import(".prisma/client").Prisma.JsonValue;
-        skuBarcode: import(".prisma/client").Prisma.JsonValue;
-        invoicing: import(".prisma/client").Prisma.JsonValue;
-        notifications: import(".prisma/client").Prisma.JsonValue;
-        integrations: import(".prisma/client").Prisma.JsonValue;
-        offline: import(".prisma/client").Prisma.JsonValue;
-        pos: import(".prisma/client").Prisma.JsonValue;
-        arca: import(".prisma/client").Prisma.JsonValue;
-        storefront: import(".prisma/client").Prisma.JsonValue;
-        pwa: import(".prisma/client").Prisma.JsonValue;
-        qr: import(".prisma/client").Prisma.JsonValue;
-        updatedAt: Date;
-    }>;
-    updateAllSettings(dto: UpdateSettingsDto, req: any): Promise<{
-        id: string;
-        general: import(".prisma/client").Prisma.JsonValue;
-        pricing: import(".prisma/client").Prisma.JsonValue;
-        skuBarcode: import(".prisma/client").Prisma.JsonValue;
-        invoicing: import(".prisma/client").Prisma.JsonValue;
-        notifications: import(".prisma/client").Prisma.JsonValue;
-        integrations: import(".prisma/client").Prisma.JsonValue;
-        offline: import(".prisma/client").Prisma.JsonValue;
-        pos: import(".prisma/client").Prisma.JsonValue;
-        arca: import(".prisma/client").Prisma.JsonValue;
-        storefront: import(".prisma/client").Prisma.JsonValue;
-        pwa: import(".prisma/client").Prisma.JsonValue;
-        qr: import(".prisma/client").Prisma.JsonValue;
-        updatedAt: Date;
-    }>;
+    getSettings(): Promise<any>;
+    patchSection(section: string, body: Record<string, any>, req: any): Promise<any>;
+    updateAllSettings(dto: UpdateSettingsDto, req: any): Promise<any>;
     testAfipConnection(): Promise<{
         success: boolean;
         message: string;
     }>;
-    testSmtpConnection(dto: any): Promise<{
+    testSmtpConnection(dto: TestSmtpDto): Promise<{
         success: boolean;
         message: string;
     }>;
-    testSmsConnection(dto: any): Promise<{
+    testSmsConnection(dto: TestSmsDto): Promise<{
         success: boolean;
         message: string;
     }>;
-    testWhatsappConnection(dto: any): Promise<{
+    testWhatsappConnection(dto: TestWhatsappDto): Promise<{
         success: boolean;
         message: string;
     }>;
-    testPushConnection(dto: any): Promise<{
+    testPushConnection(dto: TestPushDto): Promise<{
         success: boolean;
         message: string;
     }>;
     uploadLogo(file: Express.Multer.File, req: any): Promise<{
         logoUrl: string;
-    }>;
-    repriceUsd(dto: {
-        type: 'Oficial' | 'Blue';
-    }): Promise<{
-        success: boolean;
-        updatedCount: number;
     }>;
 }

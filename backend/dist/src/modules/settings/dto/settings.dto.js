@@ -9,19 +9,19 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateSettingsDto = exports.QrSettingsDto = exports.PwaSettingsDto = exports.StorefrontSettingsDto = exports.ArcaSettingsDto = exports.PosSettingsDto = exports.OfflineSettingsDto = exports.IntegrationSettingsDto = exports.NotificationSettingsDto = exports.InvoicingSettingsDto = exports.SkuBarcodeSettingsDto = exports.PricingSettingsDto = exports.GeneralSettingsDto = void 0;
+exports.TestPushDto = exports.TestWhatsappDto = exports.TestSmsDto = exports.TestSmtpDto = exports.UpdateSettingsDto = exports.QrSettingsDto = exports.PwaSettingsDto = exports.StorefrontSettingsDto = exports.ArcaSettingsDto = exports.PosSettingsDto = exports.OfflineSettingsDto = exports.IntegrationSettingsDto = exports.NotificationSettingsDto = exports.InvoicingSettingsDto = exports.SkuBarcodeSettingsDto = exports.PricingSettingsDto = exports.GeneralSettingsDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 class GeneralSettingsDto {
 }
 exports.GeneralSettingsDto = GeneralSettingsDto;
 __decorate([
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'El nombre de la empresa es obligatorio' }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], GeneralSettingsDto.prototype, "companyName", void 0);
 __decorate([
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'El CUIT es obligatorio' }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], GeneralSettingsDto.prototype, "taxId", void 0);
@@ -57,7 +57,7 @@ __decorate([
 ], GeneralSettingsDto.prototype, "phone", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], GeneralSettingsDto.prototype, "email", void 0);
 __decorate([
@@ -167,7 +167,7 @@ class InvoicingSettingsDto {
 exports.InvoicingSettingsDto = InvoicingSettingsDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsIn)(['FACTURA_B', 'FACTURA_A', 'FACTURA_C']),
+    (0, class_validator_1.IsIn)(['FACTURA_B', 'FACTURA_A', 'FACTURA_C', 'EXENTO']),
     __metadata("design:type", String)
 ], InvoicingSettingsDto.prototype, "defaultInvoiceType", void 0);
 __decorate([
@@ -252,22 +252,17 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], NotificationSettingsDto.prototype, "openWaUrl", void 0);
+], NotificationSettingsDto.prototype, "evolutionApiUrl", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], NotificationSettingsDto.prototype, "openWaSession", void 0);
+], NotificationSettingsDto.prototype, "evolutionApiKey", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], NotificationSettingsDto.prototype, "openWaOtpUrl", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], NotificationSettingsDto.prototype, "openWaOtpSession", void 0);
+], NotificationSettingsDto.prototype, "evolutionInstance", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
@@ -709,4 +704,61 @@ __decorate([
     (0, class_transformer_1.Type)(() => QrSettingsDto),
     __metadata("design:type", QrSettingsDto)
 ], UpdateSettingsDto.prototype, "qr", void 0);
+class TestSmtpDto {
+}
+exports.TestSmtpDto = TestSmtpDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], TestSmtpDto.prototype, "smtpHost", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], TestSmtpDto.prototype, "smtpPort", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], TestSmtpDto.prototype, "smtpUser", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], TestSmtpDto.prototype, "smtpPass", void 0);
+class TestSmsDto {
+}
+exports.TestSmsDto = TestSmsDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsUrl)(),
+    __metadata("design:type", String)
+], TestSmsDto.prototype, "smsGatewayUrl", void 0);
+class TestWhatsappDto {
+}
+exports.TestWhatsappDto = TestWhatsappDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsUrl)(),
+    __metadata("design:type", String)
+], TestWhatsappDto.prototype, "evolutionApiUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], TestWhatsappDto.prototype, "evolutionApiKey", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], TestWhatsappDto.prototype, "evolutionInstance", void 0);
+class TestPushDto {
+}
+exports.TestPushDto = TestPushDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], TestPushDto.prototype, "fcmServerKey", void 0);
 //# sourceMappingURL=settings.dto.js.map

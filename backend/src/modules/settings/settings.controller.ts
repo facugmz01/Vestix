@@ -10,7 +10,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { SettingsService } from './settings.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
-import { UpdateSettingsDto } from './dto/settings.dto';
+import { UpdateSettingsDto, TestSmtpDto, TestSmsDto, TestWhatsappDto, TestPushDto } from './dto/settings.dto';
 
 // Valid section keys — prevents arbitrary key injection
 const VALID_SECTIONS = new Set([
@@ -68,25 +68,25 @@ export class SettingsController {
 
   @Post('notifications/test-smtp')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  async testSmtpConnection(@Body() dto: any) {
+  async testSmtpConnection(@Body() dto: TestSmtpDto) {
     return this.settingsService.testSmtpConnection(dto);
   }
 
   @Post('notifications/test-sms')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  async testSmsConnection(@Body() dto: any) {
+  async testSmsConnection(@Body() dto: TestSmsDto) {
     return this.settingsService.testSmsConnection(dto);
   }
 
   @Post('notifications/test-whatsapp')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  async testWhatsappConnection(@Body() dto: any) {
+  async testWhatsappConnection(@Body() dto: TestWhatsappDto) {
     return this.settingsService.testWhatsappConnection(dto);
   }
 
   @Post('notifications/test-push')
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  async testPushConnection(@Body() dto: any) {
+  async testPushConnection(@Body() dto: TestPushDto) {
     return this.settingsService.testPushConnection(dto);
   }
 

@@ -16,15 +16,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WhatsAppOpenWaService = void 0;
 const common_1 = require("@nestjs/common");
 const axios_1 = __importDefault(require("axios"));
-const prisma_service_1 = require("../../../core/prisma/prisma.service");
+const settings_service_1 = require("../../../modules/settings/settings.service");
 let WhatsAppOpenWaService = WhatsAppOpenWaService_1 = class WhatsAppOpenWaService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(settingsService) {
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(WhatsAppOpenWaService_1.name);
     }
     async sendText(phone, message, isOtp = false) {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const notificationsConfig = settings?.notifications || {};
+        const notificationsConfig = (await this.settingsService.getNotificationSettings());
         const openWaUrl = isOtp ? (notificationsConfig.openWaOtpUrl || notificationsConfig.openWaUrl) : notificationsConfig.openWaUrl;
         const session = isOtp ? (notificationsConfig.openWaOtpSession || notificationsConfig.openWaSession || 'default') : (notificationsConfig.openWaSession || 'default');
         if (!openWaUrl) {
@@ -47,8 +46,7 @@ let WhatsAppOpenWaService = WhatsAppOpenWaService_1 = class WhatsAppOpenWaServic
         }
     }
     async getStatus() {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const notificationsConfig = settings?.notifications || {};
+        const notificationsConfig = (await this.settingsService.getNotificationSettings());
         const openWaUrl = notificationsConfig.openWaUrl;
         if (!openWaUrl) {
             return { isReady: false, qrCode: null };
@@ -67,6 +65,6 @@ let WhatsAppOpenWaService = WhatsAppOpenWaService_1 = class WhatsAppOpenWaServic
 exports.WhatsAppOpenWaService = WhatsAppOpenWaService;
 exports.WhatsAppOpenWaService = WhatsAppOpenWaService = WhatsAppOpenWaService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [settings_service_1.SettingsService])
 ], WhatsAppOpenWaService);
 //# sourceMappingURL=whatsapp-openwa.service.js.map

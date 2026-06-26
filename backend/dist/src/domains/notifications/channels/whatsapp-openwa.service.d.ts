@@ -1,8 +1,8 @@
-import { PrismaService } from '../../../core/prisma/prisma.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 export declare class WhatsAppOpenWaService {
-    private readonly prisma;
+    private readonly settingsService;
     private readonly logger;
-    constructor(prisma: PrismaService);
+    constructor(settingsService: SettingsService);
     sendText(phone: string, message: string, isOtp?: boolean): Promise<{
         success: boolean;
         error: string;

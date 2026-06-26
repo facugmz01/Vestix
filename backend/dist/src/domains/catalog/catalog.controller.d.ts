@@ -29,6 +29,12 @@ export declare class CatalogController {
             stock: number;
         }[];
     }>;
+    repriceUsd(dto: {
+        type: 'Oficial' | 'Blue';
+    }): Promise<{
+        success: boolean;
+        updatedCount: number;
+    }>;
     getPosSyncCatalog(branchId: string): Promise<{
         status: string;
         timestamp: string;

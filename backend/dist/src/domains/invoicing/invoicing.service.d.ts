@@ -1,10 +1,12 @@
 import { InvoiceType } from './models/invoice.model';
 import { AfipService } from './afip.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 export declare class InvoicingService {
     private readonly afipService;
     private readonly prisma;
-    constructor(afipService: AfipService, prisma: PrismaService);
+    private readonly settingsService;
+    constructor(afipService: AfipService, prisma: PrismaService, settingsService: SettingsService);
     generateInvoice(payload: {
         orderId: string;
         type: InvoiceType;

@@ -12,9 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InventoryService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const settings_service_1 = require("../../modules/settings/settings.service");
 let InventoryService = class InventoryService {
-    constructor(prisma) {
+    constructor(prisma, settingsService) {
         this.prisma = prisma;
+        this.settingsService = settingsService;
     }
     async recordMovement(data, tx) {
         if (data.quantity <= 0) {
@@ -75,8 +77,7 @@ let InventoryService = class InventoryService {
             };
         }
         if (quantityChange < 0 && type !== 'CONSUME_RESERVATION') {
-            const settings = await tx.systemSettings.findUnique({ where: { id: 'default' } });
-            const posSettings = settings?.pos || {};
+            const posSettings = await this.settingsService.getPosSettings();
             if (!posSettings.allowNegativeStock) {
                 const stock = await tx.stockLevel.findFirst({
                     where: { variantId, warehouseId, batchId: batchId || null }
@@ -107,8 +108,7 @@ let InventoryService = class InventoryService {
             where: { variantId, warehouseId },
             orderBy: { availableQuantity: 'desc' }
         });
-        const settings = await prismaClient.systemSettings.findUnique({ where: { id: 'default' } });
-        const posSettings = settings?.pos || {};
+        const posSettings = await this.settingsService.getPosSettings();
         if (!posSettings.allowNegativeStock) {
             if (!stock || stock.availableQuantity < quantity) {
                 throw new common_1.BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
@@ -353,6 +353,7 @@ let InventoryService = class InventoryService {
 exports.InventoryService = InventoryService;
 exports.InventoryService = InventoryService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        settings_service_1.SettingsService])
 ], InventoryService);
 //# sourceMappingURL=inventory.service.js.map

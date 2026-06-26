@@ -157,4 +157,8 @@ export class CatalogService {
       ]
     };
   }
+
+  async repriceUsd(usdType: 'Oficial' | 'Blue') {
+    return this.settingsService.repriceUsd(usdType);
+  }
 }

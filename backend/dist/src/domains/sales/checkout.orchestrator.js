@@ -49,14 +49,16 @@ const pricing_service_1 = require("../catalog/pricing.service");
 const rules_engine_service_1 = require("../catalog/rules-engine.service");
 const afip_producer_1 = require("../invoicing/afip.producer");
 const inventory_service_1 = require("../logistics/inventory.service");
+const settings_service_1 = require("../../modules/settings/settings.service");
 const crypto = __importStar(require("crypto"));
 let CheckoutOrchestrator = class CheckoutOrchestrator {
-    constructor(prisma, pricingService, rulesEngine, afipProducer, inventoryService) {
+    constructor(prisma, pricingService, rulesEngine, afipProducer, inventoryService, settingsService) {
         this.prisma = prisma;
         this.pricingService = pricingService;
         this.rulesEngine = rulesEngine;
         this.afipProducer = afipProducer;
         this.inventoryService = inventoryService;
+        this.settingsService = settingsService;
     }
     async processCheckout(dto, cashierUserId) {
         const existingOrder = await this.prisma.saleOrder.findUnique({
@@ -74,15 +76,14 @@ let CheckoutOrchestrator = class CheckoutOrchestrator {
             if (!shift || shift.status !== 'OPEN') {
                 throw new common_1.BadRequestException('El turno de caja provisto no es válido o ya fue cerrado.');
             }
-            const posSettings = (await this.prisma.systemSettings.findUnique({ where: { id: 'default' } }))?.pos || {};
+            const posSettings = await this.settingsService.getPosSettings();
             if (posSettings.boxMode === 'STRICT') {
                 if (!cashierUserId || shift.openedByUserId !== cashierUserId) {
                     throw new common_1.BadRequestException('El modo de caja es ESTRICTO. Solo el usuario que abrió el turno puede registrar ventas.');
                 }
             }
         }
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const pricingSettings = settings?.pricing || {};
+        const pricingSettings = await this.settingsService.getPricingSettings();
         const evaluatedLines = [];
         for (const lineDto of dto.lines) {
             const variant = await this.prisma.productVariant.findUnique({ where: { id: lineDto.variantId } });
@@ -328,6 +329,7 @@ exports.CheckoutOrchestrator = CheckoutOrchestrator = __decorate([
         pricing_service_1.PricingService,
         rules_engine_service_1.RulesEngineService,
         afip_producer_1.AfipProducer,
-        inventory_service_1.InventoryService])
+        inventory_service_1.InventoryService,
+        settings_service_1.SettingsService])
 ], CheckoutOrchestrator);
 //# sourceMappingURL=checkout.orchestrator.js.map

@@ -16,15 +16,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SmsGatewayService = void 0;
 const common_1 = require("@nestjs/common");
 const axios_1 = __importDefault(require("axios"));
-const prisma_service_1 = require("../../../core/prisma/prisma.service");
+const settings_service_1 = require("../../../modules/settings/settings.service");
 let SmsGatewayService = SmsGatewayService_1 = class SmsGatewayService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(settingsService) {
+        this.settingsService = settingsService;
         this.logger = new common_1.Logger(SmsGatewayService_1.name);
     }
     async sendSms(phone, message) {
-        const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
-        const notificationsConfig = settings?.notifications || {};
+        const notificationsConfig = await this.settingsService.getNotificationSettings();
         const url = notificationsConfig.smsGatewayUrl;
         if (!url) {
             this.logger.warn(`[SMS Gateway] Cannot send SMS to +${phone}. No URL configured.`);
@@ -48,6 +47,6 @@ let SmsGatewayService = SmsGatewayService_1 = class SmsGatewayService {
 exports.SmsGatewayService = SmsGatewayService;
 exports.SmsGatewayService = SmsGatewayService = SmsGatewayService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [settings_service_1.SettingsService])
 ], SmsGatewayService);
 //# sourceMappingURL=sms-gateway.service.js.map
