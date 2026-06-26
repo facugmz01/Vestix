@@ -22,11 +22,11 @@ let SalesReportService = SalesReportService_1 = class SalesReportService {
             totalDiscounts: 9500,
             netRevenue: 118500,
             averageOrderValue: 376.47,
-            byPaymentMethod: {
-                CASH: 52000,
-                CREDIT_CARD: 47000,
-                CUSTOMER_CREDIT: 19500,
-            },
+            byPaymentMethod: [
+                { method: 'CASH', count: 120, amount: 52000 },
+                { method: 'CREDIT_CARD', count: 90, amount: 47000 },
+                { method: 'CUSTOMER_CREDIT', count: 35, amount: 19500 },
+            ],
             byChannel: {
                 POS: 89000,
                 ECOMMERCE: 39000,

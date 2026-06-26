@@ -13,7 +13,11 @@ export interface SalesSummaryReport {
     totalDiscounts: number;
     netRevenue: number;
     averageOrderValue: number;
-    byPaymentMethod: Record<string, number>;
+    byPaymentMethod: {
+        method: string;
+        count: number;
+        amount: number;
+    }[];
     byChannel: Record<string, number>;
 }
 export interface TopSellingVariant {

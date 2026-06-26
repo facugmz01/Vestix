@@ -13,7 +13,7 @@ export interface SalesSummaryReport {
   totalDiscounts: number;
   netRevenue: number;
   averageOrderValue: number;
-  byPaymentMethod: Record<string, number>; // e.g., { CASH: 5000, CREDIT_CARD: 8000 }
+  byPaymentMethod: { method: string; count: number; amount: number }[];
   byChannel: Record<string, number>;       // e.g., { POS: 9000, ECOMMERCE: 4000 }
 }
 
