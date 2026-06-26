@@ -9,7 +9,6 @@ import {
   VariantsController,
   AttributesController,
   PriceListController,
-  PublicCatalogController,
   PricingLegacyController,
 } from './controllers/catalog.controller';
 import { PricingService } from './pricing.service';
@@ -33,7 +32,6 @@ import { IdentifiersController } from './identifiers.controller';
     PromotionsController,
     CatalogController,
     IdentifiersController,
-    PublicCatalogController,
     PricingLegacyController,
   ],
   providers: [

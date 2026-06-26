@@ -52,13 +52,7 @@ export default function OnlineCatalogPage() {
 
   const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(val);
 
-  const sorted = [...products].sort((a, b) => {
-    const priceA = a.lowestPrice || a.price || a.basePrice || 0;
-    const priceB = b.lowestPrice || b.price || b.basePrice || 0;
-    if (sortBy === 'PRICE_ASC') return priceA - priceB;
-    if (sortBy === 'PRICE_DESC') return priceB - priceA;
-    return 0;
-  });
+  const sorted = products;
 
   const clearFilters = () => {
     setSearch('');
