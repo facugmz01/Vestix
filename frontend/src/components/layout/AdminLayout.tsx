@@ -6,14 +6,14 @@ import styles from './AdminLayout.module.css';
 
 export function AdminLayout() {
   return (
-    <div className={styles.shell}>
-      {/* Desktop sidebar */}
-      <div className={styles.sidebarWrapper}>
+    <div className="spatial-workspace">
+      {/* Desktop Dock (formerly sidebar) */}
+      <div className={styles.dockWrapper}>
         <Sidebar />
       </div>
 
-      {/* Main content area */}
-      <div className={styles.main}>
+      {/* Main content canvas */}
+      <div className={styles.canvas}>
         <TopBar />
         <main className={styles.content}>
           <Outlet />

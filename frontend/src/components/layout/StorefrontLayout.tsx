@@ -24,25 +24,23 @@ export function StorefrontLayout() {
   }
 
   return (
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <div className={styles.inner}>
-          <Link to="/store" className={styles.brand}>
-            <div className={styles.logoMark} aria-hidden />
-            <span className={styles.brandName}>{storeName}</span>
+    <div className="spatial-workspace" style={{ flexDirection: 'column' }}>
+      <header className={styles.headerIsland}>
+        <Link to="/store" className={styles.brand}>
+          <div className={styles.logoMark} aria-hidden />
+          <span className={styles.brandName}>{storeName}</span>
+        </Link>
+        <nav className={styles.nav} aria-label="Categorías">
+          <Link to="/store" className={styles.navLink}>Catálogo</Link>
+        </nav>
+        <div className={styles.actions}>
+          <Link to="/store/cart" className={styles.iconBtn} aria-label="Carrito">
+            <ShoppingBag size={18} />
           </Link>
-          <nav className={styles.nav} aria-label="Categorías">
-            <Link to="/store" className={styles.navLink}>Catálogo</Link>
-          </nav>
-          <div className={styles.actions}>
-            <Link to="/store/cart" className={styles.iconBtn} aria-label="Carrito">
-              <ShoppingBag size={18} />
-            </Link>
-          </div>
         </div>
       </header>
 
-      <main className={styles.main}>
+      <main className={styles.canvas}>
         <Outlet context={{ settings }} />
       </main>
 

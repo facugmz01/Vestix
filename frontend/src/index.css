@@ -55,7 +55,7 @@
 
   /* Efecto Glass Global */
   --backdrop-blur: blur(40px) saturate(150%);
-  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -70,6 +70,38 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* We handle scrolling inside the workspace */
+}
+
+/* Ambient background orbs */
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  animation: floatOrb 15s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.orb-1 { width: 400px; height: 400px; background: rgba(99, 102, 241, 0.15); top: 10%; left: 20%; }
+.orb-2 { width: 500px; height: 500px; background: rgba(236, 72, 153, 0.1); bottom: -10%; right: 10%; animation-delay: -5s; }
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(30px, -50px); }
+}
+
+/* ─── RADICAL SPATIAL UI STRUCTURE ─── */
+.spatial-workspace {
+  position: relative;
+  z-index: 10;
+  width: 95vw;
+  height: 94vh;
+  max-width: 1600px;
+  display: flex;
+  gap: 24px;
 }
 
 /* ─── TYPOGRAPHY GLOBALS ─── */

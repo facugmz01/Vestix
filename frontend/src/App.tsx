@@ -87,6 +87,10 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      {/* Ambient background orbs for Apple Vision glassmorphism effect */}
+      <div className="bg-orb orb-1"></div>
+      <div className="bg-orb orb-2"></div>
+
       <OfflineStatusBar />
       <Suspense fallback={<PageSpinner />}>
         <Routes>

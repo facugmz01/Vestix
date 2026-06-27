@@ -1,21 +1,84 @@
 .topbar {
-  height: 56px; display: flex; align-items: center;
+  height: 72px; display: flex; align-items: center; justify-content: space-between;
   padding: 0 32px;
-  border-bottom: 1px solid var(--border);
   background: var(--bg-sidebar);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border);
+  border-top: 1px solid var(--border-strong);
+  border-left: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
   position: sticky; top: 0; z-index: 10;
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  gap: 24px;
 }
 .breadcrumbs { flex: 1; }
 .crumbList { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
 .crumb { display: flex; align-items: center; gap: 4px; }
 .homeIcon { color: var(--text-muted); }
 .crumbLink {
-  font-size: 13px; color: var(--text-secondary); text-decoration: none;
-  transition: color .15s;
+  font-size: 14px; color: var(--text-secondary); text-decoration: none;
+  transition: var(--transition);
 }
 .crumbLink:hover { color: var(--accent); }
-.crumbCurrent { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.crumbCurrent { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .sep { color: var(--text-muted); }
+
+/* Search Bar */
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  width: 320px;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+.searchBar:focus-within {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--accent-subtle);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+.searchBar input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.searchBar input::placeholder { color: var(--text-muted); }
+
+/* User Profile */
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px 6px 6px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+.userProfile:hover { background: rgba(255, 255, 255, 0.5); }
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 14px;
+}
+.userName { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+.logoutBtn {
+  background: transparent; border: none;
+  color: var(--text-muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px; border-radius: 50%;
+  transition: var(--transition);
+}
+.logoutBtn:hover { color: var(--red); background: var(--red-bg); }

@@ -1,8 +1,27 @@
-.shell  { min-height:100dvh; display:flex; flex-direction:column; background:var(--bg-base); }
-.header {
-  position:sticky; top:0; z-index:50;
-  background:rgba(13,15,20,.85); backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);
+/* Removed .shell because it's replaced by global .spatial-workspace */
+.headerIsland {
+  height: 72px;
+  background: var(--bg-surface);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border);
+  border-top: 1px solid var(--border-strong);
+  border-left: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  margin-top: 12px;
+}
+
+.canvas {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
 }
 .inner  {
   max-width:1200px; margin:0 auto; padding:0 24px;

@@ -16,21 +16,16 @@ export function Sidebar() {
   const handleLogout = () => { authApi.logout(); clearAuth(); };
 
   return (
-    <aside className={styles.sidebar} aria-label="Navegación principal">
-      {/* Brand */}
-      <div className={styles.brand}>
-        <div className={styles.logoMark} aria-hidden />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className={styles.logoText}>{APP_CONFIG.appName}</span>
-          <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600, marginTop: '-2px' }}>v{APP_CONFIG.appVersion}</span>
-        </div>
+    <aside className={styles.dock} aria-label="Navegación principal">
+      {/* Brand Logo only */}
+      <div className={styles.dockLogo} aria-hidden>
+        {APP_CONFIG.appName.charAt(0)}
       </div>
 
-      {/* Permission-filtered grouped navigation */}
+      {/* Navigation */}
       <nav className={styles.nav}>
         {groups.map((group) => (
           <div key={group.id} className={styles.group}>
-            <span className={styles.groupLabel}>{group.label}</span>
             {group.items.map((item) => {
               const Icon = item.icon;
               return (
@@ -39,37 +34,18 @@ export function Sidebar() {
                   to={item.to}
                   end={item.end}
                   className={({ isActive }) =>
-                    `${styles.navItem} ${isActive ? styles.active : ''}`
+                    `${styles.dockItem} ${isActive ? styles.active : ''}`
                   }
+                  title={item.label}
                   aria-label={item.label}
                 >
-                  <Icon size={17} className={styles.navIcon} aria-hidden />
-                  <span className={styles.navLabel}>{item.label}</span>
+                  <Icon size={20} className={styles.navIcon} aria-hidden />
                 </NavLink>
               );
             })}
           </div>
         ))}
       </nav>
-
-      {/* User block */}
-      <div className={styles.user}>
-        <div className={styles.avatar} aria-hidden>
-          {user?.fullName?.[0]?.toUpperCase() ?? 'U'}
-        </div>
-        <div className={styles.userInfo}>
-          <span className={styles.userName}>{user?.fullName ?? 'Usuario'}</span>
-          <span className={styles.userRole}>{roleLabel}</span>
-        </div>
-        <button
-          className={styles.logoutBtn}
-          onClick={handleLogout}
-          title="Cerrar sesión"
-          aria-label="Cerrar sesión"
-        >
-          <LogOut size={15} />
-        </button>
-      </div>
     </aside>
   );
 }
