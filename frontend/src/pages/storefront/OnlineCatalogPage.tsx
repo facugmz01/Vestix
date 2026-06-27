@@ -353,7 +353,7 @@ export default function OnlineCatalogPage() {
                     }}>
                       {hasImage ? (
                         <img 
-                          src={p.images[0]} 
+                          src={p.images![0]} 
                           alt={p.name} 
                           style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
                           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
@@ -416,7 +416,7 @@ export default function OnlineCatalogPage() {
 
                       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
                         <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                          {fmtCurrency(p.lowestPrice || p.basePrice || p.price || 0)}
+                          {fmtCurrency(p.price || p.basePrice || 0)}
                         </span>
                         
                         {isMobile && (
