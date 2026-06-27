@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -5,7 +6,7 @@ import toast from 'react-hot-toast';
 import { Drawer, Button, Input } from '@/components/ui';
 import { notificationsApi, type CreateTemplateDto } from '@/api/notifications.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { NotificationTemplate, NotificationChannel, NotificationEvent } from '@/types';
+import type { NotificationTemplate, NotificationChannel } from '@/types';
 
 interface Props {
   open: boolean;
@@ -13,19 +14,24 @@ interface Props {
   template?: NotificationTemplate | null;
 }
 
-const EVENTS: { value: NotificationEvent; label: string }[] = [
-  { value: 'SALE_CONFIRMED', label: 'Venta Confirmada' },
-  { value: 'PURCHASE_ORDER_ISSUED', label: 'Orden de Compra Emitida' },
-  { value: 'GOODS_RECEIPT_RECEIVED', label: 'Recepción de Mercadería' },
-  { value: 'LOW_STOCK_ALERT', label: 'Alerta de Stock Bajo' },
-  { value: 'TRANSFER_DISPATCHED', label: 'Transferencia Despachada' },
-  { value: 'TRANSFER_RECEIVED', label: 'Transferencia Recibida' },
-  { value: 'INVOICE_ISSUED', label: 'Factura Emitida' },
-  { value: 'PAYMENT_RECEIVED', label: 'Pago Registrado' },
-  { value: 'RETURN_APPROVED', label: 'Devolución Aprobada' },
-  { value: 'OVERDUE_CURRENT_ACCOUNT', label: 'Cuenta Corriente Vencida' },
-  { value: 'MANUAL_CURRENT_ACCOUNT_STATEMENT', label: 'Envío Manual: Cta. Cte.' },
-  { value: 'MANUAL_SALE_RECEIPT', label: 'Envío Manual: Venta' },
+const EVENTS: { value: string; label: string }[] = [
+  { value: 'SALE_CONFIRMED',                  label: 'Venta Confirmada' },
+  { value: 'ORDER_SHIPPED',                   label: 'Pedido Enviado' },
+  { value: 'ORDER_DELIVERED',                 label: 'Pedido Entregado' },
+  { value: 'PAYMENT_RECEIVED',                label: 'Pago Registrado' },
+  { value: 'PURCHASE_ORDER_ISSUED',           label: 'Orden de Compra Emitida' },
+  { value: 'GOODS_RECEIPT_RECEIVED',          label: 'Recepción de Mercadería' },
+  { value: 'LOW_STOCK_ALERT',                 label: 'Alerta de Stock Bajo' },
+  { value: 'SHIFT_CLOSING_DISCREPANCY',       label: 'Diferencia de Caja' },
+  { value: 'TRANSFER_DISPATCHED',             label: 'Transferencia Despachada' },
+  { value: 'TRANSFER_RECEIVED',               label: 'Transferencia Recibida' },
+  { value: 'INVOICE_ISSUED',                  label: 'Factura Emitida' },
+  { value: 'RETURN_APPROVED',                 label: 'Devolución Aprobada' },
+  { value: 'OVERDUE_CURRENT_ACCOUNT',         label: 'Cuenta Corriente Vencida' },
+  { value: 'MANUAL_CURRENT_ACCOUNT_STATEMENT',label: 'Envío Manual: Cta. Cte.' },
+  { value: 'MANUAL_SALE_RECEIPT',             label: 'Envío Manual: Venta' },
+  { value: 'WELCOME_CUSTOMER',                label: 'Bienvenida Cliente' },
+  { value: 'OTP_CODE',                        label: 'Código OTP' },
 ];
 
 const CHANNELS: { value: NotificationChannel; label: string }[] = [
@@ -44,16 +50,28 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
   const queryClient = useQueryClient();
   const isEdit = !!template;
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CreateTemplateDto>({
+  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<CreateTemplateDto>({
     defaultValues: {
-      name: template?.name ?? '',
-      event: template?.event ?? 'SALE_CONFIRMED',
-      channel: template?.channel ?? 'EMAIL',
-      subject: template?.subject ?? '',
-      body: template?.body ?? '',
+      name:     template?.name     ?? '',
+      event:    template?.event    ?? 'SALE_CONFIRMED',
+      channel:  template?.channel  ?? 'EMAIL',
+      subject:  template?.subject  ?? '',
+      body:     template?.body     ?? '',
       isActive: template?.isActive ?? true,
     }
   });
+
+  // Reset form values whenever the template prop changes (open in edit / switch between templates)
+  useEffect(() => {
+    reset({
+      name:     template?.name     ?? '',
+      event:    template?.event    ?? 'SALE_CONFIRMED',
+      channel:  template?.channel  ?? 'EMAIL',
+      subject:  template?.subject  ?? '',
+      body:     template?.body     ?? '',
+      isActive: template?.isActive ?? true,
+    });
+  }, [template, reset]);
 
   const watchedChannel = watch('channel');
 

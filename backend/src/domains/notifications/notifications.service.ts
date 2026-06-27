@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
@@ -10,6 +10,26 @@ import {
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NOTIFICATION_TEMPLATES } from './templates/notification-templates.registry';
 
+// ─── Filter DTOs ────────────────────────────────────────────────────────────
+
+export interface GetTemplatesFilters {
+  page?: number;
+  pageSize?: number;
+  channel?: string;
+  isActive?: boolean;
+}
+
+export interface GetLogsFilters {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  channel?: string;
+  event?: string;
+  search?: string;
+}
+
+// ─── Service ─────────────────────────────────────────────────────────────────
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -20,18 +40,13 @@ export class NotificationsService {
   ) {}
 
   async onModuleInit() {
-    // Seed default templates if the table is empty
+    // Seed default templates if none exist yet
     const count = await this.prisma.notificationTemplate.count();
     if (count === 0) {
       this.logger.log('Seeding initial notification templates...');
       for (const tpl of NOTIFICATION_TEMPLATES) {
         await this.prisma.notificationTemplate.upsert({
-          where: {
-            event_channel: {
-              event: tpl.key,
-              channel: tpl.channel,
-            }
-          },
+          where: { event_channel: { event: tpl.key, channel: tpl.channel } },
           update: {},
           create: {
             name: `Plantilla ${tpl.key} (${tpl.channel})`,
@@ -40,22 +55,37 @@ export class NotificationsService {
             subject: tpl.subject,
             body: tpl.body,
             isActive: true,
-          }
+          },
         });
       }
       this.logger.log('Notification templates seeded successfully.');
     }
   }
 
-  // --- TEMPLATE CRUD ---
+  // ─── TEMPLATE CRUD ─────────────────────────────────────────────────────────
 
-  async getTemplates(page: number, pageSize: number) {
+  async getTemplates(filters: GetTemplatesFilters = {}) {
+    const { page = 1, pageSize = 10, channel, isActive } = filters;
     const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (channel)              where.channel  = channel;
+    if (isActive !== undefined) where.isActive = isActive;
+
     const [data, total] = await Promise.all([
-      this.prisma.notificationTemplate.findMany({ skip, take: pageSize }),
-      this.prisma.notificationTemplate.count(),
+      this.prisma.notificationTemplate.findMany({
+        where, skip, take: pageSize,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.notificationTemplate.count({ where }),
     ]);
-    return { data, total };
+    return { data, total, page, pageSize };
+  }
+
+  async getTemplate(id: string) {
+    const tpl = await this.prisma.notificationTemplate.findUnique({ where: { id } });
+    if (!tpl) throw new NotFoundException(`Template ${id} not found`);
+    return tpl;
   }
 
   async createTemplate(data: any) {
@@ -63,134 +93,203 @@ export class NotificationsService {
   }
 
   async updateTemplate(id: string, data: any) {
+    const existing = await this.prisma.notificationTemplate.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException(`Template ${id} not found`);
     return this.prisma.notificationTemplate.update({ where: { id }, data });
   }
 
+  async toggleTemplate(id: string, isActive: boolean) {
+    const existing = await this.prisma.notificationTemplate.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException(`Template ${id} not found`);
+    return this.prisma.notificationTemplate.update({ where: { id }, data: { isActive } });
+  }
+
+  // ─── LOGS ──────────────────────────────────────────────────────────────────
+
+  async getLogs(filters: GetLogsFilters = {}) {
+    const { page = 1, pageSize = 15, status, channel, event, search } = filters;
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (status)  where.status  = status;
+    if (channel) where.channel = channel;
+    if (event)   where.event   = event;
+    if (search) {
+      where.recipient = { contains: search, mode: 'insensitive' };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.notificationLog.findMany({
+        where, skip, take: pageSize,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.notificationLog.count({ where }),
+    ]);
+    return { data, total, page, pageSize };
+  }
+
+  // ─── QUEUE / ENQUEUE ───────────────────────────────────────────────────────
+
   /**
    * PUBLIC API — called from any other module (Sales, Inventory, Finance).
-   * Enqueues a notification job in BullMQ; actual dispatch is async by the processor.
+   * Enqueues a notification job in BullMQ; actual dispatch is async via the processor.
+   * Also creates a PENDING NotificationLog entry for tracking.
    */
   async enqueue(payload: {
     channel: NotificationChannel;
     templateKey: TemplateKey;
     recipient: string;
     variables: Record<string, string>;
+    referenceId?: string;
   }): Promise<NotificationJob | null> {
-    // First, check if the template is active in the database
+    // Check if active template exists
     const template = await this.prisma.notificationTemplate.findUnique({
       where: {
         event_channel: {
           event: payload.templateKey,
           channel: payload.channel,
-        }
-      }
+        },
+      },
     });
 
     if (!template) {
-      this.logger.warn(`No template found for ${payload.templateKey} on ${payload.channel}. Skipping notification.`);
-      return null; // Silent skip if no template exists
-    }
-
-    if (!template.isActive) {
-      this.logger.log(`Template ${payload.templateKey} on ${payload.channel} is inactive. Skipping notification.`);
+      this.logger.warn(
+        `No template found for ${payload.templateKey} on ${payload.channel}. Skipping.`,
+      );
       return null;
     }
 
+    if (!template.isActive) {
+      this.logger.log(
+        `Template ${payload.templateKey} on ${payload.channel} is inactive. Skipping.`,
+      );
+      return null;
+    }
+
+    // Create a PENDING log entry before pushing to queue
+    const log = await this.prisma.notificationLog.create({
+      data: {
+        templateId:  template.id,
+        event:       payload.templateKey,
+        channel:     payload.channel,
+        recipient:   payload.recipient,
+        referenceId: payload.referenceId ?? null,
+        status:      'PENDING',
+      },
+    });
+
     const job = await this.notificationsQueue.add('send_notification', {
-      channel: payload.channel,
+      channel:     payload.channel,
       templateKey: payload.templateKey,
-      recipient: payload.recipient,
-      variables: payload.variables || {},
+      recipient:   payload.recipient,
+      variables:   payload.variables ?? {},
+      logId:       log.id,   // pass log ID so the processor can update status
     });
 
     this.logger.log(
-      `[Queue] Enqueued ${payload.channel} notification (${payload.templateKey}) → ${payload.recipient} via BullMQ (Job ID: ${job.id})`
+      `[Queue] Enqueued ${payload.channel}/${payload.templateKey} → ${payload.recipient} (Job: ${job.id}, Log: ${log.id})`,
     );
 
     return {
-      id: job.id || '',
-      channel: payload.channel,
+      id:          job.id || '',
+      channel:     payload.channel,
       templateKey: payload.templateKey,
-      recipient: payload.recipient,
-      variables: payload.variables || {},
-      status: NotificationStatus.QUEUED,
-      attempts: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      recipient:   payload.recipient,
+      variables:   payload.variables ?? {},
+      status:      NotificationStatus.QUEUED,
+      attempts:    0,
+      createdAt:   new Date(),
+      updatedAt:   new Date(),
     };
   }
 
   /**
-   * Returns the entire queue of notification jobs from Redis.
-   * Useful for administrative UI and API monitoring.
+   * Returns BullMQ queue jobs for the admin monitoring view.
    */
   async getQueue(): Promise<NotificationJob[]> {
     const jobs = await this.notificationsQueue.getJobs([
-      'active',
-      'waiting',
-      'completed',
-      'failed',
-      'delayed',
-      'paused',
+      'active', 'waiting', 'completed', 'failed', 'delayed', 'paused',
     ]);
-    
-    // Sort chronologically (most recent first)
-    const sortedJobs = jobs.sort((a, b) => b.timestamp - a.timestamp);
 
-    return sortedJobs.map(job => {
+    const sorted = jobs.sort((a, b) => b.timestamp - a.timestamp);
+
+    return sorted.map(job => {
       let status = NotificationStatus.QUEUED;
-      if (job.failedReason) {
-        status = NotificationStatus.FAILED;
-      } else if (job.finishedOn) {
-        status = NotificationStatus.SENT;
-      } else if (job.processedOn) {
-        status = NotificationStatus.SENDING;
-      }
+      if (job.failedReason)  status = NotificationStatus.FAILED;
+      else if (job.finishedOn)  status = NotificationStatus.SENT;
+      else if (job.processedOn) status = NotificationStatus.SENDING;
 
       return {
-        id: job.id || '',
-        channel: job.data.channel,
+        id:          job.id || '',
+        channel:     job.data.channel,
         templateKey: job.data.templateKey,
-        recipient: job.data.recipient,
-        variables: job.data.variables,
+        recipient:   job.data.recipient,
+        variables:   job.data.variables,
         status,
-        attempts: job.attemptsMade,
-        lastError: job.failedReason || undefined,
-        createdAt: new Date(job.timestamp),
-        updatedAt: new Date(job.finishedOn || job.processedOn || job.timestamp),
+        attempts:    job.attemptsMade,
+        lastError:   job.failedReason || undefined,
+        createdAt:   new Date(job.timestamp),
+        updatedAt:   new Date(job.finishedOn || job.processedOn || job.timestamp),
       };
     });
   }
 
-  // --- CONVENIENCE HELPERS (used across the ERP) ---
+  // ─── CONVENIENCE HELPERS ──────────────────────────────────────────────────
 
   async notifyOrderConfirmed(
     recipient: string,
     channel: NotificationChannel,
-    vars: { customerName: string; orderId: string; total: string }
+    vars: { customerName: string; orderId: string; total: string },
+    referenceId?: string,
   ) {
-    return this.enqueue({ channel, templateKey: TemplateKey.ORDER_CONFIRMED, recipient, variables: vars });
+    return this.enqueue({
+      channel,
+      templateKey: TemplateKey.SALE_CONFIRMED,
+      recipient,
+      variables: vars,
+      referenceId,
+    });
   }
 
   async notifyOrderShipped(
     recipient: string,
     channel: NotificationChannel,
-    vars: { customerName: string; orderId: string; courierName: string; trackingNumber: string }
+    vars: { customerName: string; orderId: string; courierName: string; trackingNumber: string },
+    referenceId?: string,
   ) {
-    return this.enqueue({ channel, templateKey: TemplateKey.ORDER_SHIPPED, recipient, variables: vars });
+    return this.enqueue({
+      channel,
+      templateKey: TemplateKey.ORDER_SHIPPED,
+      recipient,
+      variables: vars,
+      referenceId,
+    });
   }
 
   async notifyLowStock(
     managerEmail: string,
-    vars: { productName: string; sku: string; quantity: string; branchName: string }
+    vars: { productName: string; sku: string; quantity: string; branchName: string },
   ) {
-    return this.enqueue({ channel: NotificationChannel.EMAIL, templateKey: TemplateKey.LOW_STOCK_ALERT, recipient: managerEmail, variables: vars });
+    return this.enqueue({
+      channel:     NotificationChannel.EMAIL,
+      templateKey: TemplateKey.LOW_STOCK_ALERT,
+      recipient:   managerEmail,
+      variables:   vars,
+    });
   }
 
   async notifyShiftDiscrepancy(
     managerEmail: string,
-    vars: { branchName: string; cashierName: string; registerName: string; difference: string; expected: string; actual: string }
+    vars: {
+      branchName: string; cashierName: string; registerName: string;
+      difference: string; expected: string; actual: string;
+    },
   ) {
-    return this.enqueue({ channel: NotificationChannel.EMAIL, templateKey: TemplateKey.SHIFT_CLOSING_DISCREPANCY, recipient: managerEmail, variables: vars });
+    return this.enqueue({
+      channel:     NotificationChannel.EMAIL,
+      templateKey: TemplateKey.SHIFT_CLOSING_DISCREPANCY,
+      recipient:   managerEmail,
+      variables:   vars,
+    });
   }
 }

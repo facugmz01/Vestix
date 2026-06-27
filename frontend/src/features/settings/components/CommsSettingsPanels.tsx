@@ -5,6 +5,26 @@ import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './S
 import { Input } from '@/components/ui';
 import { toast } from 'react-hot-toast';
 
+// ─── Sentinel que el backend devuelve para campos sensibles enmascarados ───────
+const BACKEND_MASK = '••••••••';
+
+/**
+ * Hook helper: devuelve props para un campo de contraseña que viene enmascarado
+ * del backend. Muestra placeholder "ya configurada" y solo envía el valor cuando
+ * el usuario escribe algo nuevo. Si el usuario borra el campo, queda vacío y el
+ * backend conserva la credencial anterior.
+ */
+function useMaskedField(rawValue: string | undefined) {
+  const isPreloaded = rawValue === BACKEND_MASK;
+  return {
+    // Si el valor es la máscara del backend, no lo metemos en el input como value
+    // (lo deja vacío para que el usuario sepa que puede reemplazarlo)
+    defaultDisplayValue: isPreloaded ? '' : (rawValue ?? ''),
+    placeholder: isPreloaded ? '★ Ya configurada — dejá vacío para no cambiar' : 'Contraseña / API Key',
+    isPreloaded,
+  };
+}
+
 // ─── Botón de prueba reutilizable con estado de carga ─────────────────────────
 
 interface TestButtonProps {
@@ -34,7 +54,7 @@ function TestButton({ toastId, loadingLabel, onClick, disabled }: TestButtonProp
 
   const btnStyle: React.CSSProperties = {
     padding: '8px 16px',
-    background: loading || disabled ? 'var(--bg-overlay)' : 'var(--bg-overlay)',
+    background: 'var(--bg-overlay)',
     color: loading || disabled ? 'var(--text-muted)' : 'var(--text-primary)',
     border: '1px solid var(--border)',
     borderRadius: '4px',
@@ -57,6 +77,16 @@ function TestButton({ toastId, loadingLabel, onClick, disabled }: TestButtonProp
 export function NotificationSettingsPanel() {
   const { register, watch, setValue } = useFormContext<SystemSettings>();
 
+  // Para las pruebas de conexión, enviamos el objeto completo de notifications.
+  // El backend resolverá la credencial real desde DB si el campo viene vacío.
+  const notifValues = watch('notifications');
+
+  // Campos sensibles: si el backend los envió enmascarados, los mostramos como
+  // placeholders y dejamos el campo vacío en el form.
+  const smtpPassMask    = useMaskedField(watch('notifications.smtpPass'));
+  const evolutionKeyMask = useMaskedField(watch('notifications.evolutionApiKey'));
+  const fcmKeyMask      = useMaskedField(watch('notifications.fcmServerKey'));
+
   return (
     <SettingsSection title="Notificaciones" description="Canales de comunicación habilitados y reglas de disparo automático.">
 
@@ -67,16 +97,26 @@ export function NotificationSettingsPanel() {
         <ToggleSwitch value={!!watch('notifications.emailEnabled')} onChange={v => setValue('notifications.emailEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
       {watch('notifications.emailEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <Input placeholder="Host (ej. smtp.gmail.com)" {...register('notifications.smtpHost')} style={{ flex: 1, minWidth: '200px' }} />
           <Input type="number" placeholder="Port" {...register('notifications.smtpPort', { valueAsNumber: true })} style={{ width: '100px' }} />
           <Input placeholder="Usuario" {...register('notifications.smtpUser')} style={{ flex: 1, minWidth: '200px' }} />
-          <Input type="password" placeholder="Contraseña" {...register('notifications.smtpPass')} style={{ flex: 1, minWidth: '200px' }} />
+          <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <Input
+              type="password"
+              placeholder={smtpPassMask.placeholder}
+              {...register('notifications.smtpPass')}
+              defaultValue={smtpPassMask.defaultDisplayValue}
+            />
+            {smtpPassMask.isPreloaded && (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Contraseña ya guardada. Escribí una nueva para reemplazarla.</span>
+            )}
+          </div>
           <TestButton
             toastId="test-smtp"
             loadingLabel="Probando SMTP..."
             disabled={!watch('notifications.smtpHost')}
-            onClick={() => settingsApi.testSmtp(watch('notifications'))}
+            onClick={() => settingsApi.testSmtp(notifValues)}
           />
         </div>
       )}
@@ -92,7 +132,7 @@ export function NotificationSettingsPanel() {
             toastId="test-sms"
             loadingLabel="Haciendo ping al Gateway..."
             disabled={!watch('notifications.smsGatewayUrl')}
-            onClick={() => settingsApi.testSms(watch('notifications'))}
+            onClick={() => settingsApi.testSms(notifValues)}
           />
         </div>
       )}
@@ -102,15 +142,25 @@ export function NotificationSettingsPanel() {
         <ToggleSwitch value={!!watch('notifications.whatsappEnabled')} onChange={v => setValue('notifications.whatsappEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
       {watch('notifications.whatsappEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <Input placeholder="URL (ej. http://localhost:8080)" {...register('notifications.evolutionApiUrl')} style={{ flex: 2, minWidth: '200px' }} />
-          <Input type="password" placeholder="API Key" {...register('notifications.evolutionApiKey')} style={{ flex: 2, minWidth: '160px' }} />
+          <div style={{ flex: 2, minWidth: '160px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <Input
+              type="password"
+              placeholder={evolutionKeyMask.placeholder}
+              {...register('notifications.evolutionApiKey')}
+              defaultValue={evolutionKeyMask.defaultDisplayValue}
+            />
+            {evolutionKeyMask.isPreloaded && (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>API Key ya guardada. Escribí una nueva para reemplazarla.</span>
+            )}
+          </div>
           <Input placeholder="Instancia (ej. store-main)" {...register('notifications.evolutionInstance')} style={{ flex: 1, minWidth: '140px' }} />
           <TestButton
             toastId="test-whatsapp"
             loadingLabel="Verificando Evolution API..."
-            disabled={!watch('notifications.evolutionApiUrl') || !watch('notifications.evolutionApiKey')}
-            onClick={() => settingsApi.testWhatsapp(watch('notifications'))}
+            disabled={!watch('notifications.evolutionApiUrl')}
+            onClick={() => settingsApi.testWhatsapp(notifValues)}
           />
         </div>
       )}
@@ -120,13 +170,23 @@ export function NotificationSettingsPanel() {
         <ToggleSwitch value={!!watch('notifications.pushEnabled')} onChange={v => setValue('notifications.pushEnabled', v, { shouldDirty: true })} />
       </SettingsRow>
       {watch('notifications.pushEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center' }}>
-          <Input placeholder="FCM Server Key (Empieza con AAA...)" {...register('notifications.fcmServerKey')} style={{ flex: 1 }} />
+        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <Input
+              type="password"
+              placeholder={fcmKeyMask.placeholder}
+              {...register('notifications.fcmServerKey')}
+              defaultValue={fcmKeyMask.defaultDisplayValue}
+            />
+            {fcmKeyMask.isPreloaded && (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Server Key ya guardada. Escribí una nueva para reemplazarla.</span>
+            )}
+          </div>
           <TestButton
             toastId="test-push"
             loadingLabel="Enviando test a FCM..."
-            disabled={!watch('notifications.fcmServerKey')}
-            onClick={() => settingsApi.testPush(watch('notifications'))}
+            disabled={!watch('notifications.fcmServerKey') && !fcmKeyMask.isPreloaded}
+            onClick={() => settingsApi.testPush(notifValues)}
           />
         </div>
       )}
@@ -154,7 +214,7 @@ export function NotificationSettingsPanel() {
 
       <div style={{ padding: '16px', background: 'var(--bg-overlay)', borderRadius: '8px', border: '1px solid var(--border)' }}>
         <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
-          Las plantillas de mensajes (Email, WhatsApp, SMS) ahora se gestionan en su propia sección para mayor comodidad.
+          Las plantillas de mensajes (Email, WhatsApp, SMS) se gestionan en su propia sección.
         </p>
         <a href="/admin/notifications" style={{ display: 'inline-block', padding: '8px 16px', background: 'var(--accent)', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
           Ir a Notificaciones y Plantillas

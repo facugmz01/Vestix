@@ -915,17 +915,39 @@ model SystemSettings {
 // ==========================================
 
 model NotificationTemplate {
-  id        String   @id @default(uuid())
+  id        String            @id @default(uuid())
   name      String
-  event     String // e.g., 'SALE_CONFIRMED', 'LOW_STOCK_ALERT'
-  channel   String // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
-  subject   String? // Mostly for email
-  body      String   @db.Text
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  event     String            // e.g., 'SALE_CONFIRMED', 'LOW_STOCK_ALERT'
+  channel   String            // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
+  subject   String?           // Mostly for email
+  body      String            @db.Text
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  logs      NotificationLog[]
 
   @@unique([event, channel])
+  @@schema("core")
+}
+
+model NotificationLog {
+  id           String    @id @default(uuid())
+  templateId   String?
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  event        String    // mirrors TemplateKey / NotificationEvent
+  channel      String    // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
+  recipient    String    // email or phone number
+  referenceId  String?   // SaleOrder, PO, etc.
+  status       String    @default("PENDING") // PENDING | SENT | FAILED | BOUNCED
+  errorMessage String?   @db.Text
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([event])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
   @@schema("core")
 }
 

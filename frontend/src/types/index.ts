@@ -422,17 +422,22 @@ export interface WebhookLog {
 // ─── NOTIFICATIONS ────────────────────────────────────────────────────────
 export type NotificationEvent =
   | 'SALE_CONFIRMED'
+  | 'ORDER_SHIPPED'
+  | 'ORDER_DELIVERED'
+  | 'PAYMENT_RECEIVED'
   | 'PURCHASE_ORDER_ISSUED'
   | 'GOODS_RECEIPT_RECEIVED'
   | 'LOW_STOCK_ALERT'
+  | 'SHIFT_CLOSING_DISCREPANCY'
   | 'TRANSFER_DISPATCHED'
   | 'TRANSFER_RECEIVED'
   | 'INVOICE_ISSUED'
-  | 'PAYMENT_RECEIVED'
   | 'RETURN_APPROVED'
   | 'OVERDUE_CURRENT_ACCOUNT'
   | 'MANUAL_CURRENT_ACCOUNT_STATEMENT'
-  | 'MANUAL_SALE_RECEIPT';
+  | 'MANUAL_SALE_RECEIPT'
+  | 'WELCOME_CUSTOMER'
+  | 'OTP_CODE';
 
 export interface NotificationTemplate {
   id: string;

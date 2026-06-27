@@ -10,7 +10,7 @@ export interface LogsFilters { page?: number; pageSize?: number; status?: string
 
 export interface CreateTemplateDto {
   name: string;
-  event: NotificationEvent;
+  event: string;        // matches TemplateKey enum values stored in DB
   channel: NotificationChannel;
   subject?: string;
   body: string;

@@ -33,18 +33,23 @@ function ChannelIcon({ channel }: { channel: string }) {
 }
 
 const EVENT_LABELS: Record<string, string> = {
-  SALE_CONFIRMED:          'Venta Confirmada',
-  PURCHASE_ORDER_ISSUED:   'OC Emitida',
-  GOODS_RECEIPT_RECEIVED:  'Recepción Mercadería',
-  LOW_STOCK_ALERT:         'Alerta Stock Bajo',
-  TRANSFER_DISPATCHED:     'Transfer. Despachada',
-  TRANSFER_RECEIVED:       'Transfer. Recibida',
-  INVOICE_ISSUED:          'Factura Emitida',
-  PAYMENT_RECEIVED:        'Pago Recibido',
-  RETURN_APPROVED:         'Dev. Aprobada',
-  OVERDUE_CURRENT_ACCOUNT: 'Cuenta Corriente Vencida',
-  MANUAL_CURRENT_ACCOUNT_STATEMENT: 'Envío Manual: Cta. Cte.',
-  MANUAL_SALE_RECEIPT:     'Envío Manual: Venta',
+  SALE_CONFIRMED:                  'Venta Confirmada',
+  ORDER_SHIPPED:                   'Pedido Enviado',
+  ORDER_DELIVERED:                 'Pedido Entregado',
+  PAYMENT_RECEIVED:                'Pago Recibido',
+  PURCHASE_ORDER_ISSUED:           'OC Emitida',
+  GOODS_RECEIPT_RECEIVED:          'Recepción Mercadería',
+  LOW_STOCK_ALERT:                 'Alerta Stock Bajo',
+  SHIFT_CLOSING_DISCREPANCY:       'Diferencia de Caja',
+  TRANSFER_DISPATCHED:             'Transfer. Despachada',
+  TRANSFER_RECEIVED:               'Transfer. Recibida',
+  INVOICE_ISSUED:                  'Factura Emitida',
+  RETURN_APPROVED:                 'Dev. Aprobada',
+  OVERDUE_CURRENT_ACCOUNT:         'Cuenta Corriente Vencida',
+  MANUAL_CURRENT_ACCOUNT_STATEMENT:'Envío Manual: Cta. Cte.',
+  MANUAL_SALE_RECEIPT:             'Envío Manual: Venta',
+  WELCOME_CUSTOMER:                'Bienvenida Cliente',
+  OTP_CODE:                        'Código OTP',
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
