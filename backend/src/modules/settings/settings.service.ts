@@ -13,6 +13,9 @@ const SENSITIVE_FIELDS: Record<string, string[]> = {
   integrations:  ['mpAccessToken', 'mpWebhookSecret', 'mlSecretKey', 'wooConsumerSecret', 'shopifyAccessToken'],
 };
 
+/** Sentinel returned by maskSection — never a real credential. */
+const MASK_VALUE = '••••••••';
+
 // ─── Typed interfaces for internal use ────────────────────────────────────────
 
 export interface GeneralSettings {
@@ -195,6 +198,22 @@ export class SettingsService implements OnModuleInit {
     );
   }
 
+  /**
+   * Removes sensitive fields that carry the mask sentinel value from an incoming DTO.
+   * This prevents the UI's placeholder "••••••••" from overwriting a real stored credential.
+   */
+  private stripMaskedFields(sectionKey: string, dto: Record<string, any>): Record<string, any> {
+    const sensitiveKeys = SENSITIVE_FIELDS[sectionKey];
+    if (!sensitiveKeys) return dto;
+    const result = { ...dto };
+    for (const key of sensitiveKeys) {
+      if (result[key] === MASK_VALUE || result[key] === '') {
+        delete result[key]; // keep whatever is already in DB
+      }
+    }
+    return result;
+  }
+
   /** Encrypts sensitive fields in a section before persisting. */
   private encryptSection(sectionKey: string, data: Record<string, any>): Record<string, any> {
     const sensitiveKeys = SENSITIVE_FIELDS[sectionKey];
@@ -363,7 +382,9 @@ export class SettingsService implements OnModuleInit {
       if (!current) throw new Error('SystemSettings default row not found');
 
       const currentSection = ((current as any)[section] as Record<string, any>) ?? {};
-      const sanitized = this.sanitizeSection(dto);
+      // Strip mask sentinels BEFORE sanitizing so the stored encrypted value is preserved.
+      const stripped = this.stripMaskedFields(section, dto);
+      const sanitized = this.sanitizeSection(stripped);
       const merged = { ...currentSection, ...sanitized };
       const encrypted = this.encryptSection(section, merged);
 
@@ -409,7 +430,8 @@ export class SettingsService implements OnModuleInit {
       for (const s of sections) {
         if ((dto as any)[s]) {
           const current_ = ((current as any)[s] as object) ?? {};
-          const sanitized = this.sanitizeSection((dto as any)[s]);
+          const stripped = this.stripMaskedFields(s, (dto as any)[s]);
+          const sanitized = this.sanitizeSection(stripped);
           const merged = { ...current_, ...sanitized };
           dataToUpdate[s] = this.encryptSection(s, merged);
         }
@@ -479,13 +501,19 @@ export class SettingsService implements OnModuleInit {
   async testSmtpConnection(dto: any) {
     try {
       if (!dto.smtpHost) return { success: false, message: 'Host SMTP no configurado' };
+      // Resolve the real password if the UI sent back the mask sentinel
+      let smtpPass = dto.smtpPass;
+      if (!smtpPass || smtpPass === MASK_VALUE) {
+        const stored = await this.getNotificationSettings();
+        smtpPass = stored.smtpPass || '';
+      }
       const transporter = nodemailer.createTransport({
         host: dto.smtpHost,
         port: Number(dto.smtpPort) || 587,
         secure: Number(dto.smtpPort) === 465,
         auth: {
           user: dto.smtpUser,
-          pass: dto.smtpPass,
+          pass: smtpPass,
         },
       });
       await transporter.verify();
@@ -513,8 +541,13 @@ export class SettingsService implements OnModuleInit {
     try {
       const url = dto.evolutionApiUrl;
       if (!url) return { success: false, message: 'URL de Evolution API no configurada' };
-      if (!dto.evolutionApiKey) return { success: false, message: 'API Key de Evolution no configurada' };
-      const apiKey = dto.evolutionApiKey;
+      // Resolve the real API key if the UI sent back the mask sentinel
+      let apiKey = dto.evolutionApiKey;
+      if (!apiKey || apiKey === MASK_VALUE) {
+        const stored = await this.getNotificationSettings();
+        apiKey = stored.evolutionApiKey || '';
+      }
+      if (!apiKey) return { success: false, message: 'API Key de Evolution no configurada' };
       const instance = dto.evolutionInstance || 'store-main';
       const endpoint = `${url.replace(/\/+$/, '')}/instance/connectionState/${instance}`;
       const res = await fetch(endpoint, {
@@ -540,10 +573,16 @@ export class SettingsService implements OnModuleInit {
 
   async testPushConnection(dto: any) {
     try {
-      if (!dto.fcmServerKey) return { success: false, message: 'Server Key de FCM no configurada' };
+      // Resolve the real FCM key if the UI sent back the mask sentinel
+      let fcmServerKey = dto.fcmServerKey;
+      if (!fcmServerKey || fcmServerKey === MASK_VALUE) {
+        const stored = await this.getNotificationSettings();
+        fcmServerKey = stored.fcmServerKey || '';
+      }
+      if (!fcmServerKey) return { success: false, message: 'Server Key de FCM no configurada' };
       const res = await fetch('https://fcm.googleapis.com/fcm/send', {
         method: 'POST',
-        headers: { 'Authorization': `key=${dto.fcmServerKey}`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `key=${fcmServerKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: 'test-token', notification: { title: 'Test', body: 'Test Push' } }),
         signal: AbortSignal.timeout(8000),
       });
