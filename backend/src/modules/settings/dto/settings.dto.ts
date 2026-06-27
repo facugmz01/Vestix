@@ -402,23 +402,94 @@ export class UpdateSettingsDto {
   qr?: QrSettingsDto;
 }
 
+/**
+ * These DTOs are intentionally permissive: the frontend sends the entire
+ * `notifications` settings object. Validation is done in the service, not here.
+ * `forbidNonWhitelisted: true` in the global pipe would cause a 400 for any
+ * extra field, so we declare the full shape as optional.
+ */
+
 export class TestSmtpDto {
-  @IsNotEmpty() @IsString() smtpHost?: string;
-  @IsNotEmpty() @IsNumber() smtpPort?: number;
+  @IsOptional() @IsString() smtpHost?: string;
+  @IsOptional() @IsNumber() smtpPort?: number;
   @IsOptional() @IsString() smtpUser?: string;
   @IsOptional() @IsString() smtpPass?: string;
+  // Extra fields from the full notifications object — ignored by the service
+  @IsOptional() @IsBoolean() emailEnabled?: boolean;
+  @IsOptional() @IsBoolean() smsEnabled?: boolean;
+  @IsOptional() @IsBoolean() whatsappEnabled?: boolean;
+  @IsOptional() @IsBoolean() pushEnabled?: boolean;
+  @IsOptional() @IsNumber()  lowStockThreshold?: number;
+  @IsOptional() @IsBoolean() notifyOnSale?: boolean;
+  @IsOptional() @IsBoolean() notifyOnPurchase?: boolean;
+  @IsOptional() @IsBoolean() notifyOnLowStock?: boolean;
+  @IsOptional() @IsBoolean() notifyOnTransfer?: boolean;
+  @IsOptional() @IsString()  smsGatewayUrl?: string;
+  @IsOptional() @IsString()  evolutionApiUrl?: string;
+  @IsOptional() @IsString()  evolutionApiKey?: string;
+  @IsOptional() @IsString()  evolutionInstance?: string;
+  @IsOptional() @IsString()  fcmServerKey?: string;
 }
 
 export class TestSmsDto {
-  @IsNotEmpty() @IsUrl() smsGatewayUrl?: string;
+  @IsOptional() @IsString() smsGatewayUrl?: string;
+  @IsOptional() @IsBoolean() emailEnabled?: boolean;
+  @IsOptional() @IsBoolean() smsEnabled?: boolean;
+  @IsOptional() @IsBoolean() whatsappEnabled?: boolean;
+  @IsOptional() @IsBoolean() pushEnabled?: boolean;
+  @IsOptional() @IsNumber()  lowStockThreshold?: number;
+  @IsOptional() @IsBoolean() notifyOnSale?: boolean;
+  @IsOptional() @IsBoolean() notifyOnPurchase?: boolean;
+  @IsOptional() @IsBoolean() notifyOnLowStock?: boolean;
+  @IsOptional() @IsBoolean() notifyOnTransfer?: boolean;
+  @IsOptional() @IsString()  smtpHost?: string;
+  @IsOptional() @IsNumber()  smtpPort?: number;
+  @IsOptional() @IsString()  smtpUser?: string;
+  @IsOptional() @IsString()  smtpPass?: string;
+  @IsOptional() @IsString()  evolutionApiUrl?: string;
+  @IsOptional() @IsString()  evolutionApiKey?: string;
+  @IsOptional() @IsString()  evolutionInstance?: string;
+  @IsOptional() @IsString()  fcmServerKey?: string;
 }
 
 export class TestWhatsappDto {
-  @IsNotEmpty() @IsUrl() evolutionApiUrl?: string;
-  @IsNotEmpty() @IsString() evolutionApiKey?: string;
+  @IsOptional() @IsString() evolutionApiUrl?: string;
+  @IsOptional() @IsString() evolutionApiKey?: string;
   @IsOptional() @IsString() evolutionInstance?: string;
+  @IsOptional() @IsBoolean() emailEnabled?: boolean;
+  @IsOptional() @IsBoolean() smsEnabled?: boolean;
+  @IsOptional() @IsBoolean() whatsappEnabled?: boolean;
+  @IsOptional() @IsBoolean() pushEnabled?: boolean;
+  @IsOptional() @IsNumber()  lowStockThreshold?: number;
+  @IsOptional() @IsBoolean() notifyOnSale?: boolean;
+  @IsOptional() @IsBoolean() notifyOnPurchase?: boolean;
+  @IsOptional() @IsBoolean() notifyOnLowStock?: boolean;
+  @IsOptional() @IsBoolean() notifyOnTransfer?: boolean;
+  @IsOptional() @IsString()  smtpHost?: string;
+  @IsOptional() @IsNumber()  smtpPort?: number;
+  @IsOptional() @IsString()  smtpUser?: string;
+  @IsOptional() @IsString()  smtpPass?: string;
+  @IsOptional() @IsString()  smsGatewayUrl?: string;
+  @IsOptional() @IsString()  fcmServerKey?: string;
 }
 
 export class TestPushDto {
-  @IsNotEmpty() @IsString() fcmServerKey?: string;
+  @IsOptional() @IsString() fcmServerKey?: string;
+  @IsOptional() @IsBoolean() emailEnabled?: boolean;
+  @IsOptional() @IsBoolean() smsEnabled?: boolean;
+  @IsOptional() @IsBoolean() whatsappEnabled?: boolean;
+  @IsOptional() @IsBoolean() pushEnabled?: boolean;
+  @IsOptional() @IsNumber()  lowStockThreshold?: number;
+  @IsOptional() @IsBoolean() notifyOnSale?: boolean;
+  @IsOptional() @IsBoolean() notifyOnPurchase?: boolean;
+  @IsOptional() @IsBoolean() notifyOnLowStock?: boolean;
+  @IsOptional() @IsBoolean() notifyOnTransfer?: boolean;
+  @IsOptional() @IsString()  smtpHost?: string;
+  @IsOptional() @IsNumber()  smtpPort?: number;
+  @IsOptional() @IsString()  smtpUser?: string;
+  @IsOptional() @IsString()  smtpPass?: string;
+  @IsOptional() @IsString()  smsGatewayUrl?: string;
+  @IsOptional() @IsString()  evolutionApiUrl?: string;
+  @IsOptional() @IsString()  evolutionApiKey?: string;
+  @IsOptional() @IsString()  evolutionInstance?: string;
 }
