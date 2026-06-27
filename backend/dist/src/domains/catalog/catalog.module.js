@@ -36,7 +36,6 @@ exports.CatalogModule = CatalogModule = __decorate([
             promotions_controller_1.PromotionsController,
             catalog_controller_2.CatalogController,
             identifiers_controller_1.IdentifiersController,
-            catalog_controller_1.PublicCatalogController,
             catalog_controller_1.PricingLegacyController,
         ],
         providers: [

@@ -7,6 +7,8 @@ export declare class CatalogController {
         metadata: {
             total: number;
             filtered: boolean;
+            page: number;
+            pageSize: number;
         };
         data: any[];
     }>;

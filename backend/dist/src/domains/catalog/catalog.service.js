@@ -24,11 +24,17 @@ let CatalogService = class CatalogService {
         const where = { isActive: true, isPublished: true };
         if (filters.categoryId)
             where.categoryId = filters.categoryId;
-        if (filters.searchQuery)
-            where.name = { contains: filters.searchQuery, mode: 'insensitive' };
+        if (filters.brandId || filters.brand)
+            where.brandId = filters.brandId || filters.brand;
+        if (filters.searchQuery) {
+            where.OR = [
+                { name: { contains: filters.searchQuery, mode: 'insensitive' } },
+                { baseSku: { contains: filters.searchQuery, mode: 'insensitive' } },
+            ];
+        }
         const storefrontSettings = await this.settingsService.getStorefrontSettings();
         const priceListId = storefrontSettings.priceListToShow;
-        const products = await this.prisma.product.findMany({
+        let products = await this.prisma.product.findMany({
             where,
             include: {
                 brand: true,
@@ -65,6 +71,7 @@ let CatalogService = class CatalogService {
                 basePrice: basePrice,
                 inStock: availableQty > 0,
                 availableQuantity: availableQty,
+                images: product.images || [],
                 variants: product.variants.map(v => ({
                     id: v.id,
                     sku: v.sku,
@@ -74,9 +81,22 @@ let CatalogService = class CatalogService {
                 }))
             });
         }
+        if (filters.sortBy === 'PRICE_ASC') {
+            results.sort((a, b) => a.price - b.price);
+        }
+        else if (filters.sortBy === 'PRICE_DESC') {
+            results.sort((a, b) => b.price - a.price);
+        }
+        else {
+            results.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        const page = filters.page || 1;
+        const pageSize = filters.pageSize || 50;
+        const startIndex = (page - 1) * pageSize;
+        const paginatedResults = results.slice(startIndex, startIndex + pageSize);
         return {
-            metadata: { total: results.length, filtered: Object.keys(filters).length > 0 },
-            data: results
+            metadata: { total: results.length, filtered: Object.keys(filters).length > 0, page, pageSize },
+            data: paginatedResults
         };
     }
     async getPublicProduct(id) {
