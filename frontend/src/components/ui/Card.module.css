@@ -1,10 +1,8 @@
 .card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  transition: border-color 0.2s;
+  /* Inherits glass-card */
+  display: flex;
+  flex-direction: column;
 }
-.card:hover { border-color: rgba(255,255,255,0.1); }
 .p-sm { padding: 12px; }
 .p-md { padding: 20px; }
 .p-lg { padding: 28px; }

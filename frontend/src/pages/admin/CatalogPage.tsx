@@ -54,30 +54,21 @@ function ProductCard({ product, onView, onEdit, onDelete }: {
 
   return (
     <div
+      className="glass-card"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onView(product)}
       style={{
         position: 'relative',
-        background: hovered
-          ? 'rgba(99,102,241,0.06)'
-          : 'rgba(255,255,255,0.03)',
-        border: `1px solid ${hovered ? 'rgba(99,102,241,0.4)' : 'var(--border)'}`,
-        borderRadius: '14px',
         overflow: 'hidden',
         cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
         transform: hovered ? 'translateY(-4px)' : 'none',
-        boxShadow: hovered
-          ? '0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.2)'
-          : '0 2px 8px rgba(0,0,0,0.15)',
-        backdropFilter: 'blur(8px)',
       }}
     >
       {/* Image area */}
       <div style={{
         height: '140px',
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.05) 100%)',
+        background: 'var(--bg-surface-hover)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderBottom: '1px solid var(--border)',
         position: 'relative',

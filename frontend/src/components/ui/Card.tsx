@@ -10,7 +10,7 @@ interface Props extends React.HTMLAttributes<HTMLDivElement> {
 
 export function Card({ title, subtitle, action, padding = 'md', className, children, ...rest }: Props) {
   return (
-    <div className={clsx(styles.card, styles[`p-${padding}`], className)} {...rest}>
+    <div className={clsx('glass-card', styles.card, styles[`p-${padding}`], className)} {...rest}>
       {(title || action) && (
         <div className={styles.header}>
           <div>

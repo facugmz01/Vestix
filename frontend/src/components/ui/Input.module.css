@@ -7,17 +7,19 @@
 }
 .input {
   width: 100%;
-  padding: 9px 14px;
-  background: var(--bg-elevated);
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
   outline: none;
 }
 .input::placeholder { color: var(--text-muted); }
-.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: var(--bg-surface-hover); }
 .withIcon  { padding-left: 38px; }
 .hasError  { border-color: var(--red) !important; }
 .error     { font-size: 12px; color: var(--red); }

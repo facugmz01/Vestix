@@ -3,12 +3,12 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-family: var(--font);
+  font-family: var(--font-sans);
   font-weight: 500;
-  border-radius: var(--radius);
+  border-radius: var(--radius-full); /* Pill shape looks better for glass buttons */
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: var(--transition);
   white-space: nowrap;
   text-decoration: none;
   position: relative;
@@ -18,31 +18,37 @@
 .btn:active:not(:disabled) { transform: scale(0.97); }
 
 /* Sizes */
-.sm  { padding: 6px 12px;  font-size: 12px; }
-.md  { padding: 9px 18px;  font-size: 14px; }
+.sm  { padding: 6px 14px;  font-size: 13px; }
+.md  { padding: 8px 18px;  font-size: 14px; }
 .lg  { padding: 12px 24px; font-size: 15px; }
 
 /* Variants */
 .primary {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 0 0 0 var(--accent-glow);
+  box-shadow: var(--shadow-sm);
 }
 .primary:hover:not(:disabled) {
   background: var(--accent-hover);
-  box-shadow: 0 0 16px var(--accent-glow);
+  box-shadow: var(--shadow-glow);
 }
 .secondary {
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   color: var(--text-primary);
   border-color: var(--border);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  box-shadow: var(--shadow-sm);
 }
-.secondary:hover:not(:disabled) { background: var(--bg-overlay); }
+.secondary:hover:not(:disabled) { 
+  background: var(--bg-surface-hover); 
+  border-color: var(--border-strong);
+}
 .ghost {
   background: transparent;
   color: var(--text-secondary);
 }
-.ghost:hover:not(:disabled) { background: var(--bg-elevated); color: var(--text-primary); }
+.ghost:hover:not(:disabled) { background: var(--bg-surface); color: var(--text-primary); }
 .danger {
   background: var(--red-bg);
   color: var(--red);

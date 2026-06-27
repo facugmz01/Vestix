@@ -68,7 +68,7 @@ export default function ReportsPage() {
       }
     >
       {/* Tab Nav */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', background: 'var(--bg-elevated)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border)', width: 'fit-content', overflowX: 'auto' }}>
+      <div className="glass-panel" style={{ display: 'flex', gap: '4px', marginBottom: '24px', padding: '6px', borderRadius: 'var(--radius-lg)', width: 'fit-content', overflowX: 'auto' }}>
         {TABS.map(t => (
           <button key={t.id} style={tabStyle(t.id)} onClick={() => setActiveTab(t.id)}>{t.icon}{t.label}</button>
         ))}
@@ -76,7 +76,7 @@ export default function ReportsPage() {
 
       {/* Date Range Filter (shown for all tabs except overview) */}
       {activeTab !== 'overview' && (
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px', padding: '16px', background: 'var(--bg-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+        <div className="glass-panel" style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px', padding: '16px', borderRadius: 'var(--radius-lg)' }}>
           <Calendar size={16} color="var(--text-secondary)" />
           <label style={{ fontSize: '13px', fontWeight: 600 }}>Período:</label>
           <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px' }} />
