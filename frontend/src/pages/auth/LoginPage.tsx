@@ -72,7 +72,7 @@ export default function LoginPage() {
           font-family: 'Inter', system-ui, sans-serif;
           -webkit-font-smoothing: antialiased;
           overflow: hidden;
-          background: #0f0c29;
+          background: #e8eaf6;
         }
 
         /* Animated gradient background */
@@ -81,17 +81,17 @@ export default function LoginPage() {
           inset: 0;
           background: linear-gradient(
             135deg,
-            #0f0c29 0%,
-            #302b63 50%,
-            #24243e 100%
+            #ede9fe 0%,
+            #e0e7ff 40%,
+            #fce7f3 100%
           );
-          animation: bgShift 12s ease-in-out infinite alternate;
+          animation: bgShift 14s ease-in-out infinite alternate;
         }
 
         @keyframes bgShift {
-          0%   { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); }
-          50%  { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
-          100% { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #1a0533 100%); }
+          0%   { background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 40%, #fce7f3 100%); }
+          50%  { background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 50%, #fce7f3 100%); }
+          100% { background: linear-gradient(135deg, #f0fdf4 0%, #e0e7ff 50%, #ede9fe 100%); }
         }
 
         /* Floating orbs */
@@ -105,14 +105,14 @@ export default function LoginPage() {
 
         .login-orb-1 {
           width: 500px; height: 500px;
-          background: rgba(120, 40, 200, 0.45);
+          background: rgba(139, 92, 246, 0.25);
           top: -15%; left: -10%;
           animation-duration: 22s;
         }
 
         .login-orb-2 {
           width: 400px; height: 400px;
-          background: rgba(0, 150, 255, 0.3);
+          background: rgba(99, 102, 241, 0.2);
           bottom: -15%; right: -10%;
           animation-delay: -8s;
           animation-duration: 18s;
@@ -120,7 +120,7 @@ export default function LoginPage() {
 
         .login-orb-3 {
           width: 300px; height: 300px;
-          background: rgba(255, 80, 150, 0.2);
+          background: rgba(236, 72, 153, 0.15);
           top: 50%; left: 60%;
           animation-delay: -4s;
           animation-duration: 25s;
@@ -138,8 +138,8 @@ export default function LoginPage() {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px);
           background-size: 50px 50px;
         }
 
@@ -150,16 +150,16 @@ export default function LoginPage() {
           width: 100%;
           max-width: 420px;
           margin: 16px;
-          background: rgba(255, 255, 255, 0.06);
+          background: rgba(255, 255, 255, 0.60);
           backdrop-filter: blur(40px) saturate(180%);
           -webkit-backdrop-filter: blur(40px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.75);
           border-radius: 28px;
           padding: 48px 40px;
           box-shadow:
-            0 32px 80px rgba(0, 0, 0, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.15),
-            0 0 0 1px rgba(255,255,255,0.04);
+            0 24px 64px rgba(99, 102, 241, 0.12),
+            0 8px 32px rgba(0, 0, 0, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.95);
           transform: ${mounted ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.96)'};
           opacity: ${mounted ? '1' : '0'};
           transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease;
@@ -193,7 +193,7 @@ export default function LoginPage() {
           font-size: 22px;
           font-weight: 800;
           letter-spacing: -0.04em;
-          color: #ffffff;
+          color: #1e1b4b;
         }
 
         /* Heading */
@@ -206,14 +206,14 @@ export default function LoginPage() {
           font-size: 30px;
           font-weight: 800;
           letter-spacing: -0.04em;
-          color: #ffffff;
+          color: #1e1b4b;
           margin: 0 0 8px;
           line-height: 1.1;
         }
 
         #login-subtitle {
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.45);
+          color: #6b7280;
           margin: 0;
           font-weight: 400;
         }
@@ -227,7 +227,7 @@ export default function LoginPage() {
           border-radius: 14px;
           background: rgba(239, 68, 68, 0.12);
           border: 1px solid rgba(239, 68, 68, 0.25);
-          color: #fca5a5;
+          color: #dc2626;
           font-size: 14px;
           font-weight: 500;
           margin-bottom: 24px;
@@ -257,7 +257,7 @@ export default function LoginPage() {
         .login-label {
           font-size: 13px;
           font-weight: 600;
-          color: rgba(255,255,255,0.65);
+          color: #374151;
           letter-spacing: 0.01em;
         }
 
@@ -270,7 +270,7 @@ export default function LoginPage() {
         .login-input-icon {
           position: absolute;
           left: 16px;
-          color: rgba(255,255,255,0.35);
+          color: #9ca3af;
           display: flex;
           align-items: center;
           pointer-events: none;
@@ -280,7 +280,7 @@ export default function LoginPage() {
         .login-input-eye {
           position: absolute;
           right: 14px;
-          color: rgba(255,255,255,0.35);
+          color: #9ca3af;
           display: flex;
           align-items: center;
           background: none;
@@ -290,15 +290,15 @@ export default function LoginPage() {
           border-radius: 6px;
           transition: color 0.2s;
         }
-        .login-input-eye:hover { color: rgba(255,255,255,0.7); }
+        .login-input-eye:hover { color: #6d28d9; }
 
         .login-input {
           width: 100%;
           padding: 14px 16px 14px 46px;
-          background: rgba(255, 255, 255, 0.07);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.7);
+          border: 1px solid rgba(99, 102, 241, 0.2);
           border-radius: 14px;
-          color: #ffffff;
+          color: #1e1b4b;
           font-size: 15px;
           font-family: 'Inter', system-ui, sans-serif;
           outline: none;
@@ -307,22 +307,22 @@ export default function LoginPage() {
         }
 
         .login-input::placeholder {
-          color: rgba(255,255,255,0.25);
+          color: #d1d5db;
         }
 
         .login-input:focus {
-          border-color: rgba(124, 58, 237, 0.6);
-          background: rgba(124, 58, 237, 0.08);
-          box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+          border-color: rgba(109, 40, 217, 0.5);
+          background: rgba(255, 255, 255, 0.9);
+          box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.1);
         }
 
         .login-input-row:focus-within .login-input-icon {
-          color: rgba(124, 58, 237, 0.8);
+          color: #6d28d9;
         }
 
         .login-input.has-error {
-          border-color: rgba(239, 68, 68, 0.5);
-          background: rgba(239, 68, 68, 0.06);
+          border-color: rgba(239, 68, 68, 0.4);
+          background: rgba(254, 242, 242, 0.9);
         }
 
         .login-input.has-error:focus {
@@ -333,7 +333,7 @@ export default function LoginPage() {
 
         .login-field-error {
           font-size: 12px;
-          color: #fca5a5;
+          color: #dc2626;
           font-weight: 500;
           display: flex;
           align-items: center;
@@ -400,7 +400,7 @@ export default function LoginPage() {
           text-align: center;
           margin-top: 28px;
           font-size: 12px;
-          color: rgba(255,255,255,0.2);
+          color: #9ca3af;
           font-weight: 500;
         }
 
@@ -408,10 +408,10 @@ export default function LoginPage() {
         .login-input:-webkit-autofill,
         .login-input:-webkit-autofill:hover,
         .login-input:-webkit-autofill:focus {
-          -webkit-box-shadow: 0 0 0 1000px rgba(15, 12, 41, 0.8) inset !important;
-          -webkit-text-fill-color: #ffffff !important;
-          border-color: rgba(124, 58, 237, 0.6) !important;
-          caret-color: white !important;
+          -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.95) inset !important;
+          -webkit-text-fill-color: #1e1b4b !important;
+          border-color: rgba(109, 40, 217, 0.5) !important;
+          caret-color: #1e1b4b !important;
         }
 
         /* Mobile */
