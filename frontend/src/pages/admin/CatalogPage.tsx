@@ -267,19 +267,20 @@ export default function CatalogPage() {
       title="Catálogo Maestro"
       subtitle="Gestioná los productos base, su categorización y publicación en el e-commerce."
       action={
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+
           {/* View mode toggle */}
-          <div style={{ display: 'flex', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', flexShrink: 0 }}>
             <button
               onClick={() => setViewMode('grid')}
-              style={{ padding: '7px 12px', border: 'none', cursor: 'pointer', background: viewMode === 'grid' ? 'var(--accent)' : 'transparent', color: viewMode === 'grid' ? '#fff' : 'var(--text-muted)', transition: 'all 0.15s', display: 'flex', alignItems: 'center' }}
+              style={{ padding: '8px 12px', border: 'none', cursor: 'pointer', background: viewMode === 'grid' ? 'var(--accent)' : 'transparent', color: viewMode === 'grid' ? '#fff' : 'var(--text-muted)', transition: 'all 0.15s', display: 'flex', alignItems: 'center' }}
               title="Vista grilla"
             >
               <LayoutGrid size={16} />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              style={{ padding: '7px 12px', border: 'none', cursor: 'pointer', background: viewMode === 'list' ? 'var(--accent)' : 'transparent', color: viewMode === 'list' ? '#fff' : 'var(--text-muted)', transition: 'all 0.15s', display: 'flex', alignItems: 'center' }}
+              style={{ padding: '8px 12px', border: 'none', cursor: 'pointer', background: viewMode === 'list' ? 'var(--accent)' : 'transparent', color: viewMode === 'list' ? '#fff' : 'var(--text-muted)', transition: 'all 0.15s', display: 'flex', alignItems: 'center' }}
               title="Vista lista"
             >
               <List size={16} />
@@ -287,33 +288,35 @@ export default function CatalogPage() {
           </div>
 
           <ActionGuard action="update" subject="Catalog">
-            <button
-              onClick={() => setBulkUpdaterOpen(true)}
-              style={{
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                color: 'var(--text-primary)', padding: '8px 16px', borderRadius: 'var(--radius)',
-                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                fontWeight: 500, fontSize: '13px'
-              }}
-            >
-              Actualización Masiva
-            </button>
-            <button
-              onClick={() => {
-                if (window.confirm('¿Estás seguro de que querés publicar todos los productos en el ecommerce?')) {
-                  publishAllMutation.mutate();
-                }
-              }}
-              style={{
-                background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)',
-                color: '#0ea5e9', padding: '8px 16px', borderRadius: 'var(--radius)',
-                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                fontWeight: 500, fontSize: '13px'
-              }}
-              disabled={publishAllMutation.isPending}
-            >
-              <Globe size={16} /> Publicar Todos
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                onClick={() => setBulkUpdaterOpen(true)}
+                style={{
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', padding: '8px 14px', borderRadius: 'var(--radius)',
+                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+                  fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                Actualización Masiva
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm('¿Estás seguro de que querés publicar todos los productos en el ecommerce?')) {
+                    publishAllMutation.mutate();
+                  }
+                }}
+                style={{
+                  background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)',
+                  color: '#0ea5e9', padding: '8px 14px', borderRadius: 'var(--radius)',
+                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+                  fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+                disabled={publishAllMutation.isPending}
+              >
+                <Globe size={15} /> Publicar Todos
+              </button>
+            </div>
           </ActionGuard>
 
           <ActionGuard action="delete" subject="Catalog">
@@ -321,33 +324,37 @@ export default function CatalogPage() {
               onClick={() => setClearDialogOpen(true)}
               style={{
                 background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#ef4444', padding: '8px 16px', borderRadius: 'var(--radius)',
-                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                fontWeight: 500, fontSize: '13px', transition: 'all 0.2s'
+                color: '#ef4444', padding: '8px 14px', borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+                fontWeight: 500, fontSize: '13px', transition: 'all 0.2s',
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
             >
-              <Trash2 size={16} /> Vaciar Catálogo
+              <Trash2 size={15} /> Vaciar Catálogo
             </button>
           </ActionGuard>
 
           <ActionGuard action="create" subject="Catalog">
-            <button
-              onClick={() => setImportOpen(true)}
-              style={{
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                color: 'var(--text-primary)', padding: '8px 16px', borderRadius: 'var(--radius)',
-                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                fontWeight: 500, fontSize: '13px'
-              }}
-            >
-              <Package size={16} /> Importar CSV
-            </button>
-            <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/admin/catalog/new')}>
-              Nuevo Producto
-            </Button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                onClick={() => setImportOpen(true)}
+                style={{
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', padding: '8px 14px', borderRadius: 'var(--radius)',
+                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+                  fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                <Package size={15} /> Importar CSV
+              </button>
+              <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/admin/catalog/new')}>
+                Nuevo Producto
+              </Button>
+            </div>
           </ActionGuard>
+
         </div>
       }
     >
