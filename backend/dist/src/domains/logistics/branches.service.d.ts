@@ -31,17 +31,6 @@ export declare class BranchesService {
     findAll(query?: any): Promise<{
         data: {
             userCount: number;
-            warehouses: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            }[];
             id: string;
             name: string;
             code: string;

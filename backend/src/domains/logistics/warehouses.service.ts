@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { paginate } from '../../core/prisma/paginate';
 import { CreateWarehouseDto } from './dto/create-warehouse.dto';
 import { UpdateWarehouseDto } from './dto/update-warehouse.dto';
 
@@ -27,33 +28,17 @@ export class WarehousesService {
   }
 
   async findAll(query: any = {}) {
-    const page = parseInt(query.page) || 1;
-    const pageSize = parseInt(query.pageSize) || 50;
-    const skip = (page - 1) * pageSize;
+    const extraWhere: any = {};
+    if (query.branchId) extraWhere.branchId = query.branchId;
+    if (query.type) extraWhere.type = query.type;
+    if (query.isActive !== undefined) extraWhere.isActive = query.isActive === 'true';
 
-    const where: any = {};
-    if (query.branchId) where.branchId = query.branchId;
-    if (query.type) where.type = query.type;
-    if (query.isActive !== undefined) where.isActive = query.isActive === 'true';
-    if (query.search) {
-      where.OR = [
-        { name: { contains: query.search, mode: 'insensitive' } },
-        { code: { contains: query.search, mode: 'insensitive' } },
-      ];
-    }
-
-    const [data, total] = await Promise.all([
-      this.prisma.warehouse.findMany({
-        where,
-        include: { branch: true },
-        orderBy: { name: 'asc' },
-        skip,
-        take: pageSize,
-      }),
-      this.prisma.warehouse.count({ where }),
-    ]);
-
-    return { data, total, page, pageSize };
+    return paginate(this.prisma.warehouse, query, {
+      searchFields: ['name', 'code'],
+      where: extraWhere,
+      orderBy: { name: 'asc' },
+      include: { branch: true },
+    });
   }
 
   async findOne(id: string) {

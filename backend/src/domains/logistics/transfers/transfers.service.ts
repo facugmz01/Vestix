@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
+import { paginate } from '../../../core/prisma/paginate';
 import { InventoryService } from '../inventory.service';
 import { MovementType } from '../models/inventory-movement.model';
 import { TransferStatus, TransferLine } from './models/transfer.model';
@@ -193,48 +194,28 @@ export class TransfersService {
    * 5. GET ALL (PAGINATED & FILTERED)
    */
   async findAll(query: { page?: number; pageSize?: number; status?: string; search?: string }) {
-    const page = Number(query.page) || 1;
-    const pageSize = Number(query.pageSize) || 15;
-    const skip = (page - 1) * pageSize;
+    const extraWhere: any = {};
+    if (query.status) extraWhere.status = query.status;
 
-    const where: any = {};
-    if (query.status) {
-      where.status = query.status;
-    }
-    if (query.search) {
-      where.OR = [
-        { id: { contains: query.search, mode: 'insensitive' } },
-        { trackingNumber: { contains: query.search, mode: 'insensitive' } },
-        { notes: { contains: query.search, mode: 'insensitive' } },
-      ];
-    }
+    const result = await paginate(this.prisma.stockTransfer, query, {
+      searchFields: ['id', 'trackingNumber', 'notes'],
+      where: extraWhere,
+      defaultPageSize: 15,
+      include: {
+        sourceWarehouse: true,
+        destinationWarehouse: true,
+        lines: { include: { variant: true } },
+      },
+    });
 
-    const [data, total] = await Promise.all([
-      this.prisma.stockTransfer.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          sourceWarehouse: true,
-          destinationWarehouse: true,
-          lines: {
-            include: {
-              variant: true,
-            },
-          },
-        },
-      }),
-      this.prisma.stockTransfer.count({ where }),
-    ]);
-
-    const formattedData = data.map(t => ({
-      ...t,
-      sourceWarehouseName: t.sourceWarehouse?.name,
-      destinationWarehouseName: t.destinationWarehouse?.name,
-    }));
-
-    return { data: formattedData, total };
+    return {
+      ...result,
+      data: result.data.map((t: any) => ({
+        ...t,
+        sourceWarehouseName: t.sourceWarehouse?.name,
+        destinationWarehouseName: t.destinationWarehouse?.name,
+      })),
+    };
   }
 
   /**

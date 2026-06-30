@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { paginate } from '../../core/prisma/paginate';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
 
@@ -46,34 +47,14 @@ export class CustomersService {
   }
 
   async findAll(query: any = {}) {
-    const page = parseInt(query.page) || 1;
-    const pageSize = parseInt(query.pageSize) || 50;
-    const skip = (page - 1) * pageSize;
-
-    const where: any = {};
-    if (query.search) {
-      where.OR = [
-        { fullName: { contains: query.search, mode: 'insensitive' } },
-        { email: { contains: query.search, mode: 'insensitive' } },
-        { taxId: { contains: query.search, mode: 'insensitive' } },
-      ];
-    }
-
-    const [data, total] = await Promise.all([
-      this.prisma.customer.findMany({
-        where,
-        orderBy: { fullName: 'asc' },
-        skip,
-        take: pageSize,
-      }),
-      this.prisma.customer.count({ where }),
-    ]);
+    const result = await paginate(this.prisma.customer, query, {
+      searchFields: ['fullName', 'email', 'taxId'],
+      orderBy: { fullName: 'asc' },
+    });
 
     return {
-      data: data.map(c => this.mapCustomer(c)),
-      total,
-      page,
-      pageSize
+      ...result,
+      data: result.data.map(c => this.mapCustomer(c)),
     };
   }
 

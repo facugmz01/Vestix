@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -14,14 +14,11 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { BranchFormDrawer } from '@/features/branches/components/BranchFormDrawer';
 import { BranchDetailDrawer } from '@/features/branches/components/BranchDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+import { useDeleteMutation } from '@/hooks/useDeleteMutation';
 
 export default function BranchesPage() {
-  const queryClient = useQueryClient();
-
-  // States
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [pageSize] = useState(15);
+  const { page, pageSize, search, setPage, setSearch } = useListPage({});
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -36,16 +33,12 @@ export default function BranchesPage() {
   });
 
   // Delete Mutation
-  const deleteMutation = useMutation({
+  const deleteMutation = useDeleteMutation({
     mutationFn: (id: string) => branchesApi.deleteBranch(id),
-    onSuccess: () => {
-      toast.success('Sucursal eliminada');
-      queryClient.invalidateQueries({ queryKey: queryKeys.branches.all() });
-      setDeleteOpen(false);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Error al eliminar sucursal');
-    }
+    invalidateKey: queryKeys.branches.all(),
+    successMessage: 'Sucursal eliminada',
+    errorMessage: 'Error al eliminar sucursal',
+    onSuccess: () => setDeleteOpen(false),
   });
 
   // Handlers
@@ -89,7 +82,7 @@ export default function BranchesPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} sucursales</Badge>}>
-        <SearchInput placeholder="Buscar por nombre o código..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por nombre o código..." onSearch={setSearch} />
       </FiltersBar>
 
       <Section>

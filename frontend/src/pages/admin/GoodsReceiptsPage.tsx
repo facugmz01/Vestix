@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, PackageCheck } from 'lucide-react';
+import { useState } from 'react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -14,16 +14,16 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { GoodsReceiptFormDrawer } from '@/features/purchasing/receipts/components/GoodsReceiptFormDrawer';
 import { GoodsReceiptDetailDrawer } from '@/features/purchasing/receipts/components/GoodsReceiptDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
 
 export default function GoodsReceiptsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const statusFilter = filters.status;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.receipts.all({ page, pageSize, search, status: statusFilter }),
@@ -60,9 +60,9 @@ export default function GoodsReceiptsPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} remitos</Badge>}>
-        <SearchInput placeholder="Buscar por ID..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por ID..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Estados</option>
           <option value="DRAFT">Conteo Inicial (DRAFT)</option>
           <option value="DISPUTED">Con Diferencias (DISPUTED)</option>

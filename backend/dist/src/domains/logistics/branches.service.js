@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BranchesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const paginate_1 = require("../../core/prisma/paginate");
 let BranchesService = class BranchesService {
     constructor(prisma) {
         this.prisma = prisma;
@@ -35,28 +36,15 @@ let BranchesService = class BranchesService {
         });
     }
     async findAll(query = {}) {
-        const page = parseInt(query.page) || 1;
-        const pageSize = parseInt(query.pageSize) || 50;
-        const skip = (page - 1) * pageSize;
-        const where = {};
-        if (query.search) {
-            where.OR = [
-                { name: { contains: query.search, mode: 'insensitive' } },
-                { code: { contains: query.search, mode: 'insensitive' } },
-            ];
-        }
-        const [data, total] = await Promise.all([
-            this.prisma.branch.findMany({
-                where,
-                include: { warehouses: true },
-                orderBy: [{ isMain: 'desc' }, { name: 'asc' }],
-                skip,
-                take: pageSize,
-            }),
-            this.prisma.branch.count({ where }),
-        ]);
-        const enriched = data.map(b => ({ ...b, userCount: 0 }));
-        return { data: enriched, total, page, pageSize };
+        const result = await (0, paginate_1.paginate)(this.prisma.branch, query, {
+            searchFields: ['name', 'code'],
+            orderBy: [{ isMain: 'desc' }, { name: 'asc' }],
+            include: { warehouses: true },
+        });
+        return {
+            ...result,
+            data: result.data.map(b => ({ ...b, userCount: 0 })),
+        };
     }
     async findOne(id) {
         const branch = await this.prisma.branch.findUnique({

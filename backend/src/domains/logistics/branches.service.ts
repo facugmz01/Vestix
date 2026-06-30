@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { paginate } from '../../core/prisma/paginate';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 
@@ -28,33 +29,16 @@ export class BranchesService {
   }
 
   async findAll(query: any = {}) {
-    const page = parseInt(query.page) || 1;
-    const pageSize = parseInt(query.pageSize) || 50;
-    const skip = (page - 1) * pageSize;
+    const result = await paginate(this.prisma.branch, query, {
+      searchFields: ['name', 'code'],
+      orderBy: [{ isMain: 'desc' }, { name: 'asc' }],
+      include: { warehouses: true },
+    });
 
-    const where: any = {};
-    if (query.search) {
-      where.OR = [
-        { name: { contains: query.search, mode: 'insensitive' } },
-        { code: { contains: query.search, mode: 'insensitive' } },
-      ];
-    }
-
-    const [data, total] = await Promise.all([
-      this.prisma.branch.findMany({
-        where,
-        include: { warehouses: true },
-        orderBy: [{ isMain: 'desc' }, { name: 'asc' }],
-        skip,
-        take: pageSize,
-      }),
-      this.prisma.branch.count({ where }),
-    ]);
-
-    // Add userCount placeholder
-    const enriched = data.map(b => ({ ...b, userCount: 0 }));
-
-    return { data: enriched, total, page, pageSize };
+    return {
+      ...result,
+      data: result.data.map(b => ({ ...b, userCount: 0 })),
+    };
   }
 
   async findOne(id: string) {

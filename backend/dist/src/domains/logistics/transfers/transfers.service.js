@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransfersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../../core/prisma/prisma.service");
+const paginate_1 = require("../../../core/prisma/paginate");
 const inventory_service_1 = require("../inventory.service");
 const inventory_movement_model_1 = require("../models/inventory-movement.model");
 const transfer_model_1 = require("./models/transfer.model");
@@ -161,44 +162,27 @@ let TransfersService = class TransfersService {
         });
     }
     async findAll(query) {
-        const page = Number(query.page) || 1;
-        const pageSize = Number(query.pageSize) || 15;
-        const skip = (page - 1) * pageSize;
-        const where = {};
-        if (query.status) {
-            where.status = query.status;
-        }
-        if (query.search) {
-            where.OR = [
-                { id: { contains: query.search, mode: 'insensitive' } },
-                { trackingNumber: { contains: query.search, mode: 'insensitive' } },
-                { notes: { contains: query.search, mode: 'insensitive' } },
-            ];
-        }
-        const [data, total] = await Promise.all([
-            this.prisma.stockTransfer.findMany({
-                where,
-                skip,
-                take: pageSize,
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    sourceWarehouse: true,
-                    destinationWarehouse: true,
-                    lines: {
-                        include: {
-                            variant: true,
-                        },
-                    },
-                },
-            }),
-            this.prisma.stockTransfer.count({ where }),
-        ]);
-        const formattedData = data.map(t => ({
-            ...t,
-            sourceWarehouseName: t.sourceWarehouse?.name,
-            destinationWarehouseName: t.destinationWarehouse?.name,
-        }));
-        return { data: formattedData, total };
+        const extraWhere = {};
+        if (query.status)
+            extraWhere.status = query.status;
+        const result = await (0, paginate_1.paginate)(this.prisma.stockTransfer, query, {
+            searchFields: ['id', 'trackingNumber', 'notes'],
+            where: extraWhere,
+            defaultPageSize: 15,
+            include: {
+                sourceWarehouse: true,
+                destinationWarehouse: true,
+                lines: { include: { variant: true } },
+            },
+        });
+        return {
+            ...result,
+            data: result.data.map((t) => ({
+                ...t,
+                sourceWarehouseName: t.sourceWarehouse?.name,
+                destinationWarehouseName: t.destinationWarehouse?.name,
+            })),
+        };
     }
     async findOne(id) {
         const transfer = await this.prisma.stockTransfer.findUnique({
