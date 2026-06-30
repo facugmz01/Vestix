@@ -6,6 +6,7 @@ import { storefrontOrdersApi } from '@/api/storefront-orders.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function StorefrontMyOrdersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -20,7 +21,6 @@ export default function StorefrontMyOrdersPage() {
   });
 
   const orders = data?.data || [];
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   // ── Auth Gate ──────────────────────────────────────────────────────────────
   if (!authLoading && !isAuthenticated) {
@@ -117,7 +117,7 @@ export default function StorefrontMyOrdersPage() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
                     <span style={{ fontSize: '13px', color: '#64748b' }}>{o.lines.length} artículos</span>
-                    <span style={{ fontWeight: 900, color: '#0f172a' }}>{fmtCurrency(o.grandTotal)}</span>
+                    <span style={{ fontWeight: 900, color: '#0f172a' }}>{formatCurrency(o.grandTotal)}</span>
                   </div>
                 </div>
               );
@@ -135,7 +135,7 @@ export default function StorefrontMyOrdersPage() {
             <p>Seleccioná un pedido para ver los detalles.</p>
           </div>
         ) : (
-          <OrderDetailView orderId={selectedId} fmtCurrency={fmtCurrency} getStatusDisplay={getStatusDisplay} />
+          <OrderDetailView orderId={selectedId} getStatusDisplay={getStatusDisplay} />
         )}
 
       </div>
@@ -144,7 +144,7 @@ export default function StorefrontMyOrdersPage() {
   );
 }
 
-function OrderDetailView({ orderId, fmtCurrency, getStatusDisplay }: any) {
+function OrderDetailView({ orderId, getStatusDisplay }: any) {
   const { data: order, isLoading } = useQuery({
     queryKey: queryKeys.storefront.order(orderId),
     queryFn: () => storefrontOrdersApi.getMyOrder(orderId),
@@ -197,12 +197,12 @@ function OrderDetailView({ orderId, fmtCurrency, getStatusDisplay }: any) {
                 <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Cant: {l.quantity}</p>
               </div>
             </div>
-            <span style={{ fontWeight: 800 }}>{fmtCurrency(l.finalPrice)}</span>
+            <span style={{ fontWeight: 800 }}>{formatCurrency(l.finalPrice)}</span>
           </div>
         ))}
         <div style={{ borderTop: '2px solid #e2e8f0', marginTop: '16px', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <span style={{ fontSize: '16px', fontWeight: 800 }}>Total Pagado</span>
-          <span style={{ fontSize: '24px', fontWeight: 900, color: '#0f172a' }}>{fmtCurrency(order.grandTotal)}</span>
+          <span style={{ fontSize: '24px', fontWeight: 900, color: '#0f172a' }}>{formatCurrency(order.grandTotal)}</span>
         </div>
       </div>
 

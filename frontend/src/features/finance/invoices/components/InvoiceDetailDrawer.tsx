@@ -6,6 +6,7 @@ import { invoicesApi } from '@/api/invoices.api';
 import { queryKeys } from '@/api/queryKeys';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props { open: boolean; onClose: () => void; invoiceId: string | null; }
 
@@ -31,7 +32,6 @@ export function InvoiceDetailDrawer({ open, onClose, invoiceId }: Props) {
     onSuccess: () => { toast.success('Comprobante anulado'); queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all() }); },
     onError: (err: any) => toast.error(err.message || 'Error al anular'),
   });
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   if (!invoiceId || isLoading || !invoice) return <Drawer open={open} onClose={onClose} title="Cargando..." width="md"><div /></Drawer>;
 
@@ -51,7 +51,7 @@ export function InvoiceDetailDrawer({ open, onClose, invoiceId }: Props) {
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)' }}>Total</p>
-            <span style={{ fontSize: '28px', fontWeight: 900 }}>{fmtCurrency(invoice.total)}</span>
+            <span style={{ fontSize: '28px', fontWeight: 900 }}>{formatCurrency(invoice.total)}</span>
           </div>
         </div>
 
@@ -92,9 +92,9 @@ export function InvoiceDetailDrawer({ open, onClose, invoiceId }: Props) {
         </div>
 
         <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}><span>Neto Gravado</span><span style={{ fontWeight: 600 }}>{fmtCurrency(invoice.subtotal)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}><span>IVA 21%</span><span style={{ fontWeight: 600 }}>{fmtCurrency(invoice.vatAmount)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '10px', borderTop: '2px solid var(--border)' }}><span style={{ fontWeight: 800, fontSize: '16px' }}>Total</span><span style={{ fontWeight: 900, fontSize: '20px' }}>{fmtCurrency(invoice.total)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}><span>Neto Gravado</span><span style={{ fontWeight: 600 }}>{formatCurrency(invoice.subtotal)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}><span>IVA 21%</span><span style={{ fontWeight: 600 }}>{formatCurrency(invoice.vatAmount)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '10px', borderTop: '2px solid var(--border)' }}><span style={{ fontWeight: 800, fontSize: '16px' }}>Total</span><span style={{ fontWeight: 900, fontSize: '20px' }}>{formatCurrency(invoice.total)}</span></div>
         </div>
 
         <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--border)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>

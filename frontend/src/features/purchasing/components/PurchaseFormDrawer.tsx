@@ -8,6 +8,7 @@ import { queryKeys } from '@/api/queryKeys';
 import type { PurchaseOrder } from '@/types';
 import toast from 'react-hot-toast';
 import { X, Search, Package } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -89,7 +90,6 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   };
 
   const totals = lines.reduce((acc, line) => acc + (line.quantity * line.unitCost), 0);
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
@@ -162,7 +162,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
                   <div key={p.id} onClick={() => handleAddToCart(p)} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', cursor: 'pointer', transition: 'all 0.2s' }}>
                     <p style={{ margin: '0 0 4px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{p.sku}</p>
                     <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, minHeight: '34px' }}>{p.name} {p.size && `(${p.size})`}</p>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--accent)' }}>{fmtCurrency(p.basePrice)}</p>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(p.basePrice)}</p>
                   </div>
                 ))}
               </div>
@@ -223,7 +223,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', marginTop: '8px', fontSize: '13px', fontWeight: 800 }}>
-                    {fmtCurrency(l.quantity * l.unitCost)}
+                    {formatCurrency(l.quantity * l.unitCost)}
                   </div>
                 </div>
               ))}
@@ -231,7 +231,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
             
             <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--border)', textAlign: 'right' }}>
               <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Monto Total OC: </span>
-              <span style={{ fontSize: '24px', fontWeight: 900, display: 'block', color: 'var(--text-primary)' }}>{fmtCurrency(totals)}</span>
+              <span style={{ fontSize: '24px', fontWeight: 900, display: 'block', color: 'var(--text-primary)' }}>{formatCurrency(totals)}</span>
             </div>
           </div>
 

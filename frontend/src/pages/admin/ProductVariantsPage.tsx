@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { 
   PageContainer, Section, Table, Button, Badge, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip
 } from '@/components/ui';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 
 import { productsApi } from '@/api/products.api';
@@ -85,7 +86,6 @@ export default function ProductVariantsPage() {
     setPrintOpen(true);
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   if (loadingProduct) return <PageContainer title="Cargando..."><p style={{ color: 'var(--text-muted)' }}>Cargando producto...</p></PageContainer>;
   if (!product) return <PageContainer title="Producto no encontrado" action={<Button onClick={() => navigate('/admin/catalog')}>Volver</Button>}><p>El producto solicitado no existe.</p></PageContainer>;
@@ -150,7 +150,7 @@ export default function ProductVariantsPage() {
               { 
                 key: 'price', 
                 header: 'Precio Base',
-                render: (v) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{fmtCurrency(v.basePrice)}</span>
+                render: (v) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(v.basePrice)}</span>
               },
               { 
                 key: 'isActive', 

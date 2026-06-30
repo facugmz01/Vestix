@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/cart.store';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function StorefrontCheckoutPage() {
   const navigate = useNavigate();
@@ -42,7 +43,6 @@ export default function StorefrontCheckoutPage() {
   
   const subtotal = totalPrice();
   const grandTotal = subtotal + SHIPPING_COST;
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   if (isLoadingSettings) {
     return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Loader2 size={32} className="spin" color="var(--accent)" /></div>;
@@ -62,7 +62,7 @@ export default function StorefrontCheckoutPage() {
         enqueueOfflineOp({
           module: 'STOREFRONT',
           action: 'checkout',
-          description: `Pedido online offline por ${fmtCurrency(grandTotal)}`,
+          description: `Pedido online offline por ${formatCurrency(grandTotal)}`,
           endpoint: '/storefront/checkout',
           method: 'POST',
           maxRetries: 5,
@@ -80,7 +80,7 @@ export default function StorefrontCheckoutPage() {
           enqueueOfflineOp({
             module: 'STOREFRONT',
             action: 'checkout',
-            description: `Pedido online offline por ${fmtCurrency(grandTotal)}`,
+            description: `Pedido online offline por ${formatCurrency(grandTotal)}`,
             endpoint: '/storefront/checkout',
             method: 'POST',
             maxRetries: 5,
@@ -238,7 +238,7 @@ export default function StorefrontCheckoutPage() {
                       <Icon size={22} color={selected ? 'var(--accent)' : 'var(--text-muted)'} style={{ marginBottom: '8px' }} />
                       <h4 style={{ margin: '0 0 4px', fontSize: '14px', color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{opt.name}</h4>
                       <p style={{ margin: 0, fontSize: '13px', color: selected ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 600 }}>
-                        {opt.price === 0 ? 'Gratis' : `+ ${fmtCurrency(opt.price)}`}
+                        {opt.price === 0 ? 'Gratis' : `+ ${formatCurrency(opt.price)}`}
                       </p>
                     </div>
                   );
@@ -295,23 +295,23 @@ export default function StorefrontCheckoutPage() {
             {items.map(i => (
               <div key={i.variantId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-secondary)' }}>
                 <span style={{ flex: 1, paddingRight: '8px' }}>{i.name} {i.size ? `(T.${i.size})` : ''} × {i.qty}</span>
-                <span style={{ fontWeight: 700, color: 'var(--text-primary)', flexShrink: 0 }}>{fmtCurrency(i.price * i.qty)}</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-primary)', flexShrink: 0 }}>{formatCurrency(i.price * i.qty)}</span>
               </div>
             ))}
           </div>
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-              <span>Subtotal</span><span style={{ fontWeight: 600 }}>{fmtCurrency(subtotal)}</span>
+              <span>Subtotal</span><span style={{ fontWeight: 600 }}>{formatCurrency(subtotal)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
               <span>Envío</span>
               <span style={{ fontWeight: 600, color: SHIPPING_COST === 0 ? 'var(--green)' : 'var(--text-primary)' }}>
-                {SHIPPING_COST === 0 ? 'GRATIS' : fmtCurrency(SHIPPING_COST)}
+                {SHIPPING_COST === 0 ? 'GRATIS' : formatCurrency(SHIPPING_COST)}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '12px', borderTop: '2px solid var(--border)' }}>
               <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>Total</span>
-              <span style={{ fontWeight: 900, fontSize: '18px', color: 'var(--text-primary)' }}>{fmtCurrency(grandTotal)}</span>
+              <span style={{ fontWeight: 900, fontSize: '18px', color: 'var(--text-primary)' }}>{formatCurrency(grandTotal)}</span>
             </div>
           </div>
         </div>

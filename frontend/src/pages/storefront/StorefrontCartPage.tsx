@@ -3,13 +3,13 @@ import { Trash2, ArrowRight, PackageX } from 'lucide-react';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function StorefrontCartPage() {
   const navigate = useNavigate();
   const prefix = storePrefix();
   const { items, updateQty, removeItem, totalPrice } = useCartStore();
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   const handleRemove = (variantId: string, name: string) => {
     removeItem(variantId);
@@ -58,7 +58,7 @@ export default function StorefrontCartPage() {
                 <p style={{ margin: '0 0 8px', fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
                   {item.sku}{item.size ? ` • T. ${item.size}` : ''}{item.color ? ` • ${item.color}` : ''}
                 </p>
-                <span style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-primary)' }}>{fmtCurrency(item.price)}</span>
+                <span style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-primary)' }}>{formatCurrency(item.price)}</span>
               </div>
 
               {/* Controls Wrapper for mobile wrap */}
@@ -72,7 +72,7 @@ export default function StorefrontCartPage() {
 
                 {/* Subtotal */}
                 <div style={{ width: '90px', textAlign: 'right', flexShrink: 0 }}>
-                  <span style={{ fontWeight: 900, fontSize: '15px', color: 'var(--text-primary)' }}>{fmtCurrency(item.price * item.qty)}</span>
+                  <span style={{ fontWeight: 900, fontSize: '15px', color: 'var(--text-primary)' }}>{formatCurrency(item.price * item.qty)}</span>
                 </div>
 
                 {/* Remove */}
@@ -92,7 +92,7 @@ export default function StorefrontCartPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', color: 'var(--text-secondary)', fontSize: '14px' }}>
             <span>Subtotal ({items.reduce((a, i) => a + i.qty, 0)} artículos)</span>
-            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{fmtCurrency(subtotal)}</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(subtotal)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', color: 'var(--text-secondary)', fontSize: '14px' }}>
             <span>Envío</span>
@@ -101,7 +101,7 @@ export default function StorefrontCartPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '16px', borderTop: '2px solid var(--border)', marginBottom: '20px' }}>
             <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>Total</span>
-            <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)' }}>{fmtCurrency(subtotal)}</span>
+            <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)' }}>{formatCurrency(subtotal)}</span>
           </div>
 
           <button

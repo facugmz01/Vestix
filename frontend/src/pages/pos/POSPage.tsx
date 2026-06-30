@@ -13,6 +13,7 @@ import { salesApi } from '@/api/sales.api';
 import { customersApi } from '@/api/customers.api';
 import { treasuryApi } from '@/api/treasury.api';
 import { get } from '@/api/client';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { queryKeys } from '@/api/queryKeys';
 import { useAuthStore } from '@/store/auth.store';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
@@ -112,7 +113,6 @@ export default function POSPage() {
   const globalDiscount = totalAfterLines * (cartDiscountPct / 100);
   const grandTotal = totalAfterLines - globalDiscount;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   // --- Handlers ---
   const handleAddToCart = (variant: ProductVariant) => {
@@ -345,7 +345,7 @@ export default function POSPage() {
                 </div>
                 <div className={styles.productInfo}>
                   <div className={styles.productName}>{(p as any).name || (p as any).productName || 'Producto'} {p.size ? `(${p.size})` : ''}</div>
-                  <div className={styles.productPrice}>{fmtCurrency(p.basePrice)}</div>
+                  <div className={styles.productPrice}>{formatCurrency(p.basePrice)}</div>
                 </div>
               </div>
             ))}
@@ -416,7 +416,7 @@ export default function POSPage() {
                         {(item.variant as any).name || (item.variant as any).productName || 'Producto'} {item.variant.size ? `(${item.variant.size})` : ''}
                       </span>
                       <span className={styles.cartItemSku}>
-                        {fmtCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
+                        {formatCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
                       </span>
                     </div>
 
@@ -444,7 +444,7 @@ export default function POSPage() {
           <div className={styles.summary}>
             <div className={styles.summaryRow}>
               <span>Items: {totalItems}</span>
-              <span>Subtotal: {fmtCurrency(subtotal)}</span>
+              <span>Subtotal: {formatCurrency(subtotal)}</span>
             </div>
             <div className={styles.summaryRow} style={{ alignItems: 'center' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -456,12 +456,12 @@ export default function POSPage() {
                   onChange={e => setCartDiscountPct(Number(e.target.value))} 
                 />
               </span>
-              <span style={{ color: '#f87171' }}>(-) {fmtCurrency(globalDiscount + lineDiscounts)}</span>
+              <span style={{ color: '#f87171' }}>(-) {formatCurrency(globalDiscount + lineDiscounts)}</span>
             </div>
             
             <div className={styles.totalRow}>
               <span>Total</span>
-              <span>{fmtCurrency(grandTotal)}</span>
+              <span>{formatCurrency(grandTotal)}</span>
             </div>
           </div>
 
@@ -520,7 +520,7 @@ export default function POSPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1))', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)', padding: '24px', textAlign: 'center', borderRadius: '16px' }}>
             <div style={{ fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, opacity: 0.8 }}>Monto a Cobrar</div>
-            <div style={{ fontSize: '48px', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{fmtCurrency(grandTotal)}</div>
+            <div style={{ fontSize: '48px', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{formatCurrency(grandTotal)}</div>
           </div>
 
           {paymentMethod === 'CASH' && (
@@ -535,7 +535,7 @@ export default function POSPage() {
               />
               {amountTendered > grandTotal && (
                 <div style={{ marginTop: '16px', color: '#f87171', fontSize: '22px', fontWeight: 'bold' }}>
-                  Vuelto a entregar: {fmtCurrency(amountTendered - grandTotal)}
+                  Vuelto a entregar: {formatCurrency(amountTendered - grandTotal)}
                 </div>
               )}
             </div>
@@ -575,7 +575,7 @@ export default function POSPage() {
                   <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{new Date(sale.date).toLocaleString()}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ fontWeight: 800, fontSize: '18px', color: '#34d399' }}>{fmtCurrency(sale.total)}</div>
+                  <div style={{ fontWeight: 800, fontSize: '18px', color: '#34d399' }}>{formatCurrency(sale.total)}</div>
                   <Button variant="primary" style={{ padding: '8px 16px', fontSize: '13px' }} onClick={() => resumeSale(sale.id)}>
                     Retomar
                   </Button>

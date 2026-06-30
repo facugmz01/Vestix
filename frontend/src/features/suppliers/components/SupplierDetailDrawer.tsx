@@ -4,6 +4,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { suppliersApi } from '@/api/suppliers.api';
 import type { Supplier } from '@/types';
 import { Briefcase, CreditCard, Receipt, FileText } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -14,7 +15,6 @@ interface Props {
 export function SupplierDetailDrawer({ open, onClose, supplier }: Props) {
   if (!supplier) return null;
 
-  const fmtCurrency = (val: number, cur: string) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: cur }).format(val);
 
   // Fetch Ledger (Account history)
   const { data: ledger, isLoading } = useQuery({
@@ -57,7 +57,7 @@ export function SupplierDetailDrawer({ open, onClose, supplier }: Props) {
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
             <span style={{ fontSize: '32px', fontWeight: 800, color: supplier.account?.balance > 0 ? "var(--red)" : "var(--green)", lineHeight: 1 }}>
-              {fmtCurrency(supplier.account?.balance || 0, supplier.account?.currency || 'ARS')}
+              {formatCurrency(supplier.account?.balance || 0, supplier.account?.currency || 'ARS')}
             </span>
             <span style={{ fontSize: '14px', color: 'var(--text-secondary)', paddingBottom: '4px' }}>
               {supplier.account?.balance > 0 ? 'Saldo pendiente a pagar' : 'Al día'}
@@ -89,9 +89,9 @@ export function SupplierDetailDrawer({ open, onClose, supplier }: Props) {
                 columns={[
                   { key: 'date', header: 'Fecha', render: (l) => new Date(l.date).toLocaleDateString() },
                   { key: 'concept', header: 'Concepto', render: (l) => l.concept },
-                  { key: 'debit', header: 'Debe (Pagos)', render: (l) => l.debit > 0 ? <span style={{ color: 'var(--green)' }}>{fmtCurrency(l.debit, supplier.account?.currency)}</span> : '-' },
-                  { key: 'credit', header: 'Haber (Facturas)', render: (l) => l.credit > 0 ? <span style={{ color: 'var(--red)' }}>{fmtCurrency(l.credit, supplier.account?.currency)}</span> : '-' },
-                  { key: 'balance', header: 'Saldo', render: (l) => <strong>{fmtCurrency(l.balance, supplier.account?.currency)}</strong> }
+                  { key: 'debit', header: 'Debe (Pagos)', render: (l) => l.debit > 0 ? <span style={{ color: 'var(--green)' }}>{formatCurrency(l.debit, supplier.account?.currency)}</span> : '-' },
+                  { key: 'credit', header: 'Haber (Facturas)', render: (l) => l.credit > 0 ? <span style={{ color: 'var(--red)' }}>{formatCurrency(l.credit, supplier.account?.currency)}</span> : '-' },
+                  { key: 'balance', header: 'Saldo', render: (l) => <strong>{formatCurrency(l.balance, supplier.account?.currency)}</strong> }
                 ]}
               />
             )}

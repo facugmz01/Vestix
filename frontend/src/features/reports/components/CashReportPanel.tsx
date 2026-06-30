@@ -5,6 +5,7 @@ import { Button } from '@/components/ui';
 import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { KpiCard, BarChart, StackedBar } from './ChartPrimitives';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props { from: string; to: string; branchId?: string; }
 
@@ -14,7 +15,6 @@ const METHOD_COLORS: Record<string, string> = {
 };
 
 export function CashReportPanel({ from, to, branchId }: Props) {
-  const fmtCurrency = (v: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v);
 
   const { data: summary, isLoading } = useQuery({
     queryKey: queryKeys.reports.cashSummary(from, to, branchId),
@@ -40,9 +40,9 @@ export function CashReportPanel({ from, to, branchId }: Props) {
       </div>
 
       <div className="grid-responsive grid-cols-3">
-        <KpiCard label="Total Ingresos" value={fmtCurrency(summary.totalIncome)} icon={<Wallet size={20} />} color="#22c55e" />
-        <KpiCard label="Total Egresos" value={fmtCurrency(summary.totalExpenses)} icon={<Wallet size={20} />} color="#ef4444" />
-        <KpiCard label="Resultado Neto de Caja" value={fmtCurrency(summary.netCash)} icon={<Wallet size={20} />} color={summary.netCash >= 0 ? '#3b82f6' : '#ef4444'} />
+        <KpiCard label="Total Ingresos" value={formatCurrency(summary.totalIncome)} icon={<Wallet size={20} />} color="#22c55e" />
+        <KpiCard label="Total Egresos" value={formatCurrency(summary.totalExpenses)} icon={<Wallet size={20} />} color="#ef4444" />
+        <KpiCard label="Resultado Neto de Caja" value={formatCurrency(summary.netCash)} icon={<Wallet size={20} />} color={summary.netCash >= 0 ? '#3b82f6' : '#ef4444'} />
       </div>
 
       {/* By payment method */}
@@ -56,7 +56,7 @@ export function CashReportPanel({ from, to, branchId }: Props) {
               color: METHOD_COLORS[m.method] ?? '#94a3b8',
             }))}
             total={summary.totalIncome}
-            formatValue={fmtCurrency}
+            formatValue={formatCurrency}
           />
         </div>
       )}

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { Wallet, CheckCircle, Calculator, AlertTriangle, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { TreasuryTransactionModal } from './TreasuryTransactionModal';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -50,7 +51,6 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="lg"><div /></Drawer>;
   }
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   const diffColor = shift.difference && shift.difference < 0 ? 'var(--red)' : (shift.difference && shift.difference > 0 ? 'var(--orange)' : 'var(--green)');
 
@@ -67,7 +67,7 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
           </div>
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Saldo Inicial (Apertura)</span>
-            <span style={{ fontSize: '20px', fontWeight: 900 }}>{fmtCurrency(shift.openingBalance)}</span>
+            <span style={{ fontSize: '20px', fontWeight: 900 }}>{formatCurrency(shift.openingBalance)}</span>
           </div>
         </div>
 
@@ -76,17 +76,17 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
           <div className="grid-responsive grid-cols-3">
             <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px' }}>
               <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Esperado por Sistema</p>
-              <h2 style={{ margin: 0, fontSize: '24px' }}>{fmtCurrency(shift.expectedClosingBalance || 0)}</h2>
+              <h2 style={{ margin: 0, fontSize: '24px' }}>{formatCurrency(shift.expectedClosingBalance || 0)}</h2>
             </div>
             <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px' }}>
               <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Conteo Físico Real</p>
-              <h2 style={{ margin: 0, fontSize: '24px' }}>{fmtCurrency(shift.actualClosingBalance || 0)}</h2>
+              <h2 style={{ margin: 0, fontSize: '24px' }}>{formatCurrency(shift.actualClosingBalance || 0)}</h2>
             </div>
             <div style={{ padding: '16px', background: 'var(--bg-base)', border: `2px solid ${diffColor}`, borderRadius: '8px', color: diffColor }}>
               <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'inherit' }}>Diferencia (Faltante/Sobrante)</p>
               <h2 style={{ margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {shift.difference === 0 ? <CheckCircle /> : <AlertTriangle />}
-                {fmtCurrency(shift.difference || 0)}
+                {formatCurrency(shift.difference || 0)}
               </h2>
             </div>
           </div>
@@ -123,7 +123,7 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
                 header: 'Monto', 
                 render: (m) => (
                   <span style={{ fontWeight: 800, color: m.type === 'INCOME' ? 'var(--green)' : 'var(--red)' }}>
-                    {m.type === 'INCOME' ? '+' : '-'}{fmtCurrency(m.amount)}
+                    {m.type === 'INCOME' ? '+' : '-'}{formatCurrency(m.amount)}
                   </span>
                 )
               }

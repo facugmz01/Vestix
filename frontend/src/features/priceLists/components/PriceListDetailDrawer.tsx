@@ -5,6 +5,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { priceListsApi } from '@/api/priceLists.api';
 import type { PriceList } from '@/types';
 import { Percent, DollarSign, Edit2 } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -26,7 +27,6 @@ export function PriceListDetailDrawer({ open, onClose, priceList }: Props) {
   const items = data?.data || [];
   const total = data?.total || 0;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: priceList.currency }).format(val);
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Lista de Precios" width="lg">
@@ -74,8 +74,8 @@ export function PriceListDetailDrawer({ open, onClose, priceList }: Props) {
                 columns={[
                   { key: 'sku', header: 'SKU', render: (i) => <span style={{ fontFamily: 'monospace' }}>{i.variantSku}</span> },
                   { key: 'name', header: 'Producto', render: (i) => i.variantName },
-                  { key: 'base', header: 'Costo / Base', render: (i) => <span style={{ color: 'var(--text-muted)' }}>{fmtCurrency(i.basePrice || 0)}</span> },
-                  { key: 'override', header: 'Precio Final', render: (i) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{fmtCurrency(i.overridePrice)}</span> },
+                  { key: 'base', header: 'Costo / Base', render: (i) => <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(i.basePrice || 0)}</span> },
+                  { key: 'override', header: 'Precio Final', render: (i) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(i.overridePrice)}</span> },
                   { 
                     key: 'actions', 
                     header: '', 

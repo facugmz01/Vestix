@@ -7,6 +7,7 @@ import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { BarChart, KpiCard } from './ChartPrimitives';
 import { TrendingUp, ShoppingBag, CreditCard } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   from: string;
@@ -17,7 +18,6 @@ interface Props {
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 
 export function SalesReportPanel({ from, to, branchId }: Props) {
-  const fmtCurrency = (v: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v);
 
   const { data: summary, isLoading: sl } = useQuery({
     queryKey: queryKeys.reports.salesSummary(from, to, branchId),
@@ -54,9 +54,9 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
 
       {/* KPIs */}
       <div className="grid-responsive grid-cols-4">
-        <KpiCard label="Total Facturado" value={fmtCurrency(summary.totalRevenue)} icon={<TrendingUp size={20} />} color="#3b82f6" />
+        <KpiCard label="Total Facturado" value={formatCurrency(summary.totalRevenue)} icon={<TrendingUp size={20} />} color="#3b82f6" />
         <KpiCard label="Transacciones" value={String(summary.totalOrders)} icon={<ShoppingBag size={20} />} color="#10b981" />
-        <KpiCard label="Ticket Promedio" value={fmtCurrency(summary.averageOrderValue)} icon={<CreditCard size={20} />} color="#f59e0b" />
+        <KpiCard label="Ticket Promedio" value={formatCurrency(summary.averageOrderValue)} icon={<CreditCard size={20} />} color="#f59e0b" />
       </div>
 
       {/* COGS */}
@@ -64,11 +64,11 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
         <div className="grid-responsive grid-cols-3">
           <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
             <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Costo de Mercadería Vendida</p>
-            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900 }}>{fmtCurrency(cogs.totalCOGS)}</h3>
+            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900 }}>{formatCurrency(cogs.totalCOGS)}</h3>
           </div>
           <div style={{ padding: '20px', background: 'var(--green-bg)', borderRadius: '12px', border: '1px solid var(--green)', textAlign: 'center' }}>
             <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--green)', textTransform: 'uppercase', fontWeight: 600 }}>Ganancia Bruta</p>
-            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: 'var(--green)' }}>{fmtCurrency(cogs.grossProfit)}</h3>
+            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: 'var(--green)' }}>{formatCurrency(cogs.grossProfit)}</h3>
           </div>
           <div style={{ padding: '20px', background: 'var(--blue-bg)', borderRadius: '12px', border: '1px solid var(--blue)', textAlign: 'center' }}>
             <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--blue)', textTransform: 'uppercase', fontWeight: 600 }}>Margen Bruto</p>
@@ -111,7 +111,7 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
                 <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '10px 8px', fontWeight: 600 }}>{m.method}</td>
                   <td style={{ padding: '10px 8px', textAlign: 'right' }}>{m.count}</td>
-                  <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700 }}>{fmtCurrency(m.amount)}</td>
+                  <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(m.amount)}</td>
                   <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>
                     {summary.totalRevenue > 0 ? ((m.amount / summary.totalRevenue) * 100).toFixed(1) : 0}%
                   </td>

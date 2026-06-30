@@ -2,6 +2,7 @@ import { Drawer, Badge } from '@/components/ui';
 import type { ProductVariant } from '@/types';
 import { Package, Barcode } from 'lucide-react';
 import { VariantPricingPanel } from './VariantPricingPanel';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -12,7 +13,6 @@ interface Props {
 export function VariantDetailDrawer({ open, onClose, variant }: Props) {
   if (!variant) return null;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Variante" width="sm">
@@ -29,7 +29,7 @@ export function VariantDetailDrawer({ open, onClose, variant }: Props) {
         <div className="grid-responsive grid-cols-2" style={{ gap: "12px" }}>
           <InfoBox label="Talle / Tamaño" value={variant.size || '-'} />
           <InfoBox label="Color" value={variant.color || '-'} />
-          <InfoBox label="Precio Base" value={fmtCurrency(variant.basePrice)} />
+          <InfoBox label="Precio Base" value={formatCurrency(variant.basePrice)} />
         </div>
 
         {variant.barcode && (

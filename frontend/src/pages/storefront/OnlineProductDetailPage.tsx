@@ -7,6 +7,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function OnlineProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,7 +40,6 @@ export default function OnlineProductDetailPage() {
     }
   }, [product, selectedVariantId]);
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   if (isLoading) {
     return (
@@ -143,9 +143,9 @@ export default function OnlineProductDetailPage() {
           <div style={{ padding: '20px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.06)', marginBottom: '24px', boxSizing: 'border-box' }}>
             
             <div style={{ marginBottom: '20px' }}>
-              <span style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{fmtCurrency(displayPrice)}</span>
+              <span style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{formatCurrency(displayPrice)}</span>
               {product.basePrice && product.basePrice > product.price && (
-                <span style={{ marginLeft: '12px', fontSize: '16px', color: '#94a3b8', textDecoration: 'line-through' }}>{fmtCurrency(product.basePrice)}</span>
+                <span style={{ marginLeft: '12px', fontSize: '16px', color: '#94a3b8', textDecoration: 'line-through' }}>{formatCurrency(product.basePrice)}</span>
               )}
               <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '8px', height: '8px', background: isAvailable ? '#22c55e' : '#ef4444', borderRadius: '50%', display: 'inline-block' }} />

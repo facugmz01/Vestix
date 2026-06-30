@@ -5,6 +5,7 @@ import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -45,7 +46,6 @@ export function ReturnDetailDrawer({ open, onClose, returnId }: Props) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="lg"><div /></Drawer>;
   }
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   const getStatusColor = (s: string) => {
     if (s === 'PENDING') return 'orange';
@@ -80,7 +80,7 @@ export function ReturnDetailDrawer({ open, onClose, returnId }: Props) {
         <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: '14px', color: 'var(--text-muted)' }}>Monto a favor del cliente</p>
-            <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>{fmtCurrency(rma.totalRefundAmount)}</h2>
+            <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>{formatCurrency(rma.totalRefundAmount)}</h2>
           </div>
           <div style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '13px', maxWidth: '200px' }}>
             {rma.action === 'EXCHANGE' ? 'Al aprobarse, el cliente podrá usar este saldo para llevar otro artículo.' : 'Al aprobarse, se extraerá este monto de la caja/cuenta correspondiente.'}
@@ -109,7 +109,7 @@ export function ReturnDetailDrawer({ open, onClose, returnId }: Props) {
                   return <Badge color={color as any}>{l.condition}</Badge>;
                 }
               },
-              { key: 'refund', header: 'Monto Reconocido', render: (l) => <span style={{ fontWeight: 800 }}>{fmtCurrency(l.refundAmount)}</span> }
+              { key: 'refund', header: 'Monto Reconocido', render: (l) => <span style={{ fontWeight: 800 }}>{formatCurrency(l.refundAmount)}</span> }
             ]}
           />
         </div>

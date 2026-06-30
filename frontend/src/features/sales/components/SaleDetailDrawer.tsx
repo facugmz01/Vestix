@@ -5,6 +5,7 @@ import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, FileText, ShoppingCart } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -45,7 +46,6 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="lg"><div /></Drawer>;
   }
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   const paymentMethodNames: Record<string, string> = {
     CASH: 'Efectivo',
@@ -94,7 +94,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
           </div>
           <div style={{ padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Monto Final</span>
-            <p style={{ margin: 0, fontWeight: 900, color: 'var(--green)', fontSize: '18px' }}>{fmtCurrency(sale.grandTotal)}</p>
+            <p style={{ margin: 0, fontWeight: 900, color: 'var(--green)', fontSize: '18px' }}>{formatCurrency(sale.grandTotal)}</p>
           </div>
         </div>
 
@@ -120,16 +120,16 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                   </div>
                 ) 
               },
-              { key: 'price', header: 'Precio Base', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{fmtCurrency(l.basePrice)}</span> },
+              { key: 'price', header: 'Precio Base', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(l.basePrice)}</span> },
               { key: 'qty', header: 'Cant.', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.quantity}</span> },
-              { key: 'discount', header: 'Desc. L.', render: (l) => l.discountAmount > 0 ? <span style={{ color: 'var(--red)' }}>-{fmtCurrency(l.discountAmount)}</span> : '-' },
-              { key: 'final', header: 'Subtotal Final', render: (l) => <span style={{ fontWeight: 800 }}>{fmtCurrency(l.finalPrice)}</span> }
+              { key: 'discount', header: 'Desc. L.', render: (l) => l.discountAmount > 0 ? <span style={{ color: 'var(--red)' }}>-{formatCurrency(l.discountAmount)}</span> : '-' },
+              { key: 'final', header: 'Subtotal Final', render: (l) => <span style={{ fontWeight: 800 }}>{formatCurrency(l.finalPrice)}</span> }
             ]}
           />
           
           {sale.cartDiscountTotal > 0 && (
             <div style={{ textAlign: 'right', marginTop: '12px', padding: '12px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: '4px', fontWeight: 600 }}>
-              Descuento Global Adicional aplicado al carrito: -{fmtCurrency(sale.cartDiscountTotal)}
+              Descuento Global Adicional aplicado al carrito: -{formatCurrency(sale.cartDiscountTotal)}
             </div>
           )}
         </div>

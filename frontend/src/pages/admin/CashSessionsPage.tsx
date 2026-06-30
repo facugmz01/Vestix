@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Wallet, CheckCircle } from 'lucide-react';
@@ -11,14 +10,17 @@ import { treasuryApi } from '@/api/treasury.api';
 import { queryKeys } from '@/api/queryKeys';
 
 import { CashSessionDetailDrawer } from '@/features/finance/components/CashSessionDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+import { formatCurrency } from '@/utils/formatCurrency';
+import { useState } from 'react';
 
 export default function CashSessionsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [statusFilter, setStatusFilter] = useState('');
+  const { page, pageSize, filters, setPage, setFilter } = useListPage({ status: '' });
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
+
+  const statusFilter = filters.status;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.treasury.shifts({ page, pageSize, status: statusFilter }),
@@ -33,7 +35,7 @@ export default function CashSessionsPage() {
   const shifts = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
 
   return (
     <PageContainer
@@ -43,7 +45,7 @@ export default function CashSessionsPage() {
       subtitle="Monitor de sesiones de caja de todas las sucursales, retiros manuales y control de diferencias."
     >
       <FiltersBar actions={<Badge color="gray">{total} sesiones</Badge>}>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Turnos</option>
           <option value="OPEN">Turnos Abiertos (Operando)</option>
           <option value="CLOSED">Turnos Cerrados (Arqueados)</option>
@@ -93,13 +95,13 @@ export default function CashSessionsPage() {
                   if (s.status === 'OPEN') return <span style={{ color: 'var(--text-muted)' }}>Operando...</span>;
                   const diff = s.difference || 0;
                   if (diff === 0) return <Badge color="green"><CheckCircle size={12} /> Exacto</Badge>;
-                  return <Badge color={diff < 0 ? 'red' : 'warning'}>{diff < 0 ? 'Faltante' : 'Sobrante'} {fmtCurrency(diff)}</Badge>;
+                  return <Badge color={diff < 0 ? 'red' : 'yellow'}>{diff < 0 ? 'Faltante' : 'Sobrante'} {formatCurrency(diff)}</Badge>;
                 }
               },
               { 
                 key: 'status', 
                 header: 'Estado',
-                render: (s) => <StatusChip label={s.status} color={s.status === 'OPEN' ? 'green' : 'gray'} />
+                render: (s) => <StatusChip label={s.status === 'OPEN' ? 'Abierto' : 'Cerrado'} color={s.status === 'OPEN' ? 'green' : 'gray'} />
               },
               {
                 key: 'actions',

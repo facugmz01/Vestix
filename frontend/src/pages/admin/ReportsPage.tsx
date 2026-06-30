@@ -10,6 +10,7 @@ import {
 } from '@/components/ui';
 import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { KpiCard } from '@/features/reports/components/ChartPrimitives';
 import { SalesReportPanel }     from '@/features/reports/components/SalesReportPanel';
 import { StockReportPanel }     from '@/features/reports/components/StockReportPanel';
@@ -41,7 +42,7 @@ export default function ReportsPage() {
     enabled: activeTab === 'overview',
   });
 
-  const fmtCurrency = (v: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v);
+
 
   const TABS: { id: ReportTab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview',   label: 'Dashboard',   icon: <BarChart2 size={14} /> },
@@ -119,7 +120,7 @@ export default function ReportsPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
                 <KpiCard
                   label="Ventas Hoy"
-                  value={fmtCurrency(dashboard.today?.revenue ?? 0)}
+                  value={formatCurrency(dashboard.today?.revenue ?? 0)}
                   icon={<TrendingUp size={20} />}
                   color="#22c55e"
                   trend={{ value: 0, label: `${dashboard.today?.orders ?? 0} pedidos` }}
@@ -138,7 +139,7 @@ export default function ReportsPage() {
                 />
                 <KpiCard
                   label="Saldo Cajas Abiertas"
-                  value={fmtCurrency(dashboard.today?.cashInDrawers ?? 0)}
+                  value={formatCurrency(dashboard.today?.cashInDrawers ?? 0)}
                   icon={<Wallet size={20} />}
                   color="#8b5cf6"
                 />

@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import type { SaleOrder } from '@/types';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface ReceiptPrinterProps {
   order: SaleOrder | null;
@@ -10,8 +11,7 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
   ({ order, branchSettings }, ref) => {
     if (!order) return null;
 
-    const fmtCurrency = (val: number) =>
-      new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
 
     const fmtDate = (dateStr: string | Date) => {
       const d = new Date(dateStr);
@@ -71,12 +71,12 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
                   {line.quantity}x {line.variant?.product?.name || 'Producto'} {line.variant?.size ? `(${line.variant?.size})` : ''}
                 </span>
                 <span style={{ width: '80px', textAlign: 'right' }}>
-                  {fmtCurrency(line.finalPrice)}
+                  {formatCurrency(line.finalPrice)}
                 </span>
               </div>
               {line.discountAmount > 0 && (
                 <div style={{ fontSize: '10px', color: '#555' }}>
-                  Bonif: -{fmtCurrency(line.discountAmount)} (Orig: {fmtCurrency(line.basePrice * line.quantity)})
+                  Bonif: -{formatCurrency(line.discountAmount)} (Orig: {formatCurrency(line.basePrice * line.quantity)})
                 </div>
               )}
             </div>
@@ -89,17 +89,17 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
         <div style={{ textAlign: 'right', marginBottom: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Subtotal:</span>
-            <span>{fmtCurrency(order.subtotal)}</span>
+            <span>{formatCurrency(order.subtotal)}</span>
           </div>
           {order.cartDiscountTotal > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Descuento Global:</span>
-              <span>-{fmtCurrency(order.cartDiscountTotal)}</span>
+              <span>-{formatCurrency(order.cartDiscountTotal)}</span>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px', marginTop: '5px', paddingTop: '5px', borderTop: '1px solid #000' }}>
             <span>TOTAL:</span>
-            <span>{fmtCurrency(order.grandTotal)}</span>
+            <span>{formatCurrency(order.grandTotal)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '11px' }}>
             <span>Medio de Pago:</span>
