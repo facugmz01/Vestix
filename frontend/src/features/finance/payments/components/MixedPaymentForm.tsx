@@ -3,6 +3,7 @@ import { Button, Input } from '@/components/ui';
 import type { PaymentMethodType } from '@/types';
 import { Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export interface MixedPaymentLine {
   id: string;
@@ -49,7 +50,6 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
     onPay(lines.map(l => ({ method: l.method, amount: l.amount, reference: l.reference })));
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
 
   return (
@@ -106,12 +106,12 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
         <div>
           <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Falta Pagar</p>
           <span style={{ fontSize: '18px', fontWeight: 800, color: remaining === 0 ? 'var(--green)' : 'var(--orange)' }}>
-            {fmtCurrency(remaining)}
+            {formatCurrency(remaining)}
           </span>
         </div>
         <div style={{ textAlign: 'right' }}>
           <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Total Ingresado</p>
-          <span style={{ fontSize: '20px', fontWeight: 900 }}>{fmtCurrency(totalAdded)}</span>
+          <span style={{ fontSize: '20px', fontWeight: 900 }}>{formatCurrency(totalAdded)}</span>
         </div>
       </div>
 

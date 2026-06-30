@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
-import { Package, Search, Filter, ShoppingBag } from 'lucide-react';
+import { Package, ShoppingBag } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useState } from 'react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -11,17 +11,21 @@ import {
 import { salesApi } from '@/api/sales.api';
 import { queryKeys } from '@/api/queryKeys';
 import { SaleDetailDrawer } from '@/features/sales/components/SaleDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+
+const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
+  PENDING_PAYMENT: 'Pago pendiente',
+  CONFIRMED: 'Confirmado',
+  READY_FOR_PICKUP: 'Listo para retiro',
+};
 
 export default function SalesFulfillmentPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
-  const [search, setSearch] = useState('');
-  
-  // We only care about pending fulfillment for web sales
-  const [statusFilter, setStatusFilter] = useState<'PENDING_PAYMENT' | 'CONFIRMED' | 'READY_FOR_PICKUP'>('CONFIRMED');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: 'CONFIRMED' }, { defaultPageSize: 20 });
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+
+  const statusFilter = filters.status;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.sales.all({ page, pageSize, search, status: statusFilter }),
@@ -59,8 +63,8 @@ export default function SalesFulfillmentPage() {
       subtitle="Visualiza y prepara los pedidos provenientes del e-commerce."
     >
       <FiltersBar actions={<Badge color="blue">{sales.length} pedidos web</Badge>}>
-        <SearchInput placeholder="Buscar por ID..." onSearch={(val) => { setSearch(val); setPage(1); }} />
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as any); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <SearchInput placeholder="Buscar por ID..." onSearch={setSearch} />
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="CONFIRMED">Por Preparar (Confirmados)</option>
           <option value="READY_FOR_PICKUP">Listos para Retiro / Envío</option>
           <option value="PENDING_PAYMENT">Pago Pendiente</option>
@@ -113,7 +117,7 @@ export default function SalesFulfillmentPage() {
               { 
                 key: 'status',
                 header: 'Estado', 
-                render: (s: any) => <StatusChip label={s.status} color={getStatusColor(s.status) as any} />
+                render: (s: any) => <StatusChip label={FULFILLMENT_STATUS_LABELS[s.status] || s.status} color={getStatusColor(s.status) as any} />
               },
               {
                 key: 'actions',

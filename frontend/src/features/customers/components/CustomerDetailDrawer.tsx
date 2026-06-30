@@ -4,6 +4,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { customersApi } from '@/api/customers.api';
 import type { Customer } from '@/types';
 import { ShoppingCart, Star, CreditCard, ExternalLink } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 
 interface Props {
@@ -15,7 +16,6 @@ interface Props {
 export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
   if (!customer) return null;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   // Fetch mock history or real history
   const { data: history, isLoading } = useQuery({
@@ -60,15 +60,15 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Límite Total:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>{fmtCurrency(customer.credit.limit)}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>{formatCurrency(customer.credit.limit)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Utilizado:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: customer.credit.used > 0 ? 'var(--red)' : 'var(--text-primary)' }}>{fmtCurrency(customer.credit.used)}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: customer.credit.used > 0 ? 'var(--red)' : 'var(--text-primary)' }}>{formatCurrency(customer.credit.used)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600 }}>Disponible:</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--green)' }}>{fmtCurrency(customer.credit.available)}</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--green)' }}>{formatCurrency(customer.credit.available)}</span>
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
                 columns={[
                   { key: 'date', header: 'Fecha', render: (h) => new Date(h.createdAt).toLocaleDateString() },
                   { key: 'id', header: 'Ticket / Factura', render: (h) => <span style={{ fontFamily: 'monospace' }}>#{h.id.slice(-6)}</span> },
-                  { key: 'total', header: 'Total', render: (h) => <strong>{fmtCurrency(h.grandTotal)}</strong> },
+                  { key: 'total', header: 'Total', render: (h) => <strong>{formatCurrency(h.grandTotal)}</strong> },
                   { key: 'method', header: 'Método', render: (h) => <Badge color="gray">{h.paymentMethod}</Badge> },
                   { key: 'action', header: '', render: () => <Button variant="ghost" size="sm"><ExternalLink size={14} /></Button> }
                 ]}

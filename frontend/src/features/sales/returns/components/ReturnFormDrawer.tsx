@@ -7,6 +7,7 @@ import { queryKeys } from '@/api/queryKeys';
 import type { SaleOrder, ReturnAction, ItemCondition } from '@/types';
 import toast from 'react-hot-toast';
 import { Search, ShoppingCart, ArrowRightLeft } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -105,7 +106,6 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
     });
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
     <Drawer
@@ -188,7 +188,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                     header: 'Pagado C/U', 
                     render: (l) => {
                       const unitPrice = l.finalPrice > 0 ? (l.finalPrice / l.quantity) : l.basePrice;
-                      return <span>{fmtCurrency(unitPrice)}</span>;
+                      return <span>{formatCurrency(unitPrice)}</span>;
                     } 
                   },
                   { key: 'max', header: 'Max. Devol.', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.quantity}</span> },
@@ -227,7 +227,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
               <div style={{ marginTop: '16px', padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', textAlign: 'right' }}>
                 <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Monto Total Implicado:</span>
                 <span style={{ fontSize: '24px', fontWeight: 900, marginLeft: '12px' }}>
-                  {fmtCurrency(
+                  {formatCurrency(
                     saleOrder.lines.reduce((acc, line) => {
                       const unitPrice = line.finalPrice > 0 ? (line.finalPrice / line.quantity) : line.basePrice;
                       return acc + (unitPrice * (returnItems[line.id]?.qty || 0));

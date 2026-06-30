@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { FileText, Banknote, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useState } from 'react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
@@ -10,22 +10,21 @@ import {
 
 import { financeApi } from '@/api/finance.api';
 import { queryKeys } from '@/api/queryKeys';
-
-
 import { CurrentAccountDetailDrawer } from '@/features/finance/components/CurrentAccountDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function CurrentAccountsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'CUSTOMER' | 'SUPPLIER' | ''>('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '' });
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
+  const typeFilter = filters.type;
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.finance.currentAccounts({ page, pageSize, search, entityType: typeFilter }),
-    queryFn: () => financeApi.getCurrentAccounts({ page, pageSize, search, entityType: typeFilter || undefined }),
+    queryFn: () => financeApi.getCurrentAccounts({ page, pageSize, search, entityType: (typeFilter || undefined) as 'CUSTOMER' | 'SUPPLIER' | undefined }),
   });
 
   const handleView = (id: string) => {
@@ -36,7 +35,7 @@ export default function CurrentAccountsPage() {
   const accounts = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
 
   const mutationOverdue = useMutation({
     mutationFn: () => financeApi.sendOverdueStatements(),
@@ -57,9 +56,9 @@ export default function CurrentAccountsPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} cuentas activas</Badge>}>
-        <SearchInput placeholder="Buscar por Nombre de Entidad..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por Nombre de Entidad..." onSearch={setSearch} />
         
-        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value as any); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={typeFilter} onChange={e => { setFilter('type', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos (Clientes y Proveedores)</option>
           <option value="CUSTOMER">Solo Clientes (Cobrar)</option>
           <option value="SUPPLIER">Solo Proveedores (Pagar)</option>
@@ -99,7 +98,7 @@ export default function CurrentAccountsPage() {
                 header: 'Saldo Total',
                 render: (a) => {
                   const isRed = a.balance > 0; // If they owe us, or we owe them. We highlight non-zero.
-                  return <span style={{ fontWeight: 800, fontSize: '15px', color: isRed ? 'var(--text-primary)' : 'var(--green)' }}>{fmtCurrency(a.balance)}</span>;
+                  return <span style={{ fontWeight: 800, fontSize: '15px', color: isRed ? 'var(--text-primary)' : 'var(--green)' }}>{formatCurrency(a.balance)}</span>;
                 }
               },
               { 
@@ -109,7 +108,7 @@ export default function CurrentAccountsPage() {
                   if (a.overdueAmount <= 0) return <span style={{ color: 'var(--text-muted)' }}>Al día</span>;
                   return (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--red)', fontWeight: 'bold' }}>
-                      <AlertTriangle size={14} /> {fmtCurrency(a.overdueAmount)}
+                      <AlertTriangle size={14} /> {formatCurrency(a.overdueAmount)}
                     </div>
                   );
                 }

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { PURCHASING_TABS } from '@/navigation/moduleTabs';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, Truck, Package, Trash2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, ConfirmDialog
 } from '@/components/ui';
 
 import { purchasesApi } from '@/api/purchases.api';
@@ -19,19 +19,22 @@ import { PurchaseFormDrawer } from '@/features/purchasing/components/PurchaseFor
 import { PurchaseDetailDrawer } from '@/features/purchasing/components/PurchaseDetailDrawer';
 import { ImportPurchasesModal } from '@/features/purchasing/components/ImportPurchasesModal';
 import { FileSpreadsheet } from 'lucide-react';
+import { useListPage } from '@/hooks/useListPage';
+import { useDeleteMutation } from '@/hooks/useDeleteMutation';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function PurchasingPage() {
   const navigate = useNavigate();
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [supplierFilter, setSupplierFilter] = useState('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '', supplier: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
+
+  const statusFilter = filters.status;
+  const supplierFilter = filters.supplier;
 
   const { data: suppliersData } = useQuery({ queryKey: queryKeys.suppliers.all(), queryFn: () => suppliersApi.getSuppliers({}) });
 
@@ -55,20 +58,17 @@ export default function PurchasingPage() {
     setDetailOpen(true);
   };
 
-  const queryClient = useQueryClient();
-  const deleteMutation = useMutation({
+  const deleteMutation = useDeleteMutation({
     mutationFn: (id: string) => purchasesApi.removeOrder(id),
-    onSuccess: () => {
-      toast.success('Borrador eliminado correctamente');
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all() });
-    },
-    onError: (err: any) => toast.error(err.message || 'Error al eliminar'),
+    invalidateKey: queryKeys.purchases.all(),
+    successMessage: 'Borrador eliminado correctamente',
+    errorMessage: 'Error al eliminar',
+    onSuccess: () => setDeleteOpen(false),
   });
 
   const handleDelete = (order: PurchaseOrder) => {
-    if (window.confirm('¿Estás seguro de eliminar este borrador de orden de compra?')) {
-      deleteMutation.mutate(order.id);
-    }
+    setSelectedOrder(order);
+    setDeleteOpen(true);
   };
 
   const orders = data?.data ?? [];
@@ -96,7 +96,7 @@ export default function PurchasingPage() {
     }
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
 
   return (
     <PageContainer
@@ -125,9 +125,9 @@ export default function PurchasingPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} órdenes</Badge>}>
-        <SearchInput placeholder="Buscar por OC ID..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por OC ID..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Estados</option>
           <option value="DRAFT">Borradores (DRAFT)</option>
           <option value="ISSUED">Emitidas (ISSUED)</option>
@@ -135,7 +135,7 @@ export default function PurchasingPage() {
           <option value="COMPLETED">Cumplidas (COMPLETED)</option>
         </select>
 
-        <select value={supplierFilter} onChange={e => { setSupplierFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={supplierFilter} onChange={e => { setFilter('supplier', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Proveedores</option>
           {suppliersData?.data.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
         </select>
@@ -175,7 +175,7 @@ export default function PurchasingPage() {
               { 
                 key: 'amount', 
                 header: 'Monto Total',
-                render: (o) => <span style={{ fontWeight: 800 }}>{fmtCurrency(o.totalAmount)}</span>
+                render: (o) => <span style={{ fontWeight: 800 }}>{formatCurrency(o.totalAmount)}</span>
               },
               { 
                 key: 'status', 
@@ -232,6 +232,17 @@ export default function PurchasingPage() {
           refetch();
           toast.success('Compras importadas. Revisá los resultados.');
         }}
+      />
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Eliminar borrador"
+        message="¿Estás seguro de eliminar este borrador de orden de compra?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleteMutation.isPending}
+        onConfirm={() => selectedOrder && deleteMutation.mutate(selectedOrder.id)}
+        onCancel={() => setDeleteOpen(false)}
       />
     </PageContainer>
   );

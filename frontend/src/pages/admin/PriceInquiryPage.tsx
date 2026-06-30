@@ -8,6 +8,7 @@ import {
 } from '@/components/ui';
 
 import { posApi } from '@/api/pos.api';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 
 export default function PriceInquiryPage() {
@@ -27,7 +28,6 @@ export default function PriceInquiryPage() {
     enabled: debouncedSearch.length >= 2,
   });
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
     <PageContainer
@@ -121,7 +121,7 @@ export default function PriceInquiryPage() {
                 render: (v: any) => (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: '20px', fontWeight: 900, color: 'var(--blue)' }}>
-                      {fmtCurrency(v.basePrice || 0)}
+                      {formatCurrency(v.basePrice || 0)}
                     </span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Iva Incluido</span>
                   </div>

@@ -5,11 +5,11 @@ import { Button } from '@/components/ui';
 import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { KpiCard, BarChart } from './ChartPrimitives';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props { from: string; to: string; branchId?: string; }
 
 export function PurchasesReportPanel({ from, to, branchId }: Props) {
-  const fmtCurrency = (v: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v);
 
   const { data: summary, isLoading } = useQuery({
     queryKey: queryKeys.reports.purchasesSummary(from, to),
@@ -33,9 +33,9 @@ export function PurchasesReportPanel({ from, to, branchId }: Props) {
       </div>
 
       <div className="grid-responsive grid-cols-3">
-        <KpiCard label="Total Comprado" value={fmtCurrency(summary.totalAmount)} icon={<ShoppingBag size={20} />} color="#3b82f6" />
-        <KpiCard label="Monto Pagado" value={fmtCurrency(summary.totalReceived)} icon={<Truck size={20} />} color="#22c55e" />
-        <KpiCard label="Deuda Generada" value={fmtCurrency(summary.pendingAmount)} icon={<AlertCircle size={20} />} color="#f59e0b" />
+        <KpiCard label="Total Comprado" value={formatCurrency(summary.totalAmount)} icon={<ShoppingBag size={20} />} color="#3b82f6" />
+        <KpiCard label="Monto Pagado" value={formatCurrency(summary.totalReceived)} icon={<Truck size={20} />} color="#22c55e" />
+        <KpiCard label="Deuda Generada" value={formatCurrency(summary.pendingAmount)} icon={<AlertCircle size={20} />} color="#f59e0b" />
       </div>
 
       {summary.topSuppliers && summary.topSuppliers.length > 0 && (

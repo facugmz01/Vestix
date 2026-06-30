@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, ArrowRightLeft } from 'lucide-react';
+import { useState } from 'react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -14,16 +14,17 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { ReturnFormDrawer } from '@/features/sales/returns/components/ReturnFormDrawer';
 import { ReturnDetailDrawer } from '@/features/sales/returns/components/ReturnDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function ReturnsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const statusFilter = filters.status;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.returns.all({ page, pageSize, search, status: statusFilter }),
@@ -42,13 +43,29 @@ export default function ReturnsPage() {
     return 'red';
   };
 
+  const getStatusLabel = (s: string) => {
+    switch (s) {
+      case 'PENDING': return 'Pendiente';
+      case 'APPROVED': return 'Aprobado';
+      case 'REJECTED': return 'Rechazado';
+      default: return s;
+    }
+  };
+
   const getActionColor = (a: string) => {
     if (a === 'REFUND') return 'blue';
     if (a === 'EXCHANGE') return 'purple';
     return 'gray';
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+  const getActionLabel = (a: string) => {
+    switch (a) {
+      case 'REFUND': return 'Reembolso';
+      case 'EXCHANGE': return 'Cambio';
+      case 'STORE_CREDIT': return 'Crédito';
+      default: return a;
+    }
+  };
 
   return (
     <PageContainer
@@ -65,9 +82,9 @@ export default function ReturnsPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} registros</Badge>}>
-        <SearchInput placeholder="Buscar por ID de Solicitud o Ticket..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por ID de Solicitud o Ticket..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Estados</option>
           <option value="PENDING">Pendiente de Aprobación</option>
           <option value="APPROVED">Aprobados / Completados</option>
@@ -109,17 +126,17 @@ export default function ReturnsPage() {
               { 
                 key: 'action', 
                 header: 'Tipo',
-                render: (r) => <Badge color={getActionColor(r.action)}>{r.action}</Badge>
+                render: (r) => <Badge color={getActionColor(r.action)}>{getActionLabel(r.action)}</Badge>
               },
               { 
                 key: 'total', 
                 header: 'Monto a Favor',
-                render: (r) => <span style={{ fontWeight: 900, fontSize: '15px' }}>{fmtCurrency(r.totalRefundAmount)}</span>
+                render: (r) => <span style={{ fontWeight: 900, fontSize: '15px' }}>{formatCurrency(r.totalRefundAmount)}</span>
               },
               { 
                 key: 'status', 
                 header: 'Auditoría',
-                render: (r) => <StatusChip label={r.status} color={getStatusColor(r.status) as any} />
+                render: (r) => <StatusChip label={getStatusLabel(r.status)} color={getStatusColor(r.status) as any} />
               },
               {
                 key: 'actions',

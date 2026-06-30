@@ -5,11 +5,11 @@ import { Button, Table, Badge } from '@/components/ui';
 import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { KpiCard } from './ChartPrimitives';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props { branchId?: string; from: string; to: string; }
 
 export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
-  const fmtCurrency = (v: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v);
 
   const { data: valuation, isLoading: vl } = useQuery({
     queryKey: queryKeys.reports.stockValuation(branchId),
@@ -40,18 +40,18 @@ export function StockReportPanel({ branchId }: Omit<Props, 'from' | 'to'>) {
           <div className="grid-responsive grid-cols-4">
             <KpiCard label="SKUs Únicos" value={String(valuation.totalSKUs)} icon={<Package size={20} />} color="#3b82f6" />
             <KpiCard label="Unidades en Stock" value={String(valuation.totalUnits)} icon={<Package size={20} />} color="#10b981" />
-            <KpiCard label="Valor al Costo" value={fmtCurrency(valuation.totalValueAtCost)} icon={<Package size={20} />} color="#f59e0b" />
+            <KpiCard label="Valor al Costo" value={formatCurrency(valuation.totalValueAtCost)} icon={<Package size={20} />} color="#f59e0b" />
             <KpiCard label="Margen Potencial" value={`${valuation.totalValueAtRetail > 0 ? (((valuation.totalValueAtRetail - valuation.totalValueAtCost) / valuation.totalValueAtRetail) * 100).toFixed(1) : 0}%`} icon={<Package size={20} />} color="#8b5cf6" />
           </div>
 
           <div className="grid-responsive grid-cols-2">
             <div style={{ padding: '20px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px' }}>
               <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Valor Venta Potencial</p>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 900 }}>{fmtCurrency(valuation.totalValueAtRetail)}</h3>
+              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 900 }}>{formatCurrency(valuation.totalValueAtRetail)}</h3>
             </div>
             <div style={{ padding: '20px', background: 'var(--green-bg)', border: '1px solid var(--green)', borderRadius: '12px' }}>
               <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--green)', textTransform: 'uppercase' }}>Margen Bruto Potencial</p>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: 'var(--green)' }}>{fmtCurrency(valuation.potentialMargin)}</h3>
+              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: 'var(--green)' }}>{formatCurrency(valuation.potentialMargin)}</h3>
             </div>
           </div>
         </>

@@ -4,6 +4,7 @@ import { paymentsApi } from '@/api/payments.api';
 import { queryKeys } from '@/api/queryKeys';
 import { PaymentStatusBadge } from './PaymentStatusBadge';
 import { CreditCard, Banknote, Landmark, Gift, ExternalLink } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -22,7 +23,6 @@ export function PaymentDetailDrawer({ open, onClose, paymentId }: Props) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="md"><div /></Drawer>;
   }
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   const getMethodName = (m: string) => {
     switch(m) {
@@ -54,7 +54,7 @@ export function PaymentDetailDrawer({ open, onClose, paymentId }: Props) {
           </div>
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
             <PaymentStatusBadge status={payment.status} />
-            <span style={{ fontSize: '24px', fontWeight: 900 }}>{fmtCurrency(payment.amount)}</span>
+            <span style={{ fontSize: '24px', fontWeight: 900 }}>{formatCurrency(payment.amount)}</span>
           </div>
         </div>
 
@@ -81,7 +81,7 @@ export function PaymentDetailDrawer({ open, onClose, paymentId }: Props) {
               { 
                 key: 'amount', 
                 header: 'Monto',
-                render: (l) => <span style={{ fontWeight: 800 }}>{fmtCurrency(l.amount)}</span>
+                render: (l) => <span style={{ fontWeight: 800 }}>{formatCurrency(l.amount)}</span>
               }
             ]}
           />

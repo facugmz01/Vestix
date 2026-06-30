@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, Package, Clock } from 'lucide-react';
+import { useState } from 'react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -14,16 +14,23 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { ReservationFormDrawer } from '@/features/inventory/reservations/components/ReservationFormDrawer';
 import { ReservationDetailDrawer } from '@/features/inventory/reservations/components/ReservationDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+
+const RESERVATION_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: 'Activa',
+  CONSUMED: 'Concretada',
+  RELEASED: 'Liberada',
+  EXPIRED: 'Vencida',
+};
 
 export default function ReservationsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const statusFilter = filters.status;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.reservations.all({ page, pageSize, search, status: statusFilter }),
@@ -62,9 +69,9 @@ export default function ReservationsPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} registros</Badge>}>
-        <SearchInput placeholder="Buscar por ID..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por ID..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todas</option>
           <option value="ACTIVE">Activas (Reteniendo Stock)</option>
           <option value="CONSUMED">Concretadas (Vendidas)</option>
@@ -121,7 +128,7 @@ export default function ReservationsPage() {
               { 
                 key: 'status', 
                 header: 'Estado',
-                render: (r) => <StatusChip label={r.status} color={getStatusColor(r.status) as any} />
+                render: (r) => <StatusChip label={RESERVATION_STATUS_LABELS[r.status] || r.status} color={getStatusColor(r.status) as any} />
               },
               {
                 key: 'actions',

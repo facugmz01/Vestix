@@ -7,6 +7,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { apiClient } from '@/api/client';
 import { StorefrontSEO } from '@/features/storefront/components/StorefrontSEO';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function OnlineCatalogPage() {
   const [search, setSearch] = useState('');
@@ -50,7 +51,6 @@ export default function OnlineCatalogPage() {
   const categories: { id: string; name: string }[] = categoriesData || [];
   const brands: { id: string; name: string }[] = brandsData || [];
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(val);
 
   const sorted = products;
 
@@ -416,7 +416,7 @@ export default function OnlineCatalogPage() {
 
                       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
                         <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                          {fmtCurrency(p.price || p.basePrice || 0)}
+                          {formatCurrency(p.price || p.basePrice || 0)}
                         </span>
                         
                         {isMobile && (

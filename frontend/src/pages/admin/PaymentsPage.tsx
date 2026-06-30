@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, CreditCard } from 'lucide-react';
+import { useState } from 'react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
@@ -11,15 +11,27 @@ import { paymentsApi } from '@/api/payments.api';
 import { queryKeys } from '@/api/queryKeys';
 import { PaymentStatusBadge } from '@/features/finance/payments/components/PaymentStatusBadge';
 import { PaymentDetailDrawer } from '@/features/finance/payments/components/PaymentDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+import { formatCurrency } from '@/utils/formatCurrency';
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  CASH: 'Efectivo',
+  CARD: 'Tarjeta',
+  DEBIT: 'Débito',
+  CREDIT: 'Crédito',
+  TRANSFER: 'Transferencia',
+  QR: 'QR',
+  CHECK: 'Cheque',
+  ACCOUNT: 'Cuenta Corriente',
+};
 
 export default function PaymentsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const statusFilter = filters.status;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.payments.all({ page, pageSize, search, status: statusFilter }),
@@ -31,7 +43,7 @@ export default function PaymentsPage() {
   const payments = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
 
   return (
     <PageContainer
@@ -41,9 +53,9 @@ export default function PaymentsPage() {
       subtitle="Historial de transacciones, cobros en POS, transferencias y pagos en línea."
     >
       <FiltersBar actions={<Badge color="gray">{total} transacciones</Badge>}>
-        <SearchInput placeholder="Buscar Ref / Cliente..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar Ref / Cliente..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Estados</option>
           <option value="PENDING">Pendientes</option>
           <option value="COMPLETED">Completados / Acreditados</option>
@@ -94,7 +106,7 @@ export default function PaymentsPage() {
                 render: (p) => (
                   <div style={{ display: 'flex', gap: '4px' }}>
                     {p.lines.map((l, i) => (
-                      <Badge key={i} color="gray">{l.method}</Badge>
+                      <Badge key={i} color="gray">{PAYMENT_METHOD_LABELS[l.method] || l.method}</Badge>
                     ))}
                   </div>
                 )
@@ -102,7 +114,7 @@ export default function PaymentsPage() {
               { 
                 key: 'amount', 
                 header: 'Total Cobrado',
-                render: (p) => <span style={{ fontWeight: 900 }}>{fmtCurrency(p.amount)}</span>
+                render: (p) => <span style={{ fontWeight: 900 }}>{formatCurrency(p.amount)}</span>
               },
               { 
                 key: 'status', 

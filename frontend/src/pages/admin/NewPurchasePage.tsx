@@ -8,6 +8,7 @@ import { purchasingApi } from '@/api/purchasing.api';
 import { queryKeys } from '@/api/queryKeys';
 import { apiClient } from '@/api/client';
 import type { ProductVariant } from '@/types';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { 
   Button, Input, Drawer
 } from '@/components/ui';
@@ -94,7 +95,6 @@ export default function NewPurchasePage() {
     setPaymentAmount(total);
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 64px)', background: 'var(--bg-elevated)', position: 'fixed', top: '64px', left: 0, right: 0, bottom: 0, zIndex: 100 }}>
@@ -144,7 +144,7 @@ export default function NewPurchasePage() {
                   <div key={p.id} onClick={() => handleAddToCart(p)} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}>
                     <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{p.sku}</p>
                     <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, minHeight: '40px' }}>{p.name} {p.size && `(${p.size})`}</p>
-                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--accent)' }}>{fmtCurrency(p.costPrice)}</p>
+                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(p.costPrice)}</p>
                   </div>
                 ))}
               </div>
@@ -227,7 +227,7 @@ export default function NewPurchasePage() {
                         style={{ width: '70px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border)' }}
                       />
                     </div>
-                    <span style={{ fontWeight: 800, fontSize: '16px' }}>{fmtCurrency((item.cost * item.qty) - item.discount)}</span>
+                    <span style={{ fontWeight: 800, fontSize: '16px' }}>{formatCurrency((item.cost * item.qty) - item.discount)}</span>
                   </div>
                 </div>
               ))
@@ -238,15 +238,15 @@ export default function NewPurchasePage() {
           <div style={{ padding: '24px', background: 'var(--bg-elevated)', borderTop: '2px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-              <span style={{ fontWeight: 600 }}>{fmtCurrency(subtotal)}</span>
+              <span style={{ fontWeight: 600 }}>{formatCurrency(subtotal)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: 'var(--red)' }}>
               <span>Descuentos</span>
-              <span>- {fmtCurrency(totalDiscount)}</span>
+              <span>- {formatCurrency(totalDiscount)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '20px', fontWeight: 800 }}>Total Compra</span>
-              <span style={{ fontSize: '32px', fontWeight: 900, color: 'var(--accent)' }}>{fmtCurrency(total)}</span>
+              <span style={{ fontSize: '32px', fontWeight: 900, color: 'var(--accent)' }}>{formatCurrency(total)}</span>
             </div>
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function NewPurchasePage() {
           
           <div style={{ textAlign: 'center', padding: '24px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)' }}>
             <p style={{ margin: '0 0 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Facturado</p>
-            <h1 style={{ margin: 0, fontSize: '42px', color: 'var(--text-primary)' }}>{fmtCurrency(total)}</h1>
+            <h1 style={{ margin: 0, fontSize: '42px', color: 'var(--text-primary)' }}>{formatCurrency(total)}</h1>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -269,7 +269,7 @@ export default function NewPurchasePage() {
               style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
             >
               <option value="">-- No pagar ahora (Deuda) --</option>
-              {(accounts?.data || accounts || []).map((a: any) => <option key={a.id} value={a.id}>{a.name} ({fmtCurrency(a.balance)})</option>)}
+              {(accounts?.data || accounts || []).map((a: any) => <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>)}
             </select>
           </div>
 
@@ -291,7 +291,7 @@ export default function NewPurchasePage() {
 
           {!paymentAccountId && (
             <div style={{ padding: '16px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: '8px', fontSize: '14px' }}>
-              <strong>Atención:</strong> Se generará una deuda de <strong>{fmtCurrency(total)}</strong> con el proveedor.
+              <strong>Atención:</strong> Se generará una deuda de <strong>{formatCurrency(total)}</strong> con el proveedor.
             </div>
           )}
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button } from '@/components/ui';
 import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface QrPaymentModalProps {
   open: boolean;
@@ -17,8 +18,6 @@ export const QrPaymentModal: React.FC<QrPaymentModalProps> = ({
 }) => {
   const [polling, setPolling] = useState(true);
 
-  const fmtCurrency = (val: number) =>
-    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   // Simulated polling for webhook confirmation
   useEffect(() => {
@@ -35,7 +34,7 @@ export const QrPaymentModal: React.FC<QrPaymentModalProps> = ({
         
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Monto a cobrar</div>
-          <div style={{ fontSize: '36px', fontWeight: 800, color: '#34d399' }}>{fmtCurrency(amount)}</div>
+          <div style={{ fontSize: '36px', fontWeight: 800, color: '#34d399' }}>{formatCurrency(amount)}</div>
         </div>
 
         {isLoading ? (

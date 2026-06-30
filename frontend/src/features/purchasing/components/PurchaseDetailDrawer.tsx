@@ -6,6 +6,7 @@ import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { Truck, CheckCircle, Package, XCircle, Send } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -75,7 +76,6 @@ export function PurchaseDetailDrawer({ open, onClose, orderId }: Props) {
     }
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
     <Drawer open={open} onClose={onClose} title="Orden de Compra" width="lg">
@@ -103,7 +103,7 @@ export function PurchaseDetailDrawer({ open, onClose, orderId }: Props) {
             data={order.lines}
             columns={[
               { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
-              { key: 'cost', header: 'Costo U.', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{fmtCurrency(l.unitCost)}</span> },
+              { key: 'cost', header: 'Costo U.', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(l.unitCost)}</span> },
               { key: 'qty', header: 'Cant. Pedida', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.orderedQuantity}</span> },
               { 
                 key: 'receivedTotal', 
@@ -137,12 +137,12 @@ export function PurchaseDetailDrawer({ open, onClose, orderId }: Props) {
                   return null;
                 }
               },
-              { key: 'subtotal', header: 'Subtotal', render: (l) => <span style={{ fontWeight: 600 }}>{fmtCurrency(l.orderedQuantity * l.unitCost)}</span> }
+              { key: 'subtotal', header: 'Subtotal', render: (l) => <span style={{ fontWeight: 600 }}>{formatCurrency(l.orderedQuantity * l.unitCost)}</span> }
             ]}
           />
           <div style={{ textAlign: 'right', marginTop: '16px' }}>
             <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Monto Total: </span>
-            <span style={{ fontSize: '20px', fontWeight: 900 }}>{fmtCurrency(order.totalAmount)}</span>
+            <span style={{ fontSize: '20px', fontWeight: 900 }}>{formatCurrency(order.totalAmount)}</span>
           </div>
         </div>
 

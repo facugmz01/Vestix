@@ -6,6 +6,7 @@ import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { Banknote, FileText, Calendar, AlertTriangle } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -53,7 +54,6 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
     return <Drawer open={open} onClose={onClose} title="Cargando Cuenta..." width="lg"><div /></Drawer>;
   }
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   // Determine if it's a customer (balance > 0 means they owe us) or supplier (balance > 0 means we owe them)
   // For clarity: Balance > 0 = Deuda. 
@@ -74,7 +74,7 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
             
             {account.overdueAmount > 0 && (
               <div style={{ marginTop: '12px', padding: '8px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600 }}>
-                <AlertTriangle size={16} /> Deuda Vencida: {fmtCurrency(account.overdueAmount)}
+                <AlertTriangle size={16} /> Deuda Vencida: {formatCurrency(account.overdueAmount)}
               </div>
             )}
 
@@ -100,11 +100,11 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
           <div style={{ padding: '20px', background: 'var(--bg-base)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end' }}>
             <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>{oweText}</p>
             <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: balanceColor }}>
-              {fmtCurrency(Math.abs(account.balance))}
+              {formatCurrency(Math.abs(account.balance))}
             </h2>
             {account.creditLimit && (
               <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                Límite de Crédito: {fmtCurrency(account.creditLimit)}
+                Límite de Crédito: {formatCurrency(account.creditLimit)}
               </p>
             )}
           </div>
@@ -165,17 +165,17 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                   { 
                     key: 'debit', 
                     header: 'Débito (+)', 
-                    render: (m) => m.debit > 0 ? <span style={{ fontWeight: 'bold', color: 'var(--red)' }}>{fmtCurrency(m.debit)}</span> : '-' 
+                    render: (m) => m.debit > 0 ? <span style={{ fontWeight: 'bold', color: 'var(--red)' }}>{formatCurrency(m.debit)}</span> : '-' 
                   },
                   { 
                     key: 'credit', 
                     header: 'Crédito (-)', 
-                    render: (m) => m.credit > 0 ? <span style={{ fontWeight: 'bold', color: 'var(--green)' }}>{fmtCurrency(m.credit)}</span> : '-' 
+                    render: (m) => m.credit > 0 ? <span style={{ fontWeight: 'bold', color: 'var(--green)' }}>{formatCurrency(m.credit)}</span> : '-' 
                   },
                   { 
                     key: 'balance', 
                     header: 'Saldo', 
-                    render: (m) => <span style={{ fontWeight: 800 }}>{fmtCurrency(m.balanceAfter)}</span> 
+                    render: (m) => <span style={{ fontWeight: 800 }}>{formatCurrency(m.balanceAfter)}</span> 
                   },
                   { 
                     key: 'dueDate', 

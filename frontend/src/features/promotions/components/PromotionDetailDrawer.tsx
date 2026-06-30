@@ -4,6 +4,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { promotionsApi } from '@/api/promotions.api';
 import type { Promotion } from '@/types';
 import { Tag, AlertTriangle, Eye } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -21,7 +22,6 @@ export function PromotionDetailDrawer({ open, onClose, promotion }: Props) {
 
   if (!promotion) return null;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
     <Drawer open={open} onClose={onClose} title="Análisis de Promoción" width="lg">
@@ -88,8 +88,8 @@ export function PromotionDetailDrawer({ open, onClose, promotion }: Props) {
                 data={impact.sampleVariants}
                 columns={[
                   { key: 'sku', header: 'SKU', render: (v) => <span style={{ fontFamily: 'monospace' }}>{v.sku}</span> },
-                  { key: 'original', header: 'Precio Normal', render: (v) => <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)' }}>{fmtCurrency(v.originalPrice)}</span> },
-                  { key: 'discounted', header: 'Con Promo', render: (v) => <span style={{ fontWeight: 'bold', color: 'var(--green)' }}>{fmtCurrency(v.discountedPrice)}</span> },
+                  { key: 'original', header: 'Precio Normal', render: (v) => <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)' }}>{formatCurrency(v.originalPrice)}</span> },
+                  { key: 'discounted', header: 'Con Promo', render: (v) => <span style={{ fontWeight: 'bold', color: 'var(--green)' }}>{formatCurrency(v.discountedPrice)}</span> },
                 ]}
               />
             </div>

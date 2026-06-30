@@ -9,6 +9,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { settingsApi } from '@/api/settings.api';
 import toast from 'react-hot-toast';
 import { X, Calculator, Percent, Search, Package } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -147,7 +148,6 @@ export function SaleFormDrawer({ open, onClose }: Props) {
     mutation.mutate({ status });
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   const results = searchResults as any[];
 
@@ -293,7 +293,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
                           </div>
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-                          <div style={{ fontWeight: 900, fontSize: '15px', color: 'var(--accent)' }}>{fmtCurrency(v.basePrice)}</div>
+                          <div style={{ fontWeight: 900, fontSize: '15px', color: 'var(--accent)' }}>{formatCurrency(v.basePrice)}</div>
                           {v.stockLevels?.length > 0 && (
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', marginTop: '2px' }}>
                               <Package size={10} />
@@ -375,7 +375,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
                     />
                   </td>
                   <td style={{ padding: '8px 4px', fontWeight: 'bold' }}>
-                    {fmtCurrency((l.basePrice * l.quantity) * (1 - (l.discountPct / 100)))}
+                    {formatCurrency((l.basePrice * l.quantity) * (1 - (l.discountPct / 100)))}
                   </td>
                   <td style={{ padding: '8px 4px', textAlign: 'right' }}>
                     <X size={16} color="var(--red)" style={{ cursor: 'pointer' }} onClick={() => removeLine(i)} />
@@ -390,12 +390,12 @@ export function SaleFormDrawer({ open, onClose }: Props) {
         <div style={{ marginLeft: 'auto', width: '350px', padding: '20px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
             <span>Subtotal Bruto:</span>
-            <span>{fmtCurrency(subtotal)}</span>
+            <span>{formatCurrency(subtotal)}</span>
           </div>
           {lineDiscountsTotal > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--red)' }}>
               <span>Descuentos por Línea:</span>
-              <span>- {fmtCurrency(lineDiscountsTotal)}</span>
+              <span>- {formatCurrency(lineDiscountsTotal)}</span>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed var(--border)' }}>
@@ -413,7 +413,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 900, marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
             <span>Total Neto:</span>
-            <span style={{ color: 'var(--accent)' }}>{fmtCurrency(grandTotal)}</span>
+            <span style={{ color: 'var(--accent)' }}>{formatCurrency(grandTotal)}</span>
           </div>
         </div>
 
