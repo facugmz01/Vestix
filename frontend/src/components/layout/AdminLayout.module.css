@@ -1,28 +1,55 @@
-/* Removed .shell because it's replaced by global .spatial-workspace */
+/* AdminLayout.module.css (Mobile First) */
 
+/* DockWrapper (Desktop Sidebar) is hidden on mobile by default */
 .dockWrapper {
-  display: flex;
-}
-@media (max-width: 1023px) {
-  .dockWrapper { display: none; }
+  display: none;
 }
 
+/* Base Canvas for mobile */
 .canvas {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column;
-  gap: 24px;
+  flex: 1; 
+  min-width: 0;
+  display: flex; 
+  flex-direction: column;
+  gap: 16px; /* slightly smaller gap on mobile */
   overflow: hidden;
 }
+
+/* Base Content area for mobile */
 .content {
   flex: 1;
-  padding: 0 16px 24px 16px;
-  max-width: 1600px;
+  padding: 16px; 
+  /* Safe area padding for bottom nav */
+  padding-bottom: max(80px, env(safe-area-inset-bottom, 80px)); 
   width: 100%;
   margin: 0 auto;
-  overflow-y: auto;
-  animation: fadeIn .22s ease;
+  overflow-y: visible; /* on mobile, we might scroll the whole page or just this container */
+  animation: fadeIn 0.22s ease;
 }
-@media (max-width: 768px) {
-  .content { padding: 16px; padding-bottom: 80px; /* space for mobile nav */ overflow-y: visible; }
+
+/* Animations */
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(6px); } 
+  to { opacity: 1; transform: translateY(0); } 
 }
-@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* --- Breakpoints --- */
+
+/* Tablet and Desktop */
+@media (min-width: 768px) {
+  .canvas {
+    gap: 24px;
+  }
+  .content {
+    padding: 0 16px 24px 16px;
+    max-width: 1600px;
+    overflow-y: auto; /* internal scroll */
+  }
+}
+
+/* Desktop Only (Sidebar visible) */
+@media (min-width: 1024px) {
+  .dockWrapper {
+    display: flex;
+  }
+}

@@ -1,5 +1,7 @@
 .wrapper {
-  width: 100%; overflow-x: auto;
+  width: 100%; 
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--bg-surface);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);

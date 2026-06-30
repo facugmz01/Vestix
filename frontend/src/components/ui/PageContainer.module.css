@@ -1,9 +1,84 @@
-.page    { display: flex; flex-direction: column; gap: 24px; animation: fadeIn 0.2s ease; }
-.header  { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.title   { font-size: 22px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
-.subtitle{ font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
-.action  { flex-shrink: 0; }
-.body    { display: flex; flex-direction: column; gap: 20px; }
-@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+/* PageContainer.module.css (Mobile First) */
 
-.tabsWrapper { margin: 0 -24px 24px -24px; padding: 0 24px; }
+.page { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 16px; /* smaller gap on mobile */
+  animation: fadeIn 0.2s ease; 
+}
+
+/* Header stacks on mobile, wraps or goes side-by-side on larger screens */
+.header { 
+  display: flex; 
+  flex-direction: column; /* Stack title and actions on mobile */
+  align-items: stretch; /* Actions stretch to full width on mobile */
+  gap: 16px; 
+}
+
+.title { 
+  font-size: 20px; /* slightly smaller on mobile */
+  font-weight: 700; 
+  color: var(--text-primary); 
+  letter-spacing: -0.02em; 
+}
+
+.subtitle { 
+  font-size: 13px; /* slightly smaller on mobile */
+  color: var(--text-secondary); 
+  margin-top: 4px; 
+}
+
+.action { 
+  display: flex;
+  flex-direction: column; /* Buttons stack on mobile */
+  gap: 8px;
+  flex-shrink: 0; 
+}
+
+/* If action contains multiple buttons, they stack on mobile. If we just want them side by side, flex-direction: row works but they might squish. We'll leave it flexible. */
+.action > * {
+  width: 100%; /* Full width buttons on mobile */
+}
+
+.tabsWrapper { 
+  margin: 0 -16px 16px -16px; /* Break out of padding on mobile if needed, or just align */
+  padding: 0 16px; 
+  overflow-x: auto; /* allow horizontal scroll for tabs */
+  -webkit-overflow-scrolling: touch;
+}
+
+.body { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 16px; 
+}
+
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(6px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
+
+/* --- Breakpoints --- */
+
+@media (min-width: 768px) {
+  .page { gap: 24px; }
+  .header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .title { font-size: 22px; }
+  .subtitle { font-size: 14px; }
+  .action {
+    flex-direction: row; /* Buttons side-by-side on tablet/desktop */
+    align-items: center;
+  }
+  .action > * {
+    width: auto; /* Auto width on larger screens */
+  }
+  .tabsWrapper {
+    margin: 0 -24px 24px -24px;
+    padding: 0 24px;
+  }
+  .body { gap: 20px; }
+}

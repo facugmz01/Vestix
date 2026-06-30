@@ -15,7 +15,7 @@ export function TopBar() {
 
   return (
     <header className={styles.topbar} role="banner">
-      {/* Breadcrumbs */}
+      {/* Breadcrumbs (Hidden on mobile) */}
       <nav className={styles.breadcrumbs} aria-label="Ruta de navegación">
         <ol className={styles.crumbList}>
           {crumbs.map((crumb, i) => {
@@ -34,13 +34,13 @@ export function TopBar() {
         </ol>
       </nav>
 
-      <div style={{ flex: 1 }} />
+      <div className={styles.spacer} />
 
       <SyncStatusIndicator />
 
-      <div className={styles.searchBar} style={{ marginLeft: '16px' }}>
+      <div className={styles.searchBar}>
         <Search size={16} color="var(--text-3)" />
-        <input type="text" placeholder="Buscar en el ERP..." />
+        <input type="text" placeholder="Buscar..." aria-label="Buscar en el ERP" />
       </div>
 
       <div className={styles.userProfile}>
@@ -48,8 +48,8 @@ export function TopBar() {
           {user?.fullName?.[0]?.toUpperCase() ?? 'U'}
         </div>
         <span className={styles.userName}>{user?.fullName ?? 'Usuario'}</span>
-        <button className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">
-          <LogOut size={15} />
+        <button className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión" aria-label="Cerrar sesión">
+          <LogOut size={16} />
         </button>
       </div>
     </header>

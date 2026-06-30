@@ -1,6 +1,10 @@
+/* TopBar.module.css (Mobile First) */
 .topbar {
-  height: 72px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 32px;
+  height: 64px; /* Slightly smaller height on mobile */
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+  padding: 0 16px;
   background: var(--bg-sidebar);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
@@ -8,39 +12,49 @@
   border-top: 1px solid var(--border-strong);
   border-left: 1px solid var(--border-strong);
   border-radius: var(--radius-full);
-  position: sticky; top: 0; z-index: 10;
+  position: sticky; 
+  top: 0; 
+  z-index: 10;
   flex-shrink: 0;
   box-shadow: var(--shadow-sm);
-  gap: 24px;
+  gap: 12px;
 }
-.breadcrumbs { flex: 1; }
+
+/* Breadcrumbs hidden by default on small screens */
+.breadcrumbs { 
+  display: none; 
+}
 .crumbList { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
 .crumb { display: flex; align-items: center; gap: 4px; }
 .homeIcon { color: var(--text-muted); }
 .crumbLink {
   font-size: 14px; color: var(--text-secondary); text-decoration: none;
   transition: var(--transition);
+  white-space: nowrap;
 }
 .crumbLink:hover { color: var(--accent); }
-.crumbCurrent { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.crumbCurrent { font-size: 14px; font-weight: 600; color: var(--text-primary); white-space: nowrap; }
 .sep { color: var(--text-muted); }
 
-/* Search Bar */
+.spacer { flex: 0; }
+
+/* Search Bar fluid on mobile */
 .searchBar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   background: rgba(255, 255, 255, 0.3);
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
-  width: 320px;
+  flex: 1; /* take up available space on mobile */
+  min-width: 0;
   border: 1px solid var(--border);
   transition: var(--transition);
 }
 .searchBar:focus-within {
   background: rgba(255, 255, 255, 0.6);
   border-color: var(--accent-subtle);
-  box-shadow: 0 0 0 4px var(--accent-glow);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 .searchBar input {
   border: none;
@@ -58,7 +72,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 16px 6px 6px;
+  padding: 4px 12px 4px 4px;
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid var(--border);
@@ -66,14 +80,20 @@
 }
 .userProfile:hover { background: rgba(255, 255, 255, 0.5); }
 .avatar {
-  width: 36px; height: 36px;
+  width: 32px; height: 32px;
   border-radius: 50%;
   background: var(--accent);
   color: white;
   display: flex; align-items: center; justify-content: center;
   font-weight: 600; font-size: 14px;
+  flex-shrink: 0;
 }
-.userName { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+.userName { 
+  display: none; /* Hidden on mobile */
+  font-weight: 600; 
+  font-size: 14px; 
+  color: var(--text-primary); 
+}
 .logoutBtn {
   background: transparent; border: none;
   color: var(--text-muted); cursor: pointer;
@@ -82,3 +102,43 @@
   transition: var(--transition);
 }
 .logoutBtn:hover { color: var(--red); background: var(--red-bg); }
+
+/* --- Breakpoints --- */
+
+/* Tablet & Desktop */
+@media (min-width: 768px) {
+  .topbar {
+    height: 72px;
+    padding: 0 32px;
+    gap: 24px;
+  }
+  .breadcrumbs {
+    display: block;
+    flex: 1;
+  }
+  .spacer { flex: 1; }
+  .searchBar {
+    flex: none;
+    width: 280px;
+    gap: 12px;
+    padding: 10px 20px;
+  }
+  .searchBar:focus-within {
+    box-shadow: 0 0 0 4px var(--accent-glow);
+  }
+  .userProfile {
+    padding: 6px 16px 6px 6px;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+  }
+  .userName {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .searchBar {
+    width: 320px;
+  }
+}
