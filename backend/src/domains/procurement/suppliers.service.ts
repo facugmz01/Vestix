@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { paginate } from '../../core/prisma/paginate';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { BulkImportBalancesDto } from '../sales/dto/bulk-balances.dto';
 
@@ -41,34 +42,14 @@ export class SuppliersService {
   }
 
   async findAll(query: any = {}) {
-    const page = parseInt(query.page) || 1;
-    const pageSize = parseInt(query.pageSize) || 50;
-    const skip = (page - 1) * pageSize;
-
-    const where: any = {};
-    if (query.search) {
-      where.OR = [
-        { companyName: { contains: query.search, mode: 'insensitive' } },
-        { contactName: { contains: query.search, mode: 'insensitive' } },
-        { taxId: { contains: query.search, mode: 'insensitive' } },
-      ];
-    }
-
-    const [data, total] = await Promise.all([
-      this.prisma.supplier.findMany({
-        where,
-        orderBy: { companyName: 'asc' },
-        skip,
-        take: pageSize,
-      }),
-      this.prisma.supplier.count({ where }),
-    ]);
+    const result = await paginate(this.prisma.supplier, query, {
+      searchFields: ['companyName', 'contactName', 'taxId'],
+      orderBy: { companyName: 'asc' },
+    });
 
     return {
-      data: data.map(s => this.mapSupplier(s)),
-      total,
-      page,
-      pageSize
+      ...result,
+      data: result.data.map(s => this.mapSupplier(s)),
     };
   }
 

@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CustomersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const paginate_1 = require("../../core/prisma/paginate");
 let CustomersService = class CustomersService {
     constructor(prisma) {
         this.prisma = prisma;
@@ -52,31 +53,13 @@ let CustomersService = class CustomersService {
         return this.mapCustomer(customer);
     }
     async findAll(query = {}) {
-        const page = parseInt(query.page) || 1;
-        const pageSize = parseInt(query.pageSize) || 50;
-        const skip = (page - 1) * pageSize;
-        const where = {};
-        if (query.search) {
-            where.OR = [
-                { fullName: { contains: query.search, mode: 'insensitive' } },
-                { email: { contains: query.search, mode: 'insensitive' } },
-                { taxId: { contains: query.search, mode: 'insensitive' } },
-            ];
-        }
-        const [data, total] = await Promise.all([
-            this.prisma.customer.findMany({
-                where,
-                orderBy: { fullName: 'asc' },
-                skip,
-                take: pageSize,
-            }),
-            this.prisma.customer.count({ where }),
-        ]);
+        const result = await (0, paginate_1.paginate)(this.prisma.customer, query, {
+            searchFields: ['fullName', 'email', 'taxId'],
+            orderBy: { fullName: 'asc' },
+        });
         return {
-            data: data.map(c => this.mapCustomer(c)),
-            total,
-            page,
-            pageSize
+            ...result,
+            data: result.data.map(c => this.mapCustomer(c)),
         };
     }
     async findOne(id) {

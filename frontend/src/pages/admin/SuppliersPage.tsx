@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PURCHASING_TABS } from '@/navigation/moduleTabs';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -17,15 +17,12 @@ import { SupplierFormDrawer } from '@/features/suppliers/components/SupplierForm
 import { SupplierDetailDrawer } from '@/features/suppliers/components/SupplierDetailDrawer';
 import { ImportBalancesModal } from '@/components/ui/ImportBalancesModal';
 import { FileSpreadsheet } from 'lucide-react';
+import { useListPage } from '@/hooks/useListPage';
+import { useDeleteMutation } from '@/hooks/useDeleteMutation';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function SuppliersPage() {
-  const queryClient = useQueryClient();
-
-  // States
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [debtFilter, setDebtFilter] = useState('');
-  const [pageSize] = useState(15);
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ debt: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -34,6 +31,8 @@ export default function SuppliersPage() {
   
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
+  const debtFilter = filters.debt;
+
   // Query
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.suppliers.all({ page, pageSize, search, hasDebt: debtFilter === 'DEBT' ? true : undefined }),
@@ -41,16 +40,12 @@ export default function SuppliersPage() {
   });
 
   // Delete Mutation
-  const deleteMutation = useMutation({
+  const deleteMutation = useDeleteMutation({
     mutationFn: (id: string) => suppliersApi.deleteSupplier(id),
-    onSuccess: () => {
-      toast.success('Proveedor eliminado');
-      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all() });
-      setDeleteOpen(false);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Error al eliminar proveedor. Verificá que no tenga órdenes de compra asociadas.');
-    }
+    invalidateKey: queryKeys.suppliers.all(),
+    successMessage: 'Proveedor eliminado',
+    errorMessage: 'Error al eliminar proveedor. Verificá que no tenga órdenes de compra asociadas.',
+    onSuccess: () => setDeleteOpen(false),
   });
 
   // Handlers
@@ -81,8 +76,6 @@ export default function SuppliersPage() {
   const suppliers = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const fmtCurrency = (val: number, cur: string = 'ARS') => new Intl.NumberFormat('es-AR', { style: 'currency', currency: cur }).format(val);
-
   return (
     <PageContainer
       tabs={<Tabs items={PURCHASING_TABS} />}
@@ -107,10 +100,10 @@ export default function SuppliersPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} proveedores</Badge>}>
-        <SearchInput placeholder="Buscar por Razón Social o CUIT..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por Razón Social o CUIT..." onSearch={setSearch} />
         <select
           value={debtFilter}
-          onChange={(e) => { setDebtFilter(e.target.value); setPage(1); }}
+          onChange={(e) => { setFilter('debt', e.target.value); }}
           style={{
             padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
             background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
@@ -163,7 +156,7 @@ export default function SuppliersPage() {
                 render: (s) => (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '14px', fontWeight: s.account?.balance > 0 ? 700 : 400, color: s.account?.balance > 0 ? 'var(--red)' : 'var(--text-primary)' }}>
-                      {fmtCurrency(s.account?.balance || 0, s.account?.currency)}
+                      {formatCurrency(s.account?.balance || 0, s.account?.currency)}
                     </span>
                   </div>
                 )

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Users, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -16,15 +16,12 @@ import { CustomerFormDrawer } from '@/features/customers/components/CustomerForm
 import { CustomerDetailDrawer } from '@/features/customers/components/CustomerDetailDrawer';
 import { ImportBalancesModal } from '@/components/ui/ImportBalancesModal';
 import { FileSpreadsheet } from 'lucide-react';
+import { useListPage } from '@/hooks/useListPage';
+import { useDeleteMutation } from '@/hooks/useDeleteMutation';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function CustomersPage() {
-  const queryClient = useQueryClient();
-
-  // States
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [pageSize] = useState(15);
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -33,6 +30,8 @@ export default function CustomersPage() {
   
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
+  const typeFilter = filters.type;
+
   // Query
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.customers.all({ page, pageSize, search, type: typeFilter }),
@@ -40,16 +39,12 @@ export default function CustomersPage() {
   });
 
   // Delete Mutation
-  const deleteMutation = useMutation({
+  const deleteMutation = useDeleteMutation({
     mutationFn: (id: string) => customersApi.deleteCustomer(id),
-    onSuccess: () => {
-      toast.success('Cliente eliminado');
-      queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
-      setDeleteOpen(false);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Error al eliminar cliente. Verificá que no tenga historial de deudas o facturas asociadas.');
-    }
+    invalidateKey: queryKeys.customers.all(),
+    successMessage: 'Cliente eliminado',
+    errorMessage: 'Error al eliminar cliente. Verificá que no tenga historial de deudas o facturas asociadas.',
+    onSuccess: () => setDeleteOpen(false),
   });
 
   // Handlers
@@ -80,8 +75,6 @@ export default function CustomersPage() {
   const customers = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
-
   return (
     <PageContainer 
       title="Clientes" 
@@ -104,10 +97,10 @@ export default function CustomersPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} clientes</Badge>}>
-        <SearchInput placeholder="Buscar por nombre, DNI o CUIT..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por nombre, DNI o CUIT..." onSearch={setSearch} />
         <select
           value={typeFilter}
-          onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+          onChange={(e) => { setFilter('type', e.target.value); }}
           style={{
             padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
             background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
@@ -168,9 +161,9 @@ export default function CustomersPage() {
                     {c.credit.limit > 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                         <span style={{ fontSize: '13px', fontWeight: c.credit.used > 0 ? 600 : 400, color: c.credit.used > 0 ? 'var(--red)' : 'var(--text-primary)' }}>
-                          Deuda: {fmtCurrency(c.credit.used)}
+                          Deuda: {formatCurrency(c.credit.used)}
                         </span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Límite: {fmtCurrency(c.credit.limit)}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Límite: {formatCurrency(c.credit.limit)}</span>
                       </div>
                     ) : (
                       <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Contado</span>

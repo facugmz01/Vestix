@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Map } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip
@@ -14,21 +13,19 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { LocationFormDrawer } from '@/features/locations/components/LocationFormDrawer';
 import { LocationDetailDrawer } from '@/features/locations/components/LocationDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+import { useDeleteMutation } from '@/hooks/useDeleteMutation';
 
 export default function LocationsPage() {
-  const queryClient = useQueryClient();
-
-  // States
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [pageSize] = useState(15);
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   
   const [selectedLocation, setSelectedLocation] = useState<StorageLocation | null>(null);
+
+  const typeFilter = filters.type;
 
   // Query
   const { data, isLoading, error, refetch } = useQuery({
@@ -37,16 +34,12 @@ export default function LocationsPage() {
   });
 
   // Delete Mutation
-  const deleteMutation = useMutation({
+  const deleteMutation = useDeleteMutation({
     mutationFn: (id: string) => locationsApi.deleteLocation(id),
-    onSuccess: () => {
-      toast.success('Ubicación eliminada');
-      queryClient.invalidateQueries({ queryKey: queryKeys.locations.all() });
-      setDeleteOpen(false);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Error al eliminar ubicación. Verificá que no tenga inventario asignado.');
-    }
+    invalidateKey: queryKeys.locations.all(),
+    successMessage: 'Ubicación eliminada',
+    errorMessage: 'Error al eliminar ubicación. Verificá que no tenga inventario asignado.',
+    onSuccess: () => setDeleteOpen(false),
   });
 
   // Handlers
@@ -93,10 +86,10 @@ export default function LocationsPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} ubicaciones</Badge>}>
-        <SearchInput placeholder="Buscar por código, nombre o código de barras..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por código, nombre o código de barras..." onSearch={setSearch} />
         <select
           value={typeFilter}
-          onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+          onChange={(e) => { setFilter('type', e.target.value); }}
           style={{
             padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
             background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'

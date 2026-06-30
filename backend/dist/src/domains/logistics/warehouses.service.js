@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WarehousesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
+const paginate_1 = require("../../core/prisma/paginate");
 let WarehousesService = class WarehousesService {
     constructor(prisma) {
         this.prisma = prisma;
@@ -35,33 +36,19 @@ let WarehousesService = class WarehousesService {
         });
     }
     async findAll(query = {}) {
-        const page = parseInt(query.page) || 1;
-        const pageSize = parseInt(query.pageSize) || 50;
-        const skip = (page - 1) * pageSize;
-        const where = {};
+        const extraWhere = {};
         if (query.branchId)
-            where.branchId = query.branchId;
+            extraWhere.branchId = query.branchId;
         if (query.type)
-            where.type = query.type;
+            extraWhere.type = query.type;
         if (query.isActive !== undefined)
-            where.isActive = query.isActive === 'true';
-        if (query.search) {
-            where.OR = [
-                { name: { contains: query.search, mode: 'insensitive' } },
-                { code: { contains: query.search, mode: 'insensitive' } },
-            ];
-        }
-        const [data, total] = await Promise.all([
-            this.prisma.warehouse.findMany({
-                where,
-                include: { branch: true },
-                orderBy: { name: 'asc' },
-                skip,
-                take: pageSize,
-            }),
-            this.prisma.warehouse.count({ where }),
-        ]);
-        return { data, total, page, pageSize };
+            extraWhere.isActive = query.isActive === 'true';
+        return (0, paginate_1.paginate)(this.prisma.warehouse, query, {
+            searchFields: ['name', 'code'],
+            where: extraWhere,
+            orderBy: { name: 'asc' },
+            include: { branch: true },
+        });
     }
     async findOne(id) {
         const warehouse = await this.prisma.warehouse.findUnique({

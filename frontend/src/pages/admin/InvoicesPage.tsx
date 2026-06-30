@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, FileText, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
@@ -14,6 +14,8 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { InvoiceStatusBadge } from '@/features/finance/invoices/components/InvoiceStatusBadge';
 import { IssueInvoiceDrawer } from '@/features/finance/invoices/components/IssueInvoiceDrawer';
 import { InvoiceDetailDrawer } from '@/features/finance/invoices/components/InvoiceDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const INVOICE_TYPE_LABELS: Record<string, string> = {
   FACTURA_A: 'Factura A', FACTURA_B: 'Factura B', FACTURA_C: 'Factura C',
@@ -21,11 +23,10 @@ const INVOICE_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function InvoicesPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '', type: '' });
+
+  const statusFilter = filters.status;
+  const typeFilter = filters.type;
 
   const [issueOpen, setIssueOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -40,7 +41,6 @@ export default function InvoicesPage() {
 
   const invoices = data?.data ?? [];
   const total = data?.total ?? 0;
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
   return (
     <PageContainer
@@ -56,9 +56,9 @@ export default function InvoicesPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} comprobantes</Badge>}>
-        <SearchInput placeholder="Buscar por CAE, Venta, CUIT..." onSearch={val => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por CAE, Venta, CUIT..." onSearch={setSearch} />
 
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Estados</option>
           <option value="PENDING">Pendiente</option>
           <option value="ISSUED">Emitidas (CAE OK)</option>
@@ -66,7 +66,7 @@ export default function InvoicesPage() {
           <option value="CANCELLED">Anuladas</option>
         </select>
 
-        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={typeFilter} onChange={e => { setFilter('type', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Tipos</option>
           <option value="FACTURA_A">Factura A</option>
           <option value="FACTURA_B">Factura B</option>
@@ -108,7 +108,7 @@ export default function InvoicesPage() {
               { key: 'type', header: 'Tipo', render: i => <Badge color="blue">{INVOICE_TYPE_LABELS[i.type]}</Badge> },
               { key: 'receiver', header: 'Receptor', render: i => <span style={{ fontWeight: 600 }}>{i.receiverName}</span> },
               { key: 'cae', header: 'CAE', render: i => i.cae ? <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{i.cae}</span> : <span style={{ color: 'var(--text-muted)' }}>—</span> },
-              { key: 'total', header: 'Total', render: i => <span style={{ fontWeight: 900 }}>{fmtCurrency(i.total)}</span> },
+              { key: 'total', header: 'Total', render: i => <span style={{ fontWeight: 900 }}>{formatCurrency(i.total)}</span> },
               { key: 'status', header: 'Estado', render: i => <InvoiceStatusBadge status={i.status} /> },
               {
                 key: 'actions', header: '',

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle } from 'lucide-react';
@@ -17,20 +16,22 @@ import { SaleDetailDrawer } from '@/features/sales/components/SaleDetailDrawer';
 import { ImportSalesModal } from '@/features/sales/components/ImportSalesModal';
 import { FileSpreadsheet } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useListPage } from '@/hooks/useListPage';
+import { formatCurrency } from '@/utils/formatCurrency';
+import { useState } from 'react';
 
 export default function SalesPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
 
+  const statusFilter = filters.status;
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: queryKeys.sales.all({ page, pageSize, search, status: statusFilter }), // Ideally backend filters source too
+    queryKey: queryKeys.sales.all({ page, pageSize, search, status: statusFilter }),
     queryFn: () => salesApi.getSales({ page, pageSize, search, status: statusFilter }),
   });
 
@@ -62,8 +63,6 @@ export default function SalesPage() {
     }
   };
 
-  const fmtCurrency = (val: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
-
   return (
     <PageContainer
       tabs={<Tabs items={SALES_TABS} />}
@@ -88,9 +87,9 @@ export default function SalesPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} documentos</Badge>}>
-        <SearchInput placeholder="Buscar por ID de Venta..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por ID de Venta..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Estados</option>
           <option value="QUOTATION">Solo Presupuestos</option>
           <option value="PENDING_PAYMENT">Pago Pendiente</option>
@@ -158,7 +157,7 @@ export default function SalesPage() {
               { 
                 key: 'total', 
                 header: 'Monto Final',
-                render: (s) => <span style={{ fontWeight: 900, fontSize: '15px' }}>{fmtCurrency(s.grandTotal)}</span>
+                render: (s) => <span style={{ fontWeight: 900, fontSize: '15px' }}>{formatCurrency(s.grandTotal)}</span>
               },
               { 
                 key: 'status', 

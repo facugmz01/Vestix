@@ -149,68 +149,10 @@ export declare class TransfersService {
         status?: string;
         search?: string;
     }): Promise<{
-        data: {
-            sourceWarehouseName: string;
-            destinationWarehouseName: string;
-            lines: ({
-                variant: {
-                    id: string;
-                    productId: string;
-                    sku: string;
-                    barcode: string | null;
-                    size: string | null;
-                    color: string | null;
-                    imageUrl: string | null;
-                    costPrice: number;
-                    basePrice: number;
-                    isActive: boolean;
-                    attributes: import(".prisma/client").Prisma.JsonValue;
-                    createdAt: Date;
-                    updatedAt: Date;
-                };
-            } & {
-                id: string;
-                transferId: string;
-                variantId: string;
-                quantity: number;
-                receivedQuantity: number | null;
-                createdAt: Date;
-            })[];
-            sourceWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
-            destinationWarehouse: {
-                id: string;
-                name: string;
-                code: string | null;
-                type: string | null;
-                address: string | null;
-                isActive: boolean;
-                branchId: string;
-                createdAt: Date;
-                updatedAt: Date;
-            };
-            id: string;
-            sourceWarehouseId: string;
-            destinationWarehouseId: string;
-            status: string;
-            trackingNumber: string | null;
-            notes: string | null;
-            requestedByUserId: string | null;
-            dispatchedAt: Date | null;
-            receivedAt: Date | null;
-            createdAt: Date;
-            updatedAt: Date;
-        }[];
+        data: any[];
         total: number;
+        page: number;
+        pageSize: number;
     }>;
     findOne(id: string): Promise<{
         sourceWarehouseName: string;
@@ -239,7 +181,7 @@ export declare class TransfersService {
             receivedQuantity: number | null;
             createdAt: Date;
         })[];
-        sourceWarehouse: {
+        destinationWarehouse: {
             id: string;
             name: string;
             code: string | null;
@@ -250,7 +192,7 @@ export declare class TransfersService {
             createdAt: Date;
             updatedAt: Date;
         };
-        destinationWarehouse: {
+        sourceWarehouse: {
             id: string;
             name: string;
             code: string | null;

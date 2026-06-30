@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, Truck, Navigation } from 'lucide-react';
+import { useState } from 'react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -14,16 +14,16 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { TransferFormDrawer } from '@/features/inventory/transfers/components/TransferFormDrawer';
 import { TransferDetailDrawer } from '@/features/inventory/transfers/components/TransferDetailDrawer';
+import { useListPage } from '@/hooks/useListPage';
 
 export default function TransfersPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(15);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const statusFilter = filters.status;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.transfers.all({ page, pageSize, search, status: statusFilter }),
@@ -77,9 +77,9 @@ export default function TransfersPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} transferencias</Badge>}>
-        <SearchInput placeholder="Buscar por ID o Tracking..." onSearch={(val) => { setSearch(val); setPage(1); }} />
+        <SearchInput placeholder="Buscar por ID o Tracking..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
           <option value="">Todos los Estados</option>
           <option value="DRAFT">Preparación (DRAFT)</option>
           <option value="IN_TRANSIT">En Tránsito (IN_TRANSIT)</option>
