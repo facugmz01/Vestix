@@ -281,22 +281,21 @@ export class InventoryService {
     if (query.warehouseId) where.warehouseId = query.warehouseId;
     
     if (query.search) {
-      where.variant = {
-        OR: [
-          { sku: { contains: query.search, mode: 'insensitive' } },
-          { product: { name: { contains: query.search, mode: 'insensitive' } } }
-        ]
-      };
+      const matchingVariants = await this.prisma.productVariant.findMany({
+        where: {
+          OR: [
+            { sku: { contains: query.search, mode: 'insensitive' } },
+            { product: { name: { contains: query.search, mode: 'insensitive' } } }
+          ]
+        },
+        select: { id: true }
+      });
+      where.variantId = { in: matchingVariants.map(v => v.id) };
     }
 
     const [data, total] = await Promise.all([
       this.prisma.stockLevel.findMany({
         where,
-        include: {
-          variant: { include: { product: true } },
-          warehouse: true,
-          branch: true
-        },
         orderBy: { warehouseId: 'asc' },
         skip,
         take: pageSize,
@@ -304,20 +303,47 @@ export class InventoryService {
       this.prisma.stockLevel.count({ where }),
     ]);
 
-    const enriched = data.map(s => ({
-      id: `${s.variantId}-${s.warehouseId}`,
-      variantId: s.variantId,
-      warehouseId: s.warehouseId,
-      branchId: s.branchId,
-      physicalQuantity: s.physicalQuantity,
-      reservedQuantity: s.reservedQuantity,
-      availableQuantity: s.availableQuantity,
-      variantSku: s.variant?.sku || '',
-      productName: s.variant?.product?.name || '',
-      warehouseName: s.warehouse?.name || '',
-      branchName: s.branch?.name || '',
-      lastUpdated: s.updatedAt,
-    }));
+    // Hydration
+    const variantIds = [...new Set(data.map(d => d.variantId))];
+    const warehouseIds = [...new Set(data.map(d => d.warehouseId))];
+    const branchIds = [...new Set(data.map(d => d.branchId).filter(Boolean))] as string[];
+
+    const [variants, warehouses, branches] = await Promise.all([
+      this.prisma.productVariant.findMany({
+        where: { id: { in: variantIds } },
+        include: { product: true }
+      }),
+      this.prisma.warehouse.findMany({
+        where: { id: { in: warehouseIds } }
+      }),
+      this.prisma.branch.findMany({
+        where: { id: { in: branchIds } }
+      })
+    ]);
+
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+    const branchMap = new Map(branches.map(b => [b.id, b]));
+
+    const enriched = data.map(s => {
+      const variant = variantMap.get(s.variantId);
+      const warehouse = warehouseMap.get(s.warehouseId);
+      const branch = s.branchId ? branchMap.get(s.branchId) : null;
+      return {
+        id: `${s.variantId}-${s.warehouseId}`,
+        variantId: s.variantId,
+        warehouseId: s.warehouseId,
+        branchId: s.branchId,
+        physicalQuantity: s.physicalQuantity,
+        reservedQuantity: s.reservedQuantity,
+        availableQuantity: s.availableQuantity,
+        variantSku: variant?.sku || '',
+        productName: variant?.product?.name || '',
+        warehouseName: warehouse?.name || '',
+        branchName: branch?.name || '',
+        lastUpdated: s.updatedAt,
+      };
+    });
 
     return { data: enriched, total, page, pageSize };
   }
@@ -339,11 +365,6 @@ export class InventoryService {
     const [data, total] = await Promise.all([
       this.prisma.inventoryMovement.findMany({
         where,
-        include: {
-          variant: { include: { product: true } },
-          sourceWarehouse: true,
-          destinationWarehouse: true,
-        },
         orderBy: { createdAt: 'desc' },
         skip,
         take: pageSize,
@@ -351,14 +372,36 @@ export class InventoryService {
       this.prisma.inventoryMovement.count({ where }),
     ]);
 
-    const enriched = data.map(m => ({
-      ...m,
-      variantSku: m.variant?.sku || '',
-      productName: m.variant?.product?.name || '',
-      sourceWarehouseName: m.sourceWarehouse?.name || '',
-      destinationWarehouseName: m.destinationWarehouse?.name || '',
-      warehouseName: m.destinationWarehouse?.name || m.sourceWarehouse?.name || '', // Helper for UI
-    }));
+    // Hydration
+    const variantIds = [...new Set(data.map(m => m.variantId))];
+    const warehouseIds = [...new Set(data.flatMap(m => [m.sourceWarehouseId, m.destinationWarehouseId]).filter(Boolean))] as string[];
+
+    const [variants, warehouses] = await Promise.all([
+      this.prisma.productVariant.findMany({
+        where: { id: { in: variantIds } },
+        include: { product: true }
+      }),
+      this.prisma.warehouse.findMany({
+        where: { id: { in: warehouseIds } }
+      })
+    ]);
+
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+
+    const enriched = data.map(m => {
+      const variant = variantMap.get(m.variantId);
+      const sourceWarehouse = m.sourceWarehouseId ? warehouseMap.get(m.sourceWarehouseId) : null;
+      const destinationWarehouse = m.destinationWarehouseId ? warehouseMap.get(m.destinationWarehouseId) : null;
+      return {
+        ...m,
+        variantSku: variant?.sku || '',
+        productName: variant?.product?.name || '',
+        sourceWarehouseName: sourceWarehouse?.name || '',
+        destinationWarehouseName: destinationWarehouse?.name || '',
+        warehouseName: destinationWarehouse?.name || sourceWarehouse?.name || '', // Helper for UI
+      };
+    });
 
     return { data: enriched, total, page, pageSize };
   }

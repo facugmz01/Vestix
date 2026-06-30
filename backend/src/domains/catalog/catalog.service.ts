@@ -3,6 +3,7 @@ import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { PricingService } from './pricing.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { ProductVariant } from '@prisma/client';
 
 @Injectable()
 export class CatalogService {
@@ -11,7 +12,6 @@ export class CatalogService {
     private readonly pricingService: PricingService,
     private readonly settingsService: SettingsService,
   ) {}
-
 
   /**
    * E-COMMERCE FRONTEND ENGINE
@@ -36,15 +36,31 @@ export class CatalogService {
     let products = await this.prisma.product.findMany({
       where,
       include: {
-        brand: true,
-        category: true,
-        variants: {
-          include: {
-            stockLevels: true
-          }
-        }
+        variants: true
       }
     });
+    
+    // Hydrate cross-module relations
+    const categoryIds = [...new Set(products.map(p => p.categoryId))].filter(Boolean);
+    const brandIds = [...new Set(products.map(p => p.brandId))].filter(Boolean);
+    const variantIds = products.flatMap(p => p.variants.map(v => v.id));
+
+    const [categories, brands, stockLevels] = await Promise.all([
+      this.prisma.category.findMany({ where: { id: { in: categoryIds } } }),
+      this.prisma.brand.findMany({ where: { id: { in: brandIds } } }),
+      this.prisma.stockLevel.findMany({ where: { variantId: { in: variantIds } } })
+    ]);
+
+    const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+    const brandMap = new Map(brands.map(b => [b.id, b.name]));
+    
+    // Group stock by variant
+    const stockByVariant = new Map<string, typeof stockLevels>();
+    for (const stock of stockLevels) {
+      const arr = stockByVariant.get(stock.variantId) || [];
+      arr.push(stock);
+      stockByVariant.set(stock.variantId, arr);
+    }
 
     const results = [];
 
@@ -63,30 +79,36 @@ export class CatalogService {
       if (filters.maxPrice && resolvedPrice > filters.maxPrice) continue;
 
       // Calculate total available stock across all variants for e-commerce
-      // In a real scenario we'd filter by E-COMMERCE branch, but we'll sum all for now.
-      const availableQty = product.variants.reduce((sum, v) => 
-        sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
-      , 0);
+      const availableQty = product.variants.reduce((sum, v) => {
+        const variantStocks = stockByVariant.get(v.id) || [];
+        return sum + variantStocks.reduce((ssum, s) => ssum + s.availableQuantity, 0);
+      }, 0);
 
       if (filters.inStockOnly && availableQty <= 0) continue;
+
+      const brandName = product.brandId ? brandMap.get(product.brandId) : null;
+      const categoryName = product.categoryId ? categoryMap.get(product.categoryId) : null;
 
       results.push({
         id: product.id,
         name: product.name,
-        brand: product.brand?.name || null,
-        category: product.category?.name || null,
+        brand: brandName || null,
+        category: categoryName || null,
         price: resolvedPrice,
         basePrice: basePrice,
         inStock: availableQty > 0,
         availableQuantity: availableQty,
         images: product.images || [],
-        variants: product.variants.map(v => ({
-          id: v.id,
-          sku: v.sku,
-          size: v.size,
-          color: v.color,
-          stock: v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
-        }))
+        variants: product.variants.map(v => {
+          const variantStocks = stockByVariant.get(v.id) || [];
+          return {
+            id: v.id,
+            sku: v.sku,
+            size: v.size,
+            color: v.color,
+            stock: variantStocks.reduce((ssum, s) => ssum + s.availableQuantity, 0)
+          };
+        })
       });
     }
 
@@ -95,7 +117,6 @@ export class CatalogService {
     } else if (filters.sortBy === 'PRICE_DESC') {
       results.sort((a, b) => b.price - a.price);
     } else {
-      // Default to newest (reverse order of DB fetch typically, or just name asc)
       results.sort((a, b) => a.name.localeCompare(b.name));
     }
 
@@ -114,15 +135,25 @@ export class CatalogService {
     const product = await this.prisma.product.findUnique({
       where: { id, isActive: true, isPublished: true },
       include: {
-        brand: true,
-        category: true,
-        variants: {
-          include: { stockLevels: true }
-        }
+        variants: true
       }
     });
 
     if (!product) throw new Error('Product not found');
+
+    const variantIds = product.variants.map(v => v.id);
+    const [category, brand, stockLevels] = await Promise.all([
+      product.categoryId ? this.prisma.category.findUnique({ where: { id: product.categoryId } }) : null,
+      product.brandId ? this.prisma.brand.findUnique({ where: { id: product.brandId } }) : null,
+      this.prisma.stockLevel.findMany({ where: { variantId: { in: variantIds } } })
+    ]);
+
+    const stockByVariant = new Map<string, typeof stockLevels>();
+    for (const stock of stockLevels) {
+      const arr = stockByVariant.get(stock.variantId) || [];
+      arr.push(stock);
+      stockByVariant.set(stock.variantId, arr);
+    }
 
     const storefrontSettings = await this.settingsService.getStorefrontSettings();
     const priceListId = storefrontSettings.priceListToShow;
@@ -133,28 +164,32 @@ export class CatalogService {
       ? await this.pricingService.resolvePriceListPrice(primaryVariant.id, basePrice, priceListId)
       : basePrice;
 
-    const availableQty = product.variants.reduce((sum, v) => 
-      sum + v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
-    , 0);
+    const availableQty = product.variants.reduce((sum, v) => {
+      const variantStocks = stockByVariant.get(v.id) || [];
+      return sum + variantStocks.reduce((ssum, s) => ssum + s.availableQuantity, 0);
+    }, 0);
 
     return {
       id: product.id,
       name: product.name,
       description: product.description,
-      brand: product.brand?.name || null,
-      category: product.category?.name || null,
+      brand: brand?.name || null,
+      category: category?.name || null,
       price: resolvedPrice,
       basePrice: basePrice,
       inStock: availableQty > 0,
       availableQuantity: availableQty,
       images: product.images,
-      variants: product.variants.map(v => ({
-        id: v.id,
-        sku: v.sku,
-        size: v.size,
-        color: v.color,
-        stock: v.stockLevels.reduce((ssum, s) => ssum + s.availableQuantity, 0)
-      }))
+      variants: product.variants.map(v => {
+        const variantStocks = stockByVariant.get(v.id) || [];
+        return {
+          id: v.id,
+          sku: v.sku,
+          size: v.size,
+          color: v.color,
+          stock: variantStocks.reduce((ssum, s) => ssum + s.availableQuantity, 0)
+        };
+      })
     };
   }
 
@@ -164,12 +199,6 @@ export class CatalogService {
    * so it can run seamlessly when the internet drops.
    */
   async getPosSyncCatalog(branchId: string) {
-    // How this differs from the public catalog:
-    // 1. Visibility: It includes items that are NOT isPublished (e.g., store-only clearance items).
-    // 2. Barcodes: It includes internal 13-digit EANs for the laser scanner to read.
-    // 3. Stock: It does NOT embed real-time stock, because offline stock drifts immediately.
-    
-    // In production, this returns a massive, heavily minified JSON array
     return {
       status: 'SYNC_READY',
       timestamp: new Date().toISOString(),

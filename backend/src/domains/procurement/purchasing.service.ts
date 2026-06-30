@@ -432,13 +432,14 @@ export class PurchasingService {
     const stockToReplenish = await this.prisma.stockLevel.findMany({
       where: {
         availableQuantity: { lte: reorderPoint }
-      },
-      include: {
-        variant: {
-          include: { product: true }
-        }
       }
     });
+
+    const variantIds = [...new Set(stockToReplenish.map(s => s.variantId))];
+    const variants = await this.prisma.productVariant.findMany({
+      where: { id: { in: variantIds } }
+    });
+    const variantMap = new Map(variants.map(v => [v.id, v]));
 
     if (stockToReplenish.length === 0) {
       return { success: true, message: 'No hay productos por debajo del punto de reposición.', ordersCreated: 0 };
@@ -449,6 +450,7 @@ export class PurchasingService {
     const draftOrders: Record<string, Record<string, any[]>> = {};
 
     for (const stock of stockToReplenish) {
+      const variant = variantMap.get(stock.variantId);
       const neededQty = reorderQuantity - stock.availableQuantity;
       if (neededQty <= 0) continue;
 
@@ -462,8 +464,8 @@ export class PurchasingService {
       draftOrders[supplierId][warehouseId].push({
         variantId: stock.variantId,
         orderedQuantity: neededQty,
-        unitCost: stock.variant.costPrice || 0, // Fallback to 0 if not set
-        totalAmount: neededQty * (stock.variant.costPrice || 0)
+        unitCost: variant?.costPrice || 0, // Fallback to 0 if not set
+        totalAmount: neededQty * (variant?.costPrice || 0)
       });
     }
 

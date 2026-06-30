@@ -52,12 +52,29 @@ export class ReturnsService {
     const r = await this.prisma.saleReturn.findUnique({
       where: { id },
       include: { 
-        lines: { include: { orderLine: { include: { variant: { include: { product: true } } } } } },
+        lines: { include: { orderLine: true } },
         saleOrder: { include: { customer: true } }
       }
     });
     if (!r) throw new NotFoundException('Return record not found');
-    return r;
+
+    const variantIds = r.lines.map(l => l.orderLine?.variantId).filter(Boolean) as string[];
+    const variants = await this.prisma.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      include: { product: true }
+    });
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+
+    return {
+      ...r,
+      lines: r.lines.map(l => ({
+        ...l,
+        orderLine: l.orderLine ? {
+          ...l.orderLine,
+          variant: variantMap.get(l.orderLine.variantId) || null
+        } : null
+      }))
+    };
   }
 
   async processReturn(dto: CreateReturnDto) {

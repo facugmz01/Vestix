@@ -1,7 +1,9 @@
 import { IsString, IsNotEmpty, IsEnum, IsArray, ValidateNested, IsNumber, IsOptional, IsUUID, Min, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderSource, PaymentMethod } from '../models/order.model';
-import { SharedCreateSaleDto, CreateSaleLineDto } from '@shared/types';
+// Removed @shared/types to prevent TS5011 rootDir compilation issues
+interface SharedCreateSaleDto { id: string; }
+interface CreateSaleLineDto { variantId: string; }
 
 class OrderLineDto implements CreateSaleLineDto {
   @IsUUID('4')

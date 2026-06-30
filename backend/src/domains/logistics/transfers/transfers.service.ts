@@ -47,11 +47,7 @@ export class TransfersService {
         },
       },
       include: {
-        lines: {
-          include: {
-            variant: true,
-          },
-        },
+        lines: true,
       },
     });
 
@@ -101,11 +97,7 @@ export class TransfersService {
         dispatchedAt: new Date(),
       },
       include: {
-        lines: {
-          include: {
-            variant: true,
-          },
-        },
+        lines: true,
       },
     });
   }
@@ -160,11 +152,7 @@ export class TransfersService {
         receivedAt: new Date(),
       },
       include: {
-        lines: {
-          include: {
-            variant: true,
-          },
-        },
+        lines: true,
       },
     });
   }
@@ -202,18 +190,31 @@ export class TransfersService {
       where: extraWhere,
       defaultPageSize: 15,
       include: {
-        sourceWarehouse: true,
-        destinationWarehouse: true,
-        lines: { include: { variant: true } },
+        lines: true,
       },
     });
+
+    const variantIds = [...new Set(result.data.flatMap((t: any) => t.lines.map((l: any) => l.variantId)))];
+    const warehouseIds = [...new Set(result.data.flatMap((t: any) => [t.sourceWarehouseId, t.destinationWarehouseId]))];
+
+    const [variants, warehouses] = await Promise.all([
+      this.prisma.productVariant.findMany({ where: { id: { in: variantIds } } }),
+      this.prisma.warehouse.findMany({ where: { id: { in: warehouseIds } } })
+    ]);
+
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
 
     return {
       ...result,
       data: result.data.map((t: any) => ({
         ...t,
-        sourceWarehouseName: t.sourceWarehouse?.name,
-        destinationWarehouseName: t.destinationWarehouse?.name,
+        sourceWarehouseName: warehouseMap.get(t.sourceWarehouseId)?.name || null,
+        destinationWarehouseName: warehouseMap.get(t.destinationWarehouseId)?.name || null,
+        lines: t.lines.map((l: any) => ({
+          ...l,
+          variant: variantMap.get(l.variantId) || null
+        }))
       })),
     };
   }
@@ -225,22 +226,31 @@ export class TransfersService {
     const transfer = await this.prisma.stockTransfer.findUnique({
       where: { id },
       include: {
-        sourceWarehouse: true,
-        destinationWarehouse: true,
-        lines: {
-          include: {
-            variant: true,
-          },
-        },
+        lines: true,
       },
     });
 
     if (!transfer) throw new NotFoundException('Transfer not found');
 
+    const variantIds = transfer.lines.map((l: any) => l.variantId);
+    const warehouseIds = [transfer.sourceWarehouseId, transfer.destinationWarehouseId];
+
+    const [variants, warehouses] = await Promise.all([
+      this.prisma.productVariant.findMany({ where: { id: { in: variantIds } } }),
+      this.prisma.warehouse.findMany({ where: { id: { in: warehouseIds } } })
+    ]);
+
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+
     return {
       ...transfer,
-      sourceWarehouseName: transfer.sourceWarehouse?.name,
-      destinationWarehouseName: transfer.destinationWarehouse?.name,
+      sourceWarehouseName: warehouseMap.get(transfer.sourceWarehouseId)?.name || null,
+      destinationWarehouseName: warehouseMap.get(transfer.destinationWarehouseId)?.name || null,
+      lines: transfer.lines.map((l: any) => ({
+        ...l,
+        variant: variantMap.get(l.variantId) || null
+      }))
     };
   }
 }

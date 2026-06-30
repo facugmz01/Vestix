@@ -19,21 +19,24 @@ export class StockReportService {
     const branchFilter = branchId ? { warehouse: { branchId } } : {};
 
     const stockLevels = await this.prisma.stockLevel.findMany({
-      where: { ...branchFilter },
-      include: {
-        variant: {
-          include: { product: true }
-        }
-      }
+      where: { ...branchFilter }
     });
 
+    const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    const variants = await this.prisma.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      include: { product: true }
+    });
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+
     const lines = stockLevels.map(sl => {
-      const unitCostWac = sl.variant?.costPrice || 0;
-      const unitRetailPrice = sl.variant?.basePrice || 0;
+      const v = variantMap.get(sl.variantId);
+      const unitCostWac = v?.costPrice || 0;
+      const unitRetailPrice = v?.basePrice || 0;
       
       return {
         variantId: sl.variantId,
-        sku: sl.variant?.sku || 'Unknown',
+        sku: v?.sku || 'Unknown',
         availableQty: sl.availableQuantity,
         reservedQty: sl.reservedQuantity,
         unitCostWac,
@@ -67,20 +70,27 @@ export class StockReportService {
         ...branchFilter
       },
       include: {
-        variant: {
-          include: { product: true }
-        },
         warehouse: true
       }
     });
 
-    return stockLevels.map(sl => ({
-      variantId: sl.variantId,
-      sku: sl.variant?.sku || 'Unknown',
-      name: sl.variant?.product?.name || 'Unknown',
-      branchId: sl.warehouse?.branchId || branchId || 'Unknown',
-      availableQuantity: sl.availableQuantity,
-      reorderPoint: reorderPoint
-    }));
+    const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    const variants = await this.prisma.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      include: { product: true }
+    });
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+
+    return stockLevels.map(sl => {
+      const v = variantMap.get(sl.variantId);
+      return {
+        variantId: sl.variantId,
+        sku: v?.sku || 'Unknown',
+        name: v?.product?.name || 'Unknown',
+        branchId: sl.warehouse?.branchId || branchId || 'Unknown',
+        availableQuantity: sl.availableQuantity,
+        reorderPoint: reorderPoint
+      };
+    });
   }
 }

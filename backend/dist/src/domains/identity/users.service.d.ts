@@ -8,10 +8,6 @@ export declare class UsersService implements OnModuleInit {
     constructor(prisma: PrismaService);
     onModuleInit(): Promise<void>;
     create(createUserDto: CreateUserDto): Promise<{
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        isActive: boolean;
         role: {
             id: string;
             name: string;
@@ -28,9 +24,13 @@ export declare class UsersService implements OnModuleInit {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        updatedAt: Date;
+        email: string;
+        isActive: boolean;
+        createdAt: Date;
         branchId: string;
         fullName: string;
-        email: string;
         roleId: string;
     }>;
     findAll({ page, pageSize }: {
@@ -122,10 +122,6 @@ export declare class UsersService implements OnModuleInit {
         updatedAt: Date;
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        isActive: boolean;
         role: {
             id: string;
             name: string;
@@ -142,16 +138,16 @@ export declare class UsersService implements OnModuleInit {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        updatedAt: Date;
+        email: string;
+        isActive: boolean;
+        createdAt: Date;
         branchId: string;
         fullName: string;
-        email: string;
         roleId: string;
     }>;
     toggleActivation(id: string, isActive: boolean): Promise<{
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        isActive: boolean;
         role: {
             id: string;
             name: string;
@@ -168,16 +164,16 @@ export declare class UsersService implements OnModuleInit {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        updatedAt: Date;
+        email: string;
+        isActive: boolean;
+        createdAt: Date;
         branchId: string;
         fullName: string;
-        email: string;
         roleId: string;
     }>;
     assignBranches(id: string, dto: AssignBranchesDto): Promise<{
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        isActive: boolean;
         role: {
             id: string;
             name: string;
@@ -194,9 +190,13 @@ export declare class UsersService implements OnModuleInit {
             createdAt: Date;
             updatedAt: Date;
         };
+        id: string;
+        updatedAt: Date;
+        email: string;
+        isActive: boolean;
+        createdAt: Date;
         branchId: string;
         fullName: string;
-        email: string;
         roleId: string;
     }>;
     private userSelect;

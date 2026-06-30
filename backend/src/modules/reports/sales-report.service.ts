@@ -95,33 +95,36 @@ export class SalesReportService {
           status: { not: 'CANCELLED' },
           ...branchFilter,
         }
-      },
-      include: {
-        variant: {
-          include: { product: true }
-        }
       }
     });
 
-    const variantMap = new Map<string, TopSellingVariant>();
+    const variantIds = [...new Set(lineItems.map(l => l.variantId))];
+    const variants = await this.prisma.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      include: { product: true }
+    });
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+
+    const reportMap = new Map<string, TopSellingVariant>();
 
     for (const item of lineItems) {
-      if (!variantMap.has(item.variantId)) {
-        variantMap.set(item.variantId, {
+      if (!reportMap.has(item.variantId)) {
+        const v = variantMap.get(item.variantId);
+        reportMap.set(item.variantId, {
           variantId: item.variantId,
-          name: item.variant?.product?.name || item.historicalName || 'Unknown',
-          sku: item.variant?.sku || item.historicalSku || 'Unknown',
+          name: v?.product?.name || item.historicalName || 'Unknown',
+          sku: v?.sku || item.historicalSku || 'Unknown',
           totalUnitsSold: 0,
           totalRevenue: 0,
         });
       }
       
-      const v = variantMap.get(item.variantId)!;
+      const v = reportMap.get(item.variantId)!;
       v.totalUnitsSold += item.quantity;
       v.totalRevenue += item.finalPrice;
     }
 
-    return Array.from(variantMap.values())
+    return Array.from(reportMap.values())
       .sort((a, b) => b.totalUnitsSold - a.totalUnitsSold)
       .slice(0, limit);
   }

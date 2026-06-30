@@ -160,13 +160,25 @@ export class PosService {
       },
       include: { 
         product: { include: { category: true, brand: true } },
-        stockLevels: true,
       },
       take: 20,
     });
 
+    const variantIds = variants.map(v => v.id);
+    const stockLevels = await this.prisma.stockLevel.findMany({
+      where: { variantId: { in: variantIds } }
+    });
+    const stockByVariant = new Map<string, typeof stockLevels>();
+    for (const stock of stockLevels) {
+      const arr = stockByVariant.get(stock.variantId) || [];
+      arr.push(stock);
+      stockByVariant.set(stock.variantId, arr);
+    }
+
     return Promise.all(variants.map(async v => {
       const resolvedPrice = await this.pricingService.resolvePrice(v.id, v.basePrice || 0, customerId);
+      const variantStocks = stockByVariant.get(v.id) || [];
+      
       return {
         id: v.id,
         sku: v.sku,
@@ -178,7 +190,7 @@ export class PosService {
         color: v.color,
         costPrice: v.costPrice || 0,
         basePrice: resolvedPrice,
-        stock: v.stockLevels.reduce((acc, s) => acc + s.availableQuantity, 0),
+        stock: variantStocks.reduce((acc, s) => acc + s.availableQuantity, 0),
       };
     }));
   }

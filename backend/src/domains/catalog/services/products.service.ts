@@ -430,11 +430,17 @@ export class ProductsService {
   }
 
   async remove(id: string) {
+    const variantsForDelete = await this.prisma.productVariant.findMany({
+      where: { productId: id },
+      select: { id: true }
+    });
+    const variantIdsForDelete = variantsForDelete.map(v => v.id);
+
     // 1. Verificar si existen StockLevels con cantidad
     const stockLevels = await this.prisma.stockLevel.findMany({
       where: {
-        variant: { productId: id },
-        quantity: { gt: 0 },
+        variantId: { in: variantIdsForDelete },
+        physicalQuantity: { gt: 0 },
       },
     });
 
@@ -813,7 +819,6 @@ export class ProductsService {
           brand: true,
           variants: {
             where: { isActive: true },
-            include: { stockLevels: true },
           },
         },
         orderBy: { name: 'asc' },
@@ -823,13 +828,26 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
+    const variantIds = data.flatMap(p => p.variants.map(v => v.id));
+    const stockLevels = await this.prisma.stockLevel.findMany({
+      where: { variantId: { in: variantIds } }
+    });
+
+    const stockByVariant = new Map<string, typeof stockLevels>();
+    for (const stock of stockLevels) {
+      const arr = stockByVariant.get(stock.variantId) || [];
+      arr.push(stock);
+      stockByVariant.set(stock.variantId, arr);
+    }
+
     // Map the response to include computed availability and simple price list logic
     const mapped = data.map(p => {
       let lowestPrice = 0;
       let totalStock = 0;
       
       const mappedVariants = p.variants.map(v => {
-        const variantStock = v.stockLevels.reduce((sum, sl) => sum + sl.availableQuantity, 0);
+        const variantStocks = stockByVariant.get(v.id) || [];
+        const variantStock = variantStocks.reduce((sum, sl) => sum + sl.availableQuantity, 0);
         totalStock += variantStock;
         if (lowestPrice === 0 || v.basePrice < lowestPrice) {
           lowestPrice = v.basePrice;
@@ -873,18 +891,30 @@ export class ProductsService {
         brand: true,
         variants: {
           where: { isActive: true },
-          include: { stockLevels: true },
         },
       },
     });
 
     if (!p) throw new NotFoundException('Producto no encontrado o no disponible en Tienda Web');
 
+    const variantIds = p.variants.map(v => v.id);
+    const stockLevels = await this.prisma.stockLevel.findMany({
+      where: { variantId: { in: variantIds } }
+    });
+
+    const stockByVariant = new Map<string, typeof stockLevels>();
+    for (const stock of stockLevels) {
+      const arr = stockByVariant.get(stock.variantId) || [];
+      arr.push(stock);
+      stockByVariant.set(stock.variantId, arr);
+    }
+
     let lowestPrice = 0;
     let totalStock = 0;
     
     const mappedVariants = p.variants.map(v => {
-      const variantStock = v.stockLevels.reduce((sum, sl) => sum + sl.availableQuantity, 0);
+      const variantStocks = stockByVariant.get(v.id) || [];
+      const variantStock = variantStocks.reduce((sum, sl) => sum + sl.availableQuantity, 0);
       totalStock += variantStock;
       if (lowestPrice === 0 || v.basePrice < lowestPrice) {
         lowestPrice = v.basePrice;

@@ -1,0 +1,94 @@
+import { SalesService } from '../sales.service';
+import { StockMovementService } from '../../logistics/stock-movement.service';
+import { PrismaService } from '../../../core/prisma/prisma.service';
+export declare class OrdersFulfillmentService {
+    private readonly salesService;
+    private readonly stockService;
+    private readonly prisma;
+    constructor(salesService: SalesService, stockService: StockMovementService, prisma: PrismaService);
+    initializeFulfillment(saleOrderId: string): Promise<{
+        id: string;
+        saleOrderId: string;
+        status: string;
+        trackingNumber: string | null;
+        courierName: string | null;
+        paidAt: Date | null;
+        pickedAt: Date | null;
+        packedAt: Date | null;
+        shippedAt: Date | null;
+        deliveredAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    markAsPaid(id: string): Promise<{
+        id: string;
+        saleOrderId: string;
+        status: string;
+        trackingNumber: string | null;
+        courierName: string | null;
+        paidAt: Date | null;
+        pickedAt: Date | null;
+        packedAt: Date | null;
+        shippedAt: Date | null;
+        deliveredAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    startPicking(id: string): Promise<{
+        id: string;
+        saleOrderId: string;
+        status: string;
+        trackingNumber: string | null;
+        courierName: string | null;
+        paidAt: Date | null;
+        pickedAt: Date | null;
+        packedAt: Date | null;
+        shippedAt: Date | null;
+        deliveredAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    markAsPacked(id: string): Promise<{
+        id: string;
+        saleOrderId: string;
+        status: string;
+        trackingNumber: string | null;
+        courierName: string | null;
+        paidAt: Date | null;
+        pickedAt: Date | null;
+        packedAt: Date | null;
+        shippedAt: Date | null;
+        deliveredAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    shipOrder(id: string, trackingNumber: string, courierName: string): Promise<{
+        id: string;
+        saleOrderId: string;
+        status: string;
+        trackingNumber: string | null;
+        courierName: string | null;
+        paidAt: Date | null;
+        pickedAt: Date | null;
+        packedAt: Date | null;
+        shippedAt: Date | null;
+        deliveredAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    markAsDelivered(id: string): Promise<{
+        id: string;
+        saleOrderId: string;
+        status: string;
+        trackingNumber: string | null;
+        courierName: string | null;
+        paidAt: Date | null;
+        pickedAt: Date | null;
+        packedAt: Date | null;
+        shippedAt: Date | null;
+        deliveredAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    private getFulfillment;
+}
