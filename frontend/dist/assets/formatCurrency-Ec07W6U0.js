@@ -1,0 +1,1 @@
+const n=new Map;function f(r,t){const e=`${r}:${t??"default"}`;if(!n.has(e)){const o={style:"currency",currency:r};t!==void 0&&(o.maximumFractionDigits=t),n.set(e,new Intl.NumberFormat("es-AR",o))}return n.get(e)}function a(r,t="ARS",e){return f(t,e).format(r)}export{a as f};

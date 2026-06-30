@@ -133,14 +133,25 @@ let TransfersService = class TransfersService {
         return { data, total, page: Number(page), pageSize: Number(pageSize) };
     }
     async findOne(id) {
-        return this.prisma.stockTransfer.findUnique({
+        const transfer = await this.prisma.stockTransfer.findUnique({
             where: { id },
-            include: {
-                lines: {
-                    include: { variant: { include: { product: true } } },
-                },
-            },
+            include: { lines: true },
         });
+        if (!transfer)
+            return null;
+        const variantIds = transfer.lines.map(l => l.variantId);
+        const variants = await this.prisma.productVariant.findMany({
+            where: { id: { in: variantIds } },
+            include: { product: true }
+        });
+        const variantMap = new Map(variants.map(v => [v.id, v]));
+        return {
+            ...transfer,
+            lines: transfer.lines.map(l => ({
+                ...l,
+                variant: variantMap.get(l.variantId) || null
+            }))
+        };
     }
 };
 exports.TransfersService = TransfersService;

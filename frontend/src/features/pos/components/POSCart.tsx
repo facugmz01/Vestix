@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Search, Plus, Minus, Trash2, User, FileText, PauseCircle, CreditCard, Banknote } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
-import styles from '../../pages/pos/POSPage.module.css';
+import styles from '@/pages/pos/POSPage.module.css';
 
 export function POSCart({
   customersData,

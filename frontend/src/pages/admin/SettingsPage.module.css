@@ -1,0 +1,149 @@
+.layoutGrid {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  padding-bottom: 80px;
+}
+
+@media (min-width: 1024px) {
+  .layoutGrid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+  }
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.sidebarNav::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .sidebarNav {
+    flex-direction: column;
+    position: sticky;
+    top: 24px;
+    padding: 0;
+    gap: 0;
+    overflow-x: hidden;
+  }
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  min-width: max-content;
+  flex-shrink: 0;
+}
+
+.navButton:hover {
+  background: var(--bg-surface-hover);
+}
+
+.navButtonActive {
+  background: var(--blue-bg) !important;
+  color: var(--accent);
+}
+
+@media (min-width: 1024px) {
+  .navButton {
+    padding: 14px 16px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+    border-left: 3px solid transparent;
+    min-width: 200px;
+    width: 100%;
+  }
+
+  .navButton:last-child {
+    border-bottom: none;
+  }
+
+  .navButtonActive {
+    border-left: 3px solid var(--accent);
+  }
+}
+
+.navIconWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navIcon {
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+
+.navButtonActive .navIcon {
+  color: var(--accent);
+}
+
+.navText {
+  display: flex;
+  flex-direction: column;
+}
+
+.navLabel {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: color 0.15s ease;
+}
+
+.navButtonActive .navLabel {
+  color: var(--accent);
+}
+
+.navDescription {
+  display: none;
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@media (min-width: 1024px) {
+  .navDescription {
+    display: block;
+  }
+}
+
+.navChevron {
+  display: none;
+  color: var(--text-muted);
+}
+
+@media (min-width: 1024px) {
+  .navChevron {
+    display: block;
+  }
+}
+
+.contentArea {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}

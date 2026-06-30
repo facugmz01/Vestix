@@ -7,7 +7,8 @@ import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { invoicingSettingsSchema, type InvoicingSettingsFormData } from '../schemas/invoicingSettings.schema';
 import { pricingSettingsSchema, type PricingSettingsFormData, skuBarcodeSettingsSchema, type SkuBarcodeSettingsFormData, offlineSettingsSchema, type OfflineSettingsFormData } from '../schemas/otherSettings.schema';
-import styles from './GeneralSettingsPanel.module.css';
+import clsx from 'clsx';
+import styles from './SettingsShared.module.css';
 
 // ─── Pricing Settings ────────────────────────────────────────────────────────
 export function PricingSettingsPanel() {
@@ -47,10 +48,22 @@ export function PricingSettingsPanel() {
             <ToggleSwitch label="Mostrar precios con IVA incluido" {...register('showPricesWithTax')} />
           </div>
         </div>
-        <footer className={styles.saveFooter}>
-          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar</Button>
-        </footer>
       </section>
+
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar Precios'}
+        </Button>
+      </div>
     </form>
   );
 }
@@ -91,10 +104,22 @@ export function SkuBarcodeSettingsPanel() {
             <ToggleSwitch label="Auto-generar Código de Barra" {...register('barcodeAutoGenerate')} />
           </div>
         </div>
-        <footer className={styles.saveFooter}>
-          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar</Button>
-        </footer>
       </section>
+
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar SKU y Códigos'}
+        </Button>
+      </div>
     </form>
   );
 }
@@ -142,10 +167,22 @@ export function InvoicingSettingsPanel() {
             />
           </div>
         </div>
-        <footer className={styles.saveFooter}>
-          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar Configuraciones</Button>
-        </footer>
       </section>
+
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar Configuración Fiscal'}
+        </Button>
+      </div>
     </form>
   );
 }
@@ -184,10 +221,22 @@ export function OfflineSettingsPanel() {
             </div>
           </div>
         </div>
-        <footer className={styles.saveFooter}>
-          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar</Button>
-        </footer>
       </section>
+
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar Modo Offline'}
+        </Button>
+      </div>
     </form>
   );
 }

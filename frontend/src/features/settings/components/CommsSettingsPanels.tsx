@@ -8,7 +8,8 @@ import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { settingsApi } from '@/api/settings.api';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { notificationSettingsSchema, type NotificationSettingsFormData, integrationSettingsSchema, type IntegrationSettingsFormData } from '../schemas/commsSettings.schema';
-import styles from './GeneralSettingsPanel.module.css'; // Reusing layout
+import clsx from 'clsx';
+import styles from './SettingsShared.module.css';
 
 const BACKEND_MASK = '••••••••';
 
@@ -154,10 +155,22 @@ export function NotificationSettingsPanel() {
             <Input type="number" label="Umbral de Stock Bajo (unidades)" {...register('lowStockThreshold', { valueAsNumber: true })} style={{ width: '120px' }} />
           </div>
         </div>
-        <footer className={styles.saveFooter}>
-          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar Notificaciones</Button>
-        </footer>
       </section>
+
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar Notificaciones'}
+        </Button>
+      </div>
 
     </form>
   );
@@ -228,11 +241,22 @@ export function IntegrationSettingsPanel() {
             </div>
           )}
         </div>
-        
-        <footer className={styles.saveFooter}>
-          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar Integraciones</Button>
-        </footer>
       </section>
+
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar Integraciones'}
+        </Button>
+      </div>
     </form>
   );
 }

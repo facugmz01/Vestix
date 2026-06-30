@@ -208,8 +208,7 @@ let InventoryService = class InventoryService {
     }
     async adjustStock(dto) {
         const stock = await this.prisma.stockLevel.findFirst({
-            where: { variantId: dto.variantId, warehouseId: dto.warehouseId },
-            include: { warehouse: true }
+            where: { variantId: dto.variantId, warehouseId: dto.warehouseId }
         });
         let diff = 0;
         if (dto.type === 'ADD') {

@@ -1,0 +1,168 @@
+.panelContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 24px);
+  width: 100%;
+  max-width: 800px;
+  animation: fadeIn 0.4s ease;
+  padding-bottom: 80px; /* Space for sticky save bar */
+  position: relative;
+}
+
+.card {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+}
+
+.cardHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-surface-hover, #f9fafb);
+}
+
+.cardTitle {
+  font-size: var(--text-base, 16px);
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px 0;
+}
+
+.cardDescription {
+  font-size: var(--text-sm, 13px);
+  color: var(--text-muted, #6b7280);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cardBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-4, 16px);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.selectGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.selectLabel {
+  font-size: var(--text-sm, 13px);
+  font-weight: 500;
+  color: var(--text-secondary, #374151);
+}
+
+.select {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border, #d1d5db);
+  background-color: var(--bg-surface, #ffffff);
+  color: var(--text-primary, #111827);
+  font-size: var(--text-base, 14px);
+  font-family: inherit;
+  transition: all 0.2s ease;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 36px;
+}
+
+.select:focus-visible {
+  border-color: var(--accent, #3b82f6);
+  box-shadow: 0 0 0 3px var(--accent-glow, rgba(59, 130, 246, 0.15));
+}
+
+/* Sticky Save Bar */
+.stickySaveBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px;
+  background: var(--bg-elevated);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  z-index: 50;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.05);
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.stickySaveBar.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (min-width: 1024px) {
+  .stickySaveBar {
+    left: 260px; /* Adjust according to layout sidebar width */
+  }
+}
+
+.unsavedText {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Utils */
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.emptyStateCard {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px;
+  text-align: center;
+  background: var(--bg-surface-hover);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emptyStateCard:hover {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}

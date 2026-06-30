@@ -9,7 +9,7 @@ import { Input, Button, ConfirmDialog, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { posSettingsSchema, type PosSettingsFormData } from '../schemas/posSettings.schema';
 import { settingsApi } from '@/api/settings.api';
-import styles from './GeneralSettingsPanel.module.css'; // Reusing the same grid/card styles
+import styles from './SettingsShared.module.css'; // Reusing the same grid/card styles
 
 export function SalesOptionsPanel() {
   const { data: settings, isLoading } = useGetSettings();
@@ -197,21 +197,22 @@ export function SalesOptionsPanel() {
             </div>
 
           </div>
-
-          <footer className={styles.saveFooter}>
-            <Button 
-              type="submit" 
-              variant="primary" 
-              loading={mutation.isPending}
-              disabled={!isDirty}
-              icon={<Save size={16} />}
-              aria-live="polite"
-            >
-              {mutation.isPending ? 'Guardando...' : 'Guardar Opciones'}
-            </Button>
-          </footer>
         </section>
 
+        {/* Sticky Save Bar */}
+        <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+          <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+          <Button 
+            type="submit" 
+            variant="primary" 
+            loading={mutation.isPending}
+            disabled={!isDirty || mutation.isPending}
+            icon={<Save size={16} />}
+            aria-live="polite"
+          >
+            {mutation.isPending ? 'Guardando...' : 'Guardar Opciones'}
+          </Button>
+        </div>
       </form>
 
       {/* Zona de peligro - Fuera del form */}

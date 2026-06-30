@@ -81,7 +81,7 @@ export declare class TransfersService {
         pageSize: number;
     }>;
     findOne(id: string): Promise<{
-        lines: ({
+        lines: {
             variant: {
                 product: {
                     id: string;
@@ -116,15 +116,13 @@ export declare class TransfersService {
                 createdAt: Date;
                 updatedAt: Date;
             };
-        } & {
             id: string;
             transferId: string;
             variantId: string;
             quantity: number;
             receivedQuantity: number | null;
             createdAt: Date;
-        })[];
-    } & {
+        }[];
         id: string;
         sourceWarehouseId: string;
         destinationWarehouseId: string;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, PauseCircle, Maximize, Calculator, LogOut } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
-import styles from '../../pages/pos/POSPage.module.css';
+import styles from '@/pages/pos/POSPage.module.css';
 
 function LiveClock() {
   const [time, setTime] = useState(new Date());

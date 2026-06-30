@@ -16,7 +16,11 @@ export class StockReportService {
   async getStockValuation(branchId?: string): Promise<StockValuationReport> {
     this.logger.log(`[StockReport] Valuation requested${branchId ? ` for branch ${branchId}` : ' (all branches)'}`);
 
-    const branchFilter = branchId ? { warehouse: { branchId } } : {};
+    let branchFilter = {};
+    if (branchId) {
+      const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
+      branchFilter = { warehouseId: { in: warehouses.map(w => w.id) } };
+    }
 
     const stockLevels = await this.prisma.stockLevel.findMany({
       where: { ...branchFilter }
@@ -62,15 +66,16 @@ export class StockReportService {
   }
 
   async getLowStockAlerts(branchId?: string, reorderPoint = DEFAULT_REORDER_POINT): Promise<LowStockAlert[]> {
-    const branchFilter = branchId ? { warehouse: { branchId } } : {};
+    let branchFilter = {};
+    if (branchId) {
+      const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
+      branchFilter = { warehouseId: { in: warehouses.map(w => w.id) } };
+    }
 
     const stockLevels = await this.prisma.stockLevel.findMany({
       where: {
         availableQuantity: { lte: reorderPoint },
         ...branchFilter
-      },
-      include: {
-        warehouse: true
       }
     });
 
@@ -87,7 +92,7 @@ export class StockReportService {
         variantId: sl.variantId,
         sku: v?.sku || 'Unknown',
         name: v?.product?.name || 'Unknown',
-        branchId: sl.warehouse?.branchId || branchId || 'Unknown',
+        branchId: sl.branchId || branchId || 'Unknown',
         availableQuantity: sl.availableQuantity,
         reorderPoint: reorderPoint
       };

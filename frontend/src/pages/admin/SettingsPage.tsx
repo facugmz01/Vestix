@@ -42,6 +42,9 @@ const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description
   { id: 'mobile',        label: 'App móvil / PWA',        icon: <Smartphone size={16} />, description: '' },
 ];
 
+import styles from './SettingsPage.module.css';
+import clsx from 'clsx';
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
 
@@ -51,7 +54,11 @@ export default function SettingsPage() {
   });
 
   if (isLoading) {
-    return <PageContainer title="Configuración del Sistema"><p style={{ color: 'var(--text-muted)' }}>Cargando configuraciones...</p></PageContainer>;
+    return (
+      <PageContainer title="Configuración del Sistema">
+        <p style={{ color: 'var(--text-muted)' }}>Cargando configuraciones...</p>
+      </PageContainer>
+    );
   }
 
   return (
@@ -60,41 +67,32 @@ export default function SettingsPage() {
         title="Configuración del Sistema"
         subtitle="Ajustes globales que afectan el comportamiento de todo el ERP."
       >
-        <div className="grid-responsive grid-cols-settings" style={{ alignItems: "flex-start", gap: "24px", paddingBottom: "80px" }}>
-
+        <div className={styles.layoutGrid}>
           {/* Sidebar nav */}
-          <div className="settings-sidebar" style={{ position: 'sticky', top: '24px', border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--bg-base)', overflow: 'hidden' }}>
-            {TABS.map((tab, i) => (
+          <div className={styles.sidebarNav}>
+            {TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '14px 16px', border: 'none', background: activeTab === tab.id ? 'var(--blue-bg)' : 'transparent',
-                  cursor: 'pointer', textAlign: 'left',
-                  borderBottom: i === TABS.length - 1 ? 'none' : '1px solid var(--border)',
-                  borderLeft: activeTab === tab.id ? '3px solid var(--accent)' : '3px solid transparent',
-                  transition: 'background 0.15s',
-                  minWidth: '200px',
-                  flexShrink: 0,
-                  width: '100%'
-                }}
+                className={clsx(styles.navButton, {
+                  [styles.navButtonActive]: activeTab === tab.id,
+                })}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-muted)' }}>{tab.icon}</span>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-primary)' }}>{tab.label}</p>
-                    {tab.description && <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>{tab.description}</p>}
+                <div className={styles.navIconWrapper}>
+                  <span className={styles.navIcon}>{tab.icon}</span>
+                  <div className={styles.navText}>
+                    <p className={styles.navLabel}>{tab.label}</p>
+                    {tab.description && <p className={styles.navDescription}>{tab.description}</p>}
                   </div>
                 </div>
-                <ChevronRight size={14} color="var(--text-muted)" />
+                <ChevronRight size={14} className={styles.navChevron} />
               </button>
             ))}
           </div>
 
           {/* Panel content (Autonomous Forms) */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className={styles.contentArea}>
             {activeTab === 'general' && <GeneralSettingsPanel />}
             {activeTab === 'pos' && <SalesOptionsPanel />}
             {activeTab === 'fiscal' && <InvoicingSettingsPanel />}
@@ -105,7 +103,6 @@ export default function SettingsPage() {
             {activeTab === 'integrations' && <IntegrationSettingsPanel />}
             {activeTab === 'mobile' && <PwaSettingsPanel />}
           </div>
-
         </div>
       </PageContainer>
     </ActionGuard>

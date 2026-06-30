@@ -1,7 +1,7 @@
 import { Tags } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
-import styles from '../../pages/pos/POSPage.module.css';
+import styles from '@/pages/pos/POSPage.module.css';
 import type { ProductVariant } from '@/types';
 
 export function POSProductGrid({

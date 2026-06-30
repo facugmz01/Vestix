@@ -7,7 +7,8 @@ import toast from 'react-hot-toast';
 import { Input, Button } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { pwaSettingsSchema, type PwaSettingsFormData } from '../schemas/pwaSettings.schema';
-import styles from './GeneralSettingsPanel.module.css';
+import clsx from 'clsx';
+import styles from './SettingsShared.module.css';
 
 export function PwaSettingsPanel() {
   const { data: settings, isLoading } = useGetSettings();
@@ -83,11 +84,22 @@ export function PwaSettingsPanel() {
             </div>
           </div>
         </div>
-
-        <footer className={styles.saveFooter}>
-          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar PWA</Button>
-        </footer>
       </section>
+
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar PWA'}
+        </Button>
+      </div>
 
       <section className={styles.card}>
         <header className={styles.cardHeader}>

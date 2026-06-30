@@ -7,7 +7,7 @@ import clsx from 'clsx';
 import { Input, Button } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { generalSettingsSchema, type GeneralSettingsFormData } from '../schemas/generalSettings.schema';
-import styles from './GeneralSettingsPanel.module.css';
+import styles from './SettingsShared.module.css';
 
 const TIMEZONES = ['America/Argentina/Buenos_Aires', 'America/Bogota', 'America/Santiago', 'America/Lima', 'America/Mexico_City'];
 
@@ -147,21 +147,22 @@ export function GeneralSettingsPanel() {
             </div>
           </div>
         </div>
-
-        {/* Global Save Footer attached to the last card for better visual flow */}
-        <footer className={styles.saveFooter}>
-          <Button 
-            type="submit" 
-            variant="primary" 
-            loading={mutation.isPending}
-            disabled={!isDirty}
-            icon={<Save size={16} />}
-            aria-live="polite"
-          >
-            {mutation.isPending ? 'Guardando...' : 'Guardar Configuraciones'}
-          </Button>
-        </footer>
       </section>
+
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+        </Button>
+      </div>
     </form>
   );
 }

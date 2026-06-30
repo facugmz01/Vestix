@@ -4,13 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { Save, ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, MessageCircle, Share2, Globe, Plus, Trash2, Store } from 'lucide-react';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { storefrontSettingsSchema, type StorefrontSettingsFormData } from '../schemas/storefrontSettings.schema';
 import { priceListsApi } from '@/api/priceLists.api';
 import { financeApi } from '@/api/finance.api';
-import styles from './GeneralSettingsPanel.module.css';
+import styles from './SettingsShared.module.css';
 
 export function StorefrontSettingsPanel() {
   const { data: settings, isLoading } = useGetSettings();
@@ -75,7 +76,7 @@ export function StorefrontSettingsPanel() {
           
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
 
-          <div className={styles.grid}>
+          <div className={clsx(styles.grid, styles.grid2)}>
             <div>
               <label className={styles.selectLabel}>Color principal</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -107,7 +108,7 @@ export function StorefrontSettingsPanel() {
           <p className={styles.cardDescription}>Imágenes del carrusel y categorías principales de la portada.</p>
         </header>
         <div className={styles.cardBody}>
-          <div style={{ border: '2px dashed var(--border)', borderRadius: '12px', padding: '40px', textAlign: 'center', background: 'var(--bg-surface-hover)', cursor: 'pointer' }}>
+          <div className={styles.emptyStateCard}>
             <ImageIcon size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
             <p style={{ margin: 0, fontWeight: 500, color: 'var(--text-primary)' }}>Arrastrá imágenes acá o hacé click para seleccionar</p>
             <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>PNG, JPG o WebP. Hasta 5MB por imagen. máx 5 en total</p>
@@ -123,7 +124,7 @@ export function StorefrontSettingsPanel() {
           <h3 className={styles.cardTitle}><CreditCard size={18} /> Configuración de Catálogo y Checkout</h3>
         </header>
         <div className={styles.cardBody}>
-          <div className={styles.grid}>
+          <div className={clsx(styles.grid, styles.grid2)}>
             <div className={styles.selectGroup}>
               <label className={styles.selectLabel}>Precio a mostrar en tienda</label>
               <select {...register('priceListToShow')} className={styles.select}>
@@ -215,7 +216,7 @@ export function StorefrontSettingsPanel() {
           <h3 className={styles.cardTitle}><Share2 size={18} /> Redes Sociales & Contacto</h3>
         </header>
         <div className={styles.cardBody}>
-          <div className={styles.grid}>
+          <div className={clsx(styles.grid, styles.grid2)}>
             <Input label="WhatsApp" placeholder="5491112345678" {...register('whatsapp')} />
             <Input label="Instagram" placeholder="https://instagram.com/tucomercio" {...register('instagramUrl')} />
             <Input label="Facebook" placeholder="https://facebook.com/tucomercio" {...register('facebookUrl')} />
@@ -224,11 +225,22 @@ export function StorefrontSettingsPanel() {
             <Input label="X / Twitter" placeholder="https://x.com/tucomercio" {...register('xUrl')} />
           </div>
         </div>
-        <footer className={styles.saveFooter}>
-          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar Tienda Web</Button>
-        </footer>
       </section>
 
+      {/* Sticky Save Bar */}
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          loading={mutation.isPending}
+          disabled={!isDirty || mutation.isPending}
+          icon={<Save size={16} />}
+          aria-live="polite"
+        >
+          {mutation.isPending ? 'Guardando...' : 'Guardar Tienda Web'}
+        </Button>
+      </div>
     </form>
   );
 }

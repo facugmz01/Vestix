@@ -21,7 +21,11 @@ let StockReportService = StockReportService_1 = class StockReportService {
     }
     async getStockValuation(branchId) {
         this.logger.log(`[StockReport] Valuation requested${branchId ? ` for branch ${branchId}` : ' (all branches)'}`);
-        const branchFilter = branchId ? { warehouse: { branchId } } : {};
+        let branchFilter = {};
+        if (branchId) {
+            const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
+            branchFilter = { warehouseId: { in: warehouses.map(w => w.id) } };
+        }
         const stockLevels = await this.prisma.stockLevel.findMany({
             where: { ...branchFilter }
         });
@@ -60,14 +64,15 @@ let StockReportService = StockReportService_1 = class StockReportService {
         };
     }
     async getLowStockAlerts(branchId, reorderPoint = DEFAULT_REORDER_POINT) {
-        const branchFilter = branchId ? { warehouse: { branchId } } : {};
+        let branchFilter = {};
+        if (branchId) {
+            const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
+            branchFilter = { warehouseId: { in: warehouses.map(w => w.id) } };
+        }
         const stockLevels = await this.prisma.stockLevel.findMany({
             where: {
                 availableQuantity: { lte: reorderPoint },
                 ...branchFilter
-            },
-            include: {
-                warehouse: true
             }
         });
         const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
@@ -82,7 +87,7 @@ let StockReportService = StockReportService_1 = class StockReportService {
                 variantId: sl.variantId,
                 sku: v?.sku || 'Unknown',
                 name: v?.product?.name || 'Unknown',
-                branchId: sl.warehouse?.branchId || branchId || 'Unknown',
+                branchId: sl.branchId || branchId || 'Unknown',
                 availableQuantity: sl.availableQuantity,
                 reorderPoint: reorderPoint
             };
