@@ -33,6 +33,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'An unexpected error occurred.';
     let errorCode = 'INTERNAL_SERVER_ERROR';
+    let details: any = undefined;
 
     if (exception instanceof HttpException) {
       statusCode  = exception.getStatus();
@@ -52,16 +53,25 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
           statusCode = HttpStatus.CONFLICT;
           message = 'Ya existe un registro con esos datos únicos (ej: SKU, Email, Nombre).';
           errorCode = 'UNIQUE_CONSTRAINT_FAILED';
+          if (exception.meta && exception.meta.target) {
+            details = { fields: exception.meta.target };
+          }
           break;
         case 'P2003': // Foreign key constraint failed
           statusCode = HttpStatus.BAD_REQUEST;
           message = 'No se puede eliminar o modificar el registro porque está siendo referenciado por otros datos (ej: variantes, órdenes, movimientos).';
           errorCode = 'FOREIGN_KEY_CONSTRAINT_FAILED';
+          if (exception.meta && exception.meta.field_name) {
+            details = { field: exception.meta.field_name };
+          }
           break;
         case 'P2025': // Record not found
           statusCode = HttpStatus.NOT_FOUND;
           message = 'El registro solicitado no existe.';
           errorCode = 'RECORD_NOT_FOUND';
+          if (exception.meta && exception.meta.cause) {
+            details = { cause: exception.meta.cause };
+          }
           break;
         default:
           statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -88,6 +98,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       statusCode,
       errorCode,
       message,
+      ...(details ? { details } : {}),
       path:      request.url,
       timestamp: new Date().toISOString(),
       // NEVER expose stack traces in production

@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
+import { Job, UnrecoverableError } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { SmtpService } from './channels/smtp.service';
 import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
@@ -40,7 +40,7 @@ export class NotificationsProcessor extends WorkerHost {
     if (!template) {
       const error = `No template found in DB for key=${templateKey}, channel=${channel}`;
       await this.failLog(logId, error);
-      throw new Error(error);
+      throw new UnrecoverableError(error);
     }
 
     const body    = this.interpolate(template.body, variables);

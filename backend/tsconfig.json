@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    },
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -18,5 +22,6 @@
     "noFallthroughCasesInSwitch": false,
     "types": ["jest", "node"]
   },
-  "exclude": ["node_modules", "dist", "scratch"]
+  "exclude": ["node_modules", "dist", "scratch"],
+  "include": ["src", "../shared"]
 }

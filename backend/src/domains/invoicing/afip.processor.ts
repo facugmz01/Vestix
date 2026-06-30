@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
+import { Job, UnrecoverableError } from 'bullmq';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { Logger } from '@nestjs/common';
 
@@ -28,7 +28,7 @@ export class AfipProcessor extends WorkerHost {
     });
 
     if (!order) {
-      throw new Error(`Order ${data.orderId} not found. Cannot invoice.`);
+      throw new UnrecoverableError(`Order ${data.orderId} not found. Cannot invoice.`);
     }
 
     if (order.invoices.some(inv => inv.status === 'APPROVED' && inv.type.startsWith('FA_'))) {
@@ -77,7 +77,7 @@ export class AfipProcessor extends WorkerHost {
       include: { saleOrder: { include: { customer: true } } }
     });
 
-    if (!saleReturn) throw new Error(`Return ${data.returnId} not found`);
+    if (!saleReturn) throw new UnrecoverableError(`Return ${data.returnId} not found`);
 
     await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API latency
     

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit, Bell, CheckCircle, XCircle, AlertTriangle, Clock, Mail, MessageSquare } from 'lucide-react';
+import clsx from 'clsx';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton
@@ -11,6 +12,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import type { NotificationTemplate } from '@/types';
 
 import { TemplateFormDrawer } from '@/features/notifications/components/TemplateFormDrawer';
+import styles from '@/features/notifications/components/Notifications.module.css';
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
@@ -87,17 +89,6 @@ export default function NotificationsPage() {
   const handleEdit = (t: NotificationTemplate) => { setEditingTemplate(t); setFormOpen(true); };
   const handleNew = () => { setEditingTemplate(null); setFormOpen(true); };
 
-  const tabStyle = (tab: string) => ({
-    padding: '10px 24px',
-    borderRadius: '8px',
-    border: 'none',
-    background: activeTab === tab ? 'var(--accent)' : 'transparent',
-    color: activeTab === tab ? '#fff' : 'var(--text-secondary)',
-    fontWeight: 700,
-    cursor: 'pointer',
-    fontSize: '14px',
-  });
-
   return (
     <PageContainer
       title="Notificaciones"
@@ -113,9 +104,19 @@ export default function NotificationsPage() {
       }
     >
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', background: 'var(--bg-elevated)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border)', width: 'fit-content' }}>
-        <button style={tabStyle('templates')} onClick={() => setActiveTab('templates')}>Plantillas de Mensajes</button>
-        <button style={tabStyle('logs')} onClick={() => setActiveTab('logs')}>Log de Entregas</button>
+      <div className={styles.tabsContainer}>
+        <button 
+          className={clsx(styles.tab, activeTab === 'templates' && styles.tabActive)} 
+          onClick={() => setActiveTab('templates')}
+        >
+          Plantillas de Mensajes
+        </button>
+        <button 
+          className={clsx(styles.tab, activeTab === 'logs' && styles.tabActive)} 
+          onClick={() => setActiveTab('logs')}
+        >
+          Log de Entregas
+        </button>
       </div>
 
       {/* ── TEMPLATES TAB ── */}
@@ -183,7 +184,11 @@ export default function NotificationsPage() {
           <FiltersBar actions={<Badge color="gray">{logsData?.total ?? 0} entregas</Badge>}>
             <SearchInput placeholder="Buscar destinatario o referencia..." onSearch={v => { setLogSearch(v); setLogPage(1); }} />
 
-            <select value={logStatus} onChange={e => { setLogStatus(e.target.value); setLogPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+            <select 
+              value={logStatus} 
+              onChange={e => { setLogStatus(e.target.value); setLogPage(1); }} 
+              className={styles.filterSelect}
+            >
               <option value="">Todos los estados</option>
               <option value="DELIVERED">Entregado</option>
               <option value="SENT">Enviado</option>
@@ -192,7 +197,11 @@ export default function NotificationsPage() {
               <option value="BOUNCED">Rebotado</option>
             </select>
 
-            <select value={logChannel} onChange={e => { setLogChannel(e.target.value); setLogPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+            <select 
+              value={logChannel} 
+              onChange={e => { setLogChannel(e.target.value); setLogPage(1); }} 
+              className={styles.filterSelect}
+            >
               <option value="">Todos los canales</option>
               <option value="EMAIL">Email</option>
               <option value="SMS">SMS</option>
@@ -200,7 +209,11 @@ export default function NotificationsPage() {
               <option value="PUSH">Push</option>
             </select>
 
-            <select value={logEvent} onChange={e => { setLogEvent(e.target.value); setLogPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+            <select 
+              value={logEvent} 
+              onChange={e => { setLogEvent(e.target.value); setLogPage(1); }} 
+              className={styles.filterSelect}
+            >
               <option value="">Todos los eventos</option>
               {Object.entries(EVENT_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>

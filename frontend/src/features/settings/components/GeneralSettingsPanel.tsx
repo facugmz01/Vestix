@@ -1,57 +1,167 @@
-import { useRef } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import { Building2, Upload, Globe, ExternalLink, Copy } from 'lucide-react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Save, Building2, MapPin, Settings2 } from 'lucide-react';
+import clsx from 'clsx';
+
 import { Input, Button } from '@/components/ui';
-import { settingsApi, SystemSettings } from '@/api/settings.api';
-import { useFormContext } from 'react-hook-form';
-import { SettingsSection, SettingsRow, SettingsDivider } from './SettingsLayout';
+import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
+import { generalSettingsSchema, type GeneralSettingsFormData } from '../schemas/generalSettings.schema';
+import styles from './GeneralSettingsPanel.module.css';
 
 const TIMEZONES = ['America/Argentina/Buenos_Aires', 'America/Bogota', 'America/Santiago', 'America/Lima', 'America/Mexico_City'];
 
 export function GeneralSettingsPanel() {
-  const { register, formState: { errors }, watch } = useFormContext<SystemSettings>();
+  const { data: settings, isLoading } = useGetSettings();
+  const mutation = useUpdateSettingsSection('general');
+
+  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<GeneralSettingsFormData>({
+    resolver: zodResolver(generalSettingsSchema),
+  });
+
+  useEffect(() => {
+    if (settings?.general) {
+      reset(settings.general);
+    }
+  }, [settings, reset]);
+
+  const onSubmit = (data: GeneralSettingsFormData) => {
+    mutation.mutate(data, {
+      onSuccess: () => reset(data) 
+    });
+  };
+
+  if (isLoading) {
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Cargando configuraciones...</div>;
+  }
 
   return (
-    <SettingsSection title="Datos de la Empresa" description="Información fiscal y de contacto visible en documentos e impresiones.">
-
-      <div className="grid-responsive grid-cols-2">
-        <Input label="Nombre Comercial *" {...register('general.companyName', { required: 'Requerido' })} error={errors.general?.companyName?.message} />
-        <Input label="Razón Social *" {...register('general.legalName', { required: 'Requerido' })} error={errors.general?.legalName?.message} />
-        <Input label="CUIT *" {...register('general.taxId', { required: 'Requerido', pattern: { value: /^\d{2}-\d{8}-\d$/, message: 'Formato: 20-12345678-9' } })} error={errors.general?.taxId?.message} placeholder="20-12345678-9" />
-        <Input label="Teléfono" {...register('general.phone')} />
-        <Input label="Email de contacto" type="email" {...register('general.email', { required: 'Requerido' })} error={errors.general?.email?.message} />
-        <Input label="Sitio Web" {...register('general.website')} placeholder="https://..." />
-      </div>
-
-      <SettingsDivider />
-
-      <div className="grid-responsive grid-cols-2">
-        <Input label="Dirección" {...register('general.address')} />
-        <Input label="Ciudad" {...register('general.city')} />
-        <Input label="Provincia / Estado" {...register('general.province')} />
-        <Input label="País" {...register('general.country')} />
-      </div>
-
-      <SettingsDivider />
-
-      <div className="grid-responsive grid-cols-2">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600 }}>Zona Horaria</label>
-          <select {...register('general.timezone')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
-            {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
-          </select>
+    <form onSubmit={handleSubmit(onSubmit)} className={styles.panelContainer} noValidate>
+      
+      {/* 1. Información Fiscal y Comercial */}
+      <section className={styles.card} aria-labelledby="fiscal-heading">
+        <header className={styles.cardHeader}>
+          <h3 id="fiscal-heading" className={styles.cardTitle}>
+            <Building2 size={18} aria-hidden="true" />
+            Información Fiscal y Comercial
+          </h3>
+          <p className={styles.cardDescription}>
+            Datos oficiales de la empresa. Estos datos aparecerán en los comprobantes y facturas.
+          </p>
+        </header>
+        <div className={styles.cardBody}>
+          <div className={clsx(styles.grid, styles.grid2)}>
+            <Input 
+              label="Nombre Comercial *" 
+              {...register('companyName')} 
+              error={errors.companyName?.message} 
+            />
+            <Input 
+              label="Razón Social *" 
+              {...register('legalName')} 
+              error={errors.legalName?.message} 
+            />
+            <Input 
+              label="CUIT / RUT *" 
+              placeholder="20-12345678-9"
+              {...register('taxId')} 
+              error={errors.taxId?.message} 
+            />
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600 }}>Moneda</label>
-          <select {...register('general.currency')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
-            <option value="ARS">ARS — Peso Argentino</option>
-            <option value="USD">USD — Dólar</option>
-            <option value="CLP">CLP — Peso Chileno</option>
-          </select>
-        </div>
-      </div>
+      </section>
 
-    </SettingsSection>
+      {/* 2. Contacto y Localización */}
+      <section className={styles.card} aria-labelledby="contact-heading">
+        <header className={styles.cardHeader}>
+          <h3 id="contact-heading" className={styles.cardTitle}>
+            <MapPin size={18} aria-hidden="true" />
+            Contacto y Localización
+          </h3>
+          <p className={styles.cardDescription}>
+            Información pública para tus clientes y ubicación de la sede principal.
+          </p>
+        </header>
+        <div className={styles.cardBody}>
+          <div className={clsx(styles.grid, styles.grid2)}>
+            <Input 
+              label="Teléfono" 
+              type="tel"
+              {...register('phone')} 
+              error={errors.phone?.message} 
+            />
+            <Input 
+              label="Email de contacto" 
+              type="email" 
+              {...register('email')} 
+              error={errors.email?.message} 
+            />
+            <Input 
+              label="Sitio Web" 
+              type="url"
+              placeholder="https://..."
+              {...register('website')} 
+              error={errors.website?.message} 
+              containerClassName={styles.fullWidth}
+            />
+          </div>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <div className={clsx(styles.grid, styles.grid2)}>
+            <Input label="Dirección" {...register('address')} error={errors.address?.message} />
+            <Input label="Ciudad" {...register('city')} error={errors.city?.message} />
+            <Input label="Provincia / Estado" {...register('province')} error={errors.province?.message} />
+            <Input label="País" {...register('country')} error={errors.country?.message} />
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Preferencias de la Cuenta */}
+      <section className={styles.card} aria-labelledby="prefs-heading">
+        <header className={styles.cardHeader}>
+          <h3 id="prefs-heading" className={styles.cardTitle}>
+            <Settings2 size={18} aria-hidden="true" />
+            Preferencias Regionales
+          </h3>
+          <p className={styles.cardDescription}>
+            Moneda base y zona horaria para reportes y transacciones.
+          </p>
+        </header>
+        <div className={styles.cardBody}>
+          <div className={clsx(styles.grid, styles.grid2)}>
+            <div className={styles.selectGroup}>
+              <label htmlFor="timezone-select" className={styles.selectLabel}>Zona Horaria</label>
+              <select id="timezone-select" {...register('timezone')} className={styles.select}>
+                {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
+              </select>
+              {errors.timezone && <span style={{color: 'var(--red)', fontSize: '12px'}}>{errors.timezone.message}</span>}
+            </div>
+            
+            <div className={styles.selectGroup}>
+              <label htmlFor="currency-select" className={styles.selectLabel}>Moneda Base</label>
+              <select id="currency-select" {...register('currency')} className={styles.select}>
+                <option value="ARS">ARS — Peso Argentino</option>
+                <option value="USD">USD — Dólar Estadounidense</option>
+                <option value="CLP">CLP — Peso Chileno</option>
+              </select>
+              {errors.currency && <span style={{color: 'var(--red)', fontSize: '12px'}}>{errors.currency.message}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Global Save Footer attached to the last card for better visual flow */}
+        <footer className={styles.saveFooter}>
+          <Button 
+            type="submit" 
+            variant="primary" 
+            loading={mutation.isPending}
+            disabled={!isDirty}
+            icon={<Save size={16} />}
+            aria-live="polite"
+          >
+            {mutation.isPending ? 'Guardando...' : 'Guardar Configuraciones'}
+          </Button>
+        </footer>
+      </section>
+    </form>
   );
 }

@@ -3,9 +3,16 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 import { v4 as uuidv4 } from 'uuid';
 
+import { CatalogFacade } from '../catalog/catalog.facade';
+import { SaleOrderRepository } from './repositories/sale-order.repository';
+
 @Injectable()
 export class SalesService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly repository: SaleOrderRepository,
+    private readonly catalogFacade: CatalogFacade
+  ) { }
 
   /**
    * Domain-specific read operations.
@@ -16,38 +23,25 @@ export class SalesService {
     // Strip prefixes like V- or P-
     const cleanId = id.replace(/^[VP]-/i, '');
 
-    const order = await this.prisma.saleOrder.findFirst({
-      where: {
-        OR: [
-          { id: { equals: id } },
-          { id: { startsWith: cleanId, mode: 'insensitive' } }
-        ]
-      },
-      include: { 
-        lines: {
-          include: {
-            variant: {
-              include: {
-                product: true
-              }
-            }
-          }
-        }, 
-        customer: true,
-        variance: true 
-      }
-    });
+    const order = await this.repository.findById(id);
+
+    if (order) {
+      // Hydrate variants
+      const variantIds = order.lines.map(l => l.variantId);
+      const variants = await this.catalogFacade.getVariantsDetails(variantIds);
+      const variantMap = new Map(variants.map(v => [v.id, v]));
+
+      (order as any).lines = order.lines.map(l => ({
+        ...l,
+        variant: variantMap.get(l.variantId)
+      }));
+    }
 
     return order;
   }
 
   async listRecentOrders(branchId: string) {
-    return this.prisma.saleOrder.findMany({
-      where: { branchId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      include: { lines: true, customer: true }
-    });
+    return this.repository.findRecentByBranch(branchId);
   }
 
   async getOrders(params: { page?: any; pageSize?: any; search?: string; status?: string }) {
@@ -65,16 +59,7 @@ export class SalesService {
       ];
     }
 
-    const [data, total] = await Promise.all([
-      this.prisma.saleOrder.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { createdAt: 'desc' },
-        include: { lines: true, customer: true }
-      }),
-      this.prisma.saleOrder.count({ where })
-    ]);
+    const { data, total } = await this.repository.findPaginated(where, skip, pageSize);
 
     return { 
       data: data.map(order => ({
@@ -85,14 +70,7 @@ export class SalesService {
     };
   }
   async updateOrderStatus(id: string, status: string) {
-    const order = await this.prisma.saleOrder.findUnique({ where: { id } });
-    if (!order) {
-      throw new Error('Order not found');
-    }
-    return this.prisma.saleOrder.update({
-      where: { id },
-      data: { status }
-    });
+    return this.repository.updateStatus(id, status);
   }
   async bulkImportSales(dto: BulkImportSalesDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -222,6 +200,16 @@ export class SalesService {
               lines: {
                 create: orderLinesData
               }
+            }
+          });
+
+          // EVENT BOUNDARY
+          await tx.outboxEvent.create({
+            data: {
+              aggregate: 'SaleOrder',
+              aggregateId: orderId,
+              type: 'ORDER_CREATED',
+              payload: { orderId: orderId, branchId: dto.branchId, status: 'COMPLETED', grandTotal: subtotal }
             }
           });
 

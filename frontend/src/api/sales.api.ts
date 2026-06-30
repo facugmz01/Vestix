@@ -1,6 +1,7 @@
 import { get, post, patch } from './client';
 import { cleanParams } from './requestUtils';
 import type { SaleOrder, PagedResponse } from '@/types';
+import type { SharedCreateSaleDto } from '@shared/types';
 
 export interface SalesFilters {
   page?: number;
@@ -11,29 +12,7 @@ export interface SalesFilters {
   branchId?: string;
 }
 
-export interface CreateSaleDto {
-  id: string;               // REQUIRED: Idempotency key from POS
-  branchId: string;
-  warehouseId: string;      // REQUIRED: Physical origin of stock
-  source: 'POS' | 'ECOMMERCE' | 'BACKOFFICE'; // Aligned with backend OrderSource
-  customerId?: string;
-  
-  paymentMethod: 'CASH' | 'CREDIT_CARD' | 'CUSTOMER_CREDIT' | 'BANK_TRANSFER';
-  paymentAccountId?: string; // REQUIRED: For routing funds in Treasury
-  
-  createdAtIso?: string;    // REQUIRED: The exact offline timestamp
-  status?: string;
-  posGrandTotal?: number;
-  cartDiscountTotal?: number;
-  
-  lines: {
-    variantId: string;
-    categoryId: string;     // REQUIRED: For backend RulesEngine
-    quantity: number;
-    unitPriceOverride?: number;
-    discountPct?: number;
-  }[];
-}
+export type CreateSaleDto = SharedCreateSaleDto;
 
 export interface CheckoutResponse {
   status: 'SUCCESS' | 'ALREADY_PROCESSED';

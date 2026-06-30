@@ -1,12 +1,16 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 
 import { Drawer, Button, Input } from '@/components/ui';
 import { notificationsApi, type CreateTemplateDto } from '@/api/notifications.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { NotificationTemplate, NotificationChannel } from '@/types';
+import { templateSchema, type TemplateFormData } from '../schemas/template.schema';
+import styles from './Notifications.module.css';
 
 interface Props {
   open: boolean;
@@ -50,7 +54,8 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
   const queryClient = useQueryClient();
   const isEdit = !!template;
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<CreateTemplateDto>({
+  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<TemplateFormData>({
+    resolver: zodResolver(templateSchema),
     defaultValues: {
       name:     template?.name     ?? '',
       event:    template?.event    ?? 'SALE_CONFIRMED',
@@ -89,8 +94,12 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
   });
 
   const insertVar = (v: string) => {
-    const current = watch('body');
-    setValue('body', current + v);
+    const current = watch('body') || '';
+    setValue('body', current + v, { shouldValidate: true });
+  };
+
+  const onSubmit = (data: TemplateFormData) => {
+    mutation.mutate(data as CreateTemplateDto);
   };
 
   return (
@@ -102,34 +111,36 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancelar</Button>
-          <Button variant="primary" onClick={handleSubmit(d => mutation.mutate(d))} loading={mutation.isPending}>
+          <Button variant="primary" onClick={handleSubmit(onSubmit)} loading={mutation.isPending}>
             {isEdit ? 'Guardar Cambios' : 'Crear Plantilla'}
           </Button>
         </>
       }
     >
-      <form style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit(onSubmit)} className={styles.formContainer} noValidate>
 
         <Input
           label="Nombre Interno *"
           placeholder="Ej: Email Confirmación de Venta"
-          {...register('name', { required: 'Requerido' })}
+          {...register('name')}
           error={errors.name?.message}
         />
 
         <div className="grid-responsive grid-cols-2">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Evento Disparador *</label>
-            <select {...register('event')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Evento Disparador *</label>
+            <select {...register('event')} className={clsx(styles.select, errors.event && styles.textareaError)}>
               {EVENTS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
             </select>
+            {errors.event && <p className={styles.errorText}>{errors.event.message}</p>}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Canal de Envío *</label>
-            <select {...register('channel')} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Canal de Envío *</label>
+            <select {...register('channel')} className={clsx(styles.select, errors.channel && styles.textareaError)}>
               {CHANNELS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
+            {errors.channel && <p className={styles.errorText}>{errors.channel.message}</p>}
           </div>
         </div>
 
@@ -137,23 +148,23 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
           <Input
             label="Asunto del Email *"
             placeholder="Ej: Tu compra fue confirmada ✓"
-            {...register('subject', { required: watchedChannel === 'EMAIL' ? 'Requerido para Email' : false })}
+            {...register('subject')}
             error={errors.subject?.message}
           />
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Cuerpo del Mensaje *</label>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Variables disponibles:</span>
+        <div className={styles.formGroup}>
+          <div className={styles.variablesHeader}>
+            <label className={styles.label}>Cuerpo del Mensaje *</label>
+            <span className={styles.variablesLabel}>Variables disponibles:</span>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+          <div className={styles.variablesContainer}>
             {TEMPLATE_VARS.map(v => (
               <button
                 key={v}
                 type="button"
                 onClick={() => insertVar(v)}
-                style={{ padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--accent)', background: 'var(--blue-bg)', color: 'var(--blue)', fontSize: '12px', cursor: 'pointer', fontFamily: 'monospace' }}
+                className={styles.variableButton}
               >
                 {v}
               </button>
@@ -164,16 +175,16 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
             placeholder={watchedChannel === 'EMAIL'
               ? 'Hola {{customerName}}, tu pedido {{orderNumber}} fue confirmado...'
               : 'Tu pedido {{orderNumber}} ha sido confirmado por ${{amount}}.'}
-            {...register('body', { required: 'El cuerpo es obligatorio' })}
-            style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', fontFamily: 'monospace', resize: 'vertical' }}
+            {...register('body')}
+            className={clsx(styles.textarea, errors.body && styles.textareaError)}
           />
-          {errors.body && <p style={{ color: 'var(--red)', fontSize: '12px', margin: 0 }}>{errors.body.message}</p>}
+          {errors.body && <p className={styles.errorText}>{errors.body.message}</p>}
         </div>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '12px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+        <label className={styles.checkboxContainer}>
           <input type="checkbox" {...register('isActive')} />
-          <span style={{ fontWeight: 600 }}>Plantilla Activa</span>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', marginLeft: '4px' }}>— Si está desactivada, el evento no enviará notificaciones.</span>
+          <span className={styles.checkboxLabel}>Plantilla Activa</span>
+          <span className={styles.checkboxHint}>— Si está desactivada, el evento no enviará notificaciones.</span>
         </label>
 
       </form>

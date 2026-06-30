@@ -1,8 +1,9 @@
 import { IsString, IsNotEmpty, IsEnum, IsArray, ValidateNested, IsNumber, IsOptional, IsUUID, Min, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderSource, PaymentMethod } from '../models/order.model';
+import { SharedCreateSaleDto, CreateSaleLineDto } from '@shared/types';
 
-class OrderLineDto {
+class OrderLineDto implements CreateSaleLineDto {
   @IsUUID('4')
   @IsNotEmpty()
   variantId: string;
@@ -24,7 +25,7 @@ class OrderLineDto {
   unitPriceOverride?: number; // Manual price set by the cashier
 }
 
-export class CreateOrderDto {
+export class CreateOrderDto implements SharedCreateSaleDto {
   @IsUUID('4')
   @IsNotEmpty()
   id: string; // MANDATORY from client for Idempotency

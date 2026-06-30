@@ -18,6 +18,7 @@ import { CatalogService } from './catalog.service';
 import { CatalogController } from './catalog.controller';
 import { IdentifiersService } from './identifiers.service';
 import { IdentifiersController } from './identifiers.controller';
+import { CatalogFacade } from './catalog.facade';
 
 @Global()
 @Module({
@@ -44,6 +45,7 @@ import { IdentifiersController } from './identifiers.controller';
     RulesEngineService,
     CatalogService,
     IdentifiersService,
+    CatalogFacade,
   ],
   exports: [
     ProductsService,
@@ -55,6 +57,7 @@ import { IdentifiersController } from './identifiers.controller';
     RulesEngineService,
     CatalogService,
     IdentifiersService,
+    CatalogFacade,
   ],
 })
 export class CatalogModule {}

@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
     "@tanstack/react-query": "^5.40.0",
     "@tanstack/react-query-devtools": "^5.40.0",
     "axios": "^1.7.2",
@@ -26,6 +27,7 @@
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.24.0",
     "recharts": "^2.12.7",
+    "zod": "^4.4.3",
     "zustand": "^4.5.4"
   },
   "devDependencies": {

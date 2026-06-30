@@ -1,11 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { CloudOff } from 'lucide-react';
+import toast from 'react-hot-toast';
+
 import { Drawer, Button, Input } from '@/components/ui';
 import { customersApi, type CreateCustomerDto } from '@/api/customers.api';
 import { priceListsApi } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { Customer, PriceList } from '@/types';
-import toast from 'react-hot-toast';
+import { db } from '@/core/db/db';
+import type { Customer } from '@/types';
+
+const customerSchema = z.object({
+  type: z.enum(['INDIVIDUAL', 'BUSINESS']),
+  fullName: z.string().min(2, 'El nombre/razón social es obligatorio'),
+  taxId: z.string().optional(),
+  email: z.string().email('Formato de correo inválido').or(z.literal('')).optional(),
+  phone: z.string().optional(),
+  initialCreditLimit: z.number().min(0, 'No puede ser negativo'),
+  priceListId: z.string().optional(),
+}).refine(data => data.type === 'INDIVIDUAL' || (data.type === 'BUSINESS' && !!data.taxId), {
+  message: 'El CUIT/RUT es obligatorio para Empresas',
+  path: ['taxId'],
+});
+
+type CustomerFormData = z.infer<typeof customerSchema>;
 
 interface Props {
   open: boolean;
@@ -16,69 +37,86 @@ interface Props {
 export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
   const queryClient = useQueryClient();
   const isEditing = !!customerToEdit;
+  
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
-  const [formData, setFormData] = useState<CreateCustomerDto>({
-    type: 'INDIVIDUAL',
-    fullName: '',
-    taxId: '',
-    email: '',
-    phone: '',
-    initialCreditLimit: 0,
-    priceListId: '',
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<CustomerFormData>({
+    resolver: zodResolver(customerSchema),
+    defaultValues: { type: 'INDIVIDUAL', initialCreditLimit: 0, email: '', phone: '', taxId: '', priceListId: '' }
   });
+
+  const selectedType = watch('type');
 
   const { data: priceListsData } = useQuery({
     queryKey: queryKeys.priceLists.all(),
     queryFn: () => priceListsApi.getPriceLists({ pageSize: 100 }),
   });
-  const priceLists = priceListsData?.data || [];
 
   useEffect(() => {
-    if (open && customerToEdit) {
-      setFormData({
-        type: customerToEdit.type,
-        fullName: customerToEdit.fullName,
-        taxId: customerToEdit.taxId || '',
-        email: customerToEdit.email || '',
-        phone: customerToEdit.phone || '',
-        initialCreditLimit: customerToEdit.credit.limit,
-        priceListId: customerToEdit.priceListId || '',
-      });
-    } else if (open && !customerToEdit) {
-      setFormData({
-        type: 'INDIVIDUAL',
-        fullName: '',
-        taxId: '',
-        email: '',
-        phone: '',
-        initialCreditLimit: 0,
-        priceListId: '',
-      });
+    if (open) {
+      if (customerToEdit) {
+        reset({
+          type: customerToEdit.type,
+          fullName: customerToEdit.fullName,
+          taxId: customerToEdit.taxId || '',
+          email: customerToEdit.email || '',
+          phone: customerToEdit.phone || '',
+          initialCreditLimit: customerToEdit.credit?.limit || 0,
+          priceListId: customerToEdit.priceListId || '',
+        });
+      } else {
+        reset({ type: 'INDIVIDUAL', fullName: '', taxId: '', email: '', phone: '', initialCreditLimit: 0, priceListId: '' });
+      }
     }
-  }, [open, customerToEdit]);
+  }, [open, customerToEdit, reset]);
 
   const mutation = useMutation({
-    mutationFn: (data: CreateCustomerDto) => {
-      if (isEditing && customerToEdit) return customersApi.updateCustomer(customerToEdit.id, data);
-      return customersApi.createCustomer(data);
+    mutationFn: async (data: CustomerFormData) => {
+      const dto = data as CreateCustomerDto;
+      
+      if (!isOnline) {
+        await db.syncQueue.add({
+          type: isEditing ? 'UPDATE_CUSTOMER' : 'CREATE_CUSTOMER',
+          payload: { ...dto, localId: crypto.randomUUID(), targetId: customerToEdit?.id },
+          createdAt: new Date().toISOString(),
+          status: 'PENDING',
+          retryCount: 0,
+        });
+        return { offline: true };
+      }
+
+      if (isEditing && customerToEdit) {
+        return { offline: false, res: await customersApi.updateCustomer(customerToEdit.id, dto) };
+      }
+      return { offline: false, res: await customersApi.createCustomer(dto) };
     },
-    onSuccess: () => {
-      toast.success(isEditing ? 'Cliente actualizado' : 'Cliente creado exitosamente');
-      queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
+    onSuccess: (result) => {
+      if (result.offline) {
+        toast('Guardado localmente. Se sincronizará al recuperar la conexión', { icon: '📴', duration: 4000 });
+      } else {
+        toast.success(isEditing ? 'Cliente actualizado' : 'Cliente creado exitosamente');
+        queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
+      }
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Error al guardar el cliente');
+      toast.error(error.message || 'Error crítico al procesar la solicitud');
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.fullName.trim()) {
-      toast.error('El nombre / razón social es obligatorio');
-      return;
-    }
-    mutation.mutate(formData);
+  const onSubmit = (data: CustomerFormData) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -89,23 +127,27 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
       width="md"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>
+          {!isOnline && (
+            <span style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--orange)', fontSize: '12px', fontWeight: 600 }}>
+              <CloudOff size={16} /> Modo Offline
+            </span>
+          )}
+          <Button variant="ghost" onClick={onClose} disabled={isSubmitting || mutation.isPending}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleSubmit} loading={mutation.isPending}>
-            Guardar
+          <Button variant="primary" onClick={handleSubmit(onSubmit)} loading={isSubmitting || mutation.isPending}>
+            Guardar Cliente
           </Button>
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} noValidate>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Tipo de Cliente</label>
+          <label style={{ fontSize: '13px', fontWeight: 600 }}>Tipo de Cliente</label>
           <select
-            value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value as 'INDIVIDUAL' | 'BUSINESS' })}
-            style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+            {...register('type')}
+            style={{ padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', outline: 'none' }}
           >
             <option value="INDIVIDUAL">Consumidor Final / Individuo</option>
             <option value="BUSINESS">Empresa (B2B)</option>
@@ -113,67 +155,56 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
         </div>
 
         <Input
-          label={formData.type === 'BUSINESS' ? 'Razón Social *' : 'Nombre Completo *'}
-          value={formData.fullName}
-          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-          required
+          label={selectedType === 'BUSINESS' ? 'Razón Social *' : 'Nombre Completo *'}
+          {...register('fullName')}
+          error={errors.fullName?.message}
         />
 
         <div className="grid-responsive grid-cols-2">
           <Input
-            label={formData.type === 'BUSINESS' ? 'CUIT / RUT *' : 'DNI / Identificación'}
-            value={formData.taxId || ''}
-            onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
-            required={formData.type === 'BUSINESS'}
+            label={selectedType === 'BUSINESS' ? 'CUIT / RUT *' : 'DNI / Identificación'}
+            {...register('taxId')}
+            error={errors.taxId?.message}
           />
           <Input
             label="Teléfono"
-            value={formData.phone || ''}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            {...register('phone')}
+            error={errors.phone?.message}
           />
         </div>
 
         <Input
           label="Correo Electrónico"
           type="email"
-          value={formData.email || ''}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          {...register('email')}
+          error={errors.email?.message}
         />
 
         <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
 
         <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: 'var(--radius)' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
-            Condiciones Comerciales
-          </h4>
+          <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>Condiciones Comerciales</h4>
           <Input
             label="Límite de Crédito Autorizado ($)"
             type="number"
-            min="0"
-            step="1000"
-            value={formData.initialCreditLimit}
-            onChange={(e) => setFormData({ ...formData, initialCreditLimit: Number(e.target.value) })}
-           
-            disabled={isEditing} // Generalmente se edita desde otra vista por seguridad financiera
+            {...register('initialCreditLimit', { valueAsNumber: true })}
+            error={errors.initialCreditLimit?.message}
+            disabled={isEditing} 
+            helperText={isEditing ? "* Se edita desde el módulo de Riesgo/Finanzas" : undefined}
           />
+          
           <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Lista de Precios Asignada</label>
+            <label style={{ fontSize: '13px', fontWeight: 600 }}>Lista de Precios Asignada</label>
             <select
-              value={formData.priceListId || ''}
-              onChange={(e) => setFormData({ ...formData, priceListId: e.target.value })}
-              style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+              {...register('priceListId')}
+              style={{ padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
             >
               <option value="">(Lista por Defecto)</option>
-              {priceLists.map(list => (
+              {priceListsData?.data.map(list => (
                 <option key={list.id} value={list.id}>{list.name} ({list.type})</option>
               ))}
             </select>
           </div>
-          {isEditing && (
-            <p style={{ fontSize: '12px', color: 'var(--orange)', marginTop: '8px' }}>
-              * Para modificar límites de crédito de clientes existentes, utilizá el módulo de Riesgo/Finanzas en la vista de detalle.
-            </p>
-          )}
         </div>
 
       </form>

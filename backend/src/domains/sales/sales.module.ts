@@ -8,6 +8,7 @@ import { ReturnsController } from './returns/returns.controller';
 import { ReturnsService } from './returns/returns.service';
 import { OrdersFulfillmentService } from './orders/orders-fulfillment.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
+import { SaleOrderRepository } from './repositories/sale-order.repository';
 
 import { StorefrontController } from './storefront.controller';
 import { StorefrontAuthController } from './storefront-auth.controller';
@@ -56,6 +57,7 @@ import { OfflineController } from './offline.controller';
     PosService,
     SyncEngineService,
     ConflictResolutionService,
+    SaleOrderRepository,
   ],
   exports: [
     SalesService,
@@ -65,6 +67,7 @@ import { OfflineController } from './offline.controller';
     CustomersService,
     PosService,
     SyncEngineService,
+    SaleOrderRepository,
   ],
 })
 export class SalesModule {}

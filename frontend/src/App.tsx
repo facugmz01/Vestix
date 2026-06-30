@@ -4,6 +4,7 @@ import { ErrorBoundary }    from '@/components/ErrorBoundary';
 import { PageSpinner }      from '@/components/ui/Spinner';
 import { useAuthInit }      from '@/hooks/useAuthInit';
 import { useSyncEngine }    from '@/hooks/useSyncEngine';
+import { useDexieSync }     from '@/hooks/useDexieSync';
 import { OfflineStatusBar } from '@/features/offline/components/OfflineStatusBar';
 import { AdminLayout }      from '@/components/layout/AdminLayout';
 import { AuthLayout }       from '@/components/layout/AuthLayout';
@@ -75,6 +76,7 @@ export default function App() {
   const isBooting = useAuthInit();
   const navigate  = useNavigate();
   useSyncEngine(); // global sync engine — mounts once, drains queue on reconnect
+  useDexieSync();  // pure Dexie POS sync engine
 
   // Global 403 event listener dispatched by the Axios interceptor
   useEffect(() => {

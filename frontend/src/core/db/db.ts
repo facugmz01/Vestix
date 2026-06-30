@@ -16,7 +16,7 @@ export interface PosCatalogItem {
 
 export interface SyncQueueItem {
   id?: number; // Auto-incremented local ID
-  type: 'SALE' | 'SALE_RETURN';
+  type: 'SALE' | 'SALE_RETURN' | 'CREATE_CUSTOMER' | 'UPDATE_CUSTOMER';
   payload: any; // The JSON payload to send to the backend
   createdAt: string; // ISO date
   status: 'PENDING' | 'ERROR';

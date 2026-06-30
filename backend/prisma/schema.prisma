@@ -100,11 +100,8 @@ model Branch {
   settings          Json? // { taxId, posReceiptHeader, posReceiptFooter }
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-  orders            SaleOrder[]
   warehouses        Warehouse[]
   cashRegisters     CashRegister[]
-  stockLevels       StockLevel[]
-  returns           SaleReturn[]
   users             User[]
   financialAccounts FinancialAccount[] // Relación agregada
 
@@ -112,27 +109,18 @@ model Branch {
 }
 
 model Warehouse {
-  id                   String              @id @default(uuid())
-  name                 String
-  code                 String?             @unique
-  type                 String?             @default("STORAGE")
-  address              String?
-  isActive             Boolean             @default(true)
-  branchId             String
-  branch               Branch              @relation(fields: [branchId], references: [id])
-  stockLevels          StockLevel[]
-  sourceMovements      InventoryMovement[] @relation("SourceMovements")
-  destinationMovements InventoryMovement[] @relation("DestinationMovements")
-
-  // Relaciones agregadas
-  saleOrders           SaleOrder[]
-  purchaseOrders       PurchaseOrder[]
-  goodsReceipts        GoodsReceipt[]
-  sourceTransfers      StockTransfer[] @relation("TransferSource")
-  destinationTransfers StockTransfer[] @relation("TransferDestination")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String          @id @default(uuid())
+  name          String
+  code          String?         @unique
+  type          String?         @default("STORAGE")
+  address       String?
+  isActive      Boolean         @default(true)
+  branchId      String
+  branch        Branch          @relation(fields: [branchId], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  PurchaseOrder PurchaseOrder[]
+  GoodsReceipt  GoodsReceipt[]
 
   @@schema("core")
 }
@@ -206,19 +194,12 @@ model ProductVariant {
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 
-  orderLines       OrderLineItem[]
-  poLines          POLineItem[]
-  stockLevels      StockLevel[]
-  movements        InventoryMovement[]
   priceListEntries PriceListEntry[]
-
-  // Relaciones formalizadas agregadas
-  returnLines   SaleReturnLine[]
-  receiptLines  GoodsReceiptLine[]
-  transferLines StockTransferLine[]
-  wcMapping     WcVariantMapping?
-  comboUses     ProductComboLine[]
-  batches       ProductBatch[]
+  wcMapping        WcVariantMapping?
+  comboUses        ProductComboLine[]
+  batches          ProductBatch[]
+  POLineItem       POLineItem[]
+  GoodsReceiptLine GoodsReceiptLine[]
 
   @@schema("catalog")
 }
@@ -343,7 +324,7 @@ model Customer {
   priceList   PriceList?  @relation(fields: [priceListId], references: [id])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  orders      SaleOrder[]
+  SaleOrder   SaleOrder[]
 
   @@schema("sales")
 }
@@ -353,40 +334,39 @@ model Customer {
 // ==========================================
 
 model SaleOrder {
-  id                String     @id // V2: Idempotent Offline UUID
+  id                String    @id // V2: Idempotent Offline UUID
   branchId          String
-  branch            Branch     @relation(fields: [branchId], references: [id])
   warehouseId       String?
-  warehouse         Warehouse? @relation(fields: [warehouseId], references: [id]) // Relación formalizada
   source            String
   customerId        String?
-  customer          Customer?  @relation(fields: [customerId], references: [id])
+  customer          Customer? @relation(fields: [customerId], references: [id])
   subtotal          Float
   cartDiscountTotal Float
   grandTotal        Float
-  appliedPromotions Json       @default("[]")
+  appliedPromotions Json      @default("[]")
 
   // Soporte legado/plano para compatibilidad inicial
   paymentMethod    String
   paymentAccountId String?
-  paymentAccount   FinancialAccount? @relation(fields: [paymentAccountId], references: [id]) // Relación formalizada
 
   // Soporte completo para múltiples pagos/pagos divididos
   payments SaleOrderPayment[]
 
-  status       String     @default("COMPLETED") // COMPLETED | QUOTE | CANCELLED
+  status       String   @default("COMPLETED") // COMPLETED | QUOTE | CANCELLED
   cashShiftId  String?
-  cashShift    CashShift? @relation(fields: [cashShiftId], references: [id])
-  issueInvoice Boolean    @default(true)
+  issueInvoice Boolean  @default(true)
   createdAt    DateTime
 
   fulfillment OrderFulfillment?
   syncedAt    DateTime          @default(now())
 
-  lines    OrderLineItem[]
-  invoices Invoice[]
-  variance SaleOrderVariance?
-  returns  SaleReturn[]
+  lines              OrderLineItem[]
+  invoices           Invoice[]
+  variance           SaleOrderVariance?
+  returns            SaleReturn[]
+  FinancialAccount   FinancialAccount?  @relation(fields: [financialAccountId], references: [id])
+  financialAccountId String?
+  CashShift          CashShift?         @relation(fields: [cashShiftId], references: [id])
 
   @@index([createdAt])
   @@index([source])
@@ -409,11 +389,10 @@ model SaleOrderVariance {
 }
 
 model OrderLineItem {
-  id             String         @id @default(uuid())
+  id             String    @id @default(uuid())
   orderId        String
-  order          SaleOrder      @relation(fields: [orderId], references: [id])
+  order          SaleOrder @relation(fields: [orderId], references: [id])
   variantId      String
-  variant        ProductVariant @relation(fields: [variantId], references: [id])
   categoryId     String
   quantity       Int
   basePrice      Float
@@ -449,7 +428,6 @@ model SaleReturn {
   saleOrderId       String
   saleOrder         SaleOrder        @relation(fields: [saleOrderId], references: [id])
   branchId          String
-  branch            Branch           @relation(fields: [branchId], references: [id])
   action            String // REFUND | EXCHANGE
   status            String           @default("PENDING") // PENDING | APPROVED | REJECTED
   totalRefundAmount Float
@@ -461,16 +439,15 @@ model SaleReturn {
 }
 
 model SaleReturnLine {
-  id          String         @id @default(uuid())
+  id          String        @id @default(uuid())
   returnId    String
-  return      SaleReturn     @relation(fields: [returnId], references: [id])
+  return      SaleReturn    @relation(fields: [returnId], references: [id])
   orderLineId String
-  orderLine   OrderLineItem  @relation(fields: [orderLineId], references: [id])
+  orderLine   OrderLineItem @relation(fields: [orderLineId], references: [id])
   variantId   String
-  variant     ProductVariant @relation(fields: [variantId], references: [id]) // Relación formalizada
   quantity    Int
   unitPrice   Float // Precio original de venta
-  condition   String         @default("NEW") // NEW | DEFECTIVE | USED
+  condition   String        @default("NEW") // NEW | DEFECTIVE | USED
   reason      String?
 
   @@schema("sales")
@@ -481,20 +458,17 @@ model SaleReturnLine {
 // ==========================================
 
 model InventoryMovement {
-  id                     String         @id @default(uuid())
+  id                     String        @id @default(uuid())
   variantId              String
-  variant                ProductVariant @relation(fields: [variantId], references: [id])
   batchId                String?
-  batch                  ProductBatch?  @relation(fields: [batchId], references: [id])
+  batch                  ProductBatch? @relation(fields: [batchId], references: [id])
   sourceWarehouseId      String?
-  sourceWarehouse        Warehouse?     @relation("SourceMovements", fields: [sourceWarehouseId], references: [id])
   destinationWarehouseId String?
-  destinationWarehouse   Warehouse?     @relation("DestinationMovements", fields: [destinationWarehouseId], references: [id])
   type                   String
   quantity               Int
   unitCost               Float
   referenceId            String?
-  createdAt              DateTime       @default(now())
+  createdAt              DateTime      @default(now())
 
   @@index([variantId])
   @@index([referenceId])
@@ -505,13 +479,10 @@ model InventoryMovement {
 model StockLevel {
   id                String             @id @default(uuid())
   variantId         String // campo sin @unique - la unicidad la garantiza @@unique([variantId, warehouseId, batchId])
-  variant           ProductVariant     @relation(fields: [variantId], references: [id])
   warehouseId       String
-  warehouse         Warehouse          @relation(fields: [warehouseId], references: [id])
   batchId           String?
   batch             ProductBatch?      @relation(fields: [batchId], references: [id])
   branchId          String?
-  branch            Branch?            @relation(fields: [branchId], references: [id])
   physicalQuantity  Int                @default(0)
   reservedQuantity  Int                @default(0)
   availableQuantity Int                @default(0)
@@ -547,9 +518,7 @@ model StockReservation {
 model StockTransfer {
   id                     String              @id @default(uuid())
   sourceWarehouseId      String
-  sourceWarehouse        Warehouse           @relation("TransferSource", fields: [sourceWarehouseId], references: [id])
   destinationWarehouseId String
-  destinationWarehouse   Warehouse           @relation("TransferDestination", fields: [destinationWarehouseId], references: [id])
   status                 String              @default("DRAFT") // DRAFT | IN_TRANSIT | COMPLETED | CANCELLED
   trackingNumber         String?
   notes                  String?
@@ -567,14 +536,13 @@ model StockTransfer {
 }
 
 model StockTransferLine {
-  id               String         @id @default(uuid())
+  id               String        @id @default(uuid())
   transferId       String
-  transfer         StockTransfer  @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  transfer         StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
   variantId        String
-  variant          ProductVariant @relation(fields: [variantId], references: [id])
   quantity         Int
   receivedQuantity Int? // Cantidad efectivamente recibida
-  createdAt        DateTime       @default(now())
+  createdAt        DateTime      @default(now())
 
   @@schema("inventory")
 }
@@ -917,9 +885,9 @@ model SystemSettings {
 model NotificationTemplate {
   id        String            @id @default(uuid())
   name      String
-  event     String            // e.g., 'SALE_CONFIRMED', 'LOW_STOCK_ALERT'
-  channel   String            // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
-  subject   String?           // Mostly for email
+  event     String // e.g., 'SALE_CONFIRMED', 'LOW_STOCK_ALERT'
+  channel   String // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
+  subject   String? // Mostly for email
   body      String            @db.Text
   isActive  Boolean           @default(true)
   createdAt DateTime          @default(now())
@@ -931,18 +899,18 @@ model NotificationTemplate {
 }
 
 model NotificationLog {
-  id           String    @id @default(uuid())
+  id           String                @id @default(uuid())
   templateId   String?
   template     NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  event        String    // mirrors TemplateKey / NotificationEvent
-  channel      String    // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
-  recipient    String    // email or phone number
-  referenceId  String?   // SaleOrder, PO, etc.
-  status       String    @default("PENDING") // PENDING | SENT | FAILED | BOUNCED
-  errorMessage String?   @db.Text
+  event        String // mirrors TemplateKey / NotificationEvent
+  channel      String // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
+  recipient    String // email or phone number
+  referenceId  String? // SaleOrder, PO, etc.
+  status       String                @default("PENDING") // PENDING | SENT | FAILED | BOUNCED
+  errorMessage String?               @db.Text
   sentAt       DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 
   @@index([event])
   @@index([channel])

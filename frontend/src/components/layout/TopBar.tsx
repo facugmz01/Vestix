@@ -3,6 +3,7 @@ import { ChevronRight, Home, Search, LogOut } from 'lucide-react';
 import { useBreadcrumbs } from '@/navigation/useBreadcrumbs';
 import { useAuthStore }  from '@/store/auth.store';
 import { authApi }       from '@/api/auth.api';
+import { SyncStatusIndicator } from '@/features/offline/components/SyncStatusIndicator';
 import styles from './TopBar.module.css';
 
 export function TopBar() {
@@ -33,7 +34,11 @@ export function TopBar() {
         </ol>
       </nav>
 
-      <div className={styles.searchBar}>
+      <div style={{ flex: 1 }} />
+
+      <SyncStatusIndicator />
+
+      <div className={styles.searchBar} style={{ marginLeft: '16px' }}>
         <Search size={16} color="var(--text-3)" />
         <input type="text" placeholder="Buscar en el ERP..." />
       </div>

@@ -1,31 +1,25 @@
-import { useState } from 'react';
-import { settingsApi, SystemSettings } from '@/api/settings.api';
-import { useFormContext } from 'react-hook-form';
-import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './SettingsLayout';
-import { Input } from '@/components/ui';
-import { toast } from 'react-hot-toast';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Save, Bell, Plug, Mail, Smartphone, MessageSquare } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-// ─── Sentinel que el backend devuelve para campos sensibles enmascarados ───────
+import { Input, Button, ToggleSwitch } from '@/components/ui';
+import { settingsApi } from '@/api/settings.api';
+import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
+import { notificationSettingsSchema, type NotificationSettingsFormData, integrationSettingsSchema, type IntegrationSettingsFormData } from '../schemas/commsSettings.schema';
+import styles from './GeneralSettingsPanel.module.css'; // Reusing layout
+
 const BACKEND_MASK = '••••••••';
 
-/**
- * Hook helper: devuelve props para un campo de contraseña que viene enmascarado
- * del backend. Muestra placeholder "ya configurada" y solo envía el valor cuando
- * el usuario escribe algo nuevo. Si el usuario borra el campo, queda vacío y el
- * backend conserva la credencial anterior.
- */
 function useMaskedField(rawValue: string | undefined) {
   const isPreloaded = rawValue === BACKEND_MASK;
   return {
-    // Si el valor es la máscara del backend, no lo metemos en el input como value
-    // (lo deja vacío para que el usuario sepa que puede reemplazarlo)
     defaultDisplayValue: isPreloaded ? '' : (rawValue ?? ''),
     placeholder: isPreloaded ? '★ Ya configurada — dejá vacío para no cambiar' : 'Contraseña / API Key',
     isPreloaded,
   };
 }
-
-// ─── Botón de prueba reutilizable con estado de carga ─────────────────────────
 
 interface TestButtonProps {
   toastId: string;
@@ -36,7 +30,6 @@ interface TestButtonProps {
 
 function TestButton({ toastId, loadingLabel, onClick, disabled }: TestButtonProps) {
   const [loading, setLoading] = useState(false);
-
   const handleClick = async () => {
     if (loading) return;
     setLoading(true);
@@ -51,229 +44,195 @@ function TestButton({ toastId, loadingLabel, onClick, disabled }: TestButtonProp
       setLoading(false);
     }
   };
-
-  const btnStyle: React.CSSProperties = {
-    padding: '8px 16px',
-    background: 'var(--bg-overlay)',
-    color: loading || disabled ? 'var(--text-muted)' : 'var(--text-primary)',
-    border: '1px solid var(--border)',
-    borderRadius: '4px',
-    cursor: loading || disabled ? 'not-allowed' : 'pointer',
-    fontSize: '13px',
-    opacity: loading || disabled ? 0.6 : 1,
-    transition: 'opacity 0.2s',
-    whiteSpace: 'nowrap',
-  };
-
   return (
-    <button type="button" onClick={handleClick} disabled={loading || disabled} style={btnStyle}>
-      {loading ? '⏳ Probando...' : 'Probar Conexión'}
-    </button>
+    <Button variant="outline" type="button" onClick={handleClick} disabled={loading || disabled} loading={loading}>
+      Probar Conexión
+    </Button>
   );
 }
-
-// ─── Notification Settings ───────────────────────────────────────────────────
 
 export function NotificationSettingsPanel() {
-  const { register, watch, setValue } = useFormContext<SystemSettings>();
+  const { data: settings, isLoading } = useGetSettings();
+  const mutation = useUpdateSettingsSection('notifications');
 
-  // Para las pruebas de conexión, enviamos el objeto completo de notifications.
-  // El backend resolverá la credencial real desde DB si el campo viene vacío.
-  const notifValues = watch('notifications');
+  const { register, watch, handleSubmit, reset, formState: { isDirty } } = useForm<NotificationSettingsFormData>({
+    resolver: zodResolver(notificationSettingsSchema),
+  });
 
-  // Campos sensibles: si el backend los envió enmascarados, los mostramos como
-  // placeholders y dejamos el campo vacío en el form.
-  const smtpPassMask    = useMaskedField(watch('notifications.smtpPass'));
-  const evolutionKeyMask = useMaskedField(watch('notifications.evolutionApiKey'));
-  const fcmKeyMask      = useMaskedField(watch('notifications.fcmServerKey'));
+  useEffect(() => {
+    if (settings?.notifications) reset(settings.notifications);
+  }, [settings, reset]);
+
+  const onSubmit = (data: NotificationSettingsFormData) => {
+    mutation.mutate(data, { onSuccess: () => reset(data) });
+  };
+
+  const emailEnabled = watch('emailEnabled');
+  const smsEnabled = watch('smsEnabled');
+  const whatsappEnabled = watch('whatsappEnabled');
+  const pushEnabled = watch('pushEnabled');
+  const allValues = watch();
+
+  const smtpPassMask = useMaskedField(watch('smtpPass'));
+  const evolutionKeyMask = useMaskedField(watch('evolutionApiKey'));
+  const fcmKeyMask = useMaskedField(watch('fcmServerKey'));
+
+  if (isLoading) return null;
 
   return (
-    <SettingsSection title="Notificaciones" description="Canales de comunicación habilitados y reglas de disparo automático.">
+    <form onSubmit={handleSubmit(onSubmit)} className={styles.panelContainer} noValidate>
+      
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><Bell size={18} /> Canales de Notificación</h3>
+          <p className={styles.cardDescription}>Servidores y pasarelas de comunicación saliente.</p>
+        </header>
 
-      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Canales habilitados</p>
+        <div className={styles.cardBody}>
+          <ToggleSwitch label="Email (SMTP)" hint="Servidor saliente de correos." {...register('emailEnabled')} />
+          {emailEnabled && (
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input placeholder="Host" {...register('smtpHost')} style={{ flex: 1 }} />
+              <Input type="number" placeholder="Port" {...register('smtpPort', { valueAsNumber: true })} style={{ width: '80px' }} />
+              <Input placeholder="Usuario" {...register('smtpUser')} style={{ flex: 1 }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Input type="password" placeholder={smtpPassMask.placeholder} {...register('smtpPass')} defaultValue={smtpPassMask.defaultDisplayValue} />
+              </div>
+              <TestButton toastId="test-smtp" loadingLabel="Probando..." disabled={!watch('smtpHost')} onClick={() => settingsApi.testSmtp({ notifications: allValues })} />
+            </div>
+          )}
 
-      {/* ─── Email SMTP ─── */}
-      <SettingsRow label="Email (SMTP)" hint="Configuración del servidor saliente de correos.">
-        <ToggleSwitch value={!!watch('notifications.emailEnabled')} onChange={v => setValue('notifications.emailEnabled', v, { shouldDirty: true })} />
-      </SettingsRow>
-      {watch('notifications.emailEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <Input placeholder="Host (ej. smtp.gmail.com)" {...register('notifications.smtpHost')} style={{ flex: 1, minWidth: '200px' }} />
-          <Input type="number" placeholder="Port" {...register('notifications.smtpPort', { valueAsNumber: true })} style={{ width: '100px' }} />
-          <Input placeholder="Usuario" {...register('notifications.smtpUser')} style={{ flex: 1, minWidth: '200px' }} />
-          <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <Input
-              type="password"
-              placeholder={smtpPassMask.placeholder}
-              {...register('notifications.smtpPass')}
-              defaultValue={smtpPassMask.defaultDisplayValue}
-            />
-            {smtpPassMask.isPreloaded && (
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Contraseña ya guardada. Escribí una nueva para reemplazarla.</span>
-            )}
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+
+          <ToggleSwitch label="SMS (Android Gateway)" hint="Envía SMS gratis usando una app local en un celular." {...register('smsEnabled')} />
+          {smsEnabled && (
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input placeholder="URL del Gateway" {...register('smsGatewayUrl')} style={{ flex: 1 }} />
+              <TestButton toastId="test-sms" loadingLabel="Ping..." disabled={!watch('smsGatewayUrl')} onClick={() => settingsApi.testSms({ notifications: allValues })} />
+            </div>
+          )}
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+
+          <ToggleSwitch label="WhatsApp (Evolution API)" hint="Integración con instancia local de WhatsApp." {...register('whatsappEnabled')} />
+          {whatsappEnabled && (
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input placeholder="URL API" {...register('evolutionApiUrl')} style={{ flex: 1 }} />
+              <Input type="password" placeholder={evolutionKeyMask.placeholder} {...register('evolutionApiKey')} defaultValue={evolutionKeyMask.defaultDisplayValue} style={{ flex: 1 }} />
+              <Input placeholder="Instancia" {...register('evolutionInstance')} style={{ flex: 1 }} />
+              <TestButton toastId="test-wpp" loadingLabel="Probando..." disabled={!watch('evolutionApiUrl')} onClick={() => settingsApi.testWhatsapp({ notifications: allValues })} />
+            </div>
+          )}
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+
+          <ToggleSwitch label="Push (FCM)" hint="Notificaciones nativas a la app móvil." {...register('pushEnabled')} />
+          {pushEnabled && (
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input type="password" placeholder={fcmKeyMask.placeholder} {...register('fcmServerKey')} defaultValue={fcmKeyMask.defaultDisplayValue} style={{ flex: 1 }} />
+              <TestButton toastId="test-push" loadingLabel="Enviando..." disabled={!watch('fcmServerKey') && !fcmKeyMask.isPreloaded} onClick={() => settingsApi.testPush({ notifications: allValues })} />
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><MessageSquare size={18} /> Eventos y Reglas</h3>
+          <p className={styles.cardDescription}>Qué acciones disparan notificaciones automáticamente.</p>
+        </header>
+        <div className={styles.cardBody}>
+          <ToggleSwitch label="Venta Confirmada" {...register('notifyOnSale')} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <ToggleSwitch label="Orden de Compra Emitida" {...register('notifyOnPurchase')} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <ToggleSwitch label="Alerta de Stock Bajo" {...register('notifyOnLowStock')} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <ToggleSwitch label="Transferencia entre Depósitos" {...register('notifyOnTransfer')} />
+          
+          <div style={{ marginTop: '16px' }}>
+            <Input type="number" label="Umbral de Stock Bajo (unidades)" {...register('lowStockThreshold', { valueAsNumber: true })} style={{ width: '120px' }} />
           </div>
-          <TestButton
-            toastId="test-smtp"
-            loadingLabel="Probando SMTP..."
-            disabled={!watch('notifications.smtpHost')}
-            onClick={() => settingsApi.testSmtp(notifValues)}
-          />
         </div>
-      )}
+        <footer className={styles.saveFooter}>
+          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar Notificaciones</Button>
+        </footer>
+      </section>
 
-      {/* ─── SMS Android Gateway ─── */}
-      <SettingsRow label="SMS (Android Gateway)" hint="Envía SMS gratis usando la app local en un celular.">
-        <ToggleSwitch value={!!watch('notifications.smsEnabled')} onChange={v => setValue('notifications.smsEnabled', v, { shouldDirty: true })} />
-      </SettingsRow>
-      {watch('notifications.smsEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'center' }}>
-          <Input placeholder="URL del Gateway (ej. http://192.168.1.50:8080/v1/sms)" {...register('notifications.smsGatewayUrl')} style={{ flex: 1 }} />
-          <TestButton
-            toastId="test-sms"
-            loadingLabel="Haciendo ping al Gateway..."
-            disabled={!watch('notifications.smsGatewayUrl')}
-            onClick={() => settingsApi.testSms(notifValues)}
-          />
-        </div>
-      )}
-
-      {/* ─── WhatsApp Evolution API ─── */}
-      <SettingsRow label="WhatsApp (Evolution API)" hint="Requiere Evolution API corriendo. Configurá la URL, API Key e instancia.">
-        <ToggleSwitch value={!!watch('notifications.whatsappEnabled')} onChange={v => setValue('notifications.whatsappEnabled', v, { shouldDirty: true })} />
-      </SettingsRow>
-      {watch('notifications.whatsappEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <Input placeholder="URL (ej. http://localhost:8080)" {...register('notifications.evolutionApiUrl')} style={{ flex: 2, minWidth: '200px' }} />
-          <div style={{ flex: 2, minWidth: '160px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <Input
-              type="password"
-              placeholder={evolutionKeyMask.placeholder}
-              {...register('notifications.evolutionApiKey')}
-              defaultValue={evolutionKeyMask.defaultDisplayValue}
-            />
-            {evolutionKeyMask.isPreloaded && (
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>API Key ya guardada. Escribí una nueva para reemplazarla.</span>
-            )}
-          </div>
-          <Input placeholder="Instancia (ej. store-main)" {...register('notifications.evolutionInstance')} style={{ flex: 1, minWidth: '140px' }} />
-          <TestButton
-            toastId="test-whatsapp"
-            loadingLabel="Verificando Evolution API..."
-            disabled={!watch('notifications.evolutionApiUrl')}
-            onClick={() => settingsApi.testWhatsapp(notifValues)}
-          />
-        </div>
-      )}
-
-      {/* ─── Push FCM ─── */}
-      <SettingsRow label="Push (App Móvil FCM)" hint="Requiere Server Key de Firebase Cloud Messaging.">
-        <ToggleSwitch value={!!watch('notifications.pushEnabled')} onChange={v => setValue('notifications.pushEnabled', v, { shouldDirty: true })} />
-      </SettingsRow>
-      {watch('notifications.pushEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <Input
-              type="password"
-              placeholder={fcmKeyMask.placeholder}
-              {...register('notifications.fcmServerKey')}
-              defaultValue={fcmKeyMask.defaultDisplayValue}
-            />
-            {fcmKeyMask.isPreloaded && (
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Server Key ya guardada. Escribí una nueva para reemplazarla.</span>
-            )}
-          </div>
-          <TestButton
-            toastId="test-push"
-            loadingLabel="Enviando test a FCM..."
-            disabled={!watch('notifications.fcmServerKey') && !fcmKeyMask.isPreloaded}
-            onClick={() => settingsApi.testPush(notifValues)}
-          />
-        </div>
-      )}
-
-      <SettingsDivider />
-
-      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Eventos que disparan notificaciones</p>
-
-      <SettingsRow label="Venta Confirmada">
-        <ToggleSwitch value={!!watch('notifications.notifyOnSale')} onChange={v => setValue('notifications.notifyOnSale', v, { shouldDirty: true })} />
-      </SettingsRow>
-      <SettingsRow label="Orden de Compra Emitida">
-        <ToggleSwitch value={!!watch('notifications.notifyOnPurchase')} onChange={v => setValue('notifications.notifyOnPurchase', v, { shouldDirty: true })} />
-      </SettingsRow>
-      <SettingsRow label="Alerta de Stock Bajo">
-        <ToggleSwitch value={!!watch('notifications.notifyOnLowStock')} onChange={v => setValue('notifications.notifyOnLowStock', v, { shouldDirty: true })} />
-      </SettingsRow>
-      <SettingsRow label="Transferencia entre Depósitos">
-        <ToggleSwitch value={!!watch('notifications.notifyOnTransfer')} onChange={v => setValue('notifications.notifyOnTransfer', v, { shouldDirty: true })} />
-      </SettingsRow>
-
-      <SettingsDivider />
-
-      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '16px' }}>Gestor de Plantillas</p>
-
-      <div style={{ padding: '16px', background: 'var(--bg-overlay)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-        <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
-          Las plantillas de mensajes (Email, WhatsApp, SMS) se gestionan en su propia sección.
-        </p>
-        <a href="/admin/notifications" style={{ display: 'inline-block', padding: '8px 16px', background: 'var(--accent)', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
-          Ir a Notificaciones y Plantillas
-        </a>
-      </div>
-
-      <SettingsDivider />
-
-      <SettingsRow label="Umbral de Stock Bajo (unidades)" hint="Se dispara la alerta cuando el stock cae por debajo de este número.">
-        <Input type="number" min={0} {...register('notifications.lowStockThreshold', { valueAsNumber: true })} style={{ width: '100px' }} />
-      </SettingsRow>
-
-    </SettingsSection>
+    </form>
   );
 }
 
-// ─── Integration Settings (Quick toggles) ───────────────────────────────────
-
+// ─── Integration Settings ────────────────────────────────────────────────────
 export function IntegrationSettingsPanel() {
-  const { watch, setValue, register } = useFormContext<SystemSettings>();
+  const { data: settings, isLoading } = useGetSettings();
+  const mutation = useUpdateSettingsSection('integrations');
+
+  const { register, watch, handleSubmit, reset, formState: { isDirty } } = useForm<IntegrationSettingsFormData>({
+    resolver: zodResolver(integrationSettingsSchema),
+  });
+
+  useEffect(() => {
+    if (settings?.integrations) reset(settings.integrations);
+  }, [settings, reset]);
+
+  const onSubmit = (data: IntegrationSettingsFormData) => {
+    mutation.mutate(data, { onSuccess: () => reset(data) });
+  };
+
+  const mercadolibreEnabled = watch('mercadolibreEnabled');
+  const woocommerceEnabled = watch('woocommerceEnabled');
+  const shopifyEnabled = watch('shopifyEnabled');
+
+  if (isLoading) return null;
 
   return (
-    <SettingsSection title="Integraciones Activas" description="Habilita o deshabilita integraciones externas. Para credenciales, ve al módulo Integraciones.">
+    <form onSubmit={handleSubmit(onSubmit)} className={styles.panelContainer} noValidate>
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><Plug size={18} /> Integraciones de Terceros</h3>
+          <p className={styles.cardDescription}>Marketplaces, tiendas externas y pasarelas de pago.</p>
+        </header>
 
-      <SettingsRow label="MercadoPago" hint="Procesamiento de pagos online y en POS.">
-        <ToggleSwitch value={!!watch('integrations.mercadopagoEnabled')} onChange={v => setValue('integrations.mercadopagoEnabled', v, { shouldDirty: true })} />
-      </SettingsRow>
+        <div className={styles.cardBody}>
+          <ToggleSwitch label="MercadoPago" hint="Procesamiento de cobros con QR." {...register('mercadopagoEnabled')} />
+          
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          
+          <ToggleSwitch label="MercadoLibre" hint="Sincronización de catálogo y pedidos." {...register('mercadolibreEnabled')} />
+          {mercadolibreEnabled && (
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input placeholder="App ID" {...register('mlAppId')} style={{ flex: 1 }} />
+              <Input type="password" placeholder="Secret Key" {...register('mlSecretKey')} style={{ flex: 2 }} />
+            </div>
+          )}
 
-      <SettingsRow label="MercadoLibre" hint="Sincronización de catálogo y pedidos del marketplace.">
-        <ToggleSwitch value={!!watch('integrations.mercadolibreEnabled')} onChange={v => setValue('integrations.mercadolibreEnabled', v, { shouldDirty: true })} />
-      </SettingsRow>
-      {watch('integrations.mercadolibreEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px' }}>
-          <Input placeholder="App ID" {...register('integrations.mlAppId')} style={{ flex: 1 }} />
-          <Input type="password" placeholder="Secret Key" {...register('integrations.mlSecretKey')} style={{ flex: 2 }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+
+          <ToggleSwitch label="WooCommerce" hint="Tienda WordPress externa." {...register('woocommerceEnabled')} />
+          {woocommerceEnabled && (
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', flexWrap: 'wrap', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input placeholder="Store URL" {...register('wooStoreUrl')} style={{ flex: '1 1 100%' }} />
+              <Input placeholder="Consumer Key" {...register('wooConsumerKey')} style={{ flex: 1 }} />
+              <Input type="password" placeholder="Consumer Secret" {...register('wooConsumerSecret')} style={{ flex: 1 }} />
+            </div>
+          )}
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+
+          <ToggleSwitch label="Shopify" hint="Sincronizar catálogo y ventas de Shopify." {...register('shopifyEnabled')} />
+          {shopifyEnabled && (
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input placeholder="Shopify Store URL" {...register('shopifyStoreUrl')} style={{ flex: 1 }} />
+              <Input type="password" placeholder="Admin API Access Token" {...register('shopifyAccessToken')} style={{ flex: 2 }} />
+            </div>
+          )}
         </div>
-      )}
-
-      <SettingsRow label="WooCommerce" hint="Sincronización con tienda WordPress.">
-        <ToggleSwitch value={!!watch('integrations.woocommerceEnabled')} onChange={v => setValue('integrations.woocommerceEnabled', v, { shouldDirty: true })} />
-      </SettingsRow>
-      {watch('integrations.woocommerceEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <Input placeholder="Store URL (ej. https://mitienda.com)" {...register('integrations.wooStoreUrl')} style={{ flex: '1 1 100%' }} />
-          <Input placeholder="Consumer Key" {...register('integrations.wooConsumerKey')} style={{ flex: 1, minWidth: '200px' }} />
-          <Input type="password" placeholder="Consumer Secret" {...register('integrations.wooConsumerSecret')} style={{ flex: 1, minWidth: '200px' }} />
-        </div>
-      )}
-
-      <SettingsRow label="Shopify" hint="Catálogo, stock y pedidos de Shopify.">
-        <ToggleSwitch value={!!watch('integrations.shopifyEnabled')} onChange={v => setValue('integrations.shopifyEnabled', v, { shouldDirty: true })} />
-      </SettingsRow>
-      {watch('integrations.shopifyEnabled') && (
-        <div style={{ display: 'flex', gap: '12px', paddingLeft: '24px', marginBottom: '16px' }}>
-          <Input placeholder="Shopify Store (ej. mitienda.myshopify.com)" {...register('integrations.shopifyStoreUrl')} style={{ flex: 1 }} />
-          <Input type="password" placeholder="Admin API Access Token" {...register('integrations.shopifyAccessToken')} style={{ flex: 2 }} />
-        </div>
-      )}
-
-    </SettingsSection>
+        
+        <footer className={styles.saveFooter}>
+          <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty} icon={<Save size={16} />}>Guardar Integraciones</Button>
+        </footer>
+      </section>
+    </form>
   );
 }

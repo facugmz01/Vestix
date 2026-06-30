@@ -17,6 +17,7 @@ export { Drawer }         from './Drawer';
 export { ConfirmDialog }  from './ConfirmDialog';
 export { EmptyState }     from './EmptyState';
 export { ApiErrorDisplay }from './ApiErrorDisplay';
+export { ToggleSwitch }   from './ToggleSwitch';
 
 export {
   Skeleton, TableSkeleton, CardGridSkeleton, StatsSkeleton,

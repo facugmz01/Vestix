@@ -1,33 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Building2, Tag, Barcode, FileText, Bell, Plug, WifiOff, ChevronRight, Save,
-  Settings as SettingsIcon, Image as ImageIcon, Star, ShoppingCart, QrCode, LayoutList, Shield, Smartphone, Megaphone
+  Building2, FileText, Bell, Plug, ChevronRight,
+  Settings as SettingsIcon, ShoppingCart, QrCode, Smartphone
 } from 'lucide-react';
 
-import { 
-  PageContainer, Button
-} from '@/components/ui';
+import { PageContainer } from '@/components/ui';
 import { ActionGuard } from '@/rbac/ActionGuard';
-import { settingsApi, SystemSettings } from '@/api/settings.api';
+import { settingsApi } from '@/api/settings.api';
 import { queryKeys } from '@/api/queryKeys';
 
 import { GeneralSettingsPanel } from '@/features/settings/components/GeneralSettingsPanel';
-import {
-  PricingSettingsPanel, SkuBarcodeSettingsPanel,
-  InvoicingSettingsPanel, OfflineSettingsPanel
-} from '@/features/settings/components/OtherSettingsPanels';
-import {
-  NotificationSettingsPanel, IntegrationSettingsPanel
-} from '@/features/settings/components/CommsSettingsPanels';
-// We will create these shortly:
 import { SalesOptionsPanel } from '@/features/settings/components/SalesOptionsPanel';
+import { InvoicingSettingsPanel } from '@/features/settings/components/OtherSettingsPanels';
 import { StorefrontSettingsPanel } from '@/features/settings/components/StorefrontSettingsPanel';
-import { ArcaSettingsPanel } from '@/features/settings/components/ArcaSettingsPanel';
-import { PwaSettingsPanel } from '@/features/settings/components/PwaSettingsPanel';
 import { QrSettingsPanel } from '@/features/settings/components/QrSettingsPanel';
+import { ArcaSettingsPanel } from '@/features/settings/components/ArcaSettingsPanel';
+import { NotificationSettingsPanel, IntegrationSettingsPanel } from '@/features/settings/components/CommsSettingsPanels';
+import { PwaSettingsPanel } from '@/features/settings/components/PwaSettingsPanel';
 
 type SettingsTab =
   | 'general'
@@ -52,155 +42,72 @@ const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description
   { id: 'mobile',        label: 'App móvil / PWA',        icon: <Smartphone size={16} />, description: '' },
 ];
 
-/**
- * Extracts only the valid settings sections from a raw API response
- */
-function sanitizeSettings(raw: any): SystemSettings {
-  return {
-    general:       raw?.general       ?? {},
-    pricing:       raw?.pricing       ?? {},
-    skuBarcode:    raw?.skuBarcode    ?? {},
-    invoicing:     raw?.invoicing     ?? {},
-    notifications: raw?.notifications ?? {},
-    integrations:  raw?.integrations  ?? {},
-    offline:       raw?.offline       ?? {},
-    pos:           raw?.pos           ?? {},
-    arca:          raw?.arca          ?? {},
-    storefront:    raw?.storefront    ?? {},
-    pwa:           raw?.pwa           ?? {},
-    qr:            raw?.qr            ?? {},
-  };
-}
-
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-  const qc = useQueryClient();
 
-  const { data: rawSettings, isLoading } = useQuery({
+  const { isLoading } = useQuery({
     queryKey: queryKeys.settings.get(),
     queryFn: settingsApi.getSettings,
   });
 
-  // Always work with sanitized settings (no `id`, `updatedAt`)
-  const settings = rawSettings ? sanitizeSettings(rawSettings) : undefined;
-
-  const methods = useForm<SystemSettings>({
-    defaultValues: settings,
-    shouldUnregister: false // Keep values of unmounted panels
-  });
-
-  const { reset, formState: { isDirty, dirtyFields }, handleSubmit } = methods;
-
-  // Reset form when settings are loaded or updated from remote
-  useEffect(() => {
-    if (settings) {
-      reset(settings);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawSettings, reset]);
-
-  const mutation = useMutation({
-    mutationFn: async (payload: { sections: (keyof SystemSettings)[], data: SystemSettings }) => {
-      const promises = payload.sections.map(section => 
-        settingsApi.patchSection(section, payload.data[section])
-      );
-      await Promise.all(promises);
-    },
-    onSuccess: (_, variables) => {
-      toast.success('Configuraciones guardadas');
-      qc.invalidateQueries({ queryKey: queryKeys.settings.get() });
-      reset(variables.data); // Clear dirty state
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message;
-      const details = Array.isArray(msg) ? msg.join(', ') : msg;
-      toast.error(details || 'Error al guardar configuraciones');
-    }
-  });
-
-  const onSubmit = (data: SystemSettings) => {
-    const dirtySections = Object.keys(dirtyFields) as (keyof SystemSettings)[];
-    if (dirtySections.length === 0) return;
-    mutation.mutate({ sections: dirtySections, data });
-  };
-
   if (isLoading) {
-    return <PageContainer title="Configuración del Sistema"><p>Cargando...</p></PageContainer>;
+    return <PageContainer title="Configuración del Sistema"><p style={{ color: 'var(--text-muted)' }}>Cargando configuraciones...</p></PageContainer>;
   }
 
   return (
     <ActionGuard action="manage" subject="Settings">
-      <FormProvider {...methods}>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <PageContainer
-            title="Configuración del Sistema"
-            subtitle="Ajustes globales que afectan el comportamiento de todo el ERP."
-          >
-            <div className="grid-responsive grid-cols-settings" style={{ alignItems: "flex-start", gap: "24px", paddingBottom: "80px" }}>
+      <PageContainer
+        title="Configuración del Sistema"
+        subtitle="Ajustes globales que afectan el comportamiento de todo el ERP."
+      >
+        <div className="grid-responsive grid-cols-settings" style={{ alignItems: "flex-start", gap: "24px", paddingBottom: "80px" }}>
 
-              {/* Sidebar nav */}
-              <div className="settings-sidebar" style={{ position: 'sticky', top: '24px', border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--bg-base)' }}>
-                {TABS.map((tab, i) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '14px 16px', border: 'none', background: activeTab === tab.id ? 'var(--blue-bg)' : 'transparent',
-                      cursor: 'pointer', textAlign: 'left',
-                      borderBottom: '1px solid var(--border)',
-                      borderLeft: activeTab === tab.id ? '3px solid var(--accent)' : '3px solid transparent',
-                      transition: 'background 0.15s',
-                      minWidth: '200px', // Ensures tabs don't squish too much on mobile
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-muted)' }}>{tab.icon}</span>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-primary)' }}>{tab.label}</p>
-                        <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>{tab.description}</p>
-                      </div>
-                    </div>
-                    <ChevronRight size={14} color="var(--text-muted)" />
-                  </button>
-                ))}
-              </div>
+          {/* Sidebar nav */}
+          <div className="settings-sidebar" style={{ position: 'sticky', top: '24px', border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--bg-base)', overflow: 'hidden' }}>
+            {TABS.map((tab, i) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '14px 16px', border: 'none', background: activeTab === tab.id ? 'var(--blue-bg)' : 'transparent',
+                  cursor: 'pointer', textAlign: 'left',
+                  borderBottom: i === TABS.length - 1 ? 'none' : '1px solid var(--border)',
+                  borderLeft: activeTab === tab.id ? '3px solid var(--accent)' : '3px solid transparent',
+                  transition: 'background 0.15s',
+                  minWidth: '200px',
+                  flexShrink: 0,
+                  width: '100%'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-muted)' }}>{tab.icon}</span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-primary)' }}>{tab.label}</p>
+                    {tab.description && <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>{tab.description}</p>}
+                  </div>
+                </div>
+                <ChevronRight size={14} color="var(--text-muted)" />
+              </button>
+            ))}
+          </div>
 
-              {/* Panel content (Lazy Mounted) */}
-              <div>
-                {activeTab === 'general' && <GeneralSettingsPanel />}
-                {activeTab === 'pos' && <SalesOptionsPanel />}
-                {activeTab === 'fiscal' && <InvoicingSettingsPanel />}
-                {activeTab === 'storefront' && <StorefrontSettingsPanel />}
-                {activeTab === 'qr' && <QrSettingsPanel />}
-                {activeTab === 'arca' && <ArcaSettingsPanel />}
-                {activeTab === 'notifications' && <NotificationSettingsPanel />}
-                {activeTab === 'integrations' && <IntegrationSettingsPanel />}
-                {activeTab === 'mobile' && <PwaSettingsPanel />}
-              </div>
+          {/* Panel content (Autonomous Forms) */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {activeTab === 'general' && <GeneralSettingsPanel />}
+            {activeTab === 'pos' && <SalesOptionsPanel />}
+            {activeTab === 'fiscal' && <InvoicingSettingsPanel />}
+            {activeTab === 'storefront' && <StorefrontSettingsPanel />}
+            {activeTab === 'qr' && <QrSettingsPanel />}
+            {activeTab === 'arca' && <ArcaSettingsPanel />}
+            {activeTab === 'notifications' && <NotificationSettingsPanel />}
+            {activeTab === 'integrations' && <IntegrationSettingsPanel />}
+            {activeTab === 'mobile' && <PwaSettingsPanel />}
+          </div>
 
-            </div>
-          </PageContainer>
-
-          {/* Floating Save Bar */}
-          {isDirty && (
-            <div style={{
-              position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-              background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px',
-              padding: '16px 24px', boxShadow: 'var(--shadow-lg)', display: 'flex', alignItems: 'center', gap: '24px',
-              zIndex: 1000, animation: 'slideUp 0.3s ease'
-            }}>
-              <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>Tienes cambios sin guardar</p>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <Button variant="outline" type="button" onClick={() => reset(settings)}>Descartar</Button>
-                <Button variant="primary" type="submit" icon={<Save size={16} />} loading={mutation.isPending}>Guardar Cambios</Button>
-              </div>
-            </div>
-          )}
-        </form>
-      </FormProvider>
+        </div>
+      </PageContainer>
     </ActionGuard>
   );
 }

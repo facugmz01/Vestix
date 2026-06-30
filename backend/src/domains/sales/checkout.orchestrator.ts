@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { PricingService } from '../catalog/pricing.service';
 import { RulesEngineService } from '../catalog/rules-engine.service';
+import { CatalogFacade } from '../catalog/catalog.facade';
 import { AfipProducer } from '../invoicing/afip.producer';
 import { InventoryService } from '../logistics/inventory.service';
 import { SettingsService } from '../../modules/settings/settings.service';
@@ -14,6 +15,7 @@ export class CheckoutOrchestrator {
     private readonly prisma: PrismaService,
     private readonly pricingService: PricingService,
     private readonly rulesEngine: RulesEngineService,
+    private readonly catalogFacade: CatalogFacade,
     private readonly afipProducer: AfipProducer,
     private readonly inventoryService: InventoryService,
     private readonly settingsService: SettingsService,
@@ -234,6 +236,18 @@ export class CheckoutOrchestrator {
         });
       }
 
+      // --- E. EVENT BOUNDARY (Outbox Pattern) ---
+      if (order.status === 'COMPLETED' || order.status === 'PENDING_PAYMENT') {
+        await tx.outboxEvent.create({
+          data: {
+            aggregate: 'SaleOrder',
+            aggregateId: order.id,
+            type: 'ORDER_CREATED',
+            payload: { orderId: order.id, branchId: order.branchId, status: order.status, grandTotal: order.grandTotal }
+          }
+        });
+      }
+
       return { status: 'SUCCESS', order };
     });
 
@@ -286,7 +300,17 @@ export class CheckoutOrchestrator {
         include: { lines: true }
       });
 
-      // 3. ENQUEUE AFIP (Post-Confirmation)
+      // 3. EVENT BOUNDARY (Outbox Pattern)
+      await tx.outboxEvent.create({
+        data: {
+          aggregate: 'SaleOrder',
+          aggregateId: updated.id,
+          type: 'ORDER_CONFIRMED',
+          payload: { orderId: updated.id, branchId: updated.branchId, status: 'CONFIRMED', grandTotal: updated.grandTotal }
+        }
+      });
+
+      // 4. ENQUEUE AFIP (Post-Confirmation)
       if (updated.issueInvoice) {
         await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
       }
@@ -298,10 +322,7 @@ export class CheckoutOrchestrator {
   private async deductStock(tx: any, data: { orderId: string, branchId: string, warehouseId: string, lines: any[] }) {
     for (const line of data.lines) {
       // Handle Combos
-      const variantWithProduct = await tx.productVariant.findUnique({
-        where: { id: line.variantId },
-        include: { product: { include: { comboLines: true } } }
-      });
+      const variantWithProduct = await this.catalogFacade.getVariantWithCombos(line.variantId, tx);
 
       if (variantWithProduct?.product?.type === 'COMBO') {
         for (const cl of variantWithProduct.product.comboLines) {

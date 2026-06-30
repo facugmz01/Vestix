@@ -1,0 +1,45 @@
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full, 999px);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.online {
+  color: var(--text-muted);
+}
+.online:hover {
+  color: var(--accent);
+}
+
+.offline {
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--orange, #f97316);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.syncing {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent, #3b82f6);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.count {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}

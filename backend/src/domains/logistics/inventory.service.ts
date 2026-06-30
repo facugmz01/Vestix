@@ -52,6 +52,16 @@ export class InventoryService {
         await this.updateStock(transaction, data.variantId, data.batchId || null, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
       }
 
+      // 4. EVENT BOUNDARY (Outbox Pattern)
+      await transaction.outboxEvent.create({
+        data: {
+          aggregate: 'InventoryMovement',
+          aggregateId: movement.id,
+          type: 'STOCK_MOVEMENT_RECORDED',
+          payload: { movementId: movement.id, variantId: movement.variantId, type: movement.type, quantity: movement.quantity }
+        }
+      });
+
       return movement;
     };
 
@@ -65,61 +75,55 @@ export class InventoryService {
   }
 
   private async updateStock(tx: any, variantId: string, batchId: string | null, warehouseId: string, branchId: string | null, type: string, quantityChange: number) {
-    // Determine which field to update based on movement type
-    // Note: quantityChange is positive for inbound, negative for outbound
-    
-    let updateData: any = {};
+    // Determine the absolute new balance to prevent drift from relative increments
+    const stock = await tx.stockLevel.findFirst({ 
+      where: { variantId, warehouseId, batchId: batchId || null } 
+    });
+
+    const currentPhysical = stock ? stock.physicalQuantity : 0;
+    const currentAvailable = stock ? stock.availableQuantity : 0;
+    const currentReserved = stock ? stock.reservedQuantity : 0;
+
+    let newPhysical = currentPhysical;
+    let newAvailable = currentAvailable;
+    let newReserved = currentReserved;
+
     if (type === 'RESERVATION') {
-      // Reservation increases reserved and decreases available
-      updateData = {
-        reservedQuantity: { increment: Math.abs(quantityChange) },
-        availableQuantity: { decrement: Math.abs(quantityChange) }
-      };
+      newReserved += Math.abs(quantityChange);
+      newAvailable -= Math.abs(quantityChange);
     } else if (type === 'RESERVATION_RELEASE') {
-      // Release decreases reserved and increases available
-      updateData = {
-        reservedQuantity: { decrement: Math.abs(quantityChange) },
-        availableQuantity: { increment: Math.abs(quantityChange) }
-      };
+      newReserved -= Math.abs(quantityChange);
+      newAvailable += Math.abs(quantityChange);
     } else if (type === 'CONSUME_RESERVATION') {
-      // Consume decreases reserved and decreases physical (available stays same because it was already reduced on RESERVATION)
-      updateData = {
-        reservedQuantity: { decrement: Math.abs(quantityChange) },
-        physicalQuantity: { decrement: Math.abs(quantityChange) }
-      };
+      newReserved -= Math.abs(quantityChange);
+      newPhysical -= Math.abs(quantityChange);
     } else {
-      // Normal movement affects physical and available
-      updateData = {
-        physicalQuantity: { increment: quantityChange },
-        availableQuantity: { increment: quantityChange }
-      };
+      newPhysical += quantityChange;
+      newAvailable += quantityChange;
     }
 
-    // Upsert the stock level record
     if (quantityChange < 0 && type !== 'CONSUME_RESERVATION') {
       const posSettings = await this.settingsService.getPosSettings();
-      if (!posSettings.allowNegativeStock) {
-        const stock = await tx.stockLevel.findFirst({ 
-          where: { variantId, warehouseId, batchId: batchId || null } 
-        });
-        const currentAvailable = stock ? stock.availableQuantity : 0;
-        if (currentAvailable + quantityChange < 0) {
-          throw new BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
-        }
+      if (!posSettings.allowNegativeStock && newAvailable < 0) {
+        throw new BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
       }
     }
 
     return tx.stockLevel.upsert({
       where: { variantId_warehouseId_batchId: { variantId, warehouseId, batchId } },
-      update: updateData,
+      update: {
+        physicalQuantity: newPhysical,
+        availableQuantity: newAvailable,
+        reservedQuantity: newReserved
+      },
       create: {
         variantId,
         warehouseId,
         batchId,
         branchId: branchId || undefined,
-        physicalQuantity: type === 'CONSUME_RESERVATION' ? -Math.abs(quantityChange) : (quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : 0) : 0),
-        availableQuantity: type === 'CONSUME_RESERVATION' ? 0 : (quantityChange > 0 ? (type !== 'RESERVATION' ? quantityChange : -quantityChange) : 0),
-        reservedQuantity: type === 'RESERVATION' ? Math.abs(quantityChange) : 0,
+        physicalQuantity: newPhysical,
+        availableQuantity: newAvailable,
+        reservedQuantity: newReserved,
       }
     });
   }

@@ -1,16 +1,34 @@
-import { useFormContext } from 'react-hook-form';
-import { SettingsSection, SettingsRow, SettingsDivider, ToggleSwitch } from './SettingsLayout';
-import { Input, Button, ConfirmDialog } from '@/components/ui';
-import { SystemSettings } from '@/api/settings.api';
-import { RefreshCw, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { ActionGuard } from '@/rbac/ActionGuard';
-import { settingsApi } from '@/api/settings.api';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Save, RefreshCw, Trash2, ShoppingCart, Settings2, Package, Calculator } from 'lucide-react';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
+
+import { Input, Button, ConfirmDialog, ToggleSwitch } from '@/components/ui';
+import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
+import { posSettingsSchema, type PosSettingsFormData } from '../schemas/posSettings.schema';
+import { settingsApi } from '@/api/settings.api';
+import styles from './GeneralSettingsPanel.module.css'; // Reusing the same grid/card styles
 
 export function SalesOptionsPanel() {
-  const { register, watch, setValue, formState: { errors } } = useFormContext<SystemSettings>();
+  const { data: settings, isLoading } = useGetSettings();
+  const mutation = useUpdateSettingsSection('pos');
   const [clearCatalogOpen, setClearCatalogOpen] = useState(false);
+
+  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<PosSettingsFormData>({
+    resolver: zodResolver(posSettingsSchema),
+  });
+
+  useEffect(() => {
+    if (settings?.pos) {
+      reset(settings.pos);
+    }
+  }, [settings, reset]);
+
+  const onSubmit = (data: PosSettingsFormData) => {
+    mutation.mutate(data, { onSuccess: () => reset(data) });
+  };
 
   const handleClearCatalog = () => {
     toast.error('Función "Vaciar catálogo" en desarrollo');
@@ -28,134 +46,188 @@ export function SalesOptionsPanel() {
     }
   };
 
+  if (isLoading) {
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Cargando configuraciones...</div>;
+  }
+
   return (
-    <>
-      <SettingsSection title="Opciones de venta" description="Comportamiento del carrito, impresión y flujos de caja.">
+    <div className={styles.panelContainer}>
+      <form onSubmit={handleSubmit(onSubmit)} className={styles.panelContainer} style={{ animation: 'none', gap: 'var(--space-6)' }} noValidate>
         
-        <SettingsRow label="Permitir venta sin stock" hint="Si está activo, se pueden confirmar ventas aunque el producto no tenga stock disponible. El stock quedará en negativo hasta que se registre una entrada.">
-          <ToggleSwitch value={!!watch('pos.allowNegativeStock')} onChange={v => setValue('pos.allowNegativeStock', v, { shouldDirty: true })} />
-        </SettingsRow>
-
-        <SettingsDivider />
-
-        <SettingsRow label="Impresión en ticket (impresora térmica 80mm)" hint="Al imprimir una venta, el formato se adapta a papel de 80mm tipo supermercado. Ideal para impresoras térmicas de rollo.">
-          <ToggleSwitch value={!!watch('pos.thermalPrint80mm')} onChange={v => setValue('pos.thermalPrint80mm', v, { shouldDirty: true })} />
-        </SettingsRow>
-
-        <SettingsDivider />
-
-        <SettingsRow label="Ticket fiscal térmico (70mm)" hint="Agrega el botón 'Imprimir fiscal' en la vista de una venta cuando tiene CAE emitido. El formato se ajusta a rollo de 70mm con QR AFIP.">
-          <ToggleSwitch value={!!watch('pos.fiscalPrint70mm')} onChange={v => setValue('pos.fiscalPrint70mm', v, { shouldDirty: true })} />
-        </SettingsRow>
-
-        <SettingsDivider />
-
-        <div className="grid-responsive grid-cols-2" style={{ gap: '24px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Modo de caja</label>
-            <select
-              {...register('pos.boxMode')}
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
-            >
-              <option value="SHARED">Compartido — cajas del comercio común</option>
-              <option value="STRICT">Estricto — caja por empleado</option>
-            </select>
-            <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              <strong>Compartido:</strong> pueden existir varias cajas abiertas simultáneamente. Cada empleado vende desde su propio turno si lo tiene abierto; si no, sus ventas van al primer turno abierto del comercio.<br/><br/>
-              <strong>Estricto:</strong> cada empleado debe abrir su propio turno en su propia caja antes de vender. Solo ve y opera sus cajas; no puede acceder a los turnos de otros.
+        {/* 1. Opciones de venta y caja */}
+        <section className={styles.card}>
+          <header className={styles.cardHeader}>
+            <h3 className={styles.cardTitle}>
+              <ShoppingCart size={18} aria-hidden="true" />
+              Flujos de Venta y Caja
+            </h3>
+            <p className={styles.cardDescription}>
+              Comportamiento del carrito, manejo de turnos e impresión de tickets.
             </p>
-          </div>
+          </header>
+          
+          <div className={styles.cardBody}>
+            <ToggleSwitch 
+              label="Permitir venta sin stock" 
+              hint="Si está activo, se pueden confirmar ventas aunque el producto no tenga stock. Quedará en negativo."
+              {...register('allowNegativeStock')} 
+            />
+            
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            
+            <ToggleSwitch 
+              label="Impresión en ticket (80mm)" 
+              hint="El formato se adapta a papel de 80mm tipo supermercado. Ideal para térmicas."
+              {...register('thermalPrint80mm')} 
+            />
+            
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            
+            <ToggleSwitch 
+              label="Ticket fiscal térmico (70mm)" 
+              hint="Agrega botón 'Imprimir fiscal' para formato 70mm con QR AFIP."
+              {...register('fiscalPrint70mm')} 
+            />
+            
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            
+            <div className={clsx(styles.grid, styles.grid2)}>
+              <div className={styles.selectGroup}>
+                <label className={styles.selectLabel}>Modo de caja</label>
+                <select {...register('boxMode')} className={styles.select}>
+                  <option value="SHARED">Compartido — cajas comunes</option>
+                  <option value="STRICT">Estricto — caja por empleado</option>
+                </select>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Compartido: turnos comunes. Estricto: cada empleado abre su turno.
+                </p>
+              </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Tipo de precio por defecto</label>
-            <select
-              {...register('pos.defaultPriceType')}
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
-            >
-              <option value="minorista">Minorista</option>
-              <option value="mayorista">Mayorista</option>
-            </select>
-            <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              Tipo de precio que se selecciona automáticamente al abrir el formulario de nueva venta. Si el cliente elegido tiene un tipo de precio propio, ese tendrá prioridad.
+              <div className={styles.selectGroup}>
+                <label className={styles.selectLabel}>Tipo de precio por defecto</label>
+                <select {...register('defaultPriceType')} className={styles.select}>
+                  <option value="minorista">Minorista</option>
+                  <option value="mayorista">Mayorista</option>
+                </select>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Aplica automáticamente a menos que el cliente tenga otro preferido.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 2. Configuración de productos */}
+        <section className={styles.card}>
+          <header className={styles.cardHeader}>
+            <h3 className={styles.cardTitle}>
+              <Package size={18} aria-hidden="true" />
+              Restricciones de Producto
+            </h3>
+            <p className={styles.cardDescription}>
+              Campos obligatorios al momento de crear o editar ítems en el catálogo.
             </p>
+          </header>
+          <div className={styles.cardBody}>
+            <ToggleSwitch 
+              label="Código interno obligatorio" 
+              {...register('requireInternalCode')} 
+            />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <ToggleSwitch 
+              label="Código de barras obligatorio" 
+              {...register('requireBarcode')} 
+            />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <ToggleSwitch 
+              label="Marca obligatoria" 
+              {...register('requireBrand')} 
+            />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <ToggleSwitch 
+              label="Descripción obligatoria" 
+              {...register('requireDescription')} 
+            />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <ToggleSwitch 
+              label="Datos de envío (dimensiones) obligatorios" 
+              hint="Exigir peso, alto, ancho y largo."
+              {...register('requireShippingDimensions')} 
+            />
           </div>
-        </div>
+        </section>
 
-      </SettingsSection>
-
-      <div style={{ height: '24px' }}></div>
-
-      <SettingsSection title="CONFIGURACIÓN DE PRODUCTOS">
-        <SettingsRow label="Código interno obligatorio" hint='El campo "Código" es requerido al crear o editar un producto.'>
-          <ToggleSwitch value={!!watch('pos.requireInternalCode')} onChange={v => setValue('pos.requireInternalCode', v, { shouldDirty: true })} />
-        </SettingsRow>
-        <SettingsDivider />
-        <SettingsRow label="Código de barras obligatorio" hint='El campo "Código de barras" es requerido al crear o editar un producto.'>
-          <ToggleSwitch value={!!watch('pos.requireBarcode')} onChange={v => setValue('pos.requireBarcode', v, { shouldDirty: true })} />
-        </SettingsRow>
-        <SettingsDivider />
-        <SettingsRow label="Marca obligatoria" hint='Se debe seleccionar una marca al crear o editar un producto.'>
-          <ToggleSwitch value={!!watch('pos.requireBrand')} onChange={v => setValue('pos.requireBrand', v, { shouldDirty: true })} />
-        </SettingsRow>
-        <SettingsDivider />
-        <SettingsRow label="Descripción obligatoria" hint='El campo "Descripción" es requerido al crear o editar un producto.'>
-          <ToggleSwitch value={!!watch('pos.requireDescription')} onChange={v => setValue('pos.requireDescription', v, { shouldDirty: true })} />
-        </SettingsRow>
-        <SettingsDivider />
-        <SettingsRow label="Datos de envío obligatorios en productos" hint='Si está activo, peso, alto, ancho y largo serán campos obligatorios al crear o editar un producto.'>
-          <ToggleSwitch value={!!watch('pos.requireShippingDimensions')} onChange={v => setValue('pos.requireShippingDimensions', v, { shouldDirty: true })} />
-        </SettingsRow>
-
-        <SettingsDivider />
-
-        <div style={{ marginTop: '16px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
-            Cotización del dólar Oficial (ARS por US$1)
-          </label>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ width: '200px' }}>
-              <Input type="number" prefix="$" placeholder="Ej: 1400" {...register('pos.officialDollarQuote', { valueAsNumber: true })} />
+        {/* 3. Cotizaciones Dólar */}
+        <section className={styles.card}>
+          <header className={styles.cardHeader}>
+            <h3 className={styles.cardTitle}>
+              <Calculator size={18} aria-hidden="true" />
+              Cotizaciones Dólar
+            </h3>
+            <p className={styles.cardDescription}>
+              Útiles para productos vinculados a moneda extranjera.
+            </p>
+          </header>
+          <div className={styles.cardBody}>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Cotización Oficial (ARS por US$1)</label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ width: '200px' }}>
+                  <Input type="number" prefix="$" placeholder="Ej: 1400" {...register('officialDollarQuote', { valueAsNumber: true })} />
+                </div>
+                <Button variant="outline" type="button" icon={<RefreshCw size={14} color="#eab308" />} onClick={() => handleRecotizar('Oficial')} style={{ color: '#eab308', borderColor: '#eab308' }}>
+                  Recotizar productos
+                </Button>
+              </div>
             </div>
-            <Button variant="outline" type="button" icon={<RefreshCw size={14} color="#eab308" />} onClick={() => handleRecotizar('Oficial')} style={{ color: '#eab308', borderColor: '#eab308' }}>
-              Recotizar productos USD Oficial
-            </Button>
-          </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>Permite cargar precios de productos en dólares. <strong>Recotizar</strong> actualiza los precios ARS de los productos marcados como Oficial según la cotización ingresada.</p>
-        </div>
 
-        <div style={{ marginTop: '24px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
-            Cotización del dólar Blue (ARS por US$1)
-          </label>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ width: '200px' }}>
-              <Input type="number" prefix="$" placeholder="Ej: 1600" {...register('pos.blueDollarQuote', { valueAsNumber: true })} />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Cotización Blue (ARS por US$1)</label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ width: '200px' }}>
+                  <Input type="number" prefix="$" placeholder="Ej: 1600" {...register('blueDollarQuote', { valueAsNumber: true })} />
+                </div>
+                <Button variant="outline" type="button" icon={<RefreshCw size={14} color="#0ea5e9" />} onClick={() => handleRecotizar('Blue')} style={{ color: '#0ea5e9', borderColor: '#0ea5e9' }}>
+                  Recotizar productos
+                </Button>
+              </div>
             </div>
-            <Button variant="outline" type="button" icon={<RefreshCw size={14} color="#0ea5e9" />} onClick={() => handleRecotizar('Blue')} style={{ color: '#0ea5e9', borderColor: '#0ea5e9' }}>
-              Recotizar productos USD Blue
-            </Button>
+
           </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>Para productos cuyos precios en USD fueron cargados usando la cotización blue. <strong>Recotizar</strong> actualiza los precios ARS de los productos marcados como Blue.</p>
-        </div>
 
-      </SettingsSection>
+          <footer className={styles.saveFooter}>
+            <Button 
+              type="submit" 
+              variant="primary" 
+              loading={mutation.isPending}
+              disabled={!isDirty}
+              icon={<Save size={16} />}
+              aria-live="polite"
+            >
+              {mutation.isPending ? 'Guardando...' : 'Guardar Opciones'}
+            </Button>
+          </footer>
+        </section>
 
-      <div style={{ height: '24px' }}></div>
+      </form>
 
-      <div style={{ border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.05)', padding: '20px' }}>
-        <h4 style={{ margin: '0 0 16px 0', color: '#ef4444', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Trash2 size={16} /> Zona de peligro
-        </h4>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Zona de peligro - Fuera del form */}
+      <section className={styles.card} style={{ border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.02)' }}>
+        <div className={styles.cardBody} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <p style={{ margin: '0 0 4px 0', fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>Vaciar catálogo de productos</p>
+            <h4 style={{ margin: '0 0 4px 0', color: '#ef4444', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Trash2 size={16} /> Vaciar catálogo de productos
+            </h4>
             <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>Elimina todos los productos activos. El historial de ventas no se verá afectado.</p>
           </div>
           <Button variant="outline" type="button" onClick={() => setClearCatalogOpen(true)} style={{ color: '#ef4444', borderColor: '#ef4444' }}>
             Vaciar catálogo
           </Button>
         </div>
-      </div>
+      </section>
 
       <ConfirmDialog
         open={clearCatalogOpen}
@@ -166,6 +238,6 @@ export function SalesOptionsPanel() {
         onConfirm={handleClearCatalog}
         onCancel={() => setClearCatalogOpen(false)}
       />
-    </>
+    </div>
   );
 }
