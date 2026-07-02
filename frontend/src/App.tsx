@@ -72,11 +72,24 @@ const StorefrontCheckoutPage = lazy(() => import('@/pages/storefront/StorefrontC
 const StorefrontMyOrdersPage = lazy(() => import('@/pages/storefront/StorefrontMyOrdersPage'));
 const StorefrontLoginPage = lazy(() => import('@/pages/storefront/StorefrontLoginPage'));
 
+import { useThemeStore }    from '@/store/theme.store';
+
 export default function App() {
   const isBooting = useAuthInit();
   const navigate  = useNavigate();
+  const theme = useThemeStore(s => s.theme);
+  
   useSyncEngine(); // global sync engine — mounts once, drains queue on reconnect
   useDexieSync();  // pure Dexie POS sync engine
+
+  // Sync theme with document element
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // Global 403 event listener dispatched by the Axios interceptor
   useEffect(() => {

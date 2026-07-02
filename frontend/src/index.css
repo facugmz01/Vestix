@@ -58,6 +58,43 @@
   --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ─── DARK THEME (APPLE VISION GLASSMORPHISM) ─────────────────────────── */
+html.dark {
+  /* Fondo Espacial Oscuro */
+  --bg-base: radial-gradient(circle at 10% 10%, #1A1A1E 0%, #0F0F13 40%, #050508 100%);
+  
+  /* Superficies de Cristal (Dark) */
+  --bg-sidebar:    rgba(25, 25, 28, 0.45);
+  --bg-surface:    rgba(30, 30, 34, 0.65);
+  --bg-surface-hover: rgba(45, 45, 50, 0.85);
+  --bg-elevated:   rgba(45, 45, 50, 0.95);
+  --bg-overlay:    rgba(0, 0, 0, 0.85);
+  
+  /* Bordes Suaves (Dark) */
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-focus:  rgba(10, 132, 255, 0.5);
+  
+  /* Acentos (Azul Apple Lighter) */
+  --accent:        #0A84FF;
+  --accent-hover:  #409CFF;
+  --accent-glow:   rgba(10, 132, 255, 0.3);
+  --accent-subtle: rgba(10, 132, 255, 0.15);
+
+  /* Texto (Dark) */
+  --text-primary:  #F5F5F7;
+  --text-secondary:#A1A1A6;
+  --text-muted:    #6E6E73;
+  --text-inverted: #1D1D1F;
+
+  /* Status Colors (Adjusted for Dark Mode contrast) */
+  --green:  #32D74B; --green-bg:  rgba(50, 215, 75, 0.15);
+  --yellow: #FFD60A; --yellow-bg: rgba(255, 214, 10, 0.15);
+  --red:    #FF453A; --red-bg:    rgba(255, 69, 58, 0.15);
+  --blue:   #0A84FF; --blue-bg:   rgba(10, 132, 255, 0.15);
+  --purple: #BF5AF2; --purple-bg: rgba(191, 90, 242, 0.15);
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { font-size: 16px; scroll-behavior: smooth; }

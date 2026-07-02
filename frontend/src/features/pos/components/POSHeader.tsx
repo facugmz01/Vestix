@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, PauseCircle, Maximize, Calculator, LogOut } from 'lucide-react';
+import { Clock, PauseCircle, Maximize, Calculator, LogOut, Sun, Moon } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
+import { useThemeStore } from '@/store/theme.store';
 import styles from '@/pages/pos/POSPage.module.css';
 
 function LiveClock() {
@@ -18,6 +19,7 @@ export function POSHeader() {
   const setShiftModalOpen = usePosStore(s => s.setShiftModalOpen);
   const setSuspendModalOpen = usePosStore(s => s.setSuspendModalOpen);
   const suspendedSales = usePosStore(s => s.suspendedSales);
+  const { theme, toggleTheme } = useThemeStore();
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -40,6 +42,11 @@ export function POSHeader() {
         </button>
         <button className={styles.iconBtn} onClick={toggleFullScreen} title="Pantalla Completa"><Maximize size={18} /></button>
         <button className={styles.iconBtn} onClick={() => window.open('/calculator', '_blank', 'width=300,height=400')} title="Calculadora"><Calculator size={18} /></button>
+        
+        <button className={styles.iconBtn} onClick={toggleTheme} title={theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}>
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
         <button className={styles.iconBtn} onClick={() => setShiftModalOpen(true)} style={{ background: 'rgba(220,38,38,0.2)', color: '#f87171', border: '1px solid rgba(220,38,38,0.4)' }} title="Cerrar Caja">
           <LogOut size={16} /> Cerrar Caja
         </button>

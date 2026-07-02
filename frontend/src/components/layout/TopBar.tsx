@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, Home, Search, LogOut } from 'lucide-react';
+import { ChevronRight, Home, Search, LogOut, Sun, Moon } from 'lucide-react';
 import { useBreadcrumbs } from '@/navigation/useBreadcrumbs';
 import { useAuthStore }  from '@/store/auth.store';
 import { authApi }       from '@/api/auth.api';
 import { SyncStatusIndicator } from '@/features/offline/components/SyncStatusIndicator';
+import { useThemeStore } from '@/store/theme.store';
 import styles from './TopBar.module.css';
 
 export function TopBar() {
   const crumbs = useBreadcrumbs();
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const { theme, toggleTheme } = useThemeStore();
   
   const handleLogout = () => { authApi.logout(); clearAuth(); };
 
@@ -39,9 +41,24 @@ export function TopBar() {
       <SyncStatusIndicator />
 
       <div className={styles.searchBar}>
-        <Search size={16} color="var(--text-3)" />
+        <Search size={16} color="var(--text-muted)" />
         <input type="text" placeholder="Buscar..." aria-label="Buscar en el ERP" />
       </div>
+
+      <button 
+        onClick={toggleTheme} 
+        style={{ 
+          background: 'var(--bg-surface)', border: '1px solid var(--border)', 
+          borderRadius: '50%', width: '36px', height: '36px',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+          color: 'var(--text-secondary)', marginLeft: '12px', transition: 'all 0.2s'
+        }}
+        title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-surface-hover)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-surface)' }}
+      >
+        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
 
       <div className={styles.userProfile}>
         <div className={styles.avatar}>
