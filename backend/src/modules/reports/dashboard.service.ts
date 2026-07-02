@@ -62,8 +62,10 @@ export class DashboardService {
         { from: month.from, to: month.to, branchId },
         monthSales.netRevenue,
       ),
+      // Real schema statuses: QUOTE | COMPLETED | CANCELLED
+      // "Pending" = orders that are not yet finalized
       this.prisma.saleOrder.count({
-        where: { status: { in: ['PENDING', 'PROCESSING', 'PAID'] } },
+        where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
       }),
     ]);
 

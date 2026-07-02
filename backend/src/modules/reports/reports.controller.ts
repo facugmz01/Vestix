@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
 import { SalesReportService } from './sales-report.service';
 import { StockReportService } from './stock-report.service';
 import { DashboardService } from './dashboard.service';
 import { CashReportService } from './cash-report.service';
 import { PurchasesReportService } from './purchases-report.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
 @Controller('reports')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ReportsController {
   constructor(
     private readonly salesReport: SalesReportService,
