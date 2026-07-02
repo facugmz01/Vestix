@@ -10,6 +10,8 @@ export declare class ReportsController {
     private readonly cashReport;
     private readonly purchasesReport;
     constructor(salesReport: SalesReportService, stockReport: StockReportService, dashboardService: DashboardService, cashReport: CashReportService, purchasesReport: PurchasesReportService);
+    private parseDate;
+    private getDefaultFrom;
     getDashboard(branchId?: string): Promise<import("./models/report.model").DashboardSummary>;
     getSalesSummary(from: string, to: string, branchId?: string): Promise<import("./models/report.model").SalesSummaryReport>;
     getTopSellers(from: string, to: string): Promise<import("./models/report.model").TopSellingVariant[]>;

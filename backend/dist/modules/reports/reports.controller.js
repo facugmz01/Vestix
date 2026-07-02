@@ -28,17 +28,39 @@ let ReportsController = class ReportsController {
         this.cashReport = cashReport;
         this.purchasesReport = purchasesReport;
     }
+    parseDate(val, fallback) {
+        if (!val)
+            return fallback;
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? fallback : d;
+    }
+    getDefaultFrom() {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(1);
+        return d;
+    }
     getDashboard(branchId) {
         return this.dashboardService.getDashboard(branchId);
     }
     getSalesSummary(from, to, branchId) {
-        return this.salesReport.getSalesSummary({ from: new Date(from), to: new Date(to), branchId });
+        return this.salesReport.getSalesSummary({
+            from: this.parseDate(from, this.getDefaultFrom()),
+            to: this.parseDate(to, new Date()),
+            branchId
+        });
     }
     getTopSellers(from, to) {
-        return this.salesReport.getTopSellers({ from: new Date(from), to: new Date(to) });
+        return this.salesReport.getTopSellers({
+            from: this.parseDate(from, this.getDefaultFrom()),
+            to: this.parseDate(to, new Date())
+        });
     }
     getCogsReport(from, to) {
-        return this.salesReport.getCogsReport({ from: new Date(from), to: new Date(to) });
+        return this.salesReport.getCogsReport({
+            from: this.parseDate(from, this.getDefaultFrom()),
+            to: this.parseDate(to, new Date())
+        });
     }
     getStockValuation(branchId) {
         return this.stockReport.getStockValuation(branchId);
@@ -47,10 +69,17 @@ let ReportsController = class ReportsController {
         return this.stockReport.getLowStockAlerts(branchId, reorderPoint ? parseInt(reorderPoint) : undefined);
     }
     getPurchasesSummary(from, to, branchId) {
-        return this.purchasesReport.getPurchasesSummary({ from: new Date(from), to: new Date(to) });
+        return this.purchasesReport.getPurchasesSummary({
+            from: this.parseDate(from, this.getDefaultFrom()),
+            to: this.parseDate(to, new Date())
+        });
     }
     getCashSummary(from, to, branchId) {
-        return this.cashReport.getCashSummary({ from: new Date(from), to: new Date(to), branchId });
+        return this.cashReport.getCashSummary({
+            from: this.parseDate(from, this.getDefaultFrom()),
+            to: this.parseDate(to, new Date()),
+            branchId
+        });
     }
     exportReport(body) {
         return { downloadUrl: `data:text/csv;charset=utf-8,Col1,Col2\nVal1,Val2` };

@@ -1,11 +1,10 @@
-import { Controller, Get, Post, Query, Body, Res } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Res, BadRequestException } from '@nestjs/common';
 import { SalesReportService } from './sales-report.service';
 import { StockReportService } from './stock-report.service';
 import { DashboardService } from './dashboard.service';
 import { CashReportService } from './cash-report.service';
 import { PurchasesReportService } from './purchases-report.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
-import { Response } from 'express';
 
 @Controller('reports')
 export class ReportsController {
@@ -16,6 +15,19 @@ export class ReportsController {
     private readonly cashReport: CashReportService,
     private readonly purchasesReport: PurchasesReportService,
   ) {}
+
+  private parseDate(val: string, fallback: Date): Date {
+    if (!val) return fallback;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? fallback : d;
+  }
+
+  private getDefaultFrom(): Date {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(1);
+    return d;
+  }
 
   @Get('dashboard')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
@@ -30,19 +42,29 @@ export class ReportsController {
     @Query('to') to: string,
     @Query('branchId') branchId?: string,
   ) {
-    return this.salesReport.getSalesSummary({ from: new Date(from), to: new Date(to), branchId });
+    return this.salesReport.getSalesSummary({ 
+      from: this.parseDate(from, this.getDefaultFrom()), 
+      to: this.parseDate(to, new Date()), 
+      branchId 
+    });
   }
 
   @Get('sales/top-sellers')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
   getTopSellers(@Query('from') from: string, @Query('to') to: string) {
-    return this.salesReport.getTopSellers({ from: new Date(from), to: new Date(to) });
+    return this.salesReport.getTopSellers({ 
+      from: this.parseDate(from, this.getDefaultFrom()), 
+      to: this.parseDate(to, new Date()) 
+    });
   }
 
   @Get('sales/cogs')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
   getCogsReport(@Query('from') from: string, @Query('to') to: string) {
-    return this.salesReport.getCogsReport({ from: new Date(from), to: new Date(to) });
+    return this.salesReport.getCogsReport({ 
+      from: this.parseDate(from, this.getDefaultFrom()), 
+      to: this.parseDate(to, new Date()) 
+    });
   }
 
   @Get('stock/valuation')
@@ -64,8 +86,10 @@ export class ReportsController {
     @Query('to') to: string,
     @Query('branchId') branchId?: string,
   ) {
-    // Note: branchId is available in the DTO but not strictly used in current service if it's not filtered, we pass what we have
-    return this.purchasesReport.getPurchasesSummary({ from: new Date(from), to: new Date(to) });
+    return this.purchasesReport.getPurchasesSummary({ 
+      from: this.parseDate(from, this.getDefaultFrom()), 
+      to: this.parseDate(to, new Date()) 
+    });
   }
 
   @Get('cash/summary')
@@ -75,14 +99,16 @@ export class ReportsController {
     @Query('to') to: string,
     @Query('branchId') branchId?: string,
   ) {
-    return this.cashReport.getCashSummary({ from: new Date(from), to: new Date(to), branchId });
+    return this.cashReport.getCashSummary({ 
+      from: this.parseDate(from, this.getDefaultFrom()), 
+      to: this.parseDate(to, new Date()), 
+      branchId 
+    });
   }
 
   @Post('export/:type')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
   exportReport(@Body() body: any) {
-    // Para simplificar, devolvemos un string en base64 o similar.
-    // Opcionalmente generar CSV real. Devuelve link ficticio para UX solicitada.
     return { downloadUrl: `data:text/csv;charset=utf-8,Col1,Col2\nVal1,Val2` };
   }
 }
