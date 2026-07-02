@@ -45,7 +45,7 @@ let DashboardService = DashboardService_1 = class DashboardService {
             this.stockReport.getLowStockAlerts(branchId),
             this.salesReport.getCogsReport({ from: month.from, to: month.to, branchId }, monthSales.netRevenue),
             this.prisma.saleOrder.count({
-                where: { status: { in: ['PENDING', 'PROCESSING', 'PAID'] } },
+                where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
             }),
         ]);
         this.logger.log(`[Dashboard] Resolved in ${Date.now() - t0}ms${branchId ? ` (branch: ${branchId})` : ''}`);

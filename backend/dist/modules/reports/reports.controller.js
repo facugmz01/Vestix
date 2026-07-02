@@ -20,6 +20,8 @@ const dashboard_service_1 = require("./dashboard.service");
 const cash_report_service_1 = require("./cash-report.service");
 const purchases_report_service_1 = require("./purchases-report.service");
 const require_permissions_decorator_1 = require("../../core/rbac/decorators/require-permissions.decorator");
+const jwt_auth_guard_1 = require("../../core/auth/jwt-auth.guard");
+const permissions_guard_1 = require("../../core/rbac/guards/permissions.guard");
 let ReportsController = class ReportsController {
     constructor(salesReport, stockReport, dashboardService, cashReport, purchasesReport) {
         this.salesReport = salesReport;
@@ -169,6 +171,7 @@ __decorate([
 ], ReportsController.prototype, "exportReport", null);
 exports.ReportsController = ReportsController = __decorate([
     (0, common_1.Controller)('reports'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [sales_report_service_1.SalesReportService,
         stock_report_service_1.StockReportService,
         dashboard_service_1.DashboardService,
