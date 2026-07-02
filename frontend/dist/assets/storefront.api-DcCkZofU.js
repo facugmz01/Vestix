@@ -1,0 +1,1 @@
+import{m as r,n as a}from"./index-DYAcfCSw.js";const c={getProducts:t=>{const{search:s,...e}=t||{};return r("/catalog/public",{params:a({...e,searchQuery:s})})},getProduct:t=>r(`/catalog/public/${t}`),getSettings:()=>r("/storefront/settings")};export{c as s};

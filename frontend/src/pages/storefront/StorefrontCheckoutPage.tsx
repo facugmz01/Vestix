@@ -6,6 +6,7 @@ import { storefrontOrdersApi, type CheckoutDto } from '@/api/storefront-orders.a
 import { storefrontApi } from '@/api/storefront.api';
 import { useCartStore } from '@/store/cart.store';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
+import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -22,12 +23,27 @@ export default function StorefrontCheckoutPage() {
     queryFn: () => storefrontApi.getSettings(),
   });
 
+  const { customer, isAuthenticated } = useStorefrontAuthStore();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [info, setInfo] = useState({ firstName: '', lastName: '', email: '', phone: '', docType: 'DNI', docNum: '' });
   const [shippingMethod, setShippingMethod] = useState<string>('');
   const [shippingAddress, setShippingAddress] = useState({ street: '', city: '', state: '', zip: '' });
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [issueInvoice, setIssueInvoice] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && customer) {
+      setInfo(prev => ({
+        ...prev,
+        firstName: customer.firstName || (customer.fullName ? customer.fullName.split(' ')[0] : prev.firstName),
+        lastName: customer.lastName || (customer.fullName && customer.fullName.split(' ').length > 1 ? customer.fullName.split(' ').slice(1).join(' ') : prev.lastName),
+        email: customer.email || prev.email,
+        phone: customer.phone || prev.phone,
+        docType: customer.documentType || prev.docType,
+        docNum: customer.documentNumber || prev.docNum,
+      }));
+    }
+  }, [isAuthenticated, customer]);
 
   useEffect(() => {
     if (settings?.shippingMethods?.length && !shippingMethod) {

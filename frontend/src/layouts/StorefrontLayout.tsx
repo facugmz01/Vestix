@@ -7,6 +7,14 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { storefrontApi } from '@/api/storefront.api';
 
+// Helper to convert hex color to RGB for CSS variables with opacity
+const hexToRgb = (hex: string) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : '59, 130, 246'; // fallback to blue
+};
+
 export default function StorefrontLayout() {
   const totalItems = useCartStore(s => s.totalItems());
   const prefix = storePrefix();
@@ -52,6 +60,12 @@ export default function StorefrontLayout() {
     navigate(`${prefix}/`);
   };
 
+  // Settings Overrides
+  const primaryColor = settings?.primaryColor || '#3b82f6';
+  const fontFamily = settings?.fontFamily || '"Inter", sans-serif';
+  const storeName = settings?.storeName || 'ERPStore';
+  const showStoreName = settings?.showStoreName !== false;
+
   // Truncate display name
   const displayName = customer?.fullName
     ? customer.fullName.length > 14
@@ -60,7 +74,41 @@ export default function StorefrontLayout() {
     : customer?.phone || 'Mi Cuenta';
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc', fontFamily: '"Inter", sans-serif' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc', fontFamily }}>
+      
+      {/* Inject Dynamic Settings */}
+      <style>{`
+        :root {
+          /* Overriding global accent variables for Storefront */
+          --accent: ${primaryColor};
+          --accent-rgb: ${hexToRgb(primaryColor)};
+          --accent-subtle: rgba(var(--accent-rgb), 0.1);
+          --accent-hover: rgba(var(--accent-rgb), 0.9);
+          
+          /* Keeping sf- specific aliases just in case */
+          --sf-primary: ${primaryColor};
+          --sf-primary-rgb: ${hexToRgb(primaryColor)};
+          --sf-primary-subtle: rgba(var(--sf-primary-rgb), 0.1);
+          --sf-primary-hover: rgba(var(--sf-primary-rgb), 0.9);
+        }
+        .sf-btn {
+          background: var(--sf-primary);
+          color: white;
+          transition: all 0.2s;
+        }
+        .sf-btn:hover {
+          background: var(--sf-primary-hover);
+        }
+        .sf-text-primary {
+          color: var(--sf-primary);
+        }
+        .sf-bg-subtle {
+          background: var(--sf-primary-subtle);
+        }
+        .sf-border-primary {
+          border-color: var(--sf-primary);
+        }
+      `}</style>
 
       {/* Navbar */}
       <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 100 }}>
@@ -68,10 +116,14 @@ export default function StorefrontLayout() {
 
           {/* Logo */}
           <Link to={`${prefix}/`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a' }}>
-            <div style={{ background: '#3b82f6', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '18px' }}>
-              E
+            <div style={{ background: 'var(--sf-primary)', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '18px' }}>
+              {storeName.charAt(0).toUpperCase()}
             </div>
-            <span style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 800, letterSpacing: '-0.5px' }}>ERP<span style={{ color: '#3b82f6' }}>Store</span></span>
+            {showStoreName && (
+              <span style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+                {storeName}
+              </span>
+            )}
           </Link>
 
           {/* Central Search Bar (Desktop only) */}
