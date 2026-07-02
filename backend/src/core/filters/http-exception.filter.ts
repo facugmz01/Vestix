@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
 /**
  * GlobalHttpExceptionFilter
@@ -29,6 +30,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     const isProduction = process.env.NODE_ENV === 'production';
+    const requestId = (request.headers['x-request-id'] as string) || randomUUID();
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'An unexpected error occurred.';
@@ -81,7 +83,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     } else if (exception instanceof Error) {
       // Unexpected runtime error — log full details, never expose to client
       this.logger.error(
-        `[Unhandled Exception] ${exception.message}`,
+        `[Unhandled Exception] [ReqID: ${requestId}] ${exception.message}`,
         isProduction ? undefined : exception.stack,
         `${request.method} ${request.url}`,
       );
@@ -89,15 +91,16 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
 
     // Log all 5xx at error level, 4xx at warn
     if (statusCode >= 500) {
-      this.logger.error(`[${statusCode}] ${request.method} ${request.url} — ${String(message)}`);
+      this.logger.error(`[${statusCode}] [ReqID: ${requestId}] ${request.method} ${request.url} — ${String(message)}`);
     } else if (statusCode >= 400) {
-      this.logger.warn(`[${statusCode}] ${request.method} ${request.url} — ${String(message)}`);
+      this.logger.warn(`[${statusCode}] [ReqID: ${requestId}] ${request.method} ${request.url} — ${String(message)}`);
     }
 
     response.status(statusCode).json({
       statusCode,
       errorCode,
       message,
+      requestId,
       ...(details ? { details } : {}),
       path:      request.url,
       timestamp: new Date().toISOString(),

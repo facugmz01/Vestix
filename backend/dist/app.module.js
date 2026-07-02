@@ -11,9 +11,11 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const throttler_1 = require("@nestjs/throttler");
 const nestjs_pino_1 = require("nestjs-pino");
+const schedule_1 = require("@nestjs/schedule");
 const prisma_module_1 = require("./core/prisma/prisma.module");
 const rbac_module_1 = require("./core/rbac/rbac.module");
 const redis_module_1 = require("./core/redis/redis.module");
+const outbox_module_1 = require("./core/outbox/outbox.module");
 const bullmq_1 = require("@nestjs/bullmq");
 const serve_static_1 = require("@nestjs/serve-static");
 const path_1 = require("path");
@@ -44,6 +46,7 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
+            schedule_1.ScheduleModule.forRoot(),
             throttler_1.ThrottlerModule.forRoot([{
                     ttl: 60000,
                     limit: 1000,
@@ -59,6 +62,7 @@ exports.AppModule = AppModule = __decorate([
             prisma_module_1.PrismaModule,
             rbac_module_1.RbacModule,
             redis_module_1.RedisModule,
+            outbox_module_1.OutboxModule,
             bullmq_1.BullModule.forRoot({
                 connection: {
                     host: process.env.REDIS_HOST || '127.0.0.1',

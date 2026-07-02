@@ -10,6 +10,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GlobalHttpExceptionFilter = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
+const crypto_1 = require("crypto");
 let GlobalHttpExceptionFilter = GlobalHttpExceptionFilter_1 = class GlobalHttpExceptionFilter {
     constructor() {
         this.logger = new common_1.Logger(GlobalHttpExceptionFilter_1.name);
@@ -19,6 +20,7 @@ let GlobalHttpExceptionFilter = GlobalHttpExceptionFilter_1 = class GlobalHttpEx
         const request = ctx.getRequest();
         const response = ctx.getResponse();
         const isProduction = process.env.NODE_ENV === 'production';
+        const requestId = request.headers['x-request-id'] || (0, crypto_1.randomUUID)();
         let statusCode = common_1.HttpStatus.INTERNAL_SERVER_ERROR;
         let message = 'An unexpected error occurred.';
         let errorCode = 'INTERNAL_SERVER_ERROR';
@@ -68,18 +70,19 @@ let GlobalHttpExceptionFilter = GlobalHttpExceptionFilter_1 = class GlobalHttpEx
             }
         }
         else if (exception instanceof Error) {
-            this.logger.error(`[Unhandled Exception] ${exception.message}`, isProduction ? undefined : exception.stack, `${request.method} ${request.url}`);
+            this.logger.error(`[Unhandled Exception] [ReqID: ${requestId}] ${exception.message}`, isProduction ? undefined : exception.stack, `${request.method} ${request.url}`);
         }
         if (statusCode >= 500) {
-            this.logger.error(`[${statusCode}] ${request.method} ${request.url} — ${String(message)}`);
+            this.logger.error(`[${statusCode}] [ReqID: ${requestId}] ${request.method} ${request.url} — ${String(message)}`);
         }
         else if (statusCode >= 400) {
-            this.logger.warn(`[${statusCode}] ${request.method} ${request.url} — ${String(message)}`);
+            this.logger.warn(`[${statusCode}] [ReqID: ${requestId}] ${request.method} ${request.url} — ${String(message)}`);
         }
         response.status(statusCode).json({
             statusCode,
             errorCode,
             message,
+            requestId,
             ...(details ? { details } : {}),
             path: request.url,
             timestamp: new Date().toISOString(),

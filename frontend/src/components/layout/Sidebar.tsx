@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LogOut }   from 'lucide-react';
+import { LogOut, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useNavGroups }  from '@/navigation/useNav';
 import { ROLE_LABELS }   from '@/rbac/permissions';
 import { useAuthStore }  from '@/store/auth.store';
@@ -12,15 +13,24 @@ export function Sidebar() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const groups    = useNavGroups();
   const roleLabel = user?.role ? (ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] ?? user.role) : '';
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const handleLogout = () => { authApi.logout(); clearAuth(); };
 
   return (
-    <aside className={styles.dock} aria-label="Navegación principal">
+    <aside className={`${styles.dock} ${isExpanded ? styles.expanded : ''}`} aria-label="Navegación principal">
       {/* Brand Logo only */}
       <div className={styles.dockLogo} aria-hidden>
         {APP_CONFIG.appName.charAt(0)}
       </div>
+
+      <button 
+        className={styles.toggleBtn} 
+        onClick={() => setIsExpanded(!isExpanded)}
+        aria-label={isExpanded ? "Colapsar menú" : "Expandir menú"}
+      >
+        {isExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+      </button>
 
       {/* Navigation */}
       <nav className={styles.nav}>
@@ -40,6 +50,7 @@ export function Sidebar() {
                   aria-label={item.label}
                 >
                   <Icon size={20} className={styles.navIcon} aria-hidden />
+                  {isExpanded && <span className={styles.navLabel}>{item.label}</span>}
                 </NavLink>
               );
             })}

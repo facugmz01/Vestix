@@ -154,12 +154,22 @@ export class InventoryService {
       );
     }
 
-    await tx.stockLevel.update({
-      where: { id: stock.id },
+    // Atomic update to prevent race conditions
+    const updateResult = await tx.stockLevel.updateMany({
+      where: { 
+        id: stock.id,
+        physicalQuantity: { gte: quantity }
+      },
       data: {
         physicalQuantity: { decrement: quantity },
         availableQuantity: { decrement: quantity },
       },
     });
+
+    if (updateResult.count === 0) {
+      throw new BadRequestException(
+        `Insufficient stock for variant ${variantId} in warehouse ${warehouseId} (Concurrent transaction conflict)`
+      );
+    }
   }
 }

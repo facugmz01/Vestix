@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { RbacModule } from './core/rbac/rbac.module';
 import { RedisModule } from './core/redis/redis.module';
+import { OutboxModule } from './core/outbox/outbox.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -37,6 +39,7 @@ import { StorefrontModule } from './domains/storefront/storefront.module';
   imports: [
     // 1. Configuración y Seguridad
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{
       ttl: 60000,
       limit: 1000, // Aumentado para producción
@@ -56,6 +59,7 @@ import { StorefrontModule } from './domains/storefront/storefront.module';
     PrismaModule,
     RbacModule,
     RedisModule,
+    OutboxModule,
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || '127.0.0.1',

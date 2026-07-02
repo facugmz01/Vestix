@@ -111,13 +111,19 @@ let InventoryService = class InventoryService {
         if (!stock || stock.physicalQuantity < quantity) {
             throw new common_1.BadRequestException(`Insufficient stock for variant ${variantId} in warehouse ${warehouseId}`);
         }
-        await tx.stockLevel.update({
-            where: { id: stock.id },
+        const updateResult = await tx.stockLevel.updateMany({
+            where: {
+                id: stock.id,
+                physicalQuantity: { gte: quantity }
+            },
             data: {
                 physicalQuantity: { decrement: quantity },
                 availableQuantity: { decrement: quantity },
             },
         });
+        if (updateResult.count === 0) {
+            throw new common_1.BadRequestException(`Insufficient stock for variant ${variantId} in warehouse ${warehouseId} (Concurrent transaction conflict)`);
+        }
     }
 };
 exports.InventoryService = InventoryService;

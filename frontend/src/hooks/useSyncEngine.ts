@@ -94,11 +94,21 @@ export function useSyncEngine() {
   // Poll aggressively if online to catch up on backoff timers
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    
+    const handleNetworkOnline = () => {
+      replay();
+    };
+    
+    window.addEventListener('online', handleNetworkOnline);
+    
     if (isOnline) {
       replay(); // Run immediately
       interval = setInterval(replay, 5000); // Poll every 5s to check backoff timers
     }
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', handleNetworkOnline);
+    };
   }, [isOnline, operations]); // operations included so it reacts to new items
 
   // Manual trigger for the UI

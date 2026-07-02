@@ -372,6 +372,8 @@ model SaleOrder {
   @@index([source])
   @@index([customerId])
   @@index([paymentMethod])
+  @@index([status])
+  @@index([syncedAt])
   @@schema("sales")
 }
 
