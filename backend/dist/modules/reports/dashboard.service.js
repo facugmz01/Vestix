@@ -8,35 +8,49 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var DashboardService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardService = void 0;
 const common_1 = require("@nestjs/common");
 const sales_report_service_1 = require("./sales-report.service");
 const stock_report_service_1 = require("./stock-report.service");
 const prisma_service_1 = require("../../core/prisma/prisma.service");
-let DashboardService = class DashboardService {
+let DashboardService = DashboardService_1 = class DashboardService {
     constructor(salesReport, stockReport, prisma) {
         this.salesReport = salesReport;
         this.stockReport = stockReport;
         this.prisma = prisma;
+        this.logger = new common_1.Logger(DashboardService_1.name);
+    }
+    buildTodayRange() {
+        const from = new Date();
+        from.setHours(0, 0, 0, 0);
+        return { from, to: new Date() };
+    }
+    buildMonthRange() {
+        const to = new Date();
+        const from = new Date(to.getFullYear(), to.getMonth(), 1);
+        return { from, to };
     }
     async getDashboard(branchId) {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const todaySales = await this.salesReport.getSalesSummary({ from: todayStart, to: now, branchId });
-        const monthSales = await this.salesReport.getSalesSummary({ from: monthStart, to: now, branchId });
-        const topSellers = await this.salesReport.getTopSellers({ from: monthStart, to: now, branchId }, 5);
-        const lowStockAlerts = await this.stockReport.getLowStockAlerts(branchId);
-        const monthCogs = await this.salesReport.getCogsReport({ from: monthStart, to: now, branchId });
-        const pendingOrders = await this.prisma.saleOrder.count({
-            where: {
-                status: { in: ['PENDING', 'PROCESSING', 'PAID'] }
-            }
-        });
+        const t0 = Date.now();
+        const today = this.buildTodayRange();
+        const month = this.buildMonthRange();
+        const [todaySales, monthSales, topSellers] = await Promise.all([
+            this.salesReport.getSalesSummary({ from: today.from, to: today.to, branchId }),
+            this.salesReport.getSalesSummary({ from: month.from, to: month.to, branchId }),
+            this.salesReport.getTopSellers({ from: month.from, to: month.to, branchId }, 5),
+        ]);
+        const [lowStockAlerts, monthCogs, pendingOrders] = await Promise.all([
+            this.stockReport.getLowStockAlerts(branchId),
+            this.salesReport.getCogsReport({ from: month.from, to: month.to, branchId }, monthSales.netRevenue),
+            this.prisma.saleOrder.count({
+                where: { status: { in: ['PENDING', 'PROCESSING', 'PAID'] } },
+            }),
+        ]);
+        this.logger.log(`[Dashboard] Resolved in ${Date.now() - t0}ms${branchId ? ` (branch: ${branchId})` : ''}`);
         return {
-            generatedAt: now,
+            generatedAt: today.to,
             today: {
                 revenue: todaySales.netRevenue,
                 orders: todaySales.totalOrders,
@@ -55,7 +69,7 @@ let DashboardService = class DashboardService {
     }
 };
 exports.DashboardService = DashboardService;
-exports.DashboardService = DashboardService = __decorate([
+exports.DashboardService = DashboardService = DashboardService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [sales_report_service_1.SalesReportService,
         stock_report_service_1.StockReportService,

@@ -6,5 +6,5 @@ export declare class SalesReportService {
     constructor(prisma: PrismaService);
     getSalesSummary(filter: DateRangeFilter): Promise<SalesSummaryReport>;
     getTopSellers(filter: DateRangeFilter, limit?: number): Promise<TopSellingVariant[]>;
-    getCogsReport(filter: DateRangeFilter): Promise<CogsReport>;
+    getCogsReport(filter: DateRangeFilter, precomputedRevenue?: number): Promise<CogsReport>;
 }

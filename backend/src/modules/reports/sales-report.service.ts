@@ -129,7 +129,7 @@ export class SalesReportService {
       .slice(0, limit);
   }
 
-  async getCogsReport(filter: DateRangeFilter): Promise<CogsReport> {
+  async getCogsReport(filter: DateRangeFilter, precomputedRevenue?: number): Promise<CogsReport> {
     const branchFilter = filter.branchId ? { branchId: filter.branchId } : {};
     
     let warehouseFilter = {};
@@ -156,8 +156,12 @@ export class SalesReportService {
       totalCOGS += (m.quantity * m.unitCost);
     }
 
-    const salesSummary = await this.getSalesSummary(filter);
-    const totalRevenue = salesSummary.netRevenue;
+    // Reuse precomputed revenue from the caller (e.g. DashboardService) to avoid a double DB round-trip.
+    // Falls back to fetching its own summary when called in isolation (e.g. from the controller directly).
+    const totalRevenue = precomputedRevenue !== undefined
+      ? precomputedRevenue
+      : (await this.getSalesSummary({ from: filter.from, to: filter.to, branchId: filter.branchId })).netRevenue;
+
     const grossProfit = totalRevenue - totalCOGS;
 
     return {

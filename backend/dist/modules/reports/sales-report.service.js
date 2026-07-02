@@ -117,7 +117,7 @@ let SalesReportService = SalesReportService_1 = class SalesReportService {
             .sort((a, b) => b.totalUnitsSold - a.totalUnitsSold)
             .slice(0, limit);
     }
-    async getCogsReport(filter) {
+    async getCogsReport(filter, precomputedRevenue) {
         const branchFilter = filter.branchId ? { branchId: filter.branchId } : {};
         let warehouseFilter = {};
         if (filter.branchId) {
@@ -140,8 +140,9 @@ let SalesReportService = SalesReportService_1 = class SalesReportService {
         for (const m of movements) {
             totalCOGS += (m.quantity * m.unitCost);
         }
-        const salesSummary = await this.getSalesSummary(filter);
-        const totalRevenue = salesSummary.netRevenue;
+        const totalRevenue = precomputedRevenue !== undefined
+            ? precomputedRevenue
+            : (await this.getSalesSummary({ from: filter.from, to: filter.to, branchId: filter.branchId })).netRevenue;
         const grossProfit = totalRevenue - totalCOGS;
         return {
             period: { from: filter.from, to: filter.to },
