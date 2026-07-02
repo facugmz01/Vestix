@@ -74,7 +74,15 @@ export default function StorefrontLayout() {
     : customer?.phone || 'Mi Cuenta';
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc', fontFamily }}>
+    <div style={{ 
+      height: '100dvh', 
+      overflowY: 'auto', 
+      overflowX: 'hidden',
+      display: 'flex', 
+      flexDirection: 'column', 
+      background: 'var(--bg-base)', 
+      fontFamily 
+    }}>
       
       {/* Inject Dynamic Settings */}
       <style>{`

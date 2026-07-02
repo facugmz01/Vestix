@@ -13,7 +13,7 @@ export function Sidebar() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const groups    = useNavGroups();
   const roleLabel = user?.role ? (ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] ?? user.role) : '';
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const handleLogout = () => { authApi.logout(); clearAuth(); };
 

@@ -1,0 +1,1 @@
+import{k as s,l as c,p as n,m as e,n as h}from"./index-BQJ4A163.js";const p={getBranches:a=>e("/branches",{params:h(a??{})}),getBranch:a=>e(`/branches/${a}`),createBranch:a=>n("/branches",a),updateBranch:(a,r)=>c(`/branches/${a}`,r),deleteBranch:a=>s(`/branches/${a}`)};export{p as b};
