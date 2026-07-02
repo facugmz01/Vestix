@@ -30,10 +30,16 @@ let StockReportService = StockReportService_1 = class StockReportService {
             where: { ...branchFilter }
         });
         const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
-        const variants = await this.prisma.productVariant.findMany({
-            where: { id: { in: variantIds } },
-            include: { product: true }
-        });
+        const chunkSize = 10000;
+        const variants = [];
+        for (let i = 0; i < variantIds.length; i += chunkSize) {
+            const chunk = variantIds.slice(i, i + chunkSize);
+            const chunkResult = await this.prisma.productVariant.findMany({
+                where: { id: { in: chunk } },
+                include: { product: true }
+            });
+            variants.push(...chunkResult);
+        }
         const variantMap = new Map(variants.map(v => [v.id, v]));
         const lines = stockLevels.map(sl => {
             const v = variantMap.get(sl.variantId);
@@ -63,7 +69,7 @@ let StockReportService = StockReportService_1 = class StockReportService {
             lines,
         };
     }
-    async getLowStockAlerts(branchId, reorderPoint = DEFAULT_REORDER_POINT) {
+    async getLowStockAlerts(branchId, reorderPoint = DEFAULT_REORDER_POINT, limit = 50) {
         let branchFilter = {};
         if (branchId) {
             const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
@@ -73,13 +79,23 @@ let StockReportService = StockReportService_1 = class StockReportService {
             where: {
                 availableQuantity: { lte: reorderPoint },
                 ...branchFilter
-            }
+            },
+            orderBy: {
+                availableQuantity: 'asc'
+            },
+            take: limit
         });
         const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
-        const variants = await this.prisma.productVariant.findMany({
-            where: { id: { in: variantIds } },
-            include: { product: true }
-        });
+        const chunkSize = 10000;
+        const variants = [];
+        for (let i = 0; i < variantIds.length; i += chunkSize) {
+            const chunk = variantIds.slice(i, i + chunkSize);
+            const chunkResult = await this.prisma.productVariant.findMany({
+                where: { id: { in: chunk } },
+                include: { product: true }
+            });
+            variants.push(...chunkResult);
+        }
         const variantMap = new Map(variants.map(v => [v.id, v]));
         return stockLevels.map(sl => {
             const v = variantMap.get(sl.variantId);

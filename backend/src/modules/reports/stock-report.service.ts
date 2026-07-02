@@ -27,10 +27,19 @@ export class StockReportService {
     });
 
     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
-    const variants = await this.prisma.productVariant.findMany({
-      where: { id: { in: variantIds } },
-      include: { product: true }
-    });
+    
+    // Chunk queries to avoid Postgres 65535 parameter limit
+    const chunkSize = 10000;
+    const variants = [];
+    for (let i = 0; i < variantIds.length; i += chunkSize) {
+      const chunk = variantIds.slice(i, i + chunkSize);
+      const chunkResult = await this.prisma.productVariant.findMany({
+        where: { id: { in: chunk } },
+        include: { product: true }
+      });
+      variants.push(...chunkResult);
+    }
+    
     const variantMap = new Map(variants.map(v => [v.id, v]));
 
     const lines = stockLevels.map(sl => {
@@ -65,7 +74,7 @@ export class StockReportService {
     };
   }
 
-  async getLowStockAlerts(branchId?: string, reorderPoint = DEFAULT_REORDER_POINT): Promise<LowStockAlert[]> {
+  async getLowStockAlerts(branchId?: string, reorderPoint = DEFAULT_REORDER_POINT, limit = 50): Promise<LowStockAlert[]> {
     let branchFilter = {};
     if (branchId) {
       const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
@@ -76,14 +85,27 @@ export class StockReportService {
       where: {
         availableQuantity: { lte: reorderPoint },
         ...branchFilter
-      }
+      },
+      orderBy: {
+        availableQuantity: 'asc'
+      },
+      take: limit
     });
 
     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
-    const variants = await this.prisma.productVariant.findMany({
-      where: { id: { in: variantIds } },
-      include: { product: true }
-    });
+    
+    // Chunk queries to avoid Postgres 65535 parameter limit
+    const chunkSize = 10000;
+    const variants = [];
+    for (let i = 0; i < variantIds.length; i += chunkSize) {
+      const chunk = variantIds.slice(i, i + chunkSize);
+      const chunkResult = await this.prisma.productVariant.findMany({
+        where: { id: { in: chunk } },
+        include: { product: true }
+      });
+      variants.push(...chunkResult);
+    }
+    
     const variantMap = new Map(variants.map(v => [v.id, v]));
 
     return stockLevels.map(sl => {

@@ -5,5 +5,5 @@ export declare class StockReportService {
     private readonly logger;
     constructor(prisma: PrismaService);
     getStockValuation(branchId?: string): Promise<StockValuationReport>;
-    getLowStockAlerts(branchId?: string, reorderPoint?: number): Promise<LowStockAlert[]>;
+    getLowStockAlerts(branchId?: string, reorderPoint?: number, limit?: number): Promise<LowStockAlert[]>;
 }

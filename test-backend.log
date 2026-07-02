@@ -1,0 +1,1287 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm 
+help npmrc` for supported config options.
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+> retail-erp-backend@1.0.0 test
+> jest
+
+FAIL src/modules/reports/sales-report.service.spec.ts (43.139 s)
+  ÔùÅ SalesReportService ÔÇ║ getTopSellers ÔÇ║ should return empty array when no line items
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      100 |
+      101 |     const variantIds = [...new Set(lineItems.map(l => l.variantId))];
+    > 102 |     const variants = await this.prisma.productVariant.findMany({
+          |                                                       ^
+      103 |       where: { id: { in: variantIds } },
+      104 |       include: { product: true }
+      105 |     });
+
+      at SalesReportService.getTopSellers (modules/reports/sales-report.service.ts:102:55)
+      at Object.<anonymous> (modules/reports/sales-report.service.spec.ts:94:22)
+
+  ÔùÅ SalesReportService ÔÇ║ getTopSellers ÔÇ║ should aggregate and sort by units sold
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      100 |
+      101 |     const variantIds = [...new Set(lineItems.map(l => l.variantId))];
+    > 102 |     const variants = await this.prisma.productVariant.findMany({
+          |                                                       ^
+      103 |       where: { id: { in: variantIds } },
+      104 |       include: { product: true }
+      105 |     });
+
+      at SalesReportService.getTopSellers (modules/reports/sales-report.service.ts:102:55)
+      at Object.<anonymous> (modules/reports/sales-report.service.spec.ts:105:22)
+
+[Nest] 8320  - 02/07/2026, 19:01:00   ERROR [AuditService] [AuditService] FAILED to persist audit log: Error: DB down
+FAIL src/modules/reports/reports.controller.spec.ts (48.747 s)
+  ÔùÅ ReportsController ÔÇ║ should be defined
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getDashboard ÔÇ║ should delegate to dashboardService
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getSalesSummary ÔÇ║ should pass parsed dates to salesReport
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getTopSellers ÔÇ║ should delegate to salesReport.getTopSellers
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getCogsReport ÔÇ║ should delegate to salesReport.getCogsReport
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getStockValuation ÔÇ║ should delegate to stockReport.getStockValuation
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getLowStockAlerts ÔÇ║ should parse reorderPoint as integer
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getLowStockAlerts ÔÇ║ should pass undefined when reorderPoint is not provided
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getPurchasesSummary ÔÇ║ should delegate to purchasesReport
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getCashSummary ÔÇ║ should delegate to cashReport with parsed dates and branchId
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ exportReport ÔÇ║ should return a downloadUrl
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+FAIL src/modules/reports/stock-report.service.spec.ts (49.759 s)
+  ÔùÅ StockReportService ÔÇ║ getStockValuation ÔÇ║ should return correct valuation for stock levels
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      28 |
+      29 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 30 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      31 |       where: { id: { in: variantIds } },
+      32 |       include: { product: true }
+      33 |     });
+
+      at StockReportService.getStockValuation (modules/reports/stock-report.service.ts:30:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:46:22)
+
+  ÔùÅ StockReportService ÔÇ║ getStockValuation ÔÇ║ should return empty report when no stock
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      28 |
+      29 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 30 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      31 |       where: { id: { in: variantIds } },
+      32 |       include: { product: true }
+      33 |     });
+
+      at StockReportService.getStockValuation (modules/reports/stock-report.service.ts:30:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:57:22)
+
+  ÔùÅ StockReportService ÔÇ║ getStockValuation ÔÇ║ should handle missing variant cost/price
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      28 |
+      29 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 30 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      31 |       where: { id: { in: variantIds } },
+      32 |       include: { product: true }
+      33 |     });
+
+      at StockReportService.getStockValuation (modules/reports/stock-report.service.ts:30:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:73:22)
+
+  ÔùÅ StockReportService ÔÇ║ getStockValuation ÔÇ║ should apply branch filter when branchId is provided
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      19 |     let branchFilter = {};
+      20 |     if (branchId) {
+    > 21 |       const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
+         |                                                      ^
+      22 |       branchFilter = { warehouseId: { in: warehouses.map(w => w.id) } };
+      23 |     }
+      24 |
+
+      at StockReportService.getStockValuation (modules/reports/stock-report.service.ts:21:54)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:81:21)
+
+  ÔùÅ StockReportService ÔÇ║ getLowStockAlerts ÔÇ║ should return items below reorder point
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      81 |
+      82 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 83 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      84 |       where: { id: { in: variantIds } },
+      85 |       include: { product: true }
+      86 |     });
+
+      at StockReportService.getLowStockAlerts (modules/reports/stock-report.service.ts:83:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:101:22)
+
+  ÔùÅ StockReportService ÔÇ║ getLowStockAlerts ÔÇ║ should use default reorder point of 5
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      81 |
+      82 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 83 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      84 |       where: { id: { in: variantIds } },
+      85 |       include: { product: true }
+      86 |     });
+
+      at StockReportService.getLowStockAlerts (modules/reports/stock-report.service.ts:83:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:110:7)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due 
+to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure 
+that .unref() was called on them.
+
+Summary of all failing tests
+FAIL modules/reports/sales-report.service.spec.ts (43.139 s)
+  ÔùÅ SalesReportService ÔÇ║ getTopSellers ÔÇ║ should return empty array when no line items
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      100 |
+      101 |     const variantIds = [...new Set(lineItems.map(l => l.variantId))];
+    > 102 |     const variants = await this.prisma.productVariant.findMany({
+          |                                                       ^
+      103 |       where: { id: { in: variantIds } },
+      104 |       include: { product: true }
+      105 |     });
+
+      at SalesReportService.getTopSellers (modules/reports/sales-report.service.ts:102:55)
+      at Object.<anonymous> (modules/reports/sales-report.service.spec.ts:94:22)
+
+  ÔùÅ SalesReportService ÔÇ║ getTopSellers ÔÇ║ should aggregate and sort by units sold
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      100 |
+      101 |     const variantIds = [...new Set(lineItems.map(l => l.variantId))];
+    > 102 |     const variants = await this.prisma.productVariant.findMany({
+          |                                                       ^
+      103 |       where: { id: { in: variantIds } },
+      104 |       include: { product: true }
+      105 |     });
+
+      at SalesReportService.getTopSellers (modules/reports/sales-report.service.ts:102:55)
+      at Object.<anonymous> (modules/reports/sales-report.service.spec.ts:105:22)
+
+FAIL modules/reports/reports.controller.spec.ts (48.747 s)
+  ÔùÅ ReportsController ÔÇ║ should be defined
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getDashboard ÔÇ║ should delegate to dashboardService
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getSalesSummary ÔÇ║ should pass parsed dates to salesReport
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getTopSellers ÔÇ║ should delegate to salesReport.getTopSellers
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getCogsReport ÔÇ║ should delegate to salesReport.getCogsReport
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getStockValuation ÔÇ║ should delegate to stockReport.getStockValuation
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getLowStockAlerts ÔÇ║ should parse reorderPoint as integer
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getLowStockAlerts ÔÇ║ should pass undefined when reorderPoint is not provided
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getPurchasesSummary ÔÇ║ should delegate to purchasesReport
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ getCashSummary ÔÇ║ should delegate to cashReport with parsed dates and branchId
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+  ÔùÅ ReportsController ÔÇ║ exportReport ÔÇ║ should return a downloadUrl
+
+    Nest can't resolve dependencies of the PermissionsGuard (Reflector, ?). Please make sure that the argument 
+RbacService at index [1] is available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If RbacService is a provider, is it part of the current RootTestModule?
+    - If RbacService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing RbacService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+      35 |
+      36 |   beforeEach(async () => {
+    > 37 |     const module: TestingModule = await Test.createTestingModule({
+         |                                   ^
+      38 |       controllers: [ReportsController],
+      39 |       providers: [
+      40 |         { provide: SalesReportService, useValue: mockSalesReport },
+
+      at TestingInjector.lookupComponentInParentModules (../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 1)
+      at TestingInjector.resolveConstructorParams (../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadInjectable (../node_modules/@nestjs/core/injector/injector.js:99:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:80:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstancesOfInjectables 
+(../node_modules/@nestjs/core/injector/instance-loader.js:79:9)
+      at ../node_modules/@nestjs/core/injector/instance-loader.js:41:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../node_modules/@nestjs/testing/testing-module.builder.js:119:9)
+      at TestingModuleBuilder.compile (../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (modules/reports/reports.controller.spec.ts:37:35)
+
+FAIL modules/reports/stock-report.service.spec.ts (49.759 s)
+  ÔùÅ StockReportService ÔÇ║ getStockValuation ÔÇ║ should return correct valuation for stock levels
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      28 |
+      29 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 30 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      31 |       where: { id: { in: variantIds } },
+      32 |       include: { product: true }
+      33 |     });
+
+      at StockReportService.getStockValuation (modules/reports/stock-report.service.ts:30:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:46:22)
+
+  ÔùÅ StockReportService ÔÇ║ getStockValuation ÔÇ║ should return empty report when no stock
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      28 |
+      29 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 30 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      31 |       where: { id: { in: variantIds } },
+      32 |       include: { product: true }
+      33 |     });
+
+      at StockReportService.getStockValuation (modules/reports/stock-report.service.ts:30:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:57:22)
+
+  ÔùÅ StockReportService ÔÇ║ getStockValuation ÔÇ║ should handle missing variant cost/price
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      28 |
+      29 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 30 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      31 |       where: { id: { in: variantIds } },
+      32 |       include: { product: true }
+      33 |     });
+
+      at StockReportService.getStockValuation (modules/reports/stock-report.service.ts:30:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:73:22)
+
+  ÔùÅ StockReportService ÔÇ║ getStockValuation ÔÇ║ should apply branch filter when branchId is provided
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      19 |     let branchFilter = {};
+      20 |     if (branchId) {
+    > 21 |       const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
+         |                                                      ^
+      22 |       branchFilter = { warehouseId: { in: warehouses.map(w => w.id) } };
+      23 |     }
+      24 |
+
+      at StockReportService.getStockValuation (modules/reports/stock-report.service.ts:21:54)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:81:21)
+
+  ÔùÅ StockReportService ÔÇ║ getLowStockAlerts ÔÇ║ should return items below reorder point
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      81 |
+      82 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 83 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      84 |       where: { id: { in: variantIds } },
+      85 |       include: { product: true }
+      86 |     });
+
+      at StockReportService.getLowStockAlerts (modules/reports/stock-report.service.ts:83:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:101:22)
+
+  ÔùÅ StockReportService ÔÇ║ getLowStockAlerts ÔÇ║ should use default reorder point of 5
+
+    TypeError: Cannot read properties of undefined (reading 'findMany')
+
+      81 |
+      82 |     const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
+    > 83 |     const variants = await this.prisma.productVariant.findMany({
+         |                                                       ^
+      84 |       where: { id: { in: variantIds } },
+      85 |       include: { product: true }
+      86 |     });
+
+      at StockReportService.getLowStockAlerts (modules/reports/stock-report.service.ts:83:55)
+      at Object.<anonymous> (modules/reports/stock-report.service.spec.ts:110:7)
+
+
+Test Suites: 3 failed, 23 passed, 26 total
+Tests:       19 failed, 123 passed, 142 total
+Snapshots:   0 total
+Time:        69.137 s
+Ran all test suites.
+npm notice
+npm notice New minor version of npm available! 11.12.1 -> 11.18.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.18.0
+npm notice To update run: npm install -g npm@11.18.0
+npm notice
