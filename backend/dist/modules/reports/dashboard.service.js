@@ -25,18 +25,16 @@ let DashboardService = class DashboardService {
         todayStart.setHours(0, 0, 0, 0);
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const [todaySales, monthSales, topSellers, lowStockAlerts, monthCogs, pendingOrders] = await Promise.all([
-            this.salesReport.getSalesSummary({ from: todayStart, to: now, branchId }),
-            this.salesReport.getSalesSummary({ from: monthStart, to: now, branchId }),
-            this.salesReport.getTopSellers({ from: monthStart, to: now, branchId }, 5),
-            this.stockReport.getLowStockAlerts(branchId),
-            this.salesReport.getCogsReport({ from: monthStart, to: now, branchId }),
-            this.prisma.saleOrder.count({
-                where: {
-                    status: { in: ['PENDING', 'PROCESSING', 'PAID'] }
-                }
-            })
-        ]);
+        const todaySales = await this.salesReport.getSalesSummary({ from: todayStart, to: now, branchId });
+        const monthSales = await this.salesReport.getSalesSummary({ from: monthStart, to: now, branchId });
+        const topSellers = await this.salesReport.getTopSellers({ from: monthStart, to: now, branchId }, 5);
+        const lowStockAlerts = await this.stockReport.getLowStockAlerts(branchId);
+        const monthCogs = await this.salesReport.getCogsReport({ from: monthStart, to: now, branchId });
+        const pendingOrders = await this.prisma.saleOrder.count({
+            where: {
+                status: { in: ['PENDING', 'PROCESSING', 'PAID'] }
+            }
+        });
         return {
             generatedAt: now,
             today: {
