@@ -42,7 +42,7 @@
   }
   .content {
     padding: 0 16px 24px 16px;
-    max-width: 1600px;
+    max-width: none;
     overflow-y: auto; /* internal scroll */
   }
 }

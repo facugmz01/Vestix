@@ -1,1 +1,0 @@
-import{f as c,z as r}from"./index-Dj4cPf93.js";import{u as m}from"./useMutation-CjquhNqf.js";function M(s){const t=c(),{mutationFn:o,invalidateKey:u,successMessage:a,errorMessage:n="Error al eliminar el recurso",onSuccess:e}=s;return m({mutationFn:o,onSuccess:()=>{r.success(a),t.invalidateQueries({queryKey:u}),e==null||e()},onError:i=>{r.error(i.message||n)}})}export{M as u};
