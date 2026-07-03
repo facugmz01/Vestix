@@ -189,19 +189,28 @@ export default function OnlineCatalogPage() {
     <main style={{ minHeight: '100%', padding: isMobile ? '16px' : '32px', background: 'var(--bg-base)', fontFamily: "'Inter', sans-serif" }}>
       <StorefrontSEO title="Catálogo | Tienda Oficial" />
       
-      {/* Top Banner / Hero */}
+      {/* Top Banner / Hero Premium */}
       <div style={{
-        maxWidth: '1280px', margin: '0 auto 32px', padding: isMobile ? '24px' : '48px',
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.05) 100%)',
-        borderRadius: '20px', border: '1px solid rgba(99,102,241,0.15)',
-        textAlign: 'center', position: 'relative', overflow: 'hidden'
+        maxWidth: '1280px', margin: '0 auto 40px', padding: isMobile ? '40px 24px' : '80px 48px',
+        background: 'linear-gradient(135deg, rgba(var(--sf-primary-rgb), 0.05) 0%, rgba(var(--sf-primary-rgb), 0.12) 100%)',
+        borderRadius: '32px', border: '1px solid rgba(var(--sf-primary-rgb), 0.1)',
+        textAlign: 'center', position: 'relative', overflow: 'hidden',
+        boxShadow: '0 24px 48px -12px rgba(var(--sf-primary-rgb), 0.15)'
       }}>
-        <h1 style={{ margin: '0 0 12px', fontSize: isMobile ? '28px' : '42px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
-          Nueva Colección
-        </h1>
-        <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px', color: 'var(--text-secondary)', maxWidth: '500px', marginInline: 'auto' }}>
-          Descubrí nuestros últimos ingresos y productos exclusivos directo desde nuestra tienda oficial.
-        </p>
+        {/* Glow orb inside hero */}
+        <div style={{ position: 'absolute', top: '-50%', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(var(--sf-primary-rgb),0.15) 0%, rgba(var(--sf-primary-rgb),0) 70%)', filter: 'blur(40px)', zIndex: 0, pointerEvents: 'none' }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <span style={{ display: 'inline-block', padding: '6px 16px', borderRadius: '99px', background: 'rgba(var(--sf-primary-rgb), 0.15)', color: 'var(--sf-primary)', fontWeight: 800, fontSize: '11px', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '24px' }}>
+            Nuevos Ingresos
+          </span>
+          <h1 style={{ margin: '0 0 16px', fontSize: isMobile ? '36px' : '56px', fontWeight: 900, color: '#0F172A', letterSpacing: '-1.5px', lineHeight: 1.1 }}>
+            Nueva Colección
+          </h1>
+          <p style={{ margin: 0, fontSize: isMobile ? '16px' : '18px', color: '#475569', maxWidth: '540px', marginInline: 'auto', lineHeight: 1.6 }}>
+            Descubrí nuestros últimos productos y encontrá tu estilo perfecto comprando directo desde nuestra tienda oficial.
+          </p>
+        </div>
       </div>
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', gap: '40px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
@@ -326,30 +335,30 @@ export default function OnlineCatalogPage() {
                     to={`${prefix}/product/${p.id}`}
                     style={{ 
                       textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', 
-                      background: 'var(--bg-elevated)', borderRadius: '16px', overflow: 'hidden', 
-                      border: '1px solid var(--border)', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                      background: '#FFFFFF', borderRadius: '24px', overflow: 'hidden', 
+                      border: '1px solid #F1F5F9', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', 
                       cursor: 'pointer', position: 'relative',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
                     }}
                     onMouseEnter={e => { 
-                      e.currentTarget.style.transform = 'translateY(-6px)'; 
-                      e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15), 0 0 0 1px rgba(99,102,241,0.2)'; 
+                      e.currentTarget.style.transform = 'translateY(-8px) scale(1.01)'; 
+                      e.currentTarget.style.boxShadow = '0 24px 48px -12px rgba(var(--sf-primary-rgb),0.15), 0 0 0 1px rgba(var(--sf-primary-rgb),0.1)'; 
                       const btn = e.currentTarget.querySelector('.quick-add-btn') as HTMLElement;
                       if(btn) { btn.style.opacity = '1'; btn.style.transform = 'translateY(0)'; }
                     }}
                     onMouseLeave={e => { 
-                      e.currentTarget.style.transform = 'translateY(0)'; 
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; 
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)'; 
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.03)'; 
                       const btn = e.currentTarget.querySelector('.quick-add-btn') as HTMLElement;
                       if(btn) { btn.style.opacity = '0'; btn.style.transform = 'translateY(10px)'; }
                     }}
                   >
                     {/* Image Area */}
                     <div style={{ 
-                      height: isMobile ? '200px' : '280px', 
-                      background: hasImage ? '#fff' : (p.id.charCodeAt(0) % 2 === 0 ? 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)' : 'linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)'), 
+                      height: isMobile ? '240px' : '320px', 
+                      background: hasImage ? '#fff' : (p.id.charCodeAt(0) % 2 === 0 ? 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)'), 
                       display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
-                      overflow: 'hidden'
+                      overflow: 'hidden', borderBottom: '1px solid #F1F5F9'
                     }}>
                       {hasImage ? (
                         <img 

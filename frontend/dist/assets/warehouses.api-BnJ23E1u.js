@@ -1,0 +1,1 @@
+import{k as r,l as o,p as h,m as s,n as u}from"./index-Dj4cPf93.js";const p={getWarehouses:e=>s("/warehouses",{params:u(e??{})}),getWarehouse:e=>s(`/warehouses/${e}`),createWarehouse:e=>h("/warehouses",e),updateWarehouse:(e,a)=>o(`/warehouses/${e}`,a),deleteWarehouse:e=>r(`/warehouses/${e}`)};export{p as w};

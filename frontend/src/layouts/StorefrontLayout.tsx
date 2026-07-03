@@ -75,18 +75,37 @@ export default function StorefrontLayout() {
 
   return (
     <div style={{ 
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      width: '100vw',
       height: '100dvh', 
       overflowY: 'auto', 
       overflowX: 'hidden',
       display: 'flex', 
       flexDirection: 'column', 
-      background: 'var(--bg-base)', 
-      fontFamily 
+      background: '#FAFAFC', 
+      fontFamily,
+      zIndex: 99999
     }}>
       
-      {/* Inject Dynamic Settings */}
+      {/* Inject Dynamic Settings & Force Light Mode */}
       <style>{`
-        :root {
+        /* The following overrides ensure Storefront is ALWAYS in Light Mode premium */
+        :root, html.dark {
+          --bg-base: #FAFAFC;
+          --bg-surface: #FFFFFF;
+          --bg-surface-hover: #F8FAFC;
+          --bg-elevated: #FFFFFF;
+          --bg-overlay: rgba(255, 255, 255, 0.8);
+          
+          --text-primary: #0F172A;
+          --text-secondary: #475569;
+          --text-muted: #94A3B8;
+          --text-inverted: #FFFFFF;
+          
+          --border: #E2E8F0;
+          --border-strong: #CBD5E1;
+          
           /* Overriding global accent variables for Storefront */
           --accent: ${primaryColor};
           --accent-rgb: ${hexToRgb(primaryColor)};
@@ -99,6 +118,7 @@ export default function StorefrontLayout() {
           --sf-primary-subtle: rgba(var(--sf-primary-rgb), 0.1);
           --sf-primary-hover: rgba(var(--sf-primary-rgb), 0.9);
         }
+        
         .sf-btn {
           background: var(--sf-primary);
           color: white;
@@ -118,8 +138,14 @@ export default function StorefrontLayout() {
         }
       `}</style>
 
-      {/* Navbar */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 100 }}>
+      {/* Navbar Premium */}
+      <header style={{ 
+        background: 'rgba(255, 255, 255, 0.85)', 
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(0,0,0,0.05)', 
+        position: 'sticky', top: 0, zIndex: 100,
+        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.03)'
+      }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '12px 16px' : '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
           {/* Logo */}
