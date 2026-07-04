@@ -16,12 +16,12 @@ export class CatalogController {
     return this.catalogService.getPublicCatalog(filters);
   }
 
-  @Get('public/categories')
+  @Get('categories/public')
   async getPublicCategories() {
     return this.catalogService.getPublicCategories();
   }
 
-  @Get('public/brands')
+  @Get('brands/public')
   async getPublicBrands() {
     return this.catalogService.getPublicBrands();
   }

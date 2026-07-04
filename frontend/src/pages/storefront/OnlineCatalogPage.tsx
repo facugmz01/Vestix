@@ -62,12 +62,12 @@ export default function OnlineCatalogPage() {
 
   const { data: categoriesData } = useQuery({
     queryKey: ['storefront', 'categories'],
-    queryFn: () => apiClient.get('/catalog/public/categories').then(r => r.data ?? r),
+    queryFn: () => apiClient.get('/catalog/categories/public').then(r => r.data ?? r),
   });
 
   const { data: brandsData } = useQuery({
     queryKey: ['storefront', 'brands'],
-    queryFn: () => apiClient.get('/catalog/public/brands').then(r => r.data ?? r),
+    queryFn: () => apiClient.get('/catalog/brands/public').then(r => r.data ?? r),
   });
 
   const products = data?.data || [];

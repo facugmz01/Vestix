@@ -16,6 +16,19 @@ export declare class CatalogService {
         };
         data: any[];
     }>;
+    getPublicCategories(): Promise<{
+        id: string;
+        name: string;
+        parentId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
+    getPublicBrands(): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
     getPublicProduct(id: string): Promise<{
         id: string;
         name: string;

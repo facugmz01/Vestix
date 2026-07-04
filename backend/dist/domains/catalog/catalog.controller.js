@@ -24,6 +24,12 @@ let CatalogController = class CatalogController {
     async getPublicCatalog(filters) {
         return this.catalogService.getPublicCatalog(filters);
     }
+    async getPublicCategories() {
+        return this.catalogService.getPublicCategories();
+    }
+    async getPublicBrands() {
+        return this.catalogService.getPublicBrands();
+    }
     async getPublicProduct(id) {
         return this.catalogService.getPublicProduct(id);
     }
@@ -42,6 +48,18 @@ __decorate([
     __metadata("design:paramtypes", [catalog_filter_dto_1.CatalogFilterDto]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getPublicCatalog", null);
+__decorate([
+    (0, common_1.Get)('public/categories'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getPublicCategories", null);
+__decorate([
+    (0, common_1.Get)('public/brands'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CatalogController.prototype, "getPublicBrands", null);
 __decorate([
     (0, common_1.Get)('public/:id'),
     __param(0, (0, common_1.Param)('id')),
