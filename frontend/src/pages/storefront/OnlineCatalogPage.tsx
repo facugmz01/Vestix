@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, PackageX, ChevronDown, Filter, ShoppingBag } from 'lucide-react';
 import { storefrontApi, StorefrontSettings } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -10,7 +10,10 @@ import { StorefrontSEO } from '@/features/storefront/components/StorefrontSEO';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function OnlineCatalogPage() {
-  const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [search, setSearch] = useState(initialSearch);
   const [categoryId, setCategoryId] = useState('');
   const [brandId, setBrandId] = useState('');
   const [sortBy, setSortBy] = useState<'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST'>('NEWEST');
@@ -32,19 +35,39 @@ export default function OnlineCatalogPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q !== null && q !== searchInput) {
+      setSearchInput(q);
+      setSearch(q);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      if (searchInput) {
+        setSearchParams({ search: searchInput }, { replace: true });
+      } else {
+        setSearchParams({}, { replace: true });
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchInput, setSearchParams]);
+
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.storefront.products({ search, categoryId, brand: brandId, sortBy }),
     queryFn: () => storefrontApi.getProducts({ search, categoryId, brand: brandId, sortBy }),
   });
 
   const { data: categoriesData } = useQuery({
-    queryKey: queryKeys.categories.all(),
-    queryFn: () => apiClient.get('/categories').then(r => r.data),
+    queryKey: ['storefront', 'categories'],
+    queryFn: () => apiClient.get('/catalog/public/categories').then(r => r.data ?? r),
   });
 
   const { data: brandsData } = useQuery({
-    queryKey: queryKeys.brands.all(),
-    queryFn: () => apiClient.get('/brands').then(r => r.data),
+    queryKey: ['storefront', 'brands'],
+    queryFn: () => apiClient.get('/catalog/public/brands').then(r => r.data ?? r),
   });
 
   const products = data?.data || [];
@@ -55,6 +78,7 @@ export default function OnlineCatalogPage() {
   const sorted = products;
 
   const clearFilters = () => {
+    setSearchInput('');
     setSearch('');
     setCategoryId('');
     setBrandId('');
@@ -76,8 +100,8 @@ export default function OnlineCatalogPage() {
             type="text"
             className="storefront-input"
             placeholder="Ej: Remera, Zapatillas..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
             style={{ 
               paddingLeft: '38px', 
               borderRadius: '8px', 
@@ -322,7 +346,7 @@ export default function OnlineCatalogPage() {
           ) : (
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+              gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '160px' : '220px'}, 1fr))`, 
               gap: isMobile ? '16px' : '24px' 
             }}>
               {sorted.map(p => {

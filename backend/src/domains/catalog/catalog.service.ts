@@ -131,6 +131,14 @@ export class CatalogService {
     };
   }
 
+  async getPublicCategories() {
+    return this.prisma.category.findMany({ orderBy: { name: 'asc' } });
+  }
+
+  async getPublicBrands() {
+    return this.prisma.brand.findMany({ orderBy: { name: 'asc' } });
+  }
+
   async getPublicProduct(id: string) {
     const product = await this.prisma.product.findUnique({
       where: { id, isActive: true, isPublished: true },
