@@ -49,13 +49,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getPublicCatalog", null);
 __decorate([
-    (0, common_1.Get)('public/categories'),
+    (0, common_1.Get)('categories/public'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getPublicCategories", null);
 __decorate([
-    (0, common_1.Get)('public/brands'),
+    (0, common_1.Get)('brands/public'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
