@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { CatalogModule } from '../catalog/catalog.module';
 
 import { SalesService } from './sales.service';
 import { SalesController } from './sales.controller';
@@ -30,6 +31,7 @@ import { OfflineController } from './offline.controller';
 @Global()
 @Module({
   imports: [
+    CatalogModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,

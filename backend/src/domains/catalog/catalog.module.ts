@@ -1,6 +1,8 @@
-import { Module, Global } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../core/prisma/prisma.module';
 import { ProductsService } from './services/products.service';
+import { PromotionsService } from './services/promotions.service';
+import { MediaService } from './services/media.service';
 import { CategoriesService, BrandsService, AttributesService, PriceListService } from './services/taxonomy.service';
 import {
   ProductsController,
@@ -20,7 +22,6 @@ import { IdentifiersService } from './identifiers.service';
 import { IdentifiersController } from './identifiers.controller';
 import { CatalogFacade } from './catalog.facade';
 
-@Global()
 @Module({
   imports: [PrismaModule],
   controllers: [
@@ -37,6 +38,8 @@ import { CatalogFacade } from './catalog.facade';
   ],
   providers: [
     ProductsService,
+    PromotionsService,
+    MediaService,
     CategoriesService,
     BrandsService,
     AttributesService,
@@ -49,6 +52,7 @@ import { CatalogFacade } from './catalog.facade';
   ],
   exports: [
     ProductsService,
+    PromotionsService,
     CategoriesService,
     BrandsService,
     AttributesService,

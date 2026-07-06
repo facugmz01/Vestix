@@ -2,18 +2,18 @@ import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
 import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { ParseBooleanQueryPipe } from '../../core/pipes/parse-boolean-query.pipe';
 
 @Controller('catalog')
 export class CatalogController {
   constructor(private readonly catalogService: CatalogService) {}
 
-  /**
-   * PUBLIC ENDPOINT: Zero authentication required.
-   * Hit by the Next.js storefront for SEO and customer browsing.
-   */
   @Get('public')
-  async getPublicCatalog(@Query() filters: CatalogFilterDto) {
-    return this.catalogService.getPublicCatalog(filters);
+  async getPublicCatalog(
+    @Query() filters: CatalogFilterDto,
+    @Query('inStockOnly', ParseBooleanQueryPipe) inStockOnly?: boolean,
+  ) {
+    return this.catalogService.getPublicCatalog({ ...filters, inStockOnly: inStockOnly ?? filters.inStockOnly });
   }
 
   @Get('categories/public')
@@ -27,8 +27,8 @@ export class CatalogController {
   }
 
   @Get('public/:id')
-  async getPublicProduct(@Param('id') id: string) {
-    return this.catalogService.getPublicProduct(id);
+  async getPublicProduct(@Param('id') id: string, @Query('preview') preview?: string) {
+    return this.catalogService.getPublicProduct(id, preview === 'true');
   }
 
   @Post('reprice-usd')

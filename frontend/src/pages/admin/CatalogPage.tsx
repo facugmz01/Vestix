@@ -199,6 +199,7 @@ export default function CatalogPage() {
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState('');
   const [importOpen, setImportOpen] = useState(false);
   const [bulkUpdaterOpen, setBulkUpdaterOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -468,14 +469,32 @@ export default function CatalogPage() {
 
       <ConfirmDialog
         open={clearDialogOpen}
-        title="Vaciar Catálogo Completo"
-        message="¿Estás seguro de que querés vaciar el catálogo? Esta acción eliminará definitivamente TODOS los productos, variantes, categorías, marcas, stock y registros de ventas/compras de prueba. Esta acción no se puede deshacer."
-        confirmLabel="Vaciar Catálogo Definitivamente"
+        title="Vaciar Catálogo"
+        message="Esta acción elimina productos, variantes, categorías, marcas y listas de precios del catálogo. No borra ventas ni finanzas, pero requiere que no haya stock ni cotizaciones abiertas. Escribí VACIAR para confirmar."
+        confirmLabel="Vaciar Catálogo"
         variant="danger"
         loading={clearCatalogMutation.isPending}
-        onConfirm={() => clearCatalogMutation.mutate()}
-        onCancel={() => setClearDialogOpen(false)}
+        onConfirm={() => {
+          if (clearConfirmText !== 'VACIAR') {
+            toast.error('Debés escribir VACIAR para confirmar');
+            return;
+          }
+          clearCatalogMutation.mutate();
+          setClearConfirmText('');
+        }}
+        onCancel={() => { setClearDialogOpen(false); setClearConfirmText(''); }}
       />
+      {clearDialogOpen && (
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'var(--bg-elevated)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <input
+            type="text"
+            placeholder="Escribí VACIAR"
+            value={clearConfirmText}
+            onChange={e => setClearConfirmText(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', minWidth: 200 }}
+          />
+        </div>
+      )}
 
       <ImportProductsModal
         isOpen={importOpen}

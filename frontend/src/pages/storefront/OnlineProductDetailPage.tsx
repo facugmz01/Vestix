@@ -63,7 +63,11 @@ export default function OnlineProductDetailPage() {
 
   const selectedVariant = product.variants?.find(v => v.id === selectedVariantId);
   const isAvailable = selectedVariant ? selectedVariant.stock > 0 : product.inStock;
-  const displayPrice = product.price ?? product.basePrice ?? 0;
+  const displayPrice = selectedVariant?.price ?? product.price ?? product.basePrice ?? 0;
+  const priceRange =
+    product.maxPrice && product.maxPrice > product.price
+      ? `${formatCurrency(product.price)} – ${formatCurrency(product.maxPrice)}`
+      : formatCurrency(displayPrice);
 
   const handleAddToCart = () => {
     if (!selectedVariant && (product.variants?.length ?? 0) > 0) {
@@ -143,7 +147,9 @@ export default function OnlineProductDetailPage() {
           <div style={{ padding: '20px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.06)', marginBottom: '24px', boxSizing: 'border-box' }}>
             
             <div style={{ marginBottom: '20px' }}>
-              <span style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{formatCurrency(displayPrice)}</span>
+              <span style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                {selectedVariant ? formatCurrency(displayPrice) : priceRange}
+              </span>
               {product.basePrice && product.basePrice > product.price && (
                 <span style={{ marginLeft: '12px', fontSize: '16px', color: '#94a3b8', textDecoration: 'line-through' }}>{formatCurrency(product.basePrice)}</span>
               )}

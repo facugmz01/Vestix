@@ -27,7 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'finance',    label: 'Finanzas',   to: '/admin/finance',    icon: <CreditCard size={18} />,      action: 'read',   subject: 'Finance',  dividerBefore: true },
   { id: 'reports',    label: 'Reportes',   to: '/admin/reports',    icon: <BarChart2 size={18} />,       action: 'read',   subject: 'Reports'   },
   { id: 'pos',        label: 'POS',        to: '/pos',              icon: <Monitor size={18} />,         action: 'create', subject: 'Sales',    dividerBefore: true },
-  { id: 'catalog-pub',label: 'Tienda',     to: '/catalog',          icon: <Globe size={18} />,           action: 'read',   subject: 'Catalog'   },
+  { id: 'catalog-pub',label: 'Tienda',     to: '/store',          icon: <Globe size={18} />,           action: 'read',   subject: 'Catalog'   },
   { id: 'settings',   label: 'Ajustes',    to: '/admin/settings',   icon: <Settings size={18} />,        action: 'manage', subject: 'Settings', dividerBefore: true },
 ];
 

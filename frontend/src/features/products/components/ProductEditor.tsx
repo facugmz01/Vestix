@@ -115,6 +115,7 @@ export function ProductEditor({ initialData }: Props) {
         brandId: data.brandId,
         baseSku: data.baseSku,
         type: data.type,
+        isVariable: data.type === 'VARIABLE' || data.isVariable,
         manageBatches: data.manageBatches,
         costPrice: data.costPrice,
         basePrice: data.basePrice,

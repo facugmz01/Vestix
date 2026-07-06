@@ -1,5 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, ParseUUIDPipe, Query, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, ParseUUIDPipe, Query, Delete, UseGuards, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { ProductsService } from '../services/products.service';
+import { MediaService } from '../services/media.service';
 import { CategoriesService, BrandsService, AttributesService, PriceListService } from '../services/taxonomy.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
@@ -78,7 +82,10 @@ export class BrandsController {
 @Controller('products')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   @Post()
   @RequirePermissions({ action: 'create', subject: 'Catalog' })
@@ -105,9 +112,21 @@ export class ProductsController {
   }
 
   @Post('clear')
-  @RequirePermissions({ action: 'delete', subject: 'Catalog' })
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
   clearCatalog() {
     return this.productsService.clearCatalog();
+  }
+
+  @Post(':id/duplicate')
+  @RequirePermissions({ action: 'create', subject: 'Catalog' })
+  duplicate(@Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.duplicate(id);
+  }
+
+  @Get(':id/publish-readiness')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  publishReadiness(@Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.getPublishReadiness(id);
   }
 
   @Post('bulk-publish-all')
@@ -144,6 +163,42 @@ export class ProductsController {
   @RequirePermissions({ action: 'create', subject: 'Catalog' })
   generateCombinations(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
     return this.productsService.generateCombinations(id, dto);
+  }
+
+  @Post(':id/images')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/products',
+        filename: (_req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `product-${unique}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+          return cb(new BadRequestException('Only image files are allowed') as any, false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  uploadProductImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.mediaService.addProductImage(id, file);
+  }
+
+  @Delete(':id/images')
+  @RequirePermissions({ action: 'update', subject: 'Catalog' })
+  deleteProductImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('url') url: string,
+  ) {
+    return this.mediaService.removeProductImage(id, url);
   }
 
   @Patch(':id')

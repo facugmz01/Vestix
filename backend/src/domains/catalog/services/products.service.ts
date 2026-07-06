@@ -6,6 +6,8 @@ import { CategoriesService, BrandsService } from './taxonomy.service';
 import { SettingsService } from '../../../modules/settings/settings.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
+import { isVariableProduct, normalizeProductType, syncIsVariableFlag } from '../utils/product-type.util';
+import { hasRequiredShippingDimensions, normalizeMetadataWithDimensions } from '../utils/shipping-dimensions.util';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -62,8 +64,7 @@ export class ProductsService {
       }
     }
     if (posSettings.requireShippingDimensions) {
-      const { weight, width, height, depth } = createProductDto.metadata || {};
-      if (!weight || !width || !height || !depth) {
+      if (!hasRequiredShippingDimensions(createProductDto.metadata)) {
         throw new ConflictException('Las dimensiones de envío (peso, ancho, alto, largo) son obligatorias según la configuración de ventas.');
       }
     }
@@ -88,6 +89,10 @@ export class ProductsService {
     const exists = await this.prisma.product.findUnique({ where: { baseSku: finalSku } });
     if (exists) throw new ConflictException(`El SKU Base ${finalSku} ya está en uso`);
 
+    const productType = normalizeProductType(createProductDto);
+    const variableProduct = isVariableProduct(createProductDto);
+    const normalizedMetadata = normalizeMetadataWithDimensions(createProductDto.metadata || {});
+
     // 3. Create Product and Variants in a Transaction
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
@@ -97,14 +102,14 @@ export class ProductsService {
           description: createProductDto.description,
           categoryId: createProductDto.categoryId,
           brandId: createProductDto.brandId,
-          type: createProductDto.type || 'SINGLE',
+          type: productType,
           manageBatches: createProductDto.manageBatches || false,
-          isVariable: createProductDto.isVariable || false,
+          isVariable: syncIsVariableFlag(productType),
           costPrice: createProductDto.costPrice || 0,
           isActive: true,
           isPublished: false,
           images: (createProductDto.images as any) || [],
-          metadata: createProductDto.metadata || {},
+          metadata: normalizedMetadata,
           comboLines: createProductDto.type === 'COMBO' && createProductDto.comboLines?.length ? {
             create: createProductDto.comboLines.map(cl => ({
               childVariantId: cl.childVariantId,
@@ -116,7 +121,7 @@ export class ProductsService {
       });
 
       // 4. Create Variants
-      if (createProductDto.isVariable && createProductDto.variants?.length) {
+      if (variableProduct && createProductDto.variants?.length) {
         await tx.productVariant.createMany({
           data: createProductDto.variants.map(v => {
             const parts = [finalSku, v.size, v.color].filter(Boolean).join('-');
@@ -178,11 +183,85 @@ export class ProductsService {
   }
 
   async publishAll() {
-    const res = await this.prisma.product.updateMany({
+    const products = await this.prisma.product.findMany({
       where: { isActive: true },
-      data: { isPublished: true }
+      include: { variants: { where: { isActive: true } } },
     });
-    return { success: true, count: res.count };
+
+    const publishableIds = products
+      .filter(p => p.variants.some(v => v.basePrice > 0))
+      .map(p => p.id);
+
+    const res = await this.prisma.product.updateMany({
+      where: { id: { in: publishableIds } },
+      data: { isPublished: true },
+    });
+    return { success: true, count: res.count, skipped: products.length - res.count };
+  }
+
+  async getPublishReadiness(id: string) {
+    const product = await this.findOne(id);
+    const issues: string[] = [];
+    const activeVariants = (product.variants || []).filter((v: any) => v.isActive);
+
+    if (!activeVariants.length) issues.push('El producto no tiene variantes activas');
+    if (!activeVariants.some((v: any) => v.basePrice > 0)) issues.push('Ninguna variante tiene precio de venta');
+    if (!product.categoryId) issues.push('Falta categoría');
+    if (!product.name?.trim()) issues.push('Falta nombre');
+
+    return { ready: issues.length === 0, issues };
+  }
+
+  async duplicate(id: string) {
+    const product = await this.findOne(id);
+    const suffix = '-COPY';
+    let newBaseSku = product.baseSku ? `${product.baseSku}${suffix}` : `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+    const skuExists = await this.prisma.product.findUnique({ where: { baseSku: newBaseSku } });
+    if (skuExists) newBaseSku = `${newBaseSku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+
+    return this.prisma.$transaction(async (tx) => {
+      const copy = await tx.product.create({
+        data: {
+          name: `${product.name} (Copia)`,
+          baseSku: newBaseSku,
+          description: product.description,
+          categoryId: product.categoryId,
+          brandId: product.brandId,
+          type: product.type,
+          isVariable: product.isVariable,
+          manageBatches: product.manageBatches,
+          costPrice: product.costPrice,
+          isActive: true,
+          isPublished: false,
+          images: product.images as any,
+          metadata: product.metadata as any,
+        },
+      });
+
+      for (const variant of product.variants || []) {
+        let variantSku = `${variant.sku}${suffix}`;
+        const exists = await tx.productVariant.findUnique({ where: { sku: variantSku } });
+        if (exists) variantSku = `${variantSku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+
+        await tx.productVariant.create({
+          data: {
+            productId: copy.id,
+            sku: variantSku,
+            barcode: null,
+            size: variant.size,
+            color: variant.color,
+            imageUrl: variant.imageUrl,
+            costPrice: variant.costPrice,
+            basePrice: variant.basePrice,
+            isActive: true,
+            attributes: variant.attributes as any,
+          },
+        });
+      }
+
+      return copy;
+    });
   }
 
   async findOne(id: string) {
@@ -223,9 +302,10 @@ export class ProductsService {
     }
 
     if (posSettings.requireShippingDimensions) {
-      const newMetadata = updateProductDto.metadata !== undefined ? updateProductDto.metadata : (product.metadata as any);
-      const { weight, width, height, depth } = newMetadata || {};
-      if (!weight || !width || !height || !depth) {
+      const metadataToCheck = updateProductDto.metadata !== undefined
+        ? updateProductDto.metadata
+        : (product.metadata as any);
+      if (!hasRequiredShippingDimensions(metadataToCheck)) {
         throw new ConflictException('Las dimensiones de envío (peso, ancho, alto, largo) son obligatorias según la configuración de ventas.');
       }
     }
@@ -252,12 +332,15 @@ export class ProductsService {
       if (exists) throw new ConflictException('El SKU Base ya está en uso por otro producto');
     }
 
-    // We also extract basePrice if present so it doesn't try to save it on the Product model
-    const { variants, images, basePrice, comboLines, ...data } = updateProductDto;
+    const { variants, images, basePrice, comboLines, type, isVariable, ...data } = updateProductDto;
+    const nextType = type !== undefined ? normalizeProductType({ type, isVariable }) : undefined;
+    const effectiveType = nextType ?? product.type;
+    const normalizedMetadata = updateProductDto.metadata
+      ? normalizeMetadataWithDimensions(updateProductDto.metadata)
+      : undefined;
 
     return this.prisma.$transaction(async (tx) => {
-      // Si el producto cambia a COMBO o actualiza sus líneas de combo, borramos las existentes y creamos las nuevas.
-      if (data.type === 'COMBO' && comboLines !== undefined) {
+      if (effectiveType === 'COMBO' && comboLines !== undefined) {
         await tx.productComboLine.deleteMany({ where: { parentProductId: id } });
       }
 
@@ -265,8 +348,10 @@ export class ProductsService {
         where: { id },
         data: {
           ...data,
+          ...(nextType !== undefined ? { type: nextType, isVariable: syncIsVariableFlag(nextType) } : {}),
+          ...(normalizedMetadata !== undefined ? { metadata: normalizedMetadata } : {}),
           images: images as any,
-          comboLines: data.type === 'COMBO' && comboLines ? {
+          comboLines: effectiveType === 'COMBO' && comboLines ? {
             create: comboLines.map((cl: any) => ({
               childVariantId: cl.childVariantId,
               quantity: cl.quantity
@@ -324,7 +409,9 @@ export class ProductsService {
         }
         
         // If switched to simple, ensure at least one default variant exists
-        const isNowVariable = updateProductDto.isVariable !== undefined ? updateProductDto.isVariable : product.isVariable;
+        const isNowVariable = updateProductDto.type !== undefined || updateProductDto.isVariable !== undefined
+          ? isVariableProduct({ type: nextType ?? product.type, isVariable: updateProductDto.isVariable ?? product.isVariable })
+          : isVariableProduct(product);
         if (!isNowVariable && variants.length === 0) {
           // Check if we just deleted all variants
           const remaining = await tx.productVariant.count({ where: { productId: id, isActive: true } });
@@ -719,27 +806,37 @@ export class ProductsService {
   }
 
   async clearCatalog() {
+    const variantCount = await this.prisma.productVariant.count();
+    const stockWithQty = await this.prisma.stockLevel.count({ where: { physicalQuantity: { gt: 0 } } });
+    if (stockWithQty > 0) {
+      throw new ConflictException(
+        'No se puede vaciar el catálogo mientras exista stock físico. Realice ajustes de salida primero.',
+      );
+    }
+
+    const openOrders = await this.prisma.saleOrder.count({
+      where: { status: 'QUOTE' },
+    });
+    if (openOrders > 0) {
+      throw new ConflictException(
+        'No se puede vaciar el catálogo mientras existan órdenes de venta abiertas.',
+      );
+    }
+
     return this.prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`
-        TRUNCATE TABLE 
-          "catalog"."Product", 
-          "catalog"."ProductVariant", 
-          "catalog"."Category", 
-          "catalog"."Brand", 
-          "catalog"."Attribute", 
-          "catalog"."AttributeValue", 
-          "catalog"."PriceList",
-          "catalog"."PriceListEntry",
-          "sales"."SaleOrder",
-          "sales"."SaleReturn",
-          "purchasing"."PurchaseOrder",
-          "purchasing"."GoodsReceipt",
-          "inventory"."StockTransfer",
-          "finance"."Invoice",
-          "finance"."FinancialTransaction"
-        CASCADE;
-      `);
-      return { success: true };
+      await tx.priceListEntry.deleteMany();
+      await tx.productComboLine.deleteMany();
+      await tx.productBarcode.deleteMany();
+      await tx.productBatch.deleteMany();
+      await tx.stockLevel.deleteMany();
+      await tx.productVariant.deleteMany();
+      await tx.product.deleteMany();
+      await tx.attributeValue.deleteMany();
+      await tx.attribute.deleteMany();
+      await tx.priceList.deleteMany();
+      await tx.brand.deleteMany();
+      await tx.category.deleteMany();
+      return { success: true, deletedVariants: variantCount };
     });
   }
 
