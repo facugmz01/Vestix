@@ -119,22 +119,28 @@ export class InventoryService {
       }
     }
 
-    return tx.stockLevel.upsert({
-      where: { variantId_warehouseId_batchId: { variantId, warehouseId, batchId } },
-      update: {
-        physicalQuantity: newPhysical,
-        availableQuantity: newAvailable,
-        reservedQuantity: newReserved
-      },
-      create: {
+    // Prisma upsert cannot use null in compound unique keys (variantId, warehouseId, batchId).
+    if (stock) {
+      return tx.stockLevel.update({
+        where: { id: stock.id },
+        data: {
+          physicalQuantity: newPhysical,
+          availableQuantity: newAvailable,
+          reservedQuantity: newReserved,
+        },
+      });
+    }
+
+    return tx.stockLevel.create({
+      data: {
         variantId,
         warehouseId,
-        batchId,
+        batchId: batchId || null,
         branchId: branchId || undefined,
         physicalQuantity: newPhysical,
         availableQuantity: newAvailable,
         reservedQuantity: newReserved,
-      }
+      },
     });
   }
 
