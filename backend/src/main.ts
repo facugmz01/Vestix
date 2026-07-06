@@ -38,6 +38,18 @@ async function bootstrap() {
     'https://roindumentaria.com.ar',
   ];
 
+  // Add the deployed frontend origin(s) from env. FRONTEND_URL is the documented
+  // variable (see .env.example); APP_URL/CORS_ORIGIN are accepted as aliases for
+  // backwards compatibility with existing deploy scripts/docs. Without this, any
+  // deployment on a domain other than the hardcoded ones above would be rejected
+  // by CORS. Accepts a comma-separated list for multiple origins.
+  const envOrigins = [process.env.FRONTEND_URL, process.env.APP_URL, process.env.CORS_ORIGIN]
+    .filter((v): v is string => Boolean(v))
+    .flatMap((v) => v.split(','))
+    .map((v) => v.trim())
+    .filter(Boolean);
+  allowedOrigins.push(...envOrigins);
+
   // Add storefront domain from env if configured
   if (process.env.STOREFRONT_DOMAIN) {
     allowedOrigins.push(`https://${process.env.STOREFRONT_DOMAIN}`);
