@@ -33,14 +33,13 @@ export default function StorefrontCheckoutPage() {
 
   useEffect(() => {
     if (isAuthenticated && customer) {
+      const nameParts = customer.fullName ? customer.fullName.split(' ') : [];
       setInfo(prev => ({
         ...prev,
-        firstName: customer.firstName || (customer.fullName ? customer.fullName.split(' ')[0] : prev.firstName),
-        lastName: customer.lastName || (customer.fullName && customer.fullName.split(' ').length > 1 ? customer.fullName.split(' ').slice(1).join(' ') : prev.lastName),
+        firstName: nameParts[0] || prev.firstName,
+        lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : prev.lastName,
         email: customer.email || prev.email,
         phone: customer.phone || prev.phone,
-        docType: customer.documentType || prev.docType,
-        docNum: customer.documentNumber || prev.docNum,
       }));
     }
   }, [isAuthenticated, customer]);
