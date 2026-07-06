@@ -59,7 +59,7 @@ pm2 delete vestix-backend || true
 
 # Start backend using PM2
 echo "-> Starting Backend with PM2..."
-NODE_ENV=production pm2 start dist/src/main.js --name "vestix-backend"
+NODE_ENV=production pm2 start dist/main.js --name "vestix-backend"
 
 echo "-> Saving PM2 state..."
 pm2 save

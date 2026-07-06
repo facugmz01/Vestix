@@ -145,7 +145,7 @@ npm run build
 echo ">>> [7/9] Iniciando servicios de Backend con PM2..."
 cd $APP_DIR/backend
 pm2 delete vestix-backend 2>/dev/null || true
-pm2 start dist/src/main.js --name "vestix-backend" --env production
+pm2 start dist/main.js --name "vestix-backend" --env production
 pm2 save
 pm2 startup | grep "sudo" | bash || true
 
