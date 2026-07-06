@@ -1,12 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 
 @Injectable()
 export class InventoryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
   /**
@@ -69,9 +71,17 @@ export class InventoryService {
       return execute(tx);
     }
 
-    return this.prisma.$transaction(async (t) => {
-      return execute(t);
-    });
+    const movement = await this.prisma.$transaction(async (t) => execute(t));
+
+    if (data.sourceWarehouseId) {
+      void this.notificationTriggers.checkLowStock(
+        data.variantId,
+        data.sourceWarehouseId,
+        data.branchId,
+      );
+    }
+
+    return movement;
   }
 
   private async updateStock(tx: any, variantId: string, batchId: string | null, warehouseId: string, branchId: string | null, type: string, quantityChange: number) {

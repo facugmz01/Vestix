@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { StockMovementService } from '../logistics/stock-movement.service';
+import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { BulkImportPurchasesDto } from './dto/bulk-purchases.dto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -10,7 +11,8 @@ export class PurchasingService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly stockMovementService: StockMovementService
+    private readonly stockMovementService: StockMovementService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
   async createPO(dto: any) {
@@ -109,6 +111,9 @@ export class PurchasingService {
         });
       }
 
+      return po;
+    }).then((po) => {
+      void this.notificationTriggers.onPurchaseOrderIssued(po.id);
       return po;
     });
   }

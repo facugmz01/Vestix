@@ -6,6 +6,7 @@ import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service'
 import { SmsGatewayService } from './channels/sms-gateway.service';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsProcessor } from './notifications.processor';
+import { NotificationTriggersService } from './notification-triggers.service';
 
 @Global()
 @Module({
@@ -30,7 +31,8 @@ import { NotificationsProcessor } from './notifications.processor';
     WhatsAppEvolutionService,
     SmsGatewayService,
     NotificationsProcessor,
+    NotificationTriggersService,
   ],
-  exports: [NotificationsService],
+  exports: [NotificationsService, NotificationTriggersService],
 })
 export class NotificationsModule {}
