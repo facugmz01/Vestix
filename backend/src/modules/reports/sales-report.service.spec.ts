@@ -8,6 +8,7 @@ const mockPrismaService: any = {
   orderLineItem: { findMany: jest.fn() },
   inventoryMovement: { findMany: jest.fn() },
   warehouse: { findMany: jest.fn() },
+  productVariant: { findMany: (jest.fn() as any).mockResolvedValue([]) },
 };
 
 describe('SalesReportService', () => {
@@ -97,9 +98,13 @@ describe('SalesReportService', () => {
 
     it('should aggregate and sort by units sold', async () => {
       mockPrismaService.orderLineItem.findMany.mockResolvedValueOnce([
-        { variantId: 'v1', quantity: 5, finalPrice: 500, variant: { sku: 'SKU-1', product: { name: 'Shirt' } } },
-        { variantId: 'v1', quantity: 3, finalPrice: 300, variant: { sku: 'SKU-1', product: { name: 'Shirt' } } },
-        { variantId: 'v2', quantity: 10, finalPrice: 1000, variant: { sku: 'SKU-2', product: { name: 'Pants' } } },
+        { variantId: 'v1', quantity: 5, finalPrice: 500 },
+        { variantId: 'v1', quantity: 3, finalPrice: 300 },
+        { variantId: 'v2', quantity: 10, finalPrice: 1000 },
+      ]);
+      mockPrismaService.productVariant.findMany.mockResolvedValueOnce([
+        { id: 'v1', sku: 'SKU-1', product: { name: 'Shirt' } },
+        { id: 'v2', sku: 'SKU-2', product: { name: 'Pants' } },
       ]);
 
       const result = await service.getTopSellers(filter, 2);
