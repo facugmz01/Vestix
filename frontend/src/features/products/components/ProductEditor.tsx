@@ -11,6 +11,7 @@ import { productsApi, type CreateProductDto } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Product } from '@/types';
 import { ProductImagesUploader } from '@/features/products/components/ProductImagesUploader';
+import { RelatedProductsPicker } from '@/features/products/components/RelatedProductsPicker';
 import { VariantMassGenerator } from '@/features/products/components/VariantMassGenerator';
 import { ComboRecipeBuilder } from '@/features/products/components/ComboRecipeBuilder';
 
@@ -40,6 +41,7 @@ export function ProductEditor({ initialData }: Props) {
     basePrice: 0,
   });
 
+  const [relatedProductIds, setRelatedProductIds] = useState<string[]>([]);
   const [dimensions, setDimensions] = useState({
     weight: '',
     height: '',
@@ -88,6 +90,9 @@ export function ProductEditor({ initialData }: Props) {
           length: meta.dimensions.length || ''
         });
       }
+      if (Array.isArray(meta?.relatedProductIds)) {
+        setRelatedProductIds(meta.relatedProductIds);
+      }
     }
   }, [initialData]);
 
@@ -104,7 +109,8 @@ export function ProductEditor({ initialData }: Props) {
           height: dimensions.height,
           width: dimensions.width,
           length: dimensions.length
-        }
+        },
+        relatedProductIds,
       };
       
       // Sanitize payload to only include whitelisted properties to prevent backend validation errors
@@ -115,6 +121,7 @@ export function ProductEditor({ initialData }: Props) {
         brandId: data.brandId,
         baseSku: data.baseSku,
         type: data.type,
+        isVariable: data.type === 'VARIABLE' || data.isVariable,
         manageBatches: data.manageBatches,
         costPrice: data.costPrice,
         basePrice: data.basePrice,
@@ -510,7 +517,11 @@ export function ProductEditor({ initialData }: Props) {
               <span style={{ background: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: '99px', fontSize: '11px', fontWeight: 600 }}>{formData.images?.length || 0}</span>
             </div>
             
-            <ProductImagesUploader images={formData.images || []} onChange={(newImages) => setFormData({ ...formData, images: newImages })} />
+            <ProductImagesUploader
+              productId={isEditing ? initialData?.id : undefined}
+              images={formData.images || []}
+              onChange={(newImages) => setFormData({ ...formData, images: newImages })}
+            />
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '12px' }}>
               JPG, PNG, WebP — máx. 5 MB por foto. La <strong>primera foto</strong> es la imagen principal. Arrastrá para reordenar.
             </p>
@@ -562,6 +573,16 @@ export function ProductEditor({ initialData }: Props) {
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Sin atributos libres aún.</p>
             <Button variant="secondary" size="sm" icon={<Plus size={14} />}>Agregar atributo</Button>
+          </div>
+
+          {/* Productos relacionados */}
+          <div style={cardStyle}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 16px' }}>Productos relacionados</h3>
+            <RelatedProductsPicker
+              selectedIds={relatedProductIds}
+              onChange={setRelatedProductIds}
+              excludeProductId={initialData?.id}
+            />
           </div>
 
           {/* Dimensiones */}

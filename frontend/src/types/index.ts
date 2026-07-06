@@ -87,7 +87,7 @@ export interface SystemUser {
 }
 
 // ─── CATALOG ─────────────────────────────────────────────────────────────
-export interface Category { id: string; name: string; code: string; }
+export interface Category { id: string; name: string; parentId?: string | null; code?: string; }
 export interface Brand    { id: string; name: string; }
 export interface Attribute {
   id: string;
@@ -226,7 +226,9 @@ export type SaleOrderStatus = 'QUOTATION' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'R
 
 export interface SaleOrder {
   id: string; branchId: string; source: OrderSource; status: SaleOrderStatus;
-  customerId?: string; customerName?: string; lines: OrderLineItem[];
+  customerId?: string; customerName?: string;
+  customer?: { fullName?: string; phone?: string | null; email?: string | null };
+  lines: OrderLineItem[];
   subtotal: number; cartDiscountTotal: number; grandTotal: number;
   afipInvoiceId?: string;
   paymentMethod: PaymentMethod; createdAt: string; syncedAt?: string;
@@ -317,7 +319,7 @@ export interface PriceListItem {
   basePrice?: number;
 }
 
-export type PromotionType = 'PERCENTAGE_DISCOUNT' | 'FIXED_DISCOUNT' | 'BOGO' | 'BULK_DISCOUNT';
+export type PromotionType = 'PERCENTAGE_DISCOUNT' | 'FIXED_DISCOUNT' | 'BOGO' | 'BULK_DISCOUNT' | 'CART_TOTAL_DISCOUNT' | 'CATEGORY_DISCOUNT';
 export interface Promotion {
   id: string;
   name: string;
@@ -500,6 +502,8 @@ export interface CurrentAccount {
   creditLimit?: number;
   overdueAmount: number;
   lastMovementDate?: string;
+  phone?: string | null;
+  email?: string | null;
 }
 
 export type ShiftStatus = 'OPEN' | 'CLOSED';

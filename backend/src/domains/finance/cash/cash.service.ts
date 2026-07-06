@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AccountsService } from '../accounts.service';
 import { SettingsService } from '../../../modules/settings/settings.service';
+import { NotificationTriggersService } from '../../notifications/notification-triggers.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class CashService {
     private readonly prisma: PrismaService,
     private readonly accountsService: AccountsService,
     private readonly settingsService: SettingsService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
   /**
@@ -162,6 +164,7 @@ export class CashService {
       );
     }
 
+    void this.notificationTriggers.onShiftClosed(shiftId);
     return closedShift;
   }
 

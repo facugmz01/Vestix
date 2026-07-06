@@ -7,6 +7,10 @@ import toast from 'react-hot-toast';
 import { Banknote, FileText, Calendar, AlertTriangle } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
+import {
+  contactMissingMessage,
+  resolveManualNotificationRecipient,
+} from '@/utils/notificationRecipient';
 
 interface Props {
   open: boolean;
@@ -61,6 +65,33 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
   const oweText = isCustomer ? 'Saldo Deudor (Nos debe)' : 'Saldo Acreedor (Le debemos)';
   const balanceColor = account.balance > 0 ? (isCustomer ? 'var(--red)' : 'var(--orange)') : 'var(--green)';
 
+  const statementRecipient = resolveManualNotificationRecipient(
+    { phone: account.phone, email: account.email },
+    isCustomer ? 'WHATSAPP' : 'EMAIL',
+  );
+
+  const handleSendStatement = async () => {
+    const resolved = resolveManualNotificationRecipient(
+      { phone: account.phone, email: account.email },
+      isCustomer ? 'WHATSAPP' : 'EMAIL',
+    );
+
+    if (!resolved) {
+      toast.error(contactMissingMessage(isCustomer ? 'El cliente' : 'El proveedor'));
+      return;
+    }
+
+    try {
+      const res = await financeApi.sendManualStatement(account.id, {
+        channel: resolved.channel,
+        recipient: resolved.recipient,
+      });
+      toast.success(`${res.message} (${resolved.label})`);
+    } catch {
+      toast.error('Error al enviar resumen');
+    }
+  };
+
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Cuenta Corriente" width="lg">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
@@ -78,22 +109,27 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
               </div>
             )}
 
-            <div style={{ marginTop: '16px' }}>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                icon={<FileText size={14} />} 
-                onClick={async () => {
-                  try {
-                    const res = await financeApi.sendManualStatement(account.id, { channel: 'WHATSAPP', recipient: '5491100000000' });
-                    toast.success(res.message);
-                  } catch (e) {
-                    toast.error('Error al enviar resumen');
-                  }
-                }}
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                icon={<FileText size={14} />}
+                onClick={handleSendStatement}
+                disabled={!statementRecipient}
               >
-                Enviar Resumen (WhatsApp)
+                {isCustomer ? 'Enviar Resumen (WhatsApp/Email)' : 'Enviar Resumen (Email)'}
               </Button>
+              {statementRecipient ? (
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Se enviará a {statementRecipient.label}
+                </span>
+              ) : (
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {isCustomer
+                    ? 'El cliente no tiene teléfono ni email cargado.'
+                    : 'El proveedor no tiene email cargado.'}
+                </span>
+              )}
             </div>
           </div>
 

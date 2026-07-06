@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { SettingsService } from '../../modules/settings/settings.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
@@ -31,13 +32,25 @@ export interface GetLogsFilters {
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 @Injectable()
-export class NotificationsService {
+export class NotificationsService implements OnModuleInit {
   private readonly logger = new Logger(NotificationsService.name);
 
   constructor(
     @InjectQueue('notifications_queue') private readonly notificationsQueue: Queue,
     private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
   ) {}
+
+  private async isChannelEnabled(channel: NotificationChannel): Promise<boolean> {
+    const settings = await this.settingsService.getNotificationSettings();
+    switch (channel) {
+      case NotificationChannel.EMAIL:    return settings.emailEnabled !== false;
+      case NotificationChannel.WHATSAPP: return settings.whatsappEnabled !== false;
+      case NotificationChannel.SMS:      return settings.smsEnabled !== false;
+      case NotificationChannel.PUSH:     return settings.pushEnabled === true;
+      default:                           return true;
+    }
+  }
 
   async onModuleInit() {
     // Seed default templates if none exist yet
@@ -162,6 +175,13 @@ export class NotificationsService {
     if (!template.isActive) {
       this.logger.log(
         `Template ${payload.templateKey} on ${payload.channel} is inactive. Skipping.`,
+      );
+      return null;
+    }
+
+    if (!(await this.isChannelEnabled(payload.channel))) {
+      this.logger.log(
+        `Channel ${payload.channel} is disabled in settings. Skipping ${payload.templateKey}.`,
       );
       return null;
     }

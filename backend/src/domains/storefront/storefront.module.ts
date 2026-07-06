@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { StorefrontAuthController } from './controllers/storefront-auth.controller';
 import { StorefrontCheckoutController } from './controllers/storefront-checkout.controller';
-import { StorefrontAuthService } from './services/storefront-auth.service';
 import { StorefrontCheckoutService } from './services/storefront-checkout.service';
 import { CustomerAuthGuard } from './guards/customer-auth.guard';
 
@@ -14,16 +12,13 @@ import { CustomerAuthGuard } from './guards/customer-auth.guard';
     })
   ],
   controllers: [
-    StorefrontAuthController,
     StorefrontCheckoutController
   ],
   providers: [
-    StorefrontAuthService,
     StorefrontCheckoutService,
     CustomerAuthGuard
   ],
   exports: [
-    StorefrontAuthService,
     StorefrontCheckoutService
   ]
 })

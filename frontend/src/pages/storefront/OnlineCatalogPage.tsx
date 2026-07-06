@@ -449,7 +449,9 @@ export default function OnlineCatalogPage() {
 
                       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
                         <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                          {formatCurrency(p.price || p.basePrice || 0)}
+                          {p.maxPrice && p.maxPrice > (p.price || 0)
+                            ? `Desde ${formatCurrency(p.price || p.basePrice || 0)}`
+                            : formatCurrency(p.price || p.basePrice || 0)}
                         </span>
                         
                         {isMobile && (

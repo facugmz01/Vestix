@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreatePriceListDto } from './dto/create-price-list.dto';
 import { RulesEngineService } from './rules-engine.service';
+import { PriceHistoryService } from './services/price-history.service';
 
 @Injectable()
 export class PricingService {
   constructor(
     private readonly rulesEngine: RulesEngineService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly priceHistoryService: PriceHistoryService,
   ) {}
 
   async findAll() {
@@ -42,17 +44,35 @@ export class PricingService {
     });
   }
 
-  async setVariantPrice(priceListId: string, variantId: string, overridePrice: number) {
+  async setVariantPrice(priceListId: string, variantId: string, overridePrice: number, changedBy?: string) {
     const list = await this.prisma.priceList.findUniqueOrThrow({ where: { id: priceListId } });
     if (list.isPercentageBased) throw new ConflictException('Cannot set explicit variant prices on a percentage-based price list.');
 
-    return this.prisma.priceListEntry.upsert({
+    const existing = await this.prisma.priceListEntry.findUnique({
+      where: { priceListId_variantId: { priceListId, variantId } },
+    });
+
+    const entry = await this.prisma.priceListEntry.upsert({
       where: {
         priceListId_variantId: { priceListId, variantId }
       },
       update: { overridePrice },
       create: { priceListId, variantId, overridePrice }
     });
+
+    const oldPrice = existing?.overridePrice ?? 0;
+    if (!existing || oldPrice !== overridePrice) {
+      await this.priceHistoryService.recordChange({
+        variantId,
+        oldPrice,
+        newPrice: overridePrice,
+        source: 'PRICE_LIST',
+        priceListId,
+        changedBy,
+      });
+    }
+
+    return entry;
   }
 
   async resolvePrice(variantId: string, basePrice: number, customerId?: string): Promise<number> {
@@ -108,6 +128,69 @@ export class PricingService {
       // Fallback for base list if no entry override
       return vBasePrice > 0 ? vBasePrice : Number((vCostPrice * activePriceList.margin).toFixed(2));
     }
+  }
+
+  async resolvePricesForVariants(
+    variantIds: string[],
+    priceListId: string,
+  ): Promise<Map<string, number>> {
+    const result = new Map<string, number>();
+    if (!variantIds.length) return result;
+
+    const [priceList, variants, entries] = await Promise.all([
+      this.prisma.priceList.findUnique({ where: { id: priceListId } }),
+      this.prisma.productVariant.findMany({
+        where: { id: { in: variantIds } },
+        select: { id: true, basePrice: true, costPrice: true },
+      }),
+      this.prisma.priceListEntry.findMany({
+        where: { priceListId, variantId: { in: variantIds } },
+      }),
+    ]);
+
+    const entryMap = new Map(entries.map(e => [e.variantId, e.overridePrice]));
+    const now = new Date();
+
+    for (const variant of variants) {
+      const basePrice = variant.basePrice;
+      if (!priceList || !priceList.isActive) {
+        result.set(variant.id, basePrice);
+        continue;
+      }
+      if (priceList.validFrom && now < priceList.validFrom) {
+        result.set(variant.id, basePrice);
+        continue;
+      }
+      if (priceList.validTo && now > priceList.validTo) {
+        result.set(variant.id, basePrice);
+        continue;
+      }
+
+      const referencePrice = variant.basePrice > 0 ? variant.basePrice : variant.costPrice;
+
+      if (priceList.type === 'MODIFIER' || priceList.isPercentageBased) {
+        const percentage =
+          priceList.modifierPercentage !== null && priceList.modifierPercentage !== undefined
+            ? priceList.modifierPercentage
+            : -(priceList.percentageDiscount || 0);
+        const multiplier = (100 + percentage) / 100;
+        result.set(variant.id, Number((referencePrice * multiplier).toFixed(2)));
+      } else {
+        const entryPrice = entryMap.get(variant.id);
+        if (entryPrice != null) {
+          result.set(variant.id, entryPrice);
+        } else {
+          result.set(
+            variant.id,
+            variant.basePrice > 0
+              ? variant.basePrice
+              : Number((variant.costPrice * priceList.margin).toFixed(2)),
+          );
+        }
+      }
+    }
+
+    return result;
   }
 
   async resolvePriceListPrice(variantId: string, basePrice: number, priceListId: string): Promise<number> {

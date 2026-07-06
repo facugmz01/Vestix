@@ -17,7 +17,7 @@ export class SmsGatewayService {
 
     if (!url) {
       this.logger.warn(`[SMS Gateway] Cannot send SMS to +${phone}. No URL configured.`);
-      return { success: false, error: 'No SMS Gateway URL configured' };
+      throw new Error('No SMS Gateway URL configured');
     }
 
     try {

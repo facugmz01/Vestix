@@ -48,13 +48,25 @@ export class NotificationsProcessor extends WorkerHost {
 
     try {
       if (channel === NotificationChannel.EMAIL) {
-        await this.smtpService.send(recipient, subject || 'Notificación', body);
+        await this.dispatchChannel('EMAIL', () =>
+          this.smtpService.send(recipient, subject || 'Notificación', body),
+        );
       } else if (channel === NotificationChannel.WHATSAPP) {
-        await this.whatsAppService.sendText(recipient, body);
+        await this.dispatchChannel('WHATSAPP', () =>
+          this.whatsAppService.sendText(recipient, body),
+        );
       } else if (channel === NotificationChannel.SMS) {
-        await this.smsService.sendSms(recipient, body);
+        await this.dispatchChannel('SMS', () =>
+          this.smsService.sendSms(recipient, body),
+        );
+      } else if (channel === NotificationChannel.PUSH) {
+        const error = `Channel "${channel}" is not implemented yet`;
+        await this.failLog(logId, error);
+        throw new UnrecoverableError(error);
       } else {
-        this.logger.warn(`[Queue] Channel "${channel}" has no dispatcher. Skipping send.`);
+        const error = `Unknown notification channel: ${channel}`;
+        await this.failLog(logId, error);
+        throw new UnrecoverableError(error);
       }
 
       // Mark log as SENT
@@ -73,6 +85,16 @@ export class NotificationsProcessor extends WorkerHost {
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
+
+  private async dispatchChannel(
+    label: string,
+    send: () => Promise<{ success?: boolean; error?: string } | void>,
+  ) {
+    const result = await send();
+    if (result && result.success === false) {
+      throw new Error(result.error || `${label} delivery failed`);
+    }
+  }
 
   private async failLog(logId: string | undefined, errorMessage: string) {
     if (!logId) return;

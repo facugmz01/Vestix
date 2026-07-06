@@ -47,9 +47,23 @@ export const productsApi = {
     post<{ success: boolean }>('/products/clear'),
 
   publishAll: () =>
-    post<{ success: boolean; count: number }>('/products/bulk-publish-all'),
+    post<{ success: boolean; count: number; skipped?: number }>('/products/bulk-publish-all'),
 
-  // Taxonomy
+  duplicateProduct: (id: string) =>
+    post<Product>(`/products/${id}/duplicate`),
+
+  getPublishReadiness: (id: string) =>
+    get<{ ready: boolean; issues: string[] }>(`/products/${id}/publish-readiness`),
+
+  uploadProductImage: (productId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return post<{ url: string }>(`/products/${productId}/images`, formData);
+  },
+
+  deleteProductImage: (productId: string, imageUrl: string) =>
+    del(`/products/${productId}/images`, { params: { url: imageUrl } }),
+
   getCategories: () => get<Category[]>('/categories'),
   createCategory: (dto: { name: string; parentId?: string }) => post<Category>('/categories', dto),
   updateCategory: (id: string, dto: { name?: string; parentId?: string }) => patch<Category>(`/categories/${id}`, dto),
@@ -60,15 +74,20 @@ export const productsApi = {
   updateBrand: (id: string, dto: { name?: string }) => patch<Brand>(`/brands/${id}`, dto),
   deleteBrand: (id: string) => del(`/brands/${id}`),
 
-  // Attributes
   getAttributes: () => get<any[]>('/attributes'),
   createAttribute: (dto: { name: string; values: string[] }) => post<any>('/attributes', dto),
   updateAttribute: (id: string, dto: { name?: string; values?: string[] }) => patch<any>(`/attributes/${id}`, dto),
   deleteAttribute: (id: string) => del(`/attributes/${id}`),
 
-  // Price Lists
-  getPriceLists: () => get<any[]>(`/pricing?t=${Date.now()}`),
-  createPriceList: (dto: { name: string; margin: number }) => post<any>('/pricing', dto),
-  updatePriceList: (id: string, dto: { name?: string; margin?: number }) => patch<any>(`/pricing/${id}`, dto),
-  deletePriceList: (id: string) => del(`/pricing/${id}`),
+  getPriceLists: () => get<{ data: any[] } | any[]>(`/price-lists?pageSize=100`).then(res =>
+    Array.isArray(res) ? res : (res as { data: any[] }).data ?? [],
+  ),
+
+  getPriceHistory: (id: string) =>
+    get<Array<{ id: string; variantId: string; sku?: string; oldPrice: number; newPrice: number; source: string; createdAt: string }>>(
+      `/products/${id}/price-history`,
+    ),
+
+  migrateBase64Images: () =>
+    post<{ migratedProducts: number; migratedImages: number }>('/products/migrate-base64-images'),
 };

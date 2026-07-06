@@ -1,8 +1,10 @@
-import { Controller, Get, Query, Post, Body, Patch, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, Req, Patch, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { AccountsService } from './accounts.service';
 import { CashService } from './cash/cash.service';
+import { CurrentAccountsService } from './current-accounts.service';
+import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('finance')
@@ -11,27 +13,58 @@ export class FinanceController {
   constructor(
     private readonly accountsService: AccountsService,
     private readonly cashService: CashService,
+    private readonly currentAccountsService: CurrentAccountsService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
   
   @Get('current-accounts')
   @RequirePermissions({ action: 'read', subject: 'Finance' })
-  getCurrentAccounts(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return { data: [], total: 0 };
-  }
-
-  @Post('current-accounts/:id/send-statement')
-  @RequirePermissions({ action: 'manage', subject: 'Finance' })
-  async sendManualStatement(@Param('id') id: string, @Body() body: { channel: 'EMAIL' | 'WHATSAPP', recipient: string }) {
-    // In a real scenario, fetch the current account details to populate variables.
-    // For now, enqueue with mock variables.
-    return { success: true, message: 'Resumen enviado a la cola de notificaciones' };
+  getCurrentAccounts(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('entityType') entityType?: 'CUSTOMER' | 'SUPPLIER',
+  ) {
+    return this.currentAccountsService.findAll({
+      page: Number(page) || 1,
+      pageSize: Number(pageSize) || 15,
+      search,
+      entityType,
+    });
   }
 
   @Post('current-accounts/send-overdue')
   @RequirePermissions({ action: 'manage', subject: 'Finance' })
-  async sendOverdueStatements() {
-    // In a real scenario, fetch all overdue accounts and loop through enqueueing.
-    return { success: true, message: 'Avisos de vencimiento enviados masivamente' };
+  sendOverdueStatements() {
+    return this.notificationTriggers.sendOverdueNotices();
+  }
+
+  @Get('current-accounts/:id')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getCurrentAccount(@Param('id') id: string) {
+    return this.currentAccountsService.findById(id);
+  }
+
+  @Get('current-accounts/:id/movements')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getCurrentAccountMovements(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.currentAccountsService.getMovements(id, {
+      page: Number(page) || 1,
+      pageSize: Number(pageSize) || 15,
+    });
+  }
+
+  @Post('current-accounts/:id/send-statement')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  sendManualStatement(
+    @Param('id') id: string,
+    @Body() body: { channel: 'EMAIL' | 'WHATSAPP'; recipient: string },
+  ) {
+    return this.notificationTriggers.sendManualAccountStatement(id, body.channel, body.recipient);
   }
 
   @Get('treasury/accounts')

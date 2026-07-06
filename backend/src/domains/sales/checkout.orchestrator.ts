@@ -6,6 +6,7 @@ import { CatalogFacade } from '../catalog/catalog.facade';
 import { AfipProducer } from '../invoicing/afip.producer';
 import { InventoryService } from '../logistics/inventory.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import * as crypto from 'crypto';
 
@@ -19,6 +20,7 @@ export class CheckoutOrchestrator {
     private readonly afipProducer: AfipProducer,
     private readonly inventoryService: InventoryService,
     private readonly settingsService: SettingsService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
   /**
@@ -278,6 +280,18 @@ export class CheckoutOrchestrator {
       await this.afipProducer.enqueueInvoiceGeneration(result.order.id, dto.branchId);
     }
 
+    if (result.status === 'SUCCESS' && result.order && !isQuote) {
+      const completedStatuses = ['COMPLETED', 'CONFIRMED', 'PENDING_PAYMENT'];
+      if (completedStatuses.includes(result.order.status)) {
+        void this.notificationTriggers.onSaleCompleted(result.order.id);
+      }
+      if (dto.warehouseId && result.order.status !== 'PENDING_PAYMENT') {
+        for (const line of result.order.lines) {
+          void this.notificationTriggers.checkLowStock(line.variantId, dto.warehouseId, dto.branchId);
+        }
+      }
+    }
+
     return result;
   }
 
@@ -336,6 +350,12 @@ export class CheckoutOrchestrator {
         await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
       }
 
+      return updated;
+    }).then(async (updated) => {
+      void this.notificationTriggers.onSaleCompleted(updated.id);
+      for (const line of updated.lines) {
+        void this.notificationTriggers.checkLowStock(line.variantId, targetWarehouseId, quote.branchId);
+      }
       return updated;
     });
   }

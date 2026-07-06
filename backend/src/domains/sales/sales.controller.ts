@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Query, Param, Req, Patch } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
+import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
@@ -13,7 +14,8 @@ import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 export class SalesController {
   constructor(
     private readonly salesService: SalesService,
-    private readonly checkoutOrchestrator: CheckoutOrchestrator
+    private readonly checkoutOrchestrator: CheckoutOrchestrator,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
   @Post('checkout')
@@ -66,9 +68,10 @@ export class SalesController {
 
   @Post('orders/:id/send-receipt')
   @RequirePermissions({ action: 'read', subject: 'Sales' })
-  async sendManualReceipt(@Param('id') id: string, @Body() body: { channel: 'EMAIL' | 'WHATSAPP', recipient: string }) {
-    // In a real scenario, fetch the sale details to populate variables.
-    // For now, enqueue with mock variables.
-    return { success: true, message: 'Comprobante de venta enviado a la cola de notificaciones' };
+  sendManualReceipt(
+    @Param('id') id: string,
+    @Body() body: { channel: 'EMAIL' | 'WHATSAPP'; recipient: string },
+  ) {
+    return this.notificationTriggers.sendManualSaleReceipt(id, body.channel, body.recipient);
   }
 }

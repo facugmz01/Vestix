@@ -11,7 +11,6 @@ export type { PaginationParams, PagedResponse, DateRangeParams, SortParams } fro
 
 // ─── Typed API services ───────────────────────────────────────────────────────
 export { authApi }          from './auth.api';
-export { catalogApi }       from './catalog.api';
 export { inventoryApi }     from './inventory.api';
 export { purchasingApi }    from './purchasing.api';
 export { salesApi }         from './sales.api';

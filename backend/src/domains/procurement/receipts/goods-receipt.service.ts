@@ -2,13 +2,15 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException }
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { PurchasingService } from '../purchasing.service';
 import { StockMovementService } from '../../logistics/stock-movement.service';
+import { NotificationTriggersService } from '../../notifications/notification-triggers.service';
 
 @Injectable()
 export class GoodsReceiptService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly purchasingService: PurchasingService,
-    private readonly stockMovementService: StockMovementService
+    private readonly stockMovementService: StockMovementService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
   async findAll(query: any = {}) {
@@ -172,6 +174,10 @@ export class GoodsReceiptService {
         },
         include: { lines: true }
       });
+    }).then(async (validated) => {
+      const branch = await this.prisma.branch.findUnique({ where: { id: branchId } });
+      void this.notificationTriggers.onGoodsReceiptReceived(receiptId, branch?.name || 'Sucursal');
+      return validated;
     });
   }
 }

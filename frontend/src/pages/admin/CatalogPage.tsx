@@ -4,7 +4,7 @@ import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Package, LayoutGrid, List,
-  Edit2, Trash2, Tag, Globe, Archive
+  Edit2, Trash2, Tag, Globe, Archive, Copy, ImageIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -43,11 +43,12 @@ function StatusPill({ isActive, isPublished }: { isActive: boolean; isPublished:
 }
 
 // ── Product Card ─────────────────────────────────────────────────────────────
-function ProductCard({ product, onView, onEdit, onDelete }: {
+function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
   product: Product;
   onView: (p: Product) => void;
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
+  onDuplicate?: (p: Product) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const cat = (product as any).category?.name || '—';
@@ -94,6 +95,15 @@ function ProductCard({ product, onView, onEdit, onDelete }: {
           transform: hovered ? 'translateY(0)' : 'translateY(-8px)',
           transition: 'all 0.2s ease',
         }}>
+          <ActionGuard action="create" subject="Catalog">
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicate?.(product); }}
+              style={{ width: '30px', height: '30px', borderRadius: '8px', border: 'none', background: 'rgba(26,30,42,0.9)', backdropFilter: 'blur(8px)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+              title="Duplicar"
+            >
+              <Copy size={13} />
+            </button>
+          </ActionGuard>
           <ActionGuard action="manage" subject="Catalog">
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(product); }}
@@ -199,6 +209,7 @@ export default function CatalogPage() {
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState('');
   const [importOpen, setImportOpen] = useState(false);
   const [bulkUpdaterOpen, setBulkUpdaterOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -254,12 +265,32 @@ export default function CatalogPage() {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: (id: string) => productsApi.duplicateProduct(id),
+    onSuccess: (product) => {
+      toast.success('Producto duplicado');
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+      navigate(`/admin/catalog/${product.id}/edit`);
+    },
+    onError: (err: any) => toast.error(err.message || 'Error al duplicar'),
+  });
+
+  const migrateImagesMutation = useMutation({
+    mutationFn: () => productsApi.migrateBase64Images(),
+    onSuccess: (res) => {
+      toast.success(`Migradas ${res.migratedImages} imágenes en ${res.migratedProducts} productos`);
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
+    },
+    onError: (err: any) => toast.error(err.message || 'Error en migración'),
+  });
+
   const products = Array.isArray(data) ? data : (data?.data ?? []);
   const total = Array.isArray(data) ? data.length : (data?.total ?? 0);
 
   const handleEdit = (p: Product) => { navigate(`/admin/catalog/${p.id}/edit`); };
   const handleView = (p: Product) => { setDetailProduct(p); };
   const handleDeletePrompt = (p: Product) => { setSelectedProduct(p); setDeleteOpen(true); };
+  const handleDuplicate = (p: Product) => duplicateMutation.mutate(p.id);
 
   return (
     <PageContainer
@@ -299,6 +330,18 @@ export default function CatalogPage() {
                 }}
               >
                 Actualización Masiva
+              </button>
+              <button
+                onClick={() => migrateImagesMutation.mutate()}
+                disabled={migrateImagesMutation.isPending}
+                style={{
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', padding: '8px 14px', borderRadius: 'var(--radius)',
+                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+                  fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                <ImageIcon size={15} /> Migrar imágenes
               </button>
               <button
                 onClick={() => {
@@ -431,6 +474,7 @@ export default function CatalogPage() {
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeletePrompt}
+              onDuplicate={handleDuplicate}
             />
           ))}
         </div>
@@ -468,14 +512,32 @@ export default function CatalogPage() {
 
       <ConfirmDialog
         open={clearDialogOpen}
-        title="Vaciar Catálogo Completo"
-        message="¿Estás seguro de que querés vaciar el catálogo? Esta acción eliminará definitivamente TODOS los productos, variantes, categorías, marcas, stock y registros de ventas/compras de prueba. Esta acción no se puede deshacer."
-        confirmLabel="Vaciar Catálogo Definitivamente"
+        title="Vaciar Catálogo"
+        message="Esta acción elimina productos, variantes, categorías, marcas y listas de precios del catálogo. No borra ventas ni finanzas, pero requiere que no haya stock ni cotizaciones abiertas. Escribí VACIAR para confirmar."
+        confirmLabel="Vaciar Catálogo"
         variant="danger"
         loading={clearCatalogMutation.isPending}
-        onConfirm={() => clearCatalogMutation.mutate()}
-        onCancel={() => setClearDialogOpen(false)}
+        onConfirm={() => {
+          if (clearConfirmText !== 'VACIAR') {
+            toast.error('Debés escribir VACIAR para confirmar');
+            return;
+          }
+          clearCatalogMutation.mutate();
+          setClearConfirmText('');
+        }}
+        onCancel={() => { setClearDialogOpen(false); setClearConfirmText(''); }}
       />
+      {clearDialogOpen && (
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'var(--bg-elevated)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <input
+            type="text"
+            placeholder="Escribí VACIAR"
+            value={clearConfirmText}
+            onChange={e => setClearConfirmText(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', minWidth: 200 }}
+          />
+        </div>
+      )}
 
       <ImportProductsModal
         isOpen={importOpen}

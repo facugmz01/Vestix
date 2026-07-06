@@ -407,6 +407,7 @@ export class PosService {
       timestamp: new Date().toISOString(),
       data: catalog.map(v => ({
         id: v.id,
+        productId: v.productId,
         sku: v.sku,
         barcode: v.barcode,
         barcodes: v.barcodes.map(b => b.barcode),
