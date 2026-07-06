@@ -28,7 +28,7 @@ export class WhatsAppEvolutionService {
 
     if (!baseUrl || !apiKey) {
       this.logger.warn(`[WhatsApp] Cannot send message to ${phone}. Evolution API URL/Key not configured.`);
-      return { success: false, error: 'Evolution API not configured' };
+      throw new Error('Evolution API not configured');
     }
 
     const endpoint = `${baseUrl.replace(/\/+$/, '')}/message/sendText/${instance}`;
