@@ -62,14 +62,21 @@ export class CashService {
       throw new BadRequestException('Ya existe un turno abierto para esta caja.');
     }
 
-    return this.prisma.cashShift.create({
-      data: {
-        cashRegisterId,
-        openedByUserId: userId,
-        status: 'OPEN',
-        openingAmount: reportedOpeningBalance,
-        openedAt: new Date(),
-      }
+    return this.prisma.$transaction(async (tx) => {
+      await tx.cashRegister.update({
+        where: { id: cashRegisterId },
+        data: { status: 'OPEN' },
+      });
+
+      return tx.cashShift.create({
+        data: {
+          cashRegisterId,
+          openedByUserId: userId,
+          status: 'OPEN',
+          openingAmount: reportedOpeningBalance,
+          openedAt: new Date(),
+        },
+      });
     });
   }
 
@@ -125,17 +132,24 @@ export class CashService {
     // The moment of truth: Does the physical money match the math?
     const difference = actualCountedBalance - expected;
 
-    const closedShift = await this.prisma.cashShift.update({
-      where: { id: shiftId },
-      data: {
-        status: 'CLOSED',
-        closedByUserId: userId,
-        closingAmount: actualCountedBalance,
-        expectedAmount: expected,
-        difference: difference,
-        closedAt: new Date(),
-        notes,
-      }
+    const closedShift = await this.prisma.$transaction(async (tx) => {
+      await tx.cashRegister.update({
+        where: { id: shift.cashRegisterId },
+        data: { status: 'CLOSED' },
+      });
+
+      return tx.cashShift.update({
+        where: { id: shiftId },
+        data: {
+          status: 'CLOSED',
+          closedByUserId: userId,
+          closingAmount: actualCountedBalance,
+          expectedAmount: expected,
+          difference: difference,
+          closedAt: new Date(),
+          notes,
+        },
+      });
     });
 
     // STRICT RECONCILIATION:

@@ -1,9 +1,12 @@
-import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ReturnsService } from './returns.service';
 import { CreateReturnDto } from './dto/create-return.dto';
 import { RequirePermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
+import { PermissionsGuard } from '../../../core/rbac/guards/permissions.guard';
 
 @Controller('sales/returns')
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class ReturnsController {
   constructor(private readonly returnsService: ReturnsService) {}
 

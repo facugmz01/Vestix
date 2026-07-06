@@ -21,6 +21,7 @@ import { CustomersController } from './customers.controller';
 
 import { PosService } from './pos.service';
 import { PosController } from './pos.controller';
+import { PosWebhooksController } from './pos-webhooks.controller';
 import { CashRegistersController } from './cash-registers.controller';
 
 import { SyncEngineService } from './sync-engine.service';
@@ -45,6 +46,7 @@ import { OfflineController } from './offline.controller';
     StorefrontAuthController,
     CustomersController,
     PosController,
+    PosWebhooksController,
     CashRegistersController,
     OfflineController,
   ],

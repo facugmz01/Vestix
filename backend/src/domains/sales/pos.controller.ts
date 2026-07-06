@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, UseGuards, Req, Sse } from '@nestjs/common';
 import { PosService } from './pos.service';
 import { 
   ScanBarcodeDto, 
@@ -75,13 +75,24 @@ export class PosController {
   @Post('qr-order')
   @RequirePermissions({ action: 'create', subject: 'Sales' })
   async generateQrOrder(@Body() dto: { amount: number; title: string }) {
-    // Generates a mock QR for MercadoPago Point / Smart POS
-    const orderId = `POS-${Date.now()}`;
-    const mockQrData = `00020101021243650016COM.MERCADOPAGO...${orderId}-AMT${dto.amount}`;
-    
-    return {
-      orderId,
-      qrData: mockQrData,
-    };
+    return this.posService.createQrOrder(dto.amount, dto.title);
+  }
+
+  @Get('qr-order/:orderId/status')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  async getQrOrderStatus(@Param('orderId') orderId: string) {
+    return this.posService.getQrOrderStatus(orderId);
+  }
+
+  @Post('qr-order/:orderId/confirm')
+  @RequirePermissions({ action: 'update', subject: 'Sales' })
+  async confirmQrOrder(@Param('orderId') orderId: string) {
+    return this.posService.confirmQrOrder(orderId);
+  }
+
+  @Sse('qr-order/:orderId/events')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  qrOrderEvents(@Param('orderId') orderId: string) {
+    return this.posService.subscribeQrOrderStatus(orderId);
   }
 }

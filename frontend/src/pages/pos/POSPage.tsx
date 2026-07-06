@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import { posApi } from '@/api/pos.api';
@@ -16,26 +17,30 @@ import { POSProductGrid } from '@/features/pos/components/POSProductGrid';
 import { POSCart } from '@/features/pos/components/POSCart';
 import { POSModals } from '@/features/pos/components/POSModals';
 
+import type { PosPaymentMethodId } from '@/features/pos/constants/posPaymentMethods';
+
 import styles from './POSPage.module.css';
 
 export default function POSPage() {
   const { user } = useAuthStore();
   const currentBranchId = user?.branchId || '';
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // 1. Estado Global del Cliente (Zustand)
   const cart = usePosStore(state => state.cart);
   const cartDiscountPct = usePosStore(state => state.cartDiscountPct);
   const selectedCustomerId = usePosStore(state => state.selectedCustomerId);
+  const suspendedSales = usePosStore(state => state.suspendedSales);
   const setPaymentModalOpen = usePosStore(s => s.setPaymentModalOpen);
   const setQrModalOpen = usePosStore(s => s.setQrModalOpen);
+  const addToCart = usePosStore(s => s.addToCart);
+  const resumeSale = usePosStore(s => s.resumeSale);
   
-  // 2. Estado Local (Exclusivo de esta vista)
   const [search, setSearch] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'|'QR_MERCADOPAGO'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethodId>('CASH');
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [issueInvoice, setIssueInvoice] = useState(false);
 
-  // 3. Estado del Servidor (React Query)
   const { data: activeShift, isLoading: isShiftLoading } = useQuery({
     queryKey: ['shifts', 'active'],
     queryFn: () => treasuryApi.getActiveShift(),
@@ -63,28 +68,84 @@ export default function POSPage() {
     queryFn: () => customersApi.getCustomers({ pageSize: 1000 }),
   });
 
-  // 4. Cálculos Derivados
-  const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
-  const subtotal = cart.reduce((acc, item) => acc + (item.variant.basePrice * item.qty), 0);
-  const lineDiscounts = cart.reduce((acc, item) => acc + ((item.variant.basePrice * item.qty) * (item.discountPct / 100)), 0);
-  const totalAfterLines = subtotal - lineDiscounts;
-  const globalDiscount = totalAfterLines * (cartDiscountPct / 100);
-  const grandTotal = totalAfterLines - globalDiscount;
+  const { data: cartCalculation } = useQuery({
+    queryKey: ['pos', 'calculate', cart, cartDiscountPct, selectedCustomerId],
+    queryFn: () => posApi.calculateCart({
+      lines: cart.map(i => ({
+        variantId: i.variant.id,
+        quantity: i.qty,
+        discountPct: i.discountPct,
+      })),
+      cartDiscountPct,
+      customerId: selectedCustomerId || undefined,
+    }),
+    enabled: cart.length > 0,
+    staleTime: 5_000,
+  });
 
-  // 5. Mutación Checkout
+  useEffect(() => {
+    const loadCartId = (location.state as { loadCartId?: string } | null)?.loadCartId;
+    if (!loadCartId) return;
+
+    const suspended = suspendedSales.find(s => s.id === loadCartId);
+    if (suspended) {
+      resumeSale(suspended.id);
+      toast.success('Venta suspendida retomada');
+    } else {
+      posApi.searchProduct(loadCartId, selectedCustomerId || undefined)
+        .then(results => {
+          if (results?.length === 1) {
+            addToCart(results[0]);
+            toast.success('Producto agregado al carrito');
+          } else if (results && results.length > 1) {
+            setSearch(loadCartId);
+            toast('Varios productos encontrados. Selecciona uno.', { icon: '🔍' });
+          } else {
+            toast.error('No se encontró el producto o venta');
+          }
+        })
+        .catch(() => toast.error('Error al cargar desde escáner'));
+    }
+
+    navigate('/pos', { replace: true, state: {} });
+  }, [location.state]);
+
+  useEffect(() => {
+    import('@/core/sync/CatalogSyncService').then(({ CatalogSyncService }) => {
+      CatalogSyncService.syncPosCatalog().catch(() => {
+        // Silent fail — online search still works
+      });
+    });
+  }, []);
+
+  const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
+  const clientSubtotal = cart.reduce((acc, item) => acc + (item.variant.basePrice * item.qty), 0);
+  const clientLineDiscounts = cart.reduce((acc, item) => acc + ((item.variant.basePrice * item.qty) * (item.discountPct / 100)), 0);
+  const clientTotalAfterLines = clientSubtotal - clientLineDiscounts;
+  const clientGlobalDiscount = clientTotalAfterLines * (cartDiscountPct / 100);
+
+  const subtotal = cartCalculation?.subtotal ?? clientSubtotal;
+  const lineDiscounts = cartCalculation?.lineDiscountsTotal ?? clientLineDiscounts;
+  const globalDiscount = cartCalculation
+    ? Math.max(0, (cartCalculation.cartDiscountTotal || 0) - lineDiscounts)
+    : clientGlobalDiscount;
+  const grandTotal = cartCalculation?.grandTotal ?? (clientTotalAfterLines - clientGlobalDiscount);
+
   const checkoutMutation = usePosCheckout(activeShift, currentBranchId);
 
-  const handleCheckoutPayment = async (method: typeof paymentMethod) => {
+  const handleCheckoutPayment = async (method: PosPaymentMethodId) => {
     if (cart.length === 0) return;
     setPaymentMethod(method);
+    usePosStore.getState().setPaymentSplits([]);
+    usePosStore.getState().setPaymentReference('');
     
     if (method === 'QR_MERCADOPAGO') {
       setQrModalOpen(true);
       setIsGeneratingQr(true);
       try {
         const res = await posApi.generateQrOrder(grandTotal, 'Cobro Vestix POS');
-        usePosStore.getState().setQrModalOpen(true, res.qrData);
-      } catch (err: any) {
+        usePosStore.getState().setQrModalOpen(true, res.qrData, res.orderId);
+      } catch {
         toast.error('Error al generar QR de cobro');
         usePosStore.getState().setQrModalOpen(true, null);
       } finally {
@@ -105,21 +166,21 @@ export default function POSPage() {
     });
   };
 
-  if (isShiftLoading) return <div style={{ padding: '40px', textAlign: 'center', fontWeight: 600 }}>Cargando estado de caja...</div>;
+  if (isShiftLoading) {
+    return <div style={{ padding: '40px', textAlign: 'center', fontWeight: 600 }}>Cargando estado de caja...</div>;
+  }
 
   return (
     <div className={styles.layout}>
       <POSHeader />
 
       <div className={styles.main}>
-        {/* LEFT PANE - PRODUCTS */}
         <POSProductGrid 
           products={gridProducts}
           searchResults={searchResults}
           search={search}
         />
 
-        {/* RIGHT PANE - CART */}
         <POSCart 
           customersData={customersData}
           searchResults={searchResults}

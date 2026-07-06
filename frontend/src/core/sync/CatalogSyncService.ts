@@ -1,18 +1,57 @@
 import { db, PosCatalogItem } from '../db/db';
-import { apiClient } from '../api/apiClient';
+import { get } from '@/api/client';
+
+interface CatalogSyncResponse {
+  status: string;
+  timestamp: string;
+  data: {
+    id: string;
+    sku: string;
+    barcode: string | null;
+    barcodes?: string[];
+    name: string;
+    basePrice: number;
+    categoryId: string;
+    categoryName?: string;
+    brandName?: string;
+  }[];
+}
 
 export class CatalogSyncService {
   static async syncPosCatalog(): Promise<void> {
     try {
-      const response = await apiClient.get<{ data: PosCatalogItem[] }>('/pos/sync/catalog');
-      const catalogData = response.data?.data ?? response.data;
+      const response = await get<CatalogSyncResponse>('/pos/sync/catalog');
+      const catalogData = response.data || [];
+
+      const items: PosCatalogItem[] = catalogData.map(item => {
+        const allBarcodes = [
+          ...(item.barcode ? [item.barcode] : []),
+          ...(item.barcodes || []),
+          item.sku,
+        ].filter((v, i, arr) => arr.indexOf(v) === i);
+
+        return {
+          id: item.id,
+          productId: item.categoryId,
+          sku: item.sku,
+          primaryBarcode: item.barcode || item.sku,
+          allBarcodes,
+          name: item.name,
+          price: item.basePrice,
+          categoryId: item.categoryId,
+          size: null,
+          color: null,
+        };
+      });
 
       await db.transaction('rw', db.catalog, async () => {
         await db.catalog.clear();
-        await db.catalog.bulkAdd(catalogData as PosCatalogItem[]);
+        if (items.length > 0) {
+          await db.catalog.bulkAdd(items);
+        }
       });
 
-      console.log(`[Sync] POS Catalog synchronized. Downloaded ${(catalogData as PosCatalogItem[]).length} items.`);
+      console.log(`[Sync] POS Catalog synchronized. Downloaded ${items.length} items.`);
     } catch (error) {
       console.error('[Sync] Failed to sync POS catalog:', error);
       throw error;

@@ -12,7 +12,7 @@ class OrderLineDto implements CreateSaleLineDto {
 
   @IsString()
   @IsOptional()
-  categoryId?: string; // Passed from frontend to help evaluate category-wide Rules Engine discounts
+  categoryId?: string;
 
   @IsNumber()
   @Min(1)
@@ -20,11 +20,25 @@ class OrderLineDto implements CreateSaleLineDto {
 
   @IsNumber()
   @IsOptional()
-  discountPct?: number; // Manual line discount percentage applied by the cashier
+  discountPct?: number;
 
   @IsNumber()
   @IsOptional()
-  unitPriceOverride?: number; // Manual price set by the cashier
+  unitPriceOverride?: number;
+}
+
+export class PaymentSplitDto {
+  @IsString()
+  @IsNotEmpty()
+  method: string;
+
+  @IsNumber()
+  @Min(0.01)
+  amount: number;
+
+  @IsString()
+  @IsOptional()
+  reference?: string;
 }
 
 export class CreateOrderDto implements SharedCreateSaleDto {
@@ -85,5 +99,15 @@ export class CreateOrderDto implements SharedCreateSaleDto {
 
   @IsBoolean()
   @IsOptional()
-  issueInvoice?: boolean; // Whether to issue an AFIP invoice or just an internal receipt
+  issueInvoice?: boolean;
+
+  @IsString()
+  @IsOptional()
+  paymentReference?: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => PaymentSplitDto)
+  payments?: PaymentSplitDto[];
 }

@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import type { SaleOrder } from '@/types';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { PAYMENT_METHOD_LABELS } from '../constants/posPaymentMethods';
 
 interface ReceiptPrinterProps {
   order: SaleOrder | null;
@@ -51,6 +52,7 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
             Fecha: {fmtDate(order.createdAt)}<br />
             Ticket #: {order.id.split('-')[0].toUpperCase()}<br />
             {order.status === 'QUOTATION' && <strong>PRESUPUESTO / COTIZACIÓN<br/></strong>}
+            {(order.status as string) === 'QUOTE' && <strong>PRESUPUESTO / COTIZACIÓN<br/></strong>}
             {order.customerId ? `Cliente ID: ${order.customerId}\n` : 'Cliente: Consumidor Final\n'}
           </div>
           <div style={{ margin: '5px 0' }}>
@@ -103,7 +105,7 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '11px' }}>
             <span>Medio de Pago:</span>
-            <span>{order.paymentMethod}</span>
+            <span>{PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}</span>
           </div>
         </div>
 

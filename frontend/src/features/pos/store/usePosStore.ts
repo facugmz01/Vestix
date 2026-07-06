@@ -31,6 +31,10 @@ interface PosState {
   customerFormOpen: boolean;
   qrModalOpen: boolean;
   qrData: string | null;
+  qrOrderId: string | null;
+  mixedPaymentModalOpen: boolean;
+  paymentReference: string;
+  paymentSplits: { method: string; amount: number; reference?: string }[];
   completedOrder: any;
   
   // Actions
@@ -51,7 +55,10 @@ interface PosState {
   setPrintModalOpen: (open: boolean) => void;
   setShiftModalOpen: (open: boolean) => void;
   setCustomerFormOpen: (open: boolean) => void;
-  setQrModalOpen: (open: boolean, data?: string | null) => void;
+  setQrModalOpen: (open: boolean, data?: string | null, orderId?: string | null) => void;
+  setMixedPaymentModalOpen: (open: boolean) => void;
+  setPaymentReference: (ref: string) => void;
+  setPaymentSplits: (splits: { method: string; amount: number; reference?: string }[]) => void;
   setCompletedOrder: (order: any) => void;
 }
 
@@ -70,6 +77,10 @@ export const usePosStore = create<PosState>()(
       customerFormOpen: false,
       qrModalOpen: false,
       qrData: null,
+      qrOrderId: null,
+      mixedPaymentModalOpen: false,
+      paymentReference: '',
+      paymentSplits: [],
       completedOrder: null,
 
       addToCart: (variant) => set((state) => {
@@ -80,9 +91,12 @@ export const usePosStore = create<PosState>()(
         return { cart: [...state.cart, { variant, qty: 1, discountPct: 0 }] };
       }),
 
-      updateQty: (id, qty) => set((state) => ({
-        cart: qty < 1 ? state.cart : state.cart.map(i => i.variant.id === id ? { ...i, qty } : i)
-      })),
+      updateQty: (id, qty) => set((state) => {
+        if (qty < 1) {
+          return { cart: state.cart.filter(i => i.variant.id !== id) };
+        }
+        return { cart: state.cart.map(i => i.variant.id === id ? { ...i, qty } : i) };
+      }),
 
       updateDiscount: (id, pct) => set((state) => ({
         cart: state.cart.map(i => i.variant.id === id ? { ...i, discountPct: pct } : i)
@@ -92,7 +106,13 @@ export const usePosStore = create<PosState>()(
         cart: state.cart.filter(i => i.variant.id !== id)
       })),
 
-      clearCart: () => set({ cart: [], selectedCustomerId: '', cartDiscountPct: 0 }),
+      clearCart: () => set({
+        cart: [],
+        selectedCustomerId: '',
+        cartDiscountPct: 0,
+        paymentReference: '',
+        paymentSplits: [],
+      }),
       
       setCustomerId: (id) => set({ selectedCustomerId: id }),
       setCartDiscountPct: (pct) => set({ cartDiscountPct: pct }),
@@ -102,7 +122,14 @@ export const usePosStore = create<PosState>()(
       setPrintModalOpen: (open) => set({ printModalOpen: open }),
       setShiftModalOpen: (open) => set({ shiftModalOpen: open }),
       setCustomerFormOpen: (open) => set({ customerFormOpen: open }),
-      setQrModalOpen: (open, data) => set({ qrModalOpen: open, qrData: data || null }),
+      setQrModalOpen: (open, data, orderId) => set({
+        qrModalOpen: open,
+        qrData: data ?? null,
+        qrOrderId: orderId ?? null,
+      }),
+      setMixedPaymentModalOpen: (open) => set({ mixedPaymentModalOpen: open }),
+      setPaymentReference: (ref) => set({ paymentReference: ref }),
+      setPaymentSplits: (splits) => set({ paymentSplits: splits }),
       setCompletedOrder: (order) => set({ completedOrder: order }),
 
       suspendSale: (total) => set((state) => {
@@ -117,8 +144,9 @@ export const usePosStore = create<PosState>()(
         };
         return { 
           suspendedSales: [...state.suspendedSales, newSale],
-          cart: [], 
-          selectedCustomerId: '' 
+          cart: [],
+          cartDiscountPct: 0,
+          selectedCustomerId: '',
         };
       }),
 
