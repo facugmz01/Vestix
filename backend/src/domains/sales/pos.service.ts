@@ -1,34 +1,62 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
-import { IdentifiersService } from '../catalog/identifiers.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PricingService } from '../catalog/pricing.service';
 import { RulesEngineService } from '../catalog/rules-engine.service';
+import { CashService } from '../finance/cash/cash.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import * as crypto from 'crypto';
 
+export type PosQrPaymentStatus = 'PENDING' | 'APPROVED' | 'EXPIRED' | 'REJECTED';
+
+interface PosQrOrder {
+  orderId: string;
+  amount: number;
+  title: string;
+  qrData: string;
+  status: PosQrPaymentStatus;
+  createdAt: number;
+}
+
 @Injectable()
 export class PosService {
+  private readonly qrOrders = new Map<string, PosQrOrder>();
+  private static readonly QR_TTL_MS = 15 * 60 * 1000;
+  private static readonly QR_MOCK_AUTO_APPROVE_MS = 25_000;
+
   constructor(
     private readonly checkoutOrchestrator: CheckoutOrchestrator,
-    private readonly identifiersService: IdentifiersService,
     private readonly pricingService: PricingService,
     private readonly rulesEngine: RulesEngineService,
+    private readonly cashService: CashService,
     private readonly prisma: PrismaService,
   ) {}
 
-  /**
-   * BARCODE SCAN: Translates raw laser scanner input into a sellable Variant object.
-   */
-  async resolveBarcode(barcode: string) {
-    const variant = await this.prisma.productVariant.findUnique({
+  private async findVariantByBarcode(barcode: string) {
+    const byPrimary = await this.prisma.productVariant.findUnique({
       where: { barcode },
-      include: {
-        product: {
-          include: { category: true }
-        }
-      }
+      include: { product: { include: { category: true } } },
     });
+    if (byPrimary) return byPrimary;
+
+    const alt = await this.prisma.productBarcode.findUnique({
+      where: { barcode },
+      include: { variant: { include: { product: { include: { category: true } } } } },
+    });
+    return alt?.variant ?? null;
+  }
+
+  private purgeExpiredQrOrders() {
+    const now = Date.now();
+    for (const [id, order] of this.qrOrders.entries()) {
+      if (now - order.createdAt > PosService.QR_TTL_MS) {
+        this.qrOrders.delete(id);
+      }
+    }
+  }
+
+  async resolveBarcode(barcode: string) {
+    const variant = await this.findVariantByBarcode(barcode);
 
     if (!variant) {
       throw new NotFoundException(`Producto con código de barras ${barcode} no encontrado.`);
@@ -41,13 +69,10 @@ export class PosService {
       name: variant.product.name,
       basePrice: variant.basePrice,
       color: variant.color,
-      size: variant.size
+      size: variant.size,
     };
   }
 
-  /**
-   * QUICK SALE: Streamlined checkout for high-volume environments.
-   */
   async processQuickSale(payload: {
     cashRegisterId: string;
     variantId: string;
@@ -58,13 +83,13 @@ export class PosService {
   }) {
     const register = await this.prisma.cashRegister.findUnique({
       where: { id: payload.cashRegisterId },
-      include: { branch: true }
+      include: { branch: true },
     });
 
     if (!register) throw new NotFoundException('Caja no encontrada.');
 
     const warehouse = await this.prisma.warehouse.findFirst({
-      where: { branchId: register.branchId, isActive: true }
+      where: { branchId: register.branchId, isActive: true },
     });
 
     let cashShiftId = payload.cashShiftId;
@@ -79,7 +104,7 @@ export class PosService {
     }
 
     const quickOrderDto: CreateOrderDto = {
-      id: crypto.randomUUID(), 
+      id: crypto.randomUUID(),
       branchId: register.branchId,
       warehouseId: warehouse?.id,
       source: 'POS' as any,
@@ -87,8 +112,8 @@ export class PosService {
         {
           variantId: payload.variantId,
           categoryId: payload.categoryId,
-          quantity: 1, 
-        }
+          quantity: 1,
+        },
       ],
       paymentMethod: 'CASH' as any,
       paymentAccountId: payload.accountId,
@@ -98,32 +123,29 @@ export class PosService {
     return this.checkoutOrchestrator.processCheckout(quickOrderDto, payload.userId);
   }
 
-  /**
-   * CALCULATE CART: Real-time pricing and promotion evaluation.
-   */
   async calculateCart(dto: {
     lines: { variantId: string; quantity: number; discountPct?: number }[];
     cartDiscountPct?: number;
     customerId?: string;
   }) {
     const evaluatedLines = [];
-    
+
     for (const lineDto of dto.lines) {
       const variant = await this.prisma.productVariant.findUnique({
         where: { id: lineDto.variantId },
-        include: { product: true }
+        include: { product: true },
       });
 
       if (!variant) throw new NotFoundException(`Producto ${lineDto.variantId} no encontrado.`);
 
       const resolvedBasePrice = await this.pricingService.resolvePrice(
-        lineDto.variantId, 
-        variant.basePrice, 
-        dto.customerId
+        lineDto.variantId,
+        variant.basePrice,
+        dto.customerId,
       );
 
-      const discountAmount = lineDto.discountPct 
-        ? (resolvedBasePrice * (lineDto.discountPct / 100)) 
+      const discountAmount = lineDto.discountPct
+        ? resolvedBasePrice * (lineDto.discountPct / 100)
         : 0;
 
       evaluatedLines.push({
@@ -131,20 +153,25 @@ export class PosService {
         categoryId: variant.product.categoryId,
         quantity: lineDto.quantity,
         basePrice: resolvedBasePrice,
-        discountAmount: discountAmount,
-        finalPrice: resolvedBasePrice - discountAmount
+        discountAmount,
+        finalPrice: resolvedBasePrice - discountAmount,
       });
     }
 
-    const cartEvaluation = await this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
-      id: crypto.randomUUID(),
-      variantId: l.variantId,
-      categoryId: l.categoryId,
-      quantity: l.quantity,
-      unitPrice: l.basePrice
-    })));
+    const cartEvaluation = await this.rulesEngine.evaluateCartPromotions(
+      evaluatedLines.map(l => ({
+        id: crypto.randomUUID(),
+        variantId: l.variantId,
+        categoryId: l.categoryId,
+        quantity: l.quantity,
+        unitPrice: l.basePrice,
+      })),
+    );
 
-    const lineDiscountsTotal = evaluatedLines.reduce((acc, l) => acc + (l.discountAmount * l.quantity), 0);
+    const lineDiscountsTotal = evaluatedLines.reduce(
+      (acc, l) => acc + l.discountAmount * l.quantity,
+      0,
+    );
     const promotionDiscount = cartEvaluation.discountTotal;
     let grandTotal = cartEvaluation.finalTotal;
     let globalPctDiscount = 0;
@@ -163,8 +190,8 @@ export class PosService {
         variantId: l.variantId,
         originalPrice: l.basePrice,
         finalPrice: l.finalPrice,
-        discountAmount: l.discountAmount
-      }))
+        discountAmount: l.discountAmount,
+      })),
     };
   }
 
@@ -175,18 +202,20 @@ export class PosService {
         OR: [
           { sku: { contains: query, mode: 'insensitive' } },
           { barcode: { contains: query, mode: 'insensitive' } },
+          { barcodes: { some: { barcode: { contains: query, mode: 'insensitive' } } } },
           { product: { name: { contains: query, mode: 'insensitive' } } },
         ],
       },
-      include: { 
+      include: {
         product: { include: { category: true, brand: true } },
+        barcodes: true,
       },
       take: 20,
     });
 
     const variantIds = variants.map(v => v.id);
     const stockLevels = await this.prisma.stockLevel.findMany({
-      where: { variantId: { in: variantIds } }
+      where: { variantId: { in: variantIds } },
     });
     const stockByVariant = new Map<string, typeof stockLevels>();
     for (const stock of stockLevels) {
@@ -195,102 +224,117 @@ export class PosService {
       stockByVariant.set(stock.variantId, arr);
     }
 
-    return Promise.all(variants.map(async v => {
-      const resolvedPrice = await this.pricingService.resolvePrice(v.id, v.basePrice || 0, customerId);
-      const variantStocks = stockByVariant.get(v.id) || [];
-      
-      return {
-        id: v.id,
-        sku: v.sku,
-        barcode: v.barcode,
-        name: v.product?.name || 'Producto Desconocido',
-        category: v.product?.category?.name,
-        brand: v.product?.brand?.name,
-        size: v.size,
-        color: v.color,
-        costPrice: v.costPrice || 0,
-        basePrice: resolvedPrice,
-        stock: variantStocks.reduce((acc, s) => acc + s.availableQuantity, 0),
-      };
-    }));
+    return Promise.all(
+      variants.map(async v => {
+        const resolvedPrice = await this.pricingService.resolvePrice(
+          v.id,
+          v.basePrice || 0,
+          customerId,
+        );
+        const variantStocks = stockByVariant.get(v.id) || [];
+
+        return {
+          id: v.id,
+          sku: v.sku,
+          barcode: v.barcode,
+          barcodes: v.barcodes.map(b => b.barcode),
+          name: v.product?.name || 'Producto Desconocido',
+          category: v.product?.category?.name,
+          brand: v.product?.brand?.name,
+          size: v.size,
+          color: v.color,
+          costPrice: v.costPrice || 0,
+          basePrice: resolvedPrice,
+          stock: variantStocks.reduce((acc, s) => acc + s.availableQuantity, 0),
+        };
+      }),
+    );
   }
 
   async getRegisters(branchId?: string) {
-    const where: any = { isActive: true };
+    const where: Record<string, unknown> = { isActive: true };
     if (branchId && branchId !== '' && branchId !== 'current-branch') {
       where.branchId = branchId;
     }
-    
+
     return this.prisma.cashRegister.findMany({
       where,
-      include: { branch: true }
+      include: { branch: true },
     });
   }
 
   async getCurrentSession(registerId: string) {
-    return this.prisma.cashShift.findFirst({
-      where: { 
-        cashRegisterId: registerId,
-        status: 'OPEN'
-      },
-      include: { cashRegister: true }
-    });
+    return this.cashService.getActiveShift(registerId);
   }
 
   async openSession(dto: { cashRegisterId: string; openingAmount: number; userId: string }) {
-    const existing = await this.getCurrentSession(dto.cashRegisterId);
-    if (existing) throw new BadRequestException('Ya existe una sesión abierta para esta caja.');
-
-    return this.prisma.$transaction(async (tx) => {
-      await tx.cashRegister.update({
-        where: { id: dto.cashRegisterId },
-        data: { status: 'OPEN' }
-      });
-
-      return tx.cashShift.create({
-        data: {
-          cashRegisterId: dto.cashRegisterId,
-          openedByUserId: dto.userId,
-          openingAmount: dto.openingAmount,
-          status: 'OPEN'
-        }
-      });
-    });
+    return this.cashService.openShift(dto.cashRegisterId, dto.userId, dto.openingAmount);
   }
 
   async closeSession(dto: { shiftId: string; closingAmount: number; userId: string; notes?: string }) {
-    const shift = await this.prisma.cashShift.findUnique({
-      where: { id: dto.shiftId }
+    return this.cashService.closeShift(dto.shiftId, dto.userId, dto.closingAmount, dto.notes);
+  }
+
+  createQrOrder(amount: number, title: string) {
+    this.purgeExpiredQrOrders();
+    const orderId = `POS-QR-${Date.now()}`;
+    const qrData = `00020101021243650016COM.MERCADOPAGO...${orderId}-AMT${amount}`;
+
+    this.qrOrders.set(orderId, {
+      orderId,
+      amount,
+      title,
+      qrData,
+      status: 'PENDING',
+      createdAt: Date.now(),
     });
 
-    if (!shift) throw new NotFoundException('Sesión no encontrada.');
-    if (shift.status === 'CLOSED') throw new BadRequestException('La sesión ya se encuentra cerrada.');
+    return { orderId, qrData };
+  }
 
-    return this.prisma.$transaction(async (tx) => {
-      await tx.cashRegister.update({
-        where: { id: shift.cashRegisterId },
-        data: { status: 'CLOSED' }
-      });
+  getQrOrderStatus(orderId: string) {
+    this.purgeExpiredQrOrders();
+    const order = this.qrOrders.get(orderId);
+    if (!order) {
+      throw new NotFoundException('Orden QR no encontrada o expirada.');
+    }
 
-      return tx.cashShift.update({
-        where: { id: dto.shiftId },
-        data: {
-          status: 'CLOSED',
-          closedByUserId: dto.userId,
-          closingAmount: dto.closingAmount,
-          closedAt: new Date(),
-          notes: dto.notes
-        }
-      });
-    });
+    if (order.status === 'PENDING') {
+      const elapsed = Date.now() - order.createdAt;
+      if (elapsed > PosService.QR_TTL_MS) {
+        order.status = 'EXPIRED';
+      } else if (elapsed > PosService.QR_MOCK_AUTO_APPROVE_MS) {
+        order.status = 'APPROVED';
+      }
+    }
+
+    return {
+      orderId: order.orderId,
+      status: order.status,
+      amount: order.amount,
+      title: order.title,
+    };
+  }
+
+  confirmQrOrder(orderId: string) {
+    const order = this.qrOrders.get(orderId);
+    if (!order) {
+      throw new NotFoundException('Orden QR no encontrada o expirada.');
+    }
+    if (order.status === 'EXPIRED') {
+      throw new BadRequestException('La orden QR expiró.');
+    }
+    order.status = 'APPROVED';
+    return { orderId, status: order.status };
   }
 
   async getCatalogSyncData() {
     const catalog = await this.prisma.productVariant.findMany({
       where: { isActive: true },
       include: {
-        product: { include: { category: true, brand: true } }
-      }
+        product: { include: { category: true, brand: true } },
+        barcodes: true,
+      },
     });
 
     return {
@@ -300,12 +344,13 @@ export class PosService {
         id: v.id,
         sku: v.sku,
         barcode: v.barcode,
+        barcodes: v.barcodes.map(b => b.barcode),
         name: v.product.name,
         basePrice: v.basePrice,
         categoryId: v.product.categoryId,
         categoryName: v.product.category.name,
-        brandName: v.product.brand?.name
-      }))
+        brandName: v.product.brand?.name,
+      })),
     };
   }
 }

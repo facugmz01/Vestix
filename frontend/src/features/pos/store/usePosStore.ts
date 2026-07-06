@@ -31,6 +31,7 @@ interface PosState {
   customerFormOpen: boolean;
   qrModalOpen: boolean;
   qrData: string | null;
+  qrOrderId: string | null;
   completedOrder: any;
   
   // Actions
@@ -51,7 +52,7 @@ interface PosState {
   setPrintModalOpen: (open: boolean) => void;
   setShiftModalOpen: (open: boolean) => void;
   setCustomerFormOpen: (open: boolean) => void;
-  setQrModalOpen: (open: boolean, data?: string | null) => void;
+  setQrModalOpen: (open: boolean, data?: string | null, orderId?: string | null) => void;
   setCompletedOrder: (order: any) => void;
 }
 
@@ -70,6 +71,7 @@ export const usePosStore = create<PosState>()(
       customerFormOpen: false,
       qrModalOpen: false,
       qrData: null,
+      qrOrderId: null,
       completedOrder: null,
 
       addToCart: (variant) => set((state) => {
@@ -105,7 +107,11 @@ export const usePosStore = create<PosState>()(
       setPrintModalOpen: (open) => set({ printModalOpen: open }),
       setShiftModalOpen: (open) => set({ shiftModalOpen: open }),
       setCustomerFormOpen: (open) => set({ customerFormOpen: open }),
-      setQrModalOpen: (open, data) => set({ qrModalOpen: open, qrData: data || null }),
+      setQrModalOpen: (open, data, orderId) => set({
+        qrModalOpen: open,
+        qrData: data ?? null,
+        qrOrderId: orderId ?? null,
+      }),
       setCompletedOrder: (order) => set({ completedOrder: order }),
 
       suspendSale: (total) => set((state) => {

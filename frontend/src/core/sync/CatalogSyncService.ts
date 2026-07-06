@@ -8,6 +8,7 @@ interface CatalogSyncResponse {
     id: string;
     sku: string;
     barcode: string | null;
+    barcodes?: string[];
     name: string;
     basePrice: number;
     categoryId: string;
@@ -22,18 +23,26 @@ export class CatalogSyncService {
       const response = await get<CatalogSyncResponse>('/pos/sync/catalog');
       const catalogData = response.data || [];
 
-      const items: PosCatalogItem[] = catalogData.map(item => ({
-        id: item.id,
-        productId: item.categoryId,
-        sku: item.sku,
-        primaryBarcode: item.barcode || item.sku,
-        allBarcodes: item.barcode ? [item.barcode] : [item.sku],
-        name: item.name,
-        price: item.basePrice,
-        categoryId: item.categoryId,
-        size: null,
-        color: null,
-      }));
+      const items: PosCatalogItem[] = catalogData.map(item => {
+        const allBarcodes = [
+          ...(item.barcode ? [item.barcode] : []),
+          ...(item.barcodes || []),
+          item.sku,
+        ].filter((v, i, arr) => arr.indexOf(v) === i);
+
+        return {
+          id: item.id,
+          productId: item.categoryId,
+          sku: item.sku,
+          primaryBarcode: item.barcode || item.sku,
+          allBarcodes,
+          name: item.name,
+          price: item.basePrice,
+          categoryId: item.categoryId,
+          size: null,
+          color: null,
+        };
+      });
 
       await db.transaction('rw', db.catalog, async () => {
         await db.catalog.clear();

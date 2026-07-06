@@ -140,7 +140,7 @@ export default function POSPage() {
       setIsGeneratingQr(true);
       try {
         const res = await posApi.generateQrOrder(grandTotal, 'Cobro Vestix POS');
-        usePosStore.getState().setQrModalOpen(true, res.qrData);
+        usePosStore.getState().setQrModalOpen(true, res.qrData, res.orderId);
       } catch {
         toast.error('Error al generar QR de cobro');
         usePosStore.getState().setQrModalOpen(true, null);

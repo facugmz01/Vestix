@@ -52,4 +52,12 @@ export const posApi = {
 
   generateQrOrder: (amount: number, title: string = 'Cobro POS') =>
     post<{ orderId: string; qrData: string }>('/pos/qr-order', { amount, title }),
+
+  getQrOrderStatus: (orderId: string) =>
+    get<{ orderId: string; status: 'PENDING' | 'APPROVED' | 'EXPIRED' | 'REJECTED'; amount: number }>(
+      `/pos/qr-order/${orderId}/status`,
+    ),
+
+  confirmQrOrder: (orderId: string) =>
+    post<{ orderId: string; status: string }>(`/pos/qr-order/${orderId}/confirm`),
 };

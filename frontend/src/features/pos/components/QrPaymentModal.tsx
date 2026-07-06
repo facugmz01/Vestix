@@ -1,37 +1,90 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal, Button } from '@/components/ui';
 import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { posApi } from '@/api/pos.api';
+import toast from 'react-hot-toast';
 
 interface QrPaymentModalProps {
   open: boolean;
   amount: number;
-  qrData: string | null; // The string returned by MercadoPago to encode in QR
+  orderId: string | null;
+  qrData: string | null;
   isLoading: boolean;
   onClose: () => void;
+  onPaymentConfirmed: () => void;
   onForceConfirm: () => void;
 }
 
-export const QrPaymentModal: React.FC<QrPaymentModalProps> = ({ 
-  open, amount, qrData, isLoading, onClose, onForceConfirm 
-}) => {
-  const [polling, setPolling] = useState(true);
+export function QrPaymentModal({
+  open,
+  amount,
+  orderId,
+  qrData,
+  isLoading,
+  onClose,
+  onPaymentConfirmed,
+  onForceConfirm,
+}: QrPaymentModalProps) {
+  const [status, setStatus] = useState<'PENDING' | 'APPROVED' | 'EXPIRED' | 'REJECTED'>('PENDING');
+  const [isConfirming, setIsConfirming] = useState(false);
+  const confirmedRef = useRef(false);
 
-
-  // Simulated polling for webhook confirmation
   useEffect(() => {
-    if (open && qrData) {
-      setPolling(true);
-      // In a real app, we'd open a WebSocket or poll the backend
-      // `const timer = setInterval(() => checkPaymentStatus(orderId), 3000)`
+    if (!open) {
+      setStatus('PENDING');
+      confirmedRef.current = false;
+      return;
     }
-  }, [open, qrData]);
+
+    if (!orderId || !qrData) return;
+
+    setStatus('PENDING');
+    confirmedRef.current = false;
+
+    const poll = async () => {
+      try {
+        const res = await posApi.getQrOrderStatus(orderId);
+        setStatus(res.status);
+        if (res.status === 'APPROVED' && !confirmedRef.current) {
+          confirmedRef.current = true;
+          toast.success('Pago QR confirmado');
+          onPaymentConfirmed();
+        }
+        if (res.status === 'EXPIRED') {
+          toast.error('El QR expiró. Generá uno nuevo.');
+        }
+      } catch {
+        // Ignore transient polling errors
+      }
+    };
+
+    poll();
+    const timer = setInterval(poll, 3000);
+    return () => clearInterval(timer);
+  }, [open, orderId, qrData, onPaymentConfirmed]);
+
+  const handleForceConfirm = async () => {
+    if (!orderId) {
+      onForceConfirm();
+      return;
+    }
+    setIsConfirming(true);
+    try {
+      await posApi.confirmQrOrder(orderId);
+      setStatus('APPROVED');
+      onPaymentConfirmed();
+    } catch {
+      onForceConfirm();
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Cobro con QR Mercadopago">
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '10px' }}>
-        
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Monto a cobrar</div>
           <div style={{ fontSize: '36px', fontWeight: 800, color: '#34d399' }}>{formatCurrency(amount)}</div>
@@ -52,27 +105,40 @@ export const QrPaymentModal: React.FC<QrPaymentModalProps> = ({
           </div>
         )}
 
-        {qrData && (
+        {qrData && status === 'PENDING' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%', marginTop: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#60a5fa', fontSize: '14px' }}>
-              <Loader2 className="spinner" size={16} /> Esperando escaneo del cliente...
+              <Loader2 className="spinner" size={16} /> Esperando confirmación de pago...
             </div>
-            
+
             <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }} />
 
-            <Button 
-              variant="primary" 
-              onClick={onForceConfirm} 
+            <Button
+              variant="primary"
+              onClick={handleForceConfirm}
+              loading={isConfirming}
               style={{ width: '100%', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
             >
-              <Check size={18} style={{ marginRight: '8px' }} /> Forzar Confirmación (Pago Exitoso)
+              <Check size={18} style={{ marginRight: '8px' }} /> Confirmar Pago Manualmente
             </Button>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
-              Usá "Forzar Confirmación" si el cliente ya pagó y la terminal no se actualizó automáticamente.
+              El sistema verifica el pago automáticamente cada 3 segundos.
             </span>
+          </div>
+        )}
+
+        {status === 'APPROVED' && (
+          <div style={{ color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Check size={20} /> Pago confirmado
+          </div>
+        )}
+
+        {status === 'EXPIRED' && (
+          <div style={{ color: '#f87171', fontSize: '14px', textAlign: 'center' }}>
+            El código QR expiró. Cerrá este modal y generá uno nuevo.
           </div>
         )}
       </div>
     </Modal>
   );
-};
+}

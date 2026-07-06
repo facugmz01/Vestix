@@ -43,6 +43,7 @@ export function POSModals({
 
   const qrModalOpen = usePosStore(s => s.qrModalOpen);
   const qrData = usePosStore(s => s.qrData);
+  const qrOrderId = usePosStore(s => s.qrOrderId);
   const setQrModalOpen = usePosStore(s => s.setQrModalOpen);
 
   const printModalOpen = usePosStore(s => s.printModalOpen);
@@ -90,10 +91,15 @@ export function POSModals({
 
       <QrPaymentModal 
         open={qrModalOpen} 
-        amount={grandTotal} 
+        amount={grandTotal}
+        orderId={qrOrderId}
         qrData={qrData} 
         isLoading={isGeneratingQr} 
         onClose={() => setQrModalOpen(false)} 
+        onPaymentConfirmed={() => {
+          setQrModalOpen(false);
+          onConfirmCheckout('CONFIRMED');
+        }}
         onForceConfirm={() => {
           setQrModalOpen(false);
           onConfirmCheckout('CONFIRMED');
