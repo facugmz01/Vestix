@@ -6,6 +6,8 @@ import { StockReportService } from './stock-report.service';
 import { DashboardService } from './dashboard.service';
 import { CashReportService } from './cash-report.service';
 import { PurchasesReportService } from './purchases-report.service';
+import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
 const mockSalesReport: any = {
   getSalesSummary: jest.fn(),
@@ -43,7 +45,12 @@ describe('ReportsController', () => {
         { provide: CashReportService, useValue: mockCashReport },
         { provide: PurchasesReportService, useValue: mockPurchasesReport },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PermissionsGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<ReportsController>(ReportsController);
     jest.clearAllMocks();

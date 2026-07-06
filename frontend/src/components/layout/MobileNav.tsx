@@ -49,10 +49,10 @@ export function MobileNav() {
       </nav>
 
       <Drawer 
-        isOpen={isMenuOpen} 
+        open={isMenuOpen} 
         onClose={() => setIsMenuOpen(false)}
         title="Menú Principal"
-        position="right"
+        side="right"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px 0' }}>
           {groups.map(group => (

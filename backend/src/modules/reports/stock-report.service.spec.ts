@@ -5,6 +5,8 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 
 const mockPrismaService: any = {
   stockLevel: { findMany: jest.fn() },
+  productVariant: { findMany: (jest.fn() as any).mockResolvedValue([]) },
+  warehouse: { findMany: jest.fn() },
 };
 
 describe('StockReportService', () => {
@@ -20,6 +22,7 @@ describe('StockReportService', () => {
 
     service = module.get<StockReportService>(StockReportService);
     jest.clearAllMocks();
+    mockPrismaService.productVariant.findMany.mockResolvedValue([]);
   });
 
   it('should be defined', () => {
@@ -29,18 +32,12 @@ describe('StockReportService', () => {
   describe('getStockValuation', () => {
     it('should return correct valuation for stock levels', async () => {
       mockPrismaService.stockLevel.findMany.mockResolvedValueOnce([
-        {
-          variantId: 'v1',
-          availableQuantity: 10,
-          reservedQuantity: 2,
-          variant: { sku: 'SKU-1', costPrice: 50, basePrice: 100, product: { name: 'Shirt' } },
-        },
-        {
-          variantId: 'v2',
-          availableQuantity: 5,
-          reservedQuantity: 0,
-          variant: { sku: 'SKU-2', costPrice: 30, basePrice: 60, product: { name: 'Pants' } },
-        },
+        { variantId: 'v1', availableQuantity: 10, reservedQuantity: 2 },
+        { variantId: 'v2', availableQuantity: 5, reservedQuantity: 0 },
+      ]);
+      mockPrismaService.productVariant.findMany.mockResolvedValueOnce([
+        { id: 'v1', sku: 'SKU-1', costPrice: 50, basePrice: 100, product: { name: 'Shirt' } },
+        { id: 'v2', sku: 'SKU-2', costPrice: 30, basePrice: 60, product: { name: 'Pants' } },
       ]);
 
       const result = await service.getStockValuation();
@@ -63,12 +60,10 @@ describe('StockReportService', () => {
 
     it('should handle missing variant cost/price', async () => {
       mockPrismaService.stockLevel.findMany.mockResolvedValueOnce([
-        {
-          variantId: 'v1',
-          availableQuantity: 3,
-          reservedQuantity: 0,
-          variant: { sku: null, costPrice: null, basePrice: null, product: { name: 'Unknown' } },
-        },
+        { variantId: 'v1', availableQuantity: 3, reservedQuantity: 0 },
+      ]);
+      mockPrismaService.productVariant.findMany.mockResolvedValueOnce([
+        { id: 'v1', sku: null, costPrice: null, basePrice: null, product: { name: 'Unknown' } },
       ]);
       const result = await service.getStockValuation();
       expect(result.totalValueAtCost).toBe(0);
@@ -77,11 +72,13 @@ describe('StockReportService', () => {
     });
 
     it('should apply branch filter when branchId is provided', async () => {
+      mockPrismaService.warehouse.findMany.mockResolvedValueOnce([{ id: 'w1' }, { id: 'w2' }]);
       mockPrismaService.stockLevel.findMany.mockResolvedValueOnce([]);
       await service.getStockValuation('b1');
+      expect(mockPrismaService.warehouse.findMany).toHaveBeenCalledWith({ where: { branchId: 'b1' } });
       expect(mockPrismaService.stockLevel.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { warehouse: { branchId: 'b1' } },
+          where: { warehouseId: { in: ['w1', 'w2'] } },
         }),
       );
     });
@@ -90,12 +87,10 @@ describe('StockReportService', () => {
   describe('getLowStockAlerts', () => {
     it('should return items below reorder point', async () => {
       mockPrismaService.stockLevel.findMany.mockResolvedValueOnce([
-        {
-          variantId: 'v1',
-          availableQuantity: 2,
-          variant: { sku: 'SKU-1', product: { name: 'Shirt' } },
-          warehouse: { branchId: 'b1' },
-        },
+        { variantId: 'v1', availableQuantity: 2, branchId: 'b1' },
+      ]);
+      mockPrismaService.productVariant.findMany.mockResolvedValueOnce([
+        { id: 'v1', sku: 'SKU-1', product: { name: 'Shirt' } },
       ]);
 
       const result = await service.getLowStockAlerts(undefined, 5);
@@ -103,6 +98,7 @@ describe('StockReportService', () => {
       expect(result[0].variantId).toBe('v1');
       expect(result[0].availableQuantity).toBe(2);
       expect(result[0].reorderPoint).toBe(5);
+      expect(result[0].branchId).toBe('b1');
     });
 
     it('should use default reorder point of 5', async () => {

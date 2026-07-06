@@ -14,6 +14,7 @@ const mockPrismaService: any = {
     findUnique: jest.fn(),
     findFirst: jest.fn(),
     update: jest.fn(),
+    updateMany: (jest.fn() as any).mockResolvedValue({ count: 1 }),
     create: jest.fn(),
   },
 };
@@ -111,13 +112,33 @@ describe('InventoryService', () => {
         sourceWarehouseId: 'w1',
       });
 
-      expect(mockPrismaService.stockLevel.update).toHaveBeenCalledWith({
-        where: { id: 's1' },
+      expect(mockPrismaService.stockLevel.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 's1',
+          physicalQuantity: { gte: 2 },
+        },
         data: {
           physicalQuantity: { decrement: 2 },
           availableQuantity: { decrement: 2 },
         },
       });
+    });
+
+    it('should throw error if concurrent transaction depletes stock during SALE', async () => {
+      mockPrismaService.stockLevel.findFirst.mockResolvedValueOnce({
+        id: 's1',
+        physicalQuantity: 10,
+      });
+      mockPrismaService.stockLevel.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(
+        service.recordMovement({
+          variantId: 'v1',
+          quantity: 2,
+          type: MovementType.SALE,
+          sourceWarehouseId: 'w1',
+        }),
+      ).rejects.toThrow('Concurrent transaction conflict');
     });
   });
 });
