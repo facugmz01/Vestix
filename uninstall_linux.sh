@@ -11,7 +11,7 @@ echo "  Iniciando Limpieza Completa de Vestix ERP"
 echo "======================================================"
 
 echo "⚠️  ADVERTENCIA: Esto eliminará de forma irreversible la base de datos y los archivos del proyecto."
-read -p "¿Estás completamente seguro de continuar? (escribe 'si' para continuar): " CONFIRM
+read -r -p "¿Estás completamente seguro de continuar? (escribe 'si' para continuar): " CONFIRM
 if [ "$CONFIRM" != "si" ]; then
     echo "Operación cancelada por el usuario."
     exit 0
