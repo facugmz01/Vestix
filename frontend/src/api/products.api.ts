@@ -82,4 +82,12 @@ export const productsApi = {
   getPriceLists: () => get<{ data: any[] } | any[]>(`/price-lists?pageSize=100`).then(res =>
     Array.isArray(res) ? res : (res as { data: any[] }).data ?? [],
   ),
+
+  getPriceHistory: (id: string) =>
+    get<Array<{ id: string; variantId: string; sku?: string; oldPrice: number; newPrice: number; source: string; createdAt: string }>>(
+      `/products/${id}/price-history`,
+    ),
+
+  migrateBase64Images: () =>
+    post<{ migratedProducts: number; migratedImages: number }>('/products/migrate-base64-images'),
 };

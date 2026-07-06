@@ -2,12 +2,14 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreatePriceListDto } from './dto/create-price-list.dto';
 import { RulesEngineService } from './rules-engine.service';
+import { PriceHistoryService } from './services/price-history.service';
 
 @Injectable()
 export class PricingService {
   constructor(
     private readonly rulesEngine: RulesEngineService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly priceHistoryService: PriceHistoryService,
   ) {}
 
   async findAll() {
@@ -42,17 +44,35 @@ export class PricingService {
     });
   }
 
-  async setVariantPrice(priceListId: string, variantId: string, overridePrice: number) {
+  async setVariantPrice(priceListId: string, variantId: string, overridePrice: number, changedBy?: string) {
     const list = await this.prisma.priceList.findUniqueOrThrow({ where: { id: priceListId } });
     if (list.isPercentageBased) throw new ConflictException('Cannot set explicit variant prices on a percentage-based price list.');
 
-    return this.prisma.priceListEntry.upsert({
+    const existing = await this.prisma.priceListEntry.findUnique({
+      where: { priceListId_variantId: { priceListId, variantId } },
+    });
+
+    const entry = await this.prisma.priceListEntry.upsert({
       where: {
         priceListId_variantId: { priceListId, variantId }
       },
       update: { overridePrice },
       create: { priceListId, variantId, overridePrice }
     });
+
+    const oldPrice = existing?.overridePrice ?? 0;
+    if (!existing || oldPrice !== overridePrice) {
+      await this.priceHistoryService.recordChange({
+        variantId,
+        oldPrice,
+        newPrice: overridePrice,
+        source: 'PRICE_LIST',
+        priceListId,
+        changedBy,
+      });
+    }
+
+    return entry;
   }
 
   async resolvePrice(variantId: string, basePrice: number, customerId?: string): Promise<number> {

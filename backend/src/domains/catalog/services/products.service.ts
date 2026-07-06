@@ -4,6 +4,7 @@ import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { CategoriesService, BrandsService } from './taxonomy.service';
 import { SettingsService } from '../../../modules/settings/settings.service';
+import { PriceHistoryService } from './price-history.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import { isVariableProduct, normalizeProductType, syncIsVariableFlag } from '../utils/product-type.util';
@@ -16,7 +17,8 @@ export class ProductsService {
     private readonly prisma: PrismaService,
     private readonly categoriesService: CategoriesService,
     private readonly brandsService: BrandsService,
-    private readonly settingsService: SettingsService
+    private readonly settingsService: SettingsService,
+    private readonly priceHistoryService: PriceHistoryService,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -451,11 +453,23 @@ export class ProductsService {
     });
   }
 
-  async updateVariant(id: string, data: any) {
-    return this.prisma.productVariant.update({
-      where: { id },
-      data
-    });
+  async updateVariant(id: string, data: any, changedBy?: string) {
+    const existing = await this.prisma.productVariant.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException(`Variante ${id} no encontrada`);
+
+    const updated = await this.prisma.productVariant.update({ where: { id }, data });
+
+    if (data.basePrice !== undefined && data.basePrice !== existing.basePrice) {
+      await this.priceHistoryService.recordChange({
+        variantId: id,
+        oldPrice: existing.basePrice,
+        newPrice: data.basePrice,
+        source: 'MANUAL',
+        changedBy,
+      });
+    }
+
+    return updated;
   }
 
   async deleteVariant(id: string) {
@@ -886,6 +900,14 @@ export class ProductsService {
             where: { id: variant.id },
             data: { costPrice: vCost, basePrice: vBase }
           });
+          if (vBase !== variant.basePrice) {
+            await this.priceHistoryService.recordChange({
+              variantId: variant.id,
+              oldPrice: variant.basePrice,
+              newPrice: vBase,
+              source: 'BULK',
+            });
+          }
         }
         updatedCount++;
       }

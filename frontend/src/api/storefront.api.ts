@@ -29,6 +29,7 @@ export interface StorefrontProduct {
   availableQuantity: number;
   images?: string[];
   variants?: StorefrontVariant[];
+  relatedProducts?: Array<{ id: string; name: string; price: number; images?: string[] }>;
 }
 
 export interface StorefrontFilters {

@@ -231,6 +231,29 @@ export default function OnlineProductDetailPage() {
           </div>
 
           {/* Trust Badges */}
+          {product.relatedProducts && product.relatedProducts.length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '12px', color: '#0f172a' }}>También te puede interesar</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
+                {product.relatedProducts.map(rp => (
+                  <Link
+                    key={rp.id}
+                    to={`${prefix}/product/${rp.id}`}
+                    style={{ textDecoration: 'none', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: '#fff' }}
+                  >
+                    <div style={{ height: '100px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {rp.images?.[0] ? <img src={rp.images[0]} alt={rp.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '24px', color: '#cbd5e1' }}>{rp.name.charAt(0)}</span>}
+                    </div>
+                    <div style={{ padding: '10px' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{rp.name}</p>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#3b82f6', fontWeight: 700 }}>{formatCurrency(rp.price)}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {[
               { icon: Truck, title: 'Envío Rápido', desc: 'Despachamos en el día a todo el país.' },

@@ -199,6 +199,35 @@ export class CatalogService {
     const basePrice = mappedVariants.length ? Math.min(...mappedVariants.map(v => v.basePrice)) : 0;
     const availableQty = mappedVariants.reduce((sum, v) => sum + v.stock, 0);
 
+    const metadata = (product.metadata || {}) as Record<string, any>;
+    const relatedIds: string[] = Array.isArray(metadata.relatedProductIds) ? metadata.relatedProductIds : [];
+    let relatedProducts: any[] = [];
+
+    if (relatedIds.length) {
+      const related = await this.prisma.product.findMany({
+        where: preview
+          ? { id: { in: relatedIds }, isActive: true }
+          : { id: { in: relatedIds }, isActive: true, isPublished: true },
+        include: { variants: { where: { isActive: true } } },
+      });
+
+      const relVariantIds = related.flatMap(p => p.variants.map(v => v.id));
+      const relPriceMap = priceListId
+        ? await this.pricingService.resolvePricesForVariants(relVariantIds, priceListId)
+        : new Map<string, number>();
+
+      relatedProducts = related.map(p => {
+        const prices = p.variants.map(v => relPriceMap.get(v.id) ?? v.basePrice);
+        const minPrice = prices.length ? Math.min(...prices) : 0;
+        return {
+          id: p.id,
+          name: p.name,
+          price: minPrice,
+          images: p.images,
+        };
+      });
+    }
+
     return {
       id: product.id,
       name: product.name,
@@ -212,6 +241,7 @@ export class CatalogService {
       availableQuantity: availableQty,
       images: product.images,
       variants: mappedVariants,
+      relatedProducts,
     };
   }
 

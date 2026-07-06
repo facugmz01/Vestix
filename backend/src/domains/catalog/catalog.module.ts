@@ -3,6 +3,7 @@ import { PrismaModule } from '../../core/prisma/prisma.module';
 import { ProductsService } from './services/products.service';
 import { PromotionsService } from './services/promotions.service';
 import { MediaService } from './services/media.service';
+import { PriceHistoryService } from './services/price-history.service';
 import { CategoriesService, BrandsService, AttributesService, PriceListService } from './services/taxonomy.service';
 import {
   ProductsController,
@@ -40,6 +41,7 @@ import { CatalogFacade } from './catalog.facade';
     ProductsService,
     PromotionsService,
     MediaService,
+    PriceHistoryService,
     CategoriesService,
     BrandsService,
     AttributesService,
@@ -61,6 +63,7 @@ import { CatalogFacade } from './catalog.facade';
     RulesEngineService,
     CatalogService,
     IdentifiersService,
+    PriceHistoryService,
     CatalogFacade,
   ],
 })

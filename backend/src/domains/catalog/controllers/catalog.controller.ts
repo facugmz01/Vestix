@@ -4,6 +4,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ProductsService } from '../services/products.service';
 import { MediaService } from '../services/media.service';
+import { PriceHistoryService } from '../services/price-history.service';
 import { CategoriesService, BrandsService, AttributesService, PriceListService } from '../services/taxonomy.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
@@ -85,6 +86,7 @@ export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
     private readonly mediaService: MediaService,
+    private readonly priceHistoryService: PriceHistoryService,
   ) {}
 
   @Post()
@@ -129,6 +131,12 @@ export class ProductsController {
     return this.productsService.getPublishReadiness(id);
   }
 
+  @Post('migrate-base64-images')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  migrateBase64Images() {
+    return this.mediaService.migrateBase64Images();
+  }
+
   @Post('bulk-publish-all')
   @RequirePermissions({ action: 'update', subject: 'Catalog' })
   publishAll() {
@@ -139,6 +147,12 @@ export class ProductsController {
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
   findAll(@Query() query: any) {
     return this.productsService.findAll(query);
+  }
+
+  @Get(':id/price-history')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  getPriceHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.priceHistoryService.getByProduct(id);
   }
 
   @Get(':id')
