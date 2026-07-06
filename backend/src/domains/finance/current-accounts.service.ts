@@ -11,6 +11,8 @@ export interface CurrentAccountView {
   creditLimit?: number;
   overdueAmount: number;
   lastMovementDate?: string;
+  phone?: string | null;
+  email?: string | null;
 }
 
 @Injectable()
@@ -128,6 +130,8 @@ export class CurrentAccountsService {
     fullName: string;
     usedCredit: number;
     creditLimit: number;
+    phone?: string | null;
+    email?: string | null;
     updatedAt: Date;
   }): CurrentAccountView {
     return {
@@ -142,6 +146,8 @@ export class CurrentAccountsService {
         ? c.usedCredit - c.creditLimit
         : c.usedCredit,
       lastMovementDate: c.updatedAt.toISOString(),
+      phone: c.phone,
+      email: c.email,
     };
   }
 
@@ -150,6 +156,8 @@ export class CurrentAccountsService {
     companyName: string;
     balance: number;
     currency: string;
+    phone?: string | null;
+    email?: string | null;
     updatedAt: Date;
   }): CurrentAccountView {
     return {
@@ -161,6 +169,8 @@ export class CurrentAccountsService {
       currency: s.currency,
       overdueAmount: s.balance,
       lastMovementDate: s.updatedAt.toISOString(),
+      phone: s.phone,
+      email: s.email,
     };
   }
 }

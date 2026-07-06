@@ -59,6 +59,8 @@ describe('CurrentAccountsService', () => {
       fullName: 'Cliente A',
       usedCredit: 3000,
       creditLimit: 2000,
+      phone: '5491122334455',
+      email: 'cliente@test.com',
       updatedAt: new Date(),
     });
 
@@ -66,6 +68,8 @@ describe('CurrentAccountsService', () => {
 
     expect(account.entityName).toBe('Cliente A');
     expect(account.overdueAmount).toBe(1000);
+    expect(account.phone).toBe('5491122334455');
+    expect(account.email).toBe('cliente@test.com');
   });
 
   it('should throw when account is not found', async () => {

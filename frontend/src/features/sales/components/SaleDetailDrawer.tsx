@@ -6,6 +6,10 @@ import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, FileText, ShoppingCart } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
+import {
+  contactMissingMessage,
+  resolveManualNotificationRecipient,
+} from '@/utils/notificationRecipient';
 
 interface Props {
   open: boolean;
@@ -60,6 +64,33 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
       case 'CONFIRMED': return 'green';
       case 'CANCELLED': return 'red';
       default: return 'gray';
+    }
+  };
+
+  const receiptRecipient = resolveManualNotificationRecipient({
+    phone: sale.customer?.phone,
+    email: sale.customer?.email,
+  });
+
+  const handleSendReceipt = async () => {
+    const resolved = resolveManualNotificationRecipient({
+      phone: sale.customer?.phone,
+      email: sale.customer?.email,
+    });
+
+    if (!resolved) {
+      toast.error(contactMissingMessage('El cliente'));
+      return;
+    }
+
+    try {
+      const res = await salesApi.sendManualReceipt(sale.id, {
+        channel: resolved.channel,
+        recipient: resolved.recipient,
+      });
+      toast.success(`${res.message} (${resolved.label})`);
+    } catch {
+      toast.error('Error al enviar comprobante');
     }
   };
 
@@ -139,20 +170,25 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
           
           {sale.status === 'CONFIRMED' && (
             <ActionGuard action="read" subject="Sales">
-              <Button 
-                variant="outline" 
-                icon={<FileText size={16} />} 
-                onClick={async () => {
-                  try {
-                    const res = await salesApi.sendManualReceipt(sale.id, { channel: 'WHATSAPP', recipient: '5491100000000' });
-                    toast.success(res.message);
-                  } catch (e) {
-                    toast.error('Error al enviar comprobante');
-                  }
-                }}
-              >
-                Enviar Comprobante
-              </Button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <Button
+                  variant="outline"
+                  icon={<FileText size={16} />}
+                  onClick={handleSendReceipt}
+                  disabled={!receiptRecipient}
+                >
+                  Enviar Comprobante
+                </Button>
+                {receiptRecipient ? (
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Se enviará a {receiptRecipient.label}
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    El cliente no tiene teléfono ni email cargado.
+                  </span>
+                )}
+              </div>
             </ActionGuard>
           )}
 

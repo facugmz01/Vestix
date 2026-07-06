@@ -226,7 +226,9 @@ export type SaleOrderStatus = 'QUOTATION' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'R
 
 export interface SaleOrder {
   id: string; branchId: string; source: OrderSource; status: SaleOrderStatus;
-  customerId?: string; customerName?: string; lines: OrderLineItem[];
+  customerId?: string; customerName?: string;
+  customer?: { fullName?: string; phone?: string | null; email?: string | null };
+  lines: OrderLineItem[];
   subtotal: number; cartDiscountTotal: number; grandTotal: number;
   afipInvoiceId?: string;
   paymentMethod: PaymentMethod; createdAt: string; syncedAt?: string;
@@ -500,6 +502,8 @@ export interface CurrentAccount {
   creditLimit?: number;
   overdueAmount: number;
   lastMovementDate?: string;
+  phone?: string | null;
+  email?: string | null;
 }
 
 export type ShiftStatus = 'OPEN' | 'CLOSED';
