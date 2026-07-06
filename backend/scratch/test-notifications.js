@@ -1,7 +1,7 @@
-const { NotificationsService } = require('../dist/src/modules/notifications/notifications.service');
-const { SmtpService } = require('../dist/src/modules/notifications/channels/smtp.service');
-const { WhatsAppEvolutionService } = require('../dist/src/modules/notifications/channels/whatsapp-evolution.service');
-const { NotificationChannel, TemplateKey, NotificationStatus } = require('../dist/src/modules/notifications/models/notification.model');
+const { NotificationsService } = require('../dist/modules/notifications/notifications.service');
+const { SmtpService } = require('../dist/modules/notifications/channels/smtp.service');
+const { WhatsAppEvolutionService } = require('../dist/modules/notifications/channels/whatsapp-evolution.service');
+const { NotificationChannel, TemplateKey, NotificationStatus } = require('../dist/modules/notifications/models/notification.model');
 
 async function testNotifications() {
   console.log('--- STARTING NOTIFICATIONS VALIDATION SCRIPT (DIST/JS) ---');
