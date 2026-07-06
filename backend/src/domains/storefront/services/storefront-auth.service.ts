@@ -33,7 +33,7 @@ export class StorefrontAuthService {
       templateKey: 'OTP_CODE' as any,
       recipient: cleanPhone,
       variables: {
-        code: otp
+        otpCode: otp,
       }
     });
 

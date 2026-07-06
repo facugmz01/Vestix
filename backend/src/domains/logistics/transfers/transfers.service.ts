@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { paginate } from '../../../core/prisma/paginate';
 import { InventoryService } from '../inventory.service';
+import { NotificationTriggersService } from '../../notifications/notification-triggers.service';
 import { MovementType } from '../models/inventory-movement.model';
 import { TransferStatus, TransferLine } from './models/transfer.model';
 
@@ -10,6 +11,7 @@ export class TransfersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly inventoryLedger: InventoryService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
   /**
@@ -89,7 +91,7 @@ export class TransfersService {
       });
     }
 
-    return this.prisma.stockTransfer.update({
+    const updated = await this.prisma.stockTransfer.update({
       where: { id: transferId },
       data: {
         status: TransferStatus.IN_TRANSIT,
@@ -100,6 +102,9 @@ export class TransfersService {
         lines: true,
       },
     });
+
+    void this.notificationTriggers.onTransferDispatched(transferId);
+    return updated;
   }
 
   /**
@@ -145,7 +150,7 @@ export class TransfersService {
       }
     }
 
-    return this.prisma.stockTransfer.update({
+    const updated = await this.prisma.stockTransfer.update({
       where: { id: transferId },
       data: {
         status: TransferStatus.COMPLETED,
@@ -155,6 +160,9 @@ export class TransfersService {
         lines: true,
       },
     });
+
+    void this.notificationTriggers.onTransferReceived(transferId);
+    return updated;
   }
 
   /**
