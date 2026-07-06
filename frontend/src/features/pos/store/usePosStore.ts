@@ -80,9 +80,12 @@ export const usePosStore = create<PosState>()(
         return { cart: [...state.cart, { variant, qty: 1, discountPct: 0 }] };
       }),
 
-      updateQty: (id, qty) => set((state) => ({
-        cart: qty < 1 ? state.cart : state.cart.map(i => i.variant.id === id ? { ...i, qty } : i)
-      })),
+      updateQty: (id, qty) => set((state) => {
+        if (qty < 1) {
+          return { cart: state.cart.filter(i => i.variant.id !== id) };
+        }
+        return { cart: state.cart.map(i => i.variant.id === id ? { ...i, qty } : i) };
+      }),
 
       updateDiscount: (id, pct) => set((state) => ({
         cart: state.cart.map(i => i.variant.id === id ? { ...i, discountPct: pct } : i)
@@ -117,8 +120,9 @@ export const usePosStore = create<PosState>()(
         };
         return { 
           suspendedSales: [...state.suspendedSales, newSale],
-          cart: [], 
-          selectedCustomerId: '' 
+          cart: [],
+          cartDiscountPct: 0,
+          selectedCustomerId: '',
         };
       }),
 

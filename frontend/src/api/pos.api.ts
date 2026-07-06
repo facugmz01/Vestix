@@ -14,6 +14,7 @@ export interface CloseSessionDto {
 export interface POSCalculateDto {
   lines: { variantId: string; quantity: number; discountPct?: number }[];
   cartDiscountPct?: number;
+  customerId?: string;
 }
 
 export interface POSCalculateResponse {

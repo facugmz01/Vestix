@@ -67,6 +67,17 @@ export class PosService {
       where: { branchId: register.branchId, isActive: true }
     });
 
+    let cashShiftId = payload.cashShiftId;
+    if (!cashShiftId) {
+      const openShift = await this.prisma.cashShift.findFirst({
+        where: { cashRegisterId: payload.cashRegisterId, status: 'OPEN' },
+      });
+      if (!openShift) {
+        throw new BadRequestException('No hay turno abierto para esta caja.');
+      }
+      cashShiftId = openShift.id;
+    }
+
     const quickOrderDto: CreateOrderDto = {
       id: crypto.randomUUID(), 
       branchId: register.branchId,
@@ -81,7 +92,7 @@ export class PosService {
       ],
       paymentMethod: 'CASH' as any,
       paymentAccountId: payload.accountId,
-      cashShiftId: payload.cashShiftId,
+      cashShiftId,
     };
 
     return this.checkoutOrchestrator.processCheckout(quickOrderDto, payload.userId);
@@ -133,11 +144,20 @@ export class PosService {
       unitPrice: l.basePrice
     })));
 
+    const lineDiscountsTotal = evaluatedLines.reduce((acc, l) => acc + (l.discountAmount * l.quantity), 0);
+    const promotionDiscount = cartEvaluation.discountTotal;
+    let grandTotal = cartEvaluation.finalTotal;
+    let globalPctDiscount = 0;
+    if (dto.cartDiscountPct && dto.cartDiscountPct > 0) {
+      globalPctDiscount = grandTotal * (dto.cartDiscountPct / 100);
+      grandTotal -= globalPctDiscount;
+    }
+
     return {
       subtotal: Number(cartEvaluation.originalTotal.toFixed(2)),
-      lineDiscountsTotal: Number(evaluatedLines.reduce((acc, l) => acc + (l.discountAmount * l.quantity), 0).toFixed(2)),
-      cartDiscountTotal: Number(cartEvaluation.discountTotal.toFixed(2)),
-      grandTotal: Number(cartEvaluation.finalTotal.toFixed(2)),
+      lineDiscountsTotal: Number(lineDiscountsTotal.toFixed(2)),
+      cartDiscountTotal: Number((promotionDiscount + globalPctDiscount).toFixed(2)),
+      grandTotal: Number(grandTotal.toFixed(2)),
       appliedPromotions: cartEvaluation.appliedPromotions,
       lines: evaluatedLines.map(l => ({
         variantId: l.variantId,

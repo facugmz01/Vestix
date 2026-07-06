@@ -10,11 +10,13 @@ interface Props {
   onClose: () => void;
   mode: 'OPEN' | 'CLOSE';
   activeShift: CashShift | null;
-  cashRegisterId?: string; // Preselected register
-  registers?: CashRegister[]; // Available registers to choose from
+  cashRegisterId?: string;
+  registers?: CashRegister[];
+  allowDismiss?: boolean;
+  onDismiss?: () => void;
 }
 
-export function ShiftManagerModal({ open, onClose, mode, activeShift, cashRegisterId: initialRegisterId, registers }: Props) {
+export function ShiftManagerModal({ open, onClose, mode, activeShift, cashRegisterId: initialRegisterId, registers, allowDismiss, onDismiss }: Props) {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
@@ -130,6 +132,9 @@ export function ShiftManagerModal({ open, onClose, mode, activeShift, cashRegist
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
           {mode === 'CLOSE' && (
             <Button variant="ghost" onClick={onClose} disabled={isPending}>Cancelar</Button>
+          )}
+          {mode === 'OPEN' && allowDismiss && (
+            <Button variant="ghost" onClick={onDismiss} disabled={isPending}>Volver al inicio</Button>
           )}
           <Button variant="primary" type="submit" loading={isPending}>
             {mode === 'OPEN' ? 'Abrir Turno' : 'Cerrar Turno'}

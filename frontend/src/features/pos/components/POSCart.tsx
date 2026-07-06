@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
-import { Search, Plus, Minus, Trash2, User, FileText, PauseCircle, CreditCard, Banknote } from 'lucide-react';
+import { useRef } from 'react';
+import { Search, Plus, Minus, Trash2, User, FileText, PauseCircle, CreditCard, Banknote, QrCode } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
 import styles from '@/pages/pos/POSPage.module.css';
+import type { ProductVariant } from '@/types';
 
 export function POSCart({
   customersData,
@@ -17,8 +18,8 @@ export function POSCart({
   onCheckoutQuotation,
   onCheckoutPayment,
 }: {
-  customersData: any;
-  searchResults: any;
+  customersData: { data?: { id: string; fullName: string }[] } | undefined;
+  searchResults: ProductVariant[] | undefined;
   search: string;
   setSearch: (s: string) => void;
   subtotal: number;
@@ -37,11 +38,17 @@ export function POSCart({
   
   const addToCart = usePosStore(s => s.addToCart);
   const updateQty = usePosStore(s => s.updateQty);
+  const updateDiscount = usePosStore(s => s.updateDiscount);
   const removeLine = usePosStore(s => s.removeLine);
   const setCustomerId = usePosStore(s => s.setCustomerId);
   const setCartDiscountPct = usePosStore(s => s.setCartDiscountPct);
   const setCustomerFormOpen = usePosStore(s => s.setCustomerFormOpen);
   const suspendSale = usePosStore(s => s.suspendSale);
+
+  const getVariantName = (variant: ProductVariant) => {
+    const v = variant as ProductVariant & { name?: string; productName?: string };
+    return v.name || v.productName || 'Producto';
+  };
 
   return (
     <div className={styles.cartArea}>
@@ -55,7 +62,7 @@ export function POSCart({
               style={{ width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none', appearance: 'none' }}
             >
               <option value="">Consumidor Final</option>
-              {customersData?.data.map((c: any) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
+              {customersData?.data?.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
             </select>
           </div>
           <button onClick={() => setCustomerFormOpen(true)} style={{ padding: '0 16px', background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s' }}>
@@ -95,7 +102,7 @@ export function POSCart({
               <div key={`${item.variant.id}-${index}`} className={styles.cartItem}>
                 <div className={styles.cartItemDetails}>
                   <span className={styles.cartItemName}>
-                    {(item.variant as any).name || (item.variant as any).productName || 'Producto'} {item.variant.size ? `(${item.variant.size})` : ''}
+                    {getVariantName(item.variant)} {item.variant.size ? `(${item.variant.size})` : ''}
                   </span>
                   <span className={styles.cartItemSku}>
                     {formatCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
@@ -108,10 +115,21 @@ export function POSCart({
                     type="number" 
                     className={styles.qtyInput} 
                     value={item.qty} 
+                    min={1}
                     onChange={e => updateQty(item.variant.id, Number(e.target.value))}
                   />
                   <button className={styles.qtyBtn} onClick={() => updateQty(item.variant.id, item.qty + 1)}><Plus size={14} /></button>
                 </div>
+
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  title="Descuento %"
+                  value={item.discountPct}
+                  onChange={e => updateDiscount(item.variant.id, Math.min(100, Math.max(0, Number(e.target.value))))}
+                  style={{ width: '48px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', color: '#fff', textAlign: 'center', fontSize: '12px' }}
+                />
 
                 <button className={styles.removeBtn} onClick={() => removeLine(item.variant.id)}>
                   <Trash2 size={18} />
@@ -132,12 +150,14 @@ export function POSCart({
             Descuento Global %: 
             <input 
               type="number" 
+              min={0}
+              max={100}
               style={{ width: '60px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', color: '#fff', textAlign: 'center' }} 
               value={cartDiscountPct} 
-              onChange={e => setCartDiscountPct(Number(e.target.value))} 
+              onChange={e => setCartDiscountPct(Math.min(100, Math.max(0, Number(e.target.value))))} 
             />
           </span>
-          <span style={{ color: '#f87171' }}>(-) {formatCurrency(globalDiscount + lineDiscounts)}</span>
+          <span style={{ color: '#f87171' }}>(-) {formatCurrency(lineDiscounts + globalDiscount)}</span>
         </div>
         
         <div className={styles.totalRow}>
@@ -152,6 +172,9 @@ export function POSCart({
         </button>
         <button className={`${styles.posBtn} ${styles.bgSuspend}`} disabled={cart.length === 0} onClick={() => suspendSale(grandTotal)}>
           <PauseCircle size={20} /> Suspender
+        </button>
+        <button className={`${styles.posBtn} ${styles.bgQr}`} disabled={cart.length === 0} onClick={() => onCheckoutPayment('QR_MERCADOPAGO')}>
+          <QrCode size={20} /> QR MP
         </button>
         <button className={`${styles.posBtn} ${styles.bgCredit}`} disabled={cart.length === 0} onClick={() => onCheckoutPayment('CREDIT_CARD')}>
           <CreditCard size={20} /> Tarjeta

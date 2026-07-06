@@ -1,37 +1,54 @@
 import { db, PosCatalogItem } from '../db/db';
-import { apiClient } from '../api/apiClient';
+import { get } from '@/api/client';
+
+interface CatalogSyncResponse {
+  status: string;
+  timestamp: string;
+  data: {
+    id: string;
+    sku: string;
+    barcode: string | null;
+    name: string;
+    basePrice: number;
+    categoryId: string;
+    categoryName?: string;
+    brandName?: string;
+  }[];
+}
 
 export class CatalogSyncService {
-  /**
-   * Fetches the flattened catalog from the backend and performs a bulk replace in Dexie.
-   * This is meant to be called when the POS initializes or when a manual sync is triggered.
-   */
   static async syncPosCatalog(): Promise<void> {
     try {
-      // 1. Fetch from backend
-      const response = await apiClient.get<PosCatalogItem[]>('/catalog/pos-sync');
-      const catalogData = response.data;
+      const response = await get<CatalogSyncResponse>('/pos/sync/catalog');
+      const catalogData = response.data || [];
 
-      // 2. Perform a transactional bulk replace
+      const items: PosCatalogItem[] = catalogData.map(item => ({
+        id: item.id,
+        productId: item.categoryId,
+        sku: item.sku,
+        primaryBarcode: item.barcode || item.sku,
+        allBarcodes: item.barcode ? [item.barcode] : [item.sku],
+        name: item.name,
+        price: item.basePrice,
+        categoryId: item.categoryId,
+        size: null,
+        color: null,
+      }));
+
       await db.transaction('rw', db.catalog, async () => {
-        // Clear old catalog (if we want full replace instead of differential update for V1)
         await db.catalog.clear();
-        
-        // Insert new data
-        await db.catalog.bulkAdd(catalogData);
+        if (items.length > 0) {
+          await db.catalog.bulkAdd(items);
+        }
       });
 
-      console.log(`[Sync] POS Catalog synchronized. Downloaded ${catalogData.length} items.`);
+      console.log(`[Sync] POS Catalog synchronized. Downloaded ${items.length} items.`);
     } catch (error) {
       console.error('[Sync] Failed to sync POS catalog:', error);
       throw error;
     }
   }
 
-  /**
-   * Searches the local Dexie DB by SKU or Barcode.
-   * Very fast, completely offline.
-   */
   static async findByBarcodeOrSku(query: string): Promise<PosCatalogItem | undefined> {
     return db.catalog
       .where('sku').equals(query)

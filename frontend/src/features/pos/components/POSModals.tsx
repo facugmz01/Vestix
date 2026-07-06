@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PauseCircle } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { useAuthStore } from '@/store/auth.store';
@@ -9,6 +10,7 @@ import { QrPaymentModal } from './QrPaymentModal';
 import { PrintReceiptModal } from './PrintReceiptModal';
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
 import { ShiftManagerModal } from '@/features/sales/components/ShiftManagerModal';
+import type { CashShift, CashRegister } from '@/types';
 
 export function POSModals({
   grandTotal,
@@ -26,15 +28,16 @@ export function POSModals({
   grandTotal: number;
   paymentMethod: string;
   isGeneratingQr: boolean;
-  customersData: any;
+  customersData: { data?: { id: string; fullName: string }[] } | undefined;
   onConfirmCheckout: (status: 'CONFIRMED' | 'QUOTATION') => void;
   isCheckoutLoading: boolean;
-  activeShift: any;
-  registersData: any;
+  activeShift: CashShift | null | undefined;
+  registersData: CashRegister[] | undefined;
   isShiftLoading: boolean;
   issueInvoice: boolean;
   setIssueInvoice: (issue: boolean) => void;
 }) {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [amountTendered, setAmountTendered] = useState(grandTotal);
 
@@ -60,6 +63,12 @@ export function POSModals({
   const customerFormOpen = usePosStore(s => s.customerFormOpen);
   const setCustomerFormOpen = usePosStore(s => s.setCustomerFormOpen);
 
+  useEffect(() => {
+    if (paymentModalOpen) {
+      setAmountTendered(grandTotal);
+    }
+  }, [paymentModalOpen, grandTotal]);
+
   return (
     <>
       <ShiftManagerModal 
@@ -67,6 +76,8 @@ export function POSModals({
         mode="OPEN"
         activeShift={null}
         registers={registersData}
+        allowDismiss
+        onDismiss={() => navigate('/')}
         onClose={() => {}}
       />
       
@@ -96,7 +107,6 @@ export function POSModals({
         branchSettings={user?.branchId === 'CENTRAL' ? { posReceiptHeader: 'VESTIX - SUCURSAL CENTRAL', posReceiptFooter: 'Gracias por tu compra' } : {}}
       />
 
-      {/* PAYMENT MODAL */}
       <Modal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar Pago">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1))', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)', padding: '24px', textAlign: 'center', borderRadius: '16px' }}>
@@ -140,7 +150,6 @@ export function POSModals({
         </div>
       </Modal>
 
-      {/* SUSPENDED SALES MODAL */}
       <Modal open={suspendModalOpen} onClose={() => setSuspendModalOpen(false)} title="Ventas Suspendidas">
         {suspendedSales.length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', opacity: 0.5 }}>
@@ -152,7 +161,7 @@ export function POSModals({
             {suspendedSales.map(sale => (
               <div key={sale.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
-                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>{customersData?.data.find((c: any) => c.id === sale.customerId)?.fullName || 'Consumidor Final'}</div>
+                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>{customersData?.data?.find(c => c.id === sale.customerId)?.fullName || 'Consumidor Final'}</div>
                   <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{new Date(sale.date).toLocaleString()}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
