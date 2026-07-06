@@ -20,12 +20,12 @@ echo ""
 echo "Ingresá el dominio o IP pública donde se accederá al sistema."
 echo "Ejemplos: erp.miempresa.com, 185.200.50.100"
 echo ""
-read -p "  Dominio o IP: " SERVER_DOMAIN
+read -r -p "  Dominio o IP: " SERVER_DOMAIN
 SERVER_DOMAIN=${SERVER_DOMAIN:-"_"}
 echo ""
 echo "  Dominio configurado: $SERVER_DOMAIN"
 echo ""
-read -p "¿Es correcto? (s/n): " CONFIRM
+read -r -p "¿Es correcto? (s/n): " CONFIRM
 if [[ ! "$CONFIRM" =~ ^[sS]$ ]]; then
   echo "Instalación cancelada. Volvé a ejecutar el script."
   exit 1
@@ -38,7 +38,7 @@ echo ""
 # ─────────────────────────────────────────────────────────────
 # 1. Actualizar e instalar dependencias del sistema
 # ─────────────────────────────────────────────────────────────
-echo ">>> [1/8] Instalando dependencias del sistema (PostgreSQL, Redis, Nginx, Git)..."
+echo ">>> [1/9] Instalando dependencias del sistema (PostgreSQL, Redis, Nginx, Git)..."
 sudo apt-get update
 sudo apt-get install -y curl git nginx postgresql postgresql-contrib redis-server build-essential
 
@@ -53,7 +53,7 @@ sudo npm install -g pm2
 # ─────────────────────────────────────────────────────────────
 # 2. Configurar Base de Datos PostgreSQL
 # ─────────────────────────────────────────────────────────────
-echo ">>> [2/8] Configurando PostgreSQL..."
+echo ">>> [2/9] Configurando PostgreSQL..."
 DB_NAME="erp_prod"
 DB_USER="erp_admin"
 DB_PASS=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9')
@@ -66,10 +66,10 @@ sudo -u postgres psql -c "ALTER DATABASE $DB_NAME OWNER TO $DB_USER;" || true
 # ─────────────────────────────────────────────────────────────
 # 3. Clonar Repositorio
 # ─────────────────────────────────────────────────────────────
-echo ">>> [3/8] Clonando repositorio desde GitHub..."
+echo ">>> [3/9] Clonando repositorio desde GitHub..."
 APP_DIR="/var/www/vestix"
 sudo mkdir -p $APP_DIR
-sudo chown -R $USER:$USER $APP_DIR
+sudo chown -R "$USER":"$USER" $APP_DIR
 if [ ! -d "$APP_DIR/.git" ]; then
     git clone https://github.com/facugmz01/Vestix.git $APP_DIR
 else
@@ -83,22 +83,19 @@ cd $APP_DIR
 # ─────────────────────────────────────────────────────────────
 # 4. Generar archivos .env
 # ─────────────────────────────────────────────────────────────
-echo ">>> [4/8] Generando variables de entorno (.env)..."
+echo ">>> [4/9] Generando variables de entorno (.env)..."
 JWT_SECRET=$(openssl rand -base64 32)
 
 mkdir -p $APP_DIR/backend
 mkdir -p $APP_DIR/frontend
 
-# Determinar si es IP o Dominio
+# Determinar si es IP o Dominio (solo afecta el tipo de certificado SSL generado más abajo)
 if [[ "$SERVER_DOMAIN" == "_" || "$SERVER_DOMAIN" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   IS_IP=true
-  API_PUBLIC_URL="https://$SERVER_DOMAIN/api"
-  APP_PUBLIC_URL="https://$SERVER_DOMAIN"
 else
   IS_IP=false
-  API_PUBLIC_URL="https://$SERVER_DOMAIN/api"
-  APP_PUBLIC_URL="https://$SERVER_DOMAIN"
 fi
+APP_PUBLIC_URL="https://$SERVER_DOMAIN"
 
 cat <<EOF > $APP_DIR/backend/.env
 PORT=3000
@@ -108,12 +105,17 @@ REDIS_PORT=6379
 JWT_SECRET="$JWT_SECRET"
 NODE_ENV="production"
 APP_URL="$APP_PUBLIC_URL"
+FRONTEND_URL="$APP_PUBLIC_URL"
 EOF
 
 # Asegurar que VITE_API_BASE y VITE_APP_URL se sobreescriban correctamente en .env.production
+# También se elimina VITE_STOREFRONT_DOMAIN heredado del repo (apunta al dominio de
+# un cliente anterior) para que este deploy no active el modo "tienda online" en un
+# hostname que no le pertenece a este servidor.
 touch $APP_DIR/frontend/.env.production
 sed -i '/^VITE_API_BASE=/d' $APP_DIR/frontend/.env.production
 sed -i '/^VITE_APP_URL=/d' $APP_DIR/frontend/.env.production
+sed -i '/^VITE_STOREFRONT_DOMAIN=/d' $APP_DIR/frontend/.env.production
 echo "VITE_API_BASE=\"/api\"" >> $APP_DIR/frontend/.env.production
 echo "VITE_APP_URL=\"$APP_PUBLIC_URL\"" >> $APP_DIR/frontend/.env.production
 
@@ -249,7 +251,7 @@ sudo systemctl enable redis-server
 if [ "$IS_IP" = false ] && [ "$SERVER_DOMAIN" != "_" ]; then
   echo ">>> [9/9] Obteniendo certificado SSL de Let's Encrypt con Certbot..."
   sudo apt-get install -y certbot python3-certbot-nginx
-  sudo certbot --nginx -d $SERVER_DOMAIN --non-interactive --agree-tos --register-unsafely-without-email --redirect || echo "⚠️ Advertencia: Falló la generación del certificado SSL. Puedes configurarlo manualmente luego."
+  sudo certbot --nginx -d "$SERVER_DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect || echo "⚠️ Advertencia: Falló la generación del certificado SSL. Puedes configurarlo manualmente luego."
 else
   echo ">>> [9/9] Certbot omitido (Se está usando IP o localhost con certificado autofirmado)."
 fi
