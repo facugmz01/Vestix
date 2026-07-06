@@ -6,31 +6,34 @@ import toast from 'react-hot-toast';
 import { get } from '@/api/client';
 import type { SaleOrder, PaymentMethod } from '@/types';
 
-function buildOfflineReceipt(dto: Record<string, any>): SaleOrder {
-  const lines = (dto.lines || []).map((line: any, idx: number) => ({
-    id: `offline-${idx}`,
-    variantId: line.variantId,
-    quantity: line.quantity,
-    basePrice: line.unitPriceOverride || 0,
-    discountAmount: (line.unitPriceOverride || 0) * line.quantity * ((line.discountPct || 0) / 100),
-    finalPrice: (line.unitPriceOverride || 0) * line.quantity * (1 - (line.discountPct || 0) / 100),
-  }));
+function buildOfflineReceipt(dto: Record<string, unknown>): SaleOrder {
+  const lines = ((dto.lines as unknown[]) || []).map((line: unknown, idx: number) => {
+    const l = line as { variantId: string; quantity: number; unitPriceOverride?: number; discountPct?: number };
+    return {
+      id: `offline-${idx}`,
+      variantId: l.variantId,
+      quantity: l.quantity,
+      basePrice: l.unitPriceOverride || 0,
+      discountAmount: (l.unitPriceOverride || 0) * l.quantity * ((l.discountPct || 0) / 100),
+      finalPrice: (l.unitPriceOverride || 0) * l.quantity * (1 - (l.discountPct || 0) / 100),
+    };
+  });
 
   const subtotal = lines.reduce((acc, l) => acc + l.basePrice * l.quantity, 0);
-  const grandTotal = dto.posGrandTotal ?? subtotal;
+  const grandTotal = (dto.posGrandTotal as number) ?? subtotal;
 
   return {
-    id: dto.id,
-    branchId: dto.branchId,
+    id: dto.id as string,
+    branchId: dto.branchId as string,
     source: 'POS',
     status: dto.status === 'QUOTE' ? 'QUOTATION' : 'CONFIRMED',
-    customerId: dto.customerId,
+    customerId: dto.customerId as string | undefined,
     lines,
     subtotal,
-    cartDiscountTotal: dto.cartDiscountTotal || Math.max(0, subtotal - grandTotal),
+    cartDiscountTotal: (dto.cartDiscountTotal as number) || Math.max(0, subtotal - grandTotal),
     grandTotal,
     paymentMethod: (dto.paymentMethod || 'CASH') as PaymentMethod,
-    createdAt: dto.createdAtIso || new Date().toISOString(),
+    createdAt: (dto.createdAtIso as string) || new Date().toISOString(),
   };
 }
 
@@ -47,8 +50,8 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       issueInvoice: boolean;
     }) => {
       if (!activeShift) throw new Error('No hay sesión de caja activa');
-      
-      const { cart, selectedCustomerId } = usePosStore.getState();
+
+      const { cart, selectedCustomerId, paymentReference, paymentSplits } = usePosStore.getState();
       const orderId = crypto.randomUUID();
 
       let warehouseId = 'main';
@@ -71,14 +74,18 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         paymentAccountId = accounts?.find(a => a.isActive)?.id;
       } catch { paymentAccountId = undefined; }
 
-      const dto = {
+      const resolvedMethod = paymentSplits.length > 0 ? 'MULTIPLE' : paymentMethod;
+
+      const dto: Record<string, unknown> = {
         id: orderId,
         branchId: currentBranchId,
         warehouseId,
         customerId: selectedCustomerId || undefined,
         source: 'POS',
-        paymentMethod: paymentMethod === 'MULTIPLE' ? 'CASH' : (paymentMethod === 'QR_MERCADOPAGO' ? 'CREDIT_CARD' : paymentMethod),
-        paymentAccountId,
+        paymentMethod: resolvedMethod,
+        paymentAccountId: resolvedMethod === 'CUSTOMER_CREDIT' ? undefined : paymentAccountId,
+        paymentReference: paymentReference || undefined,
+        payments: paymentSplits.length > 0 ? paymentSplits : undefined,
         cashShiftId: activeShift.id,
         status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
         posGrandTotal: grandTotal,
@@ -106,8 +113,8 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       }
 
       try {
-        const res = await salesApi.createSale(dto);
-        return { offline: false, res, dto };
+        const res = await salesApi.createSale(dto as Parameters<typeof salesApi.createSale>[0]);
+        return { offline: false, res: res.order || res, dto };
       } catch (err: unknown) {
         const axiosErr = err as { response?: unknown; code?: string };
         if (!axiosErr.response || axiosErr.code === 'ERR_NETWORK') {
@@ -134,13 +141,14 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       } else {
         toast.success('Venta registrada con éxito');
       }
-      
+
       const order = data.offline
         ? buildOfflineReceipt(data.dto)
         : (data.res as SaleOrder);
       usePosStore.getState().setCompletedOrder(order);
       usePosStore.getState().setPrintModalOpen(true);
       usePosStore.getState().setPaymentModalOpen(false);
+      usePosStore.getState().setMixedPaymentModalOpen(false);
     },
     onError: (_err, _variables, context) => {
       if (context?.prevCart) {

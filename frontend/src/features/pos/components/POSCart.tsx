@@ -1,7 +1,9 @@
 import { useRef } from 'react';
-import { Search, Plus, Minus, Trash2, User, FileText, PauseCircle, CreditCard, Banknote, QrCode } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, User, FileText, PauseCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { POS_PAYMENT_METHODS, type PosPaymentMethodId } from '../constants/posPaymentMethods';
 import styles from '@/pages/pos/POSPage.module.css';
 import type { ProductVariant } from '@/types';
 
@@ -28,7 +30,7 @@ export function POSCart({
   globalDiscount: number;
   totalItems: number;
   onCheckoutQuotation: () => void;
-  onCheckoutPayment: (method: 'CASH' | 'CREDIT_CARD' | 'QR_MERCADOPAGO' | 'MULTIPLE') => void;
+  onCheckoutPayment: (method: PosPaymentMethodId) => void;
 }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   
@@ -44,10 +46,23 @@ export function POSCart({
   const setCartDiscountPct = usePosStore(s => s.setCartDiscountPct);
   const setCustomerFormOpen = usePosStore(s => s.setCustomerFormOpen);
   const suspendSale = usePosStore(s => s.suspendSale);
+  const setMixedPaymentModalOpen = usePosStore(s => s.setMixedPaymentModalOpen);
 
   const getVariantName = (variant: ProductVariant) => {
     const v = variant as ProductVariant & { name?: string; productName?: string };
     return v.name || v.productName || 'Producto';
+  };
+
+  const handlePaymentClick = (method: typeof POS_PAYMENT_METHODS[number]) => {
+    if (method.requiresCustomer && !selectedCustomerId) {
+      toast.error('Seleccioná un cliente para usar Cuenta Corriente');
+      return;
+    }
+    if (method.opensMixedModal) {
+      setMixedPaymentModalOpen(true);
+      return;
+    }
+    onCheckoutPayment(method.id);
   };
 
   return (
@@ -173,15 +188,20 @@ export function POSCart({
         <button className={`${styles.posBtn} ${styles.bgSuspend}`} disabled={cart.length === 0} onClick={() => suspendSale(grandTotal)}>
           <PauseCircle size={20} /> Suspender
         </button>
-        <button className={`${styles.posBtn} ${styles.bgQr}`} disabled={cart.length === 0} onClick={() => onCheckoutPayment('QR_MERCADOPAGO')}>
-          <QrCode size={20} /> QR MP
-        </button>
-        <button className={`${styles.posBtn} ${styles.bgCredit}`} disabled={cart.length === 0} onClick={() => onCheckoutPayment('CREDIT_CARD')}>
-          <CreditCard size={20} /> Tarjeta
-        </button>
-        <button className={`${styles.posBtn} ${styles.bgCash}`} disabled={cart.length === 0} onClick={() => onCheckoutPayment('CASH')}>
-          <Banknote size={20} /> Efectivo
-        </button>
+        {POS_PAYMENT_METHODS.map(method => {
+          const Icon = method.icon;
+          return (
+            <button
+              key={method.id}
+              className={`${styles.posBtn} ${styles[method.cssClass as keyof typeof styles] || ''}`}
+              disabled={cart.length === 0}
+              onClick={() => handlePaymentClick(method)}
+              title={method.label}
+            >
+              <Icon size={20} /> {method.shortLabel}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

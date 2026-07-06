@@ -17,6 +17,8 @@ import { POSProductGrid } from '@/features/pos/components/POSProductGrid';
 import { POSCart } from '@/features/pos/components/POSCart';
 import { POSModals } from '@/features/pos/components/POSModals';
 
+import type { PosPaymentMethodId } from '@/features/pos/constants/posPaymentMethods';
+
 import styles from './POSPage.module.css';
 
 export default function POSPage() {
@@ -35,7 +37,7 @@ export default function POSPage() {
   const resumeSale = usePosStore(s => s.resumeSale);
   
   const [search, setSearch] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'|'QR_MERCADOPAGO'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethodId>('CASH');
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [issueInvoice, setIssueInvoice] = useState(false);
 
@@ -131,9 +133,11 @@ export default function POSPage() {
 
   const checkoutMutation = usePosCheckout(activeShift, currentBranchId);
 
-  const handleCheckoutPayment = async (method: typeof paymentMethod) => {
+  const handleCheckoutPayment = async (method: PosPaymentMethodId) => {
     if (cart.length === 0) return;
     setPaymentMethod(method);
+    usePosStore.getState().setPaymentSplits([]);
+    usePosStore.getState().setPaymentReference('');
     
     if (method === 'QR_MERCADOPAGO') {
       setQrModalOpen(true);

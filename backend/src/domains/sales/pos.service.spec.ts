@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { MercadoPagoService } from './mercadopago.service';
 import { PosService } from './pos.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { PricingService } from '../catalog/pricing.service';
@@ -63,6 +64,10 @@ const mockCashService: any = {
   closeShift: jest.fn(),
 };
 
+const mockMercadoPagoService: any = {
+  createPreference: jest.fn<any>().mockResolvedValue({ preferenceId: 'mock', initPoint: 'http://mock' }),
+};
+
 describe('PosService', () => {
   let service: PosService;
 
@@ -74,6 +79,7 @@ describe('PosService', () => {
         { provide: PricingService, useValue: mockPricingService },
         { provide: RulesEngineService, useValue: mockRulesEngine },
         { provide: CashService, useValue: mockCashService },
+        { provide: MercadoPagoService, useValue: mockMercadoPagoService },
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();

@@ -8,7 +8,9 @@ export enum PaymentMethod {
   CASH = 'CASH',
   CREDIT_CARD = 'CREDIT_CARD',
   BANK_TRANSFER = 'BANK_TRANSFER',
-  CUSTOMER_CREDIT = 'CUSTOMER_CREDIT', // B2B Wholesale "Pay on Account"
+  CUSTOMER_CREDIT = 'CUSTOMER_CREDIT',
+  MULTIPLE = 'MULTIPLE',
+  QR_MERCADOPAGO = 'QR_MERCADOPAGO',
 }
 
 export interface OrderLineItem {

@@ -14,6 +14,8 @@ export interface SharedCreateSaleDto {
   customerId?: string;
   paymentMethod: 'CASH' | 'CREDIT_CARD' | 'CUSTOMER_CREDIT' | 'BANK_TRANSFER' | 'MULTIPLE' | 'QR_MERCADOPAGO';
   paymentAccountId?: string;
+  paymentReference?: string;
+  payments?: { method: string; amount: number; reference?: string }[];
   status?: string;
   createdAtIso?: string;
   posGrandTotal?: number;

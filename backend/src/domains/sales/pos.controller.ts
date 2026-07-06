@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, UseGuards, Req, Sse } from '@nestjs/common';
 import { PosService } from './pos.service';
 import { 
   ScanBarcodeDto, 
@@ -88,5 +88,11 @@ export class PosController {
   @RequirePermissions({ action: 'update', subject: 'Sales' })
   async confirmQrOrder(@Param('orderId') orderId: string) {
     return this.posService.confirmQrOrder(orderId);
+  }
+
+  @Sse('qr-order/:orderId/events')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  qrOrderEvents(@Param('orderId') orderId: string) {
+    return this.posService.subscribeQrOrderStatus(orderId);
   }
 }

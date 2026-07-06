@@ -30,11 +30,21 @@ export function QrPaymentModal({
   const [status, setStatus] = useState<'PENDING' | 'APPROVED' | 'EXPIRED' | 'REJECTED'>('PENDING');
   const [isConfirming, setIsConfirming] = useState(false);
   const confirmedRef = useRef(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  const handleApproved = () => {
+    if (confirmedRef.current) return;
+    confirmedRef.current = true;
+    toast.success('Pago QR confirmado');
+    onPaymentConfirmed();
+  };
 
   useEffect(() => {
     if (!open) {
       setStatus('PENDING');
       confirmedRef.current = false;
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
       return;
     }
 
@@ -47,22 +57,40 @@ export function QrPaymentModal({
       try {
         const res = await posApi.getQrOrderStatus(orderId);
         setStatus(res.status);
-        if (res.status === 'APPROVED' && !confirmedRef.current) {
-          confirmedRef.current = true;
-          toast.success('Pago QR confirmado');
-          onPaymentConfirmed();
-        }
-        if (res.status === 'EXPIRED') {
-          toast.error('El QR expiró. Generá uno nuevo.');
-        }
+        if (res.status === 'APPROVED') handleApproved();
+        if (res.status === 'EXPIRED') toast.error('El QR expiró. Generá uno nuevo.');
+        if (res.status === 'REJECTED') toast.error('El pago fue rechazado.');
       } catch {
         // Ignore transient polling errors
       }
     };
 
     poll();
-    const timer = setInterval(poll, 3000);
-    return () => clearInterval(timer);
+
+    try {
+      const es = new EventSource(`/api/pos/qr-order/${orderId}/events`, { withCredentials: true });
+      eventSourceRef.current = es;
+      es.onmessage = (evt) => {
+        try {
+          const payload = JSON.parse(evt.data);
+          if (payload.status) {
+            setStatus(payload.status);
+            if (payload.status === 'APPROVED') handleApproved();
+          }
+        } catch { /* ignore */ }
+      };
+      es.onerror = () => es.close();
+    } catch {
+      const timer = setInterval(poll, 3000);
+      return () => clearInterval(timer);
+    }
+
+    const fallbackTimer = setInterval(poll, 5000);
+    return () => {
+      clearInterval(fallbackTimer);
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+    };
   }, [open, orderId, qrData, onPaymentConfirmed]);
 
   const handleForceConfirm = async () => {
@@ -74,7 +102,7 @@ export function QrPaymentModal({
     try {
       await posApi.confirmQrOrder(orderId);
       setStatus('APPROVED');
-      onPaymentConfirmed();
+      handleApproved();
     } catch {
       onForceConfirm();
     } finally {
@@ -122,7 +150,7 @@ export function QrPaymentModal({
               <Check size={18} style={{ marginRight: '8px' }} /> Confirmar Pago Manualmente
             </Button>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
-              El sistema verifica el pago automáticamente cada 3 segundos.
+              Confirmación en tiempo real vía SSE + polling de respaldo.
             </span>
           </div>
         )}

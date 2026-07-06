@@ -32,6 +32,9 @@ interface PosState {
   qrModalOpen: boolean;
   qrData: string | null;
   qrOrderId: string | null;
+  mixedPaymentModalOpen: boolean;
+  paymentReference: string;
+  paymentSplits: { method: string; amount: number; reference?: string }[];
   completedOrder: any;
   
   // Actions
@@ -53,6 +56,9 @@ interface PosState {
   setShiftModalOpen: (open: boolean) => void;
   setCustomerFormOpen: (open: boolean) => void;
   setQrModalOpen: (open: boolean, data?: string | null, orderId?: string | null) => void;
+  setMixedPaymentModalOpen: (open: boolean) => void;
+  setPaymentReference: (ref: string) => void;
+  setPaymentSplits: (splits: { method: string; amount: number; reference?: string }[]) => void;
   setCompletedOrder: (order: any) => void;
 }
 
@@ -72,6 +78,9 @@ export const usePosStore = create<PosState>()(
       qrModalOpen: false,
       qrData: null,
       qrOrderId: null,
+      mixedPaymentModalOpen: false,
+      paymentReference: '',
+      paymentSplits: [],
       completedOrder: null,
 
       addToCart: (variant) => set((state) => {
@@ -97,7 +106,13 @@ export const usePosStore = create<PosState>()(
         cart: state.cart.filter(i => i.variant.id !== id)
       })),
 
-      clearCart: () => set({ cart: [], selectedCustomerId: '', cartDiscountPct: 0 }),
+      clearCart: () => set({
+        cart: [],
+        selectedCustomerId: '',
+        cartDiscountPct: 0,
+        paymentReference: '',
+        paymentSplits: [],
+      }),
       
       setCustomerId: (id) => set({ selectedCustomerId: id }),
       setCartDiscountPct: (pct) => set({ cartDiscountPct: pct }),
@@ -112,6 +127,9 @@ export const usePosStore = create<PosState>()(
         qrData: data ?? null,
         qrOrderId: orderId ?? null,
       }),
+      setMixedPaymentModalOpen: (open) => set({ mixedPaymentModalOpen: open }),
+      setPaymentReference: (ref) => set({ paymentReference: ref }),
+      setPaymentSplits: (splits) => set({ paymentSplits: splits }),
       setCompletedOrder: (order) => set({ completedOrder: order }),
 
       suspendSale: (total) => set((state) => {

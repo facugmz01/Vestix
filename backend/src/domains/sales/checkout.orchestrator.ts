@@ -142,7 +142,9 @@ export class CheckoutOrchestrator {
       const isBackoffice = dto.source === 'BACKOFFICE';
 
       // --- A. FINANCE BOUNDARY ---
-      if (!isQuote) {
+      const hasSplitPayments = !isQuote && dto.payments && dto.payments.length > 0;
+
+      if (!isQuote && !hasSplitPayments) {
         if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
           if (!dto.customerId) throw new BadRequestException('Customer ID required for credit');
           const customer = await tx.customer.findUnique({ where: { id: dto.customerId }});
@@ -157,13 +159,15 @@ export class CheckoutOrchestrator {
             data: { usedCredit: { increment: posTotal } }
           });
         } else if (dto.paymentAccountId && !isBackoffice) {
+          const treasuryMethod = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'QR_MERCADOPAGO' : dto.paymentMethod;
+          const refNote = dto.paymentReference ? ` Ref: ${dto.paymentReference}` : '';
           await tx.treasuryReceipt.create({
             data: {
               accountId: dto.paymentAccountId,
               amount: posTotal,
               payerName: dto.customerId || 'Walk-in',
               referenceId: dto.id,
-              description: `Checkout via ${dto.paymentMethod}`
+              description: `Checkout via ${treasuryMethod}${refNote}`
             }
           });
         }
@@ -223,6 +227,23 @@ export class CheckoutOrchestrator {
         },
         include: { lines: true }
       });
+
+      if (hasSplitPayments) {
+        await this.processPaymentSplits(tx, dto, order.id, posTotal);
+      } else if (!isQuote && dto.paymentMethod !== 'CUSTOMER_CREDIT') {
+        const pmType = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'CREDIT_CARD' : dto.paymentMethod;
+        const pm = await tx.paymentMethod.findFirst({ where: { type: pmType, isActive: true } });
+        if (pm) {
+          await tx.saleOrderPayment.create({
+            data: {
+              orderId: order.id,
+              paymentMethodId: pm.id,
+              amount: posTotal,
+              referenceId: dto.paymentReference || null,
+            },
+          });
+        }
+      }
 
       // --- D. DATA INTEGRITY BOUNDARY (Price Variance) ---
       if (Math.abs(posDifference) > 0.01) {
@@ -360,5 +381,64 @@ export class CheckoutOrchestrator {
       where: { id },
       data: { status: 'CANCELLED' }
     });
+  }
+
+  private async processPaymentSplits(
+    tx: any,
+    dto: CreateOrderDto,
+    orderId: string,
+    posTotal: number,
+  ) {
+    const splits = dto.payments || [];
+    const splitTotal = splits.reduce((sum, s) => sum + s.amount, 0);
+    if (Math.abs(splitTotal - posTotal) > 0.01) {
+      throw new BadRequestException(`Split payments ($${splitTotal}) must equal order total ($${posTotal})`);
+    }
+
+    for (const split of splits) {
+      const methodType = split.method === 'QR_MERCADOPAGO' ? 'CREDIT_CARD'
+        : split.method === 'DEBIT_CARD' ? 'CREDIT_CARD'
+        : split.method === 'STORE_CREDIT' ? 'CUSTOMER_CREDIT'
+        : split.method;
+
+      if (methodType === 'CUSTOMER_CREDIT') {
+        if (!dto.customerId) throw new BadRequestException('Customer ID required for credit payment');
+        const customer = await tx.customer.findUnique({ where: { id: dto.customerId } });
+        if (!customer) throw new BadRequestException('Customer not found');
+        if (customer.usedCredit + split.amount > customer.creditLimit) {
+          throw new BadRequestException('Credit limit exceeded');
+        }
+        await tx.customer.update({
+          where: { id: dto.customerId },
+          data: { usedCredit: { increment: split.amount } },
+        });
+      } else {
+        const pm = await tx.paymentMethod.findFirst({
+          where: { type: methodType, isActive: true },
+          include: { account: true },
+        });
+        if (pm?.accountId) {
+          await tx.treasuryReceipt.create({
+            data: {
+              accountId: pm.accountId,
+              amount: split.amount,
+              payerName: dto.customerId || 'Walk-in',
+              referenceId: orderId,
+              description: `Split payment via ${split.method}${split.reference ? ` Ref: ${split.reference}` : ''}`,
+            },
+          });
+        }
+        if (pm) {
+          await tx.saleOrderPayment.create({
+            data: {
+              orderId,
+              paymentMethodId: pm.id,
+              amount: split.amount,
+              referenceId: split.reference || null,
+            },
+          });
+        }
+      }
+    }
   }
 }
