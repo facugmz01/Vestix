@@ -35,6 +35,10 @@ export class BrandsService {
 
   async delete(id: string) {
     await this.findOne(id);
+    const productCount = await this.prisma.product.count({ where: { brandId: id } });
+    if (productCount > 0) {
+      throw new ConflictException(`No se puede eliminar la marca: ${productCount} producto(s) la utilizan.`);
+    }
     return this.prisma.brand.delete({ where: { id } });
   }
 }
@@ -75,6 +79,14 @@ export class CategoriesService {
 
   async delete(id: string) {
     await this.findOne(id);
+    const children = await this.prisma.category.count({ where: { parentId: id } });
+    if (children > 0) {
+      throw new ConflictException('No se puede eliminar una categoría que tiene subcategorías.');
+    }
+    const productCount = await this.prisma.product.count({ where: { categoryId: id } });
+    if (productCount > 0) {
+      throw new ConflictException(`No se puede eliminar la categoría: ${productCount} producto(s) la utilizan.`);
+    }
     return this.prisma.category.delete({ where: { id } });
   }
 }

@@ -87,7 +87,7 @@ export interface SystemUser {
 }
 
 // ─── CATALOG ─────────────────────────────────────────────────────────────
-export interface Category { id: string; name: string; code: string; }
+export interface Category { id: string; name: string; parentId?: string | null; code?: string; }
 export interface Brand    { id: string; name: string; }
 export interface Attribute {
   id: string;
@@ -319,7 +319,7 @@ export interface PriceListItem {
   basePrice?: number;
 }
 
-export type PromotionType = 'PERCENTAGE_DISCOUNT' | 'FIXED_DISCOUNT' | 'BOGO' | 'BULK_DISCOUNT';
+export type PromotionType = 'PERCENTAGE_DISCOUNT' | 'FIXED_DISCOUNT' | 'BOGO' | 'BULK_DISCOUNT' | 'CART_TOTAL_DISCOUNT' | 'CATEGORY_DISCOUNT';
 export interface Promotion {
   id: string;
   name: string;

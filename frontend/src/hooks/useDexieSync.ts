@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { db } from '@/core/db/db';
 import { salesApi } from '@/api/sales.api';
+import { CatalogSyncService } from '@/core/sync/CatalogSyncService';
 import toast from 'react-hot-toast';
 
 export function useDexieSync() {
@@ -69,6 +70,9 @@ export function useDexieSync() {
     // Initial check
     if (navigator.onLine) {
       syncQueue();
+      CatalogSyncService.syncPosCatalog().catch(() => {
+        // Silent fail — POS can still use live search when online
+      });
     }
 
     return () => {

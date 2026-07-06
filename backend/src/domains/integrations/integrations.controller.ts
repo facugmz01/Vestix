@@ -93,6 +93,37 @@ export class IntegrationsController {
     return this.integrationsService.deleteWcMapping(variantId);
   }
 
+  @Get('mercadolibre/mappings')
+  @RequirePermissions({ action: 'read', subject: 'System' })
+  async getMlMappings() {
+    return this.integrationsService.getMlMappings();
+  }
+
+  @Post('mercadolibre/mappings')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async saveMlMapping(
+    @Body('variantId') variantId: string,
+    @Body('mlItemId') mlItemId: string,
+    @Body('mlVariationId') mlVariationId?: string,
+  ) {
+    return this.integrationsService.saveMlMapping(variantId, mlItemId, mlVariationId);
+  }
+
+  @Post('mercadolibre/mappings/delete')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async deleteMlMapping(@Body('variantId') variantId: string) {
+    return this.integrationsService.deleteMlMapping(variantId);
+  }
+
+  @Post('mercadolibre/webhook')
+  async receiveMlWebhook(
+    @Headers('x-ml-topic') topic: string,
+    @Body() payload: any,
+  ) {
+    const resource = payload?.resource || payload?.id || '';
+    return this.integrationsService.handleMlWebhook(topic, resource, payload);
+  }
+
   /**
    * WooCommerce Webhook Receiver.
    * No RBAC: This endpoint must be publicly reachable by WooCommerce's servers.

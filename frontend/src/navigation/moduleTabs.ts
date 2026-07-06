@@ -10,7 +10,8 @@ export const CATALOG_TABS: TabItem[] = [
   { id: 'products', label: 'Productos', to: '/admin/catalog', icon: Package, end: true },
   { id: 'attributes', label: 'Categorías y Atributos', to: '/admin/attributes', icon: Layers },
   { id: 'promotions', label: 'Promociones', to: '/admin/promotions', icon: Tag },
-  { id: 'prices', label: 'Listas de Precios', to: '/admin/price-inquiry', icon: Banknote },
+  { id: 'prices', label: 'Listas de Precios', to: '/admin/price-lists', icon: Banknote },
+  { id: 'price-inquiry', label: 'Consulta de Precios', to: '/admin/price-inquiry', icon: Tag },
   { id: 'barcodes', label: 'Etiquetas', to: '/admin/barcodes', icon: Tag },
 ];
 

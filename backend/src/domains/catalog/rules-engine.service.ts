@@ -88,7 +88,7 @@ export class RulesEngineService {
       }
       
       // RULE 2: Category Wide Discounts
-      if (rule.type === PromotionType.CATEGORY_DISCOUNT) {
+      if (rule.type === PromotionType.CATEGORY_DISCOUNT || rule.type === 'CATEGORY_DISCOUNT') {
         const conditions: any = rule.conditions;
         const actions: any = rule.actions;
         const targetCat = conditions.targetCategoryId;
@@ -104,24 +104,44 @@ export class RulesEngineService {
       }
 
       // RULE 3: Minimum Spend Cart Discount
-      if (rule.type === PromotionType.CART_TOTAL_DISCOUNT) {
+      if (rule.type === PromotionType.CART_TOTAL_DISCOUNT || rule.type === 'CART_TOTAL_DISCOUNT') {
         const conditions: any = rule.conditions;
         const actions: any = rule.actions;
-        // Calculate against current subtotal (after other discounts)
-        if ((originalTotal - discountTotal) >= conditions.minimumSpend) {
-          // Distribute cart discount proportionally across all lines to preserve item margins
-          const cartDiscountAmount = actions.flatDiscountAmount;
+        if ((originalTotal - discountTotal) >= (conditions.minimumSpend ?? 0)) {
+          const cartDiscountAmount = actions.flatDiscountAmount ?? 0;
           const currentTotalAfterLineDiscounts = originalTotal - discountTotal;
-          
-          evaluatedLines.forEach(line => {
-            const lineCurrentTotal = (line.unitPrice * line.quantity) - line.promotionalDiscount;
-            const lineWeight = lineCurrentTotal / currentTotalAfterLineDiscounts;
-            line.promotionalDiscount += cartDiscountAmount * lineWeight;
-          });
-
-          discountTotal += cartDiscountAmount;
-          appliedPromotions.push(rule.name);
+          if (currentTotalAfterLineDiscounts > 0 && cartDiscountAmount > 0) {
+            evaluatedLines.forEach(line => {
+              const lineCurrentTotal = (line.unitPrice * line.quantity) - line.promotionalDiscount;
+              const lineWeight = lineCurrentTotal / currentTotalAfterLineDiscounts;
+              line.promotionalDiscount += cartDiscountAmount * lineWeight;
+            });
+            discountTotal += cartDiscountAmount;
+            appliedPromotions.push(rule.name);
+          }
         }
+      }
+
+      // RULE 4: Percentage discount on scope (ALL / CATEGORY)
+      if (rule.type === 'PERCENTAGE_DISCOUNT') {
+        const conditions: any = rule.conditions;
+        const actions: any = rule.actions;
+        const pctOff = actions.discountPercentage ?? 0;
+        const scope = conditions.scope || 'ALL';
+        const targetIds: string[] = conditions.targetIds || [];
+
+        const eligibleLines = evaluatedLines.filter(line => {
+          if (scope === 'ALL') return true;
+          if (scope === 'CATEGORY') return targetIds.includes(line.categoryId);
+          return true;
+        });
+
+        eligibleLines.forEach(line => {
+          const discountAmount = (line.unitPrice * line.quantity) * (pctOff / 100);
+          line.promotionalDiscount += discountAmount;
+          discountTotal += discountAmount;
+          if (!appliedPromotions.includes(rule.name)) appliedPromotions.push(rule.name);
+        });
       }
     }
 

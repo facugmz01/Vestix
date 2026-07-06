@@ -11,7 +11,9 @@ export interface StorefrontVariant {
   sku: string;
   size?: string | null;
   color?: string | null;
-  stock: number; // total available across all warehouses
+  stock: number;
+  price?: number;
+  basePrice?: number;
 }
 
 export interface StorefrontProduct {
@@ -21,11 +23,13 @@ export interface StorefrontProduct {
   brand?: string | null;
   category?: string | null;
   price: number;
+  maxPrice?: number;
   basePrice: number;
   inStock: boolean;
   availableQuantity: number;
   images?: string[];
   variants?: StorefrontVariant[];
+  relatedProducts?: Array<{ id: string; name: string; price: number; images?: string[] }>;
 }
 
 export interface StorefrontFilters {

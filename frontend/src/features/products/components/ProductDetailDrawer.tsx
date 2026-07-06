@@ -18,6 +18,12 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
     enabled: !!product?.id && open,
   });
 
+  const { data: priceHistory } = useQuery({
+    queryKey: ['product-price-history', product?.id],
+    queryFn: () => productsApi.getPriceHistory(product!.id),
+    enabled: !!product?.id && open,
+  });
+
   const displayProduct = fullProduct || product;
 
   if (!displayProduct) return null;
@@ -104,6 +110,20 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
             Administrar Inventario Completo
           </Button>
         </div>
+
+        {priceHistory && priceHistory.length > 0 && (
+          <div style={{ border: '1px solid var(--border)', background: 'var(--bg-base)', padding: '16px', borderRadius: 'var(--radius)' }}>
+            <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 600 }}>Historial de precios</h4>
+            <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+              {priceHistory.slice(0, 10).map(h => (
+                <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                  <span>{h.sku || h.variantId.slice(0, 8)} · {h.source}</span>
+                  <span>{h.oldPrice} → <strong>{h.newPrice}</strong></span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </Drawer>

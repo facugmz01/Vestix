@@ -51,6 +51,15 @@ export const integrationsApi = {
 
   searchVariants: (search: string) =>
     get<any[]>('/variants', { params: { search } }),
+
+  getMlMappings: () =>
+    get<any[]>('/integrations/mercadolibre/mappings'),
+
+  saveMlMapping: (variantId: string, mlItemId: string, mlVariationId?: string) =>
+    post<{ success: boolean }>('/integrations/mercadolibre/mappings', { variantId, mlItemId, mlVariationId }),
+
+  deleteMlMapping: (variantId: string) =>
+    post<{ success: boolean }>('/integrations/mercadolibre/mappings/delete', { variantId }),
 };
 
 export interface FailedAfipJob {

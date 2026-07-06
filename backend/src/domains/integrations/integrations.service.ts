@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
 import { WooCommerceApiService } from './woocommerce-api.service';
+import { MercadoLibreService } from './mercadolibre.service';
 import { CheckoutOrchestrator } from '../sales/checkout.orchestrator';
 import { OrderSource, PaymentMethod } from '../sales/models/order.model';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -26,6 +27,7 @@ export class IntegrationsService {
 
   constructor(
     private readonly wcApi: WooCommerceApiService,
+    private readonly mlService: MercadoLibreService,
     private readonly checkoutOrchestrator: CheckoutOrchestrator,
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
@@ -139,8 +141,10 @@ export class IntegrationsService {
       updatedInt.mpAccessToken = config.accessToken;
       updatedInt.mpWebhookSecret = config.webhookSecret;
     } else if (id === 'mercadolibre') {
-      updatedInt.mlAppId = config.clientId;
-      updatedInt.mlSecretKey = config.clientSecret;
+      updatedInt.mlAppId = config.clientId ?? config.appId;
+      updatedInt.mlSecretKey = config.clientSecret ?? config.secretKey;
+      if (config.accessToken) updatedInt.mlAccessToken = config.accessToken;
+      if (config.userId) updatedInt.mlUserId = config.userId;
     } else if (id === 'woocommerce') {
       updatedInt.wooStoreUrl = config.storeUrl;
       updatedInt.wooConsumerKey = config.consumerKey;
@@ -184,6 +188,9 @@ export class IntegrationsService {
     if (id.toLowerCase() === 'afip') {
       return { success: true, message: 'Conexión simulada con AFIP homologación exitosa' };
     }
+    if (id.toLowerCase() === 'mercadolibre') {
+      return this.mlService.testConnection();
+    }
     return { success: false, message: 'Proveedor no soportado para test' };
   }
 
@@ -191,6 +198,11 @@ export class IntegrationsService {
     if (id.toLowerCase() === 'woocommerce') {
       this.logger.log(`Full synchronization triggered for WooCommerce`);
       return { message: 'Sincronización iniciada (Log en consola)' };
+    }
+    if (id.toLowerCase() === 'mercadolibre') {
+      const result = await this.mlService.syncProducts();
+      await this.mlService.syncStockAndPrices().catch(() => undefined);
+      return { message: `ML sync: ${result.created} creados, ${result.updated} actualizados`, ...result };
     }
     return { message: 'Sincronización no soportada' };
   }
@@ -490,5 +502,21 @@ export class IntegrationsService {
     return this.prisma.wcVariantMapping.delete({
       where: { variantId },
     });
+  }
+
+  async handleMlWebhook(topic: string, resource: string, payload?: any) {
+    return this.mlService.handleWebhook(topic, resource, payload);
+  }
+
+  async getMlMappings() {
+    return this.mlService.getMappings();
+  }
+
+  async saveMlMapping(variantId: string, mlItemId: string, mlVariationId?: string) {
+    return this.mlService.saveMapping(variantId, mlItemId, mlVariationId);
+  }
+
+  async deleteMlMapping(variantId: string) {
+    return this.mlService.deleteMapping(variantId);
   }
 }

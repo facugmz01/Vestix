@@ -269,8 +269,9 @@ export class PosService {
     const catalog = await this.prisma.productVariant.findMany({
       where: { isActive: true },
       include: {
-        product: { include: { category: true, brand: true } }
-      }
+        product: { include: { category: true, brand: true } },
+        barcodes: true,
+      },
     });
 
     return {
@@ -278,14 +279,19 @@ export class PosService {
       timestamp: new Date().toISOString(),
       data: catalog.map(v => ({
         id: v.id,
+        productId: v.productId,
         sku: v.sku,
         barcode: v.barcode,
+        primaryBarcode: v.barcode,
+        allBarcodes: [v.barcode, ...v.barcodes.map(b => b.barcode)].filter(Boolean) as string[],
         name: v.product.name,
         basePrice: v.basePrice,
         categoryId: v.product.categoryId,
         categoryName: v.product.category.name,
-        brandName: v.product.brand?.name
-      }))
+        brandName: v.product.brand?.name,
+        size: v.size,
+        color: v.color,
+      })),
     };
   }
 }

@@ -26,7 +26,6 @@ const SetupWizardPage = lazy(() => import('@/pages/setup/SetupWizardPage'));
 const CatalogPage    = lazy(() => import('@/pages/admin/CatalogPage'));
 const NewProductPage = lazy(() => import('@/pages/admin/NewProductPage'));
 const EditProductPage = lazy(() => import('@/pages/admin/EditProductPage'));
-const TaxonomyPage   = lazy(() => import('@/pages/admin/TaxonomyPage'));
 const AttributesPage = lazy(() => import('@/pages/admin/AttributesPage'));
 const ProductVariantsPage = lazy(() => import('@/pages/admin/ProductVariantsPage'));
 const PromotionsPage = lazy(() => import('@/pages/admin/PromotionsPage'));
@@ -61,6 +60,7 @@ const WarehousesPage = lazy(() => import('@/pages/admin/WarehousesPage'));
 const LocationsPage  = lazy(() => import('@/pages/admin/LocationsPage'));
 const CashRegistersPage = lazy(() => import('@/pages/admin/CashRegistersPage'));
 const PriceInquiryPage = lazy(() => import('@/pages/admin/PriceInquiryPage'));
+const PriceListsPage = lazy(() => import('@/pages/admin/PriceListsPage'));
 const QRScannerPage  = lazy(() => import('@/pages/admin/QRScannerPage'));
 
 // ─── Standalone pages ─────────────────────────────────────────────────────────
@@ -156,8 +156,9 @@ export default function App() {
                 <Route path="/admin/catalog"    element={<CatalogPage />} />
                 <Route path="/admin/catalog/new" element={<NewProductPage />} />
                 <Route path="/admin/catalog/:id/edit" element={<EditProductPage />} />
-                <Route path="/admin/taxonomy"   element={<TaxonomyPage />} />
+                <Route path="/admin/taxonomy"   element={<Navigate to="/admin/attributes" replace />} />
                 <Route path="/admin/attributes" element={<AttributesPage />} />
+                <Route path="/admin/price-lists" element={<PriceListsPage />} />
                 <Route path="/admin/catalog/:productId/variants" element={<ProductVariantsPage />} />
                 <Route path="/admin/promotions"  element={<PromotionsPage />} />
                 <Route path="/admin/price-inquiry" element={<PriceInquiryPage />} />
