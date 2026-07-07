@@ -228,6 +228,9 @@ export class PosService {
         );
         const variantStocks = stockByVariant.get(v.id) || [];
 
+        const productImages = v.product?.images;
+        const firstProductImage = Array.isArray(productImages) ? (productImages as string[])[0] : undefined;
+
         return {
           id: v.id,
           sku: v.sku,
@@ -240,6 +243,7 @@ export class PosService {
           color: v.color,
           costPrice: v.costPrice || 0,
           basePrice: resolvedPrice,
+          imageUrl: v.imageUrl || firstProductImage || null,
           stock: variantStocks.reduce((acc, s) => acc + s.availableQuantity, 0),
         };
       }),
@@ -375,6 +379,29 @@ export class PosService {
     }
     await this.setQrOrderStatus(orderId, 'APPROVED');
     return { orderId, status: 'APPROVED' as const };
+  }
+
+  async getShiftOrders(shiftId: string) {
+    const orders = await this.prisma.saleOrder.findMany({
+      where: {
+        cashShiftId: shiftId,
+        status: { in: ['COMPLETED', 'CONFIRMED'] },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        customer: { select: { fullName: true } },
+      },
+    });
+
+    return orders.map(o => ({
+      id: o.id,
+      grandTotal: o.grandTotal,
+      paymentMethod: o.paymentMethod,
+      status: o.status,
+      createdAt: o.createdAt,
+      customerName: o.customer?.fullName || 'Consumidor Final',
+    }));
   }
 
   async getCatalogSyncData(since?: string, branchId?: string) {

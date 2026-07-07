@@ -302,4 +302,18 @@ describe('PosService', () => {
       expect(mockCashService.openShift).toHaveBeenCalledWith('register-1', 'user-1', 100);
     });
   });
+
+  describe('getShiftOrders', () => {
+    it('returns orders for a shift', async () => {
+      mockPrisma.saleOrder = {
+        findMany: jest.fn<any>().mockResolvedValue([
+          { id: 'o1', grandTotal: 1000, paymentMethod: 'CASH', status: 'COMPLETED', createdAt: new Date(), customer: { fullName: 'Juan' } },
+        ]),
+      };
+
+      const result = await service.getShiftOrders('shift-1');
+      expect(result).toHaveLength(1);
+      expect(result[0].customerName).toBe('Juan');
+    });
+  });
 });

@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import { posApi } from '@/api/pos.api';
-import { customersApi } from '@/api/customers.api';
 import { treasuryApi } from '@/api/treasury.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useAuthStore } from '@/store/auth.store';
@@ -13,13 +12,17 @@ import { usePosStore } from '@/features/pos/store/usePosStore';
 import { usePosCheckout } from '@/features/pos/hooks/usePosCheckout';
 import { usePosOffline } from '@/features/pos/hooks/usePosOffline';
 import { useDexieSync } from '@/hooks/useDexieSync';
+import { usePosKeyboard } from '@/features/pos/hooks/usePosKeyboard';
 
 import { POSHeader } from '@/features/pos/components/POSHeader';
 import { POSProductGrid } from '@/features/pos/components/POSProductGrid';
 import { POSCart } from '@/features/pos/components/POSCart';
 import { POSModals } from '@/features/pos/components/POSModals';
+import { PosVariantPickerModal } from '@/features/pos/components/PosVariantPickerModal';
+import { PosShiftSalesDrawer } from '@/features/pos/components/PosShiftSalesDrawer';
 
 import type { PosPaymentMethodId } from '@/features/pos/constants/posPaymentMethods';
+import type { ProductVariant } from '@/types';
 
 import styles from './POSPage.module.css';
 
@@ -28,20 +31,28 @@ export default function POSPage() {
   const currentBranchId = user?.branchId || '';
   const location = useLocation();
   const navigate = useNavigate();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const cart = usePosStore(state => state.cart);
   const cartDiscountPct = usePosStore(state => state.cartDiscountPct);
   const selectedCustomerId = usePosStore(state => state.selectedCustomerId);
   const suspendedSales = usePosStore(state => state.suspendedSales);
+  const favoriteVariantIds = usePosStore(state => state.favoriteVariantIds);
+  const lastSaleSnapshot = usePosStore(state => state.lastSaleSnapshot);
+  const shiftSalesDrawerOpen = usePosStore(state => state.shiftSalesDrawerOpen);
   const setPaymentModalOpen = usePosStore(s => s.setPaymentModalOpen);
   const setQrModalOpen = usePosStore(s => s.setQrModalOpen);
-  const addToCart = usePosStore(s => s.addToCart);
+  const setShiftSalesDrawerOpen = usePosStore(s => s.setShiftSalesDrawerOpen);
+  const addVariantWithRecent = usePosStore(s => s.addVariantWithRecent);
+  const duplicateLastSale = usePosStore(s => s.duplicateLastSale);
   const resumeSale = usePosStore(s => s.resumeSale);
-  
+
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethodId>('CASH');
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [issueInvoice, setIssueInvoice] = useState(false);
+  const [variantPickerOpen, setVariantPickerOpen] = useState(false);
+  const [variantPickerOptions, setVariantPickerOptions] = useState<ProductVariant[]>([]);
 
   const {
     isOnline,
@@ -67,11 +78,6 @@ export default function POSPage() {
     queryKey: queryKeys.pos.registers(currentBranchId),
     queryFn: () => posApi.getAvailableRegisters(currentBranchId),
     enabled: !isShiftLoading && !activeShift,
-  });
-
-  const { data: customersData } = useQuery({
-    queryKey: queryKeys.customers.all(),
-    queryFn: () => customersApi.getCustomers({ pageSize: 1000 }),
   });
 
   const { data: cartCalculation } = useQuery({
@@ -101,11 +107,11 @@ export default function POSPage() {
       lookupBarcode(loadCartId)
         .then(results => {
           if (results?.length === 1) {
-            addToCart(results[0]);
+            addVariantWithRecent(results[0]);
             toast.success('Producto agregado al carrito');
           } else if (results && results.length > 1) {
-            setSearch(loadCartId);
-            toast('Varios productos encontrados. Selecciona uno.', { icon: '🔍' });
+            setVariantPickerOptions(results);
+            setVariantPickerOpen(true);
           } else {
             toast.error('No se encontró el producto o venta');
           }
@@ -128,15 +134,16 @@ export default function POSPage() {
     ? Math.max(0, (cartCalculation.cartDiscountTotal || 0) - lineDiscounts)
     : clientGlobalDiscount;
   const grandTotal = cartCalculation?.grandTotal ?? (clientTotalAfterLines - clientGlobalDiscount);
+  const appliedPromotions = cartCalculation?.appliedPromotions;
 
   const checkoutMutation = usePosCheckout(activeShift, currentBranchId);
 
-  const handleCheckoutPayment = async (method: PosPaymentMethodId) => {
+  const handleCheckoutPayment = useCallback(async (method: PosPaymentMethodId) => {
     if (cart.length === 0) return;
     setPaymentMethod(method);
     usePosStore.getState().setPaymentSplits([]);
     usePosStore.getState().setPaymentReference('');
-    
+
     if (method === 'QR_MERCADOPAGO') {
       if (!isOnline) {
         toast.error('QR Mercado Pago requiere conexión a internet');
@@ -158,7 +165,47 @@ export default function POSPage() {
     } else {
       setPaymentModalOpen(true);
     }
-  };
+  }, [cart.length, grandTotal, isOnline, setPaymentModalOpen, setQrModalOpen]);
+
+  const handleSearchEnter = useCallback(() => {
+    if (!searchResults || searchResults.length === 0) return;
+    if (searchResults.length === 1) {
+      addVariantWithRecent(searchResults[0]);
+      setSearch('');
+      toast.success('Producto agregado');
+    } else {
+      setVariantPickerOptions(searchResults);
+      setVariantPickerOpen(true);
+    }
+  }, [searchResults, addVariantWithRecent]);
+
+  const handleFavoriteSlot = useCallback((index: number) => {
+    const variantId = favoriteVariantIds[index];
+    if (!variantId || !gridProducts) return;
+    const variant = gridProducts.find(p => p.id === variantId);
+    if (variant) {
+      addVariantWithRecent(variant);
+      toast.success('Favorito agregado');
+    }
+  }, [favoriteVariantIds, gridProducts, addVariantWithRecent]);
+
+  const handleDuplicateLastSale = useCallback(() => {
+    if (duplicateLastSale()) {
+      toast.success('Última venta duplicada en el carrito');
+    } else {
+      toast.error('No hay venta anterior para duplicar');
+    }
+  }, [duplicateLastSale]);
+
+  usePosKeyboard({
+    onFocusSearch: () => searchInputRef.current?.focus(),
+    onQuickCash: () => {
+      if (cart.length > 0) handleCheckoutPayment('CASH');
+    },
+    onDuplicateLastSale: handleDuplicateLastSale,
+    onFavoriteSlot: handleFavoriteSlot,
+    onEscape: () => setSearch(''),
+  });
 
   const handleConfirmCheckout = (status: 'CONFIRMED' | 'QUOTATION') => {
     checkoutMutation.mutate({
@@ -166,7 +213,7 @@ export default function POSPage() {
       grandTotal,
       subtotal,
       paymentMethod,
-      issueInvoice
+      issueInvoice,
     });
   };
 
@@ -184,20 +231,22 @@ export default function POSPage() {
         catalogCount={catalogCount}
         onForceSync={forceSync}
         onForceCatalogSync={forceCatalogSync}
+        search={search}
+        setSearch={setSearch}
+        searchInputRef={searchInputRef}
+        onSearchEnter={handleSearchEnter}
+        onDuplicateLastSale={handleDuplicateLastSale}
+        hasLastSale={!!lastSaleSnapshot?.cart.length}
       />
 
       <div className={styles.main}>
-        <POSProductGrid 
+        <POSProductGrid
           products={gridProducts}
           searchResults={searchResults}
           search={search}
         />
 
-        <POSCart 
-          customersData={customersData}
-          searchResults={searchResults}
-          search={search}
-          setSearch={setSearch}
+        <POSCart
           subtotal={subtotal}
           grandTotal={grandTotal}
           lineDiscounts={lineDiscounts}
@@ -205,16 +254,16 @@ export default function POSPage() {
           totalItems={totalItems}
           isOffline={!isOnline}
           catalogCount={catalogCount}
+          appliedPromotions={appliedPromotions}
           onCheckoutQuotation={() => handleConfirmCheckout('QUOTATION')}
           onCheckoutPayment={handleCheckoutPayment}
         />
       </div>
 
-      <POSModals 
+      <POSModals
         grandTotal={grandTotal}
         paymentMethod={paymentMethod}
         isGeneratingQr={isGeneratingQr}
-        customersData={customersData}
         onConfirmCheckout={handleConfirmCheckout}
         isCheckoutLoading={checkoutMutation.isPending}
         activeShift={activeShift}
@@ -222,6 +271,19 @@ export default function POSPage() {
         isShiftLoading={isShiftLoading}
         issueInvoice={issueInvoice}
         setIssueInvoice={setIssueInvoice}
+      />
+
+      <PosVariantPickerModal
+        open={variantPickerOpen}
+        variants={variantPickerOptions}
+        onSelect={v => { addVariantWithRecent(v); setSearch(''); }}
+        onClose={() => setVariantPickerOpen(false)}
+      />
+
+      <PosShiftSalesDrawer
+        open={shiftSalesDrawerOpen}
+        shiftId={activeShift?.id}
+        onClose={() => setShiftSalesDrawerOpen(false)}
       />
     </div>
   );
