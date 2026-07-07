@@ -4,6 +4,7 @@ import { Logger } from '@nestjs/common';
 import { SmtpService } from './channels/smtp.service';
 import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
 import { SmsGatewayService } from './channels/sms-gateway.service';
+import { FcmPushService } from './channels/fcm-push.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationChannel } from './models/notification.model';
 import { interpolateTemplate } from './templates/template-variables.registry';
@@ -24,6 +25,7 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly smtpService: SmtpService,
     private readonly whatsAppService: WhatsAppEvolutionService,
     private readonly smsService: SmsGatewayService,
+    private readonly fcmService: FcmPushService,
     private readonly prisma: PrismaService,
   ) {
     super();
@@ -61,9 +63,14 @@ export class NotificationsProcessor extends WorkerHost {
           this.smsService.sendSms(recipient, body),
         );
       } else if (channel === NotificationChannel.PUSH) {
-        const error = `Channel "${channel}" is not implemented yet`;
-        await this.failLog(logId, error);
-        throw new UnrecoverableError(error);
+        await this.dispatchChannel('PUSH', () =>
+          this.fcmService.send(
+            recipient,
+            subject || template.name || 'Notificación',
+            body,
+            { event: templateKey, ...(variables ?? {}) },
+          ),
+        );
       } else {
         const error = `Unknown notification channel: ${channel}`;
         await this.failLog(logId, error);

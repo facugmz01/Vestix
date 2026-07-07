@@ -4,9 +4,12 @@ import { NotificationsService } from './notifications.service';
 import { SmtpService } from './channels/smtp.service';
 import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
 import { SmsGatewayService } from './channels/sms-gateway.service';
+import { FcmPushService } from './channels/fcm-push.service';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsProcessor } from './notifications.processor';
 import { NotificationTriggersService } from './notification-triggers.service';
+import { NotificationRateLimitService } from './notification-rate-limit.service';
+import { StaffInboxService } from './staff-inbox.service';
 
 @Global()
 @Module({
@@ -30,9 +33,17 @@ import { NotificationTriggersService } from './notification-triggers.service';
     SmtpService,
     WhatsAppEvolutionService,
     SmsGatewayService,
+    FcmPushService,
     NotificationsProcessor,
     NotificationTriggersService,
+    NotificationRateLimitService,
+    StaffInboxService,
   ],
-  exports: [NotificationsService, NotificationTriggersService],
+  exports: [
+    NotificationsService,
+    NotificationTriggersService,
+    NotificationRateLimitService,
+    StaffInboxService,
+  ],
 })
 export class NotificationsModule {}

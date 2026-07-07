@@ -187,6 +187,7 @@ export class NotificationsService implements OnModuleInit {
     return {
       totals: {
         sent:     statusCounts.SENT ?? 0,
+        delivered: statusCounts.DELIVERED ?? 0,
         failed:   statusCounts.FAILED ?? 0,
         pending:  statusCounts.PENDING ?? 0,
         bounced:  statusCounts.BOUNCED ?? 0,
@@ -242,6 +243,36 @@ export class NotificationsService implements OnModuleInit {
     }
 
     return { success: true, message: 'Notificación reencolada', job };
+  }
+
+  /**
+   * Marks the most recent SENT WhatsApp log for a phone as DELIVERED.
+   * Called from Evolution API webhook callbacks.
+   */
+  async markWhatsAppDelivered(phone: string) {
+    const normalized = phone.replace(/\D/g, '');
+    const log = await this.prisma.notificationLog.findFirst({
+      where: {
+        channel: 'WHATSAPP',
+        status: 'SENT',
+        OR: [
+          { recipient: normalized },
+          { recipient: { endsWith: normalized.slice(-10) } },
+        ],
+      },
+      orderBy: { sentAt: 'desc' },
+    });
+
+    if (!log) {
+      return { updated: false, message: 'No matching SENT log found' };
+    }
+
+    await this.prisma.notificationLog.update({
+      where: { id: log.id },
+      data: { status: 'DELIVERED' },
+    });
+
+    return { updated: true, logId: log.id };
   }
 
   // ─── QUEUE / ENQUEUE ───────────────────────────────────────────────────────

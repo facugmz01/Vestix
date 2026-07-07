@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Bell, CheckCircle, XCircle, AlertTriangle, Clock, Mail, MessageSquare, Send, RefreshCw, ListOrdered } from 'lucide-react';
+import { Plus, Edit, Bell, CheckCircle, XCircle, AlertTriangle, Clock, Mail, MessageSquare, Send, RefreshCw, ListOrdered, Inbox } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
@@ -47,6 +47,7 @@ function StatsBar() {
   const cards = [
     { label: 'Últimas 24h', value: stats.totals.last24h, color: 'var(--blue)' },
     { label: 'Enviados', value: stats.totals.sent, color: 'var(--green)' },
+    { label: 'Entregados', value: stats.totals.delivered ?? 0, color: 'var(--green)' },
     { label: 'Fallidos', value: stats.totals.failed, color: 'var(--red)' },
     { label: 'Pendientes', value: stats.totals.pending, color: 'var(--orange)' },
     { label: 'En cola', value: stats.queuePending, color: 'var(--text-primary)' },
@@ -67,7 +68,7 @@ function StatsBar() {
 
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'templates' | 'logs' | 'queue'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'logs' | 'queue' | 'inbox'>('templates');
 
   const [templatePage, setTemplatePage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
@@ -101,6 +102,21 @@ export default function NotificationsPage() {
     onError: (err: any) => toast.error(err.response?.data?.message || 'Error al reintentar'),
   });
 
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => notificationsApi.markInboxRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.inbox() });
+    },
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => notificationsApi.markAllInboxRead(),
+    onSuccess: (res) => {
+      toast.success(`${res.updated} notificaciones marcadas como leídas`);
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.inbox() });
+    },
+  });
+
   const { data: templatesData, isLoading: isLoadingTemplates, error: templatesError, refetch: refetchTemplates } = useQuery({
     queryKey: queryKeys.notifications.templates({ page: templatePage }),
     queryFn: () => notificationsApi.getTemplates({ page: templatePage, pageSize: 10 }),
@@ -118,6 +134,13 @@ export default function NotificationsPage() {
     queryFn: () => notificationsApi.getQueue(),
     enabled: activeTab === 'queue',
     refetchInterval: activeTab === 'queue' ? 10_000 : false,
+  });
+
+  const { data: inboxData, isLoading: isLoadingInbox, error: inboxError, refetch: refetchInbox } = useQuery({
+    queryKey: queryKeys.notifications.inbox({}),
+    queryFn: () => notificationsApi.getInbox({ page: 1, pageSize: 30 }),
+    enabled: activeTab === 'inbox',
+    refetchInterval: activeTab === 'inbox' ? 30_000 : false,
   });
 
   const templates = templatesData?.data ?? [];
@@ -159,6 +182,12 @@ export default function NotificationsPage() {
         </button>
         <button className={clsx(styles.tab, activeTab === 'queue' && styles.tabActive)} onClick={() => setActiveTab('queue')}>
           Cola BullMQ
+        </button>
+        <button className={clsx(styles.tab, activeTab === 'inbox' && styles.tabActive)} onClick={() => setActiveTab('inbox')}>
+          Bandeja interna
+          {(inboxData?.unreadCount ?? 0) > 0 && (
+            <Badge color="red" style={{ marginLeft: '8px' }}>{inboxData!.unreadCount}</Badge>
+          )}
         </button>
       </div>
 
@@ -296,6 +325,51 @@ export default function NotificationsPage() {
                 { key: 'status', header: 'Estado', render: j => <Badge color={j.status === 'FAILED' ? 'red' : 'gray'}>{j.status}</Badge> },
                 { key: 'attempts', header: 'Intentos', render: j => j.attempts },
                 { key: 'error', header: 'Error', render: j => j.lastError ? <span style={{ fontSize: '11px', color: 'var(--red)' }}>{j.lastError}</span> : '—' },
+              ]}
+            />
+          )}
+        </Section>
+      )}
+
+      {activeTab === 'inbox' && (
+        <Section>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <Badge color="gray">{inboxData?.unreadCount ?? 0} sin leer</Badge>
+            <Button variant="outline" size="sm" icon={<CheckCircle size={14} />}
+              onClick={() => markAllReadMutation.mutate()} loading={markAllReadMutation.isPending}
+              disabled={!inboxData?.unreadCount}>
+              Marcar todas leídas
+            </Button>
+          </div>
+          {isLoadingInbox ? <TableSkeleton rows={6} /> : inboxError ? (
+            <ApiErrorDisplay error={inboxError} onRetry={refetchInbox} />
+          ) : !inboxData?.data.length ? (
+            <EmptyState icon={<Inbox size={40} />} title="Bandeja vacía" message="Alertas internas de stock, caja y operaciones aparecerán aquí." />
+          ) : (
+            <Table
+              keyField="id"
+              data={inboxData.data}
+              columns={[
+                {
+                  key: 'title', header: 'Alerta',
+                  render: n => (
+                    <div>
+                      <span style={{ fontWeight: n.readAt ? 500 : 800 }}>{n.title}</span>
+                      {!n.readAt && <Badge color="blue" style={{ marginLeft: '8px' }}>Nueva</Badge>}
+                    </div>
+                  ),
+                },
+                { key: 'body', header: 'Detalle', render: n => <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{n.body}</span> },
+                { key: 'event', header: 'Evento', render: n => n.event ? <Badge color="gray">{NOTIFICATION_EVENT_LABELS[n.event] || n.event}</Badge> : '—' },
+                { key: 'date', header: 'Fecha', render: n => new Date(n.createdAt).toLocaleString() },
+                {
+                  key: 'actions', header: '',
+                  render: n => !n.readAt ? (
+                    <Button variant="ghost" size="sm" onClick={() => markReadMutation.mutate(n.id)} loading={markReadMutation.isPending}>
+                      Marcar leída
+                    </Button>
+                  ) : null,
+                },
               ]}
             />
           )}

@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, BadRequestException } from '@nes
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { NotificationsService } from './notifications.service';
+import { StaffInboxService } from './staff-inbox.service';
 import { NotificationChannel, TemplateKey } from './models/notification.model';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class NotificationTriggersService {
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
     private readonly notifications: NotificationsService,
+    private readonly staffInbox: StaffInboxService,
   ) {}
 
   // ─── Manual dispatch ───────────────────────────────────────────────────────
@@ -203,6 +205,13 @@ export class NotificationTriggersService {
       quantity:      String(stock.availableQuantity),
       branchName:    branch?.name || 'Sucursal',
     });
+
+    void this.staffInbox.create({
+      title: 'Stock bajo',
+      body: `${variant?.product?.name || variantId} (SKU ${variant?.sku}) — ${stock.availableQuantity} u. en ${branch?.name || 'sucursal'}`,
+      event: TemplateKey.LOW_STOCK_ALERT,
+      referenceId: variantId,
+    });
   }
 
   async onPurchaseOrderIssued(poId: string) {
@@ -339,6 +348,13 @@ export class NotificationTriggersService {
       difference:   this.formatMoney(shift.difference),
       expected:     this.formatMoney(shift.expectedAmount ?? 0),
       actual:       this.formatMoney(shift.closingAmount ?? 0),
+    });
+
+    void this.staffInbox.create({
+      title: 'Diferencia de caja',
+      body: `${shift.cashRegister.name}: diferencia $${this.formatMoney(shift.difference)} (esperado $${this.formatMoney(shift.expectedAmount ?? 0)}, contado $${this.formatMoney(shift.closingAmount ?? 0)})`,
+      event: TemplateKey.SHIFT_CLOSING_DISCREPANCY,
+      referenceId: shiftId,
     });
   }
 

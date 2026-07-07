@@ -108,6 +108,7 @@ export const queryKeys = {
     logs:      (filters?: object) => withFilters(['notifications', 'logs'], filters),
     stats:     ()                 => ['notifications', 'stats'] as const,
     queue:     ()                 => ['notifications', 'queue'] as const,
+    inbox:     (filters?: object) => withFilters(['notifications', 'inbox'], filters),
   },
   integrations: {
     all:         ()         => ['integrations', 'list'] as const,

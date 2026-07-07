@@ -20,6 +20,7 @@ export interface CreateTemplateDto {
 export interface NotificationStats {
   totals: {
     sent: number;
+    delivered: number;
     failed: number;
     pending: number;
     bounced: number;
@@ -46,6 +47,16 @@ export interface QueueJob {
   status: string;
   attempts: number;
   lastError?: string;
+  createdAt: string;
+}
+
+export interface StaffNotification {
+  id: string;
+  title: string;
+  body: string;
+  event?: string;
+  referenceId?: string;
+  readAt?: string | null;
   createdAt: string;
 }
 
@@ -94,6 +105,18 @@ export const notificationsApi = {
 
   retryLog: (logId: string) =>
     post<{ success: boolean; message: string }>(`/notifications/logs/${logId}/retry`, {}),
+
+  getInbox: (filters?: { page?: number; pageSize?: number; unreadOnly?: boolean }) =>
+    get<{ data: StaffNotification[]; total: number; unreadCount: number }>(
+      '/notifications/inbox',
+      { params: cleanParams(filters ?? {}) },
+    ),
+
+  markInboxRead: (id: string) =>
+    patch<StaffNotification>(`/notifications/inbox/${id}/read`, {}),
+
+  markAllInboxRead: () =>
+    post<{ updated: number }>('/notifications/inbox/read-all', {}),
 
   // WhatsApp Evolution API
   getWhatsAppStatus: () => get<{ isReady: boolean; qrCode: string | null }>('/notifications/whatsapp/status'),

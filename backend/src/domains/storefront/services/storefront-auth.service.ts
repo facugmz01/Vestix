@@ -27,7 +27,7 @@ export class StorefrontAuthService {
     // Store in Redis (Valid for 5 minutes)
     await this.redis.getClient().setex(`storefront_otp_${cleanPhone}`, 300, otp);
 
-    // Enqueue notification via WhatsApp OpenWaOtp
+    // Enqueue OTP via WhatsApp (Evolution API)
     await this.notifications.enqueue({
       channel: 'WHATSAPP' as any,
       templateKey: 'OTP_CODE' as any,

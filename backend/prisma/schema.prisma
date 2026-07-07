@@ -908,7 +908,7 @@ model NotificationLog {
   channel      String // 'EMAIL', 'WHATSAPP', 'SMS', 'PUSH'
   recipient    String // email or phone number
   referenceId  String? // SaleOrder, PO, etc.
-  status       String                @default("PENDING") // PENDING | SENT | FAILED | BOUNCED
+  status       String                @default("PENDING") // PENDING | SENT | DELIVERED | FAILED | BOUNCED
   errorMessage String?               @db.Text
   variables    Json                  @default("{}")
   sentAt       DateTime?
@@ -918,6 +918,21 @@ model NotificationLog {
   @@index([event])
   @@index([channel])
   @@index([status])
+  @@index([createdAt])
+  @@schema("core")
+}
+
+model StaffNotification {
+  id          String    @id @default(uuid())
+  userId      String?
+  title       String
+  body        String    @db.Text
+  event       String?
+  referenceId String?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([readAt])
   @@index([createdAt])
   @@schema("core")
 }
