@@ -11,6 +11,8 @@ import { useAuthStore } from '@/store/auth.store';
 
 import { usePosStore } from '@/features/pos/store/usePosStore';
 import { usePosCheckout } from '@/features/pos/hooks/usePosCheckout';
+import { usePosOffline } from '@/features/pos/hooks/usePosOffline';
+import { useDexieSync } from '@/hooks/useDexieSync';
 
 import { POSHeader } from '@/features/pos/components/POSHeader';
 import { POSProductGrid } from '@/features/pos/components/POSProductGrid';
@@ -41,6 +43,21 @@ export default function POSPage() {
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [issueInvoice, setIssueInvoice] = useState(false);
 
+  const {
+    isOnline,
+    isSyncing,
+    lastCatalogSync,
+    catalogCount,
+    forceSync,
+    forceCatalogSync,
+  } = useDexieSync(currentBranchId);
+
+  const {
+    gridProducts,
+    searchResults,
+    lookupBarcode,
+  } = usePosOffline(currentBranchId, selectedCustomerId, search);
+
   const { data: activeShift, isLoading: isShiftLoading } = useQuery({
     queryKey: ['shifts', 'active'],
     queryFn: () => treasuryApi.getActiveShift(),
@@ -50,17 +67,6 @@ export default function POSPage() {
     queryKey: queryKeys.pos.registers(currentBranchId),
     queryFn: () => posApi.getAvailableRegisters(currentBranchId),
     enabled: !isShiftLoading && !activeShift,
-  });
-
-  const { data: gridProducts } = useQuery({
-    queryKey: ['pos', 'gridProducts', selectedCustomerId],
-    queryFn: () => posApi.searchProduct('', selectedCustomerId || undefined),
-  });
-
-  const { data: searchResults } = useQuery({
-    queryKey: ['pos', 'search', search, selectedCustomerId],
-    queryFn: () => posApi.searchProduct(search, selectedCustomerId || undefined),
-    enabled: search.length >= 2,
   });
 
   const { data: customersData } = useQuery({
@@ -79,7 +85,7 @@ export default function POSPage() {
       cartDiscountPct,
       customerId: selectedCustomerId || undefined,
     }),
-    enabled: cart.length > 0,
+    enabled: cart.length > 0 && isOnline,
     staleTime: 5_000,
   });
 
@@ -92,7 +98,7 @@ export default function POSPage() {
       resumeSale(suspended.id);
       toast.success('Venta suspendida retomada');
     } else {
-      posApi.searchProduct(loadCartId, selectedCustomerId || undefined)
+      lookupBarcode(loadCartId)
         .then(results => {
           if (results?.length === 1) {
             addToCart(results[0]);
@@ -109,14 +115,6 @@ export default function POSPage() {
 
     navigate('/pos', { replace: true, state: {} });
   }, [location.state]);
-
-  useEffect(() => {
-    import('@/core/sync/CatalogSyncService').then(({ CatalogSyncService }) => {
-      CatalogSyncService.syncPosCatalog().catch(() => {
-        // Silent fail — online search still works
-      });
-    });
-  }, []);
 
   const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
   const clientSubtotal = cart.reduce((acc, item) => acc + (item.variant.basePrice * item.qty), 0);
@@ -140,6 +138,10 @@ export default function POSPage() {
     usePosStore.getState().setPaymentReference('');
     
     if (method === 'QR_MERCADOPAGO') {
+      if (!isOnline) {
+        toast.error('QR Mercado Pago requiere conexión a internet');
+        return;
+      }
       setQrModalOpen(true);
       setIsGeneratingQr(true);
       try {
@@ -172,7 +174,15 @@ export default function POSPage() {
 
   return (
     <div className={styles.layout}>
-      <POSHeader />
+      <POSHeader
+        branchId={currentBranchId}
+        isOnline={isOnline}
+        isSyncing={isSyncing}
+        lastCatalogSync={lastCatalogSync}
+        catalogCount={catalogCount}
+        onForceSync={forceSync}
+        onForceCatalogSync={forceCatalogSync}
+      />
 
       <div className={styles.main}>
         <POSProductGrid 
@@ -191,6 +201,8 @@ export default function POSPage() {
           lineDiscounts={lineDiscounts}
           globalDiscount={globalDiscount}
           totalItems={totalItems}
+          isOffline={!isOnline}
+          catalogCount={catalogCount}
           onCheckoutQuotation={() => handleConfirmCheckout('QUOTATION')}
           onCheckoutPayment={handleCheckoutPayment}
         />

@@ -24,10 +24,12 @@ interface PosState {
   
   suspendedSales: SuspendedSale[];
   
+  shiftModalOpen: boolean;
+  syncPanelOpen: boolean;
+
   paymentModalOpen: boolean;
   suspendModalOpen: boolean;
   printModalOpen: boolean;
-  shiftModalOpen: boolean;
   customerFormOpen: boolean;
   qrModalOpen: boolean;
   qrData: string | null;
@@ -54,6 +56,7 @@ interface PosState {
   setSuspendModalOpen: (open: boolean) => void;
   setPrintModalOpen: (open: boolean) => void;
   setShiftModalOpen: (open: boolean) => void;
+  setSyncPanelOpen: (open: boolean) => void;
   setCustomerFormOpen: (open: boolean) => void;
   setQrModalOpen: (open: boolean, data?: string | null, orderId?: string | null) => void;
   setMixedPaymentModalOpen: (open: boolean) => void;
@@ -74,6 +77,7 @@ export const usePosStore = create<PosState>()(
       suspendModalOpen: false,
       printModalOpen: false,
       shiftModalOpen: false,
+      syncPanelOpen: false,
       customerFormOpen: false,
       qrModalOpen: false,
       qrData: null,
@@ -121,6 +125,7 @@ export const usePosStore = create<PosState>()(
       setSuspendModalOpen: (open) => set({ suspendModalOpen: open }),
       setPrintModalOpen: (open) => set({ printModalOpen: open }),
       setShiftModalOpen: (open) => set({ shiftModalOpen: open }),
+      setSyncPanelOpen: (open) => set({ syncPanelOpen: open }),
       setCustomerFormOpen: (open) => set({ customerFormOpen: open }),
       setQrModalOpen: (open, data, orderId) => set({
         qrModalOpen: open,
@@ -164,7 +169,12 @@ export const usePosStore = create<PosState>()(
     }),
     {
       name: 'vestix_pos_storage',
-      partialize: (state) => ({ suspendedSales: state.suspendedSales }),
+      partialize: (state) => ({
+        suspendedSales: state.suspendedSales,
+        cart: state.cart,
+        cartDiscountPct: state.cartDiscountPct,
+        selectedCustomerId: state.selectedCustomerId,
+      }),
     }
   )
 );

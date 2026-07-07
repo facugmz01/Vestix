@@ -199,6 +199,79 @@ describe('PosService', () => {
     });
   });
 
+  describe('getCatalogSyncData', () => {
+    const mockCatalogVariant = {
+      id: 'variant-1',
+      productId: 'prod-1',
+      sku: 'SKU-001',
+      barcode: '1234567890',
+      basePrice: 1000,
+      size: 'M',
+      color: 'Rojo',
+      imageUrl: null,
+      updatedAt: new Date('2026-07-01T12:00:00Z'),
+      product: {
+        name: 'Remera Básica',
+        categoryId: 'cat-1',
+        category: { name: 'Remeras' },
+        brand: { name: 'Vestix' },
+        images: ['https://example.com/img.jpg'],
+      },
+      barcodes: [{ barcode: 'ALT-001' }],
+    };
+
+    it('returns full catalog with stock when no since param', async () => {
+      mockPrisma.productVariant.findMany.mockResolvedValueOnce([mockCatalogVariant]);
+      mockPrisma.stockLevel.findMany.mockResolvedValueOnce([
+        { variantId: 'variant-1', availableQuantity: 5 },
+      ]);
+
+      const result = await service.getCatalogSyncData(undefined, 'branch-1');
+
+      expect(result.incremental).toBe(false);
+      expect(result.removedIds).toEqual([]);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toMatchObject({
+        id: 'variant-1',
+        sku: 'SKU-001',
+        stock: 5,
+        categoryName: 'Remeras',
+        brandName: 'Vestix',
+      });
+      expect(mockPrisma.productVariant.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { isActive: true } }),
+      );
+      expect(mockPrisma.stockLevel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { variantId: { in: ['variant-1'] }, branchId: 'branch-1' } }),
+      );
+    });
+
+    it('returns incremental updates and removed variant ids', async () => {
+      mockPrisma.productVariant.findMany
+        .mockResolvedValueOnce([mockCatalogVariant])
+        .mockResolvedValueOnce([{ id: 'variant-old' }]);
+      mockPrisma.stockLevel.findMany.mockResolvedValueOnce([]);
+
+      const since = '2026-07-01T00:00:00Z';
+      const result = await service.getCatalogSyncData(since);
+
+      expect(result.incremental).toBe(true);
+      expect(result.removedIds).toEqual(['variant-old']);
+      expect(mockPrisma.productVariant.findMany).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          where: { isActive: true, updatedAt: { gt: new Date(since) } },
+        }),
+      );
+      expect(mockPrisma.productVariant.findMany).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          where: { isActive: false, updatedAt: { gt: new Date(since) } },
+        }),
+      );
+    });
+  });
+
   describe('session management', () => {
     it('delegates openSession to CashService', async () => {
       mockCashService.openShift.mockResolvedValue({ id: 'shift-1' });

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Clock, PauseCircle, Maximize, Calculator, LogOut, Sun, Moon } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { useThemeStore } from '@/store/theme.store';
-import { SyncStatusIndicator } from '@/features/offline/components/SyncStatusIndicator';
+import { db } from '@/core/db/db';
+import { PosSyncPanel, SyncStatusIndicatorClickable } from './PosSyncPanel';
 import { CalculatorModal } from './CalculatorModal';
 import styles from '@/pages/pos/POSPage.module.css';
 
@@ -16,13 +18,38 @@ function LiveClock() {
   return <span>{time.toLocaleTimeString()}</span>;
 }
 
-export function POSHeader() {
+interface POSHeaderProps {
+  branchId?: string;
+  isOnline: boolean;
+  isSyncing: boolean;
+  lastCatalogSync: string | null;
+  catalogCount: number;
+  onForceSync: () => Promise<void>;
+  onForceCatalogSync?: (full?: boolean) => Promise<unknown>;
+}
+
+export function POSHeader({
+  branchId,
+  isOnline,
+  isSyncing,
+  lastCatalogSync,
+  catalogCount,
+  onForceSync,
+  onForceCatalogSync,
+}: POSHeaderProps) {
   const navigate = useNavigate();
   const setShiftModalOpen = usePosStore(s => s.setShiftModalOpen);
   const setSuspendModalOpen = usePosStore(s => s.setSuspendModalOpen);
+  const syncPanelOpen = usePosStore(s => s.syncPanelOpen);
+  const setSyncPanelOpen = usePosStore(s => s.setSyncPanelOpen);
   const suspendedSales = usePosStore(s => s.suspendedSales);
   const { theme, toggleTheme } = useThemeStore();
   const [calcOpen, setCalcOpen] = useState(false);
+
+  const pendingCount = useLiveQuery(
+    () => db.syncQueue.where('status').equals('PENDING').count(),
+    [],
+  ) ?? 0;
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -39,7 +66,12 @@ export function POSHeader() {
           <span>Vestix</span> POS
         </div>
         <div className={styles.navIcons}>
-          <SyncStatusIndicator />
+          <SyncStatusIndicatorClickable
+            onClick={() => setSyncPanelOpen(true)}
+            isOnline={isOnline}
+            pendingCount={pendingCount}
+            catalogCount={catalogCount}
+          />
           <div className={styles.iconBtn}><Clock size={16} /> <LiveClock /></div>
           <button className={styles.iconBtn} onClick={() => setSuspendModalOpen(true)} title="Ventas Suspendidas">
             <PauseCircle size={18} /> 
@@ -58,6 +90,19 @@ export function POSHeader() {
           <button className={styles.iconBtn} onClick={() => navigate('/')} title="Volver al Dashboard"><LogOut size={18} /> Volver</button>
         </div>
       </div>
+
+      <PosSyncPanel
+        open={syncPanelOpen}
+        onClose={() => setSyncPanelOpen(false)}
+        branchId={branchId}
+        isOnline={isOnline}
+        isSyncing={isSyncing}
+        lastCatalogSync={lastCatalogSync}
+        catalogCount={catalogCount}
+        onForceSync={onForceSync}
+        onForceCatalogSync={onForceCatalogSync}
+      />
+
       <CalculatorModal open={calcOpen} onClose={() => setCalcOpen(false)} />
     </>
   );

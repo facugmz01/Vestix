@@ -20,8 +20,11 @@ export class PosController {
 
   @Get('sync/catalog')
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
-  async downloadPosCatalog() {
-    return this.posService.getCatalogSyncData();
+  async downloadPosCatalog(
+    @Query('since') since?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    return this.posService.getCatalogSyncData(since, branchId);
   }
 
   @Get('catalog/search')

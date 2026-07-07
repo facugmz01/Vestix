@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Search, Plus, Minus, Trash2, User, FileText, PauseCircle } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, User, FileText, PauseCircle, CloudOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -17,6 +17,8 @@ export function POSCart({
   lineDiscounts,
   globalDiscount,
   totalItems,
+  isOffline,
+  catalogCount,
   onCheckoutQuotation,
   onCheckoutPayment,
 }: {
@@ -29,6 +31,8 @@ export function POSCart({
   lineDiscounts: number;
   globalDiscount: number;
   totalItems: number;
+  isOffline?: boolean;
+  catalogCount?: number;
   onCheckoutQuotation: () => void;
   onCheckoutPayment: (method: PosPaymentMethodId) => void;
 }) {
@@ -67,6 +71,21 @@ export function POSCart({
 
   return (
     <div className={styles.cartArea}>
+      {isOffline && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '10px 14px', marginBottom: '10px', borderRadius: '10px',
+          background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.25)',
+          fontSize: '13px', color: '#fb923c',
+        }}>
+          <CloudOff size={16} />
+          <span>
+            Modo offline
+            {catalogCount ? ` · ${catalogCount} productos en catálogo local` : ' · descargá el catálogo cuando tengas red'}
+            {' · las ventas se encolan para sincronizar'}
+          </span>
+        </div>
+      )}
       <div className={styles.cartTop}>
         <div style={{ display: 'flex', gap: '10px' }}>
           <div style={{ flex: 1, position: 'relative' }}>
