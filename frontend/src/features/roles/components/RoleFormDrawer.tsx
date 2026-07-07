@@ -91,7 +91,7 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
       toast.error('El nombre del rol es obligatorio');
       return;
     }
-    mutation.mutate({ name, description, permissions });
+    mutation.mutate({ name, permissions });
   };
 
   return (

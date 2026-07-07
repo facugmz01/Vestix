@@ -16,6 +16,10 @@ export class AuthService {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException('Usuario desactivado. Contactá al administrador.');
+    }
+
     const isMatch = await bcrypt.compare(pass, user.password);
     if (!isMatch) {
       throw new UnauthorizedException('Contraseña incorrecta');

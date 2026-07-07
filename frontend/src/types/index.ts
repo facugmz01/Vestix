@@ -12,7 +12,8 @@ export interface CustomRole {
   description?: string;
   isSystem: boolean;
   permissions: Permission[];
-  createdAt: string;
+  userCount?: number;
+  createdAt?: string;
 }
 
 export interface Branch {
@@ -81,8 +82,8 @@ export interface SystemUser {
   fullName: string;
   role: string;
   branchId?: string;
+  branchName?: string;
   isActive: boolean;
-  lastLoginAt?: string;
   createdAt: string;
 }
 

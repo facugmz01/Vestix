@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
-  Users, Wallet, Settings, Monitor, Globe, BarChart2, Scan, Bell
+  Users, Wallet, Settings, Monitor, Globe, BarChart2, Scan, Bell, Shield, UserCog
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';
@@ -85,6 +85,8 @@ export const NAV_GROUPS: NavGroup[] = [
     id:    'system',
     label: 'Sistema',
     items: [
+      { id:'users',         label:'Usuarios',       to:'/admin/users',         icon:UserCog,      action:'manage', subject:'Users' },
+      { id:'roles',         label:'Roles y Permisos', to:'/admin/roles',       icon:Shield,       action:'manage', subject:'Settings' },
       { id:'notifications', label:'Notificaciones',to:'/admin/notifications', icon:Bell,       action:'manage', subject:'Settings' },
       { id:'settings',  label:'Configuración',to:'/admin/settings',   icon:Settings,     action:'manage', subject:'Settings' },
     ],

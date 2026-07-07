@@ -47,15 +47,11 @@ export function UserDetailDrawer({ open, onClose, user }: Props) {
               />
             } 
           />
-          <InfoBox label="ID Sucursal" value={user.branchId || 'Global'} />
+          <InfoBox label="Sucursal" value={user.branchName || 'Sin sucursal'} />
           <InfoBox label="ID Usuario" value={user.id} />
-          <InfoBox 
-            label="Fecha Creación" 
-            value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'} 
-          />
-          <InfoBox 
-            label="Último Acceso" 
-            value={user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Nunca'} 
+          <InfoBox
+            label="Fecha Creación"
+            value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
           />
         </div>
       </div>

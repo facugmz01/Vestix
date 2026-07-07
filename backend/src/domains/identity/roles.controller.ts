@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
@@ -17,8 +28,12 @@ export class RolesController {
 
   @Get()
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
-  findAll() {
-    return this.rolesService.findAll();
+  findAll(@Query() query: Record<string, string>) {
+    const page = parseInt(query.page) || 1;
+    const pageSize = parseInt(query.pageSize) || 15;
+    const search = query.search || undefined;
+
+    return this.rolesService.findAll({ page, pageSize, search });
   }
 
   @Get(':id')

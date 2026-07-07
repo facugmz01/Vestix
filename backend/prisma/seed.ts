@@ -1,58 +1,68 @@
 import { PrismaClient } from '@prisma/client';
-import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
+import { DEFAULT_ROLE_PERMISSIONS } from '../src/domains/identity/constants/system-roles';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding initial data...');
 
-  // 1. Roles and Permissions
   const adminRole = await prisma.role.upsert({
     where: { name: 'SUPER_ADMIN' },
     update: {},
-    create: { name: 'SUPER_ADMIN' }
+    create: {
+      name: 'SUPER_ADMIN',
+      permissions: {
+        create: [{ action: 'manage', subject: 'all' }],
+      },
+    },
   });
 
   await prisma.permission.createMany({
     skipDuplicates: true,
-    data: [
-      { id: crypto.randomUUID(), action: 'manage', subject: 'all', roleId: adminRole.id }
-    ]
+    data: [{ action: 'manage', subject: 'all', roleId: adminRole.id }],
   });
 
-  // 2. Default User
+  for (const [roleName, permissions] of Object.entries(DEFAULT_ROLE_PERMISSIONS)) {
+    const role = await prisma.role.upsert({
+      where: { name: roleName },
+      update: {},
+      create: {
+        name: roleName,
+        permissions: { create: permissions },
+      },
+    });
+
+    const permCount = await prisma.permission.count({ where: { roleId: role.id } });
+    if (permCount === 0 && permissions.length) {
+      await prisma.permission.createMany({
+        data: permissions.map((p) => ({ ...p, roleId: role.id })),
+      });
+    }
+  }
+
+  const hashedPassword = await bcrypt.hash('Admin123!', 10);
   await prisma.user.upsert({
     where: { email: 'admin@erp.com' },
-    update: {},
+    update: { password: hashedPassword, fullName: 'Administrador' },
     create: {
       email: 'admin@erp.com',
-      password: 'HASHED_PASSWORD_MOCK', // In real prod, this is hashed via bcrypt
-      roleId: adminRole.id
-    }
+      password: hashedPassword,
+      fullName: 'Administrador',
+      roleId: adminRole.id,
+    },
   });
 
-  // 3. Main Branch & Warehouse
   const branch = await prisma.branch.upsert({
     where: { code: 'CENTRAL' },
     update: {},
-    create: { name: 'Casa Central', code: 'CENTRAL', isMain: true }
+    create: { name: 'Casa Central', code: 'CENTRAL', isMain: true },
   });
 
-  const warehouse = await prisma.warehouse.create({
-    data: { name: 'Depósito Principal', code: 'DEP-01', branchId: branch.id }
-  });
-
-  // 4. Base Catalog Item
-  const product = await prisma.product.create({
-    data: { name: 'Remera Básica', categoryId: 'cat-remeras' }
-  });
-
-  await prisma.productVariant.create({
-    data: {
-      productId: product.id,
-      sku: 'REM-BAS-BLA-M',
-      basePrice: 15000.00
-    }
+  await prisma.warehouse.upsert({
+    where: { code: 'DEP-01' },
+    update: {},
+    create: { name: 'Depósito Principal', code: 'DEP-01', branchId: branch.id },
   });
 
   console.log('Seeding completed successfully.');
