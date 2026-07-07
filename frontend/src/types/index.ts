@@ -307,6 +307,7 @@ export interface PriceList {
   type: 'BASE' | 'MODIFIER';
   modifierPercentage?: number;
   isActive: boolean;
+  isDefault?: boolean;
   createdAt: string;
 }
 
@@ -315,6 +316,7 @@ export interface PriceListItem {
   priceListId: string;
   variantId: string;
   overridePrice: number;
+  hasEntry?: boolean;
   variantSku?: string;
   variantName?: string;
   basePrice?: number;

@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateCategoryDto } from '../dto/create-category.dto';
 import { CreateBrandDto } from '../dto/create-brand.dto';
+import { PricingService } from '../pricing.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 
 @Injectable()
 export class BrandsService {
@@ -134,7 +136,15 @@ export class AttributesService {
 
 @Injectable()
 export class PriceListService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingService: PricingService,
+    private readonly settingsService: SettingsService,
+  ) {}
+
+  private async syncDefaultPriceList(priceListId: string) {
+    await this.settingsService.setDefaultPriceListId(priceListId);
+  }
 
   async findAll() {
     return this.prisma.priceList.findMany({
@@ -183,7 +193,7 @@ export class PriceListService {
   }
 
   async create(data: any) {
-    const { name, code, currency, type, modifierPercentage, isActive, margin } = data;
+    const { name, code, currency, type, modifierPercentage, isActive, margin, isDefault } = data;
     
     const computedMargin = margin !== undefined ? Number(margin) : 1.0;
     
@@ -200,7 +210,7 @@ export class PriceListService {
     const isPercentageBased = computedType === 'MODIFIER';
     const percentageDiscount = isPercentageBased ? -computedModifierPercentage : null;
 
-    return this.prisma.priceList.create({
+    const list = await this.prisma.priceList.create({
       data: {
         name,
         code: code || name || '',
@@ -211,8 +221,19 @@ export class PriceListService {
         isPercentageBased,
         percentageDiscount,
         margin: computedMargin,
+        isDefault: isDefault ?? false,
       }
     });
+
+    if (isDefault) {
+      await this.syncDefaultPriceList(list.id);
+    }
+
+    if (computedType === 'BASE') {
+      await this.pricingService.seedBaseListEntries(list.id);
+    }
+
+    return list;
   }
 
   async update(id: string, data: any) {
@@ -237,25 +258,43 @@ export class PriceListService {
     if (updateData.margin !== undefined) {
       updateData.margin = Number(updateData.margin);
     }
-    
-    return this.prisma.priceList.update({
+
+    const updated = await this.prisma.priceList.update({
       where: { id },
       data: updateData
     });
+
+    if (updateData.isDefault === true) {
+      await this.syncDefaultPriceList(id);
+    }
+
+    return updated;
   }
 
   async delete(id: string) {
     await this.findOne(id);
+
+    const assignedCustomers = await this.prisma.customer.count({
+      where: { priceListId: id },
+    });
+    if (assignedCustomers > 0) {
+      throw new ConflictException(
+        `No se puede eliminar: ${assignedCustomers} cliente(s) tienen asignada esta lista.`,
+      );
+    }
+
     return this.prisma.priceList.delete({ where: { id } });
   }
 
   async findItems(priceListId: string, page: number, pageSize: number) {
     const skip = (page - 1) * pageSize;
+    const list = await this.findOne(priceListId);
 
     const [variants, total] = await Promise.all([
       this.prisma.productVariant.findMany({
         skip,
         take: pageSize,
+        where: { isActive: true },
         include: {
           product: {
             select: { name: true }
@@ -266,12 +305,15 @@ export class PriceListService {
         },
         orderBy: { sku: 'asc' }
       }),
-      this.prisma.productVariant.count()
+      this.prisma.productVariant.count({ where: { isActive: true } })
     ]);
+
+    const variantIds = variants.map(v => v.id);
+    const priceMap = await this.pricingService.resolvePricesForVariants(variantIds, priceListId);
 
     const data = variants.map(v => {
       const entry = v.priceListEntries[0];
-      const overridePrice = entry ? entry.overridePrice : v.basePrice;
+      const resolvedPrice = priceMap.get(v.id) ?? v.basePrice;
       
       let variantName = v.product.name;
       const attributes = [];
@@ -285,10 +327,12 @@ export class PriceListService {
         id: entry?.id || v.id,
         priceListId,
         variantId: v.id,
-        overridePrice,
+        overridePrice: resolvedPrice,
+        hasEntry: !!entry,
         variantSku: v.sku,
         variantName,
-        basePrice: v.basePrice
+        basePrice: v.basePrice,
+        listType: list.type,
       };
     });
 

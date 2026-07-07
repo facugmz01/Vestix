@@ -6,6 +6,8 @@ import { Save, Tag, Barcode, WifiOff, FileText, AlertTriangle } from 'lucide-rea
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { labelsApi } from '@/api/labels.api';
+import { priceListsApi } from '@/api/priceLists.api';
+import { queryKeys } from '@/api/queryKeys';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { invoicingSettingsSchema, type InvoicingSettingsFormData } from '../schemas/invoicingSettings.schema';
 import { labelPrintingSettingsSchema, type LabelPrintingSettingsFormData } from '../schemas/labelPrintingSettings.schema';
@@ -17,6 +19,11 @@ import styles from './SettingsShared.module.css';
 export function PricingSettingsPanel() {
   const { data: settings, isLoading } = useGetSettings();
   const mutation = useUpdateSettingsSection('pricing');
+
+  const { data: priceLists } = useQuery({
+    queryKey: queryKeys.priceLists.all({ pageSize: 100 }),
+    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100 }),
+  });
 
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<PricingSettingsFormData>({ resolver: zodResolver(pricingSettingsSchema) });
 
@@ -34,6 +41,15 @@ export function PricingSettingsPanel() {
         </header>
         <div className={styles.cardBody}>
           <div className={styles.grid}>
+            <div className={styles.selectGroup}>
+              <label className={styles.selectLabel}>Lista de precios por defecto (POS)</label>
+              <select {...register('defaultPriceListId')} className={styles.select}>
+                <option value="">Sin lista (usar precio base)</option>
+                {priceLists?.data?.map((pl) => (
+                  <option key={pl.id} value={pl.id}>{pl.name} ({pl.type})</option>
+                ))}
+              </select>
+            </div>
             <Input type="number" label="IVA por Defecto (%)" {...register('vatDefaultPct', { valueAsNumber: true })} />
             <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
             <ToggleSwitch label="Permitir Descuento Manual" {...register('allowManualDiscount')} />

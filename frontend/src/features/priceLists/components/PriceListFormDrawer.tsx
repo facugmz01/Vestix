@@ -23,6 +23,7 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
     type: 'BASE',
     modifierPercentage: 0,
     isActive: true,
+    isDefault: false,
   });
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
         type: listToEdit.type,
         modifierPercentage: listToEdit.modifierPercentage || 0,
         isActive: listToEdit.isActive,
+        isDefault: listToEdit.isDefault ?? false,
       });
     } else if (open && !listToEdit) {
       setFormData({
@@ -43,6 +45,7 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
         type: 'BASE',
         modifierPercentage: 0,
         isActive: true,
+        isDefault: false,
       });
     }
   }, [open, listToEdit]);
@@ -122,6 +125,11 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />
           <label htmlFor="isActive" style={{ fontSize: '14px' }}>Lista Activa</label>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input type="checkbox" id="isDefault" checked={!!formData.isDefault} onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })} />
+          <label htmlFor="isDefault" style={{ fontSize: '14px' }}>Lista por defecto (POS y ventas sin cliente asignado)</label>
         </div>
 
       </form>

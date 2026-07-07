@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { SettingsService } from '../../../modules/settings/settings.service';
+import { PricingService } from '../../catalog/pricing.service';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface CheckoutDto {
@@ -36,6 +37,7 @@ export class StorefrontCheckoutService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly pricingService: PricingService,
   ) {}
 
   async processCheckout(authCustomerId: string | null, dto: CheckoutDto) {
@@ -43,7 +45,6 @@ export class StorefrontCheckoutService {
       throw new BadRequestException('El carrito está vacío');
     }
 
-    // Find or create customer
     let customerId = authCustomerId;
     let customer = customerId ? await this.prisma.customer.findUnique({ where: { id: customerId } }) : null;
 
@@ -69,18 +70,13 @@ export class StorefrontCheckoutService {
       throw new BadRequestException('No se pudo determinar el cliente');
     }
 
-    // Get system settings for storefront configuration
     const storefrontConfig = await this.settingsService.getStorefrontSettings();
-    
-    // Fallbacks
-    const defaultBranchId = 'default-branch-id'; // Ideally this should come from settings
-    const priceListId = customer?.priceListId || storefrontConfig.priceListToShow || 'retail-default';
+    const defaultBranchId = 'default-branch-id';
 
     let subtotal = 0;
     const orderLinesData = [];
 
     for (const item of dto.cartLines) {
-      // Find variant and its base price
       const variant = await this.prisma.productVariant.findUnique({
         where: { id: item.variantId },
         include: { product: true }
@@ -94,12 +90,19 @@ export class StorefrontCheckoutService {
         throw new BadRequestException(`El producto ${variant.product.name} ya no está disponible`);
       }
 
-      // Find price from PriceListEntry
-      const priceEntry = await this.prisma.priceListEntry.findUnique({
-        where: { priceListId_variantId: { priceListId, variantId: item.variantId } }
-      });
+      let finalPrice: number;
+      if (customer?.priceListId) {
+        finalPrice = await this.pricingService.resolvePrice(item.variantId, variant.basePrice, customerId);
+      } else if (storefrontConfig.priceListToShow) {
+        finalPrice = await this.pricingService.resolvePriceListPrice(
+          item.variantId,
+          variant.basePrice,
+          storefrontConfig.priceListToShow,
+        );
+      } else {
+        finalPrice = await this.pricingService.resolvePrice(item.variantId, variant.basePrice, customerId);
+      }
 
-      const finalPrice = priceEntry ? priceEntry.overridePrice : variant.basePrice;
       subtotal += finalPrice * item.quantity;
 
       orderLinesData.push({
@@ -115,7 +118,6 @@ export class StorefrontCheckoutService {
       });
     }
 
-    // Create SaleOrder
     const orderId = dto.id || uuidv4();
     const order = await this.prisma.saleOrder.create({
       data: {
@@ -127,7 +129,7 @@ export class StorefrontCheckoutService {
         cartDiscountTotal: 0,
         grandTotal: subtotal,
         paymentMethod: dto.paymentMethod || 'EFECTIVO',
-        status: 'QUOTE', // PENDING/QUOTE for storefront orders until paid/confirmed
+        status: 'QUOTE',
         issueInvoice: dto.issueInvoice || false,
         createdAt: new Date(),
         lines: {

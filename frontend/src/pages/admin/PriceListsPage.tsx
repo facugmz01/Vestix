@@ -118,9 +118,10 @@ export default function PriceListsPage() {
                 key: 'name', 
                 header: 'Nombre / Código',
                 render: (l) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span style={{ fontWeight: 600 }}>{l.name}</span>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{l.code}</span>
+                    {l.isDefault && <Badge color="green">Por defecto</Badge>}
                   </div>
                 )
               },
