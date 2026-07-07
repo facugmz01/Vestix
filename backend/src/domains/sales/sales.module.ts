@@ -20,6 +20,7 @@ import { CustomersService } from './customers.service';
 import { CustomersController } from './customers.controller';
 
 import { PosService } from './pos.service';
+import { PosQrStoreService } from './pos-qr-store.service';
 import { PosController } from './pos.controller';
 import { PosWebhooksController } from './pos-webhooks.controller';
 import { CashRegistersController } from './cash-registers.controller';
@@ -59,6 +60,7 @@ import { OfflineController } from './offline.controller';
     MercadoPagoService,
     CustomersService,
     PosService,
+    PosQrStoreService,
     SyncEngineService,
     ConflictResolutionService,
     SaleOrderRepository,

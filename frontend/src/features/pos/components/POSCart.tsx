@@ -46,7 +46,6 @@ export function POSCart({
   const setCartDiscountPct = usePosStore(s => s.setCartDiscountPct);
   const setCustomerFormOpen = usePosStore(s => s.setCustomerFormOpen);
   const suspendSale = usePosStore(s => s.suspendSale);
-  const setMixedPaymentModalOpen = usePosStore(s => s.setMixedPaymentModalOpen);
 
   const getVariantName = (variant: ProductVariant) => {
     const v = variant as ProductVariant & { name?: string; productName?: string };
@@ -59,7 +58,7 @@ export function POSCart({
       return;
     }
     if (method.opensMixedModal) {
-      setMixedPaymentModalOpen(true);
+      onCheckoutPayment('MULTIPLE');
       return;
     }
     onCheckoutPayment(method.id);
@@ -185,7 +184,14 @@ export function POSCart({
         <button className={`${styles.posBtn} ${styles.bgQuotation}`} disabled={cart.length === 0} onClick={onCheckoutQuotation}>
           <FileText size={20} /> Cotización
         </button>
-        <button className={`${styles.posBtn} ${styles.bgSuspend}`} disabled={cart.length === 0} onClick={() => suspendSale(grandTotal)}>
+        <button className={`${styles.posBtn} ${styles.bgSuspend}`} disabled={cart.length === 0} onClick={() => {
+          const pendingBefore = usePosStore.getState().suspendedSales.length;
+          suspendSale(grandTotal);
+          const pendingAfter = usePosStore.getState().suspendedSales.length;
+          if (pendingAfter > pendingBefore) {
+            toast.success(`Venta suspendida (${pendingAfter} pendiente${pendingAfter === 1 ? '' : 's'})`);
+          }
+        }}>
           <PauseCircle size={20} /> Suspender
         </button>
         {POS_PAYMENT_METHODS.map(method => {

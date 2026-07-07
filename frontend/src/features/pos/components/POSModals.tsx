@@ -81,6 +81,13 @@ export function POSModals({
   }, [paymentModalOpen, grandTotal]);
 
   const paymentLabel = PAYMENT_METHOD_LABELS[paymentMethod] || paymentMethod;
+  const isCashInsufficient = paymentMethod === 'CASH' && amountTendered < grandTotal;
+  const canConfirmSale = !isCashInsufficient && !isCheckoutLoading;
+
+  const handleConfirmSale = () => {
+    if (paymentMethod === 'CASH' && amountTendered < grandTotal) return;
+    onConfirmCheckout('CONFIRMED');
+  };
 
   return (
     <>
@@ -110,11 +117,11 @@ export function POSModals({
         onClose={() => setQrModalOpen(false)} 
         onPaymentConfirmed={() => {
           setQrModalOpen(false);
-          onConfirmCheckout('CONFIRMED');
+          setPaymentModalOpen(true);
         }}
         onForceConfirm={() => {
           setQrModalOpen(false);
-          onConfirmCheckout('CONFIRMED');
+          setPaymentModalOpen(true);
         }} 
       />
 
@@ -126,7 +133,7 @@ export function POSModals({
         onConfirm={(splits) => {
           setPaymentSplits(splits);
           setMixedPaymentModalOpen(false);
-          onConfirmCheckout('CONFIRMED');
+          setPaymentModalOpen(true);
         }}
       />
 
@@ -157,6 +164,11 @@ export function POSModals({
               {amountTendered > grandTotal && (
                 <div style={{ marginTop: '16px', color: '#f87171', fontSize: '22px', fontWeight: 'bold' }}>
                   Vuelto a entregar: {formatCurrency(amountTendered - grandTotal)}
+                </div>
+              )}
+              {amountTendered < grandTotal && (
+                <div style={{ marginTop: '12px', color: '#f87171', fontSize: '14px' }}>
+                  El monto recibido debe ser al menos {formatCurrency(grandTotal)}
                 </div>
               )}
             </div>
@@ -191,6 +203,18 @@ export function POSModals({
             </div>
           )}
 
+          {paymentMethod === 'QR_MERCADOPAGO' && (
+            <div style={{ padding: '16px', background: 'rgba(59,130,246,0.1)', borderRadius: '12px', border: '1px solid rgba(59,130,246,0.2)', color: '#93c5fd', fontSize: '14px' }}>
+              Pago QR MercadoPago confirmado{qrOrderId ? ` — ref. ${qrOrderId}` : ''}.
+            </div>
+          )}
+
+          {paymentMethod === 'MULTIPLE' && (
+            <div style={{ padding: '16px', background: 'rgba(99,102,241,0.1)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc', fontSize: '14px' }}>
+              Pago mixto configurado. Revisá el total y confirmá la venta.
+            </div>
+          )}
+
           <div style={{ padding: '10px 0' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '15px' }}>
               <input type="checkbox" checked={issueInvoice} onChange={e => setIssueInvoice(e.target.checked)} style={{ width: '20px', height: '20px' }} />
@@ -201,8 +225,9 @@ export function POSModals({
           <Button 
             variant="primary" 
             style={{ height: '56px', fontSize: '18px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', boxShadow: '0 8px 20px rgba(16,185,129,0.3)' }}
-            onClick={() => onConfirmCheckout('CONFIRMED')}
+            onClick={handleConfirmSale}
             loading={isCheckoutLoading}
+            disabled={!canConfirmSale}
           >
             Completar Venta y Emitir Ticket
           </Button>

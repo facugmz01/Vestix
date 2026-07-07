@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, Button, Input } from '@/components/ui';
 import { Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { usePosStore } from '../store/usePosStore';
 import type { PaymentMethodType } from '@/types';
 
 export interface PosPaymentSplit {
@@ -29,9 +30,16 @@ const METHOD_OPTIONS: { value: PaymentMethodType; label: string }[] = [
 ];
 
 export function PosMixedPaymentModal({ open, grandTotal, onClose, onConfirm, isLoading }: Props) {
+  const selectedCustomerId = usePosStore(s => s.selectedCustomerId);
   const [lines, setLines] = useState<PosPaymentSplit[]>([
     { id: '1', method: 'CASH', amount: grandTotal, reference: '' },
   ]);
+
+  useEffect(() => {
+    if (open) {
+      setLines([{ id: '1', method: 'CASH', amount: grandTotal, reference: '' }]);
+    }
+  }, [open, grandTotal]);
 
   const totalAdded = lines.reduce((acc, l) => acc + l.amount, 0);
   const remaining = grandTotal - totalAdded;
@@ -59,6 +67,10 @@ export function PosMixedPaymentModal({ open, grandTotal, onClose, onConfirm, isL
   };
 
   const handleConfirm = () => {
+    if (lines.some(l => l.method === 'STORE_CREDIT') && !selectedCustomerId) {
+      toast.error('Seleccioná un cliente para usar Cuenta Corriente en el pago mixto');
+      return;
+    }
     if (Math.abs(remaining) > 0.01) {
       toast.error(`El total de los pagos debe ser ${formatCurrency(grandTotal)}`);
       return;
