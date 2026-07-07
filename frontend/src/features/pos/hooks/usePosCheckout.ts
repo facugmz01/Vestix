@@ -51,8 +51,13 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
     }) => {
       if (!activeShift) throw new Error('No hay sesión de caja activa');
 
-      const { cart, selectedCustomerId, paymentReference, paymentSplits } = usePosStore.getState();
+      const { cart, selectedCustomerId, paymentReference, paymentSplits, qrOrderId } = usePosStore.getState();
       const orderId = crypto.randomUUID();
+
+      let resolvedPaymentReference = paymentReference || undefined;
+      if (paymentMethod === 'QR_MERCADOPAGO' && qrOrderId) {
+        resolvedPaymentReference = qrOrderId;
+      }
 
       let warehouseId = 'main';
       try {
@@ -84,7 +89,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         source: 'POS',
         paymentMethod: resolvedMethod,
         paymentAccountId: resolvedMethod === 'CUSTOMER_CREDIT' ? undefined : paymentAccountId,
-        paymentReference: paymentReference || undefined,
+        paymentReference: resolvedPaymentReference,
         payments: paymentSplits.length > 0 ? paymentSplits : undefined,
         cashShiftId: activeShift.id,
         status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
@@ -149,6 +154,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       usePosStore.getState().setPrintModalOpen(true);
       usePosStore.getState().setPaymentModalOpen(false);
       usePosStore.getState().setMixedPaymentModalOpen(false);
+      usePosStore.getState().setQrModalOpen(false);
     },
     onError: (_err, _variables, context) => {
       if (context?.prevCart) {

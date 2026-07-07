@@ -8,6 +8,7 @@ import { PricingService } from '../catalog/pricing.service';
 import { RulesEngineService } from '../catalog/rules-engine.service';
 import { CashService } from '../finance/cash/cash.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { PosQrStoreService } from './pos-qr-store.service';
 
 const mockVariant = {
   id: 'variant-1',
@@ -68,10 +69,26 @@ const mockMercadoPagoService: any = {
   createPreference: jest.fn<any>().mockResolvedValue({ preferenceId: 'mock', initPoint: 'http://mock' }),
 };
 
+const qrMemory = new Map<string, any>();
+const mockQrStore: any = {
+  save: jest.fn<any>(async (order: any) => { qrMemory.set(order.orderId, { ...order }); }),
+  get: jest.fn<any>(async (orderId: string) => qrMemory.get(orderId) ?? null),
+  updateStatus: jest.fn<any>(async (orderId: string, status: string) => {
+    const order = qrMemory.get(orderId);
+    if (!order) return null;
+    order.status = status;
+    qrMemory.set(orderId, order);
+    return order;
+  }),
+  purgeExpired: jest.fn<any>().mockResolvedValue(undefined),
+};
+
 describe('PosService', () => {
   let service: PosService;
 
   beforeEach(async () => {
+    qrMemory.clear();
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PosService,
@@ -81,11 +98,11 @@ describe('PosService', () => {
         { provide: CashService, useValue: mockCashService },
         { provide: MercadoPagoService, useValue: mockMercadoPagoService },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: PosQrStoreService, useValue: mockQrStore },
       ],
     }).compile();
 
     service = module.get<PosService>(PosService);
-    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -184,17 +201,17 @@ describe('PosService', () => {
   });
 
   describe('QR orders', () => {
-    it('creates and polls a pending QR order', () => {
-      const { orderId } = service.createQrOrder(1500, 'Cobro POS');
-      const status = service.getQrOrderStatus(orderId);
+    it('creates and polls a pending QR order', async () => {
+      const { orderId } = await service.createQrOrder(1500, 'Cobro POS');
+      const status = await service.getQrOrderStatus(orderId);
       expect(status.status).toBe('PENDING');
       expect(status.amount).toBe(1500);
     });
 
-    it('confirms a QR order manually', () => {
-      const { orderId } = service.createQrOrder(500, 'Test');
-      service.confirmQrOrder(orderId);
-      const status = service.getQrOrderStatus(orderId);
+    it('confirms a QR order manually', async () => {
+      const { orderId } = await service.createQrOrder(500, 'Test');
+      await service.confirmQrOrder(orderId);
+      const status = await service.getQrOrderStatus(orderId);
       expect(status.status).toBe('APPROVED');
     });
   });

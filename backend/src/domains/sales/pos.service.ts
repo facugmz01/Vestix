@@ -7,23 +7,14 @@ import { RulesEngineService } from '../catalog/rules-engine.service';
 import { CashService } from '../finance/cash/cash.service';
 import { MercadoPagoService } from './mercadopago.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { PosQrStoreService, type PosQrPaymentStatus } from './pos-qr-store.service';
 import * as crypto from 'crypto';
 
-export type PosQrPaymentStatus = 'PENDING' | 'APPROVED' | 'EXPIRED' | 'REJECTED';
-
-interface PosQrOrder {
-  orderId: string;
-  amount: number;
-  title: string;
-  qrData: string;
-  status: PosQrPaymentStatus;
-  createdAt: number;
-}
+export type { PosQrPaymentStatus };
 
 @Injectable()
 export class PosService {
   private readonly logger = new Logger(PosService.name);
-  private readonly qrOrders = new Map<string, PosQrOrder>();
   private readonly qrStatusEvents = new Subject<{ orderId: string; status: PosQrPaymentStatus }>();
   private static readonly QR_TTL_MS = 15 * 60 * 1000;
   private static readonly QR_MOCK_AUTO_APPROVE_MS = 25_000;
@@ -35,6 +26,7 @@ export class PosService {
     private readonly cashService: CashService,
     private readonly mercadoPagoService: MercadoPagoService,
     private readonly prisma: PrismaService,
+    private readonly qrStore: PosQrStoreService,
   ) {}
 
   private async findVariantByBarcode(barcode: string) {
@@ -51,12 +43,10 @@ export class PosService {
     return alt?.variant ?? null;
   }
 
-  private purgeExpiredQrOrders() {
-    const now = Date.now();
-    for (const [id, order] of this.qrOrders.entries()) {
-      if (now - order.createdAt > PosService.QR_TTL_MS) {
-        this.qrOrders.delete(id);
-      }
+  private async setQrOrderStatus(orderId: string, status: PosQrPaymentStatus) {
+    const order = await this.qrStore.updateStatus(orderId, status);
+    if (order) {
+      this.qrStatusEvents.next({ orderId, status });
     }
   }
 
@@ -280,12 +270,12 @@ export class PosService {
     return this.cashService.closeShift(dto.shiftId, dto.userId, dto.closingAmount, dto.notes);
   }
 
-  createQrOrder(amount: number, title: string) {
-    this.purgeExpiredQrOrders();
+  async createQrOrder(amount: number, title: string) {
+    await this.qrStore.purgeExpired();
     const orderId = `POS-QR-${Date.now()}`;
     const qrData = `00020101021243650016COM.MERCADOPAGO...${orderId}-AMT${amount}`;
 
-    this.qrOrders.set(orderId, {
+    await this.qrStore.save({
       orderId,
       amount,
       title,
@@ -295,14 +285,6 @@ export class PosService {
     });
 
     return { orderId, qrData };
-  }
-
-  private setQrOrderStatus(orderId: string, status: PosQrPaymentStatus) {
-    const order = this.qrOrders.get(orderId);
-    if (order) {
-      order.status = status;
-      this.qrStatusEvents.next({ orderId, status });
-    }
   }
 
   subscribeQrOrderStatus(orderId: string): Observable<{ data: { orderId: string; status: PosQrPaymentStatus } }> {
@@ -344,9 +326,9 @@ export class PosService {
       }
 
       if (status === 'approved') {
-        this.setQrOrderStatus(externalRef, 'APPROVED');
+        await this.setQrOrderStatus(externalRef, 'APPROVED');
       } else if (status === 'rejected' || status === 'cancelled') {
-        this.setQrOrderStatus(externalRef, 'REJECTED');
+        await this.setQrOrderStatus(externalRef, 'REJECTED');
       }
 
       return { received: true, orderId: externalRef, status };
@@ -357,9 +339,9 @@ export class PosService {
     }
   }
 
-  getQrOrderStatus(orderId: string) {
-    this.purgeExpiredQrOrders();
-    const order = this.qrOrders.get(orderId);
+  async getQrOrderStatus(orderId: string) {
+    await this.qrStore.purgeExpired();
+    const order = await this.qrStore.get(orderId);
     if (!order) {
       throw new NotFoundException('Orden QR no encontrada o expirada.');
     }
@@ -367,9 +349,11 @@ export class PosService {
     if (order.status === 'PENDING') {
       const elapsed = Date.now() - order.createdAt;
       if (elapsed > PosService.QR_TTL_MS) {
-        this.setQrOrderStatus(orderId, 'EXPIRED');
+        await this.setQrOrderStatus(orderId, 'EXPIRED');
+        order.status = 'EXPIRED';
       } else if (elapsed > PosService.QR_MOCK_AUTO_APPROVE_MS) {
-        this.setQrOrderStatus(orderId, 'APPROVED');
+        await this.setQrOrderStatus(orderId, 'APPROVED');
+        order.status = 'APPROVED';
       }
     }
 
@@ -381,15 +365,15 @@ export class PosService {
     };
   }
 
-  confirmQrOrder(orderId: string) {
-    const order = this.qrOrders.get(orderId);
+  async confirmQrOrder(orderId: string) {
+    const order = await this.qrStore.get(orderId);
     if (!order) {
       throw new NotFoundException('Orden QR no encontrada o expirada.');
     }
     if (order.status === 'EXPIRED') {
       throw new BadRequestException('La orden QR expiró.');
     }
-    this.setQrOrderStatus(orderId, 'APPROVED');
+    await this.setQrOrderStatus(orderId, 'APPROVED');
     return { orderId, status: 'APPROVED' as const };
   }
 

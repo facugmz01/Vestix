@@ -7,6 +7,7 @@ import { AfipProducer } from '../invoicing/afip.producer';
 import { InventoryService } from '../logistics/inventory.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
+import { AccountsService } from '../finance/accounts.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import * as crypto from 'crypto';
 
@@ -21,6 +22,7 @@ export class CheckoutOrchestrator {
     private readonly inventoryService: InventoryService,
     private readonly settingsService: SettingsService,
     private readonly notificationTriggers: NotificationTriggersService,
+    private readonly accountsService: AccountsService,
   ) {}
 
   /**
@@ -160,18 +162,21 @@ export class CheckoutOrchestrator {
             where: { id: dto.customerId },
             data: { usedCredit: { increment: posTotal } }
           });
-        } else if (dto.paymentAccountId && !isBackoffice) {
+        } else if (!isBackoffice) {
           const treasuryMethod = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'QR_MERCADOPAGO' : dto.paymentMethod;
-          const refNote = dto.paymentReference ? ` Ref: ${dto.paymentReference}` : '';
-          await tx.treasuryReceipt.create({
-            data: {
-              accountId: dto.paymentAccountId,
-              amount: posTotal,
-              payerName: dto.customerId || 'Walk-in',
-              referenceId: dto.id,
-              description: `Checkout via ${treasuryMethod}${refNote}`
-            }
-          });
+          const accountId = await this.resolvePaymentAccountId(tx, dto, treasuryMethod);
+          if (accountId) {
+            const refNote = dto.paymentReference ? ` Ref: ${dto.paymentReference}` : '';
+            const description = `Checkout via ${treasuryMethod}${refNote}`;
+            await this.postSaleLedgerEntry(
+              tx,
+              accountId,
+              posTotal,
+              dto.id,
+              description,
+              dto.customerId || 'Walk-in',
+            );
+          }
         }
       }
 
@@ -394,12 +399,124 @@ export class CheckoutOrchestrator {
   }
 
   async cancelOrder(id: string) {
-    const order = await this.prisma.saleOrder.findUnique({ where: { id } });
-    if (!order) throw new NotFoundException('Order not found');
-
-    return this.prisma.saleOrder.update({
+    const order = await this.prisma.saleOrder.findUnique({
       where: { id },
-      data: { status: 'CANCELLED' }
+      include: {
+        lines: true,
+        payments: { include: { paymentMethod: true } },
+      },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status === 'CANCELLED') {
+      throw new BadRequestException('La orden ya fue cancelada');
+    }
+    if (!['COMPLETED', 'CONFIRMED'].includes(order.status)) {
+      throw new BadRequestException('Solo se pueden cancelar ventas completadas');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (order.warehouseId) {
+        for (const line of order.lines) {
+          await this.inventoryService.recordMovement({
+            variantId: line.variantId,
+            sourceWarehouseId: null,
+            destinationWarehouseId: order.warehouseId,
+            branchId: order.branchId,
+            type: 'SALE_RETURN',
+            quantity: line.quantity,
+            unitCost: line.basePrice,
+            referenceId: `CANCEL-${order.id}`,
+          }, tx);
+        }
+      }
+
+      const ledgerEntries = await tx.financialTransaction.findMany({
+        where: { referenceId: order.id, type: 'DEBIT' },
+      });
+      for (const entry of ledgerEntries) {
+        await this.accountsService.postTransactionInTx(
+          tx,
+          entry.accountId,
+          'CREDIT',
+          entry.amount,
+          `CANCEL-${order.id}`,
+          `Reversa venta ${order.id}`,
+        );
+      }
+
+      if (order.paymentMethod === 'CUSTOMER_CREDIT' && order.customerId) {
+        await tx.customer.update({
+          where: { id: order.customerId },
+          data: { usedCredit: { decrement: order.grandTotal } },
+        });
+      }
+
+      for (const payment of order.payments) {
+        if (payment.paymentMethod.type === 'CUSTOMER_CREDIT' && order.customerId) {
+          await tx.customer.update({
+            where: { id: order.customerId },
+            data: { usedCredit: { decrement: payment.amount } },
+          });
+        }
+      }
+
+      return tx.saleOrder.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+        include: { lines: true },
+      });
+    });
+  }
+
+  private async resolvePaymentAccountId(
+    tx: any,
+    dto: CreateOrderDto,
+    methodType: string,
+  ): Promise<string | null> {
+    if (dto.paymentAccountId) return dto.paymentAccountId;
+
+    if (dto.cashShiftId) {
+      const shift = await tx.cashShift.findUnique({
+        where: { id: dto.cashShiftId },
+        include: { cashRegister: { include: { paymentMethods: true } } },
+      });
+      const registerPm = shift?.cashRegister.paymentMethods.find(
+        (p: { type: string; isActive: boolean; accountId?: string | null }) =>
+          p.type === methodType && p.isActive,
+      );
+      if (registerPm?.accountId) return registerPm.accountId;
+    }
+
+    const pm = await tx.paymentMethod.findFirst({
+      where: { type: methodType, isActive: true },
+    });
+    return pm?.accountId ?? null;
+  }
+
+  private async postSaleLedgerEntry(
+    tx: any,
+    accountId: string,
+    amount: number,
+    orderId: string,
+    description: string,
+    payerName: string,
+  ) {
+    await this.accountsService.postTransactionInTx(
+      tx,
+      accountId,
+      'DEBIT',
+      amount,
+      orderId,
+      description,
+    );
+    await tx.treasuryReceipt.create({
+      data: {
+        accountId,
+        amount,
+        payerName,
+        referenceId: orderId,
+        description,
+      },
     });
   }
 
@@ -438,15 +555,15 @@ export class CheckoutOrchestrator {
           include: { account: true },
         });
         if (pm?.accountId) {
-          await tx.treasuryReceipt.create({
-            data: {
-              accountId: pm.accountId,
-              amount: split.amount,
-              payerName: dto.customerId || 'Walk-in',
-              referenceId: orderId,
-              description: `Split payment via ${split.method}${split.reference ? ` Ref: ${split.reference}` : ''}`,
-            },
-          });
+          const description = `Split payment via ${split.method}${split.reference ? ` Ref: ${split.reference}` : ''}`;
+          await this.postSaleLedgerEntry(
+            tx,
+            pm.accountId,
+            split.amount,
+            orderId,
+            description,
+            dto.customerId || 'Walk-in',
+          );
         }
         if (pm) {
           await tx.saleOrderPayment.create({
