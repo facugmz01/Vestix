@@ -10,7 +10,17 @@ export default defineConfig({
       injectRegister: 'auto',
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^\/api\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /^\/health$/i,
+            handler: 'NetworkOnly',
+          },
+        ],
       },
       // Manifest is dynamically served by the backend, so we disable static manifest generation
       manifest: false,
@@ -25,7 +35,10 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/api/, ''), // Removed this because backend expects /api
+      },
+      '/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
       },
     },
   },

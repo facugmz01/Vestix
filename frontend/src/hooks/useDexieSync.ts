@@ -3,12 +3,13 @@ import { db } from '@/core/db/db';
 import { salesApi } from '@/api/sales.api';
 import { CatalogSyncService } from '@/core/sync/CatalogSyncService';
 import { useAuthStore } from '@/store/auth.store';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import toast from 'react-hot-toast';
 
 export function useDexieSync(branchIdOverride?: string) {
   const authBranchId = useAuthStore(s => s.user?.branchId);
   const branchId = branchIdOverride ?? authBranchId ?? undefined;
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { isOnline, connectivityChecked } = useNetworkStatus();
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastCatalogSync, setLastCatalogSync] = useState<string | null>(null);
   const [catalogCount, setCatalogCount] = useState(0);
@@ -23,12 +24,8 @@ export function useDexieSync(branchIdOverride?: string) {
     setCatalogCount(count);
   }, []);
 
-  const checkConnectivity = useCallback(() => {
-    setIsOnline(navigator.onLine);
-  }, []);
-
   const syncCatalog = useCallback(async (forceFull = false) => {
-    if (!navigator.onLine) return null;
+    if (!isOnline) return null;
     try {
       const result = await CatalogSyncService.syncPosCatalog(branchId, forceFull);
       await refreshMeta();
@@ -36,10 +33,10 @@ export function useDexieSync(branchIdOverride?: string) {
     } catch {
       return null;
     }
-  }, [branchId, refreshMeta]);
+  }, [branchId, isOnline, refreshMeta]);
 
   const syncQueue = useCallback(async () => {
-    if (!navigator.onLine || syncInProgress.current) return;
+    if (!isOnline || syncInProgress.current) return;
 
     syncInProgress.current = true;
     setIsSyncing(true);
@@ -50,11 +47,11 @@ export function useDexieSync(branchIdOverride?: string) {
       const pendingItems = items.filter(i => i.status === 'PENDING' || (i.status === 'ERROR' && i.retryCount < 5));
 
       for (const item of pendingItems) {
-        if (!navigator.onLine) break;
+        if (!isOnline) break;
 
         try {
           if (item.type === 'SALE') {
-            await salesApi.createSale(item.payload as Parameters<typeof salesApi.createSale>[0]);
+            await salesApi.createSale(item.payload as unknown as Parameters<typeof salesApi.createSale>[0]);
           }
           if (item.id) {
             await db.syncQueue.delete(item.id);
@@ -88,7 +85,7 @@ export function useDexieSync(branchIdOverride?: string) {
       setIsSyncing(false);
       await refreshMeta();
     }
-  }, [refreshMeta]);
+  }, [isOnline, refreshMeta]);
 
   const runOnlineBootstrap = useCallback(async () => {
     await syncCatalog(false);
@@ -100,23 +97,14 @@ export function useDexieSync(branchIdOverride?: string) {
   }, [refreshMeta]);
 
   useEffect(() => {
-    window.addEventListener('online', checkConnectivity);
-    window.addEventListener('offline', checkConnectivity);
-    window.addEventListener('online', runOnlineBootstrap);
-
-    if (navigator.onLine) {
+    if (isOnline && connectivityChecked) {
       runOnlineBootstrap();
     }
-
-    return () => {
-      window.removeEventListener('online', checkConnectivity);
-      window.removeEventListener('offline', checkConnectivity);
-      window.removeEventListener('online', runOnlineBootstrap);
-    };
-  }, [checkConnectivity, runOnlineBootstrap]);
+  }, [isOnline, connectivityChecked, runOnlineBootstrap]);
 
   return {
     isOnline,
+    connectivityChecked,
     isSyncing,
     lastCatalogSync,
     catalogCount,

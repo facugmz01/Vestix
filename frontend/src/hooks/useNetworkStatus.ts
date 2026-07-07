@@ -1,26 +1,78 @@
 /**
  * useNetworkStatus
  *
- * Tracks online/offline state using browser Navigator API events.
- * Used by the offline queue to know when to retry pending operations.
+ * Combines browser online/offline events with a lightweight server probe.
+ * navigator.onLine alone is unreliable (false negatives on load, PWA, etc.).
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+const PROBE_INTERVAL_MS = 30_000;
+const PROBE_TIMEOUT_MS = 5_000;
+
+async function probeServer(): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+
+  try {
+    const res = await fetch('/health', {
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'same-origin',
+      signal: controller.signal,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 export function useNetworkStatus() {
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(true);
+  const [connectivityChecked, setConnectivityChecked] = useState(false);
+  const probing = useRef(false);
 
-  useEffect(() => {
-    const goOnline  = () => setIsOnline(true);
-    const goOffline = () => setIsOnline(false);
+  const checkConnectivity = useCallback(async () => {
+    if (probing.current) return;
+    probing.current = true;
 
-    window.addEventListener('online',  goOnline);
-    window.addEventListener('offline', goOffline);
+    try {
+      if (!navigator.onLine) {
+        setIsOnline(false);
+        return;
+      }
 
-    return () => {
-      window.removeEventListener('online',  goOnline);
-      window.removeEventListener('offline', goOffline);
-    };
+      const reachable = await probeServer();
+      setIsOnline(reachable);
+    } finally {
+      setConnectivityChecked(true);
+      probing.current = false;
+    }
   }, []);
 
-  return { isOnline };
+  useEffect(() => {
+    checkConnectivity();
+
+    const handleOnline = () => {
+      checkConnectivity();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setConnectivityChecked(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    const interval = window.setInterval(checkConnectivity, PROBE_INTERVAL_MS);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.clearInterval(interval);
+    };
+  }, [checkConnectivity]);
+
+  return { isOnline, connectivityChecked, recheck: checkConnectivity };
 }

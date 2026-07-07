@@ -39,7 +39,7 @@ export function PosSyncPanel({
   );
 
   const handleCatalogSync = async (full: boolean) => {
-    if (!navigator.onLine) {
+    if (!isOnline) {
       toast.error('Sin conexión — no se puede sincronizar catálogo');
       return;
     }

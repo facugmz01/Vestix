@@ -56,6 +56,7 @@ export default function POSPage() {
 
   const {
     isOnline,
+    connectivityChecked,
     isSyncing,
     lastCatalogSync,
     catalogCount,
@@ -67,7 +68,7 @@ export default function POSPage() {
     gridProducts,
     searchResults,
     lookupBarcode,
-  } = usePosOffline(currentBranchId, selectedCustomerId, search);
+  } = usePosOffline(currentBranchId, selectedCustomerId, search, isOnline);
 
   const { data: activeShift, isLoading: isShiftLoading } = useQuery({
     queryKey: ['shifts', 'active'],
@@ -252,7 +253,7 @@ export default function POSPage() {
           lineDiscounts={lineDiscounts}
           globalDiscount={globalDiscount}
           totalItems={totalItems}
-          isOffline={!isOnline}
+          isOffline={connectivityChecked && !isOnline}
           catalogCount={catalogCount}
           appliedPromotions={appliedPromotions}
           onCheckoutQuotation={() => handleConfirmCheckout('QUOTATION')}

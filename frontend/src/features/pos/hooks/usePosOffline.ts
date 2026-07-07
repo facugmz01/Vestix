@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { posApi } from '@/api/pos.api';
 import { CatalogSyncService } from '@/core/sync/CatalogSyncService';
@@ -17,20 +17,13 @@ function toVariants(items: Awaited<ReturnType<typeof CatalogSyncService.searchOf
   return items.map(item => CatalogSyncService.toProductVariant(item) as PosVariant);
 }
 
-export function usePosOffline(branchId: string, selectedCustomerId: string, search: string) {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+export function usePosOffline(
+  branchId: string,
+  selectedCustomerId: string,
+  search: string,
+  isOnline: boolean,
+) {
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const goOnline = () => setIsOnline(true);
-    const goOffline = () => setIsOnline(false);
-    window.addEventListener('online', goOnline);
-    window.addEventListener('offline', goOffline);
-    return () => {
-      window.removeEventListener('online', goOnline);
-      window.removeEventListener('offline', goOffline);
-    };
-  }, []);
 
   const { data: gridProducts, isLoading: gridLoading } = useQuery({
     queryKey: ['pos', 'gridProducts', selectedCustomerId, isOnline],
@@ -72,14 +65,13 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
   }, [isOnline, selectedCustomerId]);
 
   const refreshCatalog = useCallback(async (forceFull = false) => {
-    if (!navigator.onLine) return null;
+    if (!isOnline) return null;
     const result = await CatalogSyncService.syncPosCatalog(branchId || undefined, forceFull);
     await queryClient.invalidateQueries({ queryKey: ['pos'] });
     return result;
-  }, [branchId, queryClient]);
+  }, [branchId, isOnline, queryClient]);
 
   return {
-    isOnline,
     gridProducts: gridProducts as PosVariant[] | undefined,
     searchResults: searchResults as PosVariant[] | undefined,
     gridLoading,
