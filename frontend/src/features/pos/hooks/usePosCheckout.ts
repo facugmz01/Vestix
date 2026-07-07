@@ -132,6 +132,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
     },
     onMutate: () => {
       const prevCart = usePosStore.getState().cart;
+      usePosStore.getState().saveLastSaleSnapshot();
       clearCart();
       return { prevCart };
     },

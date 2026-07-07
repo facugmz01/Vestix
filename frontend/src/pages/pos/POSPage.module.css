@@ -18,14 +18,217 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   color: var(--text-primary);
-  height: 68px;
+  min-height: 68px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
+  padding: 0 20px;
+  gap: 16px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
   z-index: 10;
+}
+
+.navLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.cashierBadge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navSearch {
+  flex: 1;
+  max-width: 480px;
+  position: relative;
+}
+
+.navSearchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.navSearchInput {
+  width: 100%;
+  padding: 10px 14px 10px 42px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.navSearchInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.shortcutsBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 28px;
+  background: rgba(99,102,241,0.08);
+  border-bottom: 1px solid rgba(99,102,241,0.15);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.shortcutsBar kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  margin-right: 4px;
+}
+
+.favoritesBar {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.favSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.favSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.favChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.favChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.favChip:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.3);
+}
+
+.favKey {
+  font-size: 10px;
+  font-weight: 700;
+  color: #a5b4fc;
+  background: rgba(99,102,241,0.2);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.favChipLabel {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.favChipPrice {
+  color: #34d399;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.favoriteBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  background: rgba(0,0,0,0.5);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fbbf24;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.productCard:hover .favoriteBtn,
+.favoriteBtn:focus {
+  opacity: 1;
+}
+
+.productCardBtn {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  cursor: pointer;
+  width: 100%;
+}
+
+.productImgFile {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.promoBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 20px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.promoChip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: rgba(16,185,129,0.15);
+  color: #34d399;
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 20px;
 }
 
 .navLogo {
@@ -552,6 +755,15 @@
 
 /* RESPONSIVE DESIGN (Mobile / Tablets) */
 @media (max-width: 1024px) {
+  .navbar {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+  }
+  .navSearch {
+    order: 3;
+    max-width: 100%;
+    width: 100%;
+  }
   .main {
     flex-direction: column;
     padding: 10px;

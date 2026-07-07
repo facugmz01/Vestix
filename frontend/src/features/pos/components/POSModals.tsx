@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { PauseCircle } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { useAuthStore } from '@/store/auth.store';
+import { customersApi } from '@/api/customers.api';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PAYMENT_METHOD_LABELS } from '../constants/posPaymentMethods';
 import { Button, Input, Modal } from '@/components/ui';
@@ -18,19 +20,17 @@ export function POSModals({
   grandTotal,
   paymentMethod,
   isGeneratingQr,
-  customersData,
   onConfirmCheckout,
   isCheckoutLoading,
   activeShift,
   registersData,
   isShiftLoading,
   issueInvoice,
-  setIssueInvoice
+  setIssueInvoice,
 }: {
   grandTotal: number;
   paymentMethod: string;
   isGeneratingQr: boolean;
-  customersData: { data?: { id: string; fullName: string }[] } | undefined;
   onConfirmCheckout: (status: 'CONFIRMED' | 'QUOTATION') => void;
   isCheckoutLoading: boolean;
   activeShift: CashShift | null | undefined;
@@ -44,6 +44,12 @@ export function POSModals({
   const [amountTendered, setAmountTendered] = useState(grandTotal);
 
   const selectedCustomerId = usePosStore(s => s.selectedCustomerId);
+
+  const { data: selectedCustomer } = useQuery({
+    queryKey: ['customer', selectedCustomerId],
+    queryFn: () => customersApi.getCustomer(selectedCustomerId),
+    enabled: !!selectedCustomerId,
+  });
   const paymentReference = usePosStore(s => s.paymentReference);
   const setPaymentReference = usePosStore(s => s.setPaymentReference);
   const setPaymentSplits = usePosStore(s => s.setPaymentSplits);
@@ -187,7 +193,7 @@ export function POSModals({
           {paymentMethod === 'CUSTOMER_CREDIT' && (
             <div style={{ padding: '16px', background: 'rgba(234,179,8,0.1)', borderRadius: '12px', border: '1px solid rgba(234,179,8,0.2)', color: '#fbbf24', fontSize: '14px' }}>
               Se cargará a cuenta corriente de{' '}
-              <strong>{customersData?.data?.find(c => c.id === selectedCustomerId)?.fullName || 'cliente seleccionado'}</strong>.
+              <strong>{selectedCustomer?.fullName || 'cliente seleccionado'}</strong>.
             </div>
           )}
 
@@ -220,7 +226,7 @@ export function POSModals({
             {suspendedSales.map(sale => (
               <div key={sale.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
-                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>{customersData?.data?.find(c => c.id === sale.customerId)?.fullName || 'Consumidor Final'}</div>
+                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>{sale.customerId ? 'Cliente registrado' : 'Consumidor Final'}</div>
                   <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{new Date(sale.date).toLocaleString()}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

@@ -72,6 +72,12 @@ export class PosController {
     return this.posService.closeSession({ ...dto, userId });
   }
 
+  @Get('shift/:shiftId/orders')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  async getShiftOrders(@Param('shiftId') shiftId: string) {
+    return this.posService.getShiftOrders(shiftId);
+  }
+
   @Post('qr-order')
   @RequirePermissions({ action: 'create', subject: 'Sales' })
   async generateQrOrder(@Body() dto: { amount: number; title: string }) {
