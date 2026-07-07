@@ -5,8 +5,11 @@ export type CreateVariantDto = Omit<ProductVariant, 'id'>;
 export type UpdateVariantDto = Partial<CreateVariantDto>;
 
 export interface GenerateCombinationsDto {
-  colors: string[];
-  sizes: string[];
+  /** Legacy format used by VariantGeneratorModal */
+  colors?: string[];
+  sizes?: string[];
+  /** Canonical format: attribute name → values */
+  attributes?: Record<string, string[]> | Array<{ name: string; values: string[] }>;
   basePrice: number;
 }
 
