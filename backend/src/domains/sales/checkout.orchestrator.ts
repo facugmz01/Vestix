@@ -367,35 +367,59 @@ export class CheckoutOrchestrator {
 
   private async deductStock(tx: any, data: { orderId: string, branchId: string, warehouseId: string, lines: any[] }) {
     for (const line of data.lines) {
-      // Handle Combos
-      const variantWithProduct = await this.catalogFacade.getVariantWithCombos(line.variantId, tx);
-
-      if (variantWithProduct?.product?.type === 'COMBO') {
-        for (const cl of variantWithProduct.product.comboLines) {
-          await this.inventoryService.recordMovement({
-            variantId: cl.childVariantId,
-            sourceWarehouseId: data.warehouseId,
-            destinationWarehouseId: null,
-            branchId: data.branchId,
-            type: 'SALE_EXIT',
-            quantity: line.quantity * cl.quantity,
-            unitCost: line.basePrice, // Approximate cost distribution can be done later
-            referenceId: data.orderId
-          }, tx);
-        }
-      } else {
+      const movements = await this.resolveStockMovements(line.variantId, line.quantity, tx);
+      for (const movement of movements) {
         await this.inventoryService.recordMovement({
-          variantId: line.variantId,
+          variantId: movement.variantId,
           sourceWarehouseId: data.warehouseId,
           destinationWarehouseId: null,
           branchId: data.branchId,
           type: 'SALE_EXIT',
-          quantity: line.quantity,
+          quantity: movement.quantity,
           unitCost: line.basePrice,
           referenceId: data.orderId
         }, tx);
       }
     }
+  }
+
+  private async restoreStock(tx: any, data: { orderId: string, branchId: string, warehouseId: string, lines: any[] }) {
+    for (const line of data.lines) {
+      const movements = await this.resolveStockMovements(line.variantId, line.quantity, tx);
+      for (const movement of movements) {
+        await this.inventoryService.recordMovement({
+          variantId: movement.variantId,
+          sourceWarehouseId: null,
+          destinationWarehouseId: data.warehouseId,
+          branchId: data.branchId,
+          type: 'SALE_RETURN',
+          quantity: movement.quantity,
+          unitCost: line.basePrice,
+          referenceId: `CANCEL-${data.orderId}`,
+        }, tx);
+      }
+    }
+  }
+
+  /**
+   * Resolves which variant IDs and quantities should move for a sale line.
+   * Combos expand into their child variants; regular products use the line variant directly.
+   */
+  private async resolveStockMovements(
+    variantId: string,
+    quantity: number,
+    tx?: any,
+  ): Promise<Array<{ variantId: string; quantity: number }>> {
+    const variantWithProduct = await this.catalogFacade.getVariantWithCombos(variantId, tx);
+
+    if (variantWithProduct?.product?.type === 'COMBO') {
+      return variantWithProduct.product.comboLines.map(cl => ({
+        variantId: cl.childVariantId,
+        quantity: quantity * cl.quantity,
+      }));
+    }
+
+    return [{ variantId, quantity }];
   }
 
   async cancelOrder(id: string) {
@@ -416,18 +440,12 @@ export class CheckoutOrchestrator {
 
     return this.prisma.$transaction(async (tx) => {
       if (order.warehouseId) {
-        for (const line of order.lines) {
-          await this.inventoryService.recordMovement({
-            variantId: line.variantId,
-            sourceWarehouseId: null,
-            destinationWarehouseId: order.warehouseId,
-            branchId: order.branchId,
-            type: 'SALE_RETURN',
-            quantity: line.quantity,
-            unitCost: line.basePrice,
-            referenceId: `CANCEL-${order.id}`,
-          }, tx);
-        }
+        await this.restoreStock(tx, {
+          orderId: order.id,
+          branchId: order.branchId,
+          warehouseId: order.warehouseId,
+          lines: order.lines,
+        });
       }
 
       const ledgerEntries = await tx.financialTransaction.findMany({

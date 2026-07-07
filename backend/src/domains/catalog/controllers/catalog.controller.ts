@@ -239,6 +239,12 @@ export class VariantsController {
     return this.productsService.findAllVariants(search);
   }
 
+  @Get(':id')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.productsService.findOneVariant(id);
+  }
+
   @Patch(':id')
   @RequirePermissions({ action: 'update', subject: 'Catalog' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() data: any) {

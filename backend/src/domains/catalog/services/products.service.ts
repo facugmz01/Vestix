@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
@@ -9,6 +9,11 @@ import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import { isVariableProduct, normalizeProductType, syncIsVariableFlag } from '../utils/product-type.util';
 import { hasRequiredShippingDimensions, normalizeMetadataWithDimensions } from '../utils/shipping-dimensions.util';
+import {
+  normalizeGenerateAttributes,
+  cartesianCombinations,
+  extractColorAndSize,
+} from '../utils/generate-variants.util';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -94,6 +99,13 @@ export class ProductsService {
     const productType = normalizeProductType(createProductDto);
     const variableProduct = isVariableProduct(createProductDto);
     const normalizedMetadata = normalizeMetadataWithDimensions(createProductDto.metadata || {});
+
+    if (productType === 'VARIABLE' && (!createProductDto.variants || createProductDto.variants.length === 0)) {
+      throw new ConflictException('Los productos variables requieren al menos una variante.');
+    }
+    if (productType === 'COMBO' && (!createProductDto.comboLines || createProductDto.comboLines.length === 0)) {
+      throw new ConflictException('Los productos combo requieren al menos un componente en la receta.');
+    }
 
     // 3. Create Product and Variants in a Transaction
     return this.prisma.$transaction(async (tx) => {
@@ -341,6 +353,22 @@ export class ProductsService {
       ? normalizeMetadataWithDimensions(updateProductDto.metadata)
       : undefined;
 
+    if (effectiveType === 'VARIABLE') {
+      if (nextType === 'VARIABLE' && product.type !== 'VARIABLE') {
+        const hasNewVariants = variants && variants.length > 0;
+        const hasExisting = (product.variants?.filter(v => v.isActive).length ?? 0) > 0;
+        if (!hasNewVariants && !hasExisting) {
+          throw new ConflictException('Los productos variables requieren al menos una variante.');
+        }
+      }
+      if (variants !== undefined && variants.length === 0) {
+        throw new ConflictException('Los productos variables requieren al menos una variante activa.');
+      }
+    }
+    if (effectiveType === 'COMBO' && comboLines !== undefined && comboLines.length === 0) {
+      throw new ConflictException('Los productos combo requieren al menos un componente en la receta.');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       if (effectiveType === 'COMBO' && comboLines !== undefined) {
         await tx.productComboLine.deleteMany({ where: { parentProductId: id } });
@@ -443,6 +471,15 @@ export class ProductsService {
     });
   }
 
+  async findOneVariant(id: string) {
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id },
+      include: { product: { include: { category: true, brand: true } } },
+    });
+    if (!variant) throw new NotFoundException(`Variante ${id} no encontrada`);
+    return variant;
+  }
+
   async createVariant(productId: string, data: any) {
     return this.prisma.productVariant.create({
       data: {
@@ -473,60 +510,88 @@ export class ProductsService {
   }
 
   async deleteVariant(id: string) {
-    return this.prisma.productVariant.delete({
-      where: { id }
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id },
+      include: { comboUses: true },
     });
+    if (!variant) throw new NotFoundException(`Variante ${id} no encontrada`);
+
+    const stockLevels = await this.prisma.stockLevel.findMany({
+      where: { variantId: id, physicalQuantity: { gt: 0 } },
+    });
+    if (stockLevels.length > 0) {
+      throw new ConflictException(
+        'No se puede eliminar la variante porque tiene stock en uno o más depósitos. Realice un ajuste de salida primero.',
+      );
+    }
+
+    if (variant.comboUses.length > 0) {
+      throw new ConflictException(
+        'No se puede eliminar la variante porque forma parte de uno o más combos.',
+      );
+    }
+
+    const salesCount = await this.prisma.orderLineItem.count({ where: { variantId: id } });
+    if (salesCount > 0) {
+      return this.prisma.productVariant.update({
+        where: { id },
+        data: { isActive: false },
+      });
+    }
+
+    try {
+      return await this.prisma.productVariant.delete({ where: { id } });
+    } catch (error: any) {
+      if (error.code === 'P2003') {
+        return this.prisma.productVariant.update({
+          where: { id },
+          data: { isActive: false },
+        });
+      }
+      throw error;
+    }
   }
 
   async generateCombinations(productId: string, dto: any) {
-    const { attributes, basePrice } = dto; // attributes is a Record<string, string[]>
-    const attrNames = Object.keys(attributes);
-    
-    if (attrNames.length === 0) return [];
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException(`Producto ${productId} no encontrado`);
 
-    let combinations: any[] = [{}];
-    
-    for (const name of attrNames) {
-      const next: any[] = [];
-      const values = attributes[name];
-      
-      for (const val of values) {
-        for (const combo of combinations) {
-          next.push({ ...combo, [name]: val });
-        }
-      }
-      combinations = next;
+    const attributes = normalizeGenerateAttributes(dto);
+    if (Object.keys(attributes).length === 0) {
+      throw new BadRequestException(
+        'Se requiere al menos un atributo con valores para generar variantes.',
+      );
     }
 
+    const combinations = cartesianCombinations(attributes);
+    const skuPrefix = product.baseSku || productId.substring(0, 8);
+    const basePrice = dto.basePrice ?? 0;
+
     const variantsData = combinations.map(combo => {
-      // For backward compatibility, try to map 'color' and 'size' if they exist
-      const colorKey = Object.keys(combo).find(k => k.toLowerCase() === 'color');
-      const sizeKey = Object.keys(combo).find(k => 
-        ['size', 'talle', 'talla', 'tamaño'].includes(k.toLowerCase()) || 
-        k.toLowerCase().startsWith('talle')
-      );
-
-      const color = colorKey ? combo[colorKey] : null;
-      const size = sizeKey ? combo[sizeKey] : null;
-
-      // SKU generation logic
+      const { color, size } = extractColorAndSize(combo);
       const attrString = Object.values(combo).join('-');
-      const sku = `${productId.substring(0, 4)}-${attrString}`.toUpperCase().replace(/\s+/g, '');
+      const sku = `${skuPrefix}-${attrString}`.toUpperCase().replace(/\s+/g, '');
 
       return {
         productId,
         color,
         size,
         attributes: combo,
-        basePrice: basePrice || 0,
+        basePrice,
         sku,
-        isActive: true
+        isActive: true,
       };
     });
 
-    return this.prisma.productVariant.createMany({
+    await this.prisma.productVariant.createMany({
       data: variantsData,
-      skipDuplicates: true
+      skipDuplicates: true,
+    });
+
+    const skus = variantsData.map(v => v.sku);
+    return this.prisma.productVariant.findMany({
+      where: { productId, sku: { in: skus } },
+      orderBy: { createdAt: 'asc' },
     });
   }
 

@@ -33,10 +33,11 @@ export default function OnlineProductDetailPage() {
     enabled: !!id,
   });
 
-  // Auto-select first available variant
+  // Auto-select first in-stock variant, or first available as fallback
   useEffect(() => {
     if ((product?.variants?.length ?? 0) > 0 && !selectedVariantId) {
-      setSelectedVariantId(product!.variants![0].id);
+      const inStock = product!.variants!.find(v => v.stock > 0);
+      setSelectedVariantId(inStock?.id ?? product!.variants![0].id);
     }
   }, [product, selectedVariantId]);
 
