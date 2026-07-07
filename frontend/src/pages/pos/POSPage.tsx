@@ -151,6 +151,8 @@ export default function POSPage() {
       } finally {
         setIsGeneratingQr(false);
       }
+    } else if (method === 'MULTIPLE') {
+      usePosStore.getState().setMixedPaymentModalOpen(true);
     } else {
       setPaymentModalOpen(true);
     }

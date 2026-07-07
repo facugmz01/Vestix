@@ -68,32 +68,38 @@ export class AccountsService {
    * CORE LEDGER ENGINE: Posts a financial transaction.
    */
   async postTransaction(accountId: string, type: 'DEBIT' | 'CREDIT', amount: number, referenceId: string, description: string) {
+    return this.prisma.$transaction(async (tx) => {
+      return this.postTransactionInTx(tx, accountId, type, amount, referenceId, description);
+    });
+  }
+
+  /**
+   * Posts a ledger entry inside an existing Prisma transaction (e.g. checkout).
+   */
+  async postTransactionInTx(
+    tx: any,
+    accountId: string,
+    type: 'DEBIT' | 'CREDIT',
+    amount: number,
+    referenceId: string,
+    description: string,
+  ) {
     if (amount <= 0) throw new BadRequestException('El monto debe ser positivo');
 
-    return this.prisma.$transaction(async (tx) => {
-      const account = await tx.financialAccount.findUnique({ where: { id: accountId } });
-      if (!account) throw new NotFoundException('Cuenta no encontrada');
+    const account = await tx.financialAccount.findUnique({ where: { id: accountId } });
+    if (!account) throw new NotFoundException('Cuenta no encontrada');
 
-      // Create transaction record
-      const transaction = await tx.financialTransaction.create({
-        data: {
-          accountId,
-          type,
-          amount,
-          referenceId,
-          description,
-        }
-      });
-
-      // Update materialized balance
-      const balanceChange = type === 'DEBIT' ? amount : -amount;
-      await tx.financialAccount.update({
-        where: { id: accountId },
-        data: { balance: { increment: balanceChange } }
-      });
-
-      return transaction;
+    const transaction = await tx.financialTransaction.create({
+      data: { accountId, type, amount, referenceId, description },
     });
+
+    const balanceChange = type === 'DEBIT' ? amount : -amount;
+    await tx.financialAccount.update({
+      where: { id: accountId },
+      data: { balance: { increment: balanceChange } },
+    });
+
+    return transaction;
   }
 
   async generateIncomingReceipt(payload: {
