@@ -114,9 +114,9 @@ export default function RolesPage() {
                 render: (r) => <span style={{ fontWeight: 600 }}>{r.name}</span>
               },
               { 
-                key: 'description', 
-                header: 'Descripción',
-                render: (r) => <span style={{ color: 'var(--text-secondary)' }}>{r.description || '-'}</span>
+                key: 'userCount', 
+                header: 'Usuarios',
+                render: (r) => <Badge color="gray">{r.userCount ?? 0}</Badge>
               },
               { 
                 key: 'isSystem', 

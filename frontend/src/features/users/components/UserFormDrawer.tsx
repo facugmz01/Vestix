@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
 import { usersApi, type CreateUserDto } from '@/api/users.api';
+import { rolesApi } from '@/api/roles.api';
+import { branchesApi } from '@/api/branches.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { SystemUser } from '@/types';
+import { ROLE_LABELS } from '@/rbac/permissions';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -25,6 +28,21 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
     password: '',
   });
 
+  const { data: rolesData } = useQuery({
+    queryKey: queryKeys.roles.all({ pageSize: 100 }),
+    queryFn: () => rolesApi.getRoles({ pageSize: 100 }),
+    enabled: open,
+  });
+
+  const { data: branchesData } = useQuery({
+    queryKey: queryKeys.branches.all(),
+    queryFn: () => branchesApi.getBranches({ pageSize: 100, isActive: true }),
+    enabled: open,
+  });
+
+  const roles = rolesData?.data ?? [];
+  const branches = branchesData?.data ?? [];
+
   useEffect(() => {
     if (open && userToEdit) {
       setFormData({
@@ -39,20 +57,24 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
       setFormData({
         email: '',
         fullName: '',
-        role: 'CASHIER',
+        role: roles[0]?.name || 'CASHIER',
         branchId: '',
         isActive: true,
         password: '',
       });
     }
-  }, [open, userToEdit]);
+  }, [open, userToEdit, roles]);
 
   const mutation = useMutation({
     mutationFn: (data: CreateUserDto) => {
-      if (isEditing && userToEdit) {
-        return usersApi.updateUser(userToEdit.id, data);
+      const payload = { ...data };
+      if (isEditing && !payload.password) {
+        delete payload.password;
       }
-      return usersApi.createUser(data);
+      if (isEditing && userToEdit) {
+        return usersApi.updateUser(userToEdit.id, payload);
+      }
+      return usersApi.createUser(payload);
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Usuario actualizado' : 'Usuario creado exitosamente');
@@ -70,6 +92,10 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
       toast.error('Completá los campos obligatorios');
       return;
     }
+    if (!isEditing && formData.password && formData.password.length < 8) {
+      toast.error('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
 
     const payload = { ...formData };
     if (!payload.branchId) {
@@ -78,6 +104,9 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
 
     mutation.mutate(payload);
   };
+
+  const roleLabel = (name: string) =>
+    ROLE_LABELS[name as keyof typeof ROLE_LABELS] || name;
 
   return (
     <Drawer
@@ -110,7 +139,7 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           required
         />
-        
+
         {!isEditing && (
           <div>
             <Input
@@ -120,7 +149,9 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>La contraseña debe tener al menos 8 caracteres.</p>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+              La contraseña debe tener al menos 8 caracteres.
+            </p>
           </div>
         )}
 
@@ -132,7 +163,9 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>Dejá en blanco si no querés cambiarla.</p>
+            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+              Dejá en blanco si no querés cambiarla.
+            </p>
           </div>
         )}
 
@@ -149,19 +182,39 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
               color: 'var(--text-primary)',
             }}
           >
-            <option value="SUPER_ADMIN">Super Admin</option>
-            <option value="STORE_MANAGER">Gerente de Tienda</option>
-            <option value="CASHIER">Cajero</option>
-            <option value="WAREHOUSE_OPERATOR">Operario de Depósito</option>
-            <option value="ECOMMERCE_MANAGER">Gerente E-commerce</option>
+            {roles.length === 0 ? (
+              <option value={formData.role}>{roleLabel(formData.role)}</option>
+            ) : (
+              roles.map((r) => (
+                <option key={r.id} value={r.name}>
+                  {roleLabel(r.name)}
+                </option>
+              ))
+            )}
           </select>
         </div>
 
-        <Input
-          label="Sucursal ID (opcional)"
-          value={formData.branchId || ''}
-          onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Sucursal (opcional)</label>
+          <select
+            value={formData.branchId || ''}
+            onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-elevated)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <option value="">Sin sucursal asignada</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name} ({b.code})
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
           <input

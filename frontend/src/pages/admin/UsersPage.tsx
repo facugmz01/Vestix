@@ -8,6 +8,7 @@ import {
 } from '@/components/ui';
 
 import { usersApi } from '@/api/users.api';
+import { rolesApi } from '@/api/roles.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { SystemUser } from '@/types';
 import { ROLE_LABELS } from '@/rbac/permissions';
@@ -38,6 +39,13 @@ export default function UsersPage() {
     queryKey: queryKeys.users.all({ page, pageSize, search, role: roleFilter }),
     queryFn: () => usersApi.getUsers({ page, pageSize, search, role: roleFilter }),
   });
+
+  const { data: rolesData } = useQuery({
+    queryKey: queryKeys.roles.all({ pageSize: 100 }),
+    queryFn: () => rolesApi.getRoles({ pageSize: 100 }),
+  });
+
+  const availableRoles = rolesData?.data ?? [];
 
   // Delete Mutation
   const deleteMutation = useMutation({
@@ -103,10 +111,11 @@ export default function UsersPage() {
           }}
         >
           <option value="">Todos los roles</option>
-          <option value="SUPER_ADMIN">Super Admin</option>
-          <option value="STORE_MANAGER">Gerente de Tienda</option>
-          <option value="CASHIER">Cajero</option>
-          <option value="WAREHOUSE_OPERATOR">Operario</option>
+          {availableRoles.map((r) => (
+            <option key={r.id} value={r.name}>
+              {ROLE_LABELS[r.name as keyof typeof ROLE_LABELS] || r.name}
+            </option>
+          ))}
         </select>
       </FiltersBar>
 
@@ -131,7 +140,7 @@ export default function UsersPage() {
                 render: (u) => (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>
-                      {u.fullName.charAt(0)}
+                      {u.fullName?.charAt(0) || '?'}
                     </div>
                     <span style={{ fontWeight: 600 }}>{u.fullName}</span>
                   </div>

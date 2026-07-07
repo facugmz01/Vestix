@@ -39,6 +39,7 @@ export class AuthController {
     // Fetch fresh user data from DB to get latest permissions/roles
     const user = await this.authService.getUserById(reqUser.userId);
     if (!user) throw new UnauthorizedException();
+    if (user.isActive === false) throw new UnauthorizedException('Usuario desactivado');
     
     return this.transformUser(user);
   }

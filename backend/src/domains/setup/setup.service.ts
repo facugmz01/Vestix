@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { DEFAULT_ROLE_PERMISSIONS } from '../identity/constants/system-roles';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -59,14 +60,26 @@ export class SetupService {
       },
     });
 
-    // 2. Upsert additional default roles
-    const defaultRoles = ['MANAGER', 'CASHIER', 'WAREHOUSE', 'VIEWER'];
+    // 2. Upsert additional default roles with permissions
+    const defaultRoles = ['STORE_MANAGER', 'CASHIER', 'WAREHOUSE_OPERATOR', 'ECOMMERCE_MANAGER', 'VIEWER'];
     for (const roleName of defaultRoles) {
-      await this.prisma.role.upsert({
-        where: { name: roleName },
-        update: {},
-        create: { name: roleName },
-      });
+      const permissions = DEFAULT_ROLE_PERMISSIONS[roleName] || [];
+      const existing = await this.prisma.role.findUnique({ where: { name: roleName } });
+      if (!existing) {
+        await this.prisma.role.create({
+          data: {
+            name: roleName,
+            permissions: permissions.length ? { create: permissions } : undefined,
+          },
+        });
+      } else if (permissions.length) {
+        const permCount = await this.prisma.permission.count({ where: { roleId: existing.id } });
+        if (permCount === 0) {
+          await this.prisma.permission.createMany({
+            data: permissions.map((p) => ({ ...p, roleId: existing.id })),
+          });
+        }
+      }
     }
 
     // 3. Hash password and create the user

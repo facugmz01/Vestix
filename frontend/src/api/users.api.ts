@@ -10,7 +10,7 @@ export interface UserFilters {
   pageSize?: number;
 }
 
-export type CreateUserDto = Omit<SystemUser, 'id' | 'createdAt' | 'lastLoginAt'> & { password?: string };
+export type CreateUserDto = Omit<SystemUser, 'id' | 'createdAt' | 'branchName'> & { password?: string };
 export type UpdateUserDto = Partial<CreateUserDto>;
 
 export const usersApi = {
