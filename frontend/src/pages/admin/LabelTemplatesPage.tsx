@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
-import { Plus, Edit2, Trash2, Copy, Star, Tag } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, Star, Tag, Download, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
@@ -9,12 +10,13 @@ import {
 } from '@/components/ui';
 import { labelsApi } from '@/api/labels.api';
 import { ActionGuard } from '@/rbac/ActionGuard';
-import { TemplateFormDrawer } from '@/features/labels/components/TemplateFormDrawer';
+import { exportTemplateToJson, parseImportedTemplate } from '@/features/labels/utils/labelExport';
 import type { LabelTemplate } from '@/features/labels/types/label.types';
 
 export default function LabelTemplatesPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [formOpen, setFormOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<LabelTemplate | null>(null);
 
@@ -42,6 +44,15 @@ export default function LabelTemplatesPage() {
     onError: (err: { message?: string }) => toast.error(err.message || 'Error al duplicar'),
   });
 
+  const importMutation = useMutation({
+    mutationFn: (dto: ReturnType<typeof parseImportedTemplate>) => labelsApi.createTemplate(dto),
+    onSuccess: () => {
+      toast.success('Plantilla importada');
+      queryClient.invalidateQueries({ queryKey: ['labelTemplates'] });
+    },
+    onError: (err: { message?: string }) => toast.error(err.message || 'Error al importar'),
+  });
+
   const defaultMutation = useMutation({
     mutationFn: (id: string) => labelsApi.setDefaultTemplate(id),
     onSuccess: () => {
@@ -51,19 +62,17 @@ export default function LabelTemplatesPage() {
     onError: (err: { message?: string }) => toast.error(err.message || 'Error al actualizar'),
   });
 
-  const handleCreate = () => {
-    setSelected(null);
-    setFormOpen(true);
-  };
-
-  const handleEdit = (tpl: LabelTemplate) => {
-    setSelected(tpl);
-    setFormOpen(true);
-  };
-
-  const handleDelete = (tpl: LabelTemplate) => {
-    setSelected(tpl);
-    setDeleteOpen(true);
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const dto = parseImportedTemplate(JSON.parse(text));
+      importMutation.mutate(dto);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Archivo inválido');
+    }
+    e.target.value = '';
   };
 
   return (
@@ -71,9 +80,15 @@ export default function LabelTemplatesPage() {
       title="Plantillas de Etiquetas"
       actions={
         <ActionGuard action="manage" subject="Labels">
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
-            Nueva plantilla
-          </Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input ref={fileInputRef} type="file" accept=".json" hidden onChange={handleImport} />
+            <Button variant="ghost" icon={<Upload size={16} />} onClick={() => fileInputRef.current?.click()}>
+              Importar
+            </Button>
+            <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/admin/label-templates/new/edit')}>
+              Nueva plantilla
+            </Button>
+          </div>
         </ActionGuard>
       }
     >
@@ -90,7 +105,9 @@ export default function LabelTemplatesPage() {
           description="Creá una plantilla para personalizar el diseño de tus etiquetas."
           action={
             <ActionGuard action="manage" subject="Labels">
-              <Button variant="primary" onClick={handleCreate}>Crear plantilla</Button>
+              <Button variant="primary" onClick={() => navigate('/admin/label-templates/new/edit')}>
+                Crear plantilla
+              </Button>
             </ActionGuard>
           }
         />
@@ -102,7 +119,7 @@ export default function LabelTemplatesPage() {
               <th>Tamaño</th>
               <th>Tipo</th>
               <th>Estado</th>
-              <th style={{ width: 160 }}>Acciones</th>
+              <th style={{ width: 200 }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -125,13 +142,14 @@ export default function LabelTemplatesPage() {
                 <td>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <ActionGuard action="manage" subject="Labels">
-                      <Button variant="ghost" size="sm" icon={<Edit2 size={14} />} onClick={() => handleEdit(tpl)} title="Editar" />
+                      <Button variant="ghost" size="sm" icon={<Edit2 size={14} />} onClick={() => navigate(`/admin/label-templates/${tpl.id}/edit`)} title="Editor visual" />
+                      <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportTemplateToJson(tpl)} title="Exportar JSON" />
                       <Button variant="ghost" size="sm" icon={<Copy size={14} />} onClick={() => duplicateMutation.mutate(tpl.id)} title="Duplicar" />
                       {!tpl.isDefault && (
                         <Button variant="ghost" size="sm" icon={<Star size={14} />} onClick={() => defaultMutation.mutate(tpl.id)} title="Marcar default" />
                       )}
                       {!tpl.isSystem && (
-                        <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => handleDelete(tpl)} title="Eliminar" />
+                        <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => { setSelected(tpl); setDeleteOpen(true); }} title="Eliminar" />
                       )}
                     </ActionGuard>
                   </div>
@@ -141,8 +159,6 @@ export default function LabelTemplatesPage() {
           </tbody>
         </Table>
       )}
-
-      <TemplateFormDrawer open={formOpen} onClose={() => setFormOpen(false)} template={selected} />
 
       <ConfirmDialog
         open={deleteOpen}

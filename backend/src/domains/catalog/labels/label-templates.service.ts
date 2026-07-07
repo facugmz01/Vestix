@@ -13,7 +13,7 @@ import {
 import {
   buildLayoutFromOptions,
   LabelLayout,
-  PRESET_LABEL_TEMPLATES,
+  ALL_PRESET_LABEL_TEMPLATES,
 } from './label-layout.types';
 
 @Injectable()
@@ -21,10 +21,7 @@ export class LabelTemplatesService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    const count = await this.prisma.labelTemplate.count();
-    if (count === 0) {
-      await this.seedPresets();
-    }
+    await this.seedPresets();
   }
 
   async findAll() {
@@ -173,7 +170,7 @@ export class LabelTemplatesService implements OnModuleInit {
   }
 
   async seedPresets() {
-    for (const preset of PRESET_LABEL_TEMPLATES) {
+    for (const preset of ALL_PRESET_LABEL_TEMPLATES) {
       const existing = await this.prisma.labelTemplate.findFirst({
         where: { name: preset.name, isSystem: true },
       });

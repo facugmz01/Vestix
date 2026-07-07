@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import JsBarcode from 'jsbarcode';
 import { QRCodeSVG } from 'qrcode.react';
-import type { LabelLayout, LabelPrintData, BarcodeSymbology } from '../types/label.types';
+import type { LabelLayout, LabelPrintData, BarcodeSymbology, LabelElement } from '../types/label.types';
 import styles from './LabelRenderer.module.css';
 
 interface Props {
@@ -12,7 +12,8 @@ interface Props {
   className?: string;
 }
 
-function resolveField(field: string | undefined, data: LabelPrintData): string {
+function resolveField(field: string | undefined, data: LabelPrintData, element?: LabelElement): string {
+  if (field === 'custom') return element?.customText || '';
   switch (field) {
     case 'storeName': return data.storeName;
     case 'productName': return data.productName;
@@ -105,17 +106,26 @@ export function LabelRenderer({ data, layout, widthMm, heightMm, className }: Pr
           left: `${element.x}mm`,
           top: `${element.y}mm`,
           width: element.width ? `${elementWidth}mm` : undefined,
+          height: element.height ? `${elementHeight}mm` : undefined,
           fontSize: element.fontSize ? `${element.fontSize}pt` : undefined,
           fontWeight: element.fontWeight,
           textAlign: element.textAlign,
         } as React.CSSProperties;
 
         if (element.type === 'TEXT') {
-          const text = resolveField(element.field, data);
+          const text = resolveField(element.field, data, element);
           if (!text) return null;
           return (
             <div key={element.id} className={styles.textElement} style={style}>
               {text}
+            </div>
+          );
+        }
+
+        if (element.type === 'IMAGE' && element.field === 'logo' && data.logoUrl) {
+          return (
+            <div key={element.id} className={styles.imageElement} style={style}>
+              <img src={data.logoUrl} alt="" className={styles.logoImg} />
             </div>
           );
         }

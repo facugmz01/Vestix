@@ -71,6 +71,14 @@ export class CreateLabelTemplateDto {
   labelsPerSheet?: number;
 
   @IsOptional()
+  @IsIn(['BASE', 'PRICE_LIST'])
+  priceSource?: 'BASE' | 'PRICE_LIST';
+
+  @IsOptional()
+  @IsString()
+  priceListId?: string;
+
+  @IsOptional()
   @IsObject()
   layout?: LabelLayout;
 
@@ -162,6 +170,14 @@ export class UpdateLabelTemplateDto {
   @IsInt()
   @Min(1)
   labelsPerSheet?: number;
+
+  @IsOptional()
+  @IsIn(['BASE', 'PRICE_LIST'])
+  priceSource?: 'BASE' | 'PRICE_LIST';
+
+  @IsOptional()
+  @IsString()
+  priceListId?: string;
 
   @IsOptional()
   @IsObject()

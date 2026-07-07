@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/api/products.api';
 import { labelsApi } from '@/api/labels.api';
+import { settingsApi } from '@/api/settings.api';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { PageContainer, Button, Tabs } from '@/components/ui';
 import { Search, Plus, Trash2, Printer, FileDown, Eye } from 'lucide-react';
@@ -23,7 +24,7 @@ interface LabelItem {
   quantity: number;
 }
 
-function toPrintData(item: LabelItem, storeName: string): LabelPrintData {
+function toPrintData(item: LabelItem, storeName: string, logoUrl?: string): LabelPrintData {
   return {
     storeName,
     productName: item.productName,
@@ -32,6 +33,7 @@ function toPrintData(item: LabelItem, storeName: string): LabelPrintData {
     size: item.size,
     color: item.color,
     price: item.basePrice,
+    logoUrl,
   };
 }
 
@@ -53,14 +55,23 @@ export default function BarcodeLabelsPage() {
     queryFn: () => labelsApi.getTemplates(),
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => settingsApi.getSettings(),
+  });
+
   const activeTemplate: LabelTemplate | undefined =
     templates.find((t) => t.id === selectedTemplateId) ||
     templates.find((t) => t.isDefault) ||
     templates[0];
 
-  const storeName = activeTemplate?.layout
-    ? 'Vestix ERP'
-    : 'Vestix ERP';
+  const storeName = settings?.general?.companyName || 'Vestix ERP';
+  const logoUrl = settings?.general?.logoUrl;
+
+  const samplePreviewData = useMemo(() => {
+    if (labelItems.length === 0) return null;
+    return toPrintData(labelItems[0], storeName, logoUrl);
+  }, [labelItems, storeName, logoUrl]);
 
   const handleAdd = (v: {
     id: string;
@@ -190,10 +201,10 @@ export default function BarcodeLabelsPage() {
               )}
             </div>
 
-            {showPreview && activeTemplate && labelItems.length > 0 && (
+            {showPreview && activeTemplate && samplePreviewData && (
               <div className={styles.previewSection}>
                 <LabelRenderer
-                  data={toPrintData(labelItems[0], storeName)}
+                  data={samplePreviewData}
                   layout={activeTemplate.layout}
                   widthMm={activeTemplate.labelWidth}
                   heightMm={activeTemplate.labelHeight}
@@ -256,7 +267,7 @@ export default function BarcodeLabelsPage() {
               Array.from({ length: item.quantity }).map((_, index) => (
                 <LabelRenderer
                   key={`${item.id}-${index}`}
-                  data={toPrintData(item, storeName)}
+                  data={toPrintData(item, storeName, logoUrl)}
                   layout={activeTemplate.layout}
                   widthMm={activeTemplate.labelWidth}
                   heightMm={activeTemplate.labelHeight}

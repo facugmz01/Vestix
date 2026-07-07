@@ -15,6 +15,11 @@ const PDFDocument = require('pdfkit');
 
 const MM_TO_PT = 72 / 25.4;
 
+interface GeneralSettings {
+  companyName?: string;
+  logoUrl?: string;
+}
+
 @Injectable()
 export class LabelsRenderService {
   constructor(
@@ -23,7 +28,14 @@ export class LabelsRenderService {
     private readonly templatesService: LabelTemplatesService,
   ) {}
 
-  async resolveVariantData(variantId: string): Promise<LabelPrintData> {
+  private async getGeneralSettings(): Promise<GeneralSettings> {
+    const settings = await this.prisma.systemSettings.findUnique({
+      where: { id: 'default' },
+    });
+    return (settings?.general ?? {}) as GeneralSettings;
+  }
+
+  async resolveVariantData(variantId: string, layout?: LabelLayout): Promise<LabelPrintData> {
     const variant = await this.prisma.productVariant.findUnique({
       where: { id: variantId },
       include: {
@@ -35,13 +47,22 @@ export class LabelsRenderService {
 
     if (!variant) throw new NotFoundException('Variante no encontrada');
 
-    const settings = await this.prisma.systemSettings.findUnique({
-      where: { id: 'default' },
-    });
-    const general = (settings?.general ?? {}) as { companyName?: string };
+    const general = await this.getGeneralSettings();
     const storeName = general.companyName || 'Vestix ERP';
+    const barcode = variant.barcode || variant.sku;
 
-    let barcode = variant.barcode || variant.sku;
+    let price = variant.basePrice;
+    if (layout?.priceSource === 'PRICE_LIST' && layout.priceListId) {
+      const entry = await this.prisma.priceListEntry.findUnique({
+        where: {
+          priceListId_variantId: {
+            priceListId: layout.priceListId,
+            variantId,
+          },
+        },
+      });
+      if (entry) price = entry.overridePrice;
+    }
 
     return {
       storeName,
@@ -50,9 +71,10 @@ export class LabelsRenderService {
       barcode,
       size: variant.size ?? undefined,
       color: variant.color ?? undefined,
-      price: variant.basePrice,
+      price,
       brand: variant.product.brand?.name,
       category: variant.product.category?.name,
+      logoUrl: general.logoUrl,
     };
   }
 
@@ -71,7 +93,12 @@ export class LabelsRenderService {
     return barcode;
   }
 
-  resolveFieldValue(field: string | undefined, data: LabelPrintData): string {
+  resolveFieldValue(
+    field: string | undefined,
+    data: LabelPrintData,
+    element?: { customText?: string },
+  ): string {
+    if (field === 'custom') return element?.customText || '';
     switch (field) {
       case 'storeName':
         return data.storeName;
@@ -173,7 +200,6 @@ export class LabelsRenderService {
     const colGap = (template.colGap || 0) * MM_TO_PT;
     const rowGap = (template.rowGap || 0) * MM_TO_PT;
 
-    let pageIndex = -1;
     let labelIndexOnPage = 0;
     const labelsPerPage = template.paperType === 'SHEET'
       ? template.labelsPerSheet || cols * 10
@@ -182,7 +208,6 @@ export class LabelsRenderService {
     for (const data of labels) {
       if (labelIndexOnPage % labelsPerPage === 0) {
         doc.addPage({ size: [pageWidth, pageHeight], margin: 0 });
-        pageIndex++;
         labelIndexOnPage = 0;
       }
 
@@ -230,7 +255,7 @@ export class LabelsRenderService {
       const h = (element.height ?? 8) * MM_TO_PT;
 
       if (element.type === 'TEXT') {
-        const text = this.resolveFieldValue(element.field, data);
+        const text = this.resolveFieldValue(element.field, data, element);
         if (!text) continue;
         doc
           .font(element.fontWeight === 'bold' ? 'Helvetica-Bold' : 'Helvetica')
@@ -240,6 +265,12 @@ export class LabelsRenderService {
             align: element.textAlign ?? 'left',
             lineBreak: false,
           });
+      } else if (element.type === 'IMAGE' && element.field === 'logo' && data.logoUrl) {
+        try {
+          doc.image(data.logoUrl, x, y, { width: w, height: h, fit: [w, h] });
+        } catch {
+          // Skip if logo cannot be loaded
+        }
       } else if (element.type === 'BARCODE' || element.type === 'QR') {
         const value = data.barcode || data.sku;
         const symbology = element.type === 'QR' ? 'QR' : layout.barcodeSymbology;

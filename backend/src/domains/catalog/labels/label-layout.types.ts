@@ -11,6 +11,7 @@ export type LabelField =
   | 'price'
   | 'brand'
   | 'category'
+  | 'logo'
   | 'custom';
 
 export interface LabelElement {
@@ -33,7 +34,8 @@ export interface LabelLayout {
   elements: LabelElement[];
   barcodeSymbology: BarcodeSymbology;
   barcodeSource: 'PRIMARY' | 'SKU';
-  priceSource: 'BASE';
+  priceSource: 'BASE' | 'PRICE_LIST';
+  priceListId?: string;
 }
 
 export interface LabelPrintData {
@@ -46,6 +48,7 @@ export interface LabelPrintData {
   price: number;
   brand?: string;
   category?: string;
+  logoUrl?: string;
 }
 
 export interface SimpleTemplateOptions {
@@ -199,3 +202,89 @@ export const PRESET_LABEL_TEMPLATES = [
     layout: buildLayoutFromOptions(66.675, 25.4),
   },
 ] as const;
+
+/** Inch to mm conversion for UltimatePOS legacy presets */
+const IN = 25.4;
+
+export const LEGACY_SHEET_PRESETS = [
+  {
+    name: 'Hoja Avery 20 etiquetas',
+    description: 'Hoja carta 8.5×11", etiqueta 4×1" (20 por hoja)',
+    isDefault: false,
+    isSystem: true,
+    labelWidth: 4 * IN,
+    labelHeight: 1 * IN,
+    paperType: 'SHEET' as const,
+    paperWidth: 8.5 * IN,
+    paperHeight: 11 * IN,
+    marginTop: 0.5 * IN,
+    marginLeft: 0.125 * IN,
+    colGap: 0.1875 * IN,
+    colsPerRow: 2,
+    labelsPerSheet: 20,
+    layout: buildLayoutFromOptions(4 * IN, 1 * IN),
+  },
+  {
+    name: 'Hoja Avery 32 etiquetas',
+    description: 'Hoja carta 8.5×11", etiqueta 2×1.25" (32 por hoja)',
+    isDefault: false,
+    isSystem: true,
+    labelWidth: 2 * IN,
+    labelHeight: 1.25 * IN,
+    paperType: 'SHEET' as const,
+    paperWidth: 8.5 * IN,
+    paperHeight: 11 * IN,
+    marginTop: 0.5 * IN,
+    marginLeft: 0.25 * IN,
+    colsPerRow: 4,
+    labelsPerSheet: 32,
+    layout: buildLayoutFromOptions(2 * IN, 1.25 * IN),
+  },
+  {
+    name: 'Hoja Avery 40 etiquetas',
+    description: 'Hoja carta 8.5×11", etiqueta 2×1" (40 por hoja)',
+    isDefault: false,
+    isSystem: true,
+    labelWidth: 2 * IN,
+    labelHeight: 1 * IN,
+    paperType: 'SHEET' as const,
+    paperWidth: 8.5 * IN,
+    paperHeight: 11 * IN,
+    marginTop: 0.5 * IN,
+    marginLeft: 0.25 * IN,
+    colsPerRow: 4,
+    labelsPerSheet: 40,
+    layout: buildLayoutFromOptions(2 * IN, 1 * IN),
+  },
+  {
+    name: 'Hoja Avery 50 etiquetas',
+    description: 'Hoja carta 8.5×11", etiqueta 1.5×1" (50 por hoja)',
+    isDefault: false,
+    isSystem: true,
+    labelWidth: 1.5 * IN,
+    labelHeight: 1 * IN,
+    paperType: 'SHEET' as const,
+    paperWidth: 8.5 * IN,
+    paperHeight: 11 * IN,
+    marginTop: 0.5 * IN,
+    marginLeft: 0.5 * IN,
+    colsPerRow: 5,
+    labelsPerSheet: 50,
+    layout: buildLayoutFromOptions(1.5 * IN, 1 * IN),
+  },
+  {
+    name: 'Rollo continuo 31.75×25.4 mm',
+    description: 'Rollo térmico continuo (1.25×1")',
+    isDefault: false,
+    isSystem: true,
+    labelWidth: 31.75,
+    labelHeight: 25.4,
+    paperType: 'ROLL' as const,
+    layout: buildLayoutFromOptions(31.75, 25.4),
+  },
+];
+
+export const ALL_PRESET_LABEL_TEMPLATES = [
+  ...PRESET_LABEL_TEMPLATES,
+  ...LEGACY_SHEET_PRESETS,
+];
