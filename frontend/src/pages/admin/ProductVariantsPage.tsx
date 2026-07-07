@@ -18,7 +18,8 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { VariantFormDrawer } from '@/features/variants/components/VariantFormDrawer';
 import { VariantDetailDrawer } from '@/features/variants/components/VariantDetailDrawer';
-import { VariantGeneratorModal } from '@/features/variants/components/VariantGeneratorModal';
+import { VariantGeneratorDrawer } from '@/features/variants/components/VariantGeneratorDrawer';
+import { useVariantStockMap } from '@/features/variants/hooks/useVariantStockMap';
 import { PrintLabelsModal } from '@/features/variants/components/PrintLabelsModal';
 import { BulkPrintLabelsModal } from '@/features/labels/components/BulkPrintLabelsModal';
 
@@ -50,11 +51,14 @@ export default function ProductVariantsPage() {
     enabled: !!productId,
   });
 
+  const variantIds = (variants ?? []).map(v => v.id);
+  const { stockMap } = useVariantStockMap(variantIds);
+
   // Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => variantsApi.deleteVariant(id),
     onSuccess: () => {
-      toast.success('Variante eliminada');
+      toast.success('Variante eliminada o desactivada');
       queryClient.invalidateQueries({ queryKey: queryKeys.products.variants(productId!) });
       setDeleteOpen(false);
     },
@@ -193,8 +197,26 @@ export default function ProductVariantsPage() {
                 header: 'Cód. Barras',
                 render: (v) => <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{v.barcode || '-'}</span>
               },
-              { 
-                key: 'price', 
+              {
+                key: 'stock',
+                header: 'Stock disp.',
+                render: (v) => {
+                  const stock = stockMap.get(v.id);
+                  const qty = stock?.availableQuantity ?? 0;
+                  return (
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        color: qty > 0 ? 'var(--green)' : qty === 0 ? 'var(--text-muted)' : 'var(--red)',
+                      }}
+                    >
+                      {qty}
+                    </span>
+                  );
+                },
+              },
+              {
+                key: 'price',
                 header: 'Precio Base',
                 render: (v) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(v.basePrice)}</span>
               },
@@ -254,10 +276,11 @@ export default function ProductVariantsPage() {
         variant={selectedVariant} 
       />
 
-      <VariantGeneratorModal
+      <VariantGeneratorDrawer
         open={generatorOpen}
         onClose={() => setGeneratorOpen(false)}
         productId={productId!}
+        defaultBasePrice={variants?.[0]?.basePrice ?? 0}
       />
 
       <PrintLabelsModal

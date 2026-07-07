@@ -5,7 +5,7 @@ export type CreateVariantDto = Omit<ProductVariant, 'id'>;
 export type UpdateVariantDto = Partial<CreateVariantDto>;
 
 export interface GenerateCombinationsDto {
-  /** Legacy format used by VariantGeneratorModal */
+  /** Legacy colors/sizes format; canonical: attributes map or array */
   colors?: string[];
   sizes?: string[];
   /** Canonical format: attribute name → values */

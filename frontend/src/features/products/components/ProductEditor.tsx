@@ -12,7 +12,7 @@ import { queryKeys } from '@/api/queryKeys';
 import type { Product } from '@/types';
 import { ProductImagesUploader } from '@/features/products/components/ProductImagesUploader';
 import { RelatedProductsPicker } from '@/features/products/components/RelatedProductsPicker';
-import { VariantMassGenerator } from '@/features/products/components/VariantMassGenerator';
+import { VariantCombinationGenerator } from '@/features/variants/components/VariantCombinationGenerator';
 import { ComboRecipeBuilder } from '@/features/products/components/ComboRecipeBuilder';
 
 interface Props {
@@ -446,10 +446,11 @@ export function ProductEditor({ initialData }: Props) {
           {formData.type === 'VARIABLE' && (
             <div style={cardStyle}>
               <h3 style={cardTitleStyle}><span style={{ color: 'var(--accent)' }}>■</span> Variantes (Talles / Colores)</h3>
-              <VariantMassGenerator 
-                costPrice={formData.costPrice || 0} 
-                basePrice={formData.basePrice || 0} 
-                onGenerate={(vars) => setFormData({ ...formData, variants: vars })} 
+              <VariantCombinationGenerator
+                mode="preview"
+                costPrice={formData.costPrice || 0}
+                basePrice={formData.basePrice || 0}
+                onPreview={(vars) => setFormData({ ...formData, variants: vars })}
               />
               {formData.variants && formData.variants.length > 0 && (
                 <div style={{ marginTop: '24px', overflowX: 'auto' }}>

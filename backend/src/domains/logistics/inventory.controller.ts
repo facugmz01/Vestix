@@ -20,6 +20,19 @@ export class InventoryController {
     return this.inventoryService.findAllStock(query);
   }
 
+  @Get('stock/summary')
+  @RequirePermissions({ action: 'read', subject: 'Inventory' })
+  getStockSummary(@Query('variantIds') variantIds?: string) {
+    const ids = variantIds?.split(',').map(id => id.trim()).filter(Boolean) ?? [];
+    return this.inventoryService.getStockSummaryByVariants(ids);
+  }
+
+  @Get('stock/variant/:variantId')
+  @RequirePermissions({ action: 'read', subject: 'Inventory' })
+  getStockByVariant(@Param('variantId') variantId: string) {
+    return this.inventoryService.getStockByVariant(variantId);
+  }
+
   @Post('stock/adjust')
   @RequirePermissions({ action: 'manage', subject: 'Inventory' })
   adjustStock(@Body() body: any) {

@@ -4,6 +4,8 @@ import { Package, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
 import type { Product } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/api/products.api';
+import { useVariantStockMap } from '@/features/variants/hooks/useVariantStockMap';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface Props {
   open: boolean;
@@ -25,6 +27,8 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
   });
 
   const displayProduct = fullProduct || product;
+  const variantIds = (displayProduct?.variants ?? []).map(v => v.id);
+  const { stockMap, isLoading: loadingStock } = useVariantStockMap(variantIds);
 
   if (!displayProduct) return null;
 
@@ -87,6 +91,7 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
                     <th style={{ textAlign: 'left', padding: '8px 4px', color: 'var(--text-secondary)' }}>SKU</th>
                     <th style={{ textAlign: 'left', padding: '8px 4px', color: 'var(--text-secondary)' }}>Color</th>
                     <th style={{ textAlign: 'left', padding: '8px 4px', color: 'var(--text-secondary)' }}>Talle</th>
+                    <th style={{ textAlign: 'right', padding: '8px 4px', color: 'var(--text-secondary)' }}>Stock</th>
                     <th style={{ textAlign: 'right', padding: '8px 4px', color: 'var(--text-secondary)' }}>Precio</th>
                   </tr>
                 </thead>
@@ -96,7 +101,12 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
                       <td style={{ padding: '8px 4px' }}>{v.sku}</td>
                       <td style={{ padding: '8px 4px' }}>{v.color || '-'}</td>
                       <td style={{ padding: '8px 4px' }}>{v.size || '-'}</td>
-                      <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 600 }}>${v.basePrice}</td>
+                      <td style={{ padding: '8px 4px', textAlign: 'right' }}>
+                        {loadingStock ? '…' : (stockMap.get(v.id)?.availableQuantity ?? 0)}
+                      </td>
+                      <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 600 }}>
+                        {formatCurrency(v.basePrice)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

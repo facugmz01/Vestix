@@ -363,6 +363,73 @@ export class InventoryService {
     return { data: enriched, total, page, pageSize };
   }
 
+  async getStockByVariant(variantId: string) {
+    const levels = await this.prisma.stockLevel.findMany({
+      where: { variantId },
+      orderBy: { warehouseId: 'asc' },
+    });
+
+    if (levels.length === 0) return [];
+
+    const warehouseIds = [...new Set(levels.map(l => l.warehouseId))];
+    const branchIds = [...new Set(levels.map(l => l.branchId).filter(Boolean))] as string[];
+
+    const [variant, warehouses, branches] = await Promise.all([
+      this.prisma.productVariant.findUnique({
+        where: { id: variantId },
+        include: { product: true },
+      }),
+      this.prisma.warehouse.findMany({ where: { id: { in: warehouseIds } } }),
+      this.prisma.branch.findMany({ where: { id: { in: branchIds } } }),
+    ]);
+
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+    const branchMap = new Map(branches.map(b => [b.id, b]));
+
+    return levels.map(s => ({
+      id: `${s.variantId}-${s.warehouseId}`,
+      variantId: s.variantId,
+      warehouseId: s.warehouseId,
+      branchId: s.branchId,
+      physicalQuantity: s.physicalQuantity,
+      reservedQuantity: s.reservedQuantity,
+      availableQuantity: s.availableQuantity,
+      variantSku: variant?.sku || '',
+      productName: variant?.product?.name || '',
+      warehouseName: warehouseMap.get(s.warehouseId)?.name || '',
+      branchName: s.branchId ? branchMap.get(s.branchId)?.name || '' : '',
+      lastUpdated: s.updatedAt,
+    }));
+  }
+
+  async getStockSummaryByVariants(variantIds: string[]) {
+    if (!variantIds.length) return [];
+
+    const levels = await this.prisma.stockLevel.findMany({
+      where: { variantId: { in: variantIds } },
+    });
+
+    const totals = new Map<string, { availableQuantity: number; physicalQuantity: number; reservedQuantity: number }>();
+    for (const level of levels) {
+      const current = totals.get(level.variantId) || {
+        availableQuantity: 0,
+        physicalQuantity: 0,
+        reservedQuantity: 0,
+      };
+      current.availableQuantity += level.availableQuantity;
+      current.physicalQuantity += level.physicalQuantity;
+      current.reservedQuantity += level.reservedQuantity;
+      totals.set(level.variantId, current);
+    }
+
+    return variantIds.map(variantId => ({
+      variantId,
+      availableQuantity: totals.get(variantId)?.availableQuantity ?? 0,
+      physicalQuantity: totals.get(variantId)?.physicalQuantity ?? 0,
+      reservedQuantity: totals.get(variantId)?.reservedQuantity ?? 0,
+    }));
+  }
+
   async findAllMovements(query: any = {}) {
     const page = parseInt(query.page) || 1;
     const pageSize = parseInt(query.pageSize) || 20;

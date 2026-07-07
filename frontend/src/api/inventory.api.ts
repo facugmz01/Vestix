@@ -48,9 +48,21 @@ export interface EnrichedMovement extends InventoryMovement {
   reason?: string;
 }
 
+export interface VariantStockSummary {
+  variantId: string;
+  availableQuantity: number;
+  physicalQuantity: number;
+  reservedQuantity: number;
+}
+
 export const inventoryApi = {
   getStockLevels: (filters?: StockFilters) =>
     get<PagedResponse<EnrichedStockLevel>>('/inventory/stock', { params: cleanParams(filters ?? {}) }),
+
+  getStockSummary: (variantIds: string[]) =>
+    get<VariantStockSummary[]>('/inventory/stock/summary', {
+      params: { variantIds: variantIds.join(',') },
+    }),
 
   getStockByVariant: (variantId: string) =>
     get<EnrichedStockLevel[]>(`/inventory/stock/variant/${variantId}`),
