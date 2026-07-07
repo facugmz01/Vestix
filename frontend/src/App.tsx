@@ -30,6 +30,7 @@ const AttributesPage = lazy(() => import('@/pages/admin/AttributesPage'));
 const ProductVariantsPage = lazy(() => import('@/pages/admin/ProductVariantsPage'));
 const PromotionsPage = lazy(() => import('@/pages/admin/PromotionsPage'));
 const BarcodeLabelsPage = lazy(() => import('@/pages/admin/BarcodeLabelsPage'));
+const LabelTemplatesPage = lazy(() => import('@/pages/admin/LabelTemplatesPage'));
 const InventoryPage  = lazy(() => import('@/pages/admin/InventoryPage'));
 const StockMovementsPage = lazy(() => import('@/pages/admin/StockMovementsPage'));
 const TransfersPage  = lazy(() => import('@/pages/admin/TransfersPage'));
@@ -164,6 +165,7 @@ export default function App() {
                 <Route path="/admin/price-inquiry" element={<PriceInquiryPage />} />
                 <Route path="/admin/scanner" element={<QRScannerPage />} />
                 <Route path="/admin/barcodes" element={<BarcodeLabelsPage />} />
+                <Route path="/admin/label-templates" element={<LabelTemplatesPage />} />
               </Route>
 
               <Route element={<RequirePermission action="read"   subject="Inventory" />}>

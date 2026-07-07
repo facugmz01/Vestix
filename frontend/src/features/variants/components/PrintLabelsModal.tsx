@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Drawer, Button, Input } from '@/components/ui';
-import { identifiersApi } from '@/api/identifiers.api';
+import { labelsApi } from '@/api/labels.api';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Printer } from 'lucide-react';
@@ -10,13 +10,14 @@ interface Props {
   open: boolean;
   onClose: () => void;
   variant: ProductVariant | null;
+  templateId?: string;
 }
 
-export function PrintLabelsModal({ open, onClose, variant }: Props) {
+export function PrintLabelsModal({ open, onClose, variant, templateId }: Props) {
   const [quantity, setQuantity] = useState(1);
 
   const mutation = useMutation({
-    mutationFn: () => identifiersApi.printLabels(variant!.id, quantity),
+    mutationFn: () => labelsApi.printVariant(variant!.id, quantity, templateId),
     onSuccess: (blob) => {
       // Create a blob URL and open it (e.g. PDF print dialog)
       const url = window.URL.createObjectURL(blob);

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DEFAULT_ROLE_PERMISSIONS } from '../src/domains/identity/constants/system-roles';
+import { PRESET_LABEL_TEMPLATES } from '../src/domains/catalog/labels/label-layout.types';
 
 const prisma = new PrismaClient();
 
@@ -64,6 +65,20 @@ async function main() {
     update: {},
     create: { name: 'Depósito Principal', code: 'DEP-01', branchId: branch.id },
   });
+
+  for (const preset of PRESET_LABEL_TEMPLATES) {
+    const existing = await prisma.labelTemplate.findFirst({
+      where: { name: preset.name, isSystem: true },
+    });
+    if (!existing) {
+      await prisma.labelTemplate.create({
+        data: {
+          ...preset,
+          layout: preset.layout as object,
+        },
+      });
+    }
+  }
 
   console.log('Seeding completed successfully.');
 }

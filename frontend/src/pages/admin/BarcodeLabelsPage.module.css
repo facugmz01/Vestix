@@ -16,6 +16,47 @@
   max-width: 600px;
 }
 
+.toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.templateSelect {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 260px;
+}
+
+.templateSelect label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.templateSelect select {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.previewSection {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 .searchInputWrapper {
   display: flex;
   align-items: center;
@@ -194,51 +235,6 @@
   }
 
   .label {
-    width: 38mm; /* Approximate width of standard small barcode label */
-    height: 25mm;
-    border: 1px dashed #ccc; /* Guía de corte, útil si imprimes en hoja A4 en lugar de térmica */
-    padding: 2mm;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
     page-break-inside: avoid;
-  }
-
-  .labelHeader {
-    font-size: 6px;
-    font-weight: bold;
-    text-transform: uppercase;
-  }
-
-  .labelProductName {
-    font-size: 8px;
-    font-weight: 600;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-  }
-
-  .labelAttributes {
-    font-size: 6px;
-    color: #333;
-  }
-
-  .barcodeVisual {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 10px;
-    letter-spacing: 1px;
-    background: #000;
-    color: #fff;
-    padding: 2px 4px;
-    margin: 2px 0;
-  }
-
-  .labelPrice {
-    font-size: 9px;
-    font-weight: bold;
   }
 }

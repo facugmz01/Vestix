@@ -1,0 +1,36 @@
+.label {
+  position: relative;
+  box-sizing: border-box;
+  padding: 1mm;
+  overflow: hidden;
+  page-break-inside: avoid;
+  border: 1px dashed #ccc;
+}
+
+.textElement {
+  position: absolute;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+  color: #000;
+}
+
+.barcodeElement {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.barcodeSvg {
+  width: 100%;
+  height: auto;
+}
+
+.qrWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
