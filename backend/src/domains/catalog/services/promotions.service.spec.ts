@@ -24,7 +24,7 @@ describe('PromotionsService', () => {
       providers: [
         PromotionsService,
         { provide: PrismaService, useValue: prisma },
-        { provide: PricingService, useValue: { bulkUpdateVariantPrices: jest.fn() } },
+        { provide: PricingService, useValue: { bulkUpdateVariantPrices: jest.fn(), applyModifierToBasePrices: jest.fn() } },
       ],
     }).compile();
 

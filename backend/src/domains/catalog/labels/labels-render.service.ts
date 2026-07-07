@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { IdentifiersService } from '../identifiers.service';
+import { PricingService } from '../pricing.service';
 import { LabelTemplatesService } from './label-templates.service';
 import {
   LabelLayout,
@@ -26,6 +27,7 @@ export class LabelsRenderService {
     private readonly prisma: PrismaService,
     private readonly identifiersService: IdentifiersService,
     private readonly templatesService: LabelTemplatesService,
+    private readonly pricingService: PricingService,
   ) {}
 
   private async getGeneralSettings(): Promise<GeneralSettings> {
@@ -54,15 +56,11 @@ export class LabelsRenderService {
 
     let price = variant.basePrice;
     if (layout?.priceSource === 'PRICE_LIST' && layout.priceListId) {
-      const entry = await this.prisma.priceListEntry.findUnique({
-        where: {
-          priceListId_variantId: {
-            priceListId: layout.priceListId,
-            variantId,
-          },
-        },
-      });
-      if (entry) price = entry.overridePrice;
+      price = await this.pricingService.resolvePriceListPrice(
+        variantId,
+        variant.basePrice,
+        layout.priceListId,
+      );
     }
 
     return {

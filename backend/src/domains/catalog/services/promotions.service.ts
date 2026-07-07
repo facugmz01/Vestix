@@ -231,8 +231,16 @@ export class PromotionsService {
   async executeBulkUpdate(dto: { promotionId?: string; priceListId?: string; action: string }) {
     if (dto.action === 'APPLY_PRICE_LIST_MODIFIER' && dto.priceListId) {
       const list = await this.prisma.priceList.findUniqueOrThrow({ where: { id: dto.priceListId } });
-      const variants = await this.prisma.productVariant.findMany({ where: { isActive: true } });
+      const variants = await this.prisma.productVariant.findMany({
+        where: { isActive: true },
+        select: { id: true, basePrice: true },
+      });
       const pct = list.modifierPercentage ?? -(list.percentageDiscount || 0);
+
+      if (list.isPercentageBased || list.type === 'MODIFIER') {
+        return this.pricingService.applyModifierToBasePrices(variants, pct);
+      }
+
       await this.pricingService.bulkUpdateVariantPrices(
         dto.priceListId,
         variants.map(v => ({ variantId: v.id, basePrice: v.basePrice })),

@@ -75,7 +75,14 @@ export function PriceListDetailDrawer({ open, onClose, priceList }: Props) {
                   { key: 'sku', header: 'SKU', render: (i) => <span style={{ fontFamily: 'monospace' }}>{i.variantSku}</span> },
                   { key: 'name', header: 'Producto', render: (i) => i.variantName },
                   { key: 'base', header: 'Costo / Base', render: (i) => <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(i.basePrice || 0)}</span> },
-                  { key: 'override', header: 'Precio Final', render: (i) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(i.overridePrice)}</span> },
+                  { key: 'override', header: 'Precio Final', render: (i) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(i.overridePrice)}</span>
+                      {!i.hasEntry && priceList.type === 'BASE' && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Hereda base</span>
+                      )}
+                    </div>
+                  ) },
                   { 
                     key: 'actions', 
                     header: '', 

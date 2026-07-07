@@ -417,6 +417,10 @@ export class SettingsService implements OnModuleInit {
         await this.syncGeneralToBranch(tx, encrypted as GeneralSettings);
       }
 
+      if (section === 'pricing' && sanitized.defaultPriceListId) {
+        await this.syncDefaultPriceListFlags(tx, sanitized.defaultPriceListId);
+      }
+
       await this.auditService.log({
         userId,
         action: AuditAction.UPDATE,
@@ -501,6 +505,30 @@ export class SettingsService implements OnModuleInit {
           companyAddress: g.address,
         },
       },
+    });
+  }
+
+  async setDefaultPriceListId(priceListId: string) {
+    await this.prisma.$transaction(async tx => {
+      await this.syncDefaultPriceListFlags(tx, priceListId);
+
+      const current = await tx.systemSettings.findUnique({ where: { id: 'default' } });
+      const pricing = ((current?.pricing as Record<string, unknown>) ?? {});
+      await tx.systemSettings.update({
+        where: { id: 'default' },
+        data: {
+          pricing: { ...pricing, defaultPriceListId: priceListId },
+        },
+      });
+    });
+    this.invalidateCache();
+  }
+
+  private async syncDefaultPriceListFlags(tx: any, priceListId: string) {
+    await tx.priceList.updateMany({ data: { isDefault: false } });
+    await tx.priceList.updateMany({
+      where: { id: priceListId },
+      data: { isDefault: true },
     });
   }
 
@@ -664,7 +692,7 @@ export class SettingsService implements OnModuleInit {
             locale: 'es-AR', currency: 'ARS',
           },
           pricing: {
-            defaultPriceListId: 'retail-default', vatDefaultPct: 21,
+            defaultPriceListId: '', vatDefaultPct: 21,
             allowManualDiscount: true, maxDiscountPct: 100,
             roundingRule: 'NONE', showPricesWithTax: true,
           },
@@ -705,7 +733,7 @@ export class SettingsService implements OnModuleInit {
           storefront: {
             enabled: false, primaryColor: '#3b82f6', fontFamily: 'Inter',
             showHeader: true, showStoreName: true, imagesCarousel: [],
-            priceListToShow: 'minorista', defaultSort: 'name_asc',
+            priceListToShow: '', defaultSort: 'name_asc',
             hideOutOfStock: false, hideBrandFilters: false,
             transferCbu: '', acceptCash: false, shippingInfo: '',
             requireShippingData: 'optional', whatsapp: '',

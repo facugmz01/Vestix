@@ -97,7 +97,7 @@ export function BulkPriceUpdateModal({ open, onClose }: Props) {
               ))}
             </select>
             <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-              Ejemplo: Si la lista es del +10%, todos los precios base se incrementarán un 10%.
+              Aplica el porcentaje de la lista seleccionada sobre los precios base de todas las variantes activas.
             </p>
           </div>
         )}
