@@ -1,4 +1,5 @@
 import { post } from './client';
+import { labelsApi } from './labels.api';
 
 export const identifiersApi = {
   generateSku: (productId?: string, attributes?: string[]) =>
@@ -7,6 +8,6 @@ export const identifiersApi = {
   generateBarcode: () =>
     post<{ barcode: string }>('/identifiers/generate-barcode', {}),
 
-  printLabels: (variantId: string, quantity: number) =>
-    post<Blob>(`/identifiers/labels/variant/${variantId}`, { quantity }, { responseType: 'blob' }), // Expects a PDF blob or similar
+  printLabels: (variantId: string, quantity: number, templateId?: string) =>
+    labelsApi.printVariant(variantId, quantity, templateId),
 };

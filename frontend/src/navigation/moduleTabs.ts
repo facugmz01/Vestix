@@ -13,6 +13,7 @@ export const CATALOG_TABS: TabItem[] = [
   { id: 'prices', label: 'Listas de Precios', to: '/admin/price-lists', icon: Banknote },
   { id: 'price-inquiry', label: 'Consulta de Precios', to: '/admin/price-inquiry', icon: Tag },
   { id: 'barcodes', label: 'Etiquetas', to: '/admin/barcodes', icon: Tag },
+  { id: 'label-templates', label: 'Plantillas', to: '/admin/label-templates', icon: Tag },
 ];
 
 export const INVENTORY_TABS: TabItem[] = [

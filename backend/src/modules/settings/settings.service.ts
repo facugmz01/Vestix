@@ -61,6 +61,15 @@ export interface PosSettings {
   blueDollarQuote: number;
 }
 
+export interface LabelPrintingSettings {
+  defaultTemplateId?: string;
+  autoGenerateBarcodeOnPrint: boolean;
+  defaultOutput: 'PDF' | 'ZPL' | 'BROWSER';
+  zplDpi: 203 | 300;
+  zplPrinterHost?: string;
+  zplPrinterPort?: number;
+}
+
 export interface NotificationSettings {
   emailEnabled: boolean;
   smsEnabled: boolean;
@@ -327,6 +336,16 @@ export class SettingsService implements OnModuleInit {
     return (row?.pos as PosSettings) ?? {} as PosSettings;
   }
 
+  async getLabelPrintingSettings(): Promise<LabelPrintingSettings> {
+    const row = await this.getCachedRaw();
+    return {
+      autoGenerateBarcodeOnPrint: true,
+      defaultOutput: 'PDF',
+      zplDpi: 203,
+      ...(row?.labelPrinting as LabelPrintingSettings),
+    };
+  }
+
   async getNotificationSettings(): Promise<NotificationSettings> {
     const row = await this.getCachedRaw();
     return (row?.notifications as NotificationSettings) ?? {} as NotificationSettings;
@@ -424,7 +443,7 @@ export class SettingsService implements OnModuleInit {
       if (!current) throw new Error('SystemSettings default row not found');
 
       const sections = ['general', 'pricing', 'skuBarcode', 'invoicing', 'notifications',
-                        'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr'] as const;
+                        'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr', 'labelPrinting'] as const;
 
       const dataToUpdate: any = {};
       for (const s of sections) {
@@ -697,6 +716,13 @@ export class SettingsService implements OnModuleInit {
             themeColor: '#3b82f6', backgroundColor: '#ffffff', iconUrl: '',
           },
           qr: { mpStoreName: 'Mi Comercio', qrGenerated: false },
+          labelPrinting: {
+            autoGenerateBarcodeOnPrint: true,
+            defaultOutput: 'PDF',
+            zplDpi: 203,
+            zplPrinterHost: '',
+            zplPrinterPort: 9100,
+          },
         },
       });
     }

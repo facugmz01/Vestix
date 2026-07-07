@@ -340,6 +340,15 @@ export class QrSettingsDto {
   @IsOptional() @IsBoolean() qrGenerated?: boolean;
 }
 
+export class LabelPrintingSettingsDto {
+  @IsOptional() @IsString() defaultTemplateId?: string;
+  @IsOptional() @IsBoolean() autoGenerateBarcodeOnPrint?: boolean;
+  @IsOptional() @IsIn(['PDF', 'ZPL', 'BROWSER']) defaultOutput?: 'PDF' | 'ZPL' | 'BROWSER';
+  @IsOptional() @IsIn([203, 300]) zplDpi?: 203 | 300;
+  @IsOptional() @IsString() zplPrinterHost?: string;
+  @IsOptional() @IsNumber() zplPrinterPort?: number;
+}
+
 export class UpdateSettingsDto {
   @IsOptional()
   @ValidateNested()
@@ -400,6 +409,11 @@ export class UpdateSettingsDto {
   @ValidateNested()
   @Type(() => QrSettingsDto)
   qr?: QrSettingsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LabelPrintingSettingsDto)
+  labelPrinting?: LabelPrintingSettingsDto;
 }
 
 /**

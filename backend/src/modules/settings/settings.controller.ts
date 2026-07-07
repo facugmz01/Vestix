@@ -15,7 +15,7 @@ import { UpdateSettingsDto, TestSmtpDto, TestSmsDto, TestWhatsappDto, TestPushDt
 // Valid section keys — prevents arbitrary key injection
 const VALID_SECTIONS = new Set([
   'general', 'pricing', 'skuBarcode', 'invoicing', 'notifications',
-  'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr',
+  'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr', 'labelPrinting',
 ]);
 
 @Controller('settings')

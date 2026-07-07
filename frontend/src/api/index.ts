@@ -28,6 +28,7 @@ export { suppliersApi }     from './suppliers.api';
 export { productsApi }      from './products.api';
 export { variantsApi }      from './variants.api';
 export { identifiersApi }   from './identifiers.api';
+export { labelsApi }        from './labels.api';
 export { priceListsApi }    from './priceLists.api';
 export { promotionsApi }    from './promotions.api';
 export { transfersApi }     from './transfers.api';

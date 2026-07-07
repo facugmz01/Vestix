@@ -27,6 +27,7 @@ export const Subjects = {
   SETTINGS:   'Settings',
   SYNC:       'Sync',
   USERS:      'Users',
+  LABELS:     'Labels',
   ALL:        'all',
 } as const;
 export type Subject = (typeof Subjects)[keyof typeof Subjects];
@@ -71,18 +72,25 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<Role, PermissionTuple[]> = {
     { action: Actions.MANAGE, subject: Subjects.CUSTOMERS  },
     { action: Actions.READ,   subject: Subjects.REPORTS    },
     { action: Actions.READ,   subject: Subjects.FINANCE    },
+    { action: Actions.READ,   subject: Subjects.LABELS     },
+    { action: 'print',        subject: Subjects.LABELS     },
+    { action: Actions.MANAGE, subject: Subjects.LABELS     },
   ],
   CASHIER: [
     { action: Actions.CREATE, subject: Subjects.SALES     },
     { action: Actions.READ,   subject: Subjects.CATALOG   },
     { action: Actions.CREATE, subject: Subjects.CUSTOMERS },
     { action: Actions.READ,   subject: Subjects.SYNC      },
+    { action: Actions.READ,   subject: Subjects.LABELS    },
+    { action: 'print',        subject: Subjects.LABELS    },
   ],
   WAREHOUSE_OPERATOR: [
     { action: Actions.READ,   subject: Subjects.INVENTORY  },
     { action: Actions.UPDATE, subject: Subjects.INVENTORY  },
     { action: Actions.READ,   subject: Subjects.PURCHASING },
     { action: Actions.UPDATE, subject: Subjects.PURCHASING },
+    { action: Actions.READ,   subject: Subjects.LABELS     },
+    { action: 'print',        subject: Subjects.LABELS     },
   ],
   ECOMMERCE_MANAGER: [
     { action: Actions.READ,   subject: Subjects.CATALOG   },

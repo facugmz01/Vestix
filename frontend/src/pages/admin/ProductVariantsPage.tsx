@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, Eye, Package, ArrowLeft, Shuffle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Package, ArrowLeft, Shuffle, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
@@ -20,7 +20,7 @@ import { VariantFormDrawer } from '@/features/variants/components/VariantFormDra
 import { VariantDetailDrawer } from '@/features/variants/components/VariantDetailDrawer';
 import { VariantGeneratorModal } from '@/features/variants/components/VariantGeneratorModal';
 import { PrintLabelsModal } from '@/features/variants/components/PrintLabelsModal';
-import { Printer } from 'lucide-react';
+import { BulkPrintLabelsModal } from '@/features/labels/components/BulkPrintLabelsModal';
 
 export default function ProductVariantsPage() {
   const { productId } = useParams<{ productId: string }>();
@@ -32,7 +32,9 @@ export default function ProductVariantsPage() {
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
+  const [bulkPrintOpen, setBulkPrintOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Parent Product Query
   const { data: product, isLoading: loadingProduct } = useQuery({
@@ -86,7 +88,25 @@ export default function ProductVariantsPage() {
     setPrintOpen(true);
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
+  const toggleSelectAll = () => {
+    if (!variants) return;
+    if (selectedIds.size === variants.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(variants.map((v) => v.id)));
+    }
+  };
+
+  const selectedVariants = (variants ?? []).filter((v) => selectedIds.has(v.id));
   if (loadingProduct) return <PageContainer title="Cargando..."><p style={{ color: 'var(--text-muted)' }}>Cargando producto...</p></PageContainer>;
   if (!product) return <PageContainer title="Producto no encontrado" action={<Button onClick={() => navigate('/admin/catalog')}>Volver</Button>}><p>El producto solicitado no existe.</p></PageContainer>;
 
@@ -99,6 +119,13 @@ export default function ProductVariantsPage() {
           <Button variant="outline" icon={<ArrowLeft size={16} />} onClick={() => navigate('/admin/catalog')}>
             Volver
           </Button>
+          <ActionGuard action="print" subject="Labels">
+            {selectedIds.size > 0 && (
+              <Button variant="secondary" icon={<Printer size={16} />} onClick={() => setBulkPrintOpen(true)}>
+                Imprimir etiquetas ({selectedIds.size})
+              </Button>
+            )}
+          </ActionGuard>
           <ActionGuard action="manage" subject="Catalog">
             <Button variant="secondary" icon={<Shuffle size={16} />} onClick={() => setGeneratorOpen(true)}>
               Generador Masivo
@@ -126,6 +153,25 @@ export default function ProductVariantsPage() {
             keyField="id"
             data={variants}
             columns={[
+              {
+                key: 'select',
+                header: (
+                  <input
+                    type="checkbox"
+                    checked={variants.length > 0 && selectedIds.size === variants.length}
+                    onChange={toggleSelectAll}
+                    aria-label="Seleccionar todas"
+                  />
+                ),
+                render: (v) => (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(v.id)}
+                    onChange={() => toggleSelect(v.id)}
+                    aria-label={`Seleccionar ${v.sku}`}
+                  />
+                ),
+              },
               { 
                 key: 'sku', 
                 header: 'SKU',
@@ -162,7 +208,7 @@ export default function ProductVariantsPage() {
                 header: '',
                 render: (v) => (
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <ActionGuard action="manage" subject="Inventory">
+                    <ActionGuard action="print" subject="Labels">
                       <Button variant="ghost" size="sm" onClick={() => handlePrint(v)} aria-label="Imprimir Etiquetas" title="Imprimir etiquetas de código de barras">
                         <Printer size={16} />
                       </Button>
@@ -218,6 +264,18 @@ export default function ProductVariantsPage() {
         open={printOpen}
         onClose={() => setPrintOpen(false)}
         variant={selectedVariant}
+      />
+
+      <BulkPrintLabelsModal
+        open={bulkPrintOpen}
+        onClose={() => setBulkPrintOpen(false)}
+        items={selectedVariants.map((v) => ({
+          variantId: v.id,
+          sku: v.sku,
+          productName: product.name,
+          quantity: 1,
+        }))}
+        title={`Etiquetas: ${selectedVariants.length} variantes`}
       />
       
       <ConfirmDialog

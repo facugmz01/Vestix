@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Badge, Table } from '@/components/ui';
 import { receiptsApi } from '@/api/receipts.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { CheckCircle, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { CheckCircle, AlertTriangle, ShieldAlert, Printer } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import { BulkPrintLabelsModal } from '@/features/labels/components/BulkPrintLabelsModal';
 
 interface Props {
   open: boolean;
@@ -14,6 +16,7 @@ interface Props {
 
 export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
   const queryClient = useQueryClient();
+  const [printOpen, setPrintOpen] = useState(false);
 
   const { data: receipt, isLoading } = useQuery({
     queryKey: queryKeys.receipts.detail(receiptId || ''),
@@ -37,6 +40,7 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
   }
 
   const isDisputed = receipt.status === 'DISPUTED';
+  const printableLines = receipt.lines.filter((l) => l.receivedQuantity > 0);
 
   const getStatusColor = (s: string) => {
     switch (s) {
@@ -101,7 +105,7 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
         </div>
 
         {/* Actions */}
-        <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           
           {(receipt.status === 'DRAFT' || receipt.status === 'DISPUTED') && (
             <ActionGuard action="manage" subject="Purchasing">
@@ -117,14 +121,35 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
           )}
 
           {receipt.status === 'VALIDATED' && (
-            <div style={{ color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-              <CheckCircle size={20} /> Remito impactado en inventario exitosamente.
-            </div>
+            <>
+              {printableLines.length > 0 && (
+                <ActionGuard action="print" subject="Labels">
+                  <Button variant="secondary" icon={<Printer size={16} />} onClick={() => setPrintOpen(true)}>
+                    Imprimir etiquetas ({printableLines.reduce((s, l) => s + l.receivedQuantity, 0)})
+                  </Button>
+                </ActionGuard>
+              )}
+              <div style={{ color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginLeft: 'auto' }}>
+                <CheckCircle size={20} /> Remito impactado en inventario exitosamente.
+              </div>
+            </>
           )}
 
         </div>
 
       </div>
+
+      <BulkPrintLabelsModal
+        open={printOpen}
+        onClose={() => setPrintOpen(false)}
+        items={printableLines.map((l) => ({
+          variantId: l.variantId,
+          sku: l.variantSku,
+          productName: l.productName,
+          quantity: l.receivedQuantity,
+        }))}
+        title="Etiquetas de recepción"
+      />
     </Drawer>
   );
 }

@@ -218,6 +218,31 @@ model ProductBarcode {
   @@schema("catalog")
 }
 
+model LabelTemplate {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  isDefault      Boolean  @default(false)
+  isSystem       Boolean  @default(false)
+  unit           String   @default("mm")
+  labelWidth     Float
+  labelHeight    Float
+  paperType      String   @default("ROLL") // ROLL | SHEET
+  paperWidth     Float?
+  paperHeight    Float?
+  marginTop      Float    @default(0)
+  marginLeft     Float    @default(0)
+  rowGap         Float    @default(0)
+  colGap         Float    @default(0)
+  colsPerRow     Int      @default(1)
+  labelsPerSheet Int?
+  layout         Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@schema("catalog")
+}
+
 model Attribute {
   id        String           @id @default(uuid())
   name      String           @unique // e.g., "Color", "Talle"
@@ -906,6 +931,7 @@ model SystemSettings {
   storefront    Json     @default("{}")
   pwa           Json     @default("{}")
   qr            Json     @default("{}")
+  labelPrinting Json     @default("{}")
   updatedAt     DateTime @updatedAt
 
   @@schema("settings")

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Building2, FileText, Bell, Plug, ChevronRight,
-  Settings as SettingsIcon, ShoppingCart, QrCode, Smartphone
+  Settings as SettingsIcon, ShoppingCart, QrCode, Smartphone, Tag
 } from 'lucide-react';
 
 import { PageContainer } from '@/components/ui';
@@ -12,7 +12,7 @@ import { queryKeys } from '@/api/queryKeys';
 
 import { GeneralSettingsPanel } from '@/features/settings/components/GeneralSettingsPanel';
 import { SalesOptionsPanel } from '@/features/settings/components/SalesOptionsPanel';
-import { InvoicingSettingsPanel } from '@/features/settings/components/OtherSettingsPanels';
+import { InvoicingSettingsPanel, LabelPrintingSettingsPanel } from '@/features/settings/components/OtherSettingsPanels';
 import { StorefrontSettingsPanel } from '@/features/settings/components/StorefrontSettingsPanel';
 import { QrSettingsPanel } from '@/features/settings/components/QrSettingsPanel';
 import { ArcaSettingsPanel } from '@/features/settings/components/ArcaSettingsPanel';
@@ -23,6 +23,7 @@ type SettingsTab =
   | 'general'
   | 'pos'
   | 'fiscal'
+  | 'labels'
   | 'storefront'
   | 'qr'
   | 'arca'
@@ -34,6 +35,7 @@ const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description
   { id: 'general',       label: 'Datos del comercio',     icon: <Building2 size={16} />, description: '' },
   { id: 'pos',           label: 'Opciones de venta',      icon: <SettingsIcon size={16} />, description: '' },
   { id: 'fiscal',        label: 'Configuración fiscal',   icon: <FileText size={16} />, description: '' },
+  { id: 'labels',        label: 'Etiquetas',              icon: <Tag size={16} />, description: '' },
   { id: 'storefront',    label: 'Tienda Web',             icon: <ShoppingCart size={16} />, description: '' },
   { id: 'qr',            label: 'QR de cobro',            icon: <QrCode size={16} />, description: '' },
   { id: 'arca',          label: 'ARCA / Facturación',     icon: <FileText size={16} />, description: '' },
@@ -96,6 +98,7 @@ export default function SettingsPage() {
             {activeTab === 'general' && <GeneralSettingsPanel />}
             {activeTab === 'pos' && <SalesOptionsPanel />}
             {activeTab === 'fiscal' && <InvoicingSettingsPanel />}
+            {activeTab === 'labels' && <LabelPrintingSettingsPanel />}
             {activeTab === 'storefront' && <StorefrontSettingsPanel />}
             {activeTab === 'qr' && <QrSettingsPanel />}
             {activeTab === 'arca' && <ArcaSettingsPanel />}

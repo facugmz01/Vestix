@@ -22,6 +22,11 @@ import { CatalogController } from './catalog.controller';
 import { IdentifiersService } from './identifiers.service';
 import { IdentifiersController } from './identifiers.controller';
 import { CatalogFacade } from './catalog.facade';
+import { LabelTemplatesService } from './labels/label-templates.service';
+import { LabelsRenderService } from './labels/labels-render.service';
+import { LabelTemplatesController } from './labels/label-templates.controller';
+import { LabelsController } from './labels/labels.controller';
+import { LabelsZplService } from './labels/labels-zpl.service';
 
 @Module({
   imports: [PrismaModule],
@@ -36,6 +41,8 @@ import { CatalogFacade } from './catalog.facade';
     CatalogController,
     IdentifiersController,
     PricingLegacyController,
+    LabelTemplatesController,
+    LabelsController,
   ],
   providers: [
     ProductsService,
@@ -51,6 +58,9 @@ import { CatalogFacade } from './catalog.facade';
     CatalogService,
     IdentifiersService,
     CatalogFacade,
+    LabelTemplatesService,
+    LabelsRenderService,
+    LabelsZplService,
   ],
   exports: [
     ProductsService,
