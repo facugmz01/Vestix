@@ -241,6 +241,8 @@ export function TemplateEditor({ template }: Props) {
           priceListId={layout.priceListId}
           onPriceListIdChange={(v) => setLayout((prev) => ({ ...prev, priceListId: v || undefined }))}
           priceLists={priceLists}
+          barcodeSource={layout.barcodeSource}
+          onBarcodeSourceChange={(v) => setLayout((prev) => ({ ...prev, barcodeSource: v }))}
         />
       </div>
     </div>

@@ -150,6 +150,15 @@ export interface QrSettings {
   qrGenerated: boolean;
 }
 
+export interface LabelPrintingSettings {
+  defaultTemplateId?: string;
+  autoGenerateBarcodeOnPrint: boolean;
+  defaultOutput: 'PDF' | 'ZPL' | 'BROWSER';
+  zplDpi: 203 | 300;
+  zplPrinterHost?: string;
+  zplPrinterPort?: number;
+}
+
 export interface SystemSettings {
   general:      GeneralSettings;
   pricing:      PricingSettings;
@@ -163,6 +172,7 @@ export interface SystemSettings {
   storefront:   StorefrontSettings;
   pwa:          PwaSettings;
   qr:           QrSettings;
+  labelPrinting: LabelPrintingSettings;
 }
 
 export const settingsApi = {

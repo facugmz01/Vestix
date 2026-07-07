@@ -14,6 +14,8 @@ interface Props {
   priceListId?: string;
   onPriceListIdChange: (v: string) => void;
   priceLists: { id: string; name: string }[];
+  barcodeSource: 'PRIMARY' | 'SKU' | 'SECONDARY';
+  onBarcodeSourceChange: (v: 'PRIMARY' | 'SKU' | 'SECONDARY') => void;
 }
 
 const FIELD_OPTIONS: LabelField[] = [
@@ -32,6 +34,8 @@ export function PropertiesPanel({
   priceListId,
   onPriceListIdChange,
   priceLists,
+  barcodeSource,
+  onBarcodeSourceChange,
 }: Props) {
   if (!element) {
     return (
@@ -76,6 +80,19 @@ export function PropertiesPanel({
               ))}
             </select>
           )}
+        </div>
+
+        <div className={styles.section}>
+          <label className={styles.label}>Código a imprimir</label>
+          <select
+            className={styles.select}
+            value={barcodeSource}
+            onChange={(e) => onBarcodeSourceChange(e.target.value as 'PRIMARY' | 'SKU' | 'SECONDARY')}
+          >
+            <option value="PRIMARY">Código principal (variante)</option>
+            <option value="SECONDARY">Código secundario / fabricante</option>
+            <option value="SKU">SKU</option>
+          </select>
         </div>
       </div>
     );

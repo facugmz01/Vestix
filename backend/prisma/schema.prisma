@@ -931,6 +931,7 @@ model SystemSettings {
   storefront    Json     @default("{}")
   pwa           Json     @default("{}")
   qr            Json     @default("{}")
+  labelPrinting Json     @default("{}")
   updatedAt     DateTime @updatedAt
 
   @@schema("settings")

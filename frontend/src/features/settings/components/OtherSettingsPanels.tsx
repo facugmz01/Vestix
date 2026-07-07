@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { Save, Tag, Barcode, WifiOff, FileText, AlertTriangle } from 'lucide-react';
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
+import { labelsApi } from '@/api/labels.api';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { invoicingSettingsSchema, type InvoicingSettingsFormData } from '../schemas/invoicingSettings.schema';
+import { labelPrintingSettingsSchema, type LabelPrintingSettingsFormData } from '../schemas/labelPrintingSettings.schema';
 import { pricingSettingsSchema, type PricingSettingsFormData, skuBarcodeSettingsSchema, type SkuBarcodeSettingsFormData, offlineSettingsSchema, type OfflineSettingsFormData } from '../schemas/otherSettings.schema';
 import clsx from 'clsx';
 import styles from './SettingsShared.module.css';
@@ -235,6 +238,79 @@ export function OfflineSettingsPanel() {
           aria-live="polite"
         >
           {mutation.isPending ? 'Guardando...' : 'Guardar Modo Offline'}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// ─── Label Printing Settings ─────────────────────────────────────────────────
+export function LabelPrintingSettingsPanel() {
+  const { data: settings, isLoading } = useGetSettings();
+  const mutation = useUpdateSettingsSection('labelPrinting');
+  const { data: templates = [] } = useQuery({
+    queryKey: ['labelTemplates'],
+    queryFn: () => labelsApi.getTemplates(),
+  });
+
+  const { register, handleSubmit, reset, formState: { isDirty } } = useForm<LabelPrintingSettingsFormData>({
+    resolver: zodResolver(labelPrintingSettingsSchema),
+  });
+
+  useEffect(() => {
+    if (settings?.labelPrinting) reset(settings.labelPrinting);
+  }, [settings, reset]);
+
+  const onSubmit = (data: LabelPrintingSettingsFormData) =>
+    mutation.mutate(data, { onSuccess: () => reset(data) });
+
+  if (isLoading) return null;
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className={styles.panelContainer} noValidate>
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><Tag size={18} /> Impresión de Etiquetas</h3>
+          <p className={styles.cardDescription}>Plantilla por defecto, salida Zebra ZPL y generación automática de códigos.</p>
+        </header>
+        <div className={styles.cardBody}>
+          <div className={styles.grid}>
+            <div className={styles.selectGroup}>
+              <label className={styles.selectLabel}>Plantilla por defecto</label>
+              <select {...register('defaultTemplateId')} className={styles.select}>
+                <option value="">Automática (marcada como default)</option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.selectGroup}>
+              <label className={styles.selectLabel}>Salida preferida</label>
+              <select {...register('defaultOutput')} className={styles.select}>
+                <option value="PDF">PDF</option>
+                <option value="ZPL">ZPL (Zebra)</option>
+                <option value="BROWSER">Navegador (window.print)</option>
+              </select>
+            </div>
+            <ToggleSwitch label="Auto-generar código de barras al imprimir" {...register('autoGenerateBarcodeOnPrint')} />
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <div className={styles.selectGroup}>
+              <label className={styles.selectLabel}>Resolución ZPL (DPI)</label>
+              <select {...register('zplDpi', { valueAsNumber: true })} className={styles.select}>
+                <option value={203}>203 dpi (estándar)</option>
+                <option value={300}>300 dpi (alta resolución)</option>
+              </select>
+            </div>
+            <Input label="IP impresora Zebra (referencia)" placeholder="192.168.1.100" {...register('zplPrinterHost')} />
+            <Input type="number" label="Puerto RAW (ZPL)" {...register('zplPrinterPort', { valueAsNumber: true })} />
+          </div>
+        </div>
+      </section>
+
+      <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
+        <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
+        <Button type="submit" variant="primary" loading={mutation.isPending} disabled={!isDirty || mutation.isPending} icon={<Save size={16} />}>
+          Guardar etiquetas
         </Button>
       </div>
     </form>

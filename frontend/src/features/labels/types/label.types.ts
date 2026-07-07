@@ -35,7 +35,7 @@ export interface LabelLayout {
   version: 1;
   elements: LabelElement[];
   barcodeSymbology: BarcodeSymbology;
-  barcodeSource: 'PRIMARY' | 'SKU';
+  barcodeSource: 'PRIMARY' | 'SKU' | 'SECONDARY';
   priceSource: 'BASE' | 'PRICE_LIST';
   priceListId?: string;
 }

@@ -117,6 +117,27 @@ export default function BarcodeLabelsPage() {
     window.print();
   };
 
+  const handleDownloadZpl = async () => {
+    if (!activeTemplate || labelItems.length === 0) return;
+    try {
+      const blob = await labelsApi.exportZpl(
+        labelItems.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+        activeTemplate.id,
+      );
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'labels.zpl');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Archivo ZPL generado');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al generar ZPL';
+      toast.error(message);
+    }
+  };
+
   const handleDownloadPdf = async () => {
     if (!activeTemplate || labelItems.length === 0) return;
     try {
@@ -249,6 +270,9 @@ export default function BarcodeLabelsPage() {
                 </table>
 
                 <div className={styles.actions}>
+                  <Button variant="ghost" icon={<FileDown size={16} />} onClick={handleDownloadZpl}>
+                    Descargar ZPL
+                  </Button>
                   <Button variant="ghost" icon={<FileDown size={16} />} onClick={handleDownloadPdf}>
                     Descargar PDF
                   </Button>

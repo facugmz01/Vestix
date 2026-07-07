@@ -42,6 +42,7 @@ export class LabelsRenderService {
         product: {
           include: { brand: true, category: true },
         },
+        barcodes: true,
       },
     });
 
@@ -49,7 +50,7 @@ export class LabelsRenderService {
 
     const general = await this.getGeneralSettings();
     const storeName = general.companyName || 'Vestix ERP';
-    const barcode = variant.barcode || variant.sku;
+    const barcode = await this.resolveBarcodeValue(variant, layout);
 
     let price = variant.basePrice;
     if (layout?.priceSource === 'PRICE_LIST' && layout.priceListId) {
@@ -91,6 +92,45 @@ export class LabelsRenderService {
       data: { barcode },
     });
     return barcode;
+  }
+
+  async resolveBarcodeValue(
+    variant: {
+      sku: string;
+      barcode: string | null;
+      barcodes: { barcode: string; type: string }[];
+    },
+    layout?: LabelLayout,
+  ): Promise<string> {
+    const source = layout?.barcodeSource ?? 'PRIMARY';
+    if (source === 'SKU') return variant.sku;
+    if (source === 'SECONDARY') {
+      const alt =
+        variant.barcodes.find((b) => b.type === 'MANUFACTURER') ?? variant.barcodes[0];
+      if (alt) return alt.barcode;
+    }
+    return variant.barcode || variant.sku;
+  }
+
+  async prepareVariantForPrint(
+    variantId: string,
+    layout?: LabelLayout,
+    autoGenerate = true,
+  ): Promise<LabelPrintData> {
+    const data = await this.resolveVariantData(variantId, layout);
+
+    if (
+      autoGenerate &&
+      (layout?.barcodeSource ?? 'PRIMARY') === 'PRIMARY' &&
+      (!data.barcode || data.barcode === data.sku)
+    ) {
+      const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
+      if (!variant?.barcode) {
+        data.barcode = await this.ensureBarcode(variantId);
+      }
+    }
+
+    return data;
   }
 
   resolveFieldValue(

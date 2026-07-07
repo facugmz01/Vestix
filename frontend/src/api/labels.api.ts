@@ -46,4 +46,16 @@ export const labelsApi = {
     );
     return data;
   },
+
+  exportZpl: async (
+    items: { variantId: string; quantity: number }[],
+    templateId?: string,
+  ) => {
+    const { data } = await apiClient.post<Blob>(
+      '/labels/export/zpl',
+      { items, templateId },
+      { responseType: 'blob' },
+    );
+    return data;
+  },
 };

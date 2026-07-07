@@ -26,6 +26,7 @@ import { LabelTemplatesService } from './labels/label-templates.service';
 import { LabelsRenderService } from './labels/labels-render.service';
 import { LabelTemplatesController } from './labels/label-templates.controller';
 import { LabelsController } from './labels/labels.controller';
+import { LabelsZplService } from './labels/labels-zpl.service';
 
 @Module({
   imports: [PrismaModule],
@@ -59,6 +60,7 @@ import { LabelsController } from './labels/labels.controller';
     CatalogFacade,
     LabelTemplatesService,
     LabelsRenderService,
+    LabelsZplService,
   ],
   exports: [
     ProductsService,
