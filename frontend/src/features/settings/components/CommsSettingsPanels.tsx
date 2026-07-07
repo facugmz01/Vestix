@@ -10,6 +10,7 @@ import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { notificationSettingsSchema, type NotificationSettingsFormData, integrationSettingsSchema, type IntegrationSettingsFormData } from '../schemas/commsSettings.schema';
 import clsx from 'clsx';
 import styles from './SettingsShared.module.css';
+import { WhatsAppEvolutionPanel } from './WhatsAppEvolutionPanel';
 
 const BACKEND_MASK = '••••••••';
 
@@ -117,12 +118,15 @@ export function NotificationSettingsPanel() {
 
           <ToggleSwitch label="WhatsApp (Evolution API)" hint="Integración con instancia local de WhatsApp." {...register('whatsappEnabled')} />
           {whatsappEnabled && (
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <Input placeholder="URL API" {...register('evolutionApiUrl')} style={{ flex: 1 }} />
-              <Input type="password" placeholder={evolutionKeyMask.placeholder} {...register('evolutionApiKey')} defaultValue={evolutionKeyMask.defaultDisplayValue} style={{ flex: 1 }} />
-              <Input placeholder="Instancia" {...register('evolutionInstance')} style={{ flex: 1 }} />
-              <TestButton toastId="test-wpp" loadingLabel="Probando..." disabled={!watch('evolutionApiUrl')} onClick={() => settingsApi.testWhatsapp({ notifications: allValues })} />
-            </div>
+            <>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <Input placeholder="URL API" {...register('evolutionApiUrl')} style={{ flex: 1 }} />
+                <Input type="password" placeholder={evolutionKeyMask.placeholder} {...register('evolutionApiKey')} defaultValue={evolutionKeyMask.defaultDisplayValue} style={{ flex: 1 }} />
+                <Input placeholder="Instancia" {...register('evolutionInstance')} style={{ flex: 1 }} />
+                <TestButton toastId="test-wpp" loadingLabel="Probando..." disabled={!watch('evolutionApiUrl')} onClick={() => settingsApi.testWhatsapp({ notifications: allValues })} />
+              </div>
+              <WhatsAppEvolutionPanel enabled={whatsappEnabled} />
+            </>
           )}
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />

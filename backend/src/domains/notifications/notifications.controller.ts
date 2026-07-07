@@ -208,12 +208,43 @@ export class NotificationsController {
 
   /**
    * GET /notifications/whatsapp/status
-   * Returns the Evolution API connection state.
+   * Returns the Evolution API connection state (and QR when pairing is required).
    */
   @Get('whatsapp/status')
   @RequirePermissions({ action: 'manage', subject: 'Integrations' })
   getWhatsAppStatus() {
     return this.whatsappService.getStatus();
+  }
+
+  /**
+   * GET /notifications/whatsapp/qr
+   * Returns the current QR code for pairing (Evolution API v2).
+   */
+  @Get('whatsapp/qr')
+  @RequirePermissions({ action: 'manage', subject: 'Integrations' })
+  async getWhatsAppQr() {
+    const { qrCode, state } = await this.whatsappService.getQrCode();
+    return { qrCode, state, webhookUrl: this.whatsappService.getWebhookUrl() };
+  }
+
+  /**
+   * POST /notifications/whatsapp/connect
+   * Ensures the instance exists and initiates WhatsApp pairing.
+   */
+  @Post('whatsapp/connect')
+  @RequirePermissions({ action: 'manage', subject: 'Integrations' })
+  connectWhatsApp() {
+    return this.whatsappService.connect();
+  }
+
+  /**
+   * POST /notifications/whatsapp/configure-webhook
+   * Registers the ERP webhook URL on the Evolution instance for delivery callbacks.
+   */
+  @Post('whatsapp/configure-webhook')
+  @RequirePermissions({ action: 'manage', subject: 'Integrations' })
+  configureWhatsAppWebhook() {
+    return this.whatsappService.configureWebhook();
   }
 
   /**

@@ -119,5 +119,30 @@ export const notificationsApi = {
     post<{ updated: number }>('/notifications/inbox/read-all', {}),
 
   // WhatsApp Evolution API
-  getWhatsAppStatus: () => get<{ isReady: boolean; qrCode: string | null }>('/notifications/whatsapp/status'),
+  getWhatsAppStatus: () => get<{
+    isReady: boolean;
+    state: string;
+    qrCode: string | null;
+    instance: string;
+    webhookUrl: string;
+    configured: boolean;
+  }>('/notifications/whatsapp/status'),
+
+  getWhatsAppQr: () => get<{ qrCode: string | null; state: string; webhookUrl: string }>(
+    '/notifications/whatsapp/qr',
+  ),
+
+  connectWhatsApp: () => post<{
+    isReady: boolean;
+    state: string;
+    qrCode: string | null;
+    instance: string;
+    webhookUrl: string;
+    configured: boolean;
+  }>('/notifications/whatsapp/connect', {}),
+
+  configureWhatsAppWebhook: () => post<{ success: boolean; url: string; message?: string }>(
+    '/notifications/whatsapp/configure-webhook',
+    {},
+  ),
 };

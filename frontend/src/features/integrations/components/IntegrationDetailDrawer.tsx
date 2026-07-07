@@ -104,8 +104,11 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
   const { data: waStatus, isLoading: isLoadingWa, refetch: refetchWa } = useQuery({
     queryKey: ['whatsapp', 'status'],
     queryFn: () => notificationsApi.getWhatsAppStatus(),
-    enabled: open && !!integration && integration.provider === 'WHATSAPP_TWILIO' && activeTab === 'qr',
-    refetchInterval: (query) => (!query.state.data?.isReady && activeTab === 'qr') ? 3000 : false,
+    enabled: open && !!integration && integration.provider === 'WHATSAPP' && activeTab === 'qr',
+    refetchInterval: (query) => {
+      if (!query.state.data?.isReady && activeTab === 'qr') return 4000;
+      return false;
+    },
   });
 
   const saveMutation = useMutation({
@@ -232,7 +235,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
           {integration.provider === 'WOOCOMMERCE' && (
             <button style={tabStyle('mappings')} onClick={() => setActiveTab('mappings')}>Mapeo de Variantes</button>
           )}
-          {integration.provider === 'WHATSAPP_TWILIO' && (
+          {integration.provider === 'WHATSAPP' && (
             <button style={tabStyle('qr')} onClick={() => setActiveTab('qr')}>Vincular Dispositivo (QR)</button>
           )}
         </div>
@@ -539,7 +542,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
 
         {/* WhatsApp QR Tab */}
         {activeTab === 'qr' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border)', padding: '40px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border)', padding: '40px', gap: 16 }}>
             {isLoadingWa ? (
               <p style={{ color: 'var(--text-muted)' }}>Cargando estado de sesión...</p>
             ) : waStatus?.isReady ? (
@@ -559,12 +562,40 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                   <img src={waStatus.qrCode} alt="WhatsApp QR Code" style={{ width: 256, height: 256 }} />
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 24, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <RefreshCw size={12} className="spin" />
+                  <RefreshCw size={12} />
                   Actualizando automáticamente...
                 </p>
               </>
             ) : (
-              <p style={{ color: 'var(--text-muted)' }}>Iniciando sesión de WhatsApp. Por favor, espera...</p>
+              <>
+                <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+                  {waStatus?.state === 'not_configured'
+                    ? 'Configurá Evolution API en Ajustes → Notificaciones antes de vincular.'
+                    : 'Iniciá el emparejamiento para obtener el código QR.'}
+                </p>
+                {waStatus?.configured !== false && (
+                  <Button
+                    variant="primary"
+                    onClick={async () => {
+                      try {
+                        await notificationsApi.connectWhatsApp();
+                        refetchWa();
+                        toast.success('Solicitud de conexión enviada');
+                      } catch (e: any) {
+                        toast.error(e.response?.data?.message || 'Error al conectar');
+                      }
+                    }}
+                  >
+                    Conectar / Generar QR
+                  </Button>
+                )}
+              </>
+            )}
+            {waStatus?.webhookUrl && (
+              <div style={{ marginTop: 16, padding: 12, background: 'var(--bg-elevated)', borderRadius: 8, border: '1px solid var(--border)', width: '100%', maxWidth: 480 }}>
+                <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700 }}>Webhook de entrega</p>
+                <code style={{ fontSize: 11, wordBreak: 'break-all' }}>{waStatus.webhookUrl}</code>
+              </div>
             )}
           </div>
         )}
