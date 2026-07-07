@@ -51,6 +51,14 @@ export class SendTestNotificationDto {
   variables?: Record<string, string>;
 }
 
+export class PreviewTemplateDto {
+  @IsString() @IsNotEmpty() event: string;
+  @IsString() @IsNotEmpty() channel: string;
+  @IsString() @IsNotEmpty() body: string;
+  @IsString() @IsOptional() subject?: string;
+  @IsObject() @IsOptional() variables?: Record<string, string>;
+}
+
 // ─── Controller ──────────────────────────────────────────────────────────────
 
 @Controller('notifications')
@@ -121,10 +129,6 @@ export class NotificationsController {
 
   // ── Logs ───────────────────────────────────────────────────────────────────
 
-  /**
-   * GET /notifications/logs
-   * Returns paginated delivery log with filters: status, channel, event, search.
-   */
   @Get('logs')
   @RequirePermissions({ action: 'read', subject: 'Settings' })
   async getLogs(
@@ -136,6 +140,30 @@ export class NotificationsController {
     @Query('search')   search?: string,
   ) {
     return this.notificationsService.getLogs({ page, pageSize, status, channel, event, search });
+  }
+
+  @Get('stats')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  getStats() {
+    return this.notificationsService.getStats();
+  }
+
+  @Get('template-variables')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  getTemplateVariables() {
+    return this.notificationsService.getTemplateVariables();
+  }
+
+  @Post('preview')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  previewTemplate(@Body() body: PreviewTemplateDto) {
+    return this.notificationsService.previewTemplate(body);
+  }
+
+  @Post('logs/:id/retry')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  retryLog(@Param('id') id: string) {
+    return this.notificationsService.retryLog(id);
   }
 
   // ── Queue (BullMQ) ─────────────────────────────────────────────────────────

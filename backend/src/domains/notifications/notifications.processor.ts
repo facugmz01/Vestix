@@ -6,6 +6,7 @@ import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service'
 import { SmsGatewayService } from './channels/sms-gateway.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationChannel } from './models/notification.model';
+import { interpolateTemplate } from './templates/template-variables.registry';
 
 interface NotificationJobData {
   channel:     string;
@@ -43,8 +44,8 @@ export class NotificationsProcessor extends WorkerHost {
       throw new UnrecoverableError(error);
     }
 
-    const body    = this.interpolate(template.body, variables);
-    const subject = template.subject ? this.interpolate(template.subject, variables) : undefined;
+    const body    = interpolateTemplate(template.body, variables);
+    const subject = template.subject ? interpolateTemplate(template.subject, variables) : undefined;
 
     try {
       if (channel === NotificationChannel.EMAIL) {
@@ -102,9 +103,5 @@ export class NotificationsProcessor extends WorkerHost {
       where: { id: logId },
       data:  { status: 'FAILED', errorMessage },
     }).catch(e => this.logger.warn(`Could not fail log ${logId}: ${e.message}`));
-  }
-
-  private interpolate(template: string, variables: Record<string, string>): string {
-    return template.replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] ?? `{{${key}}}`);
   }
 }

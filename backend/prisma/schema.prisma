@@ -910,6 +910,7 @@ model NotificationLog {
   referenceId  String? // SaleOrder, PO, etc.
   status       String                @default("PENDING") // PENDING | SENT | FAILED | BOUNCED
   errorMessage String?               @db.Text
+  variables    Json                  @default("{}")
   sentAt       DateTime?
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt

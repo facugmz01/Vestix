@@ -106,6 +106,8 @@ export const queryKeys = {
     templates: (filters?: object) => withFilters(['notifications', 'templates'], filters),
     template:  (id: string)       => ['notifications', 'template', id] as const,
     logs:      (filters?: object) => withFilters(['notifications', 'logs'], filters),
+    stats:     ()                 => ['notifications', 'stats'] as const,
+    queue:     ()                 => ['notifications', 'queue'] as const,
   },
   integrations: {
     all:         ()         => ['integrations', 'list'] as const,
