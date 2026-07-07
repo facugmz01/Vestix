@@ -5,6 +5,7 @@ import { NotificationTriggersService } from './notification-triggers.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { NotificationsService } from './notifications.service';
+import { StaffInboxService } from './staff-inbox.service';
 import { NotificationChannel, TemplateKey } from './models/notification.model';
 
 const mockPrisma: any = {
@@ -37,6 +38,10 @@ const mockNotifications = {
   notifyShiftDiscrepancy: jest.fn<any>().mockResolvedValue({ id: 'job-4' }),
 };
 
+const mockStaffInbox = {
+  create: jest.fn<any>().mockResolvedValue({ id: 'inbox-1' }),
+};
+
 describe('NotificationTriggersService', () => {
   let service: NotificationTriggersService;
 
@@ -48,6 +53,7 @@ describe('NotificationTriggersService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: SettingsService, useValue: mockSettings },
         { provide: NotificationsService, useValue: mockNotifications },
+        { provide: StaffInboxService, useValue: mockStaffInbox },
       ],
     }).compile();
 

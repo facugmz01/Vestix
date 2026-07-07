@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,8 +8,14 @@ import clsx from 'clsx';
 import { Drawer, Button, Input } from '@/components/ui';
 import { notificationsApi, type CreateTemplateDto } from '@/api/notifications.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { NotificationTemplate, NotificationChannel } from '@/types';
+import type { NotificationTemplate } from '@/types';
 import { templateSchema, type TemplateFormData } from '../schemas/template.schema';
+import {
+  NOTIFICATION_CHANNELS,
+  NOTIFICATION_EVENT_LABELS,
+  TEMPLATE_VARIABLES_BY_EVENT,
+  DEFAULT_PREVIEW_VARIABLES,
+} from '../constants';
 import styles from './Notifications.module.css';
 
 interface Props {
@@ -18,37 +24,8 @@ interface Props {
   template?: NotificationTemplate | null;
 }
 
-const EVENTS: { value: string; label: string }[] = [
-  { value: 'SALE_CONFIRMED',                  label: 'Venta Confirmada' },
-  { value: 'ORDER_SHIPPED',                   label: 'Pedido Enviado' },
-  { value: 'ORDER_DELIVERED',                 label: 'Pedido Entregado' },
-  { value: 'PAYMENT_RECEIVED',                label: 'Pago Registrado' },
-  { value: 'PURCHASE_ORDER_ISSUED',           label: 'Orden de Compra Emitida' },
-  { value: 'GOODS_RECEIPT_RECEIVED',          label: 'Recepción de Mercadería' },
-  { value: 'LOW_STOCK_ALERT',                 label: 'Alerta de Stock Bajo' },
-  { value: 'SHIFT_CLOSING_DISCREPANCY',       label: 'Diferencia de Caja' },
-  { value: 'TRANSFER_DISPATCHED',             label: 'Transferencia Despachada' },
-  { value: 'TRANSFER_RECEIVED',               label: 'Transferencia Recibida' },
-  { value: 'INVOICE_ISSUED',                  label: 'Factura Emitida' },
-  { value: 'RETURN_APPROVED',                 label: 'Devolución Aprobada' },
-  { value: 'OVERDUE_CURRENT_ACCOUNT',         label: 'Cuenta Corriente Vencida' },
-  { value: 'MANUAL_CURRENT_ACCOUNT_STATEMENT',label: 'Envío Manual: Cta. Cte.' },
-  { value: 'MANUAL_SALE_RECEIPT',             label: 'Envío Manual: Venta' },
-  { value: 'WELCOME_CUSTOMER',                label: 'Bienvenida Cliente' },
-  { value: 'OTP_CODE',                        label: 'Código OTP' },
-];
-
-const CHANNELS: { value: NotificationChannel; label: string }[] = [
-  { value: 'EMAIL', label: 'Email' },
-  { value: 'SMS', label: 'SMS' },
-  { value: 'WHATSAPP', label: 'WhatsApp' },
-  { value: 'PUSH', label: 'Push (App Móvil)' },
-];
-
-const TEMPLATE_VARS = [
-  '{{customerName}}', '{{orderNumber}}', '{{amount}}', '{{date}}',
-  '{{productName}}', '{{trackingNumber}}', '{{invoiceNumber}}', '{{branchName}}',
-];
+const EVENTS = Object.entries(NOTIFICATION_EVENT_LABELS).map(([value, label]) => ({ value, label }));
+const CHANNELS = NOTIFICATION_CHANNELS;
 
 export function TemplateFormDrawer({ open, onClose, template }: Props) {
   const queryClient = useQueryClient();
@@ -79,6 +56,38 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
   }, [template, reset]);
 
   const watchedChannel = watch('channel');
+  const watchedEvent = watch('event');
+  const watchedBody = watch('body');
+  const watchedSubject = watch('subject');
+  const templateVars = TEMPLATE_VARIABLES_BY_EVENT[watchedEvent] ?? ['{{customerName}}'];
+
+  const previewVariables = useMemo(() => {
+    const vars = { ...DEFAULT_PREVIEW_VARIABLES };
+    for (const key of Object.keys(vars)) {
+      const placeholder = `{{${key}}}`;
+      if (templateVars.includes(placeholder)) continue;
+    }
+    return vars;
+  }, [watchedEvent, templateVars]);
+
+  const [preview, setPreview] = useState<{ subject?: string; body: string } | null>(null);
+
+  useEffect(() => {
+    if (!watchedBody?.trim()) {
+      setPreview(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      notificationsApi.previewTemplate({
+        event: watchedEvent,
+        channel: watchedChannel,
+        body: watchedBody,
+        subject: watchedSubject || undefined,
+        variables: previewVariables,
+      }).then(setPreview).catch(() => setPreview(null));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [watchedBody, watchedSubject, watchedEvent, watchedChannel, previewVariables]);
 
   const mutation = useMutation({
     mutationFn: (data: CreateTemplateDto) =>
@@ -159,7 +168,7 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
             <span className={styles.variablesLabel}>Variables disponibles:</span>
           </div>
           <div className={styles.variablesContainer}>
-            {TEMPLATE_VARS.map(v => (
+            {templateVars.map(v => (
               <button
                 key={v}
                 type="button"
@@ -173,12 +182,20 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
           <textarea
             rows={6}
             placeholder={watchedChannel === 'EMAIL'
-              ? 'Hola {{customerName}}, tu pedido {{orderNumber}} fue confirmado...'
-              : 'Tu pedido {{orderNumber}} ha sido confirmado por ${{amount}}.'}
+              ? 'Hola {{customerName}}, tu pedido {{orderId}} fue confirmado por ${{total}}.'
+              : 'Tu código es {{otpCode}}'}
             {...register('body')}
             className={clsx(styles.textarea, errors.body && styles.textareaError)}
           />
           {errors.body && <p className={styles.errorText}>{errors.body.message}</p>}
+
+          {preview && (
+            <div className={styles.previewBox} style={{ marginTop: '12px' }}>
+              <strong style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Vista previa en vivo</strong>
+              {preview.subject && <p style={{ margin: '8px 0 4px' }}><strong>Asunto:</strong> {preview.subject}</p>}
+              <pre className={styles.previewBody}>{preview.body}</pre>
+            </div>
+          )}
         </div>
 
         <label className={styles.checkboxContainer}>

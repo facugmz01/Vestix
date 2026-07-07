@@ -8,9 +8,7 @@ export class SmtpService {
   constructor(private readonly settingsService: SettingsService) {}
 
   /**
-   * Dispatches an email.
-   * If SMTP host and credentials are set in the SystemSettings, it uses
-   * nodemailer to send a real email. Otherwise, it falls back to a clean mock logger.
+   * Dispatches an email with plain text + simple HTML body.
    */
   async send(to: string, subject: string, body: string) {
     const notificationsConfig = await this.settingsService.getNotificationSettings();
@@ -18,24 +16,17 @@ export class SmtpService {
     const smtpPort = notificationsConfig.smtpPort?.toString() || process.env.SMTP_PORT;
     const smtpUser = notificationsConfig.smtpUser || process.env.SMTP_USER;
     const smtpPass = notificationsConfig.smtpPass || process.env.SMTP_PASS;
-    
-    // Store name not directly in StorefrontSettings interface, using env or default
     const storeName = process.env.STORE_NAME || 'Vestix ERP';
 
     if (smtpHost && smtpUser && smtpPass) {
       try {
-        // Dynamic import to prevent compilation errors if nodemailer is not installed
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const nodemailer = require('nodemailer');
-        
+
         const transporter = nodemailer.createTransport({
           host: smtpHost,
           port: smtpPort ? parseInt(smtpPort, 10) : 587,
           secure: smtpPort === '465',
-          auth: {
-            user: smtpUser,
-            pass: smtpPass,
-          },
+          auth: { user: smtpUser, pass: smtpPass },
         });
 
         await transporter.sendMail({
@@ -43,6 +34,7 @@ export class SmtpService {
           to,
           subject,
           text: body,
+          html: this.toHtml(body),
         });
 
         this.logger.log(`[SMTP] ✓ Real email sent to ${to} | Subject: "${subject}"`);
@@ -51,14 +43,21 @@ export class SmtpService {
         this.logger.error(`[SMTP] Failed to send real email to ${to}: ${err.message}`);
         throw err;
       }
-    } else {
-      // Mock Fallback in development
-      this.logger.log(
-        `[SMTP Mock] → Recipient: ${to}\n` +
-        `  Subject: "${subject}"\n` +
-        `  Body: "${body.replace(/\n/g, ' ')}"`
-      );
-      return { success: true };
     }
+
+    this.logger.log(
+      `[SMTP Mock] → Recipient: ${to}\n` +
+      `  Subject: "${subject}"\n` +
+      `  Body: "${body.replace(/\n/g, ' ')}"`,
+    );
+    return { success: true };
+  }
+
+  private toHtml(text: string): string {
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;line-height:1.5;color:#222">${escaped.replace(/\n/g, '<br>')}</body></html>`;
   }
 }

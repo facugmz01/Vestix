@@ -1,11 +1,12 @@
 import {
   Controller, Get, Post, Body, Query, Param,
-  Patch, ParseBoolPipe, ParseIntPipe,
-  DefaultValuePipe, Optional,
+  Patch, ParseIntPipe, DefaultValuePipe, Req, Headers, HttpCode, HttpStatus, UnauthorizedException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { NotificationsService } from './notifications.service';
 import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
+import { StaffInboxService } from './staff-inbox.service';
 import { NotificationChannel, TemplateKey } from './models/notification.model';
 import {
   IsEnum, IsString, IsNotEmpty, IsObject,
@@ -51,6 +52,14 @@ export class SendTestNotificationDto {
   variables?: Record<string, string>;
 }
 
+export class PreviewTemplateDto {
+  @IsString() @IsNotEmpty() event: string;
+  @IsString() @IsNotEmpty() channel: string;
+  @IsString() @IsNotEmpty() body: string;
+  @IsString() @IsOptional() subject?: string;
+  @IsObject() @IsOptional() variables?: Record<string, string>;
+}
+
 // ─── Controller ──────────────────────────────────────────────────────────────
 
 @Controller('notifications')
@@ -58,6 +67,7 @@ export class NotificationsController {
   constructor(
     private readonly notificationsService: NotificationsService,
     private readonly whatsappService: WhatsAppEvolutionService,
+    private readonly staffInbox: StaffInboxService,
   ) {}
 
   // ── Templates ──────────────────────────────────────────────────────────────
@@ -121,10 +131,6 @@ export class NotificationsController {
 
   // ── Logs ───────────────────────────────────────────────────────────────────
 
-  /**
-   * GET /notifications/logs
-   * Returns paginated delivery log with filters: status, channel, event, search.
-   */
   @Get('logs')
   @RequirePermissions({ action: 'read', subject: 'Settings' })
   async getLogs(
@@ -136,6 +142,30 @@ export class NotificationsController {
     @Query('search')   search?: string,
   ) {
     return this.notificationsService.getLogs({ page, pageSize, status, channel, event, search });
+  }
+
+  @Get('stats')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  getStats() {
+    return this.notificationsService.getStats();
+  }
+
+  @Get('template-variables')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  getTemplateVariables() {
+    return this.notificationsService.getTemplateVariables();
+  }
+
+  @Post('preview')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  previewTemplate(@Body() body: PreviewTemplateDto) {
+    return this.notificationsService.previewTemplate(body);
+  }
+
+  @Post('logs/:id/retry')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  retryLog(@Param('id') id: string) {
+    return this.notificationsService.retryLog(id);
   }
 
   // ── Queue (BullMQ) ─────────────────────────────────────────────────────────
@@ -178,11 +208,130 @@ export class NotificationsController {
 
   /**
    * GET /notifications/whatsapp/status
-   * Returns the Evolution API connection state.
+   * Returns the Evolution API connection state (and QR when pairing is required).
    */
   @Get('whatsapp/status')
   @RequirePermissions({ action: 'manage', subject: 'Integrations' })
   getWhatsAppStatus() {
     return this.whatsappService.getStatus();
+  }
+
+  /**
+   * GET /notifications/whatsapp/qr
+   * Returns the current QR code for pairing (Evolution API v2).
+   */
+  @Get('whatsapp/qr')
+  @RequirePermissions({ action: 'manage', subject: 'Integrations' })
+  async getWhatsAppQr() {
+    const { qrCode, state } = await this.whatsappService.getQrCode();
+    return { qrCode, state, webhookUrl: this.whatsappService.getWebhookUrl() };
+  }
+
+  /**
+   * POST /notifications/whatsapp/connect
+   * Ensures the instance exists and initiates WhatsApp pairing.
+   */
+  @Post('whatsapp/connect')
+  @RequirePermissions({ action: 'manage', subject: 'Integrations' })
+  connectWhatsApp() {
+    return this.whatsappService.connect();
+  }
+
+  /**
+   * POST /notifications/whatsapp/configure-webhook
+   * Registers the ERP webhook URL on the Evolution instance for delivery callbacks.
+   */
+  @Post('whatsapp/configure-webhook')
+  @RequirePermissions({ action: 'manage', subject: 'Integrations' })
+  configureWhatsAppWebhook() {
+    return this.whatsappService.configureWebhook();
+  }
+
+  /**
+   * POST /notifications/whatsapp/webhook
+   * Evolution API delivery callbacks — marks recent SENT logs as DELIVERED.
+   */
+  @Post('whatsapp/webhook')
+  @HttpCode(HttpStatus.OK)
+  async whatsAppWebhook(
+    @Body() body: any,
+    @Headers('apikey') apiKey?: string,
+  ) {
+    const secret = process.env.EVOLUTION_WEBHOOK_SECRET;
+    if (secret && apiKey !== secret) {
+      throw new UnauthorizedException('Invalid webhook secret');
+    }
+
+    const phone = this.extractPhoneFromWebhook(body);
+    const isDelivered = this.isDeliveryEvent(body);
+
+    if (phone && isDelivered) {
+      return this.notificationsService.markWhatsAppDelivered(phone);
+    }
+
+    return { received: true, updated: false };
+  }
+
+  // ── Staff inbox ────────────────────────────────────────────────────────────
+
+  @Get('inbox')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  getInbox(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+    @Query('unreadOnly') unreadOnly?: string,
+  ) {
+    return this.staffInbox.findAll({
+      page,
+      pageSize,
+      unreadOnly: unreadOnly === 'true',
+    });
+  }
+
+  @Patch('inbox/:id/read')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  markInboxRead(@Param('id') id: string) {
+    return this.staffInbox.markRead(id);
+  }
+
+  @Post('inbox/read-all')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  markAllInboxRead() {
+    return this.staffInbox.markAllRead();
+  }
+
+  private extractPhoneFromWebhook(body: any): string | null {
+    const candidates = [
+      body?.recipient,
+      body?.number,
+      body?.data?.key?.remoteJid,
+      body?.data?.remoteJid,
+    ];
+    for (const raw of candidates) {
+      if (!raw || typeof raw !== 'string') continue;
+      const digits = raw.replace(/\D/g, '');
+      if (digits.length >= 8) return digits;
+    }
+    return null;
+  }
+
+  private isDeliveryEvent(body: any): boolean {
+    const status = (
+      body?.status ||
+      body?.data?.status ||
+      body?.data?.update?.status ||
+      body?.ack ||
+      ''
+    ).toString().toUpperCase();
+
+    const event = (body?.event || '').toString().toLowerCase();
+
+    return (
+      status.includes('DELIVER') ||
+      status === 'READ' ||
+      status === '4' ||
+      event.includes('messages.update') ||
+      event.includes('delivery')
+    );
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit, BadRequestException } from '@nestjs/common';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -10,6 +10,10 @@ import {
 } from './models/notification.model';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NOTIFICATION_TEMPLATES } from './templates/notification-templates.registry';
+import {
+  TEMPLATE_VARIABLES,
+  interpolateTemplate,
+} from './templates/template-variables.registry';
 
 // ─── Filter DTOs ────────────────────────────────────────────────────────────
 
@@ -141,6 +145,136 @@ export class NotificationsService implements OnModuleInit {
     return { data, total, page, pageSize };
   }
 
+  async getStats() {
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const [byStatus, byChannel, last24h, failedRecent, activeTemplates, totalTemplates] =
+      await Promise.all([
+        this.prisma.notificationLog.groupBy({
+          by: ['status'],
+          _count: { _all: true },
+        }),
+        this.prisma.notificationLog.groupBy({
+          by: ['channel'],
+          _count: { _all: true },
+        }),
+        this.prisma.notificationLog.count({ where: { createdAt: { gte: since24h } } }),
+        this.prisma.notificationLog.findMany({
+          where: { status: 'FAILED' },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: {
+            id: true, event: true, channel: true, recipient: true,
+            errorMessage: true, createdAt: true,
+          },
+        }),
+        this.prisma.notificationTemplate.count({ where: { isActive: true } }),
+        this.prisma.notificationTemplate.count(),
+      ]);
+
+    const statusCounts = Object.fromEntries(
+      byStatus.map(r => [r.status, r._count._all]),
+    );
+    const channelCounts = Object.fromEntries(
+      byChannel.map(r => [r.channel, r._count._all]),
+    );
+
+    const queue = await this.getQueue();
+    const queuePending = queue.filter(j =>
+      ['QUEUED', 'SENDING', 'RETRYING'].includes(j.status),
+    ).length;
+
+    return {
+      totals: {
+        sent:     statusCounts.SENT ?? 0,
+        delivered: statusCounts.DELIVERED ?? 0,
+        failed:   statusCounts.FAILED ?? 0,
+        pending:  statusCounts.PENDING ?? 0,
+        bounced:  statusCounts.BOUNCED ?? 0,
+        last24h,
+      },
+      byChannel: channelCounts,
+      queuePending,
+      templates: { active: activeTemplates, total: totalTemplates },
+      recentFailures: failedRecent,
+    };
+  }
+
+  getTemplateVariables() {
+    return TEMPLATE_VARIABLES;
+  }
+
+  async previewTemplate(payload: {
+    event: string;
+    channel: string;
+    body: string;
+    subject?: string;
+    variables?: Record<string, string>;
+  }) {
+    const vars = payload.variables ?? {};
+    return {
+      subject: payload.subject
+        ? interpolateTemplate(payload.subject, vars)
+        : undefined,
+      body: interpolateTemplate(payload.body, vars),
+    };
+  }
+
+  async retryLog(logId: string) {
+    const log = await this.prisma.notificationLog.findUnique({ where: { id: logId } });
+    if (!log) throw new NotFoundException(`Log ${logId} not found`);
+    if (log.status !== 'FAILED') {
+      throw new BadRequestException('Solo se pueden reintentar notificaciones fallidas');
+    }
+
+    const variables = (log.variables as Record<string, string>) ?? {};
+    const job = await this.enqueue({
+      channel:     log.channel as NotificationChannel,
+      templateKey: log.event as TemplateKey,
+      recipient:   log.recipient,
+      variables,
+      referenceId: log.referenceId ?? undefined,
+    });
+
+    if (!job) {
+      throw new BadRequestException(
+        'No se pudo reencolar. Verificá que el canal y la plantilla estén activos.',
+      );
+    }
+
+    return { success: true, message: 'Notificación reencolada', job };
+  }
+
+  /**
+   * Marks the most recent SENT WhatsApp log for a phone as DELIVERED.
+   * Called from Evolution API webhook callbacks.
+   */
+  async markWhatsAppDelivered(phone: string) {
+    const normalized = phone.replace(/\D/g, '');
+    const log = await this.prisma.notificationLog.findFirst({
+      where: {
+        channel: 'WHATSAPP',
+        status: 'SENT',
+        OR: [
+          { recipient: normalized },
+          { recipient: { endsWith: normalized.slice(-10) } },
+        ],
+      },
+      orderBy: { sentAt: 'desc' },
+    });
+
+    if (!log) {
+      return { updated: false, message: 'No matching SENT log found' };
+    }
+
+    await this.prisma.notificationLog.update({
+      where: { id: log.id },
+      data: { status: 'DELIVERED' },
+    });
+
+    return { updated: true, logId: log.id };
+  }
+
   // ─── QUEUE / ENQUEUE ───────────────────────────────────────────────────────
 
   /**
@@ -194,6 +328,7 @@ export class NotificationsService implements OnModuleInit {
         channel:     payload.channel,
         recipient:   payload.recipient,
         referenceId: payload.referenceId ?? null,
+        variables:   payload.variables ?? {},
         status:      'PENDING',
       },
     });

@@ -1,10 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnrecoverableError } from 'bullmq';
 import { NotificationsProcessor } from './notifications.processor';
 import { SmtpService } from './channels/smtp.service';
 import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
 import { SmsGatewayService } from './channels/sms-gateway.service';
+import { FcmPushService } from './channels/fcm-push.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationChannel } from './models/notification.model';
 
@@ -18,6 +18,10 @@ const mockWhatsAppService = {
 
 const mockSmsService = {
   sendSms: jest.fn<any>().mockResolvedValue({ success: true }),
+};
+
+const mockFcmService = {
+  send: jest.fn<any>().mockResolvedValue({ success: true }),
 };
 
 const mockPrismaService: any = {
@@ -41,6 +45,7 @@ describe('NotificationsProcessor', () => {
         { provide: SmtpService, useValue: mockSmtpService },
         { provide: WhatsAppEvolutionService, useValue: mockWhatsAppService },
         { provide: SmsGatewayService, useValue: mockSmsService },
+        { provide: FcmPushService, useValue: mockFcmService },
         { provide: PrismaService, useValue: mockPrismaService },
       ],
     }).compile();
@@ -113,25 +118,29 @@ describe('NotificationsProcessor', () => {
     });
   });
 
-  it('should fail PUSH jobs as unrecoverable', async () => {
+  it('should send PUSH notifications via FCM', async () => {
     mockPrismaService.notificationTemplate.findUnique.mockResolvedValueOnce({
-      body: 'Push body',
-      subject: null,
+      name: 'Push Alert',
+      body: 'Hola {{customerName}}',
+      subject: 'Aviso',
     });
 
-    await expect(
-      processor.process({
-        ...baseJob,
-        data: { ...baseJob.data, channel: NotificationChannel.PUSH },
-      } as any),
-    ).rejects.toBeInstanceOf(UnrecoverableError);
-
-    expect(mockPrismaService.notificationLog.update).toHaveBeenCalledWith({
-      where: { id: 'log-1' },
+    await processor.process({
+      ...baseJob,
       data: {
-        status: 'FAILED',
-        errorMessage: 'Channel "PUSH" is not implemented yet',
+        ...baseJob.data,
+        channel: NotificationChannel.PUSH,
+        templateKey: 'LOW_STOCK_ALERT',
+        recipient: 'fcm-device-token-abc',
+        variables: { customerName: 'Admin' },
       },
-    });
+    } as any);
+
+    expect(mockFcmService.send).toHaveBeenCalledWith(
+      'fcm-device-token-abc',
+      'Aviso',
+      'Hola Admin',
+      expect.objectContaining({ event: 'LOW_STOCK_ALERT' }),
+    );
   });
 });

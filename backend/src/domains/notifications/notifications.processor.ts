@@ -4,8 +4,10 @@ import { Logger } from '@nestjs/common';
 import { SmtpService } from './channels/smtp.service';
 import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
 import { SmsGatewayService } from './channels/sms-gateway.service';
+import { FcmPushService } from './channels/fcm-push.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationChannel } from './models/notification.model';
+import { interpolateTemplate } from './templates/template-variables.registry';
 
 interface NotificationJobData {
   channel:     string;
@@ -23,6 +25,7 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly smtpService: SmtpService,
     private readonly whatsAppService: WhatsAppEvolutionService,
     private readonly smsService: SmsGatewayService,
+    private readonly fcmService: FcmPushService,
     private readonly prisma: PrismaService,
   ) {
     super();
@@ -43,8 +46,8 @@ export class NotificationsProcessor extends WorkerHost {
       throw new UnrecoverableError(error);
     }
 
-    const body    = this.interpolate(template.body, variables);
-    const subject = template.subject ? this.interpolate(template.subject, variables) : undefined;
+    const body    = interpolateTemplate(template.body, variables);
+    const subject = template.subject ? interpolateTemplate(template.subject, variables) : undefined;
 
     try {
       if (channel === NotificationChannel.EMAIL) {
@@ -60,9 +63,14 @@ export class NotificationsProcessor extends WorkerHost {
           this.smsService.sendSms(recipient, body),
         );
       } else if (channel === NotificationChannel.PUSH) {
-        const error = `Channel "${channel}" is not implemented yet`;
-        await this.failLog(logId, error);
-        throw new UnrecoverableError(error);
+        await this.dispatchChannel('PUSH', () =>
+          this.fcmService.send(
+            recipient,
+            subject || template.name || 'Notificación',
+            body,
+            { event: templateKey, ...(variables ?? {}) },
+          ),
+        );
       } else {
         const error = `Unknown notification channel: ${channel}`;
         await this.failLog(logId, error);
@@ -102,9 +110,5 @@ export class NotificationsProcessor extends WorkerHost {
       where: { id: logId },
       data:  { status: 'FAILED', errorMessage },
     }).catch(e => this.logger.warn(`Could not fail log ${logId}: ${e.message}`));
-  }
-
-  private interpolate(template: string, variables: Record<string, string>): string {
-    return template.replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] ?? `{{${key}}}`);
   }
 }

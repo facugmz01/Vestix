@@ -16,6 +16,7 @@ import { Response, Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationRateLimitService } from '../notifications/notification-rate-limit.service';
 import { NotificationChannel, TemplateKey } from '../notifications/models/notification.model';
 import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { RedisService } from '../../core/redis/redis.service';
@@ -45,6 +46,7 @@ export class StorefrontAuthController {
     private readonly jwtService: JwtService,
     private readonly notificationsService: NotificationsService,
     private readonly redisService: RedisService,
+    private readonly rateLimitService: NotificationRateLimitService,
   ) {}
 
   private async getOtp(phone: string): Promise<OtpEntry | null> {
@@ -78,11 +80,14 @@ export class StorefrontAuthController {
    */
   @Post('send-otp')
   @HttpCode(HttpStatus.OK)
-  async sendOtp(@Body() body: { phone: string }) {
+  async sendOtp(@Body() body: { phone: string }, @Req() req: Request) {
     const phone = this.normalizePhone(body.phone);
     if (!phone) {
       throw new BadRequestException('Número de teléfono inválido.');
     }
+
+    const clientIp = req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim();
+    await this.rateLimitService.assertOtpAllowed(phone, clientIp);
 
     // Rate limiting: check if a code was sent recently
     const existing = await this.getOtp(phone);

@@ -8,6 +8,7 @@ import { NotificationChannel, TemplateKey } from './models/notification.model';
 
 const mockQueue = {
   add: jest.fn<any>().mockResolvedValue({ id: 'job-123' }),
+  getJobs: jest.fn<any>().mockResolvedValue([]),
 };
 
 const mockPrismaService: any = {
@@ -17,6 +18,10 @@ const mockPrismaService: any = {
   },
   notificationLog: {
     create: jest.fn<any>().mockResolvedValue({ id: 'log-123' }),
+    findUnique: jest.fn(),
+    groupBy: jest.fn<any>().mockResolvedValue([]),
+    count: jest.fn<any>().mockResolvedValue(0),
+    findMany: jest.fn<any>().mockResolvedValue([]),
   },
 };
 
@@ -109,5 +114,43 @@ describe('NotificationsService', () => {
 
     expect(result).toBeNull();
     expect(mockQueue.add).not.toHaveBeenCalled();
+  });
+
+  it('should interpolate template preview', async () => {
+    const result = await service.previewTemplate({
+      event: 'OTP_CODE',
+      channel: 'WHATSAPP',
+      body: 'Código: {{otpCode}}',
+      variables: { otpCode: '123456' },
+    });
+    expect(result.body).toBe('Código: 123456');
+  });
+
+  it('should retry a failed log entry', async () => {
+    mockPrismaService.notificationLog.findUnique.mockResolvedValueOnce({
+      id: 'log-fail',
+      status: 'FAILED',
+      event: TemplateKey.OTP_CODE,
+      channel: NotificationChannel.WHATSAPP,
+      recipient: '5491122334455',
+      variables: { otpCode: '999999' },
+      referenceId: null,
+    });
+    mockPrismaService.notificationTemplate.findUnique.mockResolvedValueOnce({
+      id: 'tpl-1',
+      isActive: true,
+    });
+
+    const result = await service.retryLog('log-fail');
+
+    expect(result.success).toBe(true);
+    expect(mockQueue.add).toHaveBeenCalled();
+  });
+
+  it('should expose template variables registry', () => {
+    const vars = service.getTemplateVariables();
+    expect(vars.OTP_CODE).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'otpCode' })]),
+    );
   });
 });
