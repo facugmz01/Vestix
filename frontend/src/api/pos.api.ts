@@ -22,11 +22,21 @@ export interface POSCalculateResponse {
   lineDiscountsTotal: number;
   cartDiscountTotal: number;
   grandTotal: number;
+  appliedPromotions?: string[];
   lines: {
     variantId: string;
     originalPrice: number;
     finalPrice: number;
   }[];
+}
+
+export interface PosShiftOrder {
+  id: string;
+  grandTotal: number;
+  paymentMethod: string;
+  status: string;
+  createdAt: string;
+  customerName: string;
 }
 
 export const posApi = {
@@ -60,4 +70,7 @@ export const posApi = {
 
   confirmQrOrder: (orderId: string) =>
     post<{ orderId: string; status: string }>(`/pos/qr-order/${orderId}/confirm`),
+
+  getShiftOrders: (shiftId: string) =>
+    get<PosShiftOrder[]>(`/pos/shift/${shiftId}/orders`),
 };

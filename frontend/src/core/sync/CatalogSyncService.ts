@@ -1,68 +1,181 @@
-import { db, PosCatalogItem } from '../db/db';
+import { db, SYNC_META_KEYS, type PosCatalogItem } from '../db/db';
 import { get } from '@/api/client';
+import type { ProductVariant } from '@/types';
+
+interface CatalogSyncItem {
+  id: string;
+  productId: string;
+  sku: string;
+  barcode: string | null;
+  barcodes?: string[];
+  name: string;
+  basePrice: number;
+  categoryId: string;
+  categoryName?: string;
+  brandName?: string;
+  size?: string | null;
+  color?: string | null;
+  imageUrl?: string | null;
+  stock?: number;
+  updatedAt?: string;
+}
 
 interface CatalogSyncResponse {
   status: string;
   timestamp: string;
-  data: {
-    id: string;
-    sku: string;
-    barcode: string | null;
-    barcodes?: string[];
-    name: string;
-    basePrice: number;
-    categoryId: string;
-    categoryName?: string;
-    brandName?: string;
-  }[];
+  incremental?: boolean;
+  removedIds?: string[];
+  data: CatalogSyncItem[];
+}
+
+export interface CatalogSyncResult {
+  itemCount: number;
+  incremental: boolean;
+  removed: number;
+  timestamp: string;
 }
 
 export class CatalogSyncService {
-  static async syncPosCatalog(): Promise<void> {
-    try {
-      const response = await get<CatalogSyncResponse>('/pos/sync/catalog');
-      const catalogData = response.data || [];
+  private static mapItem(item: CatalogSyncItem): PosCatalogItem {
+    const allBarcodes = [
+      ...(item.barcode ? [item.barcode] : []),
+      ...(item.barcodes || []),
+      item.sku,
+    ].filter((v, i, arr) => v && arr.indexOf(v) === i) as string[];
 
-      const items: PosCatalogItem[] = catalogData.map(item => {
-        const allBarcodes = [
-          ...(item.barcode ? [item.barcode] : []),
-          ...(item.barcodes || []),
-          item.sku,
-        ].filter((v, i, arr) => arr.indexOf(v) === i);
+    return {
+      id: item.id,
+      productId: item.productId,
+      sku: item.sku,
+      primaryBarcode: item.barcode || item.sku,
+      allBarcodes,
+      name: item.name,
+      price: item.basePrice,
+      categoryId: item.categoryId,
+      categoryName: item.categoryName,
+      brandName: item.brandName,
+      size: item.size ?? null,
+      color: item.color ?? null,
+      imageUrl: item.imageUrl ?? null,
+      stock: item.stock ?? 0,
+      updatedAt: item.updatedAt || new Date().toISOString(),
+    };
+  }
 
-        return {
-          id: item.id,
-          productId: item.categoryId,
-          sku: item.sku,
-          primaryBarcode: item.barcode || item.sku,
-          allBarcodes,
-          name: item.name,
-          price: item.basePrice,
-          categoryId: item.categoryId,
-          size: null,
-          color: null,
-        };
-      });
+  static async getLastSyncAt(): Promise<string | null> {
+    const row = await db.syncMeta.get(SYNC_META_KEYS.LAST_CATALOG_SYNC);
+    return row?.value ?? null;
+  }
 
-      await db.transaction('rw', db.catalog, async () => {
+  static async getCatalogCount(): Promise<number> {
+    return db.catalog.count();
+  }
+
+  static toProductVariant(item: PosCatalogItem): ProductVariant & {
+    name: string;
+    category?: string;
+    brand?: string;
+    stock?: number;
+    imageUrl?: string | null;
+  } {
+    return {
+      id: item.id,
+      productId: item.productId,
+      sku: item.sku,
+      barcode: item.primaryBarcode || item.sku,
+      basePrice: item.price,
+      costPrice: 0,
+      size: item.size || undefined,
+      color: item.color || undefined,
+      name: item.name,
+      category: item.categoryName,
+      brand: item.brandName,
+      stock: item.stock,
+      imageUrl: item.imageUrl,
+    } as ProductVariant & {
+      name: string;
+      category?: string;
+      brand?: string;
+      stock?: number;
+      imageUrl?: string | null;
+    };
+  }
+
+  static async syncPosCatalog(branchId?: string, forceFull = false): Promise<CatalogSyncResult> {
+    const since = forceFull ? undefined : (await this.getLastSyncAt()) ?? undefined;
+    const params: Record<string, string> = {};
+    if (since) params.since = since;
+    if (branchId) params.branchId = branchId;
+
+    const response = await get<CatalogSyncResponse>('/pos/sync/catalog', { params });
+    const items = (response.data || []).map(item => this.mapItem(item));
+    const removedIds = response.removedIds || [];
+
+    await db.transaction('rw', db.catalog, db.syncMeta, async () => {
+      if (!response.incremental) {
         await db.catalog.clear();
-        if (items.length > 0) {
-          await db.catalog.bulkAdd(items);
-        }
-      });
+      }
 
-      console.log(`[Sync] POS Catalog synchronized. Downloaded ${items.length} items.`);
-    } catch (error) {
-      console.error('[Sync] Failed to sync POS catalog:', error);
-      throw error;
-    }
+      for (const id of removedIds) {
+        await db.catalog.delete(id);
+      }
+
+      for (const item of items) {
+        await db.catalog.put(item);
+      }
+
+      await db.syncMeta.put({
+        key: SYNC_META_KEYS.LAST_CATALOG_SYNC,
+        value: response.timestamp,
+      });
+      const count = await db.catalog.count();
+      await db.syncMeta.put({
+        key: SYNC_META_KEYS.LAST_CATALOG_COUNT,
+        value: String(count),
+      });
+    });
+
+    return {
+      itemCount: await db.catalog.count(),
+      incremental: !!response.incremental,
+      removed: removedIds.length,
+      timestamp: response.timestamp,
+    };
   }
 
   static async findByBarcodeOrSku(query: string): Promise<PosCatalogItem | undefined> {
-    return db.catalog
-      .where('sku').equals(query)
-      .or('primaryBarcode').equals(query)
-      .or('allBarcodes').equals(query)
-      .first();
+    const normalized = query.trim();
+    if (!normalized) return undefined;
+
+    const bySku = await db.catalog.where('sku').equals(normalized).first();
+    if (bySku) return bySku;
+
+    const byBarcode = await db.catalog.where('primaryBarcode').equals(normalized).first();
+    if (byBarcode) return byBarcode;
+
+    const all = await db.catalog.toArray();
+    return all.find(item => item.allBarcodes.includes(normalized));
+  }
+
+  static async searchOffline(query: string, limit = 20): Promise<PosCatalogItem[]> {
+    const q = query.trim().toLowerCase();
+    if (q.length < 1) {
+      return db.catalog.orderBy('name').limit(200).toArray();
+    }
+
+    const all = await db.catalog.toArray();
+    return all
+      .filter(item => {
+        if (item.sku.toLowerCase().includes(q)) return true;
+        if (item.primaryBarcode?.toLowerCase().includes(q)) return true;
+        if (item.allBarcodes.some(b => b.toLowerCase().includes(q))) return true;
+        if (item.name.toLowerCase().includes(q)) return true;
+        return false;
+      })
+      .slice(0, limit);
+  }
+
+  static async getAllForGrid(): Promise<PosCatalogItem[]> {
+    return db.catalog.orderBy('name').toArray();
   }
 }

@@ -228,6 +228,9 @@ export class PosService {
         );
         const variantStocks = stockByVariant.get(v.id) || [];
 
+        const productImages = v.product?.images;
+        const firstProductImage = Array.isArray(productImages) ? (productImages as string[])[0] : undefined;
+
         return {
           id: v.id,
           sku: v.sku,
@@ -240,6 +243,7 @@ export class PosService {
           color: v.color,
           costPrice: v.costPrice || 0,
           basePrice: resolvedPrice,
+          imageUrl: v.imageUrl || firstProductImage || null,
           stock: variantStocks.reduce((acc, s) => acc + s.availableQuantity, 0),
         };
       }),
@@ -377,30 +381,100 @@ export class PosService {
     return { orderId, status: 'APPROVED' as const };
   }
 
-  async getCatalogSyncData() {
+  async getShiftOrders(shiftId: string) {
+    const orders = await this.prisma.saleOrder.findMany({
+      where: {
+        cashShiftId: shiftId,
+        status: { in: ['COMPLETED', 'CONFIRMED'] },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        customer: { select: { fullName: true } },
+      },
+    });
+
+    return orders.map(o => ({
+      id: o.id,
+      grandTotal: o.grandTotal,
+      paymentMethod: o.paymentMethod,
+      status: o.status,
+      createdAt: o.createdAt,
+      customerName: o.customer?.fullName || 'Consumidor Final',
+    }));
+  }
+
+  async getCatalogSyncData(since?: string, branchId?: string) {
+    const sinceDate = since ? new Date(since) : null;
+    const variantWhere: Record<string, unknown> = { isActive: true };
+    if (sinceDate && !Number.isNaN(sinceDate.getTime())) {
+      variantWhere.updatedAt = { gt: sinceDate };
+    }
+
     const catalog = await this.prisma.productVariant.findMany({
-      where: { isActive: true },
+      where: variantWhere,
       include: {
         product: { include: { category: true, brand: true } },
         barcodes: true,
       },
     });
 
+    const variantIds = catalog.map(v => v.id);
+    const stockLevels = variantIds.length
+      ? await this.prisma.stockLevel.findMany({
+          where: {
+            variantId: { in: variantIds },
+            ...(branchId ? { branchId } : {}),
+          },
+        })
+      : [];
+
+    const stockByVariant = new Map<string, number>();
+    for (const stock of stockLevels) {
+      stockByVariant.set(
+        stock.variantId,
+        (stockByVariant.get(stock.variantId) || 0) + stock.availableQuantity,
+      );
+    }
+
+    let removedIds: string[] = [];
+    if (sinceDate && !Number.isNaN(sinceDate.getTime())) {
+      const deactivated = await this.prisma.productVariant.findMany({
+        where: { isActive: false, updatedAt: { gt: sinceDate } },
+        select: { id: true },
+      });
+      removedIds = deactivated.map(v => v.id);
+    }
+
     return {
       status: 'SYNC_READY',
       timestamp: new Date().toISOString(),
-      data: catalog.map(v => ({
-        id: v.id,
-        productId: v.productId,
-        sku: v.sku,
-        barcode: v.barcode,
-        barcodes: v.barcodes.map(b => b.barcode),
-        name: v.product.name,
-        basePrice: v.basePrice,
-        categoryId: v.product.categoryId,
-        categoryName: v.product.category.name,
-        brandName: v.product.brand?.name,
-      })),
+      incremental: !!sinceDate,
+      removedIds,
+      data: catalog.map(v => {
+        const productImages = v.product?.images;
+        const firstProductImage = Array.isArray(productImages)
+          ? (productImages as string[])[0]
+          : undefined;
+
+        return {
+          id: v.id,
+          productId: v.productId,
+          sku: v.sku,
+          barcode: v.barcode,
+          barcodes: v.barcodes.map(b => b.barcode),
+          name: v.product.name,
+          basePrice: v.basePrice,
+          categoryId: v.product.categoryId,
+          categoryName: v.product.category.name,
+          brandName: v.product.brand?.name,
+          size: v.size,
+          color: v.color,
+          imageUrl: v.imageUrl || firstProductImage || null,
+          stock: stockByVariant.get(v.id) ?? 0,
+          updatedAt: v.updatedAt.toISOString(),
+        };
+      }),
     };
   }
 }

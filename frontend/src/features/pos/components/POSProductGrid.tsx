@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Tags } from 'lucide-react';
+import { Tags, Star } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { PosFavoritesBar } from './PosFavoritesBar';
 import styles from '@/pages/pos/POSPage.module.css';
 import type { ProductVariant } from '@/types';
 
@@ -11,21 +12,26 @@ type PosVariant = ProductVariant & {
   category?: string;
   brand?: string;
   stock?: number;
+  imageUrl?: string | null;
 };
 
 export function POSProductGrid({
   products,
   searchResults,
-  search
+  search,
 }: {
   products: PosVariant[] | undefined;
   searchResults: PosVariant[] | undefined;
   search: string;
 }) {
-  const addToCart = usePosStore(s => s.addToCart);
+  const addVariantWithRecent = usePosStore(s => s.addVariantWithRecent);
+  const toggleFavorite = usePosStore(s => s.toggleFavorite);
+  const favoriteVariantIds = usePosStore(s => s.favoriteVariantIds);
+  const recentVariantIds = usePosStore(s => s.recentVariantIds);
+
   const [categoryFilter, setCategoryFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
-  
+
   const displayedProducts = search.length >= 2 ? searchResults : products;
 
   const categories = useMemo(() => {
@@ -51,12 +57,24 @@ export function POSProductGrid({
 
   const getName = (p: PosVariant) => p.name || p.productName || 'Producto';
 
+  const handleProductClick = (p: PosVariant) => {
+    addVariantWithRecent(p);
+  };
+
   return (
     <div className={styles.productsArea}>
+      <PosFavoritesBar
+        products={products}
+        favoriteIds={favoriteVariantIds}
+        recentIds={recentVariantIds}
+        onSelect={addVariantWithRecent}
+      />
+
       <div className={styles.productsHeader}>
         <select
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}
+          aria-label="Filtrar por categoría"
           style={{ flex: 1, padding: '10px 14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: '12px', outline: 'none' }}
         >
           <option value="">Todas las Categorías</option>
@@ -65,31 +83,53 @@ export function POSProductGrid({
         <select
           value={brandFilter}
           onChange={e => setBrandFilter(e.target.value)}
+          aria-label="Filtrar por marca"
           style={{ flex: 1, padding: '10px 14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: '12px', outline: 'none' }}
         >
           <option value="">Todas las Marcas</option>
           {brands.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
       </div>
-      
+
       <div className={styles.productsGrid}>
-        {filteredProducts.map(p => (
-          <div key={p.id} className={styles.productCard} onClick={() => addToCart(p)}>
-            <div className={styles.productImg}>
-              <Tags size={36} />
-            </div>
-            <div className={styles.productInfo}>
-              <div className={styles.productName}>{getName(p)} {p.size ? `(${p.size})` : ''}</div>
-              <div className={styles.productPrice}>{formatCurrency(p.basePrice)}</div>
-              {typeof p.stock === 'number' && (
-                <div className={styles.productStock} data-low={p.stock <= 5}>
-                  Stock: {p.stock}
+        {filteredProducts.map(p => {
+          const isFavorite = favoriteVariantIds.includes(p.id);
+          return (
+            <div key={p.id} className={styles.productCard}>
+              <button
+                type="button"
+                className={styles.favoriteBtn}
+                onClick={e => { e.stopPropagation(); toggleFavorite(p.id); }}
+                aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              >
+                <Star size={14} fill={isFavorite ? 'currentColor' : 'none'} />
+              </button>
+              <button
+                type="button"
+                className={styles.productCardBtn}
+                onClick={() => handleProductClick(p)}
+              >
+                <div className={styles.productImg}>
+                  {p.imageUrl ? (
+                    <img src={p.imageUrl} alt={getName(p)} className={styles.productImgFile} />
+                  ) : (
+                    <Tags size={36} />
+                  )}
                 </div>
-              )}
+                <div className={styles.productInfo}>
+                  <div className={styles.productName}>{getName(p)} {p.size ? `(${p.size})` : ''}</div>
+                  <div className={styles.productPrice}>{formatCurrency(p.basePrice)}</div>
+                  {typeof p.stock === 'number' && (
+                    <div className={styles.productStock} data-low={p.stock <= 5}>
+                      Stock: {p.stock}
+                    </div>
+                  )}
+                </div>
+              </button>
             </div>
-          </div>
-        ))}
-        
+          );
+        })}
+
         {filteredProducts.length === 0 && (
           <div className={styles.emptyState}>
             <Tags size={48} />

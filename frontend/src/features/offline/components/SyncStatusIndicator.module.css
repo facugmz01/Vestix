@@ -23,6 +23,23 @@
   border: 1px solid rgba(249, 115, 22, 0.2);
 }
 
+.offlineReady {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.clickable {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font: inherit;
+}
+
+.clickable:hover {
+  opacity: 0.85;
+}
+
 .syncing {
   background: rgba(59, 130, 246, 0.1);
   color: var(--accent, #3b82f6);

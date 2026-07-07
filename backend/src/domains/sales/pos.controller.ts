@@ -20,8 +20,11 @@ export class PosController {
 
   @Get('sync/catalog')
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
-  async downloadPosCatalog() {
-    return this.posService.getCatalogSyncData();
+  async downloadPosCatalog(
+    @Query('since') since?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    return this.posService.getCatalogSyncData(since, branchId);
   }
 
   @Get('catalog/search')
@@ -70,6 +73,12 @@ export class PosController {
   @RequirePermissions({ action: 'update', subject: 'Sales' })
   async closeSession(@Body() dto: CloseSessionDto, @CurrentUser('userId') userId: string) {
     return this.posService.closeSession({ ...dto, userId });
+  }
+
+  @Get('shift/:shiftId/orders')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  async getShiftOrders(@Param('shiftId') shiftId: string) {
+    return this.posService.getShiftOrders(shiftId);
   }
 
   @Post('qr-order')

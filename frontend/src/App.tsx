@@ -4,7 +4,6 @@ import { ErrorBoundary }    from '@/components/ErrorBoundary';
 import { PageSpinner }      from '@/components/ui/Spinner';
 import { useAuthInit }      from '@/hooks/useAuthInit';
 import { useSyncEngine }    from '@/hooks/useSyncEngine';
-import { useDexieSync }     from '@/hooks/useDexieSync';
 import { OfflineStatusBar } from '@/features/offline/components/OfflineStatusBar';
 import { AdminLayout }      from '@/components/layout/AdminLayout';
 import { AuthLayout }       from '@/components/layout/AuthLayout';
@@ -82,7 +81,6 @@ export default function App() {
   const theme = useThemeStore(s => s.theme);
   
   useSyncEngine(); // global sync engine — mounts once, drains queue on reconnect
-  useDexieSync();  // pure Dexie POS sync engine
 
   // Sync theme with document element
   useEffect(() => {
