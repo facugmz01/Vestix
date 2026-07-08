@@ -1,6 +1,6 @@
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard } from 'lucide-react';
+import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -76,14 +76,35 @@ export default function SalesPage() {
 
   const handleConfirmPayment = async (id: string) => {
     if (!window.confirm('¿Validar el pago y confirmar esta venta?')) return;
+    const ref = window.prompt('Referencia de pago (opcional, ej. nº de transferencia):');
     try {
-      await salesApi.confirmPayment(id);
+      await salesApi.confirmPayment(id, { paymentReference: ref?.trim() || undefined });
       toast.success('Pago validado correctamente');
       refetch();
     } catch (err: any) {
       toast.error(err.message || 'Error al validar el pago');
     }
   };
+
+  const handleCancelSale = async (id: string, status: string) => {
+    const messages: Record<string, string> = {
+      PENDING_PAYMENT: '¿Cancelar esta venta con pago pendiente?',
+      CONFIRMED: '¿Anular esta venta confirmada?',
+      COMPLETED: '¿Anular esta venta completada?',
+      READY_FOR_PICKUP: '¿Anular esta venta lista para retiro?',
+      DELIVERED: '¿Anular esta venta ya entregada?',
+    };
+    if (!window.confirm(messages[status] || '¿Cancelar este documento?')) return;
+    try {
+      await salesApi.cancelSale(id);
+      toast.success('Documento cancelado');
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al cancelar');
+    }
+  };
+
+  const cancellableStatuses = ['PENDING_PAYMENT', 'CONFIRMED', 'COMPLETED', 'READY_FOR_PICKUP', 'DELIVERED'];
 
   return (
     <PageContainer
@@ -210,6 +231,13 @@ export default function SalesPage() {
                       <Button variant="primary" size="sm" onClick={() => updateStatus(s.id, 'DELIVERED')} aria-label="Entregado" title="Marcar Entregado">
                         <CheckCircle size={16} />
                       </Button>
+                    )}
+                    {cancellableStatuses.includes(s.status) && (
+                      <ActionGuard action="update" subject="Sales">
+                        <Button variant="ghost" size="sm" onClick={() => handleCancelSale(s.id, s.status)} aria-label="Cancelar" title="Cancelar / Anular venta">
+                          <XCircle size={16} />
+                        </Button>
+                      </ActionGuard>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => handleView(s.id)} aria-label="Ver Detalles" title="Abrir Visor Comercial">
                       <Eye size={16} />

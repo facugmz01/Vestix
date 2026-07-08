@@ -423,7 +423,7 @@ export class CheckoutOrchestrator {
     return [{ variantId, quantity }];
   }
 
-  async confirmPayment(id: string) {
+  async confirmPayment(id: string, paymentReference?: string) {
     const order = await this.prisma.saleOrder.findUnique({
       where: { id },
       include: { lines: true, payments: { include: { paymentMethod: true } } },
@@ -460,12 +460,16 @@ export class CheckoutOrchestrator {
         }
       }
 
-      await this.postOrderFinanceIfNeeded(tx, order);
+      if (paymentReference) {
+        await this.savePaymentReference(tx, order, paymentReference);
+      }
+
+      await this.postOrderFinanceIfNeeded(tx, order, paymentReference);
 
       const updatedOrder = await tx.saleOrder.update({
         where: { id },
         data: { status: newStatus },
-        include: { lines: true },
+        include: { lines: true, payments: { include: { paymentMethod: true } } },
       });
 
       await tx.outboxEvent.create({
@@ -545,7 +549,7 @@ export class CheckoutOrchestrator {
       });
     }
 
-    if (!['COMPLETED', 'CONFIRMED'].includes(order.status)) {
+    if (!['COMPLETED', 'CONFIRMED', 'READY_FOR_PICKUP', 'DELIVERED'].includes(order.status)) {
       throw new BadRequestException('No se puede cancelar este documento en su estado actual');
     }
 
@@ -569,11 +573,44 @@ export class CheckoutOrchestrator {
     });
   }
 
-  private async postOrderFinanceIfNeeded(tx: any, order: any) {
+  private async savePaymentReference(tx: any, order: any, paymentReference: string) {
+    const existingPayment = await tx.saleOrderPayment.findFirst({
+      where: { orderId: order.id },
+    });
+
+    if (existingPayment) {
+      await tx.saleOrderPayment.update({
+        where: { id: existingPayment.id },
+        data: { referenceId: paymentReference },
+      });
+      return;
+    }
+
+    const treasuryMethod =
+      order.paymentMethod === 'QR_MERCADOPAGO' ? 'QR_MERCADOPAGO' : order.paymentMethod;
+    const pm = await tx.paymentMethod.findFirst({
+      where: { type: treasuryMethod, isActive: true },
+    });
+
+    if (pm) {
+      await tx.saleOrderPayment.create({
+        data: {
+          orderId: order.id,
+          paymentMethodId: pm.id,
+          amount: order.grandTotal,
+          referenceId: paymentReference,
+        },
+      });
+    }
+  }
+
+  private async postOrderFinanceIfNeeded(tx: any, order: any, paymentReference?: string) {
     const existing = await tx.financialTransaction.count({
       where: { referenceId: order.id, type: 'DEBIT' },
     });
     if (existing > 0) return;
+
+    const refNote = paymentReference ? ` Ref: ${paymentReference}` : '';
 
     if (order.payments?.length > 0) {
       for (const payment of order.payments) {
@@ -595,7 +632,7 @@ export class CheckoutOrchestrator {
             payment.paymentMethod.accountId,
             payment.amount,
             order.id,
-            `Pago confirmado via ${methodType}`,
+            `Pago confirmado via ${methodType}${refNote}`,
             order.customerId || 'Walk-in',
           );
         }
@@ -628,7 +665,7 @@ export class CheckoutOrchestrator {
         pm.accountId,
         order.grandTotal,
         order.id,
-        `Pago confirmado via ${treasuryMethod}`,
+        `Pago confirmado via ${treasuryMethod}${refNote}`,
         order.customerId || 'Walk-in',
       );
     }

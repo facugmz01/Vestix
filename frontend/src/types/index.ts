@@ -230,9 +230,16 @@ export interface SaleOrder {
   customerId?: string; customerName?: string;
   customer?: { fullName?: string; phone?: string | null; email?: string | null };
   lines: OrderLineItem[];
+  payments?: SaleOrderPayment[];
   subtotal: number; cartDiscountTotal: number; grandTotal: number;
   afipInvoiceId?: string;
   paymentMethod: PaymentMethod; createdAt: string; syncedAt?: string;
+}
+export interface SaleOrderPayment {
+  id: string;
+  amount: number;
+  referenceId?: string | null;
+  paymentMethod?: { type: string; name?: string };
 }
 export interface OrderLineItem {
   id: string; variantId: string; variantSku?: string; productName?: string;

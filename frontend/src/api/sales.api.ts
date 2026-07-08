@@ -32,8 +32,8 @@ export const salesApi = {
   confirmQuotation: (id: string) =>
     post<SaleOrder>(`/sales/orders/${id}/confirm`, {}),
 
-  confirmPayment: (id: string) =>
-    post<SaleOrder>(`/sales/orders/${id}/confirm-payment`, {}),
+  confirmPayment: (id: string, payload?: { paymentReference?: string }) =>
+    post<SaleOrder>(`/sales/orders/${id}/confirm-payment`, payload ?? {}),
 
   cancelSale: (id: string) =>
     post<SaleOrder>(`/sales/orders/${id}/cancel`, {}),

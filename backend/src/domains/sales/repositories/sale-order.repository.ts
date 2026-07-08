@@ -17,7 +17,8 @@ export class SaleOrderRepository {
       include: {
         lines: true,
         variance: true,
-        customer: true
+        customer: true,
+        payments: { include: { paymentMethod: true } },
       }
     });
   }

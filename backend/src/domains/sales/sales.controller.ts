@@ -5,6 +5,7 @@ import { NotificationTriggersService } from '../notifications/notification-trigg
 import { ShippingService } from '../shipping/shipping.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
+import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -28,8 +29,8 @@ export class SalesController {
 
   @Post('orders/:id/confirm-payment')
   @RequirePermissions({ action: 'update', subject: 'Sales' })
-  async confirmPayment(@Param('id') id: string) {
-    const order = await this.checkoutOrchestrator.confirmPayment(id);
+  async confirmPayment(@Param('id') id: string, @Body() body: ConfirmPaymentDto) {
+    const order = await this.checkoutOrchestrator.confirmPayment(id, body.paymentReference);
     if (order.source === 'ECOMMERCE') {
       await this.shippingService.markFulfillmentPaid(order.id);
     }
@@ -69,7 +70,9 @@ export class SalesController {
   @Post('orders/:id/cancel')
   @RequirePermissions({ action: 'update', subject: 'Sales' })
   async cancelOrder(@Param('id') id: string) {
-    return this.checkoutOrchestrator.cancelOrder(id);
+    const order = await this.checkoutOrchestrator.cancelOrder(id);
+    await this.shippingService.cancelFulfillment(id);
+    return order;
   }
 
   @Post('orders/:id/send-receipt')

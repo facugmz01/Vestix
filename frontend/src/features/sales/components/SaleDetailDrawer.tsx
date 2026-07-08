@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Drawer, Button, Badge, Table } from '@/components/ui';
+import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
 import { salesApi } from '@/api/sales.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
@@ -54,6 +55,7 @@ function isActiveSale(status: string) {
 
 export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
   const queryClient = useQueryClient();
+  const [paymentReference, setPaymentReference] = useState('');
 
   const { data: sale, isLoading } = useQuery({
     queryKey: queryKeys.sales.detail(saleId || ''),
@@ -76,9 +78,12 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
   });
 
   const confirmPaymentMutation = useMutation({
-    mutationFn: () => salesApi.confirmPayment(saleId!),
+    mutationFn: () => salesApi.confirmPayment(saleId!, {
+      paymentReference: paymentReference.trim() || undefined,
+    }),
     onSuccess: () => {
       toast.success('Pago validado. La venta fue confirmada y el stock descontado.');
+      setPaymentReference('');
       invalidate();
     },
     onError: (err: any) => toast.error(err.message || 'Error al validar el pago'),
@@ -131,6 +136,8 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
       PENDING_PAYMENT: '¿Cancelar esta venta con pago pendiente? Se liberará el stock reservado.',
       CONFIRMED: '¿Anular esta venta confirmada? Se restaurará el stock y se revertirán los movimientos financieros.',
       COMPLETED: '¿Anular esta venta completada? Se restaurará el stock y se revertirán los movimientos financieros.',
+      READY_FOR_PICKUP: '¿Anular esta venta lista para retiro? Se restaurará el stock y se revertirán los movimientos financieros.',
+      DELIVERED: '¿Anular esta venta ya entregada? Se restaurará el stock y se revertirán los movimientos financieros. Esta acción es irreversible desde el punto de vista logístico.',
     };
     if (!window.confirm(messages[sale.status] || '¿Cancelar este documento?')) return;
     cancelMutation.mutate();
@@ -140,6 +147,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
   const statusLabel = STATUS_LABELS[sale.status] || sale.status;
   const statusColor = STATUS_COLORS[sale.status] || 'gray';
   const anyPending = confirmMutation.isPending || confirmPaymentMutation.isPending || cancelMutation.isPending;
+  const savedPaymentReference = sale.payments?.find(p => p.referenceId)?.referenceId;
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle del Documento Comercial" width="lg">
@@ -181,8 +189,23 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
         </div>
 
         {sale.status === 'PENDING_PAYMENT' && (
-          <div style={{ padding: '12px 16px', background: 'var(--yellow-bg, #fef9c3)', color: 'var(--yellow, #ca8a04)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-            Esta venta tiene el pago pendiente de validación. Al confirmar el pago se descontará el stock reservado y se registrará en tesorería.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ padding: '12px 16px', background: 'var(--yellow-bg, #fef9c3)', color: 'var(--yellow, #ca8a04)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+              Esta venta tiene el pago pendiente de validación. Al confirmar el pago se descontará el stock reservado y se registrará en tesorería.
+            </div>
+            <Input
+              label="Referencia de pago (opcional)"
+              placeholder="Ej: Nº de transferencia, comprobante, cupón..."
+              value={paymentReference}
+              onChange={(e) => setPaymentReference(e.target.value)}
+            />
+          </div>
+        )}
+
+        {savedPaymentReference && sale.status !== 'PENDING_PAYMENT' && (
+          <div style={{ padding: '12px 16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Referencia de pago registrada</span>
+            <p style={{ margin: '4px 0 0', fontWeight: 600, fontFamily: 'monospace' }}>{savedPaymentReference}</p>
           </div>
         )}
 
@@ -299,11 +322,38 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
           )}
 
           {['READY_FOR_PICKUP', 'DELIVERED'].includes(sale.status) && (
-            <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-              <span style={{ fontWeight: 600 }}>Estado logístico: {STATUS_LABELS[sale.status]}</span>
-              <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-                Podés cambiar el estado de entrega desde el listado de ventas.
-              </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                <span style={{ fontWeight: 600 }}>Estado logístico: {STATUS_LABELS[sale.status]}</span>
+                <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                  Podés cambiar el estado de entrega desde el listado de ventas o anular la venta si corresponde.
+                </p>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
+                <ActionGuard action="read" subject="Sales">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <Button
+                      variant="outline"
+                      icon={<FileText size={16} />}
+                      onClick={handleSendReceipt}
+                      disabled={!receiptRecipient}
+                    >
+                      Enviar Comprobante
+                    </Button>
+                  </div>
+                </ActionGuard>
+                <ActionGuard action="update" subject="Sales">
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancel}
+                    loading={cancelMutation.isPending}
+                    disabled={anyPending}
+                    icon={<XCircle size={16} />}
+                  >
+                    Anular Venta
+                  </Button>
+                </ActionGuard>
+              </div>
             </div>
           )}
         </div>
