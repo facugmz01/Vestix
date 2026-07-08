@@ -325,6 +325,13 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsString() subdomain?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) allowedPaymentMethods?: string[];
   @IsOptional() @IsArray() shippingMethods?: any[];
+  @IsOptional() deliverySettings?: {
+    enableGpsTracking?: boolean;
+    enableGeofence?: boolean;
+    geofenceRadiusMeters?: number;
+    requirePhotoOnDelivery?: boolean;
+    showMapToCustomer?: boolean;
+  };
 }
 
 export class PwaSettingsDto {

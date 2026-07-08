@@ -6,6 +6,7 @@ import {
   Param,
   Req,
   UseGuards,
+  Sse,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { StorefrontAuthGuard } from '../sales/storefront-auth.guard';
@@ -23,17 +24,21 @@ export class StorefrontTrackingController {
     return this.shippingService.getTrackingForCustomer(id, customerId);
   }
 
+  @Sse('my-orders/:id/tracking/live')
+  @UseGuards(StorefrontAuthGuard)
+  trackingLive(@Param('id') id: string) {
+    return this.shippingService.subscribeTracking(id);
+  }
+
   @Post('my-orders/:id/confirm-delivery')
   @UseGuards(StorefrontAuthGuard)
-  confirmDelivery(
+  async confirmDelivery(
     @Param('id') id: string,
     @Body() dto: CompleteDeliveryDto,
     @Req() req: Request,
   ) {
     const customerId = (req as any).user.customerId;
-    // Ownership check via getTrackingForCustomer
-    return this.shippingService.getTrackingForCustomer(id, customerId).then(() =>
-      this.shippingService.completeDelivery(id, dto, 'CUSTOMER'),
-    );
+    await this.shippingService.getTrackingForCustomer(id, customerId);
+    return this.shippingService.completeDelivery(id, dto, 'CUSTOMER');
   }
 }

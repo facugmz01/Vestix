@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { RedisService } from '../../core/redis/redis.service';
+import { haversineDistanceMeters } from './utils/geofence.util';
 import { ValidationMethod, ValidationStatus } from './models/delivery.model';
 
 const OTP_ATTEMPT_PREFIX = 'delivery:otp:attempts:';
@@ -37,6 +38,24 @@ export class DeliveryValidationService {
     return {
       passed,
       metadata: { attempts, method: ValidationMethod.OTP },
+    };
+  }
+
+  validateGeofence(
+    driverLat: number,
+    driverLng: number,
+    destLat: number,
+    destLng: number,
+    radiusMeters: number,
+  ): { passed: boolean; metadata: Record<string, unknown> } {
+    const distance = haversineDistanceMeters(driverLat, driverLng, destLat, destLng);
+    return {
+      passed: distance <= radiusMeters,
+      metadata: {
+        distanceMeters: Math.round(distance),
+        radiusMeters,
+        method: ValidationMethod.GEOFENCE,
+      },
     };
   }
 

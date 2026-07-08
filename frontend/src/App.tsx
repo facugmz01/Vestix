@@ -72,6 +72,8 @@ const StorefrontCartPage = lazy(() => import('@/pages/storefront/StorefrontCartP
 const StorefrontCheckoutPage = lazy(() => import('@/pages/storefront/StorefrontCheckoutPage'));
 const StorefrontMyOrdersPage = lazy(() => import('@/pages/storefront/StorefrontMyOrdersPage'));
 const StorefrontLoginPage = lazy(() => import('@/pages/storefront/StorefrontLoginPage'));
+const DriverDeliveryPage = lazy(() => import('@/pages/driver/DriverDeliveryPage'));
+const PublicTrackPage = lazy(() => import('@/pages/storefront/PublicTrackPage'));
 
 import { useThemeStore }    from '@/store/theme.store';
 
@@ -122,6 +124,10 @@ export default function App() {
 
           {/* ── Error pages (accessible regardless of auth) ── */}
           <Route path="/forbidden" element={<ForbiddenPage />} />
+
+          {/* ── Public delivery tracking & driver PWA ── */}
+          <Route path="/track/:token" element={<PublicTrackPage />} />
+          <Route path="/driver/:token" element={<DriverDeliveryPage />} />
 
           {/* ── Storefront: Public store routes ── */}
           {/* Always available at /store/* on the admin domain */}

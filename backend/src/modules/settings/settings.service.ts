@@ -115,6 +115,15 @@ export interface StorefrontSettings {
   subdomain?: string;
   allowedPaymentMethods?: string[];
   shippingMethods?: any[];
+  deliverySettings?: DeliverySettings;
+}
+
+export interface DeliverySettings {
+  enableGpsTracking: boolean;
+  enableGeofence: boolean;
+  geofenceRadiusMeters: number;
+  requirePhotoOnDelivery: boolean;
+  showMapToCustomer: boolean;
 }
 
 export interface IntegrationSettings {
@@ -738,6 +747,13 @@ export class SettingsService implements OnModuleInit {
             transferCbu: '', acceptCash: false, shippingInfo: '',
             requireShippingData: 'optional', whatsapp: '',
             instagramUrl: '', facebookUrl: '', tiktokUrl: '', youtubeUrl: '', xUrl: '',
+            deliverySettings: {
+              enableGpsTracking: true,
+              enableGeofence: true,
+              geofenceRadiusMeters: 150,
+              requirePhotoOnDelivery: false,
+              showMapToCustomer: true,
+            },
           },
           pwa: {
             appName: 'Mi Empresa', appShortName: 'Empresa',

@@ -33,7 +33,6 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { PurchasingModule } from './modules/purchasing/purchasing.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
 import { TreasuryModule } from './modules/treasury/treasury.module';
-import { StorefrontModule } from './domains/storefront/storefront.module';
 import { ShippingModule } from './domains/shipping/shipping.module';
 
 @Module({
@@ -94,7 +93,6 @@ import { ShippingModule } from './domains/shipping/shipping.module';
     PurchasingModule,
     TransfersModule,
     TreasuryModule,
-    StorefrontModule,
     ShippingModule,
   ],
 })

@@ -31,7 +31,20 @@ export const storefrontSettingsSchema = z.object({
   tiktokUrl: z.string().catch(''),
   youtubeUrl: z.string().catch(''),
   xUrl: z.string().catch(''),
-  subdomain: z.string().optional()
+  subdomain: z.string().optional(),
+  deliverySettings: z.object({
+    enableGpsTracking: z.boolean().catch(true),
+    enableGeofence: z.boolean().catch(true),
+    geofenceRadiusMeters: z.number().catch(150),
+    requirePhotoOnDelivery: z.boolean().catch(false),
+    showMapToCustomer: z.boolean().catch(true),
+  }).catch({
+    enableGpsTracking: true,
+    enableGeofence: true,
+    geofenceRadiusMeters: 150,
+    requirePhotoOnDelivery: false,
+    showMapToCustomer: true,
+  }),
 });
 
 export type StorefrontSettingsFormData = z.infer<typeof storefrontSettingsSchema>;

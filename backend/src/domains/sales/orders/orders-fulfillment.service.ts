@@ -82,33 +82,15 @@ export class OrdersFulfillmentService {
   }
 
   /**
-   * CRITICAL OMNI-CHANNEL EVENT: The courier scans the box and takes it away.
-   * This is the exact moment the physical stock officially leaves the building.
+   * Advances fulfillment to SHIPPED.
+   * E-commerce inventory is consumed at payment approval (consumeReservation in MP webhook).
+   * Ship time only records the logistics handoff — no additional stock movement.
    */
   async shipOrder(id: string, trackingNumber: string, courierName: string) {
     const fulfillment = await this.getFulfillment(id);
-    if (fulfillment.status !== OrderStatus.PACKED) throw new BadRequestException('Order must be PACKED before shipping.');
-    
-    // 1. Fetch the master order details
-    // const saleOrder = await this.salesService.getOrder(fulfillment.saleOrderId);
-
-    // 2. Fire the Double-Entry Ledger
-    // When the order was first placed, the items were marked as RESERVED.
-    // Now that the items are physically leaving the building on a truck, 
-    // we explicitly tell the ledger to release the reservation lock AND log the SALE exit.
-    
-    /* PRODUCTION IMPLEMENTATION:
-    for (const line of saleOrder.lines) {
-       await this.stockService.processSaleExit({
-          variantId: line.variantId,
-          sourceWarehouseId: saleOrder.warehouseId,
-          branchId: saleOrder.branchId,
-          quantity: line.quantity,
-          orderId: saleOrder.id,
-          wasReserved: true // <--- CRITICAL: Tells the ledger to decrement 'reservedQuantity' instead of 'availableQuantity'
-       });
+    if (fulfillment.status !== OrderStatus.PACKED) {
+      throw new BadRequestException('Order must be PACKED before shipping.');
     }
-    */
 
     return this.prisma.orderFulfillment.update({
       where: { id },
@@ -116,8 +98,8 @@ export class OrdersFulfillmentService {
         status: OrderStatus.SHIPPED,
         trackingNumber,
         courierName,
-        shippedAt: new Date()
-      }
+        shippedAt: new Date(),
+      },
     });
   }
 

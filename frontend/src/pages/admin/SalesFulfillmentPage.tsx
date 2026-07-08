@@ -8,7 +8,7 @@ import {
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, Modal, Input
 } from '@/components/ui';
 
-import { shippingApi, type FulfillmentListItem } from '@/api/shipping.api';
+import { shippingApi, type FulfillmentListItem, type DispatchResult } from '@/api/shipping.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useListPage } from '@/hooks/useListPage';
 
@@ -36,6 +36,7 @@ export default function SalesFulfillmentPage() {
 
   const [dispatchModal, setDispatchModal] = useState<FulfillmentListItem | null>(null);
   const [completeModal, setCompleteModal] = useState<FulfillmentListItem | null>(null);
+  const [linksModal, setLinksModal] = useState<DispatchResult | null>(null);
   const [driverName, setDriverName] = useState('');
   const [driverPhone, setDriverPhone] = useState('');
   const [courierName, setCourierName] = useState('Propio');
@@ -53,10 +54,11 @@ export default function SalesFulfillmentPage() {
   const dispatchMutation = useMutation({
     mutationFn: ({ orderId, dto }: { orderId: string; dto: Parameters<typeof shippingApi.dispatch>[1] }) =>
       shippingApi.dispatch(orderId, dto),
-    onSuccess: () => {
-      toast.success('Pedido despachado. Se generó código OTP para el cliente.');
+    onSuccess: (result) => {
+      toast.success('Pedido despachado');
       setDispatchModal(null);
       resetDispatchForm();
+      setLinksModal(result);
       queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
     },
     onError: () => toast.error('Error al despachar el pedido'),
@@ -313,6 +315,34 @@ export default function SalesFulfillmentPage() {
             placeholder="000000"
             style={{ fontFamily: 'monospace', letterSpacing: '4px' }}
           />
+        </Modal>
+      )}
+      {linksModal && (
+        <Modal
+          open
+          title="Envío despachado"
+          onClose={() => setLinksModal(null)}
+          footer={<Button variant="primary" onClick={() => setLinksModal(null)}>Cerrar</Button>}
+        >
+          <p style={{ marginBottom: '16px', color: 'var(--text-muted)' }}>
+            Compartí estos links con el cliente y el repartidor. OTP para validación: <strong style={{ fontFamily: 'monospace' }}>{linksModal.otpForAdmin}</strong>
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Seguimiento público</label>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <input readOnly value={linksModal.links.trackingUrl} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '13px' }} />
+                <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard.writeText(linksModal.links.trackingUrl); toast.success('Copiado'); }}>Copiar</Button>
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>App repartidor</label>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <input readOnly value={linksModal.links.driverUrl} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '13px' }} />
+                <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard.writeText(linksModal.links.driverUrl); toast.success('Copiado'); }}>Copiar</Button>
+              </div>
+            </div>
+          </div>
         </Modal>
       )}
     </PageContainer>

@@ -1,5 +1,16 @@
 import { get, post } from './client';
 
+const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
+
+async function postForm<T>(url: string, formData: FormData): Promise<T> {
+  const res = await fetch(`${API_BASE}${url}`, { method: 'POST', body: formData, credentials: 'include' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw Object.assign(new Error(err.message || 'Request failed'), { response: { data: err } });
+  }
+  return res.json();
+}
+
 export interface ShippingAddress {
   fullName: string;
   phone?: string;
@@ -95,7 +106,7 @@ export const shippingApi = {
     post(`/shipping/orders/${orderId}/pack`, {}),
 
   dispatch: (orderId: string, dto: DispatchDeliveryDto) =>
-    post(`/shipping/orders/${orderId}/dispatch`, dto),
+    post<DispatchResult>(`/shipping/orders/${orderId}/dispatch`, dto),
 
   updateLocation: (orderId: string, latitude: number, longitude: number) =>
     post(`/shipping/orders/${orderId}/location`, { latitude, longitude }),
@@ -108,4 +119,57 @@ export const shippingApi = {
 
   completeManual: (orderId: string, notes?: string) =>
     post(`/shipping/orders/${orderId}/complete-manual`, { notes }),
+
+  getPublicTracking: (token: string) =>
+    get<PublicTracking>(`/track/${token}`),
+};
+
+export interface PublicTracking {
+  orderRef: string;
+  status: string;
+  trackingNumber?: string;
+  courierName?: string;
+  city?: string;
+  state?: string;
+  timeline: {
+    paidAt?: string;
+    packedAt?: string;
+    shippedAt?: string;
+    dispatchedAt?: string;
+    deliveredAt?: string;
+  };
+  delivery?: {
+    status: string;
+    lastLatitude?: number;
+    lastLongitude?: number;
+    lastLocationAt?: string;
+  };
+  itemCount: number;
+}
+
+export interface DispatchResult {
+  fulfillment: any;
+  delivery: any;
+  links: { trackingUrl: string; driverUrl: string };
+  otpForAdmin: string;
+}
+
+export const driverApi = {
+  getDelivery: (token: string) =>
+    get<any>(`/driver/${token}`),
+
+  updateLocation: (token: string, latitude: number, longitude: number) =>
+    post(`/driver/${token}/location`, { latitude, longitude }),
+
+  markArrived: (token: string) =>
+    post(`/driver/${token}/arrive`, {}),
+
+  uploadPhoto: (token: string, file: File) => {
+    const fd = new FormData();
+    fd.append('photo', file);
+    return postForm<{ proofPhotoUrl: string }>(`/driver/${token}/photo`, fd);
+  },
+
+  completeDelivery: (token: string, otp: string, latitude?: number, longitude?: number) =>
+    post(`/driver/${token}/complete`, { otp, latitude, longitude }),
 };

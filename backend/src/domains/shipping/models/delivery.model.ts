@@ -11,6 +11,8 @@ export enum ValidationMethod {
   OTP = 'OTP',
   MANUAL = 'MANUAL',
   CUSTOMER_CONFIRM = 'CUSTOMER_CONFIRM',
+  GEOFENCE = 'GEOFENCE',
+  PHOTO = 'PHOTO',
 }
 
 export enum ValidationStatus {
