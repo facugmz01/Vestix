@@ -4,6 +4,7 @@ import type { StockLevel, InventoryMovement, PagedResponse } from '@/types';
 
 export interface EnrichedStockLevel extends StockLevel {
   id: string; // composite key or backend ID
+  physicalQuantity: number;
   variantSku: string;
   productName: string;
   warehouseName: string;

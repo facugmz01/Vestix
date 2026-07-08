@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { inventoryApi } from '@/api/inventory.api';
 import { queryKeys } from '@/api/queryKeys';
 import { ArrowUpRight, ArrowDownRight, History, Package, Link2, Clock, MapPin } from 'lucide-react';
+import { formatMovementQty, getMovementLabel } from '../utils/movementLabels';
 
 interface Props {
   open: boolean;
@@ -19,26 +20,29 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
 
   if (!movementId) return null;
 
+  const qty = movement
+    ? formatMovementQty(movement.type, movement.quantity, movement.sourceWarehouseId, movement.destinationWarehouseId)
+    : null;
+
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Movimiento" width="md">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
         {isLoading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando detalles de auditoría...</div>
-        ) : movement ? (
+        ) : movement && qty ? (
           <>
-            {/* Cabecera / Status Badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '24px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
               <div style={{ 
                 width: 56, height: 56, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: movement.type === 'ADD' ? 'var(--green-bg)' : movement.type === 'SUBTRACT' ? 'var(--red-bg)' : 'var(--blue-bg)',
-                color: movement.type === 'ADD' ? 'var(--green)' : movement.type === 'SUBTRACT' ? 'var(--red)' : 'var(--blue)'
+                background: qty.direction === 'IN' ? 'var(--green-bg)' : qty.direction === 'OUT' ? 'var(--red-bg)' : 'var(--blue-bg)',
+                color: qty.direction === 'IN' ? 'var(--green)' : qty.direction === 'OUT' ? 'var(--red)' : 'var(--blue)'
               }}>
-                {movement.type === 'ADD' ? <ArrowUpRight size={32} /> : movement.type === 'SUBTRACT' ? <ArrowDownRight size={32} /> : <History size={32} />}
+                {qty.direction === 'IN' ? <ArrowUpRight size={32} /> : qty.direction === 'OUT' ? <ArrowDownRight size={32} /> : <History size={32} />}
               </div>
               <div style={{ flex: 1 }}>
                 <h3 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 800 }}>
-                  {movement.type === 'ADD' ? 'Entrada de Mercadería' : movement.type === 'SUBTRACT' ? 'Salida de Mercadería' : 'Ajuste Físico'}
+                  {getMovementLabel(movement.type)}
                 </h3>
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Clock size={12} /> {new Date(movement.createdAt).toLocaleString()}
@@ -46,13 +50,12 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>Cantidad</p>
-                <p style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: movement.type === 'ADD' ? 'var(--green)' : movement.type === 'SUBTRACT' ? 'var(--red)' : 'var(--text-primary)' }}>
-                  {movement.type === 'ADD' ? '+' : movement.type === 'SUBTRACT' ? '-' : ''}{movement.quantity}
+                <p style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: qty.direction === 'IN' ? 'var(--green)' : qty.direction === 'OUT' ? 'var(--red)' : 'var(--text-primary)' }}>
+                  {qty.text}
                 </p>
               </div>
             </div>
 
-            {/* Artículo */}
             <div>
               <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Package size={16} /> Artículo Afectado
@@ -63,7 +66,6 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
               </div>
             </div>
 
-            {/* Ubicación */}
             <div>
               <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <MapPin size={16} /> Ubicación Física
@@ -74,7 +76,6 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
               </div>
             </div>
 
-            {/* Trazabilidad (Traceability) */}
             <div>
               <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Link2 size={16} /> Trazabilidad (Auditoría)
@@ -83,7 +84,7 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', marginBottom: '12px' }}>
                   <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Origen / Tipo:</span>
-                  <Badge color="purple">{movement.referenceType || 'SYSTEM_ADJUSTMENT'}</Badge>
+                  <Badge color="purple">{movement.referenceType || movement.type}</Badge>
                 </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', marginBottom: '12px' }}>
@@ -96,7 +97,7 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
                   <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{movement.reason || 'Sin motivo especificado'}</span>
                 </div>
                 
-                {movement.unitCost && (
+                {movement.unitCost != null && movement.unitCost > 0 && (
                   <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border)' }}>
                     <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Costo Unitario:</span>
                     <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 600 }}>

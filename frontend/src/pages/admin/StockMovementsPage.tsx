@@ -11,6 +11,7 @@ import { inventoryApi } from '@/api/inventory.api';
 import { branchesApi } from '@/api/branches.api';
 import { warehousesApi } from '@/api/warehouses.api';
 import { queryKeys } from '@/api/queryKeys';
+import { formatMovementQty, getMovementLabel } from '@/features/inventory/utils/movementLabels';
 
 import { MovementDetailDrawer } from '@/features/inventory/components/MovementDetailDrawer';
 
@@ -68,7 +69,7 @@ export default function StockMovementsPage() {
           <option value="">Todas las Operaciones</option>
           <option value="ADD">Entradas (+)</option>
           <option value="SUBTRACT">Salidas (-)</option>
-          <option value="SET">Ajustes Físicos (=)</option>
+          <option value="SET">Ajustes</option>
         </select>
 
         <select value={branchId} onChange={e => { setBranchId(e.target.value); setWarehouseId(''); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
@@ -113,12 +114,15 @@ export default function StockMovementsPage() {
               { 
                 key: 'type', 
                 header: 'Operación',
-                render: (m) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {m.type === 'ADD' ? <ArrowUpRight size={16} color="var(--green)" /> : m.type === 'SUBTRACT' ? <ArrowDownRight size={16} color="var(--red)" /> : <History size={16} color="var(--blue)" />}
-                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{m.type === 'ADD' ? 'ENTRADA' : m.type === 'SUBTRACT' ? 'SALIDA' : 'AJUSTE'}</span>
-                  </div>
-                )
+                render: (m) => {
+                  const { direction } = formatMovementQty(m.type, m.quantity, m.sourceWarehouseId, m.destinationWarehouseId);
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {direction === 'IN' ? <ArrowUpRight size={16} color="var(--green)" /> : direction === 'OUT' ? <ArrowDownRight size={16} color="var(--red)" /> : <History size={16} color="var(--blue)" />}
+                      <span style={{ fontSize: '13px', fontWeight: 600 }}>{getMovementLabel(m.type)}</span>
+                    </div>
+                  );
+                }
               },
               { 
                 key: 'product', 
@@ -143,11 +147,14 @@ export default function StockMovementsPage() {
               { 
                 key: 'qty', 
                 header: 'Cant.',
-                render: (m) => (
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: m.type === 'ADD' ? 'var(--green)' : m.type === 'SUBTRACT' ? 'var(--red)' : 'var(--text-primary)' }}>
-                    {m.type === 'ADD' ? '+' : m.type === 'SUBTRACT' ? '-' : ''}{m.quantity}
-                  </span>
-                )
+                render: (m) => {
+                  const { text, direction } = formatMovementQty(m.type, m.quantity, m.sourceWarehouseId, m.destinationWarehouseId);
+                  return (
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: direction === 'IN' ? 'var(--green)' : direction === 'OUT' ? 'var(--red)' : 'var(--text-primary)' }}>
+                      {text}
+                    </span>
+                  );
+                }
               },
               { 
                 key: 'ref', 
@@ -155,7 +162,7 @@ export default function StockMovementsPage() {
                 render: (m) => (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: '13px', fontFamily: 'monospace' }}>{m.referenceId}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{m.referenceType || 'Ajuste'}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{m.referenceType || m.type}</span>
                   </div>
                 )
               },

@@ -150,12 +150,24 @@ export interface ProductVariant {
 
 // ─── INVENTORY ───────────────────────────────────────────────────────────
 export interface StockLevel {
-  variantId: string; warehouseId: string; branchId: string;
-  availableQuantity: number; reservedQuantity: number;
+  variantId: string;
+  warehouseId: string;
+  branchId: string;
+  physicalQuantity: number;
+  availableQuantity: number;
+  reservedQuantity: number;
 }
 export interface InventoryMovement {
-  id: string; variantId: string; type: string; quantity: number;
-  unitCost?: number; referenceId: string; branchId: string; createdAt: string;
+  id: string;
+  variantId: string;
+  type: string;
+  quantity: number;
+  unitCost?: number;
+  referenceId: string;
+  branchId: string;
+  createdAt: string;
+  sourceWarehouseId?: string | null;
+  destinationWarehouseId?: string | null;
 }
 
 export type TransferStatus = 'DRAFT' | 'IN_TRANSIT' | 'COMPLETED' | 'CANCELLED';

@@ -127,29 +127,29 @@ export default function InventoryPage() {
                 )
               },
               { 
-                key: 'available', 
-                header: 'Stock Físico Disp.',
+                key: 'physical', 
+                header: 'Stock Físico',
                 render: (s) => (
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: s.availableQuantity <= 0 ? 'var(--red)' : 'var(--green)' }}>
-                    {s.availableQuantity}
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {s.physicalQuantity ?? (s.availableQuantity + s.reservedQuantity)}
                   </span>
                 )
               },
               { 
                 key: 'reserved', 
-                header: 'Reservado (Pedidos)',
+                header: 'Reservado',
                 render: (s) => (
                   <span style={{ fontSize: '13px', fontWeight: 600, color: s.reservedQuantity > 0 ? 'var(--orange)' : 'var(--text-muted)' }}>
-                    {s.reservedQuantity > 0 ? `-${s.reservedQuantity}` : '0'}
+                    {s.reservedQuantity > 0 ? s.reservedQuantity : '0'}
                   </span>
                 )
               },
               { 
-                key: 'real', 
-                header: 'Real Contable',
+                key: 'available', 
+                header: 'Disponible',
                 render: (s) => (
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {s.availableQuantity + s.reservedQuantity}
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: s.availableQuantity <= 0 ? 'var(--red)' : 'var(--green)' }}>
+                    {s.availableQuantity}
                   </span>
                 )
               },

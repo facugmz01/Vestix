@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { InventoryService } from './inventory.service';
 import { TransfersService } from './transfers/transfers.service';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { AuthGuard } from '@nestjs/passport';
-import { UseGuards } from '@nestjs/common';
+import { AdjustStockDto } from './dto/adjust-stock.dto';
 
 @Controller('inventory')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -20,10 +20,16 @@ export class InventoryController {
     return this.inventoryService.findAllStock(query);
   }
 
+  @Get('stock/variant/:variantId')
+  @RequirePermissions({ action: 'read', subject: 'Inventory' })
+  getStockByVariant(@Param('variantId') variantId: string) {
+    return this.inventoryService.getStockByVariant(variantId);
+  }
+
   @Post('stock/adjust')
   @RequirePermissions({ action: 'manage', subject: 'Inventory' })
-  adjustStock(@Body() body: any) {
-    return this.inventoryService.recordMovement(body);
+  adjustStock(@Body() body: AdjustStockDto) {
+    return this.inventoryService.adjustStock(body);
   }
 
   @Post('audit')
@@ -43,6 +49,12 @@ export class InventoryController {
   @RequirePermissions({ action: 'read', subject: 'Inventory' })
   getAllMovements(@Query() query: any) {
     return this.inventoryService.findAllMovements(query);
+  }
+
+  @Get('movements/:id')
+  @RequirePermissions({ action: 'read', subject: 'Inventory' })
+  getMovementDetail(@Param('id') id: string) {
+    return this.inventoryService.findMovementById(id);
   }
 
   @Get('transfers')
