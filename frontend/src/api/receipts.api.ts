@@ -25,6 +25,6 @@ export const receiptsApi = {
   draftReceipt: (dto: DraftReceiptDto) =>
     post<GoodsReceipt>('/purchasing/receipts/draft', dto),
 
-  validateReceipt: (id: string) =>
-    post<GoodsReceipt>(`/purchasing/receipts/${id}/validate`, {}),
+  validateReceipt: (id: string, body?: { branchId?: string; approvedByUserId?: string }) =>
+    post<GoodsReceipt>(`/purchasing/receipts/${id}/validate`, body ?? {}),
 };

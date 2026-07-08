@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { CheckCircle, AlertTriangle, ShieldAlert, Printer } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { BulkPrintLabelsModal } from '@/features/labels/components/BulkPrintLabelsModal';
+import { useAuthStore } from '@/store/auth.store';
 
 interface Props {
   open: boolean;
@@ -17,6 +18,7 @@ interface Props {
 export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
   const queryClient = useQueryClient();
   const [printOpen, setPrintOpen] = useState(false);
+  const user = useAuthStore((s) => s.user);
 
   const { data: receipt, isLoading } = useQuery({
     queryKey: queryKeys.receipts.detail(receiptId || ''),
@@ -25,7 +27,10 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
   });
 
   const validateMutation = useMutation({
-    mutationFn: () => receiptsApi.validateReceipt(receiptId!),
+    mutationFn: () => receiptsApi.validateReceipt(receiptId!, {
+      branchId: user?.branchId,
+      approvedByUserId: user?.id,
+    }),
     onSuccess: () => {
       toast.success('Remito validado e inventario actualizado.');
       queryClient.invalidateQueries({ queryKey: queryKeys.receipts.detail(receiptId!) });

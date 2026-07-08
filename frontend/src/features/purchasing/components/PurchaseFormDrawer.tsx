@@ -114,7 +114,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
     
     mutation.mutate({
       supplierId,
-      warehouseId,
+      destinationWarehouseId: warehouseId,
       expectedDeliveryDate,
       lines: lines.map(l => ({ variantId: l.variantId, orderedQuantity: l.quantity, unitCost: l.unitCost })),
     });

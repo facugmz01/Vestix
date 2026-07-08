@@ -32,8 +32,7 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
         return;
       }
       setPurchaseOrder(data);
-      // Pre-fill with 0
-      const initial = data.lines.reduce((acc, line) => ({ ...acc, [line.variantId]: 0 }), {});
+      const initial = data.lines.reduce((acc, line) => ({ ...acc, [line.id]: 0 }), {} as Record<string, number>);
       setScannedItems(initial);
     } catch (err: any) {
       toast.error('OC no encontrada o error de conexión');
@@ -66,15 +65,18 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
 
     const payloadLines = Object.entries(scannedItems)
       .filter(([_, qty]) => qty > 0)
-      .map(([variantId, qty]) => {
-        return { 
-          poLineItemId: variantId, 
-          variantId, 
+      .map(([poLineItemId, qty]) => {
+        const line = purchaseOrder.lines.find((l) => l.id === poLineItemId);
+        if (!line) return null;
+        return {
+          poLineItemId,
+          variantId: line.variantId,
           quantity: qty,
-          batchLot: batchInfo[variantId]?.lot || undefined,
-          batchExpirationDate: batchInfo[variantId]?.expiration || undefined
+          batchLot: batchInfo[poLineItemId]?.lot || undefined,
+          batchExpirationDate: batchInfo[poLineItemId]?.expiration || undefined,
         };
-      });
+      })
+      .filter(Boolean) as DraftReceiptDto['scannedItems'];
 
     if (payloadLines.length === 0) {
       toast.error('Tenés que indicar al menos un artículo recibido mayor a 0');
@@ -130,7 +132,7 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
                 <PackageCheck size={18} /> Conteo Físico (Bultos Recibidos)
               </h4>
               <Table
-                keyField="variantId"
+                keyField="id"
                 data={purchaseOrder.lines}
                 columns={[
                   { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
@@ -148,8 +150,8 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
                       <input 
                         type="number" 
                         min="0"
-                        value={scannedItems[l.variantId] ?? 0} 
-                        onChange={e => setScannedItems({ ...scannedItems, [l.variantId]: Number(e.target.value) })}
+                        value={scannedItems[l.id] ?? 0} 
+                        onChange={e => setScannedItems({ ...scannedItems, [l.id]: Number(e.target.value) })}
                         style={{ width: '80px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 'bold', textAlign: 'right' }}
                       />
                     )
@@ -162,14 +164,14 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
                         <input
                           type="text"
                           placeholder="Nro Lote"
-                          value={batchInfo[l.variantId]?.lot || ''}
-                          onChange={e => setBatchInfo({ ...batchInfo, [l.variantId]: { ...batchInfo[l.variantId], lot: e.target.value } })}
+                          value={batchInfo[l.id]?.lot || ''}
+                          onChange={e => setBatchInfo({ ...batchInfo, [l.id]: { ...batchInfo[l.id], lot: e.target.value } })}
                           style={{ width: '100px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px' }}
                         />
                         <input
                           type="date"
-                          value={batchInfo[l.variantId]?.expiration || ''}
-                          onChange={e => setBatchInfo({ ...batchInfo, [l.variantId]: { ...batchInfo[l.variantId], expiration: e.target.value } })}
+                          value={batchInfo[l.id]?.expiration || ''}
+                          onChange={e => setBatchInfo({ ...batchInfo, [l.id]: { ...batchInfo[l.id], expiration: e.target.value } })}
                           style={{ width: '130px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px' }}
                         />
                       </div>

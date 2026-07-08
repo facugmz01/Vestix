@@ -49,6 +49,9 @@ export class GoodsReceiptService {
   }) {
     const po = await this.purchasingService.getPO(payload.purchaseOrderId);
     if (!po) throw new NotFoundException('Purchase Order not found');
+    if (po.status !== 'ISSUED' && po.status !== 'PARTIALLY_RECEIVED') {
+      throw new BadRequestException(`La orden está en estado ${po.status} y no puede recibir mercadería`);
+    }
 
     let hasDifferences = false;
     const lineData = [];
@@ -90,10 +93,55 @@ export class GoodsReceiptService {
   }
 
   /**
+   * Quick receive: draft + validate in one step (used from PO detail drawer).
+   */
+  async quickReceiveFromPO(
+    poId: string,
+    lines: { variantId: string; receivedQuantity: number }[],
+    userId?: string,
+  ) {
+    const po = await this.purchasingService.getPO(poId);
+    if (!po) throw new NotFoundException('Orden de compra no encontrada');
+    if (po.status !== 'ISSUED' && po.status !== 'PARTIALLY_RECEIVED') {
+      throw new BadRequestException(`La orden está en estado ${po.status} y no puede recibir mercadería`);
+    }
+
+    const scannedItems = lines
+      .filter((l) => l.receivedQuantity > 0)
+      .map((l) => {
+        const poLine = po.lines.find((pl) => pl.variantId === l.variantId);
+        if (!poLine) {
+          throw new BadRequestException(`La variante ${l.variantId} no pertenece a la orden`);
+        }
+        return {
+          poLineItemId: poLine.id,
+          variantId: l.variantId,
+          quantity: l.receivedQuantity,
+        };
+      });
+
+    if (scannedItems.length === 0) {
+      throw new BadRequestException('Indicá al menos un artículo con cantidad mayor a cero');
+    }
+
+    const receipt = await this.draftReceipt({
+      purchaseOrderId: poId,
+      receivedByUserId: userId,
+      scannedItems,
+    });
+
+    const warehouse = await this.prisma.warehouse.findUnique({
+      where: { id: po.destinationWarehouseId },
+    });
+
+    return this.validateReceipt(receipt.id, warehouse?.branchId, userId);
+  }
+
+  /**
    * 2. Validate and Commit the Receipt.
    * This pushes the physical goods into the Inventory Ledger.
    */
-  async validateReceipt(receiptId: string, branchId: string, approvedByUserId?: string) {
+  async validateReceipt(receiptId: string, branchId?: string, approvedByUserId?: string) {
     return this.prisma.$transaction(async (tx) => {
       const receipt = await tx.goodsReceipt.findUnique({
         where: { id: receiptId },
@@ -102,6 +150,17 @@ export class GoodsReceiptService {
 
       if (!receipt) throw new NotFoundException('Goods Receipt not found');
       if (receipt.status === 'VALIDATED') throw new ConflictException('Already validated');
+
+      let resolvedBranchId = branchId;
+      if (!resolvedBranchId) {
+        const warehouse = await tx.warehouse.findUnique({
+          where: { id: receipt.destinationWarehouseId },
+        });
+        resolvedBranchId = warehouse?.branchId;
+      }
+      if (!resolvedBranchId) {
+        throw new BadRequestException('No se pudo determinar la sucursal del depósito de destino');
+      }
 
       if (receipt.status === 'DISPUTED' && !approvedByUserId) {
         throw new BadRequestException('Disputed receipt requires manager approval');
@@ -137,7 +196,7 @@ export class GoodsReceiptService {
         await this.stockMovementService.processGoodsReceipt({
           variantId: line.variantId,
           destinationWarehouseId: receipt.destinationWarehouseId,
-          branchId: branchId,
+          branchId: resolvedBranchId,
           quantity: line.receivedQuantity,
           purchaseCost: line.poLineItem.unitCost,
           purchaseOrderId: receipt.purchaseOrderId,
@@ -175,7 +234,12 @@ export class GoodsReceiptService {
         include: { lines: true }
       });
     }).then(async (validated) => {
-      const branch = await this.prisma.branch.findUnique({ where: { id: branchId } });
+      const warehouse = await this.prisma.warehouse.findUnique({
+        where: { id: validated.destinationWarehouseId },
+      });
+      const branch = warehouse?.branchId
+        ? await this.prisma.branch.findUnique({ where: { id: warehouse.branchId } })
+        : null;
       void this.notificationTriggers.onGoodsReceiptReceived(receiptId, branch?.name || 'Sucursal');
       return validated;
     });
