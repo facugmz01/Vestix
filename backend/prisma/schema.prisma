@@ -439,6 +439,8 @@ model ShippingAddress {
   city        String
   state       String
   zipCode     String
+  latitude    Float?
+  longitude   Float?
   notes       String?
   createdAt   DateTime  @default(now())
 
@@ -1083,6 +1085,11 @@ model Delivery {
   estimatedArrival      DateTime?
   deliveryCode          String?
   deliveryCodeExpiresAt DateTime?
+  trackingToken         String?          @unique
+  driverToken           String?          @unique
+  carrierType           String?
+  carrierShipmentId     String?
+  labelUrl              String?
   lastLatitude          Float?
   lastLongitude         Float?
   lastLocationAt        DateTime?

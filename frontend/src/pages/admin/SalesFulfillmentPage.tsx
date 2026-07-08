@@ -1,4 +1,4 @@
-import { SALES_TABS } from '@/navigation/moduleTabs';
+import { DELIVERY_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, ShoppingBag, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -8,7 +8,7 @@ import {
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, Modal, Input
 } from '@/components/ui';
 
-import { shippingApi, type FulfillmentListItem } from '@/api/shipping.api';
+import { shippingApi, type FulfillmentListItem, type DispatchResult } from '@/api/shipping.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useListPage } from '@/hooks/useListPage';
 
@@ -36,9 +36,11 @@ export default function SalesFulfillmentPage() {
 
   const [dispatchModal, setDispatchModal] = useState<FulfillmentListItem | null>(null);
   const [completeModal, setCompleteModal] = useState<FulfillmentListItem | null>(null);
+  const [linksModal, setLinksModal] = useState<DispatchResult | null>(null);
   const [driverName, setDriverName] = useState('');
   const [driverPhone, setDriverPhone] = useState('');
   const [courierName, setCourierName] = useState('Propio');
+  const [carrierType, setCarrierType] = useState<'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS'>('PROPIO');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [locationOrderId, setLocationOrderId] = useState<string | null>(null);
@@ -53,10 +55,11 @@ export default function SalesFulfillmentPage() {
   const dispatchMutation = useMutation({
     mutationFn: ({ orderId, dto }: { orderId: string; dto: Parameters<typeof shippingApi.dispatch>[1] }) =>
       shippingApi.dispatch(orderId, dto),
-    onSuccess: () => {
-      toast.success('Pedido despachado. Se generó código OTP para el cliente.');
+    onSuccess: (result) => {
+      toast.success('Pedido despachado');
       setDispatchModal(null);
       resetDispatchForm();
+      setLinksModal(result);
       queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
     },
     onError: () => toast.error('Error al despachar el pedido'),
@@ -89,6 +92,7 @@ export default function SalesFulfillmentPage() {
     setDriverName('');
     setDriverPhone('');
     setCourierName('Propio');
+    setCarrierType('PROPIO');
     setTrackingNumber('');
   };
 
@@ -130,7 +134,7 @@ export default function SalesFulfillmentPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={SALES_TABS} />}
+      tabs={<Tabs items={DELIVERY_TABS} />}
       title="Envíos y Despacho"
       subtitle="Gestioná pedidos web: preparación, despacho, tracking GPS y validación de entrega."
     >
@@ -264,7 +268,7 @@ export default function SalesFulfillmentPage() {
                 disabled={!driverName.trim()}
                 onClick={() => dispatchMutation.mutate({
                   orderId: dispatchModal.saleOrderId,
-                  dto: { driverName, driverPhone, courierName, trackingNumber },
+                  dto: { driverName, driverPhone, courierName, trackingNumber, carrierType },
                 })}
               >
                 Confirmar despacho
@@ -275,7 +279,23 @@ export default function SalesFulfillmentPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <Input label="Repartidor *" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre del repartidor" />
             <Input label="Teléfono repartidor" value={driverPhone} onChange={e => setDriverPhone(e.target.value)} placeholder="54911..." />
-            <Input label="Courier" value={courierName} onChange={e => setCourierName(e.target.value)} placeholder="Propio / Andreani / etc." />
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Carrier</label>
+              <select
+                value={carrierType}
+                onChange={e => {
+                  const value = e.target.value as 'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS';
+                  setCarrierType(value);
+                  setCourierName(value === 'PROPIO' ? 'Propio' : value === 'ANDREANI' ? 'Andreani' : 'Mercado Envíos');
+                }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}
+              >
+                <option value="PROPIO">Propio (repartidor interno)</option>
+                <option value="ANDREANI">Andreani</option>
+                <option value="MERCADO_ENVIOS">Mercado Envíos</option>
+              </select>
+            </div>
+            <Input label="Nombre courier (visible al cliente)" value={courierName} onChange={e => setCourierName(e.target.value)} placeholder="Propio / Andreani / etc." />
             <Input label="Número de tracking" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Opcional" />
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
               Al despachar se generará un código OTP de 6 dígitos que el cliente recibirá por WhatsApp para validar la entrega.
@@ -313,6 +333,34 @@ export default function SalesFulfillmentPage() {
             placeholder="000000"
             style={{ fontFamily: 'monospace', letterSpacing: '4px' }}
           />
+        </Modal>
+      )}
+      {linksModal && (
+        <Modal
+          open
+          title="Envío despachado"
+          onClose={() => setLinksModal(null)}
+          footer={<Button variant="primary" onClick={() => setLinksModal(null)}>Cerrar</Button>}
+        >
+          <p style={{ marginBottom: '16px', color: 'var(--text-muted)' }}>
+            Compartí estos links con el cliente y el repartidor. OTP para validación: <strong style={{ fontFamily: 'monospace' }}>{linksModal.otpForAdmin}</strong>
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Seguimiento público</label>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <input readOnly value={linksModal.links.trackingUrl} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '13px' }} />
+                <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard.writeText(linksModal.links.trackingUrl); toast.success('Copiado'); }}>Copiar</Button>
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>App repartidor</label>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <input readOnly value={linksModal.links.driverUrl} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '13px' }} />
+                <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard.writeText(linksModal.links.driverUrl); toast.success('Copiado'); }}>Copiar</Button>
+              </div>
+            </div>
+          </div>
         </Modal>
       )}
     </PageContainer>

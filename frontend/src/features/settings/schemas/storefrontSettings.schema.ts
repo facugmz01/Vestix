@@ -31,7 +31,40 @@ export const storefrontSettingsSchema = z.object({
   tiktokUrl: z.string().catch(''),
   youtubeUrl: z.string().catch(''),
   xUrl: z.string().catch(''),
-  subdomain: z.string().optional()
+  subdomain: z.string().optional(),
+  deliverySettings: z.object({
+    enableGpsTracking: z.boolean().catch(true),
+    enableGeofence: z.boolean().catch(true),
+    geofenceRadiusMeters: z.number().catch(150),
+    requirePhotoOnDelivery: z.boolean().catch(false),
+    showMapToCustomer: z.boolean().catch(true),
+    carriers: z.object({
+      andreani: z.object({
+        enabled: z.boolean().catch(false),
+        apiKey: z.string().catch(''),
+        clientId: z.string().catch(''),
+        contract: z.string().catch(''),
+      }).catch({ enabled: false, apiKey: '', clientId: '', contract: '' }),
+      mercadoEnvios: z.object({
+        enabled: z.boolean().catch(false),
+        accessToken: z.string().catch(''),
+        userId: z.string().catch(''),
+      }).catch({ enabled: false, accessToken: '', userId: '' }),
+    }).catch({
+      andreani: { enabled: false, apiKey: '', clientId: '', contract: '' },
+      mercadoEnvios: { enabled: false, accessToken: '', userId: '' },
+    }),
+  }).catch({
+    enableGpsTracking: true,
+    enableGeofence: true,
+    geofenceRadiusMeters: 150,
+    requirePhotoOnDelivery: false,
+    showMapToCustomer: true,
+    carriers: {
+      andreani: { enabled: false, apiKey: '', clientId: '', contract: '' },
+      mercadoEnvios: { enabled: false, accessToken: '', userId: '' },
+    },
+  }),
 });
 
 export type StorefrontSettingsFormData = z.infer<typeof storefrontSettingsSchema>;

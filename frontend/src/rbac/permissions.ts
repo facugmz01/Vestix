@@ -28,6 +28,7 @@ export const Subjects = {
   SYNC:       'Sync',
   USERS:      'Users',
   LABELS:     'Labels',
+  DELIVERY:   'Delivery',
   ALL:        'all',
 } as const;
 export type Subject = (typeof Subjects)[keyof typeof Subjects];
@@ -45,6 +46,7 @@ export const Roles = {
   CASHIER:            'CASHIER',
   WAREHOUSE_OPERATOR: 'WAREHOUSE_OPERATOR',
   ECOMMERCE_MANAGER:  'ECOMMERCE_MANAGER',
+  DELIVERY_DRIVER:    'DELIVERY_DRIVER',
 } as const;
 export type Role = (typeof Roles)[keyof typeof Roles];
 
@@ -57,6 +59,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   CASHIER:            'Cajero',
   WAREHOUSE_OPERATOR: 'Operario de Depósito',
   ECOMMERCE_MANAGER:  'Gerente E-commerce',
+  DELIVERY_DRIVER:    'Repartidor',
 };
 
 /**
@@ -75,6 +78,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<Role, PermissionTuple[]> = {
     { action: Actions.READ,   subject: Subjects.LABELS     },
     { action: 'print',        subject: Subjects.LABELS     },
     { action: Actions.MANAGE, subject: Subjects.LABELS     },
+    { action: Actions.MANAGE, subject: Subjects.DELIVERY   },
   ],
   CASHIER: [
     { action: Actions.CREATE, subject: Subjects.SALES     },
@@ -91,6 +95,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<Role, PermissionTuple[]> = {
     { action: Actions.UPDATE, subject: Subjects.PURCHASING },
     { action: Actions.READ,   subject: Subjects.LABELS     },
     { action: 'print',        subject: Subjects.LABELS     },
+    { action: Actions.READ,   subject: Subjects.DELIVERY   },
+    { action: Actions.UPDATE, subject: Subjects.DELIVERY   },
   ],
   ECOMMERCE_MANAGER: [
     { action: Actions.READ,   subject: Subjects.CATALOG   },
@@ -99,5 +105,10 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<Role, PermissionTuple[]> = {
     { action: Actions.MANAGE, subject: Subjects.SALES     },
     { action: Actions.READ,   subject: Subjects.CUSTOMERS },
     { action: Actions.READ,   subject: Subjects.REPORTS   },
+    { action: Actions.MANAGE, subject: Subjects.DELIVERY  },
+  ],
+  DELIVERY_DRIVER: [
+    { action: Actions.READ,   subject: Subjects.DELIVERY  },
+    { action: Actions.UPDATE, subject: Subjects.DELIVERY  },
   ],
 };

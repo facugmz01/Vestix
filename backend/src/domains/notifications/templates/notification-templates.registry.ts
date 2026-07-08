@@ -23,13 +23,40 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
   {
     key: TemplateKey.ORDER_SHIPPED,
     channel: NotificationChannel.WHATSAPP,
-    body: `🚚 *¡Tu pedido está en camino!*\nHola {{customerName}}, tu pedido *#{{orderId}}* fue despachado con *{{courierName}}*.\nTracking: {{trackingNumber}}`,
+    body: `🚚 *¡Tu pedido está en camino!*\nHola {{customerName}}, tu pedido *#{{orderId}}* fue despachado con *{{courierName}}*.\n\n📍 Seguilo en vivo: {{trackingUrl}}\nTracking: {{trackingNumber}}`,
   },
   {
     key: TemplateKey.ORDER_SHIPPED,
     channel: NotificationChannel.EMAIL,
     subject: 'Tu pedido #{{orderId}} fue enviado 🚚',
-    body: `Hola {{customerName}},\n\nTu pedido viaja con {{courierName}}.\nNúmero de seguimiento: {{trackingNumber}}\n\n¡Que lo disfrutes!`,
+    body: `Hola {{customerName}},\n\nTu pedido viaja con {{courierName}}.\nSeguimiento en vivo: {{trackingUrl}}\nNúmero de tracking: {{trackingNumber}}\n\n¡Que lo disfrutes!`,
+  },
+
+  // ─── ORDER DELIVERED ───────────────────────────────────────────────────────
+  {
+    key: TemplateKey.ORDER_DELIVERED,
+    channel: NotificationChannel.WHATSAPP,
+    body: `✅ *¡Pedido entregado!*\nHola {{customerName}}, confirmamos la entrega de tu pedido *#{{orderId}}*.\n¡Gracias por tu compra! 🛍️`,
+  },
+  {
+    key: TemplateKey.ORDER_DELIVERED,
+    channel: NotificationChannel.EMAIL,
+    subject: 'Tu pedido #{{orderId}} fue entregado ✅',
+    body: `Hola {{customerName}},\n\nTu pedido #{{orderId}} fue entregado exitosamente.\n\nGracias por confiar en nosotros.`,
+  },
+
+  // ─── DELIVERY ARRIVED ──────────────────────────────────────────────────────
+  {
+    key: TemplateKey.DELIVERY_ARRIVED,
+    channel: NotificationChannel.WHATSAPP,
+    body: `📍 *El repartidor está cerca*\nHola {{customerName}}, el repartidor de tu pedido *#{{orderId}}* llegó a tu zona.\nTené a mano el código de entrega.`,
+  },
+
+  // ─── DELIVERY OTP ──────────────────────────────────────────────────────────
+  {
+    key: TemplateKey.DELIVERY_OTP,
+    channel: NotificationChannel.WHATSAPP,
+    body: `🔐 *Código de entrega — Pedido #{{orderId}}*\n\n*{{otpCode}}*\n\nEntregá este código al repartidor al recibir tu pedido. Válido por 30 minutos.`,
   },
 
   // ─── PAYMENT RECEIVED ──────────────────────────────────────────────────────

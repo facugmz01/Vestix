@@ -154,6 +154,8 @@ export function NotificationSettingsPanel() {
           <ToggleSwitch label="Alerta de Stock Bajo" {...register('notifyOnLowStock')} />
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
           <ToggleSwitch label="Transferencia entre Depósitos" {...register('notifyOnTransfer')} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <ToggleSwitch label="Envíos y Entregas" hint="Despacho, OTP, llegada del repartidor y confirmación de entrega." {...register('notifyOnDelivery')} />
           
           <div style={{ marginTop: '16px' }}>
             <Input type="number" label="Umbral de Stock Bajo (unidades)" {...register('lowStockThreshold', { valueAsNumber: true })} style={{ width: '120px' }} />

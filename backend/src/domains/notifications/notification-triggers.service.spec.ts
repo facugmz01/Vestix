@@ -24,6 +24,7 @@ const mockSettings = {
     notifyOnLowStock: true,
     notifyOnPurchase: true,
     notifyOnTransfer: true,
+    notifyOnDelivery: true,
     whatsappEnabled: true,
     lowStockThreshold: 5,
     smtpUser: 'admin@test.com',
@@ -141,6 +142,59 @@ describe('NotificationTriggersService', () => {
     expect(mockNotifications.notifyLowStock).toHaveBeenCalledWith(
       'admin@test.com',
       expect.objectContaining({ productName: 'Remera', quantity: '3' }),
+    );
+  });
+
+  it('should enqueue order shipped notification when notifyOnDelivery is enabled', async () => {
+    await service.onOrderShipped('order-1', {
+      customerName: 'María',
+      customerPhone: '5491122334455',
+      orderRef: 'ORDER',
+      courierName: 'Andreani',
+      trackingNumber: 'AR123',
+      trackingUrl: 'https://tienda.test/track/abc',
+    });
+
+    expect(mockNotifications.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: NotificationChannel.WHATSAPP,
+        templateKey: TemplateKey.ORDER_SHIPPED,
+        recipient: '5491122334455',
+        variables: expect.objectContaining({
+          trackingUrl: 'https://tienda.test/track/abc',
+        }),
+      }),
+    );
+  });
+
+  it('should skip delivery notifications when notifyOnDelivery is disabled', async () => {
+    mockSettings.getNotificationSettings.mockResolvedValueOnce({ notifyOnDelivery: false });
+
+    await service.onOrderShipped('order-1', {
+      customerName: 'María',
+      customerPhone: '5491122334455',
+      orderRef: 'ORDER',
+      courierName: 'Propio',
+      trackingNumber: 'X1',
+      trackingUrl: 'https://tienda.test/track/abc',
+    });
+
+    expect(mockNotifications.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('should enqueue delivery OTP via WhatsApp', async () => {
+    await service.onDeliveryOtp('order-1', {
+      customerPhone: '5491122334455',
+      orderRef: 'ORDER',
+      otpCode: '123456',
+    });
+
+    expect(mockNotifications.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        templateKey: TemplateKey.DELIVERY_OTP,
+        recipient: '5491122334455',
+        variables: { orderId: 'ORDER', otpCode: '123456' },
+      }),
     );
   });
 });

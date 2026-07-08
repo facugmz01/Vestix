@@ -4,6 +4,8 @@ export const NOTIFICATION_EVENT_LABELS: Record<string, string> = {
   SALE_CONFIRMED:                  'Venta Confirmada',
   ORDER_SHIPPED:                   'Pedido Enviado',
   ORDER_DELIVERED:                 'Pedido Entregado',
+  DELIVERY_ARRIVED:                'Repartidor en Zona',
+  DELIVERY_OTP:                    'Código de Entrega (OTP)',
   PAYMENT_RECEIVED:                'Pago Recibido',
   PURCHASE_ORDER_ISSUED:           'OC Emitida',
   GOODS_RECEIPT_RECEIVED:          'Recepción Mercadería',
@@ -30,7 +32,10 @@ export const NOTIFICATION_CHANNELS: { value: NotificationChannel; label: string 
 /** Variables alineadas con el registry del backend */
 export const TEMPLATE_VARIABLES_BY_EVENT: Record<string, string[]> = {
   SALE_CONFIRMED: ['{{customerName}}', '{{orderId}}', '{{total}}'],
-  ORDER_SHIPPED: ['{{customerName}}', '{{orderId}}', '{{courierName}}', '{{trackingNumber}}'],
+  ORDER_SHIPPED: ['{{customerName}}', '{{orderId}}', '{{courierName}}', '{{trackingNumber}}', '{{trackingUrl}}'],
+  ORDER_DELIVERED: ['{{customerName}}', '{{orderId}}'],
+  DELIVERY_ARRIVED: ['{{customerName}}', '{{orderId}}'],
+  DELIVERY_OTP: ['{{orderId}}', '{{otpCode}}'],
   PAYMENT_RECEIVED: ['{{customerName}}', '{{orderId}}', '{{amount}}', '{{receiptId}}'],
   LOW_STOCK_ALERT: ['{{productName}}', '{{sku}}', '{{quantity}}', '{{branchName}}'],
   SHIFT_CLOSING_DISCREPANCY: ['{{branchName}}', '{{cashierName}}', '{{registerName}}', '{{difference}}', '{{expected}}', '{{actual}}'],
@@ -58,6 +63,7 @@ export const DEFAULT_PREVIEW_VARIABLES: Record<string, string> = {
   branchName: 'Sucursal Centro',
   courierName: 'Andreani',
   trackingNumber: 'AR123456789',
+  trackingUrl: 'https://tienda.ejemplo.com/track/abc123',
   balance: '8.500,00',
   overdueAmount: '2.000,00',
   supplierName: 'Proveedor SA',

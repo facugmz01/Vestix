@@ -10,6 +10,7 @@ export const notificationSettingsSchema = z.object({
   notifyOnPurchase: z.boolean(),
   notifyOnLowStock: z.boolean(),
   notifyOnTransfer: z.boolean(),
+  notifyOnDelivery: z.boolean(),
   smtpHost: z.string().catch(''),
   smtpPort: z.number().catch(587),
   smtpUser: z.string().catch(''),

@@ -24,6 +24,8 @@ export enum TemplateKey {
   SALE_CONFIRMED                 = 'SALE_CONFIRMED',
   ORDER_SHIPPED                  = 'ORDER_SHIPPED',
   ORDER_DELIVERED                = 'ORDER_DELIVERED',
+  DELIVERY_ARRIVED                 = 'DELIVERY_ARRIVED',
+  DELIVERY_OTP                     = 'DELIVERY_OTP',
   PAYMENT_RECEIVED               = 'PAYMENT_RECEIVED',
 
   // ─── Stock & operations ────────────────────────────────────────────────

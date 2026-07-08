@@ -8,6 +8,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { useTrackingSse } from '@/hooks/useTrackingSse';
 import type { OrderTracking } from '@/api/shipping.api';
 
 const FULFILLMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -162,6 +163,14 @@ function OrderDetailView({ orderId }: { orderId: string }) {
     queryFn: () => storefrontOrdersApi.getOrderTracking(orderId),
   });
 
+  const { liveData, connected } = useTrackingSse(
+    tracking?.status === 'SHIPPED' ? `/api/storefront/my-orders/${orderId}/tracking/live` : null,
+    {
+      enabled: tracking?.status === 'SHIPPED',
+      onUpdate: () => queryClient.invalidateQueries({ queryKey: queryKeys.storefront.tracking(orderId) }),
+    },
+  );
+
   const confirmMutation = useMutation({
     mutationFn: (code: string) => storefrontOrdersApi.confirmDelivery(orderId, code),
     onSuccess: () => {
@@ -177,6 +186,9 @@ function OrderDetailView({ orderId }: { orderId: string }) {
 
   const statusInfo = getStatusDisplay(tracking.status);
   const progress = getTimelineProgress(tracking);
+
+  const mapLat = liveData?.lastLatitude ?? tracking.delivery?.lastLatitude;
+  const mapLng = liveData?.lastLongitude ?? tracking.delivery?.lastLongitude;
 
   return (
     <div>
@@ -199,12 +211,13 @@ function OrderDetailView({ orderId }: { orderId: string }) {
 
       <Timeline tracking={tracking} progress={progress} />
 
-      {tracking.delivery?.lastLatitude && tracking.delivery?.lastLongitude && (
+      {mapLat && mapLng && (
         <DeliveryMap
-          lat={tracking.delivery.lastLatitude}
-          lng={tracking.delivery.lastLongitude}
-          updatedAt={tracking.delivery.lastLocationAt}
-          driverName={tracking.delivery.driverName}
+          lat={mapLat}
+          lng={mapLng}
+          updatedAt={liveData?.lastLocationAt || tracking.delivery?.lastLocationAt}
+          driverName={tracking.delivery?.driverName}
+          live={connected}
         />
       )}
 
@@ -305,7 +318,7 @@ function Timeline({ tracking, progress }: { tracking: OrderTracking; progress: n
   );
 }
 
-function DeliveryMap({ lat, lng, updatedAt, driverName }: { lat: number; lng: number; updatedAt?: string; driverName?: string }) {
+function DeliveryMap({ lat, lng, updatedAt, driverName, live }: { lat: number; lng: number; updatedAt?: string; driverName?: string; live?: boolean }) {
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01}%2C${lat - 0.01}%2C${lng + 0.01}%2C${lat + 0.01}&layer=mapnik&marker=${lat}%2C${lng}`;
 
   return (
@@ -314,6 +327,7 @@ function DeliveryMap({ lat, lng, updatedAt, driverName }: { lat: number; lng: nu
         <Navigation size={16} color="#8b5cf6" />
         <span style={{ fontWeight: 700, fontSize: '14px' }}>
           Ubicación del repartidor{driverName ? `: ${driverName}` : ''}
+          {live && <span style={{ marginLeft: '8px', color: '#22c55e', fontSize: '12px' }}>● En vivo</span>}
         </span>
         {updatedAt && (
           <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#64748b' }}>

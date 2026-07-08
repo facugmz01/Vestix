@@ -80,6 +80,7 @@ export interface NotificationSettings {
   notifyOnPurchase: boolean;
   notifyOnLowStock: boolean;
   notifyOnTransfer: boolean;
+  notifyOnDelivery: boolean;
   smtpHost?: string;
   smtpPort?: number;
   smtpUser?: string;
@@ -115,6 +116,19 @@ export interface StorefrontSettings {
   subdomain?: string;
   allowedPaymentMethods?: string[];
   shippingMethods?: any[];
+  deliverySettings?: DeliverySettings;
+}
+
+export interface DeliverySettings {
+  enableGpsTracking: boolean;
+  enableGeofence: boolean;
+  geofenceRadiusMeters: number;
+  requirePhotoOnDelivery: boolean;
+  showMapToCustomer: boolean;
+  carriers?: {
+    andreani?: { enabled: boolean; apiKey?: string; clientId?: string; contract?: string };
+    mercadoEnvios?: { enabled: boolean; accessToken?: string; userId?: string };
+  };
 }
 
 export interface IntegrationSettings {
@@ -704,7 +718,7 @@ export class SettingsService implements OnModuleInit {
           notifications: {
             emailEnabled: false, smsEnabled: false, whatsappEnabled: false, pushEnabled: false,
             lowStockThreshold: 5, notifyOnSale: false, notifyOnPurchase: false,
-            notifyOnLowStock: true, notifyOnTransfer: false,
+            notifyOnLowStock: true, notifyOnTransfer: false, notifyOnDelivery: true,
             smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
             smsGatewayUrl: '', evolutionApiUrl: '', evolutionApiKey: '',
             evolutionInstance: 'store-main', fcmServerKey: '',
@@ -738,6 +752,17 @@ export class SettingsService implements OnModuleInit {
             transferCbu: '', acceptCash: false, shippingInfo: '',
             requireShippingData: 'optional', whatsapp: '',
             instagramUrl: '', facebookUrl: '', tiktokUrl: '', youtubeUrl: '', xUrl: '',
+            deliverySettings: {
+              enableGpsTracking: true,
+              enableGeofence: true,
+              geofenceRadiusMeters: 150,
+              requirePhotoOnDelivery: false,
+              showMapToCustomer: true,
+              carriers: {
+                andreani: { enabled: false, apiKey: '', clientId: '', contract: '' },
+                mercadoEnvios: { enabled: false, accessToken: '', userId: '' },
+              },
+            },
           },
           pwa: {
             appName: 'Mi Empresa', appShortName: 'Empresa',

@@ -4,6 +4,7 @@ import { notificationsApi } from '@/api/notifications.api';
 import { Button, Input, Modal } from '@/components/ui';
 import { toast } from 'react-hot-toast';
 import { Pencil, Check, X, MessageSquare, Mail, Smartphone, BellRing } from 'lucide-react';
+import { NOTIFICATION_EVENT_LABELS } from '@/features/notifications/constants';
 import { NotificationTemplate } from '@/types';
 
 export function NotificationTemplatesEditor() {
@@ -46,15 +47,7 @@ export function NotificationTemplatesEditor() {
     }
   };
 
-  const getEventName = (event: string) => {
-    switch (event) {
-      case 'ORDER_CONFIRMED': return 'Venta Confirmada';
-      case 'ORDER_SHIPPED': return 'Venta Despachada';
-      case 'PAYMENT_RECEIVED': return 'Pago Recibido';
-      case 'LOW_STOCK_ALERT': return 'Alerta de Stock Bajo';
-      default: return event;
-    }
-  };
+  const getEventName = (event: string) => NOTIFICATION_EVENT_LABELS[event] || event;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

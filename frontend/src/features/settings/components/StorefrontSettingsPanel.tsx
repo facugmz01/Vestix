@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Save, ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, MessageCircle, Share2, Globe, Plus, Trash2, Store } from 'lucide-react';
+import { Save, ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, MessageCircle, Share2, Globe, Plus, Trash2, Store, Navigation } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -29,7 +29,20 @@ export function StorefrontSettingsPanel() {
 
   const { register, control, handleSubmit, reset, formState: { isDirty } } = useForm<StorefrontSettingsFormData>({
     resolver: zodResolver(storefrontSettingsSchema),
-    defaultValues: { shippingMethods: [] }
+    defaultValues: {
+      shippingMethods: [],
+      deliverySettings: {
+        enableGpsTracking: true,
+        enableGeofence: true,
+        geofenceRadiusMeters: 150,
+        requirePhotoOnDelivery: false,
+        showMapToCustomer: true,
+        carriers: {
+          andreani: { enabled: false, apiKey: '', clientId: '', contract: '' },
+          mercadoEnvios: { enabled: false, accessToken: '', userId: '' },
+        },
+      },
+    },
   });
 
   const { fields: shippingFields, append: appendShipping, remove: removeShipping } = useFieldArray({
@@ -207,6 +220,46 @@ export function StorefrontSettingsPanel() {
               <option value="required">Obligatorio</option>
               <option value="none">No pedir</option>
             </select>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><Navigation size={18} /> Configuración de Delivery</h3>
+        </header>
+        <div className={styles.cardBody}>
+          <div className={clsx(styles.grid, styles.grid2)}>
+            <ToggleSwitch label="Tracking GPS en vivo" {...register('deliverySettings.enableGpsTracking')} />
+            <ToggleSwitch label="Mostrar mapa al cliente" {...register('deliverySettings.showMapToCustomer')} />
+            <ToggleSwitch label="Validación por geofence" {...register('deliverySettings.enableGeofence')} />
+            <ToggleSwitch label="Foto obligatoria al entregar" {...register('deliverySettings.requirePhotoOnDelivery')} />
+            <Input
+              type="number"
+              label="Radio geofence (metros)"
+              {...register('deliverySettings.geofenceRadiusMeters', { valueAsNumber: true })}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><Truck size={18} /> Carriers externos</h3>
+          <p className={styles.cardDescription}>Credenciales para Andreani y Mercado Envíos al despachar pedidos.</p>
+        </header>
+        <div className={styles.cardBody}>
+          <ToggleSwitch label="Andreani habilitado" {...register('deliverySettings.carriers.andreani.enabled')} />
+          <div className={clsx(styles.grid, styles.grid2)} style={{ marginTop: '12px' }}>
+            <Input label="API Key Andreani" type="password" {...register('deliverySettings.carriers.andreani.apiKey')} />
+            <Input label="Client ID" {...register('deliverySettings.carriers.andreani.clientId')} />
+            <Input label="Contrato" {...register('deliverySettings.carriers.andreani.contract')} />
+          </div>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+          <ToggleSwitch label="Mercado Envíos habilitado" {...register('deliverySettings.carriers.mercadoEnvios.enabled')} />
+          <div className={clsx(styles.grid, styles.grid2)} style={{ marginTop: '12px' }}>
+            <Input label="Access Token" type="password" {...register('deliverySettings.carriers.mercadoEnvios.accessToken')} />
+            <Input label="User ID" {...register('deliverySettings.carriers.mercadoEnvios.userId')} />
           </div>
         </div>
       </section>

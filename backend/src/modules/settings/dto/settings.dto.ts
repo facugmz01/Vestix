@@ -171,6 +171,10 @@ export class NotificationSettingsDto {
   notifyOnTransfer?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  notifyOnDelivery?: boolean;
+
+  @IsOptional()
   @IsString()
   smtpHost?: string;
 
@@ -325,6 +329,17 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsString() subdomain?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) allowedPaymentMethods?: string[];
   @IsOptional() @IsArray() shippingMethods?: any[];
+  @IsOptional() deliverySettings?: {
+    enableGpsTracking?: boolean;
+    enableGeofence?: boolean;
+    geofenceRadiusMeters?: number;
+    requirePhotoOnDelivery?: boolean;
+    showMapToCustomer?: boolean;
+    carriers?: {
+      andreani?: { enabled?: boolean; apiKey?: string; clientId?: string; contract?: string };
+      mercadoEnvios?: { enabled?: boolean; accessToken?: string; userId?: string };
+    };
+  };
 }
 
 export class PwaSettingsDto {

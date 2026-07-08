@@ -29,9 +29,13 @@ export const PURCHASING_TABS: TabItem[] = [
   { id: 'suppliers', label: 'Proveedores', to: '/admin/suppliers', icon: Users },
 ];
 
+export const DELIVERY_TABS: TabItem[] = [
+  { id: 'shipments', label: 'Envíos', to: '/admin/delivery', icon: Package, end: true },
+  { id: 'carriers', label: 'Carriers', to: '/admin/delivery/carriers', icon: Truck },
+];
+
 export const SALES_TABS: TabItem[] = [
   { id: 'history', label: 'Historial de Ventas', to: '/admin/sales', icon: ShoppingCart, end: true },
-  { id: 'fulfillment', label: 'Envíos', to: '/admin/sales/fulfillment', icon: Package },
   { id: 'returns', label: 'Devoluciones', to: '/admin/returns', icon: History },
 ];
 
