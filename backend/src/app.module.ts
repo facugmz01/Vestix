@@ -30,8 +30,6 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
-import { TransfersModule } from './modules/transfers/transfers.module';
-import { TreasuryModule } from './modules/treasury/treasury.module';
 import { ShippingModule } from './domains/shipping/shipping.module';
 
 @Module({
@@ -89,10 +87,9 @@ import { ShippingModule } from './domains/shipping/shipping.module';
     ReportsModule,
     LocationsModule,
     InventoryModule,
-    // PurchasingModule removed: legacy routes conflicted with ProcurementModule
-    // and used RolesGuard incompatible with the current JWT/RBAC model.
-    TransfersModule,
-    TreasuryModule,
+    // TransfersModule / TreasuryModule removed: duplicate routes handled by
+    // domains/logistics (inventory/transfers) and domains/finance (treasury/shifts)
+    // with PermissionsGuard. Legacy modules/* controllers kept for reference only.
     ShippingModule,
   ],
 })

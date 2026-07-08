@@ -5,6 +5,7 @@ import {
   ANY_PERMISSIONS_KEY,
   RequiredPermission,
 } from '../decorators/require-permissions.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { RbacService } from '../rbac.service';
 
 @Injectable()
@@ -15,6 +16,12 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+
     const anyPermissions = this.reflector.getAllAndOverride<RequiredPermission[][]>(
       ANY_PERMISSIONS_KEY,
       [context.getHandler(), context.getClass()],

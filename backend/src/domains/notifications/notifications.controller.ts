@@ -1,9 +1,13 @@
 import {
   Controller, Get, Post, Body, Query, Param,
   Patch, ParseIntPipe, DefaultValuePipe, Req, Headers, HttpCode, HttpStatus, UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { Public } from '../../core/rbac/decorators/public.decorator';
+import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { NotificationsService } from './notifications.service';
 import { WhatsAppEvolutionService } from './channels/whatsapp-evolution.service';
 import { StaffInboxService } from './staff-inbox.service';
@@ -63,6 +67,7 @@ export class PreviewTemplateDto {
 // ─── Controller ──────────────────────────────────────────────────────────────
 
 @Controller('notifications')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class NotificationsController {
   constructor(
     private readonly notificationsService: NotificationsService,
@@ -252,6 +257,7 @@ export class NotificationsController {
    * Evolution API delivery callbacks — marks recent SENT logs as DELIVERED.
    */
   @Post('whatsapp/webhook')
+  @Public()
   @HttpCode(HttpStatus.OK)
   async whatsAppWebhook(
     @Body() body: any,

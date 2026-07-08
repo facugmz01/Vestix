@@ -2,53 +2,57 @@ import { Body, Controller, Post, Get, Param, Query, UseGuards, Request } from '@
 import { TreasuryService } from './treasury.service';
 import { OpenShiftDto, CloseShiftDto } from './dto/treasury.dto';
 import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
-import { RolesGuard } from '../../core/rbac/roles.guard';
-import { Roles } from '../../core/rbac/roles.decorator';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
+/**
+ * @deprecated Superseded by domains/finance FinanceController (`/finance/treasury/shifts`).
+ * Kept for reference; not registered in AppModule.
+ */
 @Controller('finance/treasury/shifts')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class TreasuryController {
   constructor(private readonly treasuryService: TreasuryService) {}
 
   @Get()
-  @Roles('Store Manager', 'Backoffice Admin', 'Cashier')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
   findAllShifts(@Query() query: any) {
     return this.treasuryService.findAllShifts(query);
   }
 
   @Get('active')
-  @Roles('Store Manager', 'Backoffice Admin', 'Cashier')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
   getActiveShift(@Request() req: any) {
-    return this.treasuryService.getActiveShift(req.user.sub);
+    return this.treasuryService.getActiveShift(req.user.userId);
   }
 
   @Get(':id')
-  @Roles('Store Manager', 'Backoffice Admin', 'Cashier')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
   findOneShift(@Param('id') id: string) {
     return this.treasuryService.findOneShift(id);
   }
 
   @Get(':id/movements')
-  @Roles('Store Manager', 'Backoffice Admin', 'Cashier')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
   getShiftMovements(@Param('id') id: string) {
     return this.treasuryService.getShiftMovements(id);
   }
 
   @Post(':id/movements')
-  @Roles('Store Manager', 'Backoffice Admin', 'Cashier')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
   createMovement(@Param('id') id: string, @Body() payload: any, @Request() req: any) {
-    return this.treasuryService.createMovement(id, payload, req.user.sub);
+    return this.treasuryService.createMovement(id, payload, req.user.userId);
   }
 
   @Post('open')
-  @Roles('Store Manager', 'Backoffice Admin', 'Cashier')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
   openShift(@Body() dto: OpenShiftDto, @Request() req: any) {
-    return this.treasuryService.openShift(dto, req.user.sub);
+    return this.treasuryService.openShift(dto, req.user.userId);
   }
 
   @Post('close')
-  @Roles('Store Manager', 'Backoffice Admin', 'Cashier')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
   closeShift(@Body() dto: CloseShiftDto, @Request() req: any) {
-    return this.treasuryService.closeShift(dto, req.user.sub);
+    return this.treasuryService.closeShift(dto, req.user.userId);
   }
 }
