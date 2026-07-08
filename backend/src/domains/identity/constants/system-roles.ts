@@ -27,6 +27,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, { action: string; subject:
     { action: 'read', subject: 'Finance' },
     { action: 'manage', subject: 'Users' },
     { action: 'manage', subject: 'Settings' },
+    { action: 'manage', subject: 'Branch' },
+    { action: 'read', subject: 'System' },
     { action: 'read', subject: 'Labels' },
     { action: 'print', subject: 'Labels' },
     { action: 'manage', subject: 'Labels' },

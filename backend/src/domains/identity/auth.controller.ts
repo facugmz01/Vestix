@@ -56,13 +56,17 @@ export class AuthController {
   }
 
   private transformUser(user: any) {
+    const roleName =
+      typeof user.role === 'string' ? user.role : user.role?.name || 'USER';
+    const permissions = user.permissions ?? user.role?.permissions ?? [];
+
     return {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
       branchId: user.branchId,
-      role: user.role?.name || 'USER',
-      permissions: user.role?.permissions || []
+      role: roleName,
+      permissions,
     };
   }
 }
