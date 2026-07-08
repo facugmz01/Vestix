@@ -107,9 +107,18 @@ export class StorefrontController {
     const reqUser = (req as any).user;
     let customerId: string | null = reqUser?.customerId || null;
 
-    // If no authenticated customer, look up or create by email/taxId (guest checkout)
+    // If no authenticated customer, look up or create by phone/email/taxId (guest checkout)
     if (!customerId && dto.customerInfo) {
       const conditions: any[] = [];
+      if (dto.customerInfo.phone) {
+        const digits = String(dto.customerInfo.phone).replace(/\D/g, '');
+        if (digits) {
+          conditions.push({ phone: digits });
+          if (!digits.startsWith('54') && digits.length >= 8) {
+            conditions.push({ phone: `549${digits}` });
+          }
+        }
+      }
       if (dto.customerInfo.email) conditions.push({ email: dto.customerInfo.email });
       if (dto.customerInfo.documentNumber) conditions.push({ taxId: dto.customerInfo.documentNumber });
 
@@ -125,8 +134,30 @@ export class StorefrontController {
             phone: dto.customerInfo.phone || null,
             taxId: dto.customerInfo.documentNumber || null,
             type: 'INDIVIDUAL',
+            source: 'STOREFRONT',
           },
         });
+      } else {
+        // Enrich profile with checkout data when fields are still empty
+        const patch: Record<string, string | null> = {};
+        const checkoutName = `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim();
+        if (checkoutName && (!customer.fullName || customer.fullName.startsWith('Cliente +'))) {
+          patch.fullName = checkoutName;
+        }
+        if (dto.customerInfo.email && !customer.email) patch.email = dto.customerInfo.email;
+        if (dto.customerInfo.phone && !customer.phone) patch.phone = dto.customerInfo.phone;
+        if (dto.customerInfo.documentNumber && !customer.taxId) patch.taxId = dto.customerInfo.documentNumber;
+        if (customer.source === 'ADMIN' || !customer.source) {
+          // leave ADMIN as-is if they already existed in backoffice
+        } else if (customer.source !== 'STOREFRONT') {
+          patch.source = 'STOREFRONT';
+        }
+        if (Object.keys(patch).length > 0) {
+          customer = await this.prisma.customer.update({
+            where: { id: customer.id },
+            data: patch,
+          });
+        }
       }
 
       customerId = customer.id;

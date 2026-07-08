@@ -355,6 +355,8 @@ model PriceHistory {
 model Customer {
   id          String      @id @default(uuid())
   type        String      @default("INDIVIDUAL") // INDIVIDUAL | BUSINESS
+  /// Origin of the customer record: ADMIN | STOREFRONT | POS | IMPORT
+  source      String      @default("ADMIN")
   fullName    String
   taxId       String?     @unique
   email       String?
@@ -368,6 +370,8 @@ model Customer {
   updatedAt   DateTime    @updatedAt
   SaleOrder   SaleOrder[]
 
+  @@index([source])
+  @@index([phone])
   @@schema("sales")
 }
 

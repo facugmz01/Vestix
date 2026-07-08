@@ -30,6 +30,12 @@ export class CustomersController {
     return this.customersService.findAll(query);
   }
 
+  @Get(':id/history')
+  @RequirePermissions({ action: 'read', subject: 'Customers' })
+  getHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.customersService.getHistory(id);
+  }
+
   @Get(':id')
   @RequirePermissions({ action: 'read', subject: 'Customers' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
