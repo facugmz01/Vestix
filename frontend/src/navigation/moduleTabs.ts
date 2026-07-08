@@ -31,7 +31,7 @@ export const PURCHASING_TABS: TabItem[] = [
 
 export const SALES_TABS: TabItem[] = [
   { id: 'history', label: 'Historial de Ventas', to: '/admin/sales', icon: ShoppingCart, end: true },
-  { id: 'fulfillment', label: 'Pick & Pack', to: '/admin/sales/fulfillment', icon: Package },
+  { id: 'fulfillment', label: 'Envíos', to: '/admin/sales/fulfillment', icon: Package },
   { id: 'returns', label: 'Devoluciones', to: '/admin/returns', icon: History },
 ];
 

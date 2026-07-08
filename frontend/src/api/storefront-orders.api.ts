@@ -39,4 +39,10 @@ export const storefrontOrdersApi = {
   // Get specific order detail and status
   getMyOrder: (id: string) =>
     get<SaleOrder>(`/storefront/my-orders/${id}`),
+
+  getOrderTracking: (id: string) =>
+    get<import('./shipping.api').OrderTracking>(`/storefront/my-orders/${id}/tracking`),
+
+  confirmDelivery: (id: string, otp: string) =>
+    post(`/storefront/my-orders/${id}/confirm-delivery`, { otp }),
 };

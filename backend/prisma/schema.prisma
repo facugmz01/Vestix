@@ -403,6 +403,12 @@ model SaleOrder {
   issueInvoice Boolean  @default(true)
   createdAt    DateTime
 
+  // E-commerce shipping
+  shippingMethodId   String?
+  shippingMethodName String?
+  shippingCost       Float            @default(0)
+  shippingAddress    ShippingAddress?
+
   fulfillment OrderFulfillment?
   syncedAt    DateTime          @default(now())
 
@@ -420,6 +426,22 @@ model SaleOrder {
   @@index([paymentMethod])
   @@index([status])
   @@index([syncedAt])
+  @@schema("sales")
+}
+
+model ShippingAddress {
+  id          String    @id @default(uuid())
+  saleOrderId String    @unique
+  saleOrder   SaleOrder @relation(fields: [saleOrderId], references: [id], onDelete: Cascade)
+  fullName    String
+  phone       String?
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  notes       String?
+  createdAt   DateTime  @default(now())
+
   @@schema("sales")
 }
 
@@ -1045,7 +1067,47 @@ model OrderFulfillment {
   deliveredAt    DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  delivery       Delivery?
 
+  @@schema("core")
+}
+
+model Delivery {
+  id                    String           @id @default(uuid())
+  fulfillmentId         String           @unique
+  fulfillment           OrderFulfillment @relation(fields: [fulfillmentId], references: [id], onDelete: Cascade)
+  status                String           @default("PENDING") // PENDING | ASSIGNED | IN_TRANSIT | ARRIVED | DELIVERED | FAILED
+  driverName            String?
+  driverPhone           String?
+  dispatchedAt          DateTime?
+  estimatedArrival      DateTime?
+  deliveryCode          String?
+  deliveryCodeExpiresAt DateTime?
+  lastLatitude          Float?
+  lastLongitude         Float?
+  lastLocationAt        DateTime?
+  proofPhotoUrl         String?
+  failureReason         String?
+  notes                 String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  validations           DeliveryValidation[]
+
+  @@index([status])
+  @@schema("core")
+}
+
+model DeliveryValidation {
+  id         String    @id @default(uuid())
+  deliveryId String
+  delivery   Delivery  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  method     String    // OTP | MANUAL | CUSTOMER_CONFIRM
+  status     String    // PENDING | PASSED | FAILED
+  metadata   Json      @default("{}")
+  validatedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([deliveryId])
   @@schema("core")
 }
 

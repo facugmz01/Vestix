@@ -1,73 +1,148 @@
 import { SALES_TABS } from '@/navigation/moduleTabs';
-import { useQuery } from '@tanstack/react-query';
-import { Package, ShoppingBag } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Package, ShoppingBag, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 
-import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
+import {
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, Modal, Input
 } from '@/components/ui';
 
-import { salesApi } from '@/api/sales.api';
+import { shippingApi, type FulfillmentListItem } from '@/api/shipping.api';
 import { queryKeys } from '@/api/queryKeys';
-import { SaleDetailDrawer } from '@/features/sales/components/SaleDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 
 const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
   PENDING_PAYMENT: 'Pago pendiente',
-  CONFIRMED: 'Confirmado',
-  READY_FOR_PICKUP: 'Listo para retiro',
+  PAID: 'Pagado',
+  PICKING: 'En preparación',
+  PACKED: 'Empaquetado',
+  SHIPPED: 'En tránsito',
+  DELIVERED: 'Entregado',
+  CANCELLED: 'Cancelado',
 };
 
+const STATUS_FILTERS = [
+  { value: 'PAID', label: 'Por preparar (Pagados)' },
+  { value: 'PACKED', label: 'Empaquetados' },
+  { value: 'SHIPPED', label: 'En tránsito' },
+  { value: 'DELIVERED', label: 'Entregados' },
+  { value: 'PENDING_PAYMENT', label: 'Pago pendiente' },
+];
+
 export default function SalesFulfillmentPage() {
-  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: 'CONFIRMED' }, { defaultPageSize: 20 });
+  const { page, pageSize, filters, setPage, setFilter } = useListPage({ status: 'PAID' }, { defaultPageSize: 20 });
+  const queryClient = useQueryClient();
 
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [dispatchModal, setDispatchModal] = useState<FulfillmentListItem | null>(null);
+  const [completeModal, setCompleteModal] = useState<FulfillmentListItem | null>(null);
+  const [driverName, setDriverName] = useState('');
+  const [driverPhone, setDriverPhone] = useState('');
+  const [courierName, setCourierName] = useState('Propio');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [otp, setOtp] = useState('');
+  const [locationOrderId, setLocationOrderId] = useState<string | null>(null);
 
-  const statusFilter = filters.status;
+  const statusFilter = filters.status as string;
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: queryKeys.sales.all({ page, pageSize, search, status: statusFilter }),
-    queryFn: () => salesApi.getSales({ page, pageSize, search, status: statusFilter }),
+    queryKey: queryKeys.orders.deliveries({ page, pageSize, status: statusFilter }),
+    queryFn: () => shippingApi.listDeliveries({ page, pageSize, status: statusFilter }),
   });
 
-  const updateStatus = async (id: string, status: string) => {
-    try {
-      await salesApi.updateStatus(id, status);
-      toast.success('Pedido actualizado a: ' + status);
-      refetch();
-    } catch (err: any) {
-      toast.error('Error al actualizar estado');
-    }
+  const dispatchMutation = useMutation({
+    mutationFn: ({ orderId, dto }: { orderId: string; dto: Parameters<typeof shippingApi.dispatch>[1] }) =>
+      shippingApi.dispatch(orderId, dto),
+    onSuccess: () => {
+      toast.success('Pedido despachado. Se generó código OTP para el cliente.');
+      setDispatchModal(null);
+      resetDispatchForm();
+      queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
+    },
+    onError: () => toast.error('Error al despachar el pedido'),
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: ({ orderId, otpCode }: { orderId: string; otpCode: string }) =>
+      shippingApi.completeDelivery(orderId, otpCode),
+    onSuccess: () => {
+      toast.success('Entrega confirmada');
+      setCompleteModal(null);
+      setOtp('');
+      queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
+    },
+    onError: () => toast.error('Código incorrecto o pedido no válido'),
+  });
+
+  const locationMutation = useMutation({
+    mutationFn: ({ orderId, lat, lng }: { orderId: string; lat: number; lng: number }) =>
+      shippingApi.updateLocation(orderId, lat, lng),
+    onSuccess: () => {
+      toast.success('Ubicación GPS actualizada');
+      setLocationOrderId(null);
+      queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
+    },
+    onError: () => toast.error('No se pudo actualizar la ubicación'),
+  });
+
+  const resetDispatchForm = () => {
+    setDriverName('');
+    setDriverPhone('');
+    setCourierName('Propio');
+    setTrackingNumber('');
   };
 
-  const handleView = (id: string) => { setSelectedSaleId(id); setDetailOpen(true); };
-
-  // Filter to show mostly web orders
-  const sales = data?.data?.filter(s => s.source === 'ECOMMERCE') ?? [];
+  const fulfillments = data?.data ?? [];
 
   const getStatusColor = (s: string) => {
     switch (s) {
       case 'PENDING_PAYMENT': return 'yellow';
-      case 'CONFIRMED': return 'blue';
-      case 'READY_FOR_PICKUP': return 'purple';
+      case 'PAID': return 'blue';
+      case 'PICKING': return 'blue';
+      case 'PACKED': return 'purple';
+      case 'SHIPPED': return 'purple';
+      case 'DELIVERED': return 'green';
       default: return 'gray';
     }
+  };
+
+  const handleUpdateGps = (orderId: string) => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocalización no disponible en este navegador');
+      return;
+    }
+    setLocationOrderId(orderId);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        locationMutation.mutate({
+          orderId,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => {
+        toast.error('No se pudo obtener la ubicación GPS');
+        setLocationOrderId(null);
+      },
+      { enableHighAccuracy: true },
+    );
   };
 
   return (
     <PageContainer
       tabs={<Tabs items={SALES_TABS} />}
-      title="Pick & Pack (Preparación Tienda Web)" 
-      subtitle="Visualiza y prepara los pedidos provenientes del e-commerce."
+      title="Envíos y Despacho"
+      subtitle="Gestioná pedidos web: preparación, despacho, tracking GPS y validación de entrega."
     >
-      <FiltersBar actions={<Badge color="blue">{sales.length} pedidos web</Badge>}>
-        <SearchInput placeholder="Buscar por ID..." onSearch={setSearch} />
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
-          <option value="CONFIRMED">Por Preparar (Confirmados)</option>
-          <option value="READY_FOR_PICKUP">Listos para Retiro / Envío</option>
-          <option value="PENDING_PAYMENT">Pago Pendiente</option>
+      <FiltersBar actions={<Badge color="blue">{data?.total ?? 0} envíos</Badge>}>
+        <select
+          value={statusFilter}
+          onChange={e => { setFilter('status', e.target.value); setPage(1); }}
+          style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}
+        >
+          {STATUS_FILTERS.map(f => (
+            <option key={f.value} value={f.value}>{f.label}</option>
+          ))}
         </select>
       </FiltersBar>
 
@@ -76,80 +151,169 @@ export default function SalesFulfillmentPage() {
           <TableSkeleton rows={8} />
         ) : error ? (
           <ApiErrorDisplay error={error} onRetry={refetch} />
-        ) : sales.length === 0 ? (
-          <EmptyState 
+        ) : fulfillments.length === 0 ? (
+          <EmptyState
             icon={<ShoppingBag size={40} />}
-            title="Sin pedidos web pendientes" 
-            message={`No hay pedidos en estado ${statusFilter} para armar.`}
+            title="Sin pedidos en este estado"
+            message={`No hay envíos con estado ${FULFILLMENT_STATUS_LABELS[statusFilter] || statusFilter}.`}
           />
         ) : (
           <Table
             keyField="id"
-            data={sales}
+            data={fulfillments}
             columns={[
-              { 
+              {
                 key: 'id',
-                header: 'ID / Fecha', 
-                render: (s: any) => (
+                header: 'ID / Fecha',
+                render: (f: FulfillmentListItem) => (
                   <div>
-                    <div style={{ fontWeight: 600 }}>{s.id.split('-')[0]}</div>
+                    <div style={{ fontWeight: 600 }}>{f.saleOrderId.split('-')[0]}</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      {new Date(s.createdAt).toLocaleString()}
+                      {new Date(f.saleOrder.createdAt).toLocaleString()}
                     </div>
                   </div>
-                )
+                ),
               },
-              { 
+              {
                 key: 'customer',
-                header: 'Cliente', 
-                render: (s: any) => s.customerName ? `${s.customerName}` : 'Consumidor Final'
+                header: 'Cliente',
+                render: (f: FulfillmentListItem) => f.saleOrder.customer?.fullName || 'Consumidor Final',
               },
-              { 
-                key: 'items',
-                header: 'Artículos', 
-                render: (s: any) => `${s.lines?.reduce((acc: number, l: any) => acc + l.quantity, 0) || 0} ítems`
-              },
-              { 
+              {
                 key: 'shipping',
-                header: 'Entrega', 
-                render: (s: any) => <Badge color="blue">Tienda Online</Badge>
+                header: 'Envío',
+                render: (f: FulfillmentListItem) => (
+                  <div>
+                    <Badge color="blue">{f.saleOrder.shippingMethodName || 'Retiro'}</Badge>
+                    {f.saleOrder.shippingAddress && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        {f.saleOrder.shippingAddress.city}
+                      </div>
+                    )}
+                  </div>
+                ),
               },
-              { 
+              {
                 key: 'status',
-                header: 'Estado', 
-                render: (s: any) => <StatusChip label={FULFILLMENT_STATUS_LABELS[s.status] || s.status} color={getStatusColor(s.status) as any} />
+                header: 'Estado',
+                render: (f: FulfillmentListItem) => (
+                  <StatusChip
+                    label={FULFILLMENT_STATUS_LABELS[f.status] || f.status}
+                    color={getStatusColor(f.status) as any}
+                  />
+                ),
+              },
+              {
+                key: 'tracking',
+                header: 'Tracking',
+                render: (f: FulfillmentListItem) => (
+                  <div style={{ fontSize: '13px' }}>
+                    {f.trackingNumber || '—'}
+                    {f.delivery?.dispatchedAt && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        Despachado: {new Date(f.delivery.dispatchedAt).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                ),
               },
               {
                 key: 'actions',
                 header: 'Acciones',
-                render: (s: any) => (
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button variant="secondary" size="sm" onClick={() => handleView(s.id)}>Detalle</Button>
-                    {s.status === 'CONFIRMED' && (
-                      <Button variant="primary" size="sm" onClick={() => updateStatus(s.id, 'READY_FOR_PICKUP')}>
-                        Listo para Retiro
+                render: (f: FulfillmentListItem) => (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {['PAID', 'PICKING', 'PACKED'].includes(f.status) && (
+                      <Button variant="primary" size="sm" onClick={() => setDispatchModal(f)}>
+                        <Truck size={14} /> Despachar
                       </Button>
                     )}
-                    {s.status === 'READY_FOR_PICKUP' && (
-                      <Button variant="primary" size="sm" onClick={() => updateStatus(s.id, 'DELIVERED')}>
-                        Entregar al Cliente
-                      </Button>
+                    {f.status === 'SHIPPED' && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          loading={locationOrderId === f.saleOrderId}
+                          onClick={() => handleUpdateGps(f.saleOrderId)}
+                        >
+                          <Package size={14} /> GPS
+                        </Button>
+                        <Button variant="primary" size="sm" onClick={() => setCompleteModal(f)}>
+                          Validar entrega
+                        </Button>
+                      </>
                     )}
                   </div>
-                )
-              }
+                ),
+              },
             ]}
           />
         )}
       </Section>
 
-      {/* Sale Detail Drawer */}
-      {selectedSaleId && (
-        <SaleDetailDrawer
-          open={detailOpen}
-          saleId={selectedSaleId}
-          onClose={() => setDetailOpen(false)}
-        />
+      {dispatchModal && (
+        <Modal
+          open
+          title={`Despachar pedido ${dispatchModal.saleOrderId.split('-')[0]}`}
+          onClose={() => { setDispatchModal(null); resetDispatchForm(); }}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setDispatchModal(null)}>Cancelar</Button>
+              <Button
+                variant="primary"
+                loading={dispatchMutation.isPending}
+                disabled={!driverName.trim()}
+                onClick={() => dispatchMutation.mutate({
+                  orderId: dispatchModal.saleOrderId,
+                  dto: { driverName, driverPhone, courierName, trackingNumber },
+                })}
+              >
+                Confirmar despacho
+              </Button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <Input label="Repartidor *" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre del repartidor" />
+            <Input label="Teléfono repartidor" value={driverPhone} onChange={e => setDriverPhone(e.target.value)} placeholder="54911..." />
+            <Input label="Courier" value={courierName} onChange={e => setCourierName(e.target.value)} placeholder="Propio / Andreani / etc." />
+            <Input label="Número de tracking" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Opcional" />
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+              Al despachar se generará un código OTP de 6 dígitos que el cliente recibirá por WhatsApp para validar la entrega.
+            </p>
+          </div>
+        </Modal>
+      )}
+
+      {completeModal && (
+        <Modal
+          open
+          title="Validar entrega con OTP"
+          onClose={() => { setCompleteModal(null); setOtp(''); }}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setCompleteModal(null)}>Cancelar</Button>
+              <Button
+                variant="primary"
+                loading={completeMutation.isPending}
+                disabled={otp.length !== 6}
+                onClick={() => completeMutation.mutate({ orderId: completeModal.saleOrderId, otpCode: otp })}
+              >
+                Confirmar entrega
+              </Button>
+            </>
+          }
+        >
+          <p style={{ marginBottom: '16px', color: 'var(--text-muted)' }}>
+            Ingresá el código de 6 dígitos que se envió al cliente al despachar el pedido.
+          </p>
+          <Input
+            label="Código OTP"
+            value={otp}
+            onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="000000"
+            style={{ fontFamily: 'monospace', letterSpacing: '4px' }}
+          />
+        </Modal>
       )}
     </PageContainer>
   );
