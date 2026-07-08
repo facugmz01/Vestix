@@ -3,6 +3,13 @@ export enum CustomerType {
   BUSINESS = 'BUSINESS',     // B2B wholesale client
 }
 
+export enum CustomerSource {
+  ADMIN = 'ADMIN',
+  STOREFRONT = 'STOREFRONT',
+  POS = 'POS',
+  IMPORT = 'IMPORT',
+}
+
 export interface CustomerCredit {
   limit: number;     // Maximum allowed debt
   used: number;      // Current outstanding debt
@@ -13,6 +20,7 @@ export interface CustomerCredit {
 export interface Customer {
   id: string;
   type: CustomerType;
+  source: CustomerSource;
   fullName: string;
   taxId?: string; // DNI, CUIT, or SSN for official electronic invoices
   email?: string;

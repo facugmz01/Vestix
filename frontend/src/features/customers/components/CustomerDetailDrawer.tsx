@@ -41,6 +41,8 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
               <Badge color={customer.type === 'BUSINESS' ? 'blue' : 'gray'}>
                 {customer.type === 'BUSINESS' ? 'B2B (Empresa)' : 'B2C (Final)'}
               </Badge>
+              {customer.source === 'STOREFRONT' && <Badge color="green">Tienda online</Badge>}
+              {customer.source === 'POS' && <Badge color="blue">POS</Badge>}
               {customer.credit.onHold && <StatusChip label="Crédito Retenido" color="red" size="sm" />}
             </div>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
@@ -115,6 +117,7 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
                 columns={[
                   { key: 'date', header: 'Fecha', render: (h) => new Date(h.createdAt).toLocaleDateString() },
                   { key: 'id', header: 'Ticket / Factura', render: (h) => <span style={{ fontFamily: 'monospace' }}>#{h.id.slice(-6)}</span> },
+                  { key: 'source', header: 'Canal', render: (h) => <Badge color={h.source === 'ECOMMERCE' ? 'green' : 'gray'}>{h.source === 'ECOMMERCE' ? 'Tienda' : h.source}</Badge> },
                   { key: 'total', header: 'Total', render: (h) => <strong>{formatCurrency(h.grandTotal)}</strong> },
                   { key: 'method', header: 'Método', render: (h) => <Badge color="gray">{h.paymentMethod}</Badge> },
                   { key: 'action', header: '', render: () => <Button variant="ghost" size="sm"><ExternalLink size={14} /></Button> }
