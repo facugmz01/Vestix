@@ -146,7 +146,7 @@ export class InventoryService {
 
   async reserveStock(variantId: string, warehouseId: string, branchId: string, quantity: number, orderId: string, tx?: any) {
     const prismaClient = tx || this.prisma;
-    const stock = await prismaClient.stockLevel.findFirst({
+    let stock = await prismaClient.stockLevel.findFirst({
       where: { variantId, warehouseId },
       orderBy: { availableQuantity: 'desc' }
     });
@@ -168,6 +168,17 @@ export class InventoryService {
       quantity,
       referenceId: orderId
     }, tx);
+
+    // recordMovement may have created the StockLevel when allowNegativeStock is on
+    if (!stock) {
+      stock = await prismaClient.stockLevel.findFirst({
+        where: { variantId, warehouseId },
+        orderBy: { availableQuantity: 'desc' },
+      });
+    }
+    if (!stock) {
+      throw new BadRequestException(`No se pudo resolver el nivel de stock para la variante ${variantId}.`);
+    }
 
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15); // Default 15 minutes TTL
@@ -259,30 +270,167 @@ export class InventoryService {
     });
   }
 
+  /**
+   * Manual stock adjustment from the admin UI (ADD / SUBTRACT / SET).
+   * SET targets physicalQuantity (counted units on shelf), consistent with processStockAudit.
+   * ADD/SUBTRACT change physical + available by the same delta.
+   */
   async adjustStock(dto: { variantId: string; warehouseId: string; quantity: number; type: 'ADD' | 'SUBTRACT' | 'SET'; reason: string }) {
-    const stock = await this.prisma.stockLevel.findFirst({
-      where: { variantId: dto.variantId, warehouseId: dto.warehouseId }
+    if (!dto.reason?.trim()) {
+      throw new BadRequestException('El motivo del ajuste es obligatorio.');
+    }
+    if (dto.quantity < 0 || (dto.type !== 'SET' && dto.quantity <= 0)) {
+      throw new BadRequestException('La cantidad del ajuste debe ser mayor a cero.');
+    }
+    if (!Number.isInteger(dto.quantity)) {
+      throw new BadRequestException('La cantidad del ajuste debe ser un número entero.');
+    }
+
+    const warehouse = await this.prisma.warehouse.findUnique({ where: { id: dto.warehouseId } });
+    if (!warehouse) {
+      throw new BadRequestException('Depósito no encontrado.');
+    }
+
+    const variant = await this.prisma.productVariant.findUnique({ where: { id: dto.variantId } });
+    if (!variant) {
+      throw new BadRequestException('Variante no encontrada.');
+    }
+
+    // Aggregate across batches for the same variant+warehouse (UI adjusts at SKU/warehouse level).
+    // Prefer the null-batch row as the adjustment target so deltas land on the default stock node.
+    const stockRows = await this.prisma.stockLevel.findMany({
+      where: { variantId: dto.variantId, warehouseId: dto.warehouseId },
     });
+    const aggregatedPhysical = stockRows.reduce((sum, s) => sum + s.physicalQuantity, 0);
+    const aggregatedAvailable = stockRows.reduce((sum, s) => sum + s.availableQuantity, 0);
+    const primaryStock =
+      stockRows.find((s) => s.batchId == null) ??
+      stockRows.sort((a, b) => b.availableQuantity - a.availableQuantity)[0] ??
+      null;
 
     let diff = 0;
     if (dto.type === 'ADD') {
       diff = dto.quantity;
     } else if (dto.type === 'SUBTRACT') {
+      if (dto.quantity > aggregatedAvailable) {
+        const posSettings = await this.settingsService.getPosSettings();
+        if (!posSettings.allowNegativeStock) {
+          throw new BadRequestException(
+            `Stock insuficiente. Disponible: ${aggregatedAvailable}, solicitado: ${dto.quantity}.`,
+          );
+        }
+      }
       diff = -dto.quantity;
     } else if (dto.type === 'SET') {
-      diff = dto.quantity - (stock?.availableQuantity || 0);
+      const aggregatedReserved = stockRows.reduce((sum, s) => sum + s.reservedQuantity, 0);
+      if (dto.quantity < aggregatedReserved) {
+        throw new BadRequestException(
+          `No se puede fijar el stock físico en ${dto.quantity}: hay ${aggregatedReserved} unidades reservadas.`,
+        );
+      }
+      // Align with stock audit: SET compares against physical count on shelf
+      diff = dto.quantity - aggregatedPhysical;
     }
 
-    if (diff === 0) return stock;
+    if (diff === 0) {
+      return {
+        ...(await this.enrichStockLevel(primaryStock, dto.variantId, dto.warehouseId, warehouse.branchId)),
+        movementId: null as string | null,
+      };
+    }
 
-    return this.recordMovement({
+    const movement = await this.recordMovement({
       variantId: dto.variantId,
+      batchId: primaryStock?.batchId ?? null,
       sourceWarehouseId: diff < 0 ? dto.warehouseId : null,
       destinationWarehouseId: diff > 0 ? dto.warehouseId : null,
-      branchId: stock?.branchId || null,
+      branchId: primaryStock?.branchId || warehouse.branchId || null,
       type: 'ADJUSTMENT',
       quantity: Math.abs(diff),
-      referenceId: dto.reason
+      referenceId: dto.reason.trim(),
+    });
+
+    const updated = await this.prisma.stockLevel.findFirst({
+      where: { variantId: dto.variantId, warehouseId: dto.warehouseId },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return {
+      ...(await this.enrichStockLevel(updated, dto.variantId, dto.warehouseId, warehouse.branchId)),
+      movementId: movement.id as string | null,
+    };
+  }
+
+  private async enrichStockLevel(
+    stock: { id?: string; variantId: string; warehouseId: string; branchId?: string | null; physicalQuantity: number; reservedQuantity: number; availableQuantity: number; updatedAt?: Date } | null,
+    variantId: string,
+    warehouseId: string,
+    branchId?: string | null,
+  ) {
+    const [variant, warehouse, branch] = await Promise.all([
+      this.prisma.productVariant.findUnique({ where: { id: variantId }, include: { product: true } }),
+      this.prisma.warehouse.findUnique({ where: { id: warehouseId } }),
+      branchId
+        ? this.prisma.branch.findUnique({ where: { id: branchId } })
+        : Promise.resolve(null),
+    ]);
+
+    const physical = stock?.physicalQuantity ?? 0;
+    const reserved = stock?.reservedQuantity ?? 0;
+    const available = stock?.availableQuantity ?? 0;
+
+    return {
+      id: stock?.id || `${variantId}-${warehouseId}`,
+      variantId,
+      warehouseId,
+      branchId: stock?.branchId || branchId || null,
+      physicalQuantity: physical,
+      reservedQuantity: reserved,
+      availableQuantity: available,
+      variantSku: variant?.sku || '',
+      productName: variant?.product?.name || '',
+      warehouseName: warehouse?.name || '',
+      branchName: branch?.name || '',
+      lastUpdated: stock?.updatedAt || new Date(),
+    };
+  }
+
+  async getStockByVariant(variantId: string) {
+    const rows = await this.prisma.stockLevel.findMany({
+      where: { variantId },
+      orderBy: { warehouseId: 'asc' },
+    });
+    if (rows.length === 0) return [];
+
+    const warehouseIds = [...new Set(rows.map((r) => r.warehouseId))];
+    const branchIds = [...new Set(rows.map((r) => r.branchId).filter(Boolean))] as string[];
+
+    const [variant, warehouses, branches] = await Promise.all([
+      this.prisma.productVariant.findUnique({ where: { id: variantId }, include: { product: true } }),
+      this.prisma.warehouse.findMany({ where: { id: { in: warehouseIds } } }),
+      this.prisma.branch.findMany({ where: { id: { in: branchIds } } }),
+    ]);
+
+    const warehouseMap = new Map(warehouses.map((w) => [w.id, w]));
+    const branchMap = new Map(branches.map((b) => [b.id, b]));
+
+    return rows.map((s) => {
+      const warehouse = warehouseMap.get(s.warehouseId);
+      const branch = s.branchId ? branchMap.get(s.branchId) : null;
+      return {
+        id: s.id,
+        variantId: s.variantId,
+        warehouseId: s.warehouseId,
+        branchId: s.branchId,
+        physicalQuantity: s.physicalQuantity,
+        reservedQuantity: s.reservedQuantity,
+        availableQuantity: s.availableQuantity,
+        variantSku: variant?.sku || '',
+        productName: variant?.product?.name || '',
+        warehouseName: warehouse?.name || '',
+        branchName: branch?.name || '',
+        lastUpdated: s.updatedAt,
+      };
     });
   }
 
@@ -377,6 +525,65 @@ export class InventoryService {
     }
     if (query.variantId) where.variantId = query.variantId;
 
+    // Map UI filter aliases (ADD/SUBTRACT/SET) to real ledger types
+    if (query.type) {
+      const typeMap: Record<string, string[]> = {
+        ADD: ['ADD', 'GOODS_RECEIPT', 'SALE_RETURN', 'RETURN', 'TRANSFER_IN', 'RESERVATION_RELEASE'],
+        SUBTRACT: ['SUBTRACT', 'SALE', 'SALE_EXIT', 'TRANSFER_OUT', 'SHRINKAGE', 'RESERVATION', 'CONSUME_RESERVATION'],
+        SET: ['SET', 'ADJUSTMENT', 'STOCK_TAKE_ADJUSTMENT', 'POS_CORRECTION'],
+      };
+      where.type = { in: typeMap[query.type] || [query.type] };
+    }
+
+    if (query.startDate || query.endDate) {
+      where.createdAt = {};
+      if (query.startDate) where.createdAt.gte = new Date(query.startDate);
+      if (query.endDate) {
+        const end = new Date(query.endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    if (query.search) {
+      const matchingVariants = await this.prisma.productVariant.findMany({
+        where: {
+          OR: [
+            { sku: { contains: query.search, mode: 'insensitive' } },
+            { product: { name: { contains: query.search, mode: 'insensitive' } } },
+          ],
+        },
+        select: { id: true },
+      });
+      const variantIds = matchingVariants.map((v) => v.id);
+      where.AND = [
+        ...(where.AND || []),
+        {
+          OR: [
+            { variantId: { in: variantIds } },
+            { referenceId: { contains: query.search, mode: 'insensitive' } },
+          ],
+        },
+      ];
+    }
+
+    if (query.branchId) {
+      const warehouses = await this.prisma.warehouse.findMany({
+        where: { branchId: query.branchId },
+        select: { id: true },
+      });
+      const whIds = warehouses.map((w) => w.id);
+      where.AND = [
+        ...(where.AND || []),
+        {
+          OR: [
+            { sourceWarehouseId: { in: whIds } },
+            { destinationWarehouseId: { in: whIds } },
+          ],
+        },
+      ];
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.inventoryMovement.findMany({
         where,
@@ -403,22 +610,72 @@ export class InventoryService {
 
     const variantMap = new Map(variants.map(v => [v.id, v]));
     const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+    const branchIds = [...new Set(warehouses.map((w) => w.branchId).filter(Boolean))];
+    const branches = branchIds.length
+      ? await this.prisma.branch.findMany({ where: { id: { in: branchIds } } })
+      : [];
+    const branchMap = new Map(branches.map((b) => [b.id, b]));
 
     const enriched = data.map(m => {
       const variant = variantMap.get(m.variantId);
       const sourceWarehouse = m.sourceWarehouseId ? warehouseMap.get(m.sourceWarehouseId) : null;
       const destinationWarehouse = m.destinationWarehouseId ? warehouseMap.get(m.destinationWarehouseId) : null;
+      const primaryWarehouse = destinationWarehouse || sourceWarehouse;
+      const branch = primaryWarehouse?.branchId ? branchMap.get(primaryWarehouse.branchId) : null;
       return {
         ...m,
         variantSku: variant?.sku || '',
         productName: variant?.product?.name || '',
         sourceWarehouseName: sourceWarehouse?.name || '',
         destinationWarehouseName: destinationWarehouse?.name || '',
-        warehouseName: destinationWarehouse?.name || sourceWarehouse?.name || '', // Helper for UI
+        warehouseName: primaryWarehouse?.name || '',
+        branchName: branch?.name || '',
+        branchId: primaryWarehouse?.branchId || null,
+        reason: m.type === 'ADJUSTMENT' || m.type === 'STOCK_TAKE_ADJUSTMENT' ? m.referenceId : null,
+        referenceType: m.type,
       };
     });
 
     return { data: enriched, total, page, pageSize };
+  }
+
+  async findMovementById(id: string) {
+    const movement = await this.prisma.inventoryMovement.findUnique({ where: { id } });
+    if (!movement) {
+      throw new BadRequestException('Movimiento no encontrado.');
+    }
+
+    const warehouseIds = [movement.sourceWarehouseId, movement.destinationWarehouseId].filter(Boolean) as string[];
+    const [variant, warehouses] = await Promise.all([
+      this.prisma.productVariant.findUnique({
+        where: { id: movement.variantId },
+        include: { product: true },
+      }),
+      this.prisma.warehouse.findMany({ where: { id: { in: warehouseIds } } }),
+    ]);
+
+    const warehouseMap = new Map(warehouses.map((w) => [w.id, w]));
+    const sourceWarehouse = movement.sourceWarehouseId ? warehouseMap.get(movement.sourceWarehouseId) : null;
+    const destinationWarehouse = movement.destinationWarehouseId
+      ? warehouseMap.get(movement.destinationWarehouseId)
+      : null;
+    const primaryWarehouse = destinationWarehouse || sourceWarehouse;
+    const branch = primaryWarehouse?.branchId
+      ? await this.prisma.branch.findUnique({ where: { id: primaryWarehouse.branchId } })
+      : null;
+
+    return {
+      ...movement,
+      variantSku: variant?.sku || '',
+      productName: variant?.product?.name || '',
+      sourceWarehouseName: sourceWarehouse?.name || '',
+      destinationWarehouseName: destinationWarehouse?.name || '',
+      warehouseName: primaryWarehouse?.name || '',
+      branchName: branch?.name || '',
+      branchId: primaryWarehouse?.branchId || null,
+      reason: movement.type === 'ADJUSTMENT' || movement.type === 'STOCK_TAKE_ADJUSTMENT' ? movement.referenceId : null,
+      referenceType: movement.type,
+    };
   }
 
   async processStockAudit(data: { warehouseId: string; items: { variantId?: string; sku?: string; batchId?: string; countedQuantity: number }[] }) {

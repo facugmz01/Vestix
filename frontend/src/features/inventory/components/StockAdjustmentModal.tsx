@@ -24,9 +24,8 @@ export function StockAdjustmentModal({ open, onClose, stockNode }: Props) {
     onSuccess: () => {
       toast.success('Ajuste de inventario aplicado con éxito');
       queryClient.invalidateQueries({ queryKey: queryKeys.stock.movements() });
-      queryClient.invalidateQueries({ queryKey: ['inventory', 'stock'] }); // General invalidate for safety if not using exact keys
+      queryClient.invalidateQueries({ queryKey: ['inventory', 'stock'] });
       onClose();
-      // Reset
       setQuantity(0);
       setType('ADD');
       setReason('');
@@ -36,15 +35,25 @@ export function StockAdjustmentModal({ open, onClose, stockNode }: Props) {
     },
   });
 
+  const physical = stockNode
+    ? (stockNode.physicalQuantity ?? stockNode.availableQuantity + stockNode.reservedQuantity)
+    : 0;
+  const available = stockNode?.availableQuantity ?? 0;
+  const reserved = stockNode?.reservedQuantity ?? 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!stockNode) return;
-    if (quantity <= 0 && type !== 'SET') {
+    if (quantity < 0 || (quantity <= 0 && type !== 'SET')) {
       toast.error('La cantidad debe ser mayor a 0');
       return;
     }
-    if (type === 'SUBTRACT' && quantity > stockNode.availableQuantity) {
+    if (type === 'SUBTRACT' && quantity > available) {
       toast.error('No podés restar más cantidad de la que hay disponible');
+      return;
+    }
+    if (type === 'SET' && quantity < reserved) {
+      toast.error(`No podés fijar el físico por debajo de las ${reserved} unidades reservadas`);
       return;
     }
     if (!reason.trim()) {
@@ -63,11 +72,19 @@ export function StockAdjustmentModal({ open, onClose, stockNode }: Props) {
 
   if (!stockNode) return null;
 
-  // Calculamos el resultado proyectado
-  let projected = stockNode.availableQuantity;
-  if (type === 'ADD') projected += quantity;
-  if (type === 'SUBTRACT') projected -= quantity;
-  if (type === 'SET') projected = quantity;
+  // Projection: ADD/SUBTRACT change available; SET sets physical (available = physical - reserved)
+  let projectedAvailable = available;
+  let projectedPhysical = physical;
+  if (type === 'ADD') {
+    projectedAvailable = available + quantity;
+    projectedPhysical = physical + quantity;
+  } else if (type === 'SUBTRACT') {
+    projectedAvailable = available - quantity;
+    projectedPhysical = physical - quantity;
+  } else if (type === 'SET') {
+    projectedPhysical = quantity;
+    projectedAvailable = quantity - reserved;
+  }
 
   return (
     <Drawer
@@ -93,6 +110,21 @@ export function StockAdjustmentModal({ open, onClose, stockNode }: Props) {
             <span style={{ fontSize: '13px' }}>Ubicación:</span>
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{stockNode.warehouseName} ({stockNode.branchName})</span>
           </div>
+
+          <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+            <div>
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Físico</p>
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{physical}</p>
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Reservado</p>
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: reserved > 0 ? 'var(--orange)' : undefined }}>{reserved}</p>
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Disponible</p>
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: available <= 0 ? 'var(--red)' : 'var(--green)' }}>{available}</p>
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -100,12 +132,12 @@ export function StockAdjustmentModal({ open, onClose, stockNode }: Props) {
           <select value={type} onChange={e => setType(e.target.value as any)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
             <option value="ADD">Entrada (+ Sumar al stock)</option>
             <option value="SUBTRACT">Salida (- Restar al stock)</option>
-            <option value="SET">Inventario Físico (= Reemplazar stock)</option>
+            <option value="SET">Inventario Físico (= Reemplazar stock físico)</option>
           </select>
         </div>
 
         <Input 
-          label="Cantidad a Ajustar" 
+          label={type === 'SET' ? 'Cantidad Física Contada' : 'Cantidad a Ajustar'} 
           type="number" 
           min={type === 'SET' ? "0" : "1"} 
           value={quantity} 
@@ -123,16 +155,15 @@ export function StockAdjustmentModal({ open, onClose, stockNode }: Props) {
           />
         </div>
 
-        {/* Proyección */}
         <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Stock Actual</p>
-            <p style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>{stockNode.availableQuantity}</p>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Actual (Fís / Disp)</p>
+            <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>{physical} / {available}</p>
           </div>
           <ArrowRightLeft size={20} color="var(--text-muted)" />
           <div style={{ textAlign: 'center' }}>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--blue)' }}>Proyección (Disponible)</p>
-            <p style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', color: 'var(--blue)' }}>{projected}</p>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--blue)' }}>Proyección (Fís / Disp)</p>
+            <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'var(--blue)' }}>{projectedPhysical} / {projectedAvailable}</p>
           </div>
         </div>
 

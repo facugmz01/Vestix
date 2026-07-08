@@ -2,6 +2,7 @@ import { Drawer, Table, Badge } from '@/components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { inventoryApi, type EnrichedStockLevel } from '@/api/inventory.api';
 import { History, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { formatMovementQty, getMovementLabel } from '../utils/movementLabels';
 
 interface Props {
   open: boolean;
@@ -52,17 +53,27 @@ export function StockMovementsDrawer({ open, onClose, stockNode }: Props) {
                   { 
                     key: 'type', 
                     header: 'Operación', 
-                    render: (m) => (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {m.type === 'ADD' ? <ArrowUpRight size={14} color="var(--green)" /> : m.type === 'SUBTRACT' ? <ArrowDownRight size={14} color="var(--red)" /> : <History size={14} color="var(--blue)" />}
-                        <span>{m.type === 'ADD' ? 'Entrada' : m.type === 'SUBTRACT' ? 'Salida' : 'Ajuste'}</span>
-                      </div>
-                    ) 
+                    render: (m) => {
+                      const { direction } = formatMovementQty(m.type, m.quantity, m.sourceWarehouseId, m.destinationWarehouseId);
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {direction === 'IN' ? <ArrowUpRight size={14} color="var(--green)" /> : direction === 'OUT' ? <ArrowDownRight size={14} color="var(--red)" /> : <History size={14} color="var(--blue)" />}
+                          <span>{getMovementLabel(m.type)}</span>
+                        </div>
+                      );
+                    }
                   },
                   { 
                     key: 'quantity', 
                     header: 'Cantidad', 
-                    render: (m) => <strong style={{ color: m.type === 'ADD' ? 'var(--green)' : m.type === 'SUBTRACT' ? 'var(--red)' : 'var(--text-primary)' }}>{m.type === 'ADD' ? '+' : m.type === 'SUBTRACT' ? '-' : ''}{m.quantity}</strong> 
+                    render: (m) => {
+                      const { text, direction } = formatMovementQty(m.type, m.quantity, m.sourceWarehouseId, m.destinationWarehouseId);
+                      return (
+                        <strong style={{ color: direction === 'IN' ? 'var(--green)' : direction === 'OUT' ? 'var(--red)' : 'var(--text-primary)' }}>
+                          {text}
+                        </strong>
+                      );
+                    }
                   },
                   { key: 'ref', header: 'Documento Ref.', render: (m) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{m.referenceId}</span> },
                 ]}
