@@ -12,6 +12,19 @@ export const TEMPLATE_VARIABLES: Record<string, { name: string; description: str
     { name: 'orderId', description: 'Número del pedido' },
     { name: 'courierName', description: 'Empresa de envío' },
     { name: 'trackingNumber', description: 'Código de seguimiento' },
+    { name: 'trackingUrl', description: 'Link público de seguimiento en vivo' },
+  ],
+  [TemplateKey.ORDER_DELIVERED]: [
+    { name: 'customerName', description: 'Nombre del cliente' },
+    { name: 'orderId', description: 'Número del pedido' },
+  ],
+  [TemplateKey.DELIVERY_ARRIVED]: [
+    { name: 'customerName', description: 'Nombre del cliente' },
+    { name: 'orderId', description: 'Número del pedido' },
+  ],
+  [TemplateKey.DELIVERY_OTP]: [
+    { name: 'orderId', description: 'Número del pedido' },
+    { name: 'otpCode', description: 'Código de entrega de 6 dígitos' },
   ],
   [TemplateKey.PAYMENT_RECEIVED]: [
     { name: 'customerName', description: 'Nombre del cliente' },

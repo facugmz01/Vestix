@@ -38,12 +38,32 @@ export const storefrontSettingsSchema = z.object({
     geofenceRadiusMeters: z.number().catch(150),
     requirePhotoOnDelivery: z.boolean().catch(false),
     showMapToCustomer: z.boolean().catch(true),
+    carriers: z.object({
+      andreani: z.object({
+        enabled: z.boolean().catch(false),
+        apiKey: z.string().catch(''),
+        clientId: z.string().catch(''),
+        contract: z.string().catch(''),
+      }).catch({ enabled: false, apiKey: '', clientId: '', contract: '' }),
+      mercadoEnvios: z.object({
+        enabled: z.boolean().catch(false),
+        accessToken: z.string().catch(''),
+        userId: z.string().catch(''),
+      }).catch({ enabled: false, accessToken: '', userId: '' }),
+    }).catch({
+      andreani: { enabled: false, apiKey: '', clientId: '', contract: '' },
+      mercadoEnvios: { enabled: false, accessToken: '', userId: '' },
+    }),
   }).catch({
     enableGpsTracking: true,
     enableGeofence: true,
     geofenceRadiusMeters: 150,
     requirePhotoOnDelivery: false,
     showMapToCustomer: true,
+    carriers: {
+      andreani: { enabled: false, apiKey: '', clientId: '', contract: '' },
+      mercadoEnvios: { enabled: false, accessToken: '', userId: '' },
+    },
   }),
 });
 

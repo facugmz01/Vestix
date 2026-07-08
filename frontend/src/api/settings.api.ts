@@ -51,6 +51,7 @@ export interface NotificationSettings {
   notifyOnPurchase: boolean;
   notifyOnLowStock: boolean;
   notifyOnTransfer: boolean;
+  notifyOnDelivery: boolean;
   smtpHost?: string;
   smtpPort?: number;
   smtpUser?: string;
@@ -135,6 +136,17 @@ export interface StorefrontSettings {
   subdomain?: string;
   allowedPaymentMethods?: string[];
   shippingMethods?: Array<{ id: string; name: string; price: number; type: 'SHIPPING' | 'PICKUP' }>;
+  deliverySettings?: {
+    enableGpsTracking: boolean;
+    enableGeofence: boolean;
+    geofenceRadiusMeters: number;
+    requirePhotoOnDelivery: boolean;
+    showMapToCustomer: boolean;
+    carriers?: {
+      andreani?: { enabled: boolean; apiKey?: string; clientId?: string; contract?: string };
+      mercadoEnvios?: { enabled: boolean; accessToken?: string; userId?: string };
+    };
+  };
 }
 
 export interface PwaSettings {

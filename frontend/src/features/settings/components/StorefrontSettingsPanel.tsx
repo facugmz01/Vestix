@@ -37,6 +37,10 @@ export function StorefrontSettingsPanel() {
         geofenceRadiusMeters: 150,
         requirePhotoOnDelivery: false,
         showMapToCustomer: true,
+        carriers: {
+          andreani: { enabled: false, apiKey: '', clientId: '', contract: '' },
+          mercadoEnvios: { enabled: false, accessToken: '', userId: '' },
+        },
       },
     },
   });
@@ -235,6 +239,27 @@ export function StorefrontSettingsPanel() {
               label="Radio geofence (metros)"
               {...register('deliverySettings.geofenceRadiusMeters', { valueAsNumber: true })}
             />
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><Truck size={18} /> Carriers externos</h3>
+          <p className={styles.cardDescription}>Credenciales para Andreani y Mercado Envíos al despachar pedidos.</p>
+        </header>
+        <div className={styles.cardBody}>
+          <ToggleSwitch label="Andreani habilitado" {...register('deliverySettings.carriers.andreani.enabled')} />
+          <div className={clsx(styles.grid, styles.grid2)} style={{ marginTop: '12px' }}>
+            <Input label="API Key Andreani" type="password" {...register('deliverySettings.carriers.andreani.apiKey')} />
+            <Input label="Client ID" {...register('deliverySettings.carriers.andreani.clientId')} />
+            <Input label="Contrato" {...register('deliverySettings.carriers.andreani.contract')} />
+          </div>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+          <ToggleSwitch label="Mercado Envíos habilitado" {...register('deliverySettings.carriers.mercadoEnvios.enabled')} />
+          <div className={clsx(styles.grid, styles.grid2)} style={{ marginTop: '12px' }}>
+            <Input label="Access Token" type="password" {...register('deliverySettings.carriers.mercadoEnvios.accessToken')} />
+            <Input label="User ID" {...register('deliverySettings.carriers.mercadoEnvios.userId')} />
           </div>
         </div>
       </section>

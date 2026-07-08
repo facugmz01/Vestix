@@ -1,4 +1,4 @@
-import { SALES_TABS } from '@/navigation/moduleTabs';
+import { DELIVERY_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, ShoppingBag, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -40,6 +40,7 @@ export default function SalesFulfillmentPage() {
   const [driverName, setDriverName] = useState('');
   const [driverPhone, setDriverPhone] = useState('');
   const [courierName, setCourierName] = useState('Propio');
+  const [carrierType, setCarrierType] = useState<'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS'>('PROPIO');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [locationOrderId, setLocationOrderId] = useState<string | null>(null);
@@ -91,6 +92,7 @@ export default function SalesFulfillmentPage() {
     setDriverName('');
     setDriverPhone('');
     setCourierName('Propio');
+    setCarrierType('PROPIO');
     setTrackingNumber('');
   };
 
@@ -132,7 +134,7 @@ export default function SalesFulfillmentPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={SALES_TABS} />}
+      tabs={<Tabs items={DELIVERY_TABS} />}
       title="Envíos y Despacho"
       subtitle="Gestioná pedidos web: preparación, despacho, tracking GPS y validación de entrega."
     >
@@ -266,7 +268,7 @@ export default function SalesFulfillmentPage() {
                 disabled={!driverName.trim()}
                 onClick={() => dispatchMutation.mutate({
                   orderId: dispatchModal.saleOrderId,
-                  dto: { driverName, driverPhone, courierName, trackingNumber },
+                  dto: { driverName, driverPhone, courierName, trackingNumber, carrierType },
                 })}
               >
                 Confirmar despacho
@@ -277,7 +279,23 @@ export default function SalesFulfillmentPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <Input label="Repartidor *" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre del repartidor" />
             <Input label="Teléfono repartidor" value={driverPhone} onChange={e => setDriverPhone(e.target.value)} placeholder="54911..." />
-            <Input label="Courier" value={courierName} onChange={e => setCourierName(e.target.value)} placeholder="Propio / Andreani / etc." />
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Carrier</label>
+              <select
+                value={carrierType}
+                onChange={e => {
+                  const value = e.target.value as 'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS';
+                  setCarrierType(value);
+                  setCourierName(value === 'PROPIO' ? 'Propio' : value === 'ANDREANI' ? 'Andreani' : 'Mercado Envíos');
+                }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}
+              >
+                <option value="PROPIO">Propio (repartidor interno)</option>
+                <option value="ANDREANI">Andreani</option>
+                <option value="MERCADO_ENVIOS">Mercado Envíos</option>
+              </select>
+            </div>
+            <Input label="Nombre courier (visible al cliente)" value={courierName} onChange={e => setCourierName(e.target.value)} placeholder="Propio / Andreani / etc." />
             <Input label="Número de tracking" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Opcional" />
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
               Al despachar se generará un código OTP de 6 dígitos que el cliente recibirá por WhatsApp para validar la entrega.

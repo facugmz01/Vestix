@@ -328,6 +328,138 @@ export class NotificationTriggersService {
     });
   }
 
+  // ─── Delivery / shipping events ────────────────────────────────────────────
+
+  async onOrderShipped(
+    saleOrderId: string,
+    payload: {
+      customerName: string;
+      customerPhone: string;
+      orderRef: string;
+      courierName: string;
+      trackingNumber: string;
+      trackingUrl: string;
+    },
+  ) {
+    const settings = await this.settingsService.getNotificationSettings();
+    if (settings.notifyOnDelivery === false) return;
+
+    const phone = this.normalizePhone(payload.customerPhone);
+    const channel = settings.whatsappEnabled !== false
+      ? NotificationChannel.WHATSAPP
+      : NotificationChannel.EMAIL;
+
+    const recipient = channel === NotificationChannel.WHATSAPP
+      ? phone
+      : await this.resolveCustomerEmail(saleOrderId);
+
+    if (!recipient) return;
+
+    await this.notifications.enqueue({
+      channel,
+      templateKey: TemplateKey.ORDER_SHIPPED,
+      recipient,
+      variables: {
+        customerName: payload.customerName,
+        orderId: payload.orderRef,
+        courierName: payload.courierName,
+        trackingNumber: payload.trackingNumber,
+        trackingUrl: payload.trackingUrl,
+      },
+      referenceId: saleOrderId,
+    });
+
+    void this.staffInbox.create({
+      title: 'Pedido despachado',
+      body: `Pedido #${payload.orderRef} despachado con ${payload.courierName}`,
+      event: TemplateKey.ORDER_SHIPPED,
+      referenceId: saleOrderId,
+    });
+  }
+
+  async onDeliveryOtp(
+    saleOrderId: string,
+    payload: { customerPhone: string; orderRef: string; otpCode: string },
+  ) {
+    const settings = await this.settingsService.getNotificationSettings();
+    if (settings.notifyOnDelivery === false) return;
+
+    const phone = this.normalizePhone(payload.customerPhone);
+    if (!phone || settings.whatsappEnabled === false) return;
+
+    await this.notifications.enqueue({
+      channel: NotificationChannel.WHATSAPP,
+      templateKey: TemplateKey.DELIVERY_OTP,
+      recipient: phone,
+      variables: { orderId: payload.orderRef, otpCode: payload.otpCode },
+      referenceId: `${saleOrderId}:delivery-otp`,
+    });
+  }
+
+  async onDeliveryArrived(saleOrderId: string) {
+    const settings = await this.settingsService.getNotificationSettings();
+    if (settings.notifyOnDelivery === false) return;
+
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: saleOrderId },
+      include: { customer: true },
+    });
+    if (!order?.customer?.phone) return;
+
+    const phone = this.normalizePhone(order.customer.phone);
+    if (!phone || settings.whatsappEnabled === false) return;
+
+    await this.notifications.enqueue({
+      channel: NotificationChannel.WHATSAPP,
+      templateKey: TemplateKey.DELIVERY_ARRIVED,
+      recipient: phone,
+      variables: {
+        customerName: order.customer.fullName,
+        orderId: this.shortId(order.id),
+      },
+      referenceId: saleOrderId,
+    });
+  }
+
+  async onOrderDelivered(saleOrderId: string) {
+    const settings = await this.settingsService.getNotificationSettings();
+    if (settings.notifyOnDelivery === false) return;
+
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: saleOrderId },
+      include: { customer: true },
+    });
+    if (!order?.customer) return;
+
+    const channel = settings.whatsappEnabled !== false
+      ? NotificationChannel.WHATSAPP
+      : NotificationChannel.EMAIL;
+
+    const recipient = channel === NotificationChannel.WHATSAPP
+      ? this.normalizePhone(order.customer.phone)
+      : order.customer.email;
+
+    if (!recipient) return;
+
+    await this.notifications.enqueue({
+      channel,
+      templateKey: TemplateKey.ORDER_DELIVERED,
+      recipient,
+      variables: {
+        customerName: order.customer.fullName,
+        orderId: this.shortId(order.id),
+      },
+      referenceId: saleOrderId,
+    });
+
+    void this.staffInbox.create({
+      title: 'Entrega confirmada',
+      body: `Pedido #${this.shortId(order.id)} entregado a ${order.customer.fullName}`,
+      event: TemplateKey.ORDER_DELIVERED,
+      referenceId: saleOrderId,
+    });
+  }
+
   async onShiftClosed(shiftId: string) {
     const shift = await this.prisma.cashShift.findUnique({
       where: { id: shiftId },
@@ -416,5 +548,13 @@ export class NotificationTriggersService {
     if (digits.startsWith('0') && digits.length >= 10) return '54' + digits.slice(1);
     if (digits.length >= 8 && digits.length <= 11) return '549' + digits;
     return digits;
+  }
+
+  private async resolveCustomerEmail(saleOrderId: string): Promise<string | null> {
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: saleOrderId },
+      include: { customer: true },
+    });
+    return order?.customer?.email || null;
   }
 }

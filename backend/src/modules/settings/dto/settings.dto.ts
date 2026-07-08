@@ -171,6 +171,10 @@ export class NotificationSettingsDto {
   notifyOnTransfer?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  notifyOnDelivery?: boolean;
+
+  @IsOptional()
   @IsString()
   smtpHost?: string;
 
@@ -331,6 +335,10 @@ export class StorefrontSettingsDto {
     geofenceRadiusMeters?: number;
     requirePhotoOnDelivery?: boolean;
     showMapToCustomer?: boolean;
+    carriers?: {
+      andreani?: { enabled?: boolean; apiKey?: string; clientId?: string; contract?: string };
+      mercadoEnvios?: { enabled?: boolean; accessToken?: string; userId?: string };
+    };
   };
 }
 

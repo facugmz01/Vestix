@@ -1083,6 +1083,9 @@ model Delivery {
   deliveryCodeExpiresAt DateTime?
   trackingToken         String?          @unique
   driverToken           String?          @unique
+  carrierType           String?
+  carrierShipmentId     String?
+  labelUrl              String?
   lastLatitude          Float?
   lastLongitude         Float?
   lastLocationAt        DateTime?

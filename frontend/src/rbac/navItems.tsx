@@ -23,6 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'inventory',  label: 'Inventario', to: '/admin/inventory',  icon: <Warehouse size={18} />,       action: 'read',   subject: 'Inventory' },
   { id: 'purchasing', label: 'Compras',    to: '/admin/purchasing', icon: <Truck size={18} />,           action: 'read',   subject: 'Purchasing'},
   { id: 'sales',      label: 'Ventas',     to: '/admin/sales',      icon: <ShoppingCart size={18} />,    action: 'read',   subject: 'Sales'     },
+  { id: 'delivery',   label: 'Delivery',   to: '/admin/delivery',   icon: <Truck size={18} />,           action: 'read',   subject: 'Delivery'  },
   { id: 'customers',  label: 'Clientes',   to: '/admin/customers',  icon: <Users size={18} />,           action: 'read',   subject: 'Customers' },
   { id: 'finance',    label: 'Finanzas',   to: '/admin/finance',    icon: <CreditCard size={18} />,      action: 'read',   subject: 'Finance',  dividerBefore: true },
   { id: 'reports',    label: 'Reportes',   to: '/admin/reports',    icon: <BarChart2 size={18} />,       action: 'read',   subject: 'Reports'   },

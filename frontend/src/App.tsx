@@ -41,6 +41,7 @@ const GoodsReceiptsPage = lazy(() => import('@/pages/admin/GoodsReceiptsPage'));
 const SuppliersPage  = lazy(() => import('@/pages/admin/SuppliersPage'));
 const SalesPage      = lazy(() => import('@/pages/admin/SalesPage'));
 const SalesFulfillmentPage = lazy(() => import('@/pages/admin/SalesFulfillmentPage'));
+const DeliveryCarriersPage = lazy(() => import('@/pages/admin/DeliveryCarriersPage'));
 const ReturnsPage    = lazy(() => import('@/pages/admin/ReturnsPage'));
 const CustomersPage  = lazy(() => import('@/pages/admin/CustomersPage'));
 const CurrentAccountsPage = lazy(() => import('@/pages/admin/CurrentAccountsPage'));
@@ -190,8 +191,13 @@ export default function App() {
 
               <Route element={<RequirePermission action="read"   subject="Sales" />}>
                 <Route path="/admin/sales"      element={<SalesPage />} />
-                <Route path="/admin/sales/fulfillment" element={<SalesFulfillmentPage />} />
                 <Route path="/admin/returns"    element={<ReturnsPage />} />
+              </Route>
+
+              <Route element={<RequirePermission action="read"   subject="Delivery" />}>
+                <Route path="/admin/delivery" element={<SalesFulfillmentPage />} />
+                <Route path="/admin/delivery/carriers" element={<DeliveryCarriersPage />} />
+                <Route path="/admin/sales/fulfillment" element={<Navigate to="/admin/delivery" replace />} />
               </Route>
 
               <Route element={<RequirePermission action="read"   subject="Customers" />}>

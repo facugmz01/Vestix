@@ -4,6 +4,10 @@ import { RedisModule } from '../../core/redis/redis.module';
 import { ShippingService } from './shipping.service';
 import { DeliveryValidationService } from './delivery-validation.service';
 import { GeocodingService } from './geocoding.service';
+import { CourierService } from './courier.service';
+import { ProprioCourierAdapter } from './couriers/proprio.courier';
+import { AndreaniCourierAdapter } from './couriers/andreani.courier';
+import { MercadoEnviosCourierAdapter } from './couriers/mercado-envios.courier';
 import { ShippingController } from './shipping.controller';
 import { ShippingSseController } from './shipping-sse.controller';
 import { StorefrontTrackingController } from './storefront-tracking.controller';
@@ -20,7 +24,15 @@ import { DriverController } from './driver.controller';
     PublicTrackingController,
     DriverController,
   ],
-  providers: [ShippingService, DeliveryValidationService, GeocodingService],
-  exports: [ShippingService, DeliveryValidationService],
+  providers: [
+    ShippingService,
+    DeliveryValidationService,
+    GeocodingService,
+    CourierService,
+    ProprioCourierAdapter,
+    AndreaniCourierAdapter,
+    MercadoEnviosCourierAdapter,
+  ],
+  exports: [ShippingService, DeliveryValidationService, CourierService],
 })
 export class ShippingModule {}

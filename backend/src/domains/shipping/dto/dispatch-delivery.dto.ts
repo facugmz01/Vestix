@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MinLength, IsIn } from 'class-validator';
 
 export class DispatchDeliveryDto {
   @IsString()
@@ -12,6 +12,10 @@ export class DispatchDeliveryDto {
   @IsOptional()
   @IsString()
   courierName?: string;
+
+  @IsOptional()
+  @IsIn(['PROPIO', 'ANDREANI', 'MERCADO_ENVIOS'])
+  carrierType?: 'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS';
 
   @IsOptional()
   @IsString()

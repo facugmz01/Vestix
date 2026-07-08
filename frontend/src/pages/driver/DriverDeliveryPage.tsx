@@ -1,15 +1,51 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Navigation, MapPin, Camera, CheckCircle, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { driverApi } from '@/api/shipping.api';
+import {
+  enqueueGpsPoint,
+  flushGpsQueue,
+  listenForGpsFlush,
+  registerDriverServiceWorker,
+} from '@/utils/driverOfflineQueue';
 
 export default function DriverDeliveryPage() {
   const { token } = useParams<{ token: string }>();
   const watchIdRef = useRef<number | null>(null);
   const [otp, setOtp] = useState('');
   const [gpsActive, setGpsActive] = useState(false);
+  const [offlinePending, setOfflinePending] = useState(0);
+
+  const sendLocation = useCallback(async (latitude: number, longitude: number) => {
+    if (!token) return;
+    if (!navigator.onLine) {
+      enqueueGpsPoint(token, latitude, longitude);
+      setOfflinePending((n) => n + 1);
+      return;
+    }
+    await driverApi.updateLocation(token, latitude, longitude);
+  }, [token]);
+
+  const flushQueue = useCallback(async () => {
+    if (!token || !navigator.onLine) return;
+    await flushGpsQueue(token, async (lat, lng) => {
+      await driverApi.updateLocation(token, lat, lng);
+    });
+    setOfflinePending(0);
+  }, [token]);
+
+  useEffect(() => {
+    registerDriverServiceWorker();
+    const unlisten = listenForGpsFlush(() => { void flushQueue(); });
+    const onOnline = () => { void flushQueue(); };
+    window.addEventListener('online', onOnline);
+    return () => {
+      unlisten();
+      window.removeEventListener('online', onOnline);
+    };
+  }, [flushQueue]);
 
   const { data: delivery, isLoading, refetch } = useQuery({
     queryKey: ['driver', 'delivery', token],
@@ -19,8 +55,14 @@ export default function DriverDeliveryPage() {
 
   const locationMutation = useMutation({
     mutationFn: (coords: { latitude: number; longitude: number }) =>
-      driverApi.updateLocation(token!, coords.latitude, coords.longitude),
-    onError: () => toast.error('Error al enviar ubicación'),
+      sendLocation(coords.latitude, coords.longitude),
+    onError: () => {
+      if (!navigator.onLine && token) {
+        toast('Sin conexión — ubicación guardada para reenvío', { icon: '📡' });
+        return;
+      }
+      toast.error('Error al enviar ubicación');
+    },
   });
 
   const arriveMutation = useMutation({
@@ -109,7 +151,7 @@ export default function DriverDeliveryPage() {
         )}
 
         <p style={{ fontSize: '14px', color: '#64748b' }}>
-          {delivery.lines.reduce((a, l) => a + l.quantity, 0)} artículos
+          {delivery.lines.reduce((a: number, l: { quantity: number }) => a + l.quantity, 0)} artículos
         </p>
       </div>
 
@@ -127,6 +169,11 @@ export default function DriverDeliveryPage() {
             <Navigation size={20} />
             {gpsActive ? 'GPS activo — compartiendo ubicación' : 'Iniciar GPS en vivo'}
           </button>
+          {offlinePending > 0 && (
+            <p style={{ fontSize: '13px', color: '#b45309', textAlign: 'center', margin: '0 0 12px' }}>
+              {offlinePending} ubicación(es) pendiente(s) de envío
+            </p>
+          )}
 
           <button
             onClick={() => arriveMutation.mutate()}

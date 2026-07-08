@@ -57,24 +57,29 @@ export class NotificationsService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    // Seed default templates if none exist yet
     const count = await this.prisma.notificationTemplate.count();
     if (count === 0) {
       this.logger.log('Seeding initial notification templates...');
-      for (const tpl of NOTIFICATION_TEMPLATES) {
-        await this.prisma.notificationTemplate.upsert({
-          where: { event_channel: { event: tpl.key, channel: tpl.channel } },
-          update: {},
-          create: {
-            name: `Plantilla ${tpl.key} (${tpl.channel})`,
-            event: tpl.key,
-            channel: tpl.channel,
-            subject: tpl.subject,
-            body: tpl.body,
-            isActive: true,
-          },
-        });
-      }
+    } else {
+      this.logger.log('Ensuring notification templates are up to date...');
+    }
+
+    for (const tpl of NOTIFICATION_TEMPLATES) {
+      await this.prisma.notificationTemplate.upsert({
+        where: { event_channel: { event: tpl.key, channel: tpl.channel } },
+        update: {},
+        create: {
+          name: `Plantilla ${tpl.key} (${tpl.channel})`,
+          event: tpl.key,
+          channel: tpl.channel,
+          subject: tpl.subject,
+          body: tpl.body,
+          isActive: true,
+        },
+      });
+    }
+
+    if (count === 0) {
       this.logger.log('Notification templates seeded successfully.');
     }
   }
@@ -409,7 +414,7 @@ export class NotificationsService implements OnModuleInit {
   async notifyOrderShipped(
     recipient: string,
     channel: NotificationChannel,
-    vars: { customerName: string; orderId: string; courierName: string; trackingNumber: string },
+    vars: { customerName: string; orderId: string; courierName: string; trackingNumber: string; trackingUrl?: string },
     referenceId?: string,
   ) {
     return this.enqueue({

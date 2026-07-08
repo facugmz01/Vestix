@@ -9,15 +9,15 @@ import { filter, map, switchMap } from 'rxjs/operators';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { OrdersFulfillmentService } from '../sales/orders/orders-fulfillment.service';
 import { OrderStatus } from '../sales/orders/models/fulfillment.model';
-import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationChannel, TemplateKey } from '../notifications/models/notification.model';
 import { SettingsService, DeliverySettings } from '../../modules/settings/settings.service';
+import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { DeliveryValidationService } from './delivery-validation.service';
 import { GeocodingService } from './geocoding.service';
 import { DispatchDeliveryDto } from './dto/dispatch-delivery.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { CompleteDeliveryDto } from './dto/complete-delivery.dto';
 import { DeliveryStatus, ValidationMethod } from './models/delivery.model';
+import { CourierService } from './courier.service';
 import * as crypto from 'crypto';
 
 const OTP_EXPIRY_MS = 30 * 60 * 1000;
@@ -40,9 +40,10 @@ export class ShippingService {
     private readonly prisma: PrismaService,
     private readonly fulfillmentService: OrdersFulfillmentService,
     private readonly validationService: DeliveryValidationService,
-    private readonly notificationsService: NotificationsService,
     private readonly settingsService: SettingsService,
     private readonly geocodingService: GeocodingService,
+    private readonly notificationTriggers: NotificationTriggersService,
+    private readonly courierService: CourierService,
   ) {}
 
   subscribeTracking(orderId: string): Observable<{ data: TrackingEventPayload }> {
@@ -341,10 +342,31 @@ export class ShippingService {
     const trackingToken = crypto.randomBytes(16).toString('hex');
     const driverToken = crypto.randomBytes(24).toString('hex');
 
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: saleOrderId },
+      include: { customer: true, shippingAddress: true },
+    });
+
+    const carrierType = dto.carrierType || 'PROPIO';
+    const shipment = await this.courierService.createShipment(carrierType, {
+      orderId: saleOrderId,
+      orderRef: saleOrderId.split('-')[0],
+      recipientName: order?.shippingAddress?.fullName || order?.customer?.fullName || 'Cliente',
+      recipientPhone: order?.shippingAddress?.phone || order?.customer?.phone || undefined,
+      address: order?.shippingAddress?.address || '',
+      city: order?.shippingAddress?.city || '',
+      state: order?.shippingAddress?.state || '',
+      zipCode: order?.shippingAddress?.zipCode || '',
+      manualTrackingNumber: dto.trackingNumber,
+    });
+
+    const trackingNumber = shipment.trackingNumber;
+    const courierName = dto.courierName || carrierType;
+
     await this.fulfillmentService.shipOrder(
       fulfillment.id,
-      dto.trackingNumber || '',
-      dto.courierName || 'Propio',
+      trackingNumber,
+      courierName,
     );
 
     const delivery = await this.prisma.delivery.upsert({
@@ -359,6 +381,9 @@ export class ShippingService {
         deliveryCodeExpiresAt: expiresAt,
         trackingToken,
         driverToken,
+        carrierType: shipment.carrierType,
+        carrierShipmentId: shipment.carrierShipmentId,
+        labelUrl: shipment.labelUrl,
         notes: dto.notes,
       },
       update: {
@@ -370,6 +395,9 @@ export class ShippingService {
         deliveryCodeExpiresAt: expiresAt,
         trackingToken,
         driverToken,
+        carrierType: shipment.carrierType,
+        carrierShipmentId: shipment.carrierShipmentId,
+        labelUrl: shipment.labelUrl,
         notes: dto.notes,
       },
     });
@@ -381,33 +409,23 @@ export class ShippingService {
     const links = {
       trackingUrl: `${baseUrl}/track/${trackingToken}`,
       driverUrl: `${baseUrl}/driver/${driverToken}`,
+      labelUrl: shipment.labelUrl,
+      carrierTrackingUrl: this.courierService.getTrackingUrl(carrierType, trackingNumber),
     };
 
-    const order = await this.prisma.saleOrder.findUnique({
-      where: { id: saleOrderId },
-      include: { customer: true },
-    });
-
     if (order?.customer?.phone) {
-      await this.notificationsService.enqueue({
-        channel: NotificationChannel.WHATSAPP,
-        templateKey: TemplateKey.ORDER_SHIPPED,
-        recipient: order.customer.phone,
-        variables: {
-          customerName: order.customer.fullName,
-          orderId: saleOrderId.split('-')[0],
-          courierName: dto.courierName || 'Propio',
-          trackingNumber: dto.trackingNumber || links.trackingUrl,
-        },
-        referenceId: saleOrderId,
+      await this.notificationTriggers.onOrderShipped(saleOrderId, {
+        customerName: order.customer.fullName,
+        customerPhone: order.customer.phone,
+        orderRef: saleOrderId.split('-')[0],
+        courierName,
+        trackingNumber,
+        trackingUrl: links.trackingUrl,
       });
-
-      await this.notificationsService.enqueue({
-        channel: NotificationChannel.WHATSAPP,
-        templateKey: TemplateKey.OTP_CODE,
-        recipient: order.customer.phone,
-        variables: { otpCode: otp },
-        referenceId: `${saleOrderId}:delivery-otp`,
+      await this.notificationTriggers.onDeliveryOtp(saleOrderId, {
+        customerPhone: order.customer.phone,
+        orderRef: saleOrderId.split('-')[0],
+        otpCode: otp,
       });
     }
 
@@ -459,6 +477,7 @@ export class ShippingService {
     });
 
     this.emitTracking(saleOrderId, fulfillment.status, DeliveryStatus.ARRIVED, updated);
+    void this.notificationTriggers.onDeliveryArrived(saleOrderId);
     return updated;
   }
 
@@ -588,6 +607,7 @@ export class ShippingService {
     });
 
     this.emitTracking(saleOrderId, OrderStatus.DELIVERED, DeliveryStatus.DELIVERED, delivered);
+    void this.notificationTriggers.onOrderDelivered(saleOrderId);
     return { delivery: delivered, fulfillment: await this.getFulfillmentByOrderId(saleOrderId) };
   }
 
@@ -639,6 +659,7 @@ export class ShippingService {
     });
 
     this.emitTracking(saleOrderId, OrderStatus.DELIVERED, DeliveryStatus.DELIVERED);
+    void this.notificationTriggers.onOrderDelivered(saleOrderId);
     return this.getShippingByOrderId(saleOrderId);
   }
 

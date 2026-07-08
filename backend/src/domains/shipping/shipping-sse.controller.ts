@@ -10,7 +10,7 @@ export class ShippingSseController {
   constructor(private readonly shippingService: ShippingService) {}
 
   @Sse('orders/:orderId/tracking/live')
-  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  @RequirePermissions({ action: 'read', subject: 'Delivery' })
   trackingLive(@Param('orderId') orderId: string) {
     return this.shippingService.subscribeTracking(orderId);
   }

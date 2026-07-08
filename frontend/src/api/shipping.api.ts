@@ -58,6 +58,7 @@ export interface DispatchDeliveryDto {
   courierName?: string;
   trackingNumber?: string;
   notes?: string;
+  carrierType?: 'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS';
 }
 
 export interface FulfillmentListItem {
