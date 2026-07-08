@@ -15,6 +15,10 @@ interface Props {
 
 const AVAILABLE_ACTIONS = [Actions.READ, Actions.CREATE, Actions.UPDATE, Actions.DELETE, Actions.MANAGE];
 const AVAILABLE_SUBJECTS = Object.values(Subjects).filter(s => s !== Subjects.ALL);
+const MATRIX_ACTIONS = [...AVAILABLE_ACTIONS, 'print'] as const;
+const CUSTOM_ACTIONS_BY_SUBJECT: Record<string, string[]> = {
+  [Subjects.LABELS]: ['print'],
+};
 
 export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
   const queryClient = useQueryClient();
@@ -143,7 +147,7 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
               <thead style={{ background: 'var(--bg-elevated)' }}>
                 <tr>
                   <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Módulo</th>
-                  {AVAILABLE_ACTIONS.map(action => (
+                  {MATRIX_ACTIONS.map(action => (
                     <th key={action} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', textAlign: 'center', textTransform: 'capitalize' }}>
                       {action}
                     </th>
@@ -159,16 +163,23 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
                       <td style={{ padding: '12px 16px', fontWeight: 500, color: 'var(--text-primary)' }}>
                         {subject}
                       </td>
-                      {AVAILABLE_ACTIONS.map(action => {
+                      {MATRIX_ACTIONS.map(action => {
+                        const supportsAction =
+                          AVAILABLE_ACTIONS.includes(action as typeof Actions[keyof typeof Actions]) ||
+                          (CUSTOM_ACTIONS_BY_SUBJECT[subject] ?? []).includes(action);
                         const isChecked = isManaged || hasPermission(action, subject);
                         return (
                           <td key={action} style={{ padding: '12px 16px', textAlign: 'center' }}>
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              disabled={roleToEdit?.isSystem || (isManaged && action !== Actions.MANAGE)}
+                              disabled={
+                                !supportsAction ||
+                                roleToEdit?.isSystem ||
+                                (isManaged && action !== Actions.MANAGE)
+                              }
                               onChange={(e) => togglePermission(action, subject, e.target.checked)}
-                              style={{ cursor: roleToEdit?.isSystem ? 'not-allowed' : 'pointer' }}
+                              style={{ cursor: roleToEdit?.isSystem || !supportsAction ? 'not-allowed' : 'pointer' }}
                             />
                           </td>
                         );

@@ -29,6 +29,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User session invalid or deleted.');
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException('Usuario desactivado. Contactá al administrador.');
+    }
+
     // Attach user to Request object for the PermissionsGuard to consume
     return { userId: payload.sub, email: payload.email, roleId: user.roleId };
   }

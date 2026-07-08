@@ -77,7 +77,7 @@ export const NAV_GROUPS: NavGroup[] = [
     id:    'channels',
     label: 'Canales',
     items: [
-      { id:'pos',       label:'Punto de Venta', to:'/pos',            icon:Monitor,      action:'manage', subject:'Sales' },
+      { id:'pos',       label:'Punto de Venta', to:'/pos',            icon:Monitor,      action:'create', subject:'Sales' },
       { id:'storefront',label:'Tienda Web',     to:'/store',          icon:Globe,        action:'read',   subject:'Catalog' },
     ],
   },

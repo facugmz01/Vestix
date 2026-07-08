@@ -213,9 +213,9 @@ export class UsersService implements OnModuleInit {
   }
 
   private async resolveRole(roleName: string) {
-    let dbRole = await this.prisma.role.findUnique({ where: { name: roleName } });
+    const dbRole = await this.prisma.role.findUnique({ where: { name: roleName } });
     if (!dbRole) {
-      dbRole = await this.prisma.role.create({ data: { name: roleName } });
+      throw new BadRequestException(`El rol "${roleName}" no existe. Creá el rol antes de asignarlo.`);
     }
     return dbRole;
   }

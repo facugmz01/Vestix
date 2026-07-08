@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { RequiredPermission } from './decorators/require-permissions.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { roleHasPermissions } from './permission-match.util';
 
 @Injectable()
 export class RbacService {
@@ -23,19 +24,7 @@ export class RbacService {
    */
   async validateUserPermissions(roleId: string, requiredPermissions: RequiredPermission[]): Promise<boolean> {
     const userPermissions = await this.getPermissionsForRole(roleId);
-
-    // Super Admin override (manage all)
-    const isSuperAdmin = userPermissions.some(
-      p => p.action === 'manage' && p.subject === 'all'
-    );
-    if (isSuperAdmin) return true;
-
-    // The user must possess ALL required permissions to pass
-    return requiredPermissions.every(required => 
-      userPermissions.some(
-        up => up.action === required.action && up.subject === required.subject
-      )
-    );
+    return roleHasPermissions(userPermissions, requiredPermissions);
   }
 
   /**

@@ -10,7 +10,7 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
-import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { RequirePermissions, RequireAnyPermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { RolesService, CreateRoleDto, UpdateRoleDto } from './roles.service';
@@ -27,7 +27,10 @@ export class RolesController {
   }
 
   @Get()
-  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  @RequireAnyPermissions(
+    [{ action: 'manage', subject: 'Settings' }],
+    [{ action: 'manage', subject: 'Users' }],
+  )
   findAll(@Query() query: Record<string, string>) {
     const page = parseInt(query.page) || 1;
     const pageSize = parseInt(query.pageSize) || 15;
@@ -37,7 +40,10 @@ export class RolesController {
   }
 
   @Get(':id')
-  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  @RequireAnyPermissions(
+    [{ action: 'manage', subject: 'Settings' }],
+    [{ action: 'manage', subject: 'Users' }],
+  )
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.rolesService.findOne(id);
   }

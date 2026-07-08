@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { AuthUser } from '@/types';
 import { authApi } from '@/api/auth.api';
+import { hasAnyPermission } from '@/rbac/permission-match';
 
 interface AuthState {
   user:            AuthUser | null;
@@ -52,11 +53,7 @@ export const useAuthStore = create<AuthState>()(
         const { user } = get();
         if (!user) return false;
         if (user.role === 'SUPER_ADMIN') return true;
-        return user.permissions.some(
-          (p) =>
-            (p.action === action || p.action === 'manage') &&
-            (p.subject === subject || p.subject === 'all')
-        );
+        return hasAnyPermission(user.permissions, action, subject);
       },
 
       isSuperAdmin: () => get().user?.role === 'SUPER_ADMIN',
