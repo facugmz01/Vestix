@@ -13,6 +13,7 @@ import { ShippingSseController } from './shipping-sse.controller';
 import { StorefrontTrackingController } from './storefront-tracking.controller';
 import { PublicTrackingController } from './public-tracking.controller';
 import { DriverController } from './driver.controller';
+import { DeliveryPortalController } from './delivery-portal.controller';
 
 @Global()
 @Module({
@@ -23,6 +24,7 @@ import { DriverController } from './driver.controller';
     StorefrontTrackingController,
     PublicTrackingController,
     DriverController,
+    DeliveryPortalController,
   ],
   providers: [
     ShippingService,

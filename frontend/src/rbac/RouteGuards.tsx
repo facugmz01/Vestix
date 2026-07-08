@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore }  from '@/store/auth.store';
 import { usePermissions } from '@/rbac/usePermissions';
 import { PageSpinner }   from '@/components/ui/Spinner';
+import { getDefaultHomePath } from '@/rbac/homeRoute';
 import type { Action, Subject } from './permissions';
 
 // ─── Auth guard ───────────────────────────────────────────────────────────────
@@ -42,8 +43,10 @@ export function RequireGuest() {
   if (isLoadingUser) return <PageSpinner />;
 
   if (isAuthenticated) {
-    const from = (location.state as { from?: string })?.from ?? '/admin';
-    return <Navigate to={from} replace />;
+    const from = (location.state as { from?: string })?.from;
+    const user = useAuthStore.getState().user;
+    const target = from && from !== '/login' ? from : getDefaultHomePath(user);
+    return <Navigate to={target} replace />;
   }
 
   return <Outlet />;

@@ -34,6 +34,12 @@ export class ShippingController {
     });
   }
 
+  @Get('drivers')
+  @RequirePermissions({ action: 'read', subject: 'Delivery' })
+  listDrivers() {
+    return this.shippingService.listDeliveryDrivers();
+  }
+
   @Get('orders/:orderId')
   @RequirePermissions({ action: 'read', subject: 'Delivery' })
   getOrderShipping(@Param('orderId') orderId: string) {

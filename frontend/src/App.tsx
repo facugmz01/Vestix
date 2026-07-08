@@ -5,6 +5,7 @@ import { PageSpinner }      from '@/components/ui/Spinner';
 import { useAuthInit }      from '@/hooks/useAuthInit';
 import { useSyncEngine }    from '@/hooks/useSyncEngine';
 import { OfflineStatusBar } from '@/features/offline/components/OfflineStatusBar';
+import { DeliveryLayout }   from '@/components/layout/DeliveryLayout';
 import { AdminLayout }      from '@/components/layout/AdminLayout';
 import { AuthLayout }       from '@/components/layout/AuthLayout';
 import { isStorefrontDomain } from '@/utils/storefrontDomain';
@@ -15,6 +16,7 @@ import {
   RequireGuest,
   RequirePermission,
 } from '@/rbac/RouteGuards';
+import { HomeRedirect } from '@/rbac/HomeRedirect';
 
 // ─── Auth & error pages ───────────────────────────────────────────────────────
 const LoginPage     = lazy(() => import('@/pages/auth/LoginPage'));
@@ -74,6 +76,8 @@ const StorefrontCheckoutPage = lazy(() => import('@/pages/storefront/StorefrontC
 const StorefrontMyOrdersPage = lazy(() => import('@/pages/storefront/StorefrontMyOrdersPage'));
 const StorefrontLoginPage = lazy(() => import('@/pages/storefront/StorefrontLoginPage'));
 const DriverDeliveryPage = lazy(() => import('@/pages/driver/DriverDeliveryPage'));
+const DeliveryAssignmentsPage = lazy(() => import('@/pages/delivery/DeliveryAssignmentsPage'));
+const DeliveryRunPage = lazy(() => import('@/pages/delivery/DeliveryRunPage'));
 const PublicTrackPage = lazy(() => import('@/pages/storefront/PublicTrackPage'));
 
 import { useThemeStore }    from '@/store/theme.store';
@@ -153,11 +157,21 @@ export default function App() {
             )}
           </Route>
 
+          {/* ── Delivery portal (repartidores ERP) ── */}
+          <Route element={<RequireAuth />}>
+            <Route element={<RequirePermission action="read" subject="Delivery" />}>
+              <Route path="/delivery" element={<DeliveryLayout />}>
+                <Route index element={<DeliveryAssignmentsPage />} />
+                <Route path="run/:deliveryId" element={<DeliveryRunPage />} />
+              </Route>
+            </Route>
+          </Route>
+
           {/* ── Admin zone ── */}
           <Route element={<RequireAuth />}>
             <Route element={<AdminLayout />}>
-              {!isStorefrontDomain() && <Route index element={<Navigate to="/admin" replace />} />}
-              <Route path="/admin" element={<ReportsPage />} />
+              {!isStorefrontDomain() && <Route index element={<HomeRedirect />} />}
+              <Route path="/admin" element={<HomeRedirect />} />
 
               <Route element={<RequirePermission action="read"   subject="Catalog" />}>
                 <Route path="/admin/catalog"    element={<CatalogPage />} />
@@ -196,8 +210,11 @@ export default function App() {
 
               <Route element={<RequirePermission action="read"   subject="Delivery" />}>
                 <Route path="/admin/delivery" element={<SalesFulfillmentPage />} />
-                <Route path="/admin/delivery/carriers" element={<DeliveryCarriersPage />} />
                 <Route path="/admin/sales/fulfillment" element={<Navigate to="/admin/delivery" replace />} />
+              </Route>
+
+              <Route element={<RequirePermission action="manage" subject="Delivery" />}>
+                <Route path="/admin/delivery/carriers" element={<DeliveryCarriersPage />} />
               </Route>
 
               <Route element={<RequirePermission action="read"   subject="Customers" />}>
@@ -249,7 +266,7 @@ export default function App() {
           <Route path="*" element={
             isStorefrontDomain()
               ? <Navigate to="/" replace />
-              : <Navigate to="/admin" replace />
+              : <HomeRedirect />
           } />
 
         </Routes>

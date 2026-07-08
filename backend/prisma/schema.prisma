@@ -42,6 +42,7 @@ model User {
   openedShifts     CashShift[]    @relation("OpenedShifts")
   closedShifts     CashShift[]    @relation("ClosedShifts")
   receivedReceipts GoodsReceipt[] @relation("ReceivedByUser")
+  assignedDeliveries Delivery[] @relation("AssignedDeliveries")
 
   @@schema("core")
 }
@@ -1081,6 +1082,8 @@ model Delivery {
   status                String           @default("PENDING") // PENDING | ASSIGNED | IN_TRANSIT | ARRIVED | DELIVERED | FAILED
   driverName            String?
   driverPhone           String?
+  assignedUserId        String?
+  assignedUser          User?            @relation("AssignedDeliveries", fields: [assignedUserId], references: [id])
   dispatchedAt          DateTime?
   estimatedArrival      DateTime?
   deliveryCode          String?
@@ -1101,6 +1104,7 @@ model Delivery {
   validations           DeliveryValidation[]
 
   @@index([status])
+  @@index([assignedUserId])
   @@schema("core")
 }
 

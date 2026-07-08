@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, ShoppingBag, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
+import { usePermissions } from '@/rbac/usePermissions';
 
 import {
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, Modal, Input
@@ -31,6 +32,10 @@ const STATUS_FILTERS = [
 ];
 
 export default function SalesFulfillmentPage() {
+  const { can } = usePermissions();
+  const deliveryTabs = DELIVERY_TABS.filter((tab) =>
+    tab.id !== 'carriers' || can('manage', 'Delivery'),
+  );
   const { page, pageSize, filters, setPage, setFilter } = useListPage({ status: 'PAID' }, { defaultPageSize: 20 });
   const queryClient = useQueryClient();
 
@@ -38,6 +43,7 @@ export default function SalesFulfillmentPage() {
   const [completeModal, setCompleteModal] = useState<FulfillmentListItem | null>(null);
   const [linksModal, setLinksModal] = useState<DispatchResult | null>(null);
   const [driverName, setDriverName] = useState('');
+  const [driverUserId, setDriverUserId] = useState('');
   const [driverPhone, setDriverPhone] = useState('');
   const [courierName, setCourierName] = useState('Propio');
   const [carrierType, setCarrierType] = useState<'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS'>('PROPIO');
@@ -50,6 +56,11 @@ export default function SalesFulfillmentPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.orders.deliveries({ page, pageSize, status: statusFilter }),
     queryFn: () => shippingApi.listDeliveries({ page, pageSize, status: statusFilter }),
+  });
+
+  const { data: deliveryDrivers = [] } = useQuery({
+    queryKey: ['shipping', 'drivers'],
+    queryFn: () => shippingApi.listDrivers(),
   });
 
   const dispatchMutation = useMutation({
@@ -90,6 +101,7 @@ export default function SalesFulfillmentPage() {
 
   const resetDispatchForm = () => {
     setDriverName('');
+    setDriverUserId('');
     setDriverPhone('');
     setCourierName('Propio');
     setCarrierType('PROPIO');
@@ -134,7 +146,7 @@ export default function SalesFulfillmentPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={DELIVERY_TABS} />}
+      tabs={<Tabs items={deliveryTabs} />}
       title="Envíos y Despacho"
       subtitle="Gestioná pedidos web: preparación, despacho, tracking GPS y validación de entrega."
     >
@@ -268,7 +280,7 @@ export default function SalesFulfillmentPage() {
                 disabled={!driverName.trim()}
                 onClick={() => dispatchMutation.mutate({
                   orderId: dispatchModal.saleOrderId,
-                  dto: { driverName, driverPhone, courierName, trackingNumber, carrierType },
+                  dto: { driverName, driverPhone, courierName, trackingNumber, carrierType, driverUserId: driverUserId || undefined },
                 })}
               >
                 Confirmar despacho
@@ -277,6 +289,24 @@ export default function SalesFulfillmentPage() {
           }
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Repartidor ERP</label>
+              <select
+                value={driverUserId}
+                onChange={e => {
+                  const id = e.target.value;
+                  setDriverUserId(id);
+                  const driver = deliveryDrivers.find(d => d.id === id);
+                  if (driver?.fullName) setDriverName(driver.fullName);
+                }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)', marginBottom: '12px' }}
+              >
+                <option value="">Seleccionar usuario repartidor (opcional)</option>
+                {deliveryDrivers.map(d => (
+                  <option key={d.id} value={d.id}>{d.fullName || d.email}</option>
+                ))}
+              </select>
+            </div>
             <Input label="Repartidor *" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre del repartidor" />
             <Input label="Teléfono repartidor" value={driverPhone} onChange={e => setDriverPhone(e.target.value)} placeholder="54911..." />
             <div>

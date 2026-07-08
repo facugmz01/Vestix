@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
-  Users, Wallet, Settings, Monitor, Globe, BarChart2, Scan, Bell, Shield, UserCog
+  Users, Wallet, Settings, Monitor, Globe, BarChart2, Scan, Bell, Shield, UserCog, Truck
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';
@@ -10,6 +10,7 @@ import {
   INVENTORY_TABS,
   PURCHASING_TABS,
   SALES_TABS,
+  DELIVERY_TABS,
   FINANCE_TABS,
 } from './moduleTabs';
 
@@ -49,6 +50,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { id:'inventory', label:'Inventario',   to:'/admin/inventory',  icon:Warehouse,    action:'read', subject:'Inventory' },
       { id:'purchasing',label:'Compras',      to:'/admin/purchasing', icon:ShoppingCart, action:'read', subject:'Purchasing' },
       { id:'sales',     label:'Ventas',       to:'/admin/sales',      icon:ShoppingCart, action:'read', subject:'Sales' },
+      { id:'delivery',  label:'Envíos',       to:'/admin/delivery',   icon:Truck,        action:'read', subject:'Delivery' },
       { id:'scanner',   label:'Escáner QR',   to:'/admin/scanner',    icon:Scan,         action:'read', subject:'Catalog' },
     ],
   },
@@ -104,5 +106,6 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   ...INVENTORY_TABS.map(t => ({ ...t, action: 'read', subject: 'Inventory' } as NavItem)),
   ...PURCHASING_TABS.map(t => ({ ...t, action: 'read', subject: 'Purchasing' } as NavItem)),
   ...SALES_TABS.map(t => ({ ...t, action: 'read', subject: 'Sales' } as NavItem)),
+  ...DELIVERY_TABS.map(t => ({ ...t, action: 'read', subject: 'Delivery' } as NavItem)),
   ...FINANCE_TABS.map(t => ({ ...t, action: 'read', subject: 'Finance' } as NavItem)),
 ];

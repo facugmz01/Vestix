@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { authApi } from '@/api/auth.api';
 import { useAuthStore } from '@/store/auth.store';
 import { APP_CONFIG } from '@/config/app.config';
+import { getDefaultHomePath } from '@/rbac/homeRoute';
 
 export default function LoginPage() {
   const [email,       setEmail]       = useState('');
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const setAuth  = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
   const location = useLocation();
-  const intendedPath = (location.state as { from?: string })?.from ?? '/admin';
+  const intendedPath = (location.state as { from?: string })?.from;
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -27,7 +28,10 @@ export default function LoginPage() {
       setAuth(user);
       const name = user.fullName ? user.fullName.split(' ')[0] : user.email.split('@')[0];
       toast.success(`¡Bienvenido, ${name}!`);
-      navigate(intendedPath, { replace: true });
+      const target = intendedPath && intendedPath !== '/admin' && intendedPath !== '/'
+        ? intendedPath
+        : getDefaultHomePath(user);
+      navigate(target, { replace: true });
     },
     onError: (err: any) => {
       const msg: string = err?.response?.data?.message ?? '';

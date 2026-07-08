@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { Subject, Observable, from } from 'rxjs';
@@ -201,6 +202,92 @@ export class ShippingService {
     return { data, total, page, pageSize };
   }
 
+  async listDeliveryDrivers() {
+    return this.prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { name: 'DELIVERY_DRIVER' },
+      },
+      select: { id: true, fullName: true, email: true },
+      orderBy: { fullName: 'asc' },
+    });
+  }
+
+  async listMyDeliveries(
+    userId: string,
+    params: { status?: string; page?: number; pageSize?: number },
+  ) {
+    const page = params.page || 1;
+    const pageSize = params.pageSize || 20;
+    const skip = (page - 1) * pageSize;
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    const activeStatuses = ['IN_TRANSIT', 'ARRIVED', 'ASSIGNED'];
+    const where: any = {
+      assignedUserId: userId,
+      status: params.status ? params.status : { in: activeStatuses },
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.delivery.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { dispatchedAt: 'desc' },
+        include: {
+          fulfillment: {
+            include: {
+              saleOrder: {
+                include: { customer: true, shippingAddress: true, lines: true },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.delivery.count({ where }),
+    ]);
+
+    return {
+      data: data.map((d) => this.mapDriverAssignment(d)),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async getMyDeliveryAssignment(userId: string, deliveryId: string) {
+    const delivery = await this.requireAssignedDelivery(deliveryId, userId);
+    const settings = await this.getDeliverySettings();
+    return this.mapDriverAssignment(delivery, settings);
+  }
+
+  async updateLocationForDriver(userId: string, deliveryId: string, dto: UpdateLocationDto) {
+    const delivery = await this.requireAssignedDelivery(deliveryId, userId);
+    return this.updateLocation(delivery.fulfillment.saleOrderId, dto);
+  }
+
+  async markArrivedForDriver(userId: string, deliveryId: string) {
+    const delivery = await this.requireAssignedDelivery(deliveryId, userId);
+    return this.markArrived(delivery.fulfillment.saleOrderId);
+  }
+
+  async uploadProofPhotoForDriver(userId: string, deliveryId: string, photoUrl: string) {
+    const delivery = await this.requireAssignedDelivery(deliveryId, userId);
+    return this.uploadProofPhoto(delivery.fulfillment.saleOrderId, photoUrl);
+  }
+
+  async completeDeliveryForDriver(
+    userId: string,
+    deliveryId: string,
+    dto: CompleteDeliveryDto,
+    coords?: { latitude: number; longitude: number },
+  ) {
+    const delivery = await this.requireAssignedDelivery(deliveryId, userId);
+    return this.completeDelivery(delivery.fulfillment.saleOrderId, dto, 'DRIVER', coords);
+  }
+
   async getShippingByOrderId(saleOrderId: string) {
     const order = await this.prisma.saleOrder.findUnique({
       where: { id: saleOrderId },
@@ -363,6 +450,18 @@ export class ShippingService {
     const trackingNumber = shipment.trackingNumber;
     const courierName = dto.courierName || carrierType;
 
+    let assignedUserId = dto.driverUserId;
+    if (!assignedUserId && dto.driverName) {
+      const driverUser = await this.prisma.user.findFirst({
+        where: {
+          fullName: { equals: dto.driverName, mode: 'insensitive' },
+          role: { name: 'DELIVERY_DRIVER' },
+          isActive: true,
+        },
+      });
+      assignedUserId = driverUser?.id;
+    }
+
     await this.fulfillmentService.shipOrder(
       fulfillment.id,
       trackingNumber,
@@ -376,6 +475,7 @@ export class ShippingService {
         status: DeliveryStatus.IN_TRANSIT,
         driverName: dto.driverName,
         driverPhone: dto.driverPhone,
+        assignedUserId,
         dispatchedAt: new Date(),
         deliveryCode: otp,
         deliveryCodeExpiresAt: expiresAt,
@@ -390,6 +490,7 @@ export class ShippingService {
         status: DeliveryStatus.IN_TRANSIT,
         driverName: dto.driverName,
         driverPhone: dto.driverPhone,
+        assignedUserId,
         dispatchedAt: new Date(),
         deliveryCode: otp,
         deliveryCodeExpiresAt: expiresAt,
@@ -800,5 +901,49 @@ export class ShippingService {
       throw new NotFoundException('Link de repartidor no válido.');
     }
     return delivery;
+  }
+
+  private async requireAssignedDelivery(deliveryId: string, userId: string) {
+    const delivery = await this.prisma.delivery.findUnique({
+      where: { id: deliveryId },
+      include: {
+        fulfillment: {
+          include: {
+            saleOrder: {
+              include: { customer: true, shippingAddress: true, lines: true },
+            },
+          },
+        },
+      },
+    });
+    if (!delivery) {
+      throw new NotFoundException('Envío no encontrado.');
+    }
+    if (delivery.assignedUserId !== userId) {
+      throw new ForbiddenException('Este envío no está asignado a tu usuario.');
+    }
+    return delivery;
+  }
+
+  private mapDriverAssignment(delivery: any, settings?: DeliverySettings) {
+    const order = delivery.fulfillment?.saleOrder;
+    return {
+      id: delivery.id,
+      status: delivery.status,
+      fulfillmentStatus: delivery.fulfillment?.status,
+      orderRef: order?.id?.split('-')[0],
+      saleOrderId: order?.id,
+      driverName: delivery.driverName,
+      customerName: order?.customer?.fullName || order?.shippingAddress?.fullName,
+      customerPhone: order?.customer?.phone || order?.shippingAddress?.phone,
+      shippingAddress: order?.shippingAddress,
+      lines: order?.lines || [],
+      dispatchedAt: delivery.dispatchedAt,
+      driverToken: delivery.driverToken,
+      settings: settings ? {
+        requirePhotoOnDelivery: settings.requirePhotoOnDelivery,
+        enableGeofence: settings.enableGeofence,
+      } : undefined,
+    };
   }
 }

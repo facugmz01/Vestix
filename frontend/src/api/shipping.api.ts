@@ -59,6 +59,7 @@ export interface DispatchDeliveryDto {
   trackingNumber?: string;
   notes?: string;
   carrierType?: 'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS';
+  driverUserId?: string;
 }
 
 export interface FulfillmentListItem {
@@ -91,6 +92,8 @@ export interface FulfillmentListItem {
 }
 
 export const shippingApi = {
+  listDrivers: () => get<Array<{ id: string; fullName: string | null; email: string }>>('/shipping/drivers'),
+
   listDeliveries: (params?: { status?: string; page?: number; pageSize?: number }) =>
     get<{ data: FulfillmentListItem[]; total: number; page: number; pageSize: number }>(
       '/shipping/deliveries',

@@ -24,4 +24,8 @@ export class DispatchDeliveryDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  driverUserId?: string;
 }
