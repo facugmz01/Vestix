@@ -306,6 +306,9 @@ export interface PriceList {
   currency: string;
   type: 'BASE' | 'MODIFIER';
   modifierPercentage?: number;
+  isPercentageBased?: boolean;
+  percentageDiscount?: number | null;
+  margin?: number;
   isActive: boolean;
   isDefault?: boolean;
   createdAt: string;

@@ -7,10 +7,20 @@ import { Button } from '@/components/ui';
 interface Props {
   costPrice: number;
   basePrice: number;
+  baseSku?: string;
   onGenerate: (variants: any[]) => void;
 }
 
-export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props) {
+function buildVariantSku(baseSku: string, attributes: Record<string, string>): string {
+  const base = (baseSku || 'PROD').trim() || 'PROD';
+  const sortedKeys = Object.keys(attributes).sort();
+  const parts = sortedKeys.map(key =>
+    String(attributes[key]).replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase(),
+  ).filter(Boolean);
+  return parts.length ? `${base}-${parts.join('-')}` : base;
+}
+
+export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate }: Props) {
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string[]>>({});
   
   const { data: attributes } = useQuery({
@@ -32,9 +42,6 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
     const attrNames = Object.keys(selectedAttributes).filter(k => selectedAttributes[k].length > 0);
     if (attrNames.length === 0) return;
 
-    // We now support any attributes. The backend will handle the mapping.
-    // However, for the local preview (before saving), we still want to show them.
-    
     let combinations: any[] = [{}];
     
     attrNames.forEach(name => {
@@ -49,8 +56,8 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
       combinations = next;
     });
 
+    const usedSkus = new Set<string>();
     const variants = combinations.map(combo => {
-      // Find color and size for the preview table
       const colorKey = Object.keys(combo).find(k => 
         ['color', 'colores', 'cor'].includes(k.toLowerCase())
       );
@@ -59,6 +66,12 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
         k.toLowerCase().startsWith('talle')
       );
 
+      let sku = buildVariantSku(baseSku || '', combo);
+      while (usedSkus.has(sku)) {
+        sku = `${sku}-X`;
+      }
+      usedSkus.add(sku);
+
       return {
         color: colorKey ? combo[colorKey] : undefined,
         size: sizeKey ? combo[sizeKey] : undefined,
@@ -66,12 +79,13 @@ export function VariantMassGenerator({ costPrice, basePrice, onGenerate }: Props
         costPrice,
         basePrice,
         isActive: true,
-        sku: '' 
+        sku,
+        barcode: '',
       };
     });
 
     onGenerate(variants);
-    setSelectedAttributes({}); // Clear selection after generating
+    setSelectedAttributes({});
   };
 
   return (

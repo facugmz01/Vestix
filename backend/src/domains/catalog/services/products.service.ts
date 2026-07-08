@@ -5,6 +5,7 @@ import { UpdateProductDto } from '../dto/update-product.dto';
 import { CategoriesService, BrandsService } from './taxonomy.service';
 import { SettingsService } from '../../../modules/settings/settings.service';
 import { PriceHistoryService } from './price-history.service';
+import { IdentifiersService } from '../identifiers.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import { isVariableProduct, normalizeProductType, syncIsVariableFlag } from '../utils/product-type.util';
@@ -24,6 +25,7 @@ export class ProductsService {
     private readonly brandsService: BrandsService,
     private readonly settingsService: SettingsService,
     private readonly priceHistoryService: PriceHistoryService,
+    private readonly identifiersService: IdentifiersService,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -36,6 +38,9 @@ export class ProductsService {
     // 2. Load settings for POS validations and SKU generation
     const posSettings = await this.settingsService.getPosSettings();
     const skuSettings = await this.settingsService.getSkuBarcodeSettings();
+    const productType = normalizeProductType(createProductDto);
+    const variableProduct = isVariableProduct(createProductDto);
+    const autoBarcode = skuSettings.barcodeAutoGenerate !== false;
 
     // 2a. POS Validations & USD Logic
     if (createProductDto.metadata?.usdCurrency) {
@@ -61,44 +66,11 @@ export class ProductsService {
     if (posSettings.requireDescription && !createProductDto.description?.trim()) {
       throw new ConflictException('La Descripción es obligatoria según la configuración de ventas.');
     }
-    if (posSettings.requireBarcode) {
-      const variants = createProductDto.variants || [];
-      const hasMissingBarcode = variants.some(v => !v.barcode?.trim());
-      // For simple products, we must check if there is a variant. If no variants are provided, we check if they passed barcode in the main dto? 
-      // DTO doesn't have barcode at root, only in variants. So if requireBarcode is true, and it's simple, they MUST send at least 1 variant.
-      if (hasMissingBarcode || variants.length === 0) {
-        throw new ConflictException('El Código de Barras es obligatorio para el producto según la configuración de ventas.');
-      }
-    }
     if (posSettings.requireShippingDimensions) {
       if (!hasRequiredShippingDimensions(createProductDto.metadata)) {
         throw new ConflictException('Las dimensiones de envío (peso, ancho, alto, largo) son obligatorias según la configuración de ventas.');
       }
     }
-
-    // 2b. Base SKU Uniqueness & Generation
-    let finalSku = createProductDto.baseSku;
-
-    if (!finalSku) {
-      if (skuSettings.skuAutoGenerate) {
-        const prefix = skuSettings.skuPrefix || 'PROD-';
-        const seq = skuSettings.nextSkuSequence || 1;
-        finalSku = `${prefix}${seq.toString().padStart(4, '0')}`;
-        
-        await this.settingsService.updateSection('skuBarcode', {
-          ...skuSettings,
-          nextSkuSequence: seq + 1
-        }, 'system');
-      } else {
-        finalSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-      }
-    }
-    const exists = await this.prisma.product.findUnique({ where: { baseSku: finalSku } });
-    if (exists) throw new ConflictException(`El SKU Base ${finalSku} ya está en uso`);
-
-    const productType = normalizeProductType(createProductDto);
-    const variableProduct = isVariableProduct(createProductDto);
-    const normalizedMetadata = normalizeMetadataWithDimensions(createProductDto.metadata || {});
 
     if (productType === 'VARIABLE' && (!createProductDto.variants || createProductDto.variants.length === 0)) {
       throw new ConflictException('Los productos variables requieren al menos una variante.');
@@ -106,6 +78,47 @@ export class ProductsService {
     if (productType === 'COMBO' && (!createProductDto.comboLines || createProductDto.comboLines.length === 0)) {
       throw new ConflictException('Los productos combo requieren al menos un componente en la receta.');
     }
+
+    // 2b. Base SKU Uniqueness & Generation
+    let finalSku = createProductDto.baseSku?.trim();
+    if (!finalSku) {
+      if (skuSettings.skuAutoGenerate !== false) {
+        finalSku = await this.identifiersService.generateBaseSku();
+      } else {
+        finalSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+      }
+    }
+    const exists = await this.prisma.product.findUnique({ where: { baseSku: finalSku } });
+    if (exists) throw new ConflictException(`El SKU Base ${finalSku} ya está en uso`);
+
+    // Prepare barcodes before create (respect barcodeAutoGenerate setting)
+    if (variableProduct && createProductDto.variants?.length) {
+      for (const v of createProductDto.variants) {
+        if (!v.barcode?.trim() && autoBarcode) {
+          v.barcode = await this.identifiersService.generateUniqueBarcode();
+        }
+      }
+    } else if (!createProductDto.variants?.[0]?.barcode?.trim() && autoBarcode) {
+      createProductDto.variants = [
+        {
+          ...(createProductDto.variants?.[0] || {}),
+          barcode: await this.identifiersService.generateUniqueBarcode(),
+        },
+      ];
+    }
+
+    if (posSettings.requireBarcode) {
+      if (variableProduct) {
+        const missing = (createProductDto.variants || []).some(v => !v.barcode?.trim());
+        if (missing) {
+          throw new ConflictException('El Código de Barras es obligatorio para el producto según la configuración de ventas.');
+        }
+      } else if (!createProductDto.variants?.[0]?.barcode?.trim()) {
+        throw new ConflictException('El Código de Barras es obligatorio para el producto según la configuración de ventas.');
+      }
+    }
+
+    const normalizedMetadata = normalizeMetadataWithDimensions(createProductDto.metadata || {});
 
     // 3. Create Product and Variants in a Transaction
     return this.prisma.$transaction(async (tx) => {
@@ -136,23 +149,52 @@ export class ProductsService {
 
       // 4. Create Variants
       if (variableProduct && createProductDto.variants?.length) {
-        await tx.productVariant.createMany({
-          data: createProductDto.variants.map(v => {
-            const parts = [finalSku, v.size, v.color].filter(Boolean).join('-');
-            return {
-              ...v,
+        const usedSkus = new Set<string>();
+        for (const v of createProductDto.variants) {
+          const attrs = (v.attributes && typeof v.attributes === 'object')
+            ? Object.fromEntries(
+                Object.entries(v.attributes)
+                  .filter(([, val]) => val != null && String(val).trim() !== '')
+                  .map(([k, val]) => [k, String(val)]),
+              )
+            : {
+                ...(v.color ? { Color: v.color } : {}),
+                ...(v.size ? { Talle: v.size } : {}),
+              };
+
+          let sku = (v.sku || '').trim();
+          if (!sku) {
+            sku = await this.identifiersService.ensureUniqueVariantSku(finalSku, attrs);
+          } else if (!(await this.identifiersService.validateSkuUniqueness(sku))) {
+            throw new ConflictException(`El SKU ${sku} ya está en uso`);
+          }
+          while (usedSkus.has(sku.toUpperCase())) {
+            sku = `${sku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+          }
+          usedSkus.add(sku.toUpperCase());
+
+          await tx.productVariant.create({
+            data: {
               productId: product.id,
+              sku,
+              barcode: (v.barcode || '').trim() || null,
+              size: v.size,
+              color: v.color,
+              imageUrl: v.imageUrl,
+              attributes: v.attributes || attrs,
               costPrice: v.costPrice || createProductDto.costPrice || 0,
-              sku: v.sku || `${parts}-${crypto.randomBytes(2).toString('hex')}`.toUpperCase()
-            };
-          })
-        });
+              basePrice: v.basePrice ?? createProductDto.basePrice ?? 0,
+              isActive: v.isActive !== false,
+            },
+          });
+        }
       } else {
-        // Simple product: create one default variant
+        // Simple / combo product: create one default variant
         await tx.productVariant.create({
           data: {
             productId: product.id,
             sku: finalSku,
+            barcode: createProductDto.variants?.[0]?.barcode?.trim() || null,
             basePrice: createProductDto.basePrice || createProductDto.variants?.[0]?.basePrice || 0,
             costPrice: createProductDto.costPrice || 0,
             isActive: true
@@ -425,14 +467,43 @@ export class ProductsService {
             });
           } else {
             // Create
-            const finalSku = updateProductDto.baseSku || product.baseSku;
-            const parts = [finalSku, variant.size, variant.color].filter(Boolean).join('-');
+            const finalSku = updateProductDto.baseSku || product.baseSku || 'PROD';
+            const attrs = (variant.attributes && typeof variant.attributes === 'object')
+              ? Object.fromEntries(
+                  Object.entries(variant.attributes)
+                    .filter(([, val]) => val != null && String(val).trim() !== '')
+                    .map(([k, val]) => [k, String(val)]),
+                )
+              : {
+                  ...(variant.color ? { Color: variant.color } : {}),
+                  ...(variant.size ? { Talle: variant.size } : {}),
+                };
+
+            let sku = (variant.sku || '').trim();
+            if (!sku) {
+              sku = await this.identifiersService.ensureUniqueVariantSku(finalSku, attrs);
+            }
+
+            let barcode = (variant.barcode || '').trim() || null;
+            if (!barcode) {
+              const skuSettings = await this.settingsService.getSkuBarcodeSettings();
+              if (skuSettings.barcodeAutoGenerate !== false) {
+                barcode = await this.identifiersService.generateUniqueBarcode();
+              }
+            }
+
             await tx.productVariant.create({
               data: {
-                ...variant,
                 productId: id,
+                sku,
+                barcode,
+                size: variant.size,
+                color: variant.color,
+                imageUrl: variant.imageUrl,
+                attributes: variant.attributes || attrs,
                 costPrice: variant.costPrice || updateProductDto.costPrice || product.costPrice || 0,
-                sku: variant.sku || `${parts}-${crypto.randomBytes(2).toString('hex')}`.toUpperCase()
+                basePrice: variant.basePrice ?? updateProductDto.basePrice ?? 0,
+                isActive: variant.isActive !== false,
               }
             });
           }
@@ -481,12 +552,41 @@ export class ProductsService {
   }
 
   async createVariant(productId: string, data: any) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException(`Producto ${productId} no encontrado`);
+
+    const skuSettings = await this.settingsService.getSkuBarcodeSettings();
+    const attrs = (data.attributes && typeof data.attributes === 'object')
+      ? Object.fromEntries(
+          Object.entries(data.attributes)
+            .filter(([, val]) => val != null && String(val).trim() !== '')
+            .map(([k, val]) => [k, String(val)]),
+        )
+      : {
+          ...(data.color ? { Color: data.color } : {}),
+          ...(data.size ? { Talle: data.size } : {}),
+        };
+
+    let sku = (data.sku || '').trim();
+    if (!sku) {
+      sku = await this.identifiersService.ensureUniqueVariantSku(product.baseSku || 'PROD', attrs);
+    } else if (!(await this.identifiersService.validateSkuUniqueness(sku))) {
+      throw new ConflictException(`El SKU ${sku} ya está en uso`);
+    }
+
+    let barcode = (data.barcode || '').trim() || null;
+    if (!barcode && skuSettings.barcodeAutoGenerate !== false) {
+      barcode = await this.identifiersService.generateUniqueBarcode();
+    }
+
     return this.prisma.productVariant.create({
       data: {
         ...data,
         productId,
-        sku: data.sku || `SKU-${crypto.randomBytes(4).toString('hex').toUpperCase()}`
-      }
+        sku,
+        barcode,
+        attributes: data.attributes || attrs,
+      },
     });
   }
 
@@ -566,33 +666,42 @@ export class ProductsService {
     const combinations = cartesianCombinations(attributes);
     const skuPrefix = product.baseSku || productId.substring(0, 8);
     const basePrice = dto.basePrice ?? 0;
+    const costPrice = dto.costPrice ?? product.costPrice ?? 0;
+    const skuSettings = await this.settingsService.getSkuBarcodeSettings();
+    const autoBarcode = skuSettings.barcodeAutoGenerate !== false;
 
-    const variantsData = combinations.map(combo => {
+    const usedSkus = new Set<string>();
+    const created = [];
+
+    for (const combo of combinations) {
       const { color, size } = extractColorAndSize(combo);
-      const attrString = Object.values(combo).join('-');
-      const sku = `${skuPrefix}-${attrString}`.toUpperCase().replace(/\s+/g, '');
+      let sku = await this.identifiersService.ensureUniqueVariantSku(skuPrefix, combo);
+      while (usedSkus.has(sku.toUpperCase())) {
+        sku = `${sku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+      }
+      usedSkus.add(sku.toUpperCase());
 
-      return {
-        productId,
-        color,
-        size,
-        attributes: combo,
-        basePrice,
-        sku,
-        isActive: true,
-      };
-    });
+      const barcode = autoBarcode
+        ? await this.identifiersService.generateUniqueBarcode()
+        : null;
 
-    await this.prisma.productVariant.createMany({
-      data: variantsData,
-      skipDuplicates: true,
-    });
+      const variant = await this.prisma.productVariant.create({
+        data: {
+          productId,
+          color,
+          size,
+          attributes: combo,
+          basePrice,
+          costPrice,
+          sku,
+          barcode,
+          isActive: true,
+        },
+      });
+      created.push(variant);
+    }
 
-    const skus = variantsData.map(v => v.sku);
-    return this.prisma.productVariant.findMany({
-      where: { productId, sku: { in: skus } },
-      orderBy: { createdAt: 'asc' },
-    });
+    return created;
   }
 
   async remove(id: string) {

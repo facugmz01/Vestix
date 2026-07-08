@@ -8,10 +8,16 @@ export class IdentifiersController {
   constructor(private readonly identifiersService: IdentifiersService) {}
 
   @Post('generate-sku')
-  async generateSku(@Body() body: { productId?: string; attributes?: string[] }) {
+  async generateSku(
+    @Body() body: { productId?: string; attributes?: string[] | Record<string, string>; base?: boolean },
+  ) {
+    if (body.base || !body.productId) {
+      const sku = await this.identifiersService.generateBaseSku();
+      return { sku };
+    }
     const sku = await this.identifiersService.generateVariantSku(
-      body.productId || 'GENERIC',
-      body.attributes || []
+      body.productId,
+      body.attributes || [],
     );
     return { sku };
   }
