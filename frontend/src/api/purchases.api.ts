@@ -12,11 +12,13 @@ export interface PurchaseFilters {
 
 export interface CreatePurchaseOrderDto {
   supplierId: string;
+  destinationWarehouseId: string;
   expectedDeliveryDate?: string;
   lines: { variantId: string; orderedQuantity: number; unitCost: number }[];
 }
 
 export interface UpdatePurchaseOrderDto {
+  destinationWarehouseId?: string;
   expectedDeliveryDate?: string;
   lines?: { variantId: string; orderedQuantity: number; unitCost: number }[];
 }

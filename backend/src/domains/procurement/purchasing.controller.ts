@@ -1,15 +1,19 @@
-import { Controller, Post, Body, Get, Query, Param, ParseUUIDPipe, Patch, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, ParseUUIDPipe, Patch, Delete, UseGuards } from '@nestjs/common';
 import { PurchasingService } from './purchasing.service';
+import { GoodsReceiptService } from './receipts/goods-receipt.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { BulkImportPurchasesDto } from './dto/bulk-purchases.dto';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { AuthGuard } from '@nestjs/passport';
-import { UseGuards } from '@nestjs/common';
+import { CurrentUser } from '../../core/rbac/decorators/current-user.decorator';
 
 @Controller('purchasing')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class PurchasingController {
-  constructor(private readonly purchasingService: PurchasingService) {}
+  constructor(
+    private readonly purchasingService: PurchasingService,
+    private readonly goodsReceiptService: GoodsReceiptService,
+  ) {}
 
   @Get('orders')
   @RequirePermissions({ action: 'read', subject: 'Purchasing' })
@@ -57,6 +61,22 @@ export class PurchasingController {
   @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
   remove(@Param('id') id: string) {
     return this.purchasingService.removePO(id);
+  }
+
+  @Post('orders/:id/issue')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  issue(@Param('id') id: string) {
+    return this.purchasingService.issueOrder(id);
+  }
+
+  @Post('orders/:id/receive')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  receive(
+    @Param('id') id: string,
+    @Body() dto: { lines: { variantId: string; receivedQuantity: number }[] },
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.goodsReceiptService.quickReceiveFromPO(id, dto.lines, userId);
   }
 }
 

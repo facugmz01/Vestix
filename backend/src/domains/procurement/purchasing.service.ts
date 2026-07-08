@@ -15,14 +15,23 @@ export class PurchasingService {
     private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
+  private resolveWarehouseId(dto: { destinationWarehouseId?: string; warehouseId?: string }) {
+    const warehouseId = dto.destinationWarehouseId || dto.warehouseId;
+    if (!warehouseId) {
+      throw new BadRequestException('Se requiere un depósito de destino (destinationWarehouseId).');
+    }
+    return warehouseId;
+  }
+
   async createPO(dto: any) {
     try {
+      const destinationWarehouseId = this.resolveWarehouseId(dto);
       const totalAmount = (dto.lines || []).reduce((sum, l) => sum + (l.orderedQuantity * l.unitCost), 0);
 
       return await this.prisma.purchaseOrder.create({
         data: {
           supplierId: dto.supplierId,
-          destinationWarehouseId: dto.destinationWarehouseId,
+          destinationWarehouseId,
           status: 'DRAFT',
           totalAmount: totalAmount,
           paidAmount: 0,
@@ -395,10 +404,12 @@ export class PurchasingService {
       
       const totalAmount = (dto.lines || []).reduce((sum: number, l: any) => sum + (l.orderedQuantity * l.unitCost), 0);
 
+      const destinationWarehouseId = dto.destinationWarehouseId || dto.warehouseId || po.destinationWarehouseId;
+
       return tx.purchaseOrder.update({
         where: { id },
         data: {
-          destinationWarehouseId: dto.destinationWarehouseId,
+          destinationWarehouseId,
           notes: dto.notes,
           totalAmount,
           lines: {
@@ -412,6 +423,23 @@ export class PurchasingService {
         },
         include: { lines: true }
       });
+    });
+  }
+
+  async issueOrder(id: string) {
+    const po = await this.getPO(id);
+    if (!po) throw new NotFoundException('Orden de compra no encontrada');
+    if (po.status !== 'DRAFT') {
+      throw new BadRequestException('Solo se pueden emitir órdenes en estado borrador');
+    }
+
+    return this.prisma.purchaseOrder.update({
+      where: { id },
+      data: { status: 'ISSUED', issuedAt: new Date() },
+      include: { supplier: true, lines: { include: { variant: { include: { product: true } } } } },
+    }).then((issued) => {
+      void this.notificationTriggers.onPurchaseOrderIssued(issued.id);
+      return issued;
     });
   }
 

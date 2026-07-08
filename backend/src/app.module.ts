@@ -30,7 +30,6 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
-import { PurchasingModule } from './modules/purchasing/purchasing.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
 import { TreasuryModule } from './modules/treasury/treasury.module';
 import { ShippingModule } from './domains/shipping/shipping.module';
@@ -90,7 +89,8 @@ import { ShippingModule } from './domains/shipping/shipping.module';
     ReportsModule,
     LocationsModule,
     InventoryModule,
-    PurchasingModule,
+    // PurchasingModule removed: legacy routes conflicted with ProcurementModule
+    // and used RolesGuard incompatible with the current JWT/RBAC model.
     TransfersModule,
     TreasuryModule,
     ShippingModule,

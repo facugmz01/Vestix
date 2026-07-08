@@ -190,7 +190,7 @@ export interface PurchaseOrder {
   lines: POLine[]; totalAmount: number; expectedDeliveryDate?: string; createdAt: string;
 }
 export interface POLine {
-  variantId: string; variantSku?: string; productName?: string;
+  id: string; variantId: string; variantSku?: string; productName?: string;
   orderedQuantity: number; receivedQuantity: number; unitCost: number;
 }
 
