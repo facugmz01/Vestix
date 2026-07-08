@@ -21,7 +21,7 @@ import { useDeleteMutation } from '@/hooks/useDeleteMutation';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function CustomersPage() {
-  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '' });
+  const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '', source: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -31,11 +31,18 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const typeFilter = filters.type;
+  const sourceFilter = filters.source;
 
   // Query
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: queryKeys.customers.all({ page, pageSize, search, type: typeFilter }),
-    queryFn: () => customersApi.getCustomers({ page, pageSize, search, type: typeFilter as any }),
+    queryKey: queryKeys.customers.all({ page, pageSize, search, type: typeFilter, source: sourceFilter }),
+    queryFn: () => customersApi.getCustomers({
+      page,
+      pageSize,
+      search,
+      type: (typeFilter || undefined) as any,
+      source: (sourceFilter || undefined) as any,
+    }),
   });
 
   // Delete Mutation
@@ -97,7 +104,7 @@ export default function CustomersPage() {
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} clientes</Badge>}>
-        <SearchInput placeholder="Buscar por nombre, DNI o CUIT..." onSearch={setSearch} />
+        <SearchInput placeholder="Buscar por nombre, teléfono, DNI o CUIT..." onSearch={setSearch} />
         <select
           value={typeFilter}
           onChange={(e) => { setFilter('type', e.target.value); }}
@@ -109,6 +116,20 @@ export default function CustomersPage() {
           <option value="">Todos los Tipos</option>
           <option value="INDIVIDUAL">Individuos (B2C)</option>
           <option value="BUSINESS">Empresas (B2B)</option>
+        </select>
+        <select
+          value={sourceFilter}
+          onChange={(e) => { setFilter('source', e.target.value); }}
+          style={{
+            padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+            background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
+          }}
+        >
+          <option value="">Todos los orígenes</option>
+          <option value="ADMIN">Backoffice</option>
+          <option value="STOREFRONT">Tienda online</option>
+          <option value="POS">POS</option>
+          <option value="IMPORT">Importación</option>
         </select>
       </FiltersBar>
 
@@ -132,8 +153,11 @@ export default function CustomersPage() {
                 key: 'fullName', 
                 header: 'Cliente',
                 render: (c) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 600 }}>{c.fullName}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 600 }}>{c.fullName}</span>
+                      {c.source === 'STOREFRONT' && <Badge color="green">Tienda</Badge>}
+                    </div>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{c.taxId || 'Sin ID'}</span>
                   </div>
                 )
@@ -142,6 +166,20 @@ export default function CustomersPage() {
                 key: 'type', 
                 header: 'Tipo',
                 render: (c) => <Badge color={c.type === 'BUSINESS' ? 'blue' : 'gray'}>{c.type === 'BUSINESS' ? 'B2B' : 'B2C'}</Badge>
+              },
+              {
+                key: 'source',
+                header: 'Origen',
+                render: (c) => {
+                  const labels: Record<string, { label: string; color: 'green' | 'blue' | 'gray' | 'purple' }> = {
+                    STOREFRONT: { label: 'Tienda online', color: 'green' },
+                    POS: { label: 'POS', color: 'blue' },
+                    IMPORT: { label: 'Importación', color: 'purple' },
+                    ADMIN: { label: 'Backoffice', color: 'gray' },
+                  };
+                  const meta = labels[c.source || 'ADMIN'] || labels.ADMIN;
+                  return <Badge color={meta.color}>{meta.label}</Badge>;
+                }
               },
               { 
                 key: 'contact', 

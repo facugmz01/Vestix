@@ -5,6 +5,7 @@ import type { Customer, PagedResponse } from '@/types';
 export interface CustomerFilters {
   search?:   string;
   type?:     'INDIVIDUAL' | 'BUSINESS';
+  source?:   'ADMIN' | 'STOREFRONT' | 'POS' | 'IMPORT';
   onHold?:   boolean;
   page?:     number;
   pageSize?: number;

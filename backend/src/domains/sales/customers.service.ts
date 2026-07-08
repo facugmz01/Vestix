@@ -13,10 +13,12 @@ export class CustomersService {
     const { creditLimit, usedCredit, ...rest } = c;
     return {
       ...rest,
+      source: c.source || 'ADMIN',
       credit: {
         limit: creditLimit,
         used: usedCredit,
-        available: creditLimit - usedCredit
+        available: creditLimit - usedCredit,
+        onHold: false,
       }
     };
   }
@@ -33,6 +35,7 @@ export class CustomersService {
     const customer = await this.prisma.customer.create({
       data: {
         type: dto.type || 'INDIVIDUAL',
+        source: 'ADMIN',
         fullName: dto.fullName,
         taxId: taxId,
         email: email,
@@ -47,9 +50,16 @@ export class CustomersService {
   }
 
   async findAll(query: any = {}) {
+    const extraWhere: Record<string, unknown> = {};
+    if (query.type) extraWhere.type = query.type;
+    if (query.source) extraWhere.source = query.source;
+    if (query.isActive === 'true' || query.isActive === true) extraWhere.isActive = true;
+    if (query.isActive === 'false' || query.isActive === false) extraWhere.isActive = false;
+
     const result = await paginate(this.prisma.customer, query, {
-      searchFields: ['fullName', 'email', 'taxId'],
-      orderBy: { fullName: 'asc' },
+      searchFields: ['fullName', 'email', 'taxId', 'phone'],
+      where: extraWhere,
+      orderBy: { createdAt: 'desc' },
     });
 
     return {
@@ -62,6 +72,33 @@ export class CustomersService {
     const customer = await this.prisma.customer.findUnique({ where: { id } });
     if (!customer) throw new NotFoundException('Cliente no encontrado');
     return this.mapCustomer(customer);
+  }
+
+  async getHistory(id: string) {
+    await this.findOne(id);
+
+    const orders = await this.prisma.saleOrder.findMany({
+      where: { customerId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        source: true,
+        grandTotal: true,
+        status: true,
+        paymentMethod: true,
+        createdAt: true,
+      },
+    });
+
+    return orders.map((o) => ({
+      id: o.id,
+      source: o.source,
+      grandTotal: o.grandTotal,
+      status: o.status,
+      paymentMethod: o.paymentMethod || '—',
+      createdAt: o.createdAt,
+    }));
   }
 
   async update(id: string, dto: any) {

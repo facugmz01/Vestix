@@ -66,6 +66,7 @@ export class StorefrontAuthService {
           fullName: 'Cliente Web',
           phone: cleanPhone,
           type: 'INDIVIDUAL',
+          source: 'STOREFRONT',
         }
       });
       this.logger.log(`Created new customer ${customer.id} for storefront`);

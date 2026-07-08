@@ -183,9 +183,16 @@ export class StorefrontAuthController {
           fullName: `Cliente +${phone}`,
           phone,
           type: 'INDIVIDUAL',
+          source: 'STOREFRONT',
         },
       });
       this.logger.log(`[OTP] New customer created: ${customer.id} (phone: +${phone})`);
+    } else if (customer.source !== 'STOREFRONT' && customer.source !== 'ADMIN') {
+      // Keep ADMIN origin if already set; otherwise mark as storefront-active
+      customer = await this.prisma.customer.update({
+        where: { id: customer.id },
+        data: { source: 'STOREFRONT' },
+      });
     }
 
     // Issue JWT for the customer (separate from admin token)
