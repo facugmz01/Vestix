@@ -57,6 +57,10 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
   const queryClient = useQueryClient();
   const [paymentReference, setPaymentReference] = useState('');
 
+  useEffect(() => {
+    if (open) setPaymentReference('');
+  }, [saleId, open]);
+
   const { data: sale, isLoading } = useQuery({
     queryKey: queryKeys.sales.detail(saleId || ''),
     queryFn: () => salesApi.getSale(saleId!),
