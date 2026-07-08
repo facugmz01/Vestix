@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsNotEmpty, IsString, IsUUID, Min } from 'class-validator';
 
 export enum AdjustStockType {
@@ -15,6 +16,7 @@ export class AdjustStockDto {
   @IsNotEmpty()
   warehouseId: string;
 
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   quantity: number;

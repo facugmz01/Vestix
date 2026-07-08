@@ -296,13 +296,17 @@ export class InventoryService {
       throw new BadRequestException('Variante no encontrada.');
     }
 
-    // Aggregate across batches for the same variant+warehouse (UI adjusts at SKU/warehouse level)
+    // Aggregate across batches for the same variant+warehouse (UI adjusts at SKU/warehouse level).
+    // Prefer the null-batch row as the adjustment target so deltas land on the default stock node.
     const stockRows = await this.prisma.stockLevel.findMany({
       where: { variantId: dto.variantId, warehouseId: dto.warehouseId },
     });
     const aggregatedPhysical = stockRows.reduce((sum, s) => sum + s.physicalQuantity, 0);
     const aggregatedAvailable = stockRows.reduce((sum, s) => sum + s.availableQuantity, 0);
-    const primaryStock = stockRows[0] ?? null;
+    const primaryStock =
+      stockRows.find((s) => s.batchId == null) ??
+      stockRows.sort((a, b) => b.availableQuantity - a.availableQuantity)[0] ??
+      null;
 
     let diff = 0;
     if (dto.type === 'ADD') {
@@ -329,7 +333,10 @@ export class InventoryService {
     }
 
     if (diff === 0) {
-      return this.enrichStockLevel(primaryStock, dto.variantId, dto.warehouseId, warehouse.branchId);
+      return {
+        ...(await this.enrichStockLevel(primaryStock, dto.variantId, dto.warehouseId, warehouse.branchId)),
+        movementId: null as string | null,
+      };
     }
 
     const movement = await this.recordMovement({
@@ -350,7 +357,7 @@ export class InventoryService {
 
     return {
       ...(await this.enrichStockLevel(updated, dto.variantId, dto.warehouseId, warehouse.branchId)),
-      movementId: movement.id,
+      movementId: movement.id as string | null,
     };
   }
 
