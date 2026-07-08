@@ -34,6 +34,7 @@ import { PurchasingModule } from './modules/purchasing/purchasing.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
 import { TreasuryModule } from './modules/treasury/treasury.module';
 import { StorefrontModule } from './domains/storefront/storefront.module';
+import { ShippingModule } from './domains/shipping/shipping.module';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { StorefrontModule } from './domains/storefront/storefront.module';
     TransfersModule,
     TreasuryModule,
     StorefrontModule,
+    ShippingModule,
   ],
 })
 export class AppModule {}

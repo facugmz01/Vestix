@@ -20,6 +20,7 @@ import { MercadoPagoService } from './mercadopago.service';
 import { InventoryService } from '../logistics/inventory.service';
 import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { ShippingService } from '../shipping/shipping.service';
 import * as crypto from 'crypto';
 
 // Fixed shipping rates
@@ -39,6 +40,7 @@ export class StorefrontController {
     private readonly mercadoPagoService: MercadoPagoService,
     private readonly inventoryService: InventoryService,
     private readonly settingsService: SettingsService,
+    private readonly shippingService: ShippingService,
   ) {}
 
   /**
@@ -169,6 +171,25 @@ export class StorefrontController {
 
     const order = await this.checkoutOrchestrator.processCheckout(saleOrderDto);
 
+    const customerName = dto.customerInfo
+      ? `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim() || 'Cliente Web'
+      : 'Cliente Web';
+
+    await this.shippingService.persistCheckoutShipping(orderId, {
+      shippingCost,
+      shippingMethodId: dto.shippingInfo?.method,
+      shippingMethodName: selectedShipping?.name,
+      shippingType: selectedShipping?.type || shippingMethodLabel,
+      customerName,
+      customerPhone: dto.customerInfo?.phone,
+      address: dto.shippingInfo?.address,
+      city: dto.shippingInfo?.city,
+      state: dto.shippingInfo?.state,
+      zipCode: dto.shippingInfo?.zipCode,
+    });
+
+    const updatedOrder = await this.salesService.getOrderById(orderId);
+
     // If it's a CREDIT_CARD, build MercadoPago preference
     if (selectedPaymentMethod.type === 'CREDIT_CARD' || selectedPaymentMethod.type === 'DEBIT_CARD') {
       const storeBase = process.env.MP_STORE_URL || 'http://localhost:5173/store';
@@ -194,7 +215,7 @@ export class StorefrontController {
       });
 
       return {
-        ...order,
+        ...updatedOrder,
         payment: {
           method: 'MERCADOPAGO',
           initPoint,
@@ -207,7 +228,7 @@ export class StorefrontController {
 
     // For non-MP payments (CASH, BANK_TRANSFER, etc.)
     return {
-      ...order,
+      ...updatedOrder,
       payment: {
         method: selectedPaymentMethod.type,
         shippingCost,
@@ -240,7 +261,12 @@ export class StorefrontController {
         skip,
         take: sizeNum,
         orderBy: { createdAt: 'desc' },
-        include: { lines: true, customer: true },
+        include: {
+          lines: true,
+          customer: true,
+          shippingAddress: true,
+          fulfillment: { include: { delivery: true } },
+        },
       }),
       this.prisma.saleOrder.count({
         where: { source: 'ECOMMERCE', customerId },
@@ -251,6 +277,10 @@ export class StorefrontController {
       data: data.map(order => ({
         ...order,
         customerName: order.customer?.fullName || 'Consumidor Final',
+        trackingStatus: order.fulfillment?.status || order.status,
+        trackingNumber: order.fulfillment?.trackingNumber,
+        courierName: order.fulfillment?.courierName,
+        dispatchedAt: order.fulfillment?.delivery?.dispatchedAt,
       })),
       total,
       page: pageNum,
@@ -274,7 +304,21 @@ export class StorefrontController {
       throw new ForbiddenException('No tenés permiso para ver este pedido.');
     }
 
-    return order;
+    const fullOrder = await this.prisma.saleOrder.findUnique({
+      where: { id: order.id },
+      include: {
+        lines: true,
+        customer: true,
+        shippingAddress: true,
+        fulfillment: { include: { delivery: true } },
+      },
+    });
+
+    return {
+      ...fullOrder,
+      customerName: fullOrder?.customer?.fullName || 'Consumidor Final',
+      trackingStatus: fullOrder?.fulfillment?.status || fullOrder?.status,
+    };
   }
 
   /**
@@ -379,7 +423,7 @@ export class StorefrontController {
             await this.prisma.$transaction(async (tx) => {
               await tx.saleOrder.update({
                 where: { id: orderId },
-                data: { status: 'COMPLETED' },
+                data: { status: order.source === 'ECOMMERCE' ? 'CONFIRMED' : 'COMPLETED' },
               });
 
               if (order.warehouseId) {
@@ -395,7 +439,12 @@ export class StorefrontController {
                 }
               }
             });
-            this.logger.log(`[MercadoPago Webhook] ✓ Order ${orderId} marked as COMPLETED and reservations consumed.`);
+
+            if (order.source === 'ECOMMERCE') {
+              await this.shippingService.markFulfillmentPaid(orderId);
+            }
+
+            this.logger.log(`[MercadoPago Webhook] ✓ Order ${orderId} marked as ${order.source === 'ECOMMERCE' ? 'CONFIRMED' : 'COMPLETED'} and reservations consumed.`);
           }
         } else if (status === 'rejected' || status === 'cancelled') {
           const order = await this.prisma.saleOrder.findUnique({

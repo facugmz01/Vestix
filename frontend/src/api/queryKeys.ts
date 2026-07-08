@@ -142,6 +142,7 @@ export const queryKeys = {
     product:  (id: string)       => ['storefront', 'product', id] as const,
     myOrders: ()                 => ['storefront', 'myOrders'] as const,
     order:    (id: string)       => ['storefront', 'order', id] as const,
+    tracking: (id: string)       => ['storefront', 'tracking', id] as const,
     settings: ()                 => ['storefront', 'settings'] as const,
   },
 
@@ -161,6 +162,7 @@ export const queryKeys = {
     all:         (filters?: object) => withFilters(['orders', 'list'], filters),
     detail:      (id: string)       => ['orders', 'detail', id]         as const,
     fulfillment: (id: string)       => ['orders', 'fulfillment', id]    as const,
+    deliveries:  (filters?: object) => withFilters(['shipping', 'deliveries'], filters),
   },
 
   // ── Customers ─────────────────────────────────────────────────────────────
