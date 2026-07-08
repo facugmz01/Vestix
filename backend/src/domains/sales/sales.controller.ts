@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Query, Param, Req, Patch } from '@nestjs/c
 import { SalesService } from './sales.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
+import { ShippingService } from '../shipping/shipping.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
@@ -16,6 +17,7 @@ export class SalesController {
     private readonly salesService: SalesService,
     private readonly checkoutOrchestrator: CheckoutOrchestrator,
     private readonly notificationTriggers: NotificationTriggersService,
+    private readonly shippingService: ShippingService,
   ) {}
 
   @Post('checkout')
@@ -24,10 +26,14 @@ export class SalesController {
     return this.checkoutOrchestrator.processCheckout(createOrderDto, req.user?.userId);
   }
 
-  @Get('returns')
-  @RequirePermissions({ action: 'read', subject: 'Sales' })
-  async getReturns() {
-    return { data: [], total: 0 };
+  @Post('orders/:id/confirm-payment')
+  @RequirePermissions({ action: 'update', subject: 'Sales' })
+  async confirmPayment(@Param('id') id: string) {
+    const order = await this.checkoutOrchestrator.confirmPayment(id);
+    if (order.source === 'ECOMMERCE') {
+      await this.shippingService.markFulfillmentPaid(order.id);
+    }
+    return order;
   }
 
   @Patch(':id/status')

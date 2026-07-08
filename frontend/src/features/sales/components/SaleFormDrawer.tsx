@@ -112,11 +112,11 @@ export function SaleFormDrawer({ open, onClose }: Props) {
   const grandTotal = totalAfterLines - cartDiscountAmt;
 
   const mutation = useMutation({
-    mutationFn: (data: { status: 'QUOTATION'|'CONFIRMED' }) => {
+    mutationFn: (data: { status: 'QUOTATION' | 'CONFIRMED' | 'PENDING_PAYMENT' }) => {
       const payload = {
         id: crypto.randomUUID(),
         branchId,
-        warehouseId,   // Send it always so we know the intended stock origin
+        warehouseId,
         customerId: customerId || undefined,
         source: 'BACKOFFICE',
         paymentMethod,
@@ -135,14 +135,19 @@ export function SaleFormDrawer({ open, onClose }: Props) {
       return salesApi.createSale(payload as any);
     },
     onSuccess: (_, variables) => {
-      toast.success(variables.status === 'QUOTATION' ? 'Presupuesto creado con éxito' : 'Venta Confirmada');
+      const messages = {
+        QUOTATION: 'Presupuesto creado con éxito',
+        CONFIRMED: 'Venta Confirmada',
+        PENDING_PAYMENT: 'Venta registrada con pago pendiente',
+      };
+      toast.success(messages[variables.status]);
       queryClient.invalidateQueries({ queryKey: queryKeys.sales.all() });
       onClose();
     },
     onError: (err: any) => toast.error(err.response?.data?.message || err.message || 'Error al procesar la operación'),
   });
 
-  const handleSave = (status: 'QUOTATION' | 'CONFIRMED') => {
+  const handleSave = (status: 'QUOTATION' | 'CONFIRMED' | 'PENDING_PAYMENT') => {
     if (!branchId) { toast.error('Debe seleccionar una sucursal origen'); return; }
     if (lines.length === 0) { toast.error('Agregue al menos un artículo'); return; }
     mutation.mutate({ status });

@@ -1,6 +1,6 @@
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle } from 'lucide-react';
+import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -56,10 +56,32 @@ export default function SalesPage() {
       case 'QUOTATION': return 'orange';
       case 'PENDING_PAYMENT': return 'yellow';
       case 'CONFIRMED': return 'blue';
+      case 'COMPLETED': return 'green';
       case 'READY_FOR_PICKUP': return 'purple';
       case 'DELIVERED': return 'green';
       case 'CANCELLED': return 'red';
       default: return 'gray';
+    }
+  };
+
+  const statusLabels: Record<string, string> = {
+    QUOTATION: 'Presupuesto',
+    PENDING_PAYMENT: 'Pago Pendiente',
+    CONFIRMED: 'Confirmado',
+    COMPLETED: 'Completado',
+    READY_FOR_PICKUP: 'Listo P/Retiro',
+    DELIVERED: 'Entregado',
+    CANCELLED: 'Cancelado',
+  };
+
+  const handleConfirmPayment = async (id: string) => {
+    if (!window.confirm('¿Validar el pago y confirmar esta venta?')) return;
+    try {
+      await salesApi.confirmPayment(id);
+      toast.success('Pago validado correctamente');
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al validar el pago');
     }
   };
 
@@ -94,6 +116,7 @@ export default function SalesPage() {
           <option value="QUOTATION">Solo Presupuestos</option>
           <option value="PENDING_PAYMENT">Pago Pendiente</option>
           <option value="CONFIRMED">Ventas Confirmadas</option>
+          <option value="COMPLETED">Ventas Completadas (POS)</option>
           <option value="READY_FOR_PICKUP">Listos para Retiro</option>
           <option value="DELIVERED">Entregados</option>
           <option value="CANCELLED">Canceladas / Rechazadas</option>
@@ -121,7 +144,7 @@ export default function SalesPage() {
                 header: 'Doc ID',
                 render: (s) => (
                   <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                    {s.status === 'QUOTATION' ? 'P-' : 'V-'}{s.id.split('-')[0].toUpperCase()}
+                    {(s.status === 'QUOTATION' ? 'P-' : 'V-')}{s.id.split('-')[0].toUpperCase()}
                   </span>
                 )
               },
@@ -162,24 +185,23 @@ export default function SalesPage() {
               { 
                 key: 'status', 
                 header: 'Estado Comercial',
-                render: (s) => {
-                  const labels: any = {
-                    QUOTATION: 'Presupuesto',
-                    PENDING_PAYMENT: 'Pago Pendiente',
-                    CONFIRMED: 'Confirmado',
-                    READY_FOR_PICKUP: 'Listo P/Retiro',
-                    DELIVERED: 'Entregado',
-                    CANCELLED: 'Cancelado'
-                  };
-                  return <StatusChip label={labels[s.status] || s.status} color={getStatusColor(s.status) as any} />;
-                }
+                render: (s) => (
+                  <StatusChip label={statusLabels[s.status] || s.status} color={getStatusColor(s.status) as any} />
+                )
               },
               {
                 key: 'actions',
                 header: '',
                 render: (s) => (
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    {s.status === 'CONFIRMED' && (
+                    {s.status === 'PENDING_PAYMENT' && (
+                      <ActionGuard action="update" subject="Sales">
+                        <Button variant="primary" size="sm" onClick={() => handleConfirmPayment(s.id)} aria-label="Validar Pago" title="Validar Pago y Confirmar">
+                          <CreditCard size={16} />
+                        </Button>
+                      </ActionGuard>
+                    )}
+                    {(s.status === 'CONFIRMED' || s.status === 'COMPLETED') && (
                       <Button variant="secondary" size="sm" onClick={() => updateStatus(s.id, 'READY_FOR_PICKUP')} aria-label="Listo para Retiro" title="Marcar Listo para Retiro">
                         <PackageCheck size={16} />
                       </Button>
