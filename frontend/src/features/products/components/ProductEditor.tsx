@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { productsApi, type CreateProductDto } from '@/api/products.api';
+import { identifiersApi } from '@/api/identifiers.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Product } from '@/types';
 import { ProductImagesUploader } from '@/features/products/components/ProductImagesUploader';
@@ -42,6 +43,9 @@ export function ProductEditor({ initialData }: Props) {
   });
 
   const [relatedProductIds, setRelatedProductIds] = useState<string[]>([]);
+  const [productBarcode, setProductBarcode] = useState('');
+  const [generatingSku, setGeneratingSku] = useState(false);
+  const [generatingBarcode, setGeneratingBarcode] = useState(false);
   const [dimensions, setDimensions] = useState({
     weight: '',
     height: '',
@@ -67,6 +71,7 @@ export function ProductEditor({ initialData }: Props) {
           id: v.id,
           productId: v.productId || '',
           sku: v.sku,
+          barcode: v.barcode,
           size: v.size,
           color: v.color,
           imageUrl: v.imageUrl,
@@ -93,6 +98,8 @@ export function ProductEditor({ initialData }: Props) {
       if (Array.isArray(meta?.relatedProductIds)) {
         setRelatedProductIds(meta.relatedProductIds);
       }
+      const firstVariant = source.variants?.find(v => v.isActive !== false) || source.variants?.[0];
+      setProductBarcode(firstVariant?.barcode || '');
     }
   }, [initialData]);
 
@@ -138,10 +145,11 @@ export function ProductEditor({ initialData }: Props) {
         }));
       }
 
-      if (data.variants) {
+      if (data.type === 'VARIABLE' && data.variants) {
         safePayload.variants = data.variants.map((v: any) => {
           const sv: any = {
             sku: v.sku,
+            barcode: v.barcode,
             size: v.size,
             color: v.color,
             imageUrl: v.imageUrl,
@@ -153,6 +161,21 @@ export function ProductEditor({ initialData }: Props) {
           if (v.id && !String(v.id).startsWith('temp-')) sv.id = v.id;
           return sv;
         });
+      } else if (productBarcode.trim() || isEditing) {
+        // Simple/combo: persist barcode on the default variant
+        const existingVariant = initialData?.variants?.find(v => v.isActive !== false) || initialData?.variants?.[0];
+        const sv: any = {
+          barcode: productBarcode.trim() || undefined,
+          costPrice: data.costPrice,
+          basePrice: data.basePrice,
+          isActive: true,
+        };
+        if (existingVariant?.id) sv.id = existingVariant.id;
+        if (existingVariant?.sku) sv.sku = existingVariant.sku;
+        // Only send variants payload when we have something to persist
+        if (productBarcode.trim() || existingVariant?.id) {
+          safePayload.variants = [sv];
+        }
       }
 
       if (!safePayload.brandId) delete safePayload.brandId;
@@ -244,7 +267,24 @@ export function ProductEditor({ initialData }: Props) {
                     placeholder="Ej: LACD01"
                     style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)' }}
                   />
-                  <Button variant="secondary" style={{ padding: '0 12px' }} title="Autogenerar" onClick={() => setFormData({...formData, baseSku: 'PROD-' + Math.floor(Math.random() * 10000)})}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    style={{ padding: '0 12px' }}
+                    title="Autogenerar"
+                    disabled={generatingSku}
+                    onClick={async () => {
+                      try {
+                        setGeneratingSku(true);
+                        const res = await identifiersApi.generateBaseSku();
+                        setFormData(prev => ({ ...prev, baseSku: res.sku }));
+                      } catch {
+                        toast.error('No se pudo generar el SKU');
+                      } finally {
+                        setGeneratingSku(false);
+                      }
+                    }}
+                  >
                     <Wand2 size={16} />
                   </Button>
                 </div>
@@ -255,14 +295,38 @@ export function ProductEditor({ initialData }: Props) {
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="text"
+                    value={productBarcode}
+                    onChange={(e) => setProductBarcode(e.target.value)}
                     placeholder="Escanear o escribir (EAN-13, CODE128)"
-                    style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)' }}
+                    disabled={formData.type === 'VARIABLE'}
+                    style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: formData.type === 'VARIABLE' ? 'var(--bg-elevated)' : 'var(--bg-base)' }}
                   />
-                  <Button variant="secondary" style={{ padding: '0 12px' }} title="Autogenerar">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    style={{ padding: '0 12px' }}
+                    title="Autogenerar"
+                    disabled={generatingBarcode || formData.type === 'VARIABLE'}
+                    onClick={async () => {
+                      try {
+                        setGeneratingBarcode(true);
+                        const res = await identifiersApi.generateBarcode();
+                        setProductBarcode(res.barcode);
+                      } catch {
+                        toast.error('No se pudo generar el código de barras');
+                      } finally {
+                        setGeneratingBarcode(false);
+                      }
+                    }}
+                  >
                     <Wand2 size={16} />
                   </Button>
                 </div>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Podés escanear directamente con un lector de códigos.</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  {formData.type === 'VARIABLE'
+                    ? 'En productos variables el código de barras se define por cada variante.'
+                    : 'Podés escanear directamente con un lector de códigos.'}
+                </span>
               </div>
 
               <div>
@@ -359,15 +423,22 @@ export function ProductEditor({ initialData }: Props) {
                 </div>
               </div>
 
-              {priceLists?.map((pl, idx) => {
+              {priceLists?.map((pl: any, idx: number) => {
+                const referencePrice = (formData.basePrice && formData.basePrice > 0)
+                  ? formData.basePrice
+                  : (formData.costPrice || 0);
                 let percentage = 0;
                 let calculatedPrice = 0;
-                if (pl.isPercentageBased) {
-                  percentage = pl.percentageDiscount || 0;
-                  calculatedPrice = formData.costPrice ? Math.round(formData.costPrice * (1 + (percentage / 100))) : 0;
+                const isModifier = pl.type === 'MODIFIER' || pl.isPercentageBased;
+                if (isModifier) {
+                  // Use modifierPercentage (markup). percentageDiscount is a legacy negated mirror.
+                  percentage = pl.modifierPercentage ?? -(pl.percentageDiscount || 0);
+                  calculatedPrice = referencePrice
+                    ? Math.round(referencePrice * (1 + (percentage / 100)))
+                    : 0;
                 } else {
                   percentage = Math.round(((pl.margin || 1) - 1) * 100);
-                  calculatedPrice = formData.costPrice ? Math.round(formData.costPrice * (pl.margin || 1)) : 0;
+                  calculatedPrice = referencePrice ? Math.round(referencePrice * (pl.margin || 1)) : 0;
                 }
                 const percentageText = percentage > 0 ? `+${percentage}%` : percentage < 0 ? `${percentage}%` : '0%';
 
@@ -448,7 +519,8 @@ export function ProductEditor({ initialData }: Props) {
               <h3 style={cardTitleStyle}><span style={{ color: 'var(--accent)' }}>■</span> Variantes (Talles / Colores)</h3>
               <VariantMassGenerator 
                 costPrice={formData.costPrice || 0} 
-                basePrice={formData.basePrice || 0} 
+                basePrice={formData.basePrice || 0}
+                baseSku={formData.baseSku || ''}
                 onGenerate={(vars) => setFormData({ ...formData, variants: vars })} 
               />
               {formData.variants && formData.variants.length > 0 && (
@@ -459,6 +531,7 @@ export function ProductEditor({ initialData }: Props) {
                       <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
                         <th style={{ padding: '8px' }}>Atributos</th>
                         <th style={{ padding: '8px' }}>SKU</th>
+                        <th style={{ padding: '8px' }}>Barras</th>
                         <th style={{ padding: '8px' }}>Costo</th>
                         <th style={{ padding: '8px' }}>Precio Base</th>
                       </tr>
@@ -479,7 +552,20 @@ export function ProductEditor({ initialData }: Props) {
                                 setFormData({ ...formData, variants: newVars });
                               }}
                               placeholder="SKU"
-                              style={{ width: '100px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} 
+                              style={{ width: '120px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} 
+                            />
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <input
+                              type="text"
+                              value={(v as any).barcode || ''}
+                              onChange={(e) => {
+                                const newVars = [...formData.variants!];
+                                (newVars[i] as any).barcode = e.target.value;
+                                setFormData({ ...formData, variants: newVars });
+                              }}
+                              placeholder="Auto"
+                              style={{ width: '130px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
                             />
                           </td>
                           <td style={{ padding: '8px' }}>${v.costPrice}</td>
