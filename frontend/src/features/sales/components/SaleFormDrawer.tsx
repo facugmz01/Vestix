@@ -167,6 +167,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancelar</Button>
           <div style={{ display: 'flex', gap: '12px' }}>
             <Button variant="secondary" onClick={() => handleSave('QUOTATION')} loading={mutation.isPending}>Guardar como Presupuesto</Button>
+            <Button variant="outline" onClick={() => handleSave('PENDING_PAYMENT')} loading={mutation.isPending}>Guardar con Pago Pendiente</Button>
             <Button variant="primary" onClick={() => handleSave('CONFIRMED')} loading={mutation.isPending}>Confirmar Venta</Button>
           </div>
         </div>
