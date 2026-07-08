@@ -213,6 +213,77 @@ input, select, textarea { font-family: var(--font-sans); color: var(--text-prima
   background: var(--bg-surface-hover);
 }
 
+/* ─── STOREFRONT SHARED UI ────────────────────────────────────────────── */
+.glass {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.storefront-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.storefront-input:focus {
+  background: #fff;
+  border-color: var(--sf-primary, var(--accent));
+  box-shadow: 0 0 0 3px rgba(var(--sf-primary-rgb, 0, 113, 227), 0.12);
+}
+
+.storefront-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background: var(--sf-primary, var(--accent));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(var(--sf-primary-rgb, 0, 113, 227), 0.2);
+}
+
+.storefront-btn:hover:not(:disabled) {
+  background: var(--sf-primary-hover, var(--accent-hover));
+  transform: translateY(-1px);
+}
+
+.storefront-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.storefront-btn-secondary {
+  background: #f1f5f9;
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.storefront-btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
 /* ─── STOREFRONT RESPONSIVE GRIDS ─────────────────────────────────────── */
 .storefront-grid {
   display: grid;

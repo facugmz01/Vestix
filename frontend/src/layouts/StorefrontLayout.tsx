@@ -119,14 +119,6 @@ export default function StorefrontLayout() {
           --sf-primary-hover: rgba(var(--sf-primary-rgb), 0.9);
         }
         
-        .sf-btn {
-          background: var(--sf-primary);
-          color: white;
-          transition: all 0.2s;
-        }
-        .sf-btn:hover {
-          background: var(--sf-primary-hover);
-        }
         .sf-text-primary {
           color: var(--sf-primary);
         }
