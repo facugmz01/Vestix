@@ -174,6 +174,31 @@ export class ShippingService {
     return updated;
   }
 
+  async cancelFulfillment(saleOrderId: string) {
+    const fulfillment = await this.getFulfillmentByOrderId(saleOrderId);
+    if (!fulfillment || fulfillment.status === OrderStatus.CANCELLED) return null;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.orderFulfillment.update({
+        where: { id: fulfillment.id },
+        data: { status: OrderStatus.CANCELLED },
+      });
+
+      if (fulfillment.delivery) {
+        await tx.delivery.update({
+          where: { id: fulfillment.delivery.id },
+          data: {
+            status: DeliveryStatus.FAILED,
+            failureReason: 'Pedido cancelado desde backoffice',
+          },
+        });
+      }
+    });
+
+    this.emitTracking(saleOrderId, OrderStatus.CANCELLED, DeliveryStatus.FAILED);
+    return fulfillment;
+  }
+
   async listDeliveries(params: { status?: string; page?: number; pageSize?: number }) {
     const page = params.page || 1;
     const pageSize = params.pageSize || 20;

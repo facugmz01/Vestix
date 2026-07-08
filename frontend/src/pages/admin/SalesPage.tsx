@@ -1,6 +1,6 @@
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle } from 'lucide-react';
+import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle } from 'lucide-react';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -56,12 +56,55 @@ export default function SalesPage() {
       case 'QUOTATION': return 'orange';
       case 'PENDING_PAYMENT': return 'yellow';
       case 'CONFIRMED': return 'blue';
+      case 'COMPLETED': return 'green';
       case 'READY_FOR_PICKUP': return 'purple';
       case 'DELIVERED': return 'green';
       case 'CANCELLED': return 'red';
       default: return 'gray';
     }
   };
+
+  const statusLabels: Record<string, string> = {
+    QUOTATION: 'Presupuesto',
+    PENDING_PAYMENT: 'Pago Pendiente',
+    CONFIRMED: 'Confirmado',
+    COMPLETED: 'Completado',
+    READY_FOR_PICKUP: 'Listo P/Retiro',
+    DELIVERED: 'Entregado',
+    CANCELLED: 'Cancelado',
+  };
+
+  const handleConfirmPayment = async (id: string) => {
+    if (!window.confirm('¿Validar el pago y confirmar esta venta?')) return;
+    const ref = window.prompt('Referencia de pago (opcional, ej. nº de transferencia):');
+    try {
+      await salesApi.confirmPayment(id, { paymentReference: ref?.trim() || undefined });
+      toast.success('Pago validado correctamente');
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al validar el pago');
+    }
+  };
+
+  const handleCancelSale = async (id: string, status: string) => {
+    const messages: Record<string, string> = {
+      PENDING_PAYMENT: '¿Cancelar esta venta con pago pendiente?',
+      CONFIRMED: '¿Anular esta venta confirmada?',
+      COMPLETED: '¿Anular esta venta completada?',
+      READY_FOR_PICKUP: '¿Anular esta venta lista para retiro?',
+      DELIVERED: '¿Anular esta venta ya entregada?',
+    };
+    if (!window.confirm(messages[status] || '¿Cancelar este documento?')) return;
+    try {
+      await salesApi.cancelSale(id);
+      toast.success('Documento cancelado');
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al cancelar');
+    }
+  };
+
+  const cancellableStatuses = ['PENDING_PAYMENT', 'CONFIRMED', 'COMPLETED', 'READY_FOR_PICKUP', 'DELIVERED'];
 
   return (
     <PageContainer
@@ -94,6 +137,7 @@ export default function SalesPage() {
           <option value="QUOTATION">Solo Presupuestos</option>
           <option value="PENDING_PAYMENT">Pago Pendiente</option>
           <option value="CONFIRMED">Ventas Confirmadas</option>
+          <option value="COMPLETED">Ventas Completadas (POS)</option>
           <option value="READY_FOR_PICKUP">Listos para Retiro</option>
           <option value="DELIVERED">Entregados</option>
           <option value="CANCELLED">Canceladas / Rechazadas</option>
@@ -121,7 +165,7 @@ export default function SalesPage() {
                 header: 'Doc ID',
                 render: (s) => (
                   <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                    {s.status === 'QUOTATION' ? 'P-' : 'V-'}{s.id.split('-')[0].toUpperCase()}
+                    {(s.status === 'QUOTATION' ? 'P-' : 'V-')}{s.id.split('-')[0].toUpperCase()}
                   </span>
                 )
               },
@@ -162,24 +206,23 @@ export default function SalesPage() {
               { 
                 key: 'status', 
                 header: 'Estado Comercial',
-                render: (s) => {
-                  const labels: any = {
-                    QUOTATION: 'Presupuesto',
-                    PENDING_PAYMENT: 'Pago Pendiente',
-                    CONFIRMED: 'Confirmado',
-                    READY_FOR_PICKUP: 'Listo P/Retiro',
-                    DELIVERED: 'Entregado',
-                    CANCELLED: 'Cancelado'
-                  };
-                  return <StatusChip label={labels[s.status] || s.status} color={getStatusColor(s.status) as any} />;
-                }
+                render: (s) => (
+                  <StatusChip label={statusLabels[s.status] || s.status} color={getStatusColor(s.status) as any} />
+                )
               },
               {
                 key: 'actions',
                 header: '',
                 render: (s) => (
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    {s.status === 'CONFIRMED' && (
+                    {s.status === 'PENDING_PAYMENT' && (
+                      <ActionGuard action="update" subject="Sales">
+                        <Button variant="primary" size="sm" onClick={() => handleConfirmPayment(s.id)} aria-label="Validar Pago" title="Validar Pago y Confirmar">
+                          <CreditCard size={16} />
+                        </Button>
+                      </ActionGuard>
+                    )}
+                    {(s.status === 'CONFIRMED' || s.status === 'COMPLETED') && (
                       <Button variant="secondary" size="sm" onClick={() => updateStatus(s.id, 'READY_FOR_PICKUP')} aria-label="Listo para Retiro" title="Marcar Listo para Retiro">
                         <PackageCheck size={16} />
                       </Button>
@@ -188,6 +231,13 @@ export default function SalesPage() {
                       <Button variant="primary" size="sm" onClick={() => updateStatus(s.id, 'DELIVERED')} aria-label="Entregado" title="Marcar Entregado">
                         <CheckCircle size={16} />
                       </Button>
+                    )}
+                    {cancellableStatuses.includes(s.status) && (
+                      <ActionGuard action="update" subject="Sales">
+                        <Button variant="ghost" size="sm" onClick={() => handleCancelSale(s.id, s.status)} aria-label="Cancelar" title="Cancelar / Anular venta">
+                          <XCircle size={16} />
+                        </Button>
+                      </ActionGuard>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => handleView(s.id)} aria-label="Ver Detalles" title="Abrir Visor Comercial">
                       <Eye size={16} />
