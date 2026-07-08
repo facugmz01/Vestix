@@ -2,50 +2,54 @@ import { Body, Controller, Param, Post, Get, Query, UseGuards, Request } from '@
 import { TransfersService } from './transfers.service';
 import { CreateTransferDto, ReceiveTransferDto } from './dto/transfer.dto';
 import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
-import { RolesGuard } from '../../core/rbac/roles.guard';
-import { Roles } from '../../core/rbac/roles.decorator';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
+/**
+ * @deprecated Superseded by domains/logistics InventoryController (`/inventory/transfers`).
+ * Kept for reference; not registered in AppModule.
+ */
 @Controller('inventory/transfers')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class TransfersController {
   constructor(private readonly transfersService: TransfersService) {}
 
   @Get()
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'read', subject: 'Inventory' })
   findAll(@Query() query: any) {
     return this.transfersService.findAll(query);
   }
 
   @Get(':id')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'read', subject: 'Inventory' })
   findOne(@Param('id') id: string) {
     return this.transfersService.findOne(id);
   }
 
   @Post()
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'manage', subject: 'Inventory' })
   createTransfer(@Body() dto: CreateTransferDto, @Request() req: any) {
-    return this.transfersService.createTransfer(dto, req.user.sub);
+    return this.transfersService.createTransfer(dto, req.user.userId);
   }
 
   @Post(':id/dispatch')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'manage', subject: 'Inventory' })
   dispatchTransfer(@Param('id') id: string) {
     return this.transfersService.dispatchTransfer(id);
   }
 
   @Post(':id/receive')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'manage', subject: 'Inventory' })
   receiveTransfer(@Param('id') id: string, @Body() dto: ReceiveTransferDto) {
     return this.transfersService.receiveTransfer(id, dto);
   }
 
   @Post(':id/cancel')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'manage', subject: 'Inventory' })
   cancelTransfer(@Param('id') id: string) {
     return this.transfersService.prisma.stockTransfer.update({
       where: { id },
-      data: { status: 'CANCELLED' } as any, // Only works if we have CANCELLED in schema, but good enough for UI that expects it
+      data: { status: 'CANCELLED' } as any,
     });
   }
 }

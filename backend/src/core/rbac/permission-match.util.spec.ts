@@ -18,6 +18,7 @@ describe('permissionMatches', () => {
   it('maps manage/Settings to settings umbrella subjects', () => {
     expect(permissionMatches({ action: 'manage', subject: 'Settings' }, { action: 'read', subject: 'Branch' })).toBe(true);
     expect(permissionMatches({ action: 'manage', subject: 'Settings' }, { action: 'read', subject: 'System' })).toBe(true);
+    expect(permissionMatches({ action: 'manage', subject: 'Settings' }, { action: 'manage', subject: 'Integrations' })).toBe(true);
     expect(permissionMatches({ action: 'manage', subject: 'Settings' }, { action: 'read', subject: 'Catalog' })).toBe(false);
   });
 

@@ -41,6 +41,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, { action: string; subject:
     { action: 'read', subject: 'Sync' },
     { action: 'read', subject: 'Labels' },
     { action: 'print', subject: 'Labels' },
+    { action: 'read', subject: 'Finance' },
+    { action: 'manage', subject: 'Finance' },
   ],
   WAREHOUSE_OPERATOR: [
     { action: 'read', subject: 'Inventory' },

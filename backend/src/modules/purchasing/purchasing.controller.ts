@@ -3,40 +3,44 @@ import { PurchasingService } from './purchasing.service';
 import { CreatePurchaseOrderDto } from './dto/create-po.dto';
 import { ReceiveGoodsDto } from './dto/receive-goods.dto';
 import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
-import { RolesGuard } from '../../core/rbac/roles.guard';
-import { Roles } from '../../core/rbac/roles.decorator';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
+/**
+ * @deprecated Superseded by domains/procurement PurchasingController.
+ * Not registered in AppModule.
+ */
 @Controller('purchasing')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PurchasingController {
   constructor(private readonly purchasingService: PurchasingService) {}
 
   @Post('orders')
-  @Roles('Store Manager', 'Backoffice Admin')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
   createPurchaseOrder(@Body() dto: CreatePurchaseOrderDto) {
     return this.purchasingService.createPurchaseOrder(dto);
   }
 
   @Post('receipts')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'update', subject: 'Purchasing' })
   receiveGoods(@Body() dto: ReceiveGoodsDto) {
     return this.purchasingService.receiveGoods(dto);
   }
 
   @Get('orders')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'read', subject: 'Purchasing' })
   findAllOrders(@Query() query: any) {
     return this.purchasingService.findAllOrders(query);
   }
 
   @Get('orders/:id')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'read', subject: 'Purchasing' })
   findOneOrder(@Param('id') id: string) {
     return this.purchasingService.findOneOrder(id);
   }
 
   @Post('orders/:id/issue')
-  @Roles('Store Manager', 'Backoffice Admin')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
   issueOrder(@Param('id') id: string) {
     return this.purchasingService.prisma.purchaseOrder.update({
       where: { id },
@@ -45,14 +49,13 @@ export class PurchasingController {
   }
 
   @Post('orders/:id/receive')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'update', subject: 'Purchasing' })
   receiveOrder(@Param('id') id: string, @Body() dto: ReceiveGoodsDto) {
-    // Adapter mapping to receiveGoods
     return this.purchasingService.receiveGoods({ ...dto, purchaseOrderId: id } as any);
   }
 
   @Delete('orders/:id')
-  @Roles('Store Manager', 'Backoffice Admin')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
   removeOrder(@Param('id') id: string) {
     return this.purchasingService.prisma.purchaseOrder.delete({
       where: { id },
@@ -60,13 +63,13 @@ export class PurchasingController {
   }
 
   @Get('receipts')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'read', subject: 'Purchasing' })
   findAllReceipts(@Query() query: any) {
     return this.purchasingService.findAllReceipts(query);
   }
 
   @Get('receipts/:id')
-  @Roles('Store Manager', 'Backoffice Admin', 'Inventory Clerk')
+  @RequirePermissions({ action: 'read', subject: 'Purchasing' })
   findOneReceipt(@Param('id') id: string) {
     return this.purchasingService.findOneReceipt(id);
   }

@@ -32,6 +32,7 @@ export const Subjects = {
   BRANCH:     'Branch',
   SYSTEM:     'System',
   PRICING:    'Pricing',
+  INTEGRATIONS: 'Integrations',
   ALL:        'all',
 } as const;
 export type Subject = (typeof Subjects)[keyof typeof Subjects];
@@ -94,6 +95,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<Role, PermissionTuple[]> = {
     { action: Actions.READ,   subject: Subjects.SYNC      },
     { action: Actions.READ,   subject: Subjects.LABELS    },
     { action: 'print',        subject: Subjects.LABELS    },
+    { action: Actions.READ,   subject: Subjects.FINANCE   },
+    { action: Actions.MANAGE, subject: Subjects.FINANCE   },
   ],
   WAREHOUSE_OPERATOR: [
     { action: Actions.READ,   subject: Subjects.INVENTORY  },

@@ -2,6 +2,11 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 
+/**
+ * @deprecated Use PermissionsGuard + @RequirePermissions instead.
+ * This guard expected user.role.name on the JWT payload, which is incompatible
+ * with the current cookie-based auth (req.user = { userId, email, roleId }).
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
@@ -13,7 +18,7 @@ export class RolesGuard implements CanActivate {
     ]);
     
     if (!requiredRoles) {
-      return true; // No roles restricted
+      return true;
     }
 
     const { user } = context.switchToHttp().getRequest();
@@ -22,8 +27,7 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    // Super Admin overrides everything
-    if (user.role.name === 'Super Admin') {
+    if (user.role.name === 'Super Admin' || user.role.name === 'SUPER_ADMIN') {
       return true;
     }
 

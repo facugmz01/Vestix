@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { CatalogService } from './catalog.service';
 import { CatalogFilterDto } from './dto/catalog-filter.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
+import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { ParseBooleanQueryPipe } from '../../core/pipes/parse-boolean-query.pipe';
 
 @Controller('catalog')
@@ -32,7 +34,8 @@ export class CatalogController {
   }
 
   @Post('reprice-usd')
-  @RequirePermissions({ action: 'manage', subject: 'Settings' }) // or 'Catalog' depending on exact roles
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async repriceUsd(@Body() dto: { type: 'Oficial' | 'Blue' }) {
     return this.catalogService.repriceUsd(dto.type);
   }
@@ -42,6 +45,7 @@ export class CatalogController {
    * Hit exclusively by physical POS terminals syncing their offline databases.
    */
   @Get('pos-sync/:branchId')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
   async getPosSyncCatalog(@Param('branchId') branchId: string) {
     return this.catalogService.getPosSyncCatalog(branchId);
