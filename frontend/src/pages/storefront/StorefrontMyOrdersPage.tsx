@@ -26,38 +26,27 @@ export default function StorefrontMyOrdersPage() {
   if (!authLoading && !isAuthenticated) {
     return (
       <div style={{ maxWidth: '500px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
-        <div style={{
-          background: '#fff', borderRadius: '20px', padding: '48px 32px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0'
-        }}>
+        <div className="glass" style={{ borderRadius: '20px', padding: '48px 32px' }}>
           <div style={{
-            width: '72px', height: '72px', borderRadius: '20px',
-            background: 'linear-gradient(135deg, #10b981, #059669)',
+            width: '72px', height: '72px', borderRadius: '18px',
+            background: 'var(--sf-primary, var(--accent))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 24px', boxShadow: '0 4px 20px rgba(16,185,129,0.3)'
+            margin: '0 auto 24px',
+            boxShadow: '0 8px 24px rgba(var(--sf-primary-rgb, 59, 130, 246), 0.25)',
           }}>
             <MessageCircle size={36} color="white" />
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '12px' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '12px' }}>
             Iniciá sesión para ver tus pedidos
           </h2>
-          <p style={{ color: '#64748b', lineHeight: 1.6, marginBottom: '28px' }}>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '28px' }}>
             Con tu número de WhatsApp podés acceder al historial de todos tus pedidos y seguir el estado de tus compras.
           </p>
-          <Link
-            to={`${prefix}/login`}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: '#fff', textDecoration: 'none', fontWeight: 700,
-              padding: '14px 28px', borderRadius: '12px', fontSize: '15px',
-              boxShadow: '0 4px 16px rgba(16,185,129,0.35)',
-            }}
-          >
+          <Link to={`${prefix}/login`} className="storefront-btn">
             <MessageCircle size={18} /> Ingresar con WhatsApp
           </Link>
           <div style={{ marginTop: '20px' }}>
-            <Link to={`${prefix}/`} style={{ color: '#94a3b8', fontSize: '14px', textDecoration: 'none' }}>
+            <Link to={`${prefix}/`} style={{ color: 'var(--text-muted)', fontSize: '14px', textDecoration: 'none' }}>
               ← Volver a la tienda
             </Link>
           </div>
