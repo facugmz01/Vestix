@@ -254,7 +254,7 @@ export function NotificationSettingsPanel() {
               <NotificationChannelPicker
                 label="Canales para ventas"
                 hint="Se enviará por cada canal seleccionado cuando el cliente tenga el dato de contacto."
-                value={field.value}
+                value={field.value ?? ['EMAIL', 'WHATSAPP']}
                 onChange={field.onChange}
               />
             )}
@@ -268,7 +268,7 @@ export function NotificationSettingsPanel() {
               <NotificationChannelPicker
                 label="Canales para compras"
                 hint="Notificaciones al proveedor y recepción de mercadería."
-                value={field.value}
+                value={field.value ?? ['EMAIL']}
                 onChange={field.onChange}
               />
             )}
@@ -281,7 +281,7 @@ export function NotificationSettingsPanel() {
             render={({ field }) => (
               <NotificationChannelPicker
                 label="Canales para alertas de stock"
-                value={field.value}
+                value={field.value ?? ['EMAIL']}
                 onChange={field.onChange}
               />
             )}
@@ -294,7 +294,7 @@ export function NotificationSettingsPanel() {
             render={({ field }) => (
               <NotificationChannelPicker
                 label="Canales para transferencias"
-                value={field.value}
+                value={field.value ?? ['EMAIL']}
                 onChange={field.onChange}
               />
             )}
@@ -307,22 +307,8 @@ export function NotificationSettingsPanel() {
             render={({ field }) => (
               <NotificationChannelPicker
                 label="Canales para envíos y entregas"
-                value={field.value}
+                value={field.value ?? ['WHATSAPP']}
                 onChange={field.onChange}
-              />
-            )}
-          />
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
-          <Controller
-            control={control}
-            name="storeLoginChannels"
-            render={({ field }) => (
-              <NotificationChannelPicker
-                label="Login de la tienda online (OTP)"
-                hint="Canal para enviar el código de verificación al iniciar sesión. Se usa el primero disponible en orden."
-                value={field.value}
-                onChange={field.onChange}
-                singleSelect
               />
             )}
           />

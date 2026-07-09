@@ -20,7 +20,7 @@ import { NotificationRateLimitService } from '../notifications/notification-rate
 import { NotificationChannel, TemplateKey } from '../notifications/models/notification.model';
 import { SettingsService } from '../../modules/settings/settings.service';
 import {
-  getEventChannels,
+  getStoreLoginChannels,
   resolveRecipient,
 } from '../notifications/utils/notification-channels.util';
 import { StorefrontAuthGuard } from './storefront-auth.guard';
@@ -119,8 +119,8 @@ export class StorefrontAuthController {
     });
 
     // Dispatch OTP via configured store-login channel(s)
-    const notificationSettings = await this.settingsService.getNotificationSettings();
-    const loginChannels = getEventChannels(notificationSettings, 'storeLoginChannels');
+    const storefrontSettings = await this.settingsService.getStorefrontSettings();
+    const loginChannels = getStoreLoginChannels(storefrontSettings);
     let sent = false;
     let sentChannel: NotificationChannel | null = null;
 
@@ -148,7 +148,7 @@ export class StorefrontAuthController {
 
     if (!sent) {
       throw new BadRequestException(
-        'No se pudo enviar el código. Verificá que el canal de login esté habilitado y configurado en Ajustes → Notificaciones.',
+        'No se pudo enviar el código. Verificá que el canal de login esté habilitado y configurado en Ajustes → Tienda Web.',
       );
     }
 

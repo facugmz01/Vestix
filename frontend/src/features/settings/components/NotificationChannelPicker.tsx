@@ -17,7 +17,7 @@ const CHANNEL_OPTIONS: Array<{
 interface NotificationChannelPickerProps {
   label: string;
   hint?: string;
-  value: NotificationChannelOption[];
+  value?: NotificationChannelOption[];
   onChange: (channels: NotificationChannelOption[]) => void;
   singleSelect?: boolean;
 }
@@ -29,7 +29,7 @@ export function NotificationChannelPicker({
   onChange,
   singleSelect = false,
 }: NotificationChannelPickerProps) {
-  const selected = value ?? [];
+  const selected = Array.isArray(value) ? value : [];
 
   const toggle = (channel: NotificationChannelOption) => {
     if (singleSelect) {

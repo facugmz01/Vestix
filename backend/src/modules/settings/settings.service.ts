@@ -88,7 +88,6 @@ export interface NotificationSettings {
   deliveryChannels?: NotificationChannelPreference[];
   lowStockChannels?: NotificationChannelPreference[];
   transferChannels?: NotificationChannelPreference[];
-  storeLoginChannels?: NotificationChannelPreference[];
   smtpHost?: string;
   smtpPort?: number;
   smtpUser?: string;
@@ -125,6 +124,7 @@ export interface StorefrontSettings {
   allowedPaymentMethods?: string[];
   shippingMethods?: any[];
   deliverySettings?: DeliverySettings;
+  storeLoginChannels?: NotificationChannelPreference[];
 }
 
 export interface DeliverySettings {
@@ -293,7 +293,22 @@ export class SettingsService implements OnModuleInit {
       deliveryChannels: notifications.deliveryChannels?.length ? notifications.deliveryChannels : ['WHATSAPP'],
       lowStockChannels: notifications.lowStockChannels?.length ? notifications.lowStockChannels : ['EMAIL'],
       transferChannels: notifications.transferChannels?.length ? notifications.transferChannels : ['EMAIL'],
-      storeLoginChannels: notifications.storeLoginChannels?.length ? notifications.storeLoginChannels : ['WHATSAPP'],
+    };
+  }
+
+  private withStorefrontDefaults(
+    storefront: Record<string, any> | null | undefined,
+    legacyNotifications?: Record<string, any>,
+  ) {
+    if (!storefront) return storefront;
+    const legacyLogin = legacyNotifications?.storeLoginChannels;
+    return {
+      ...storefront,
+      storeLoginChannels: storefront.storeLoginChannels?.length
+        ? storefront.storeLoginChannels
+        : legacyLogin?.length
+          ? legacyLogin
+          : ['WHATSAPP'],
     };
   }
 
@@ -322,6 +337,9 @@ export class SettingsService implements OnModuleInit {
       notifications: decrypted.notifications
         ? this.withNotificationDefaults(this.maskSection('notifications', decrypted.notifications as any))
         : decrypted.notifications,
+      storefront: decrypted.storefront
+        ? this.withStorefrontDefaults(decrypted.storefront, decrypted.notifications)
+        : decrypted.storefront,
       integrations: decrypted.integrations
         ? this.maskSection('integrations', decrypted.integrations as any)
         : decrypted.integrations,
@@ -411,7 +429,11 @@ export class SettingsService implements OnModuleInit {
 
   async getStorefrontSettings(): Promise<StorefrontSettings> {
     const row = await this.getCachedRaw();
-    return (row?.storefront as StorefrontSettings) ?? {} as StorefrontSettings;
+    const stored = (row?.storefront as StorefrontSettings) ?? {} as StorefrontSettings;
+    return {
+      ...stored,
+      ...this.withStorefrontDefaults(stored, row?.notifications as Record<string, any>),
+    };
   }
 
   async getIntegrationSettings(): Promise<IntegrationSettings> {
@@ -987,7 +1009,6 @@ export class SettingsService implements OnModuleInit {
             deliveryChannels: ['WHATSAPP'],
             lowStockChannels: ['EMAIL'],
             transferChannels: ['EMAIL'],
-            storeLoginChannels: ['WHATSAPP'],
             smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
             smsGatewayUrl: '', evolutionApiUrl: '', evolutionApiKey: '',
             evolutionInstance: 'store-main', fcmServerKey: '',
@@ -1020,6 +1041,7 @@ export class SettingsService implements OnModuleInit {
             hideOutOfStock: false, hideBrandFilters: false,
             transferCbu: '', acceptCash: false, shippingInfo: '',
             requireShippingData: 'optional', whatsapp: '',
+            storeLoginChannels: ['WHATSAPP'],
             instagramUrl: '', facebookUrl: '', tiktokUrl: '', youtubeUrl: '', xUrl: '',
             deliverySettings: {
               enableGpsTracking: true,

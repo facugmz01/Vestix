@@ -18,7 +18,6 @@ export const notificationSettingsSchema = z.object({
   deliveryChannels: z.array(notificationChannelSchema).min(1).catch(['WHATSAPP']),
   lowStockChannels: z.array(notificationChannelSchema).min(1).catch(['EMAIL']),
   transferChannels: z.array(notificationChannelSchema).min(1).catch(['EMAIL']),
-  storeLoginChannels: z.array(notificationChannelSchema).min(1).catch(['WHATSAPP']),
   smtpHost: z.string().catch(''),
   smtpPort: z.number().catch(587),
   smtpUser: z.string().catch(''),
