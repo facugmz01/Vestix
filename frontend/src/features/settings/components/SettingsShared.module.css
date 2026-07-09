@@ -270,3 +270,212 @@
   border-color: var(--accent);
   background: var(--accent-subtle);
 }
+
+/* Loading & form helpers */
+.loadingState {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 8px 0;
+}
+
+.fieldError {
+  color: var(--red);
+  font-size: 12px;
+}
+
+.fieldHint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.constrainedField {
+  margin-bottom: 24px;
+  max-width: 400px;
+}
+
+/* Info / warning callouts */
+.infoBox {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--blue-bg);
+  border-radius: 8px;
+  background: var(--blue-bg);
+}
+
+.infoBoxIcon {
+  flex-shrink: 0;
+  color: var(--blue);
+}
+
+.infoBoxBody {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.infoBoxParagraph {
+  margin: 0 0 8px;
+}
+
+.infoBoxParagraph:last-child {
+  margin-bottom: 0;
+}
+
+.infoBoxAccent {
+  color: var(--accent);
+}
+
+.infoBoxWarning {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--yellow-bg);
+  border-radius: 8px;
+  background: var(--yellow-bg);
+}
+
+.infoBoxWarningIcon {
+  flex-shrink: 0;
+  color: var(--yellow);
+}
+
+.infoBoxWarningText {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+/* Receipt style preview */
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.previewBody {
+  display: flex;
+  justify-content: center;
+  background: var(--surface-1);
+}
+
+.previewFrame {
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.formStatic {
+  animation: none;
+  gap: var(--space-6, 24px);
+}
+
+.gridStart {
+  align-items: start;
+}
+
+/* Settings layout primitives (SettingsLayout.tsx) */
+.settingsSection {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-0);
+}
+
+.settingsSectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settingsSectionTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.settingsSectionDescription {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.settingsSectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+}
+
+.settingsRow {
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.settingsRowLabel {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settingsRowHint {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.settingsDivider {
+  margin: 0 -24px;
+  border-top: 1px solid var(--border);
+}
+
+.legacyToggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.legacyToggle:disabled {
+  cursor: default;
+}
+
+.legacyToggleOn {
+  background: var(--accent);
+}
+
+.legacyToggleKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-inverted);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: left 0.2s;
+}
+
+.legacyToggleKnobOn {
+  left: 23px;
+}

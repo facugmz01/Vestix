@@ -51,10 +51,10 @@ export function PricingSettingsPanel() {
               </select>
             </div>
             <Input type="number" label="IVA por Defecto (%)" {...register('vatDefaultPct', { valueAsNumber: true })} />
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             <ToggleSwitch label="Permitir Descuento Manual" {...register('allowManualDiscount')} />
             <Input type="number" label="Descuento Máximo Permitido (%)" {...register('maxDiscountPct', { valueAsNumber: true })} />
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             <div className={styles.selectGroup}>
               <label className={styles.selectLabel}>Redondeo de Precios</label>
               <select {...register('roundingRule')} className={styles.select}>
@@ -110,7 +110,7 @@ export function SkuBarcodeSettingsPanel() {
             <Input label="Prefijo de SKU" placeholder="PROD-" {...register('skuPrefix')} />
             <ToggleSwitch label="Auto-generar SKU" {...register('skuAutoGenerate')} />
             <Input type="number" label="Próximo Número Secuencia" {...register('nextSkuSequence', { valueAsNumber: true })} />
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             <div className={styles.selectGroup}>
               <label className={styles.selectLabel}>Formato de Código de Barra</label>
               <select {...register('barcodeFormat')} className={styles.select}>
@@ -172,12 +172,12 @@ export function InvoicingSettingsPanel() {
               </select>
             </div>
             
-            <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', padding: '12px 16px', borderRadius: '8px', display: 'flex', gap: '8px' }}>
-              <AlertTriangle size={16} color="#eab308" />
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-primary)' }}>Requiere cargar certificados AFIP.</p>
+            <div className={styles.infoBoxWarning}>
+              <AlertTriangle size={16} className={styles.infoBoxWarningIcon} aria-hidden="true" />
+              <p className={styles.infoBoxWarningText}>Requiere cargar certificados AFIP.</p>
             </div>
 
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
 
             <ToggleSwitch 
               label="Ventas sin comprobante fiscal" 
@@ -309,7 +309,7 @@ export function LabelPrintingSettingsPanel() {
               </select>
             </div>
             <ToggleSwitch label="Auto-generar código de barras al imprimir" {...register('autoGenerateBarcodeOnPrint')} />
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             <div className={styles.selectGroup}>
               <label className={styles.selectLabel}>Resolución ZPL (DPI)</label>
               <select {...register('zplDpi', { valueAsNumber: true })} className={styles.select}>
