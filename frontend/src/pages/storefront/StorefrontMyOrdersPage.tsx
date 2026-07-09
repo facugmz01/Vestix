@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, Truck, CheckCircle, Clock, MapPin, Navigation } from 'lucide-react';
+import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { storefrontOrdersApi } from '@/api/storefront-orders.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -9,18 +10,19 @@ import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
 import { useTrackingSse } from '@/hooks/useTrackingSse';
 import type { OrderTracking } from '@/api/shipping.api';
+import styles from './StorefrontMyOrdersPage.module.css';
 
 const FULFILLMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  PENDING_PAYMENT: { label: 'Pendiente de Pago', color: '#f59e0b' },
-  PAID: { label: 'Pagado - Preparando', color: '#3b82f6' },
-  PICKING: { label: 'En Preparación', color: '#3b82f6' },
-  PACKED: { label: 'Empaquetado', color: '#6366f1' },
-  READY_FOR_PICKUP: { label: 'Listo para Retiro', color: '#8b5cf6' },
-  SHIPPED: { label: 'En Camino', color: '#8b5cf6' },
-  DELIVERED: { label: 'Entregado', color: '#22c55e' },
-  CANCELLED: { label: 'Cancelado', color: '#ef4444' },
-  CONFIRMED: { label: 'Confirmado', color: '#3b82f6' },
-  COMPLETED: { label: 'Confirmado', color: '#3b82f6' },
+  PENDING_PAYMENT: { label: 'Pendiente de Pago', color: 'var(--amber, #f59e0b)' },
+  PAID: { label: 'Pagado - Preparando', color: 'var(--sf-primary, var(--accent))' },
+  PICKING: { label: 'En Preparación', color: 'var(--sf-primary, var(--accent))' },
+  PACKED: { label: 'Empaquetado', color: 'var(--purple, #6366f1)' },
+  READY_FOR_PICKUP: { label: 'Listo para Retiro', color: 'var(--purple, #8b5cf6)' },
+  SHIPPED: { label: 'En Camino', color: 'var(--purple, #8b5cf6)' },
+  DELIVERED: { label: 'Entregado', color: 'var(--green)' },
+  CANCELLED: { label: 'Cancelado', color: 'var(--red)' },
+  CONFIRMED: { label: 'Confirmado', color: 'var(--sf-primary, var(--accent))' },
+  COMPLETED: { label: 'Confirmado', color: 'var(--sf-primary, var(--accent))' },
 };
 
 function getStatusDisplay(status: string) {
@@ -39,7 +41,7 @@ function getStatusDisplay(status: string) {
     };
     return { ...info, icon: icons[status] || Package };
   }
-  return { label: status, color: '#64748b', icon: Package };
+  return { label: status, color: 'var(--text-secondary)', icon: Package };
 }
 
 function MyOrdersContent() {
@@ -53,63 +55,57 @@ function MyOrdersContent() {
   const orders = data?.data || [];
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '48px auto', padding: '0 24px', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
-      <div style={{ width: '400px', flexShrink: 0 }}>
-        <h1 style={{ margin: '0 0 24px', fontSize: '28px', fontWeight: 900 }}>Mis Compras</h1>
+    <div className={styles.layout}>
+      <div className={styles.sidebar}>
+        <h1 className={styles.title}>Mis Compras</h1>
 
         {isLoading ? (
-          <div>Cargando historial...</div>
+          <div className={styles.loading}>Cargando historial...</div>
         ) : orders.length === 0 ? (
-          <div style={{ padding: '32px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-            <Package size={32} color="#cbd5e1" style={{ margin: '0 auto 12px' }} />
-            <p style={{ margin: 0, color: '#64748b' }}>Aún no has realizado compras.</p>
+          <div className={styles.emptyCard}>
+            <Package size={32} className={styles.emptyIcon} />
+            <p className={styles.emptyText}>Aún no has realizado compras.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className={styles.orderList}>
             {orders.map((o: any) => {
               const displayStatus = o.trackingStatus || o.status;
               const statusInfo = getStatusDisplay(displayStatus);
               const isSelected = selectedId === o.id;
               return (
-                <div
+                <button
                   key={o.id}
+                  type="button"
                   onClick={() => setSelectedId(o.id)}
-                  style={{
-                    padding: '20px',
-                    background: isSelected ? '#eff6ff' : '#fff',
-                    borderRadius: '12px',
-                    border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
+                  className={clsx(styles.orderCard, isSelected && styles.orderCardSelected)}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 800, fontFamily: 'monospace', color: '#0f172a' }}>{formatSaleId(o.id, o.status)}</span>
-                    <span style={{ fontSize: '13px', color: '#64748b' }}>{new Date(o.createdAt).toLocaleDateString()}</span>
+                  <div className={styles.orderHeader}>
+                    <span className={styles.orderId}>{formatSaleId(o.id, o.status)}</span>
+                    <span className={styles.orderDate}>{new Date(o.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: statusInfo.color, fontWeight: 700, marginBottom: '12px' }}>
+                  <div className={styles.statusRow} style={{ color: statusInfo.color }}>
                     <statusInfo.icon size={16} /> {statusInfo.label}
                   </div>
                   {o.dispatchedAt && (
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>
+                    <div className={styles.dispatched}>
                       Despachado: {new Date(o.dispatchedAt).toLocaleString()}
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
-                    <span style={{ fontSize: '13px', color: '#64748b' }}>{o.lines.length} artículos</span>
-                    <span style={{ fontWeight: 900, color: '#0f172a' }}>{formatCurrency(o.grandTotal)}</span>
+                  <div className={styles.orderFooter}>
+                    <span className={styles.itemCount}>{o.lines.length} artículos</span>
+                    <span className={styles.orderTotal}>{formatCurrency(o.grandTotal)}</span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
         )}
       </div>
 
-      <div style={{ flex: 1, background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '32px', minHeight: '500px' }}>
+      <div className={styles.detailPanel}>
         {!selectedId ? (
-          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-            <Package size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
+          <div className={styles.placeholder}>
+            <Package size={48} className={styles.placeholderIcon} />
             <p>Seleccioná un pedido para ver los detalles.</p>
           </div>
         ) : (
@@ -148,7 +144,7 @@ function OrderDetailView({ orderId }: { orderId: string }) {
     onError: () => toast.error('Código incorrecto o expirado'),
   });
 
-  if (isLoading || !tracking) return <div>Cargando detalle...</div>;
+  if (isLoading || !tracking) return <div className={styles.loading}>Cargando detalle...</div>;
 
   const statusInfo = getStatusDisplay(tracking.status);
   const progress = getTimelineProgress(tracking);
@@ -158,19 +154,19 @@ function OrderDetailView({ orderId }: { orderId: string }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div className={styles.detailHeader}>
         <div>
-          <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 900 }}>
-            Pedido <span style={{ fontFamily: 'monospace' }}>{formatSaleId(tracking.orderId)}</span>
+          <h2 className={styles.detailTitle}>
+            Pedido <span className={styles.mono}>{formatSaleId(tracking.orderId)}</span>
           </h2>
           {tracking.trackingNumber && (
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>
+            <p className={styles.trackingMeta}>
               Tracking: <strong>{tracking.trackingNumber}</strong>
               {tracking.courierName && ` · ${tracking.courierName}`}
             </p>
           )}
         </div>
-        <div style={{ padding: '8px 16px', background: '#f8fafc', border: `1px solid ${statusInfo.color}`, borderRadius: '999px', color: statusInfo.color, fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.statusBadge} style={{ borderColor: statusInfo.color, color: statusInfo.color }}>
           <statusInfo.icon size={18} /> {statusInfo.label}
         </div>
       </div>
@@ -187,64 +183,61 @@ function OrderDetailView({ orderId }: { orderId: string }) {
         />
       )}
 
-      <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: 800 }}>Artículos</h3>
-      <div style={{ background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '16px', marginBottom: '32px' }}>
+      <h3 className={styles.sectionTitle}>Artículos</h3>
+      <div className={styles.linesBox}>
         {tracking.lines.map((l: any, i: number) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: i < tracking.lines.length - 1 ? '1px solid #e2e8f0' : 'none' }}>
+          <div key={i} className={styles.lineRow}>
             <div>
-              <p style={{ margin: '0 0 4px', fontWeight: 700 }}>{l.productName || l.variantId}</p>
-              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Cant: {l.quantity}</p>
+              <p className={styles.lineName}>{l.productName || l.variantId}</p>
+              <p className={styles.lineQty}>Cant: {l.quantity}</p>
             </div>
-            <span style={{ fontWeight: 800 }}>{formatCurrency(l.finalPrice)}</span>
+            <span className={styles.linePrice}>{formatCurrency(l.finalPrice)}</span>
           </div>
         ))}
-        <div style={{ borderTop: '2px solid #e2e8f0', marginTop: '16px', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <span style={{ fontSize: '16px', fontWeight: 800 }}>Total</span>
-          <span style={{ fontSize: '24px', fontWeight: 900, color: '#0f172a' }}>{formatCurrency(tracking.grandTotal)}</span>
+        <div className={styles.linesTotal}>
+          <span className={styles.linesTotalLabel}>Total</span>
+          <span className={styles.linesTotalValue}>{formatCurrency(tracking.grandTotal)}</span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
-        <div style={{ flex: 1, padding: '20px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: '#64748b', textTransform: 'uppercase' }}>Información de Envío</h4>
+      <div className={styles.infoGrid}>
+        <div className={styles.infoCard}>
+          <h4 className={styles.infoCardTitle}>Información de Envío</h4>
           {tracking.shippingAddress ? (
             <>
-              <p style={{ margin: '0 0 4px', fontWeight: 600 }}>{tracking.shippingAddress.fullName}</p>
-              <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>
+              <p className={styles.infoName}>{tracking.shippingAddress.fullName}</p>
+              <p className={styles.infoText}>
                 {tracking.shippingAddress.address}<br />
                 {tracking.shippingAddress.city}, {tracking.shippingAddress.state}<br />
                 CP: {tracking.shippingAddress.zipCode}
               </p>
               {tracking.shippingMethodName && (
-                <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#64748b' }}>
-                  Método: {tracking.shippingMethodName}
-                </p>
+                <p className={styles.infoMuted}>Método: {tracking.shippingMethodName}</p>
               )}
             </>
           ) : (
-            <p style={{ margin: 0, color: '#64748b' }}>Retiro en tienda</p>
+            <p className={styles.infoEmpty}>Retiro en tienda</p>
           )}
         </div>
-        <div style={{ flex: 1, padding: '20px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: '#64748b', textTransform: 'uppercase' }}>Fechas</h4>
+        <div className={styles.infoCard}>
+          <h4 className={styles.infoCardTitle}>Fechas</h4>
           <DeliveryDates timeline={tracking.timeline} />
         </div>
       </div>
 
       {tracking.status === 'SHIPPED' && tracking.delivery?.hasDeliveryCode && (
-        <div style={{ padding: '20px', border: '2px solid #8b5cf6', borderRadius: '12px', background: '#faf5ff' }}>
-          <h4 style={{ margin: '0 0 8px', fontWeight: 800 }}>Confirmar recepción</h4>
-          <p style={{ margin: '0 0 16px', fontSize: '14px', color: '#64748b' }}>
+        <div className={styles.confirmBox}>
+          <h4 className={styles.confirmTitle}>Confirmar recepción</h4>
+          <p className={styles.confirmText}>
             Ingresá el código de 6 dígitos que recibiste por WhatsApp al despachar tu pedido.
           </p>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div className={styles.confirmRow}>
             <input
-              className="storefront-input"
+              className={clsx('storefront-input', styles.otpInput)}
               placeholder="000000"
               maxLength={6}
               value={otp}
               onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-              style={{ maxWidth: '140px', fontFamily: 'monospace', fontSize: '18px', letterSpacing: '4px' }}
             />
             <button
               className="storefront-btn"
@@ -269,15 +262,15 @@ function Timeline({ tracking, progress }: { tracking: OrderTracking; progress: n
   ];
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '48px', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: '16px', left: '0', right: '0', height: '4px', background: '#e2e8f0', zIndex: 0 }} />
-      <div style={{ position: 'absolute', top: '16px', left: '0', width: `${progress}%`, height: '4px', background: '#3b82f6', zIndex: 0, transition: 'all 0.5s' }} />
+    <div className={styles.timeline}>
+      <div className={styles.timelineTrack} />
+      <div className={styles.timelineProgress} style={{ width: `${progress}%` }} />
       {steps.map((step, i) => (
-        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, width: '80px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: step.active ? '#3b82f6' : '#f1f5f9', border: step.active ? 'none' : '4px solid #fff', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div key={i} className={styles.timelineStep}>
+          <div className={clsx(styles.timelineCircle, step.active && styles.timelineCircleActive)}>
             {step.active && <CheckCircle size={18} />}
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: step.active ? '#0f172a' : '#94a3b8', marginTop: '8px', textAlign: 'center' }}>{step.label}</span>
+          <span className={clsx(styles.timelineLabel, step.active && styles.timelineLabelActive)}>{step.label}</span>
         </div>
       ))}
     </div>
@@ -288,15 +281,15 @@ function DeliveryMap({ lat, lng, updatedAt, driverName, live }: { lat: number; l
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01}%2C${lat - 0.01}%2C${lng + 0.01}%2C${lat + 0.01}&layer=mapnik&marker=${lat}%2C${lng}`;
 
   return (
-    <div style={{ marginBottom: '32px', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
-      <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Navigation size={16} color="#8b5cf6" />
-        <span style={{ fontWeight: 700, fontSize: '14px' }}>
+    <div className={styles.mapWrap}>
+      <div className={styles.mapHeader}>
+        <Navigation size={16} color="var(--purple, #8b5cf6)" />
+        <span className={styles.mapTitle}>
           Ubicación del repartidor{driverName ? `: ${driverName}` : ''}
-          {live && <span style={{ marginLeft: '8px', color: '#22c55e', fontSize: '12px' }}>● En vivo</span>}
+          {live && <span className={styles.mapLive}>● En vivo</span>}
         </span>
         {updatedAt && (
-          <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#64748b' }}>
+          <span className={styles.mapUpdated}>
             Actualizado: {new Date(updatedAt).toLocaleTimeString()}
           </span>
         )}
@@ -304,11 +297,11 @@ function DeliveryMap({ lat, lng, updatedAt, driverName, live }: { lat: number; l
       <iframe
         title="Ubicación del delivery"
         src={mapUrl}
-        style={{ width: '100%', height: '220px', border: 'none' }}
+        className={styles.mapFrame}
         loading="lazy"
       />
-      <div style={{ padding: '8px 16px', fontSize: '12px' }}>
-        <a href={`https://maps.google.com/?q=${lat},${lng}`} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <div className={styles.mapFooter}>
+        <a href={`https://maps.google.com/?q=${lat},${lng}`} target="_blank" rel="noreferrer" className={styles.mapLink}>
           <MapPin size={14} /> Abrir en Google Maps
         </a>
       </div>
@@ -325,15 +318,15 @@ function DeliveryDates({ timeline }: { timeline: OrderTracking['timeline'] }) {
   ].filter(e => e.date);
 
   if (entries.length === 0) {
-    return <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>Sin fechas registradas aún.</p>;
+    return <p className={styles.dateEmpty}>Sin fechas registradas aún.</p>;
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div className={styles.dateList}>
       {entries.map((e, i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-          <span style={{ color: '#64748b' }}>{e.label}</span>
-          <span style={{ fontWeight: 600 }}>{new Date(e.date!).toLocaleString()}</span>
+        <div key={i} className={styles.dateRow}>
+          <span className={styles.dateLabel}>{e.label}</span>
+          <span className={styles.dateValue}>{new Date(e.date!).toLocaleString()}</span>
         </div>
       ))}
     </div>

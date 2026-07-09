@@ -5,6 +5,8 @@ import { CheckCircle, XCircle, Clock, Package, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { formatSaleId } from '@/utils/formatId';
+import { StorefrontPage, StorefrontCard } from '@/components/storefront';
+import sf from '@/components/storefront/storefront.module.css';
 
 type CheckoutResultStatus = 'success' | 'failure' | 'pending';
 
@@ -56,7 +58,7 @@ const STATUS_CONFIG: Record<
   },
   pending: {
     icon: Clock,
-    iconColor: '#f59e0b',
+    iconColor: 'var(--amber, #f59e0b)',
     iconBg: 'rgba(245, 158, 11, 0.12)',
     title: 'Pago en proceso',
     description: (orderId) =>
@@ -118,91 +120,36 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
   }, [effectiveStatus, clearCart, queryClient]);
 
   return (
-    <div style={{ maxWidth: '600px', margin: '80px auto', padding: '0 24px' }}>
-      <div
-        className="glass animate-fade"
-        style={{
-          padding: '48px 32px',
-          textAlign: 'center',
-          borderRadius: '20px',
-          border: '1px solid var(--border)',
-        }}
-      >
-        <div
-          style={{
-            width: '80px',
-            height: '80px',
-            background: config.iconBg,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px',
-          }}
-        >
+    <StorefrontPage variant="medium" className={sf.resultPage}>
+      <StorefrontCard className={sf.resultCard} padded={false}>
+        <div className={sf.resultIconWrap} style={{ background: config.iconBg }}>
           <Icon size={48} color={config.iconColor} />
         </div>
 
-        <h1
-          style={{
-            margin: '0 0 12px',
-            fontSize: '26px',
-            fontWeight: 900,
-            color: 'var(--text-primary)',
-          }}
-        >
-          {config.title}
-        </h1>
+        <h1 className={sf.resultTitle}>{config.title}</h1>
 
-        <p
-          style={{
-            margin: '0 0 28px',
-            color: 'var(--text-secondary)',
-            fontSize: '15px',
-            lineHeight: 1.6,
-          }}
-        >
-          {config.description(orderId)}
-        </p>
+        <p className={sf.resultText}>{config.description(orderId)}</p>
 
         {effectiveStatus === 'pending' && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              marginBottom: '24px',
-              color: 'var(--text-muted)',
-              fontSize: '13px',
-            }}
-          >
+          <div className={sf.resultPending}>
             <Loader2 size={16} className="spin" />
             Estamos verificando el estado del pago...
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className={sf.resultActions}>
           <Link to={config.primaryTo(prefix)} className="storefront-btn" style={{ textDecoration: 'none' }}>
             <Package size={18} />
             {config.primaryLabel}
           </Link>
 
           {config.secondaryLabel && config.secondaryTo && (
-            <Link
-              to={config.secondaryTo(prefix)}
-              style={{
-                color: 'var(--text-muted)',
-                fontSize: '14px',
-                textDecoration: 'none',
-                fontWeight: 600,
-              }}
-            >
+            <Link to={config.secondaryTo(prefix)} className={sf.resultLink}>
               {config.secondaryLabel}
             </Link>
           )}
         </div>
-      </div>
-    </div>
+      </StorefrontCard>
+    </StorefrontPage>
   );
 }

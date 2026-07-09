@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Truck, Store, CreditCard, User, Loader2 } from 'lucide-react';
+import clsx from 'clsx';
 import { storefrontOrdersApi, type CheckoutDto } from '@/api/storefront-orders.api';
 import { storefrontApi } from '@/api/storefront.api';
 import { useCartStore } from '@/store/cart.store';
@@ -11,6 +12,7 @@ import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { StorefrontStepper } from '@/components/storefront';
+import styles from './storefrontCheckout.module.css';
 
 export default function StorefrontCheckoutPage() {
   const navigate = useNavigate();
@@ -165,7 +167,11 @@ export default function StorefrontCheckoutPage() {
   };
 
   if (isLoadingSettings) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Loader2 size={32} className="spin" color="var(--accent)" /></div>;
+    return (
+      <div className={styles.loadingWrap}>
+        <Loader2 size={32} className="spin" color="var(--accent)" />
+      </div>
+    );
   }
 
   if (!isLoadingSettings && items.length === 0 && !mutation.isPending && !checkoutCompletedRef.current) {
@@ -176,102 +182,103 @@ export default function StorefrontCheckoutPage() {
 
   return (
     <div className="storefront-checkout-container">
-
-      {/* Left: Form */}
       <div className="storefront-checkout-left">
-        
         <StorefrontStepper steps={steps} currentStep={step} />
 
-        <div className="glass" style={{ overflow: 'hidden' }}>
-
-          {/* Step 1: Personal info */}
+        <div className={styles.panel}>
           {step === 1 && (
-            <div className="animate-fade" style={{ padding: '28px' }}>
-              <h2 style={{ margin: '0 0 20px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}><User size={18} /> Datos del Comprador</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div className={clsx('animate-fade', styles.panelPad)}>
+              <h2 className={styles.stepTitle}><User size={18} /> Datos del Comprador</h2>
+              <div className={styles.formGrid}>
                 <input className="storefront-input" placeholder="Nombre *" value={info.firstName} onChange={e => setInfo({...info, firstName: e.target.value})} />
                 <input className="storefront-input" placeholder="Apellido" value={info.lastName} onChange={e => setInfo({...info, lastName: e.target.value})} />
-                <input className="storefront-input" placeholder="Correo Electrónico *" type="email" value={info.email} onChange={e => setInfo({...info, email: e.target.value})} style={{ gridColumn: 'span 2' }} />
+                <input className={clsx('storefront-input', styles.span2)} placeholder="Correo Electrónico *" type="email" value={info.email} onChange={e => setInfo({...info, email: e.target.value})} />
                 <input className="storefront-input" placeholder="Teléfono" value={info.phone} onChange={e => setInfo({...info, phone: e.target.value})} />
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <select className="storefront-input" value={info.docType} onChange={e => setInfo({...info, docType: e.target.value})} style={{ width: '90px' }}>
+                <div className={styles.docRow}>
+                  <select className={clsx('storefront-input', styles.docSelect)} value={info.docType} onChange={e => setInfo({...info, docType: e.target.value})}>
                     <option>DNI</option><option>CUIT</option>
                   </select>
-                  <input className="storefront-input" placeholder="Número" value={info.docNum} onChange={e => setInfo({...info, docNum: e.target.value})} style={{ flex: 1 }} />
+                  <input className={clsx('storefront-input', styles.docInput)} placeholder="Número" value={info.docNum} onChange={e => setInfo({...info, docNum: e.target.value})} />
                 </div>
-                <div style={{ gridColumn: 'span 2', marginTop: '8px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: 'var(--text-primary)' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={issueInvoice} 
-                      onChange={e => setIssueInvoice(e.target.checked)} 
-                      style={{ accentColor: 'var(--accent)', width: '16px', height: '16px' }} 
+                <div className={styles.checkboxField}>
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={issueInvoice}
+                      onChange={e => setIssueInvoice(e.target.checked)}
+                      className={styles.checkbox}
                     />
                     Solicitar Factura Electrónica (AFIP)
                   </label>
-                  <p style={{ margin: '4px 0 0 24px', fontSize: '12px', color: 'var(--text-secondary)' }}>Si no lo marcas, se emitirá un recibo de uso interno.</p>
+                  <p className={styles.checkboxHint}>Si no lo marcas, se emitirá un recibo de uso interno.</p>
                 </div>
               </div>
-              <div style={{ marginTop: '24px', textAlign: 'right' }}>
-                <button onClick={() => setStep(2)} className="storefront-btn">Continuar →</button>
+              <div className={styles.stepActions}>
+                <button type="button" onClick={() => setStep(2)} className="storefront-btn">Continuar →</button>
               </div>
             </div>
           )}
 
-          {/* Step 2: Shipping */}
           {step === 2 && (
-            <div className="animate-fade" style={{ padding: '28px' }}>
-              <h2 style={{ margin: '0 0 20px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}><Truck size={18} /> Opciones de Entrega</h2>
-              <div style={{ display: 'flex', gap: '14px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <div className={clsx('animate-fade', styles.panelPad)}>
+              <h2 className={styles.stepTitle}><Truck size={18} /> Opciones de Entrega</h2>
+              <div className={styles.optionRow}>
                 {(settings?.shippingMethods || []).map(opt => {
                   const selected = shippingMethod === opt.id;
                   const Icon = opt.type === 'SHIPPING' ? Truck : Store;
                   return (
-                    <div key={opt.id} onClick={() => setShippingMethod(opt.id)} style={{ flex: 1, minWidth: '140px', padding: '16px', border: selected ? '2px solid var(--accent)' : '1px solid var(--border)', borderRadius: '12px', cursor: 'pointer', background: selected ? 'var(--accent-subtle)' : 'var(--bg-overlay)', transition: 'all 0.2s' }}>
-                      <Icon size={22} color={selected ? 'var(--accent)' : 'var(--text-muted)'} style={{ marginBottom: '8px' }} />
-                      <h4 style={{ margin: '0 0 4px', fontSize: '14px', color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{opt.name}</h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: selected ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 600 }}>
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setShippingMethod(opt.id)}
+                      className={clsx(styles.optionCard, selected && styles.optionCardSelected)}
+                    >
+                      <Icon size={22} className={clsx(styles.optionIcon, selected && styles.optionIconSelected)} />
+                      <h4 className={clsx(styles.optionName, selected && styles.optionNameSelected)}>{opt.name}</h4>
+                      <p className={clsx(styles.optionPrice, selected && styles.optionPriceSelected)}>
                         {opt.price === 0 ? 'Gratis' : `+ ${formatCurrency(opt.price)}`}
                       </p>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
               {selectedShipping?.type === 'SHIPPING' && settings?.requireShippingData !== 'none' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <input className="storefront-input" placeholder="Calle y Número" value={shippingAddress.street} onChange={e => setShippingAddress({...shippingAddress, street: e.target.value})} style={{ gridColumn: 'span 2' }} />
+                <div className={styles.formGrid}>
+                  <input className={clsx('storefront-input', styles.span2)} placeholder="Calle y Número" value={shippingAddress.street} onChange={e => setShippingAddress({...shippingAddress, street: e.target.value})} />
                   <input className="storefront-input" placeholder="Ciudad" value={shippingAddress.city} onChange={e => setShippingAddress({...shippingAddress, city: e.target.value})} />
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input className="storefront-input" placeholder="Provincia" value={shippingAddress.state} onChange={e => setShippingAddress({...shippingAddress, state: e.target.value})} style={{ flex: 2 }} />
-                    <input className="storefront-input" placeholder="C.P." value={shippingAddress.zip} onChange={e => setShippingAddress({...shippingAddress, zip: e.target.value})} style={{ flex: 1 }} />
+                  <div className={styles.addressRow}>
+                    <input className={clsx('storefront-input', styles.addressState)} placeholder="Provincia" value={shippingAddress.state} onChange={e => setShippingAddress({...shippingAddress, state: e.target.value})} />
+                    <input className={clsx('storefront-input', styles.addressZip)} placeholder="C.P." value={shippingAddress.zip} onChange={e => setShippingAddress({...shippingAddress, zip: e.target.value})} />
                   </div>
                 </div>
               )}
-              <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between' }}>
-                <button onClick={() => setStep(1)} className="storefront-btn storefront-btn-secondary">← Volver</button>
-                <button onClick={() => setStep(3)} className="storefront-btn">Continuar →</button>
+              <div className={styles.stepActionsBetween}>
+                <button type="button" onClick={() => setStep(1)} className="storefront-btn storefront-btn-secondary">← Volver</button>
+                <button type="button" onClick={() => setStep(3)} className="storefront-btn">Continuar →</button>
               </div>
             </div>
           )}
 
-          {/* Step 3: Payment */}
           {step === 3 && (
-            <div className="animate-fade" style={{ padding: '28px' }}>
-              <h2 style={{ margin: '0 0 20px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}><CreditCard size={18} /> Pago Seguro</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+            <div className={clsx('animate-fade', styles.panelPad)}>
+              <h2 className={styles.stepTitle}><CreditCard size={18} /> Pago Seguro</h2>
+              <div className={styles.paymentList}>
                 {(settings?.paymentMethods || []).map(pm => (
-                  <label key={pm.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', border: paymentMethod === pm.id ? '2px solid var(--accent)' : '1px solid var(--border)', borderRadius: '10px', cursor: 'pointer', background: paymentMethod === pm.id ? 'var(--accent-subtle)' : 'var(--bg-overlay)' }}>
-                    <input type="radio" checked={paymentMethod === pm.id} onChange={() => setPaymentMethod(pm.id)} style={{ accentColor: 'var(--accent)' }} />
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontWeight: 700, color: 'var(--text-primary)', fontSize: '14px' }}>{pm.name}</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>{pm.type === 'CREDIT_CARD' ? 'Mercado Pago' : pm.type}</p>
+                  <label
+                    key={pm.id}
+                    className={clsx(styles.paymentOption, paymentMethod === pm.id && styles.paymentOptionSelected)}
+                  >
+                    <input type="radio" checked={paymentMethod === pm.id} onChange={() => setPaymentMethod(pm.id)} className={styles.paymentRadio} />
+                    <div className={styles.paymentInfo}>
+                      <p className={styles.paymentName}>{pm.name}</p>
+                      <p className={styles.paymentType}>{pm.type === 'CREDIT_CARD' ? 'Mercado Pago' : pm.type}</p>
                     </div>
                   </label>
                 ))}
               </div>
-              <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between' }}>
-                <button onClick={() => setStep(2)} className="storefront-btn storefront-btn-secondary">← Volver</button>
-                <button onClick={handleCheckout} disabled={mutation.isPending} className="storefront-btn" style={{ minWidth: '180px' }}>
+              <div className={styles.stepActionsBetween}>
+                <button type="button" onClick={() => setStep(2)} className="storefront-btn storefront-btn-secondary">← Volver</button>
+                <button type="button" onClick={handleCheckout} disabled={mutation.isPending} className={clsx('storefront-btn', styles.confirmBtn)}>
                   {mutation.isPending ? <><Loader2 size={16} className="animate-spin" /> Procesando...</> : '✓ Confirmar Pedido'}
                 </button>
               </div>
@@ -280,36 +287,34 @@ export default function StorefrontCheckoutPage() {
         </div>
       </div>
 
-      {/* Right: Order summary */}
       <div className="storefront-checkout-right">
-        <div className="glass" style={{ padding: '24px' }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>Tu pedido</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+        <div className={clsx(styles.panel, styles.panelPadSm)}>
+          <h3 className={styles.summaryTitle}>Tu pedido</h3>
+          <div className={styles.lineList}>
             {items.map(i => (
-              <div key={i.variantId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                <span style={{ flex: 1, paddingRight: '8px' }}>{i.name} {i.size ? `(T.${i.size})` : ''} × {i.qty}</span>
-                <span style={{ fontWeight: 700, color: 'var(--text-primary)', flexShrink: 0 }}>{formatCurrency(i.price * i.qty)}</span>
+              <div key={i.variantId} className={styles.lineItem}>
+                <span className={styles.lineName}>{i.name} {i.size ? `(T.${i.size})` : ''} × {i.qty}</span>
+                <span className={styles.linePrice}>{formatCurrency(i.price * i.qty)}</span>
               </div>
             ))}
           </div>
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-              <span>Subtotal</span><span style={{ fontWeight: 600 }}>{formatCurrency(subtotal)}</span>
+          <div className={styles.totals}>
+            <div className={styles.totalRow}>
+              <span>Subtotal</span><span className={styles.totalRowValue}>{formatCurrency(subtotal)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <div className={styles.totalRow}>
               <span>Envío</span>
-              <span style={{ fontWeight: 600, color: SHIPPING_COST === 0 ? 'var(--green)' : 'var(--text-primary)' }}>
+              <span className={SHIPPING_COST === 0 ? styles.totalRowFree : styles.totalRowValue}>
                 {SHIPPING_COST === 0 ? 'GRATIS' : formatCurrency(SHIPPING_COST)}
               </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '12px', borderTop: '2px solid var(--border)' }}>
-              <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>Total</span>
-              <span style={{ fontWeight: 900, fontSize: '18px', color: 'var(--text-primary)' }}>{formatCurrency(grandTotal)}</span>
+            <div className={styles.grandTotalRow}>
+              <span className={styles.grandTotalLabel}>Total</span>
+              <span className={styles.grandTotalValue}>{formatCurrency(grandTotal)}</span>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   );
 }

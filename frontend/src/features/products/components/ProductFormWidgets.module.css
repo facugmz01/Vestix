@@ -1,0 +1,233 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.searchWrap {
+  position: relative;
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 12px;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 0;
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 4px;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.dropdownEmpty {
+  padding: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.dropdownItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  align-items: center;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.dropdownItem:hover {
+  background: var(--surface-1);
+}
+
+.dropdownItemName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.dropdownMeta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tableWrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.table th,
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.thCenter {
+  text-align: center;
+  width: 100px;
+}
+
+.thRight {
+  text-align: right;
+}
+
+.thAction {
+  text-align: right;
+  width: 50px;
+}
+
+.tdCenter {
+  text-align: center;
+}
+
+.tdRight {
+  text-align: right;
+}
+
+.cellName {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.cellSku {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.qtyInput {
+  width: 60px;
+  padding: 6px;
+  text-align: center;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.table tfoot {
+  background: var(--surface-1);
+}
+
+.table tfoot td {
+  padding: 10px;
+  font-weight: 600;
+  border-bottom: none;
+}
+
+.tfootLabel {
+  text-align: right;
+}
+
+/* Variant generator */
+.generator {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.generatorTitle {
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.attrGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.attrGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attrLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.attrValues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.attrChip {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.attrChipSelected {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
