@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const notificationChannelSchema = z.enum(['EMAIL', 'WHATSAPP', 'SMS']);
+
 export const notificationSettingsSchema = z.object({
   emailEnabled: z.boolean(),
   smsEnabled: z.boolean(),
@@ -11,6 +13,12 @@ export const notificationSettingsSchema = z.object({
   notifyOnLowStock: z.boolean(),
   notifyOnTransfer: z.boolean(),
   notifyOnDelivery: z.boolean(),
+  saleChannels: z.array(notificationChannelSchema).min(1).catch(['EMAIL', 'WHATSAPP']),
+  purchaseChannels: z.array(notificationChannelSchema).min(1).catch(['EMAIL']),
+  deliveryChannels: z.array(notificationChannelSchema).min(1).catch(['WHATSAPP']),
+  lowStockChannels: z.array(notificationChannelSchema).min(1).catch(['EMAIL']),
+  transferChannels: z.array(notificationChannelSchema).min(1).catch(['EMAIL']),
+  storeLoginChannels: z.array(notificationChannelSchema).min(1).catch(['WHATSAPP']),
   smtpHost: z.string().catch(''),
   smtpPort: z.number().catch(587),
   smtpUser: z.string().catch(''),

@@ -1,4 +1,4 @@
-export type NotificationChannel = 'EMAIL' | 'WHATSAPP';
+export type NotificationChannel = 'EMAIL' | 'WHATSAPP' | 'SMS';
 
 export interface ContactInfo {
   phone?: string | null;
@@ -37,9 +37,10 @@ export function resolveManualNotificationRecipient(
   const phone = normalizePhone(contact.phone);
   const email = resolveEmailRecipient(contact.email);
 
-  if (prefer === 'WHATSAPP') {
+  if (prefer === 'WHATSAPP' || prefer === 'SMS') {
     if (phone) {
-      return { channel: 'WHATSAPP', recipient: phone, label: `WhatsApp +${phone}` };
+      const label = prefer === 'SMS' ? `SMS +${phone}` : `WhatsApp +${phone}`;
+      return { channel: prefer, recipient: phone, label };
     }
     if (email) {
       return { channel: 'EMAIL', recipient: email, label: `Email ${email}` };

@@ -18,6 +18,11 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     channel: NotificationChannel.WHATSAPP,
     body: `✅ *Pedido confirmado*\nHola {{customerName}}! Recibimos tu pedido *#{{orderId}}* por *$ {{total}}*. Te avisaremos cuando esté en camino. 🛍️`,
   },
+  {
+    key: TemplateKey.SALE_CONFIRMED,
+    channel: NotificationChannel.SMS,
+    body: `Pedido #{{orderId}} confirmado por $ {{total}}. Gracias {{customerName}}.`,
+  },
 
   // ─── ORDER SHIPPED ─────────────────────────────────────────────────────────
   {
@@ -30,6 +35,11 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     channel: NotificationChannel.EMAIL,
     subject: 'Tu pedido #{{orderId}} fue enviado 🚚',
     body: `Hola {{customerName}},\n\nTu pedido viaja con {{courierName}}.\nSeguimiento en vivo: {{trackingUrl}}\nNúmero de tracking: {{trackingNumber}}\n\n¡Que lo disfrutes!`,
+  },
+  {
+    key: TemplateKey.ORDER_SHIPPED,
+    channel: NotificationChannel.SMS,
+    body: `Pedido #{{orderId}} enviado con {{courierName}}. Seguimiento: {{trackingUrl}}`,
   },
 
   // ─── ORDER DELIVERED ───────────────────────────────────────────────────────
@@ -44,6 +54,11 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     subject: 'Tu pedido #{{orderId}} fue entregado ✅',
     body: `Hola {{customerName}},\n\nTu pedido #{{orderId}} fue entregado exitosamente.\n\nGracias por confiar en nosotros.`,
   },
+  {
+    key: TemplateKey.ORDER_DELIVERED,
+    channel: NotificationChannel.SMS,
+    body: `Pedido #{{orderId}} entregado. Gracias {{customerName}}.`,
+  },
 
   // ─── DELIVERY ARRIVED ──────────────────────────────────────────────────────
   {
@@ -51,12 +66,22 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     channel: NotificationChannel.WHATSAPP,
     body: `📍 *El repartidor está cerca*\nHola {{customerName}}, el repartidor de tu pedido *#{{orderId}}* llegó a tu zona.\nTené a mano el código de entrega.`,
   },
+  {
+    key: TemplateKey.DELIVERY_ARRIVED,
+    channel: NotificationChannel.SMS,
+    body: `El repartidor de tu pedido #{{orderId}} está cerca. Tené a mano el código de entrega.`,
+  },
 
   // ─── DELIVERY OTP ──────────────────────────────────────────────────────────
   {
     key: TemplateKey.DELIVERY_OTP,
     channel: NotificationChannel.WHATSAPP,
     body: `🔐 *Código de entrega — Pedido #{{orderId}}*\n\n*{{otpCode}}*\n\nEntregá este código al repartidor al recibir tu pedido. Válido por 30 minutos.`,
+  },
+  {
+    key: TemplateKey.DELIVERY_OTP,
+    channel: NotificationChannel.SMS,
+    body: `Código de entrega pedido #{{orderId}}: {{otpCode}}. Válido 30 min.`,
   },
 
   // ─── PAYMENT RECEIVED ──────────────────────────────────────────────────────
@@ -74,6 +99,16 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     subject: '⚠️ Stock bajo: {{productName}}',
     body: `ALERTA INTERNA:\n\nEl producto *{{productName}}* (SKU: {{sku}}) tiene solo {{quantity}} unidades disponibles en la sucursal {{branchName}}.\n\nAcción requerida: Generar orden de compra.`,
   },
+  {
+    key: TemplateKey.LOW_STOCK_ALERT,
+    channel: NotificationChannel.WHATSAPP,
+    body: `⚠️ *Stock bajo*\n{{productName}} (SKU {{sku}}) — {{quantity}} u. en {{branchName}}.`,
+  },
+  {
+    key: TemplateKey.LOW_STOCK_ALERT,
+    channel: NotificationChannel.SMS,
+    body: `Stock bajo: {{productName}} ({{sku}}) — {{quantity}} u. en {{branchName}}.`,
+  },
 
   // ─── SHIFT CLOSING DISCREPANCY ─────────────────────────────────────────────
   {
@@ -90,6 +125,16 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     subject: 'Nueva Orden de Compra #{{orderId}}',
     body: `Hola {{supplierName}},\n\nAdjuntamos la orden de compra #{{orderId}} por un total de $ {{total}}.\nPor favor confirmar recepción y fecha estimada de entrega.\n\nSaludos,\n{{companyName}}`,
   },
+  {
+    key: TemplateKey.PURCHASE_ORDER_ISSUED,
+    channel: NotificationChannel.WHATSAPP,
+    body: `📦 *Orden de Compra #{{orderId}}*\nHola {{supplierName}}, enviamos OC por *$ {{total}}*.\nPor favor confirmá recepción.\n— {{companyName}}`,
+  },
+  {
+    key: TemplateKey.PURCHASE_ORDER_ISSUED,
+    channel: NotificationChannel.SMS,
+    body: `OC #{{orderId}} por $ {{total}}. Confirmá recepción. — {{companyName}}`,
+  },
 
   // ─── GOODS RECEIPT RECEIVED ────────────────────────────────────────────────
   {
@@ -97,6 +142,16 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     channel: NotificationChannel.EMAIL,
     subject: 'Recepción de mercadería registrada',
     body: `Se registró la recepción de mercadería para la OC #{{orderId}}.\nSucursal destino: {{branchName}}.\nFecha: {{date}}.`,
+  },
+  {
+    key: TemplateKey.GOODS_RECEIPT_RECEIVED,
+    channel: NotificationChannel.WHATSAPP,
+    body: `📥 Recepción registrada para OC #{{orderId}} en {{branchName}} ({{date}}).`,
+  },
+  {
+    key: TemplateKey.GOODS_RECEIPT_RECEIVED,
+    channel: NotificationChannel.SMS,
+    body: `Recepción OC #{{orderId}} en {{branchName}} — {{date}}.`,
   },
 
   // ─── TRANSFER DISPATCHED ───────────────────────────────────────────────────
@@ -106,6 +161,16 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     subject: 'Transferencia despachada — {{branchName}}',
     body: `Se despachó una transferencia de stock desde {{sourceBranch}} hacia {{destinationBranch}}.\nFecha: {{date}}.`,
   },
+  {
+    key: TemplateKey.TRANSFER_DISPATCHED,
+    channel: NotificationChannel.WHATSAPP,
+    body: `🚚 Transferencia despachada: {{sourceBranch}} → {{destinationBranch}} ({{date}}).`,
+  },
+  {
+    key: TemplateKey.TRANSFER_DISPATCHED,
+    channel: NotificationChannel.SMS,
+    body: `Transferencia despachada {{sourceBranch}} → {{destinationBranch}}.`,
+  },
 
   // ─── TRANSFER RECEIVED ─────────────────────────────────────────────────────
   {
@@ -113,6 +178,16 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     channel: NotificationChannel.EMAIL,
     subject: 'Transferencia recibida — {{branchName}}',
     body: `Se confirmó la recepción de la transferencia en {{destinationBranch}}.\nFecha: {{date}}.`,
+  },
+  {
+    key: TemplateKey.TRANSFER_RECEIVED,
+    channel: NotificationChannel.WHATSAPP,
+    body: `✅ Transferencia recibida en {{destinationBranch}} ({{date}}).`,
+  },
+  {
+    key: TemplateKey.TRANSFER_RECEIVED,
+    channel: NotificationChannel.SMS,
+    body: `Transferencia recibida en {{destinationBranch}}.`,
   },
 
   // ─── INVOICE ISSUED ────────────────────────────────────────────────────────
@@ -164,5 +239,16 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     key: TemplateKey.OTP_CODE,
     channel: NotificationChannel.WHATSAPP,
     body: `🔐 *Tu código de verificación es:*\n\n*{{otpCode}}*\n\nEste código expira en 10 minutos.\nSi no lo solicitaste, ignorá este mensaje.`,
+  },
+  {
+    key: TemplateKey.OTP_CODE,
+    channel: NotificationChannel.SMS,
+    body: `Tu código de verificación es: {{otpCode}}. Expira en 10 minutos.`,
+  },
+  {
+    key: TemplateKey.OTP_CODE,
+    channel: NotificationChannel.EMAIL,
+    subject: 'Tu código de verificación',
+    body: `Tu código de verificación es: {{otpCode}}\n\nEste código expira en 10 minutos.\nSi no lo solicitaste, ignorá este mensaje.`,
   },
 ];
