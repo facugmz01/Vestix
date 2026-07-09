@@ -28,8 +28,14 @@ const mockSettings = {
     whatsappEnabled: true,
     lowStockThreshold: 5,
     smtpUser: 'admin@test.com',
+    saleChannels: ['EMAIL', 'WHATSAPP'],
+    purchaseChannels: ['EMAIL'],
+    deliveryChannels: ['WHATSAPP'],
+    lowStockChannels: ['EMAIL'],
+    transferChannels: ['EMAIL'],
+    storeLoginChannels: ['WHATSAPP'],
   }),
-  getGeneralSettings: jest.fn<any>().mockResolvedValue({ companyName: 'Vestix', email: 'admin@test.com' }),
+  getGeneralSettings: jest.fn<any>().mockResolvedValue({ companyName: 'Vestix', email: 'admin@test.com', phone: '5491122334455' }),
 };
 
 const mockNotifications = {
@@ -114,12 +120,20 @@ describe('NotificationTriggersService', () => {
 
     await service.onSaleCompleted('sale-abc-def');
 
-    expect(mockNotifications.notifyOrderConfirmed).toHaveBeenCalledTimes(2);
-    expect(mockNotifications.notifyOrderConfirmed).toHaveBeenCalledWith(
-      'juan@test.com',
-      NotificationChannel.EMAIL,
-      expect.objectContaining({ customerName: 'Juan' }),
-      'sale-abc-def',
+    expect(mockNotifications.enqueue).toHaveBeenCalledTimes(2);
+    expect(mockNotifications.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: NotificationChannel.EMAIL,
+        templateKey: TemplateKey.SALE_CONFIRMED,
+        recipient: 'juan@test.com',
+      }),
+    );
+    expect(mockNotifications.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: NotificationChannel.WHATSAPP,
+        templateKey: TemplateKey.SALE_CONFIRMED,
+        recipient: '5491111222333',
+      }),
     );
   });
 
@@ -139,9 +153,13 @@ describe('NotificationTriggersService', () => {
 
     await service.checkLowStock('variant-1', 'warehouse-1', 'branch-1');
 
-    expect(mockNotifications.notifyLowStock).toHaveBeenCalledWith(
-      'admin@test.com',
-      expect.objectContaining({ productName: 'Remera', quantity: '3' }),
+    expect(mockNotifications.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: NotificationChannel.EMAIL,
+        templateKey: TemplateKey.LOW_STOCK_ALERT,
+        recipient: 'admin@test.com',
+        variables: expect.objectContaining({ productName: 'Remera', quantity: '3' }),
+      }),
     );
   });
 

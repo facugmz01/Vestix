@@ -70,6 +70,8 @@ export interface LabelPrintingSettings {
   zplPrinterPort?: number;
 }
 
+export type NotificationChannelPreference = 'EMAIL' | 'WHATSAPP' | 'SMS';
+
 export interface NotificationSettings {
   emailEnabled: boolean;
   smsEnabled: boolean;
@@ -81,6 +83,12 @@ export interface NotificationSettings {
   notifyOnLowStock: boolean;
   notifyOnTransfer: boolean;
   notifyOnDelivery: boolean;
+  saleChannels?: NotificationChannelPreference[];
+  purchaseChannels?: NotificationChannelPreference[];
+  deliveryChannels?: NotificationChannelPreference[];
+  lowStockChannels?: NotificationChannelPreference[];
+  transferChannels?: NotificationChannelPreference[];
+  storeLoginChannels?: NotificationChannelPreference[];
   smtpHost?: string;
   smtpPort?: number;
   smtpUser?: string;
@@ -362,7 +370,35 @@ export class SettingsService implements OnModuleInit {
 
   async getNotificationSettings(): Promise<NotificationSettings> {
     const row = await this.getCachedRaw();
-    return (row?.notifications as NotificationSettings) ?? {} as NotificationSettings;
+    const stored = (row?.notifications as NotificationSettings) ?? {} as NotificationSettings;
+    return {
+      emailEnabled: false,
+      smsEnabled: false,
+      whatsappEnabled: false,
+      pushEnabled: false,
+      lowStockThreshold: 5,
+      notifyOnSale: false,
+      notifyOnPurchase: false,
+      notifyOnLowStock: true,
+      notifyOnTransfer: false,
+      notifyOnDelivery: true,
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smsGatewayUrl: '',
+      evolutionApiUrl: '',
+      evolutionApiKey: '',
+      evolutionInstance: 'store-main',
+      fcmServerKey: '',
+      ...stored,
+      saleChannels: stored.saleChannels?.length ? stored.saleChannels : ['EMAIL', 'WHATSAPP'],
+      purchaseChannels: stored.purchaseChannels?.length ? stored.purchaseChannels : ['EMAIL'],
+      deliveryChannels: stored.deliveryChannels?.length ? stored.deliveryChannels : ['WHATSAPP'],
+      lowStockChannels: stored.lowStockChannels?.length ? stored.lowStockChannels : ['EMAIL'],
+      transferChannels: stored.transferChannels?.length ? stored.transferChannels : ['EMAIL'],
+      storeLoginChannels: stored.storeLoginChannels?.length ? stored.storeLoginChannels : ['WHATSAPP'],
+    };
   }
 
   async getStorefrontSettings(): Promise<StorefrontSettings> {
@@ -719,6 +755,12 @@ export class SettingsService implements OnModuleInit {
             emailEnabled: false, smsEnabled: false, whatsappEnabled: false, pushEnabled: false,
             lowStockThreshold: 5, notifyOnSale: false, notifyOnPurchase: false,
             notifyOnLowStock: true, notifyOnTransfer: false, notifyOnDelivery: true,
+            saleChannels: ['EMAIL', 'WHATSAPP'],
+            purchaseChannels: ['EMAIL'],
+            deliveryChannels: ['WHATSAPP'],
+            lowStockChannels: ['EMAIL'],
+            transferChannels: ['EMAIL'],
+            storeLoginChannels: ['WHATSAPP'],
             smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
             smsGatewayUrl: '', evolutionApiUrl: '', evolutionApiKey: '',
             evolutionInstance: 'store-main', fcmServerKey: '',

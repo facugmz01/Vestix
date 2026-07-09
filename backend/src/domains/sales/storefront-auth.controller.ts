@@ -18,6 +18,11 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationRateLimitService } from '../notifications/notification-rate-limit.service';
 import { NotificationChannel, TemplateKey } from '../notifications/models/notification.model';
+import { SettingsService } from '../../modules/settings/settings.service';
+import {
+  getEventChannels,
+  resolveRecipient,
+} from '../notifications/utils/notification-channels.util';
 import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { RedisService } from '../../core/redis/redis.service';
 
@@ -47,6 +52,7 @@ export class StorefrontAuthController {
     private readonly notificationsService: NotificationsService,
     private readonly redisService: RedisService,
     private readonly rateLimitService: NotificationRateLimitService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   private async getOtp(phone: string): Promise<OtpEntry | null> {
@@ -112,17 +118,49 @@ export class StorefrontAuthController {
       attempts: 0,
     });
 
-    // Dispatch WhatsApp notification (fire-and-forget)
-    await this.notificationsService.enqueue({
-      channel: NotificationChannel.WHATSAPP,
-      templateKey: TemplateKey.OTP_CODE,
-      recipient: phone,
-      variables: { otpCode: code },
-    });
+    // Dispatch OTP via configured store-login channel(s)
+    const notificationSettings = await this.settingsService.getNotificationSettings();
+    const loginChannels = getEventChannels(notificationSettings, 'storeLoginChannels');
+    let sent = false;
+    let sentChannel: NotificationChannel | null = null;
 
-    this.logger.log(`[OTP] Code sent to +${phone}`);
+    for (const channel of loginChannels) {
+      const recipient = resolveRecipient(
+        channel,
+        { phone },
+        (value) => this.normalizePhone(value),
+      );
+      if (!recipient) continue;
 
-    return { success: true, message: 'Código enviado por WhatsApp.' };
+      const job = await this.notificationsService.enqueue({
+        channel,
+        templateKey: TemplateKey.OTP_CODE,
+        recipient,
+        variables: { otpCode: code },
+      });
+
+      if (job) {
+        sent = true;
+        sentChannel = channel;
+        break;
+      }
+    }
+
+    if (!sent) {
+      throw new BadRequestException(
+        'No se pudo enviar el código. Verificá que el canal de login esté habilitado y configurado en Ajustes → Notificaciones.',
+      );
+    }
+
+    const channelLabel = sentChannel === NotificationChannel.SMS
+      ? 'SMS'
+      : sentChannel === NotificationChannel.EMAIL
+        ? 'correo electrónico'
+        : 'WhatsApp';
+
+    this.logger.log(`[OTP] Code sent to +${phone} via ${sentChannel}`);
+
+    return { success: true, message: `Código enviado por ${channelLabel}.` };
   }
 
   /**

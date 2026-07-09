@@ -62,7 +62,7 @@ export class FinanceController {
   @RequirePermissions({ action: 'manage', subject: 'Finance' })
   sendManualStatement(
     @Param('id') id: string,
-    @Body() body: { channel: 'EMAIL' | 'WHATSAPP'; recipient: string },
+    @Body() body: { channel: 'EMAIL' | 'WHATSAPP' | 'SMS'; recipient: string },
   ) {
     return this.notificationTriggers.sendManualAccountStatement(id, body.channel, body.recipient);
   }

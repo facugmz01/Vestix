@@ -79,7 +79,7 @@ export class SalesController {
   @RequirePermissions({ action: 'read', subject: 'Sales' })
   sendManualReceipt(
     @Param('id') id: string,
-    @Body() body: { channel: 'EMAIL' | 'WHATSAPP'; recipient: string },
+    @Body() body: { channel: 'EMAIL' | 'WHATSAPP' | 'SMS'; recipient: string },
   ) {
     return this.notificationTriggers.sendManualSaleReceipt(id, body.channel, body.recipient);
   }

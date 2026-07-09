@@ -41,7 +41,7 @@ export const salesApi = {
   bulkImportSales: (rows: any[], updateStock: boolean, paymentResolution: string, branchId: string) =>
     post<{ success: boolean; createdCount: number; errorCount: number; errors: string[] }>('/sales/bulk-import', { rows, updateStock, paymentResolution, branchId }),
 
-  sendManualReceipt: (id: string, payload: { channel: 'EMAIL' | 'WHATSAPP'; recipient: string }) =>
+  sendManualReceipt: (id: string, payload: { channel: 'EMAIL' | 'WHATSAPP' | 'SMS'; recipient: string }) =>
     post<{ success: boolean; message: string }>(`/sales/orders/${id}/send-receipt`, payload),
 
   updateStatus: (id: string, status: string) =>
