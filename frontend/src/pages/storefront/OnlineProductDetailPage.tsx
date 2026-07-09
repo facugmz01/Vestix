@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ShoppingCart, ShieldCheck, Truck, RotateCcw, Check } from 'lucide-react';
+import clsx from 'clsx';
 import { storefrontApi } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import styles from './OnlineProductDetailPage.module.css';
 
 export default function OnlineProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,21 +21,12 @@ export default function OnlineProductDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [justAdded, setJustAdded] = useState(false);
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   const { data: product, isLoading } = useQuery({
     queryKey: queryKeys.storefront.product(id!),
     queryFn: () => storefrontApi.getProduct(id!),
     enabled: !!id,
   });
 
-  // Auto-select first in-stock variant, or first available as fallback
   useEffect(() => {
     if ((product?.variants?.length ?? 0) > 0 && !selectedVariantId) {
       const inStock = product!.variants!.find(v => v.stock > 0);
@@ -41,13 +34,17 @@ export default function OnlineProductDetailPage() {
     }
   }, [product, selectedVariantId]);
 
-
   if (isLoading) {
     return (
-      <div style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 24px', display: 'flex', gap: '48px', flexDirection: isMobile ? 'column' : 'row' }}>
-        <div style={{ flex: 1, background: '#f1f5f9', borderRadius: '16px', aspectRatio: '1' }} />
-        <div style={{ width: isMobile ? '100%' : '420px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {[1,2,3,4].map(i => <div key={i} style={{ height: i === 1 ? 40 : 20, background: '#f1f5f9', borderRadius: 8 }} />)}
+      <div className={styles.skeletonPage}>
+        <div className={styles.skeletonImage} />
+        <div className={styles.skeletonInfo}>
+          {[1, 2, 3, 4].map(i => (
+            <div
+              key={i}
+              className={clsx(styles.skeletonLine, i === 1 ? styles.skeletonLineLg : styles.skeletonLineSm)}
+            />
+          ))}
         </div>
       </div>
     );
@@ -55,9 +52,9 @@ export default function OnlineProductDetailPage() {
 
   if (!product) {
     return (
-      <div style={{ padding: '80px', textAlign: 'center' }}>
+      <div className={styles.notFound}>
         <h2>Producto no encontrado</h2>
-        <Link to={`${prefix}/`} style={{ color: '#3b82f6' }}>Volver al catálogo</Link>
+        <Link to={`${prefix}/`} className={styles.notFoundLink}>Volver al catálogo</Link>
       </div>
     );
   }
@@ -94,101 +91,89 @@ export default function OnlineProductDetailPage() {
     setTimeout(() => setJustAdded(false), 2500);
   };
 
-  return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '20px 16px' : '32px 24px' }}>
+  const hasImages = product.images && product.images.length > 0;
 
-      <Link to={`${prefix}/`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#64748b', textDecoration: 'none', fontWeight: 600, marginBottom: '24px', fontSize: '14px' }}>
+  return (
+    <div className={styles.page}>
+      <Link to={`${prefix}/`} className={styles.backLink}>
         <ChevronLeft size={18} /> Volver al catálogo
       </Link>
 
-      <div style={{ display: 'flex', gap: isMobile ? '24px' : '48px', alignItems: 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
-        
-        {/* Left: Gallery */}
-        <div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ background: (product.images && product.images.length > 0) ? '#fff' : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderRadius: '16px', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            {product.images && product.images.length > 0 ? (
-              <img src={product.images[activeImageIndex] || product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div className={styles.layout}>
+        <div className={styles.gallery}>
+          <div className={clsx(styles.mainImage, hasImages && styles.mainImageHasPhoto)}>
+            {hasImages ? (
+              <img src={product.images[activeImageIndex] || product.images[0]} alt={product.name} />
             ) : (
-              <span style={{ fontSize: isMobile ? '80px' : '120px', color: '#cbd5e1', fontWeight: 900, userSelect: 'none' }}>{product.name.charAt(0).toUpperCase()}</span>
+              <span className={styles.placeholderLetter}>{product.name.charAt(0).toUpperCase()}</span>
             )}
           </div>
-          
+
           {product.images && product.images.length > 1 && (
-            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+            <div className={styles.thumbnails}>
               {product.images.map((img: string, i: number) => (
-                <div 
-                  key={i} 
+                <button
+                  key={i}
+                  type="button"
                   onClick={() => setActiveImageIndex(i)}
-                  style={{ 
-                    width: '80px', flexShrink: 0, aspectRatio: '1', background: '#f1f5f9', borderRadius: '10px', 
-                    border: '2px solid', borderColor: i === activeImageIndex ? '#3b82f6' : 'transparent', 
-                    cursor: 'pointer', overflow: 'hidden' 
-                  }}
+                  className={clsx(styles.thumb, i === activeImageIndex && styles.thumbActive)}
                 >
-                  <img src={img} alt={`${product.name} thumbnail ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
+                  <img src={img} alt={`${product.name} thumbnail ${i}`} />
+                </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Right: Info & Buy Box */}
-        <div style={{ width: isMobile ? '100%' : '430px', flexShrink: 0 }}>
-
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-              {product.brand && <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{product.brand}</span>}
-              {product.category && <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>/ {product.category}</span>}
+        <div className={styles.info}>
+          <div className={styles.meta}>
+            <div className={styles.metaRow}>
+              {product.brand && <span className={styles.brand}>{product.brand}</span>}
+              {product.category && <span className={styles.category}>/ {product.category}</span>}
             </div>
-            <h1 style={{ margin: '0 0 12px', fontSize: isMobile ? '22px' : '28px', fontWeight: 900, lineHeight: 1.2, color: '#0f172a' }}>{product.name}</h1>
-            {product.description && <p style={{ margin: 0, fontSize: '14px', color: '#475569', lineHeight: 1.6 }}>{product.description}</p>}
+            <h1 className={styles.title}>{product.name}</h1>
+            {product.description && <p className={styles.description}>{product.description}</p>}
           </div>
 
-          {/* Buy Box */}
-          <div style={{ padding: '20px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.06)', marginBottom: '24px', boxSizing: 'border-box' }}>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <span style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+          <div className={styles.buyBox}>
+            <div className={styles.priceBlock}>
+              <span className={styles.price}>
                 {selectedVariant ? formatCurrency(displayPrice) : priceRange}
               </span>
               {product.basePrice && product.basePrice > product.price && (
-                <span style={{ marginLeft: '12px', fontSize: '16px', color: '#94a3b8', textDecoration: 'line-through' }}>{formatCurrency(product.basePrice)}</span>
+                <span className={styles.priceStrike}>{formatCurrency(product.basePrice)}</span>
               )}
-              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '8px', height: '8px', background: isAvailable ? '#22c55e' : '#ef4444', borderRadius: '50%', display: 'inline-block' }} />
-                <span style={{ fontSize: '13px', color: isAvailable ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+              <div className={styles.stockRow}>
+                <span
+                  className={clsx(
+                    styles.stockDot,
+                    isAvailable ? styles.stockDotAvailable : styles.stockDotUnavailable,
+                  )}
+                />
+                <span className={clsx(styles.stockText, isAvailable ? styles.stockAvailable : styles.stockUnavailable)}>
                   {isAvailable ? 'Stock Disponible' : 'Sin Stock'}
                 </span>
               </div>
             </div>
 
-            {/* Variant selectors */}
             {product.variants && product.variants.length > 0 && (
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, marginBottom: '10px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Variante
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <div className={styles.variantBlock}>
+                <label className={styles.variantLabel}>Variante</label>
+                <div className={styles.variantList}>
                   {product.variants.map((v: any) => {
                     const isSel = selectedVariantId === v.id;
                     const noStock = v.stock === 0;
                     return (
                       <button
                         key={v.id}
+                        type="button"
                         onClick={() => !noStock && setSelectedVariantId(v.id)}
                         title={noStock ? 'Sin stock' : undefined}
-                        style={{
-                          padding: '10px 16px',
-                          borderRadius: '8px',
-                          border: isSel ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-                          background: isSel ? '#eff6ff' : noStock ? '#fafafa' : '#fff',
-                          color: isSel ? '#1d4ed8' : noStock ? '#cbd5e1' : '#475569',
-                          fontWeight: 600,
-                          fontSize: '13px',
-                          cursor: noStock ? 'not-allowed' : 'pointer',
-                          outline: 'none',
-                          textDecoration: noStock ? 'line-through' : 'none',
-                        }}
+                        className={clsx(
+                          styles.variantBtn,
+                          isSel && styles.variantBtnSelected,
+                          noStock && styles.variantBtnNoStock,
+                        )}
                       >
                         {v.size && v.color ? `${v.size} - ${v.color}` : v.size ? `T. ${v.size}` : v.color ? v.color : v.sku}
                       </button>
@@ -198,56 +183,43 @@ export default function OnlineProductDetailPage() {
               </div>
             )}
 
-            {/* Qty + Add to Cart */}
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
-                <button onClick={() => setQty(Math.max(1, qty - 1))} style={{ padding: '10px 14px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontWeight: 800, fontSize: '16px' }}>−</button>
-                <div style={{ width: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, background: '#fff', fontSize: '15px' }}>{qty}</div>
-                <button onClick={() => setQty(qty + 1)} style={{ padding: '10px 14px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontWeight: 800, fontSize: '16px' }}>+</button>
+            <div className={styles.cartRow}>
+              <div className={styles.qtyControl}>
+                <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className={styles.qtyBtn}>−</button>
+                <div className={styles.qtyValue}>{qty}</div>
+                <button type="button" onClick={() => setQty(qty + 1)} className={styles.qtyBtn}>+</button>
               </div>
 
               <button
+                type="button"
                 onClick={handleAddToCart}
                 disabled={!isAvailable}
-                style={{
-                  flex: 1,
-                  background: justAdded ? '#22c55e' : (isAvailable ? '#3b82f6' : '#cbd5e1'),
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  cursor: isAvailable ? 'pointer' : 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  transition: 'background 0.3s ease',
-                  padding: '12px 16px'
-                }}
+                className={clsx(
+                  styles.addBtn,
+                  justAdded ? styles.addBtnSuccess : isAvailable ? styles.addBtnAvailable : styles.addBtnDisabled,
+                )}
               >
                 {justAdded ? <><Check size={18} /> Agregado!</> : <><ShoppingCart size={18} /> {isAvailable ? 'Agregar al Carrito' : 'Agotado'}</>}
               </button>
             </div>
           </div>
 
-          {/* Trust Badges */}
           {product.relatedProducts && product.relatedProducts.length > 0 && (
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '12px', color: '#0f172a' }}>También te puede interesar</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
+            <div className={styles.related}>
+              <h3 className={styles.relatedTitle}>También te puede interesar</h3>
+              <div className={styles.relatedGrid}>
                 {product.relatedProducts.map(rp => (
-                  <Link
-                    key={rp.id}
-                    to={`${prefix}/product/${rp.id}`}
-                    style={{ textDecoration: 'none', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', background: '#fff' }}
-                  >
-                    <div style={{ height: '100px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {rp.images?.[0] ? <img src={rp.images[0]} alt={rp.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '24px', color: '#cbd5e1' }}>{rp.name.charAt(0)}</span>}
+                  <Link key={rp.id} to={`${prefix}/product/${rp.id}`} className={styles.relatedCard}>
+                    <div className={styles.relatedImage}>
+                      {rp.images?.[0] ? (
+                        <img src={rp.images[0]} alt={rp.name} />
+                      ) : (
+                        <span className={styles.relatedPlaceholder}>{rp.name.charAt(0)}</span>
+                      )}
                     </div>
-                    <div style={{ padding: '10px' }}>
-                      <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{rp.name}</p>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#3b82f6', fontWeight: 700 }}>{formatCurrency(rp.price)}</p>
+                    <div className={styles.relatedBody}>
+                      <p className={styles.relatedName}>{rp.name}</p>
+                      <p className={styles.relatedPrice}>{formatCurrency(rp.price)}</p>
                     </div>
                   </Link>
                 ))}
@@ -255,19 +227,19 @@ export default function OnlineProductDetailPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className={styles.trustList}>
             {[
               { icon: Truck, title: 'Envío Rápido', desc: 'Despachamos en el día a todo el país.' },
               { icon: ShieldCheck, title: 'Compra Protegida', desc: 'Seguridad SSL en todas tus transacciones.' },
               { icon: RotateCcw, title: 'Devoluciones Gratis', desc: 'Tenés 30 días para realizar cambios.' },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '40px', height: '40px', background: '#eff6ff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon size={20} color="#3b82f6" />
+              <div key={title} className={styles.trustItem}>
+                <div className={styles.trustIcon}>
+                  <Icon size={20} />
                 </div>
                 <div>
-                  <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{title}</p>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>{desc}</p>
+                  <p className={styles.trustTitle}>{title}</p>
+                  <p className={styles.trustDesc}>{desc}</p>
                 </div>
               </div>
             ))}
@@ -277,6 +249,3 @@ export default function OnlineProductDetailPage() {
     </div>
   );
 }
-
-
-

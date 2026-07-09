@@ -1,10 +1,11 @@
-import { useRef, type CSSProperties } from 'react';
+import { useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Printer, FileText } from 'lucide-react';
 import { salesApi } from '@/api/sales.api';
 import { ReceiptPrinter } from '@/features/pos/components/ReceiptPrinter';
 import type { SaleOrder } from '@/types';
+import styles from './PublicReceiptPage.module.css';
 
 export default function PublicReceiptPage() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -25,21 +26,21 @@ export default function PublicReceiptPage() {
 
   if (!orderId || !token) {
     return (
-      <div style={styles.centered}>
-        <FileText size={48} color="#94a3b8" />
+      <div className={styles.centered}>
+        <FileText size={48} color="var(--text-muted)" />
         <p>Enlace de comprobante incompleto.</p>
       </div>
     );
   }
 
   if (isLoading) {
-    return <div style={styles.centered}>Cargando comprobante...</div>;
+    return <div className={styles.centered}>Cargando comprobante...</div>;
   }
 
   if (error || !data) {
     return (
-      <div style={styles.centered}>
-        <FileText size={48} color="#94a3b8" />
+      <div className={styles.centered}>
+        <FileText size={48} color="var(--text-muted)" />
         <p>El comprobante no está disponible o el enlace expiró.</p>
       </div>
     );
@@ -74,19 +75,19 @@ export default function PublicReceiptPage() {
   };
 
   return (
-    <div style={styles.page}>
-      <div className="no-print" style={styles.toolbar}>
+    <div className={styles.page}>
+      <div className={`no-print ${styles.toolbar}`}>
         <div>
-          <h1 style={styles.title}>Comprobante de venta</h1>
-          <p style={styles.subtitle}>Podés imprimirlo o guardarlo como PDF desde el navegador.</p>
+          <h1 className={styles.title}>Comprobante de venta</h1>
+          <p className={styles.subtitle}>Podés imprimirlo o guardarlo como PDF desde el navegador.</p>
         </div>
-        <button type="button" onClick={handlePrint} style={styles.printButton}>
+        <button type="button" onClick={handlePrint} className={styles.printButton}>
           <Printer size={18} />
           Imprimir / Guardar PDF
         </button>
       </div>
 
-      <div style={styles.receiptCard}>
+      <div className={styles.receiptCard}>
         <ReceiptPrinter
           ref={printRef}
           order={receiptOrder}
@@ -104,60 +105,3 @@ export default function PublicReceiptPage() {
     </div>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    background: '#f8fafc',
-    padding: '24px 16px',
-  },
-  centered: {
-    minHeight: '60vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'column',
-    gap: '12px',
-    color: '#64748b',
-  },
-  toolbar: {
-    maxWidth: '360px',
-    margin: '0 auto 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  title: {
-    margin: 0,
-    fontSize: '22px',
-    fontWeight: 800,
-    color: '#0f172a',
-  },
-  subtitle: {
-    margin: '6px 0 0',
-    fontSize: '14px',
-    color: '#64748b',
-  },
-  printButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '12px 16px',
-    border: 'none',
-    borderRadius: '10px',
-    background: '#2563eb',
-    color: '#fff',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  receiptCard: {
-    maxWidth: '360px',
-    margin: '0 auto',
-    background: '#fff',
-    borderRadius: '12px',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
-    overflow: 'hidden',
-  },
-};
