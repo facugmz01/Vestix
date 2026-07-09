@@ -23,8 +23,9 @@ interface Props {
 const PROVIDER_FIELDS: Record<string, { key: string; label: string; placeholder: string; secret?: boolean }[]> = {
   MERCADOPAGO: [
     { key: 'publicKey', label: 'Public Key', placeholder: 'APP_USR-...', secret: false },
-    { key: 'accessToken', label: 'Access Token', placeholder: 'APP_USR-...', secret: true },
-    { key: 'webhookSecret', label: 'Webhook Secret', placeholder: 'mp_secret_...', secret: true },
+    { key: 'accessToken', label: 'Access Token', placeholder: 'TEST-... o APP_USR-...', secret: true },
+    { key: 'webhookSecret', label: 'Webhook Secret', placeholder: 'Clave de Tus integraciones', secret: true },
+    { key: 'externalPosId', label: 'External POS ID (QR híbrido)', placeholder: 'CAJA001', secret: false },
   ],
   MERCADOLIBRE: [
     { key: 'clientId', label: 'Client ID', placeholder: '123456' },
@@ -243,12 +244,26 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
         {/* Config Tab */}
         {activeTab === 'config' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {integration.webhookUrl && (
+            {integration.webhookUrls?.length ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {integration.webhookUrls.map(endpoint => (
+                  <div key={endpoint.url} style={{ padding: '12px 16px', background: 'var(--blue-bg)', border: '1px solid var(--blue)', borderRadius: '8px' }}>
+                    <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: 'var(--blue)' }}>
+                      Webhook — {endpoint.label}
+                    </p>
+                    <code style={{ fontSize: '13px', wordBreak: 'break-all' }}>{endpoint.url}</code>
+                  </div>
+                ))}
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Configurá estos URLs en Tus integraciones de Mercado Pago. Para QR POS, suscribite al tópico <strong>Order (Mercado Pago)</strong>; para Checkout Pro, al tópico <strong>Payments</strong>.
+                </p>
+              </div>
+            ) : integration.webhookUrl ? (
               <div style={{ padding: '12px 16px', background: 'var(--blue-bg)', border: '1px solid var(--blue)', borderRadius: '8px' }}>
                 <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: 'var(--blue)' }}>URL del Webhook Entrante (configurá en el proveedor)</p>
                 <code style={{ fontSize: '13px', wordBreak: 'break-all' }}>{integration.webhookUrl}</code>
               </div>
-            )}
+            ) : null}
 
             {fields.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '24px' }}>No hay campos de configuración para este proveedor.</p>

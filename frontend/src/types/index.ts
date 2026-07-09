@@ -430,8 +430,9 @@ export interface Integration {
   description: string;
   status: IntegrationStatus;
   lastSyncAt?: string;
-  config: Record<string, string>; // Key-value credential store (masked from backend)
+  config: Record<string, string>;
   webhookUrl?: string;
+  webhookUrls?: { label: string; url: string }[];
   createdAt: string;
 }
 

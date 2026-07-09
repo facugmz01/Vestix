@@ -74,6 +74,7 @@ import { OfflineController } from './offline.controller';
     PosService,
     SyncEngineService,
     SaleOrderRepository,
+    MercadoPagoService,
   ],
 })
 export class SalesModule {}

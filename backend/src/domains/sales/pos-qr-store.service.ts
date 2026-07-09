@@ -10,6 +10,8 @@ export interface StoredPosQrOrder {
   qrData: string;
   status: PosQrPaymentStatus;
   createdAt: number;
+  isMock?: boolean;
+  mpOrderId?: string;
 }
 
 @Injectable()

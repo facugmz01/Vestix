@@ -9,6 +9,7 @@ import { RulesEngineService } from '../catalog/rules-engine.service';
 import { CashService } from '../finance/cash/cash.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { PosQrStoreService } from './pos-qr-store.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 
 const mockVariant = {
   id: 'variant-1',
@@ -67,6 +68,16 @@ const mockCashService: any = {
 
 const mockMercadoPagoService: any = {
   createPreference: jest.fn<any>().mockResolvedValue({ preferenceId: 'mock', initPoint: 'http://mock' }),
+  createPosQrOrder: jest.fn<any>().mockResolvedValue({
+    orderId: 'POS-QR-1',
+    qrData: 'mock-qr',
+    isMock: true,
+  }),
+  fetchOrder: jest.fn<any>().mockResolvedValue(null),
+};
+
+const mockSettingsService: any = {
+  getIntegrationSettings: jest.fn<any>().mockResolvedValue({}),
 };
 
 const qrMemory = new Map<string, any>();
@@ -98,6 +109,7 @@ describe('PosService', () => {
         { provide: CashService, useValue: mockCashService },
         { provide: MercadoPagoService, useValue: mockMercadoPagoService },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: SettingsService, useValue: mockSettingsService },
         { provide: PosQrStoreService, useValue: mockQrStore },
       ],
     }).compile();

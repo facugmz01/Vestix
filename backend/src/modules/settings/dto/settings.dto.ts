@@ -248,6 +248,7 @@ export class IntegrationSettingsDto {
   @IsOptional() @IsString() mpPublicKey?: string;
   @IsOptional() @IsString() mpAccessToken?: string;
   @IsOptional() @IsString() mpWebhookSecret?: string;
+  @IsOptional() @IsString() mpExternalPosId?: string;
 
   @IsOptional()
   @IsBoolean()

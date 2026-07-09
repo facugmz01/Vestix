@@ -7,6 +7,7 @@ import { RulesEngineService } from '../catalog/rules-engine.service';
 import { CashService } from '../finance/cash/cash.service';
 import { MercadoPagoService } from './mercadopago.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../modules/settings/settings.service';
 import { PosQrStoreService, type PosQrPaymentStatus } from './pos-qr-store.service';
 import * as crypto from 'crypto';
 
@@ -26,6 +27,7 @@ export class PosService {
     private readonly cashService: CashService,
     private readonly mercadoPagoService: MercadoPagoService,
     private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
     private readonly qrStore: PosQrStoreService,
   ) {}
 
@@ -277,18 +279,28 @@ export class PosService {
   async createQrOrder(amount: number, title: string) {
     await this.qrStore.purgeExpired();
     const orderId = `POS-QR-${Date.now()}`;
-    const qrData = `00020101021243650016COM.MERCADOPAGO...${orderId}-AMT${amount}`;
+
+    const intSettings = await this.settingsService.getIntegrationSettings();
+    const { orderId: localOrderId, mpOrderId, qrData, isMock } = await this.mercadoPagoService.createPosQrOrder({
+      externalReference: orderId,
+      amount,
+      title,
+      externalPosId: intSettings.mpExternalPosId,
+      mode: intSettings.mpExternalPosId ? 'hybrid' : 'dynamic',
+    });
 
     await this.qrStore.save({
-      orderId,
+      orderId: localOrderId,
       amount,
       title,
       qrData,
       status: 'PENDING',
       createdAt: Date.now(),
+      isMock,
+      mpOrderId,
     });
 
-    return { orderId, qrData };
+    return { orderId: localOrderId, qrData, isMock };
   }
 
   subscribeQrOrderStatus(orderId: string): Observable<{ data: { orderId: string; status: PosQrPaymentStatus } }> {
@@ -298,32 +310,40 @@ export class PosService {
     );
   }
 
-  async handleMercadoPagoWebhook(body: Record<string, unknown>) {
+  async handleMercadoPagoWebhook(
+    body: Record<string, unknown>,
+    headers?: Record<string, string | string[] | undefined>,
+  ) {
     const type = (body?.type || body?.action) as string | undefined;
-    const resourceId = (body?.data as { id?: string })?.id || body?.resource;
+    const resourceId = ((body?.data as { id?: string })?.id || body?.resource) as string | number | undefined;
 
-    if (!type || !resourceId) return { received: true };
+    if (!type || resourceId === undefined) return { received: true };
+
+    if (headers) {
+      const signatureResult = await this.mercadoPagoService.verifyWebhookSignature(headers, resourceId);
+      if (!signatureResult.valid) {
+        this.logger.warn(`[POS QR Webhook] ${signatureResult.error}`);
+        return { received: false, error: signatureResult.error };
+      }
+    }
+
+    if (type === 'order' || type === 'order.updated') {
+      return this.handlePosOrderWebhook(String(resourceId));
+    }
 
     if (type !== 'payment' && type !== 'payment.updated') {
       return { received: true };
     }
 
     try {
-      const mpToken = process.env.MP_ACCESS_TOKEN;
-      if (!mpToken) {
-        this.logger.warn('[POS QR Webhook] No MP_ACCESS_TOKEN — skipping verification');
+      const payment = await this.mercadoPagoService.fetchPayment(resourceId);
+      if (!payment) {
+        this.logger.warn('[POS QR Webhook] No access token or payment fetch failed');
         return { received: true };
       }
 
-      const response = await fetch(`https://api.mercadopago.com/v1/payments/${resourceId}`, {
-        headers: { Authorization: `Bearer ${mpToken}` },
-      });
-
-      if (!response.ok) return { received: true };
-
-      const payment = await response.json();
-      const externalRef = payment.external_reference as string | undefined;
-      const status = payment.status as string;
+      const externalRef = payment.external_reference;
+      const status = payment.status;
 
       if (!externalRef?.startsWith('POS-QR-')) {
         return { received: true };
@@ -343,6 +363,25 @@ export class PosService {
     }
   }
 
+  private async handlePosOrderWebhook(mpOrderId: string) {
+    const order = await this.mercadoPagoService.fetchOrder(mpOrderId);
+    if (!order) return { received: true };
+
+    const externalRef = order.external_reference as string | undefined;
+    if (!externalRef?.startsWith('POS-QR-')) {
+      return { received: true };
+    }
+
+    const status = order.status as string;
+    if (status === 'paid' || status === 'processed') {
+      await this.setQrOrderStatus(externalRef, 'APPROVED');
+    } else if (status === 'canceled' || status === 'expired') {
+      await this.setQrOrderStatus(externalRef, 'REJECTED');
+    }
+
+    return { received: true, orderId: externalRef, status };
+  }
+
   async getQrOrderStatus(orderId: string) {
     await this.qrStore.purgeExpired();
     const order = await this.qrStore.get(orderId);
@@ -355,9 +394,19 @@ export class PosService {
       if (elapsed > PosService.QR_TTL_MS) {
         await this.setQrOrderStatus(orderId, 'EXPIRED');
         order.status = 'EXPIRED';
-      } else if (elapsed > PosService.QR_MOCK_AUTO_APPROVE_MS) {
+      } else if (order.isMock !== false && elapsed > PosService.QR_MOCK_AUTO_APPROVE_MS) {
         await this.setQrOrderStatus(orderId, 'APPROVED');
         order.status = 'APPROVED';
+      } else if (order.isMock === false && order.mpOrderId) {
+        const mpOrder = await this.mercadoPagoService.fetchOrder(order.mpOrderId);
+        const mpStatus = mpOrder?.status as string | undefined;
+        if (mpStatus === 'paid' || mpStatus === 'processed') {
+          await this.setQrOrderStatus(orderId, 'APPROVED');
+          order.status = 'APPROVED';
+        } else if (mpStatus === 'canceled' || mpStatus === 'expired') {
+          await this.setQrOrderStatus(orderId, 'REJECTED');
+          order.status = 'REJECTED';
+        }
       }
     }
 
