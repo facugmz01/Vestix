@@ -64,7 +64,10 @@ export class CheckoutOrchestrator {
     // 2. PRICING EVALUATION (Server-Authoritative)
     const evaluatedLines = [];
     for (const lineDto of dto.lines) {
-      const variant = await this.prisma.productVariant.findUnique({ where: { id: lineDto.variantId } });
+      const variant = await this.prisma.productVariant.findUnique({
+        where: { id: lineDto.variantId },
+        include: { product: true },
+      });
       if (!variant) throw new BadRequestException(`Variant ${lineDto.variantId} not found`);
 
       // If a manual override is provided (e.g. from POS or Backoffice), trust it.
@@ -92,11 +95,14 @@ export class CheckoutOrchestrator {
       
       evaluatedLines.push({
         variantId: lineDto.variantId,
-        categoryId: lineDto.categoryId || 'default_category',
+        categoryId: lineDto.categoryId || variant.product?.categoryId || 'default_category',
         quantity: lineDto.quantity,
         basePrice: resolvedBasePrice,
         manualDiscountAmount: manualDiscountAmount,
-        finalPrice: finalPriceAfterManualDiscount
+        finalPrice: finalPriceAfterManualDiscount,
+        historicalSku: variant.sku,
+        historicalName: variant.product?.name || null,
+        historicalCost: variant.costPrice ?? null,
       });
     }
 
@@ -229,7 +235,10 @@ export class CheckoutOrchestrator {
               quantity: l.quantity,
               basePrice: l.basePrice,
               discountAmount: l.totalDiscountAmount,
-              finalPrice: l.finalPrice
+              finalPrice: l.finalPrice,
+              historicalSku: l.historicalSku,
+              historicalName: l.historicalName,
+              historicalCost: l.historicalCost,
             }))
           }
         },
