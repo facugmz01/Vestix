@@ -1,18 +1,11 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { useNavigate, useLocation, Link, useOutletContext } from 'react-router-dom';
-import { MessageCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { storefrontAuthApi } from '@/api/storefront-auth.api';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
+import { getStoreLoginChannelConfig } from '@/utils/storeLoginChannel';
 import type { StorefrontSettings } from '@/api/storefront.api';
-
-function normalizePhone(raw: string): string {
-  const digits = raw.replace(/\D/g, '');
-  if (!digits) return digits;
-  if (digits.startsWith('54') && digits.length > 11) return digits;
-  if (digits.startsWith('0')) return '54' + digits.slice(1);
-  return '549' + digits;
-}
 
 export default function StorefrontLoginPage() {
   const navigate = useNavigate();
@@ -21,8 +14,11 @@ export default function StorefrontLoginPage() {
   const setCustomer = useStorefrontAuthStore((s) => s.setCustomer);
   const { settings } = useOutletContext<{ settings?: StorefrontSettings }>();
 
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('');
+  const loginConfig = getStoreLoginChannelConfig(settings?.storeLoginChannels);
+  const LoginIcon = loginConfig.icon;
+
+  const [step, setStep] = useState<'identifier' | 'otp'>('identifier');
+  const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,10 +51,12 @@ export default function StorefrontLoginPage() {
     }, 1000);
   }, []);
 
+  const buildAuthPayload = () => loginConfig.buildPayload(identifier);
+
   const handleSendOtp = async () => {
-    const raw = phone.trim();
-    if (!raw || raw.replace(/\D/g, '').length < 8) {
-      setError('Ingresá un número válido (ej: 11 2233 4455)');
+    const validationError = loginConfig.validate(identifier);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -67,10 +65,9 @@ export default function StorefrontLoginPage() {
     setInfo('');
 
     try {
-      const normalized = normalizePhone(raw);
-      await storefrontAuthApi.sendOtp(normalized);
+      const res = await storefrontAuthApi.sendOtp(buildAuthPayload());
       setStep('otp');
-      setInfo('¡Código enviado! Revisá tu WhatsApp.');
+      setInfo(res.message || 'Código enviado.');
       startCountdown(60);
       setTimeout(() => otpRefs.current[0]?.focus(), 200);
     } catch (e: any) {
@@ -85,9 +82,8 @@ export default function StorefrontLoginPage() {
     setLoading(true);
     setError('');
     try {
-      const normalized = normalizePhone(phone);
-      await storefrontAuthApi.sendOtp(normalized);
-      setInfo('Nuevo código enviado.');
+      const res = await storefrontAuthApi.sendOtp(buildAuthPayload());
+      setInfo(res.message || 'Nuevo código enviado.');
       setOtp(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
       startCountdown(60);
@@ -109,8 +105,10 @@ export default function StorefrontLoginPage() {
     setError('');
 
     try {
-      const normalized = normalizePhone(phone);
-      const result = await storefrontAuthApi.verifyOtp(normalized, code);
+      const result = await storefrontAuthApi.verifyOtp({
+        ...buildAuthPayload(),
+        code,
+      });
       setCustomer(result.customer);
 
       const from = (location.state as { from?: string } | null)?.from || `${prefix}/`;
@@ -171,7 +169,6 @@ export default function StorefrontLoginPage() {
           boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
         }}
       >
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div
             style={{
@@ -187,24 +184,23 @@ export default function StorefrontLoginPage() {
               boxShadow: '0 8px 24px rgba(var(--sf-primary-rgb, 59, 130, 246), 0.25)',
             }}
           >
-            <MessageCircle size={30} />
+            <LoginIcon size={30} />
           </div>
           <h1 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
             Accedé a tu cuenta
           </h1>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.5 }}>
-            Ingresá con WhatsApp para ver tus pedidos en {storeName}
+            {loginConfig.subtitle} en {storeName}
           </p>
         </div>
 
-        {/* Step indicator */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
           <div
             style={{
-              width: step === 'phone' ? 28 : 8,
+              width: step === 'identifier' ? 28 : 8,
               height: 8,
               borderRadius: 4,
-              background: step === 'phone' ? 'var(--sf-primary, var(--accent))' : 'var(--border-strong)',
+              background: step === 'identifier' ? 'var(--sf-primary, var(--accent))' : 'var(--border-strong)',
               transition: 'all 0.3s ease',
             }}
           />
@@ -252,8 +248,7 @@ export default function StorefrontLoginPage() {
           </div>
         )}
 
-        {/* Step 1: Phone */}
-        {step === 'phone' && (
+        {step === 'identifier' && (
           <div className="animate-fade">
             <label
               style={{
@@ -264,45 +259,61 @@ export default function StorefrontLoginPage() {
                 marginBottom: '8px',
               }}
             >
-              Tu número de WhatsApp
+              {loginConfig.inputLabel}
             </label>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  background: 'var(--sf-primary-subtle, var(--accent-subtle))',
-                  border: '1px solid rgba(var(--sf-primary-rgb, 59, 130, 246), 0.2)',
-                  borderRadius: '10px',
-                  padding: '0 12px',
-                  color: 'var(--sf-primary, var(--accent))',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  flexShrink: 0,
-                }}
-              >
-                🇦🇷 +54
-              </div>
+            {loginConfig.channel === 'EMAIL' ? (
               <input
                 className="storefront-input"
-                type="tel"
-                inputMode="tel"
-                placeholder="11 2233 4455"
-                value={phone}
+                type={loginConfig.inputType}
+                inputMode={loginConfig.inputMode}
+                placeholder={loginConfig.placeholder}
+                value={identifier}
                 onChange={(e) => {
-                  setPhone(e.target.value);
+                  setIdentifier(e.target.value);
                   setError('');
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
                 autoFocus
-                autoComplete="tel"
-                style={{ flex: 1 }}
+                autoComplete="email"
+                style={{ width: '100%', marginBottom: '8px' }}
               />
-            </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: 'var(--sf-primary-subtle, var(--accent-subtle))',
+                    border: '1px solid rgba(var(--sf-primary-rgb, 59, 130, 246), 0.2)',
+                    borderRadius: '10px',
+                    padding: '0 12px',
+                    color: 'var(--sf-primary, var(--accent))',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    flexShrink: 0,
+                  }}
+                >
+                  🇦🇷 +54
+                </div>
+                <input
+                  className="storefront-input"
+                  type={loginConfig.inputType}
+                  inputMode={loginConfig.inputMode}
+                  placeholder={loginConfig.placeholder}
+                  value={identifier}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    setError('');
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+                  autoFocus
+                  autoComplete="tel"
+                  style={{ flex: 1 }}
+                />
+              </div>
+            )}
             <p style={{ margin: '0 0 20px', color: 'var(--text-muted)', fontSize: '12px', lineHeight: 1.5 }}>
-              Ingresá tu número sin el 0 inicial ni el 15.
-              <br />
-              Ejemplo: 11 2233 4455
+              {loginConfig.hint}
             </p>
 
             <button
@@ -317,20 +328,19 @@ export default function StorefrontLoginPage() {
                 </>
               ) : (
                 <>
-                  <MessageCircle size={18} /> Enviar código por WhatsApp
+                  <LoginIcon size={18} /> {loginConfig.buttonLabel}
                 </>
               )}
             </button>
           </div>
         )}
 
-        {/* Step 2: OTP */}
         {step === 'otp' && (
           <div className="animate-fade">
             <button
               type="button"
               onClick={() => {
-                setStep('phone');
+                setStep('identifier');
                 setError('');
                 setOtp(['', '', '', '', '', '']);
               }}
@@ -348,7 +358,7 @@ export default function StorefrontLoginPage() {
                 padding: 0,
               }}
             >
-              <ArrowLeft size={14} /> Cambiar número
+              <ArrowLeft size={14} /> {loginConfig.changeLabel}
             </button>
 
             <label
@@ -364,7 +374,7 @@ export default function StorefrontLoginPage() {
               Ingresá el código de 6 dígitos
             </label>
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', margin: '0 0 16px' }}>
-              Enviado al +54 {phone}
+              Enviado a {loginConfig.sentToLabel(identifier)}
             </p>
 
             <div
@@ -458,7 +468,7 @@ export default function StorefrontLoginPage() {
                     padding: 0,
                   }}
                 >
-                  Reenviar código por WhatsApp
+                  {loginConfig.resendLabel}
                 </button>
               )}
             </div>

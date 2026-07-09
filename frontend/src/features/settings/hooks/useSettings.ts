@@ -19,6 +19,10 @@ export function useUpdateSettingsSection<K extends keyof SystemSettings>(section
     onSuccess: () => {
       toast.success('Configuración guardada exitosamente');
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.get() });
+      if (section === 'storefront') {
+        queryClient.invalidateQueries({ queryKey: ['storefrontSettings'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.storefront.settings() });
+      }
     },
     onError: (error: any) => {
       const msg = error.response?.data?.message || error.message || 'Error al guardar';

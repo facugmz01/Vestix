@@ -17,20 +17,25 @@ export interface VerifyOtpResponse {
   customer: StorefrontCustomer;
 }
 
+export interface SendOtpPayload {
+  phone?: string;
+  email?: string;
+}
+
+export interface VerifyOtpPayload extends SendOtpPayload {
+  code: string;
+}
+
 export const storefrontAuthApi = {
-  /** Step 1 — Request an OTP code via WhatsApp */
-  sendOtp: (phone: string) =>
-    post<SendOtpResponse>('/storefront/auth/send-otp', { phone }),
+  sendOtp: (payload: SendOtpPayload) =>
+    post<SendOtpResponse>('/storefront/auth/send-otp', payload),
 
-  /** Step 2 — Verify OTP and receive session cookie */
-  verifyOtp: (phone: string, code: string) =>
-    post<VerifyOtpResponse>('/storefront/auth/verify-otp', { phone, code }),
+  verifyOtp: (payload: VerifyOtpPayload) =>
+    post<VerifyOtpResponse>('/storefront/auth/verify-otp', payload),
 
-  /** Returns the currently authenticated customer (validates cookie) */
   me: () =>
     get<StorefrontCustomer>('/storefront/auth/me'),
 
-  /** Clears the storefront_token cookie */
   logout: () =>
     post<{ success: boolean }>('/storefront/auth/logout'),
 };
