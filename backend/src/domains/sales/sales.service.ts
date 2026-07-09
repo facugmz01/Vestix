@@ -6,13 +6,16 @@ import { v4 as uuidv4 } from 'uuid';
 import { CatalogFacade } from '../catalog/catalog.facade';
 import { SaleOrderRepository } from './repositories/sale-order.repository';
 import { verifyReceiptAccessToken } from './utils/receipt-access.util';
+import { SettingsService } from '../../modules/settings/settings.service';
+import { resolveReceiptStyle } from './models/receipt-style.model';
 
 @Injectable()
 export class SalesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly repository: SaleOrderRepository,
-    private readonly catalogFacade: CatalogFacade
+    private readonly catalogFacade: CatalogFacade,
+    private readonly settingsService: SettingsService,
   ) { }
 
   /**
@@ -68,6 +71,7 @@ export class SalesService {
       select: { settings: true },
     });
     const branchSettings = (branch?.settings as Record<string, string> | null) || {};
+    const posSettings = await this.settingsService.getPosSettings();
 
     return {
       id: order.id,
@@ -93,6 +97,7 @@ export class SalesService {
         posReceiptHeader: branchSettings.posReceiptHeader || null,
         posReceiptFooter: branchSettings.posReceiptFooter || null,
       },
+      receiptStyle: resolveReceiptStyle(posSettings.receiptStyle),
     };
   }
 

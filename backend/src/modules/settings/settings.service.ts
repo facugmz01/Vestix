@@ -5,6 +5,11 @@ import { AuditAction } from '../audit/models/audit-log.model';
 import { EncryptionService } from '../../core/crypto/encryption.service';
 import * as nodemailer from 'nodemailer';
 import { UpdateSettingsDto } from './dto/settings.dto';
+import {
+  DEFAULT_RECEIPT_STYLE,
+  ReceiptStyleSettings,
+  resolveReceiptStyle,
+} from '../../domains/sales/models/receipt-style.model';
 
 // ─── Sensitive field maps — fields to encrypt/decrypt per section ──────────────
 
@@ -59,6 +64,7 @@ export interface PosSettings {
   requireShippingDimensions: boolean;
   officialDollarQuote: number;
   blueDollarQuote: number;
+  receiptStyle?: ReceiptStyleSettings;
 }
 
 export interface LabelPrintingSettings {
@@ -388,7 +394,11 @@ export class SettingsService implements OnModuleInit {
 
   async getPosSettings(): Promise<PosSettings> {
     const row = await this.getCachedRaw();
-    return (row?.pos as PosSettings) ?? {} as PosSettings;
+    const pos = (row?.pos as PosSettings) ?? {} as PosSettings;
+    return {
+      ...pos,
+      receiptStyle: resolveReceiptStyle(pos.receiptStyle),
+    };
   }
 
   async getLabelPrintingSettings(): Promise<LabelPrintingSettings> {
@@ -1071,6 +1081,7 @@ export class SettingsService implements OnModuleInit {
             requireInternalCode: false, requireBarcode: false, requireBrand: false,
             requireDescription: false, requireShippingDimensions: false,
             officialDollarQuote: 1000, blueDollarQuote: 1200,
+            receiptStyle: { ...DEFAULT_RECEIPT_STYLE } as any,
           },
           arca: {
             enabled: false, pointOfSale: 1, environment: 'homologation',

@@ -3,16 +3,28 @@ import { Modal, Button } from '@/components/ui';
 import { ReceiptPrinter } from './ReceiptPrinter';
 import { Printer, X } from 'lucide-react';
 import type { SaleOrder } from '@/types';
+import type { ReceiptStyleSettings } from '@/features/receipts/types/receiptStyle.types';
+import { useGetSettings } from '@/features/settings/hooks/useSettings';
+import { resolveReceiptStyle } from '@/features/receipts/types/receiptStyle.types';
 
 interface PrintReceiptModalProps {
   open: boolean;
   order: SaleOrder | null;
   branchSettings?: any;
+  receiptStyle?: Partial<ReceiptStyleSettings> | null;
   onClose: () => void;
 }
 
-export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({ open, order, branchSettings, onClose }) => {
+export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
+  open,
+  order,
+  branchSettings,
+  receiptStyle,
+  onClose,
+}) => {
   const printRef = useRef<HTMLDivElement>(null);
+  const { data: settings } = useGetSettings();
+  const resolvedStyle = resolveReceiptStyle(receiptStyle || settings?.pos?.receiptStyle);
 
   const handlePrint = () => {
     window.print();
@@ -32,7 +44,7 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({ open, orde
           padding: '10px',
           background: 'rgba(255,255,255,0.05)'
         }}>
-          <ReceiptPrinter ref={printRef} order={order} branchSettings={branchSettings} />
+          <ReceiptPrinter ref={printRef} order={order} branchSettings={branchSettings} receiptStyle={resolvedStyle} />
         </div>
 
         <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
