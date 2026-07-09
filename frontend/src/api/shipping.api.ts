@@ -128,6 +128,7 @@ export const shippingApi = {
 export interface PublicTracking {
   orderRef: string;
   status: string;
+  deliveryStatus?: string;
   trackingNumber?: string;
   courierName?: string;
   city?: string;
@@ -144,6 +145,7 @@ export interface PublicTracking {
     lastLatitude?: number;
     lastLongitude?: number;
     lastLocationAt?: string;
+    driverName?: string;
   };
   itemCount: number;
 }

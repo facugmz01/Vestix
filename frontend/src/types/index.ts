@@ -235,7 +235,7 @@ export interface GoodsReceipt {
 export type PaymentMethod = 'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'|'QR_MERCADOPAGO';
 export interface PaymentMethodEntity { id: string; name: string; type: string; isActive: boolean; }
 export type OrderSource   = 'POS'|'ECOMMERCE'|'BACKOFFICE';
-export type SaleOrderStatus = 'QUOTATION' | 'QUOTE' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'COMPLETED' | 'READY_FOR_PICKUP' | 'DELIVERED' | 'CANCELLED';
+export type SaleOrderStatus = 'QUOTATION' | 'QUOTE' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'COMPLETED' | 'READY_FOR_PICKUP' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 
 export interface SaleOrder {
   id: string; branchId: string; source: OrderSource; status: SaleOrderStatus;
@@ -246,6 +246,24 @@ export interface SaleOrder {
   subtotal: number; cartDiscountTotal: number; grandTotal: number;
   afipInvoiceId?: string;
   paymentMethod: PaymentMethod; createdAt: string; syncedAt?: string;
+  shippingMethodId?: string | null;
+  shippingMethodName?: string | null;
+  shippingCost?: number;
+  shippingAddress?: {
+    fullName?: string;
+    phone?: string | null;
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  } | null;
+  fulfillment?: {
+    id: string;
+    status: string;
+    trackingNumber?: string | null;
+    courierName?: string | null;
+    delivery?: { status?: string; dispatchedAt?: string | null } | null;
+  } | null;
 }
 export interface SaleOrderPayment {
   id: string;

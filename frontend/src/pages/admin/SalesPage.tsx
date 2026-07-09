@@ -1,6 +1,7 @@
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle } from 'lucide-react';
+import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle, Truck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -20,8 +21,14 @@ import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
 import { useState } from 'react';
+import type { SaleOrder } from '@/types';
+
+function isHomeDelivery(sale: SaleOrder) {
+  return !!sale.shippingAddress;
+}
 
 export default function SalesPage() {
+  const navigate = useNavigate();
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
   const [formOpen, setFormOpen] = useState(false);
@@ -42,7 +49,7 @@ export default function SalesPage() {
       toast.success('Estado actualizado exitosamente');
       refetch();
     } catch (err: any) {
-      toast.error('Error al actualizar estado');
+      toast.error(err?.message || 'Error al actualizar estado');
     }
   };
 
@@ -59,6 +66,7 @@ export default function SalesPage() {
       case 'CONFIRMED': return 'blue';
       case 'COMPLETED': return 'green';
       case 'READY_FOR_PICKUP': return 'purple';
+      case 'SHIPPED': return 'purple';
       case 'DELIVERED': return 'green';
       case 'CANCELLED': return 'red';
       default: return 'gray';
@@ -71,6 +79,7 @@ export default function SalesPage() {
     CONFIRMED: 'Confirmado',
     COMPLETED: 'Completado',
     READY_FOR_PICKUP: 'Listo P/Retiro',
+    SHIPPED: 'En Tránsito',
     DELIVERED: 'Entregado',
     CANCELLED: 'Cancelado',
   };
@@ -93,6 +102,7 @@ export default function SalesPage() {
       CONFIRMED: '¿Anular esta venta confirmada?',
       COMPLETED: '¿Anular esta venta completada?',
       READY_FOR_PICKUP: '¿Anular esta venta lista para retiro?',
+      SHIPPED: '¿Anular esta venta en tránsito?',
       DELIVERED: '¿Anular esta venta ya entregada?',
     };
     if (!window.confirm(messages[status] || '¿Cancelar este documento?')) return;
@@ -140,6 +150,7 @@ export default function SalesPage() {
           <option value="CONFIRMED">Ventas Confirmadas</option>
           <option value="COMPLETED">Ventas Completadas (POS)</option>
           <option value="READY_FOR_PICKUP">Listos para Retiro</option>
+          <option value="SHIPPED">En Tránsito</option>
           <option value="DELIVERED">Entregados</option>
           <option value="CANCELLED">Canceladas / Rechazadas</option>
         </select>
@@ -214,7 +225,9 @@ export default function SalesPage() {
               {
                 key: 'actions',
                 header: '',
-                render: (s) => (
+                render: (s) => {
+                  const homeDelivery = isHomeDelivery(s);
+                  return (
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                     {s.status === 'PENDING_PAYMENT' && (
                       <ActionGuard action="update" subject="Sales">
@@ -223,14 +236,25 @@ export default function SalesPage() {
                         </Button>
                       </ActionGuard>
                     )}
-                    {(s.status === 'CONFIRMED' || s.status === 'COMPLETED') && (
+                    {!homeDelivery && (s.status === 'CONFIRMED' || s.status === 'COMPLETED') && (
                       <Button variant="secondary" size="sm" onClick={() => updateStatus(s.id, 'READY_FOR_PICKUP')} aria-label="Listo para Retiro" title="Marcar Listo para Retiro">
                         <PackageCheck size={16} />
                       </Button>
                     )}
-                    {s.status === 'READY_FOR_PICKUP' && (
+                    {!homeDelivery && s.status === 'READY_FOR_PICKUP' && (
                       <Button variant="primary" size="sm" onClick={() => updateStatus(s.id, 'DELIVERED')} aria-label="Entregado" title="Marcar Entregado">
                         <CheckCircle size={16} />
+                      </Button>
+                    )}
+                    {homeDelivery && (s.status === 'CONFIRMED' || s.status === 'COMPLETED' || s.status === 'SHIPPED') && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate('/admin/delivery')}
+                        aria-label="Gestionar envío"
+                        title="Gestionar en Envíos y Despacho"
+                      >
+                        <Truck size={16} />
                       </Button>
                     )}
                     {cancellableStatuses.includes(s.status) && (
@@ -244,7 +268,8 @@ export default function SalesPage() {
                       <Eye size={16} />
                     </Button>
                   </div>
-                )
+                  );
+                }
               }
             ]}
           />

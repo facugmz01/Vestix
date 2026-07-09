@@ -1,14 +1,15 @@
 import { DELIVERY_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, ShoppingBag, Truck } from 'lucide-react';
+import { Package, PackageCheck, CheckCircle, ShoppingBag, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 
 import {
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, Modal, Input
+  PageContainer, Section, Table, Button, Badge, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, Modal, Input
 } from '@/components/ui';
 
 import { shippingApi, type FulfillmentListItem, type DispatchResult } from '@/api/shipping.api';
+import { salesApi } from '@/api/sales.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useListPage } from '@/hooks/useListPage';
 import { formatSaleId } from '@/utils/formatId';
@@ -30,6 +31,10 @@ const STATUS_FILTERS = [
   { value: 'DELIVERED', label: 'Entregados' },
   { value: 'PENDING_PAYMENT', label: 'Pago pendiente' },
 ];
+
+function isHomeDelivery(f: FulfillmentListItem) {
+  return !!f.saleOrder.shippingAddress;
+}
 
 export default function SalesFulfillmentPage() {
   const { page, pageSize, filters, setPage, setFilter } = useListPage({ status: 'PAID' }, { defaultPageSize: 20 });
@@ -53,6 +58,8 @@ export default function SalesFulfillmentPage() {
     queryFn: () => shippingApi.listDeliveries({ page, pageSize, status: statusFilter }),
   });
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
+
   const dispatchMutation = useMutation({
     mutationFn: ({ orderId, dto }: { orderId: string; dto: Parameters<typeof shippingApi.dispatch>[1] }) =>
       shippingApi.dispatch(orderId, dto),
@@ -61,9 +68,9 @@ export default function SalesFulfillmentPage() {
       setDispatchModal(null);
       resetDispatchForm();
       setLinksModal(result);
-      queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
+      invalidate();
     },
-    onError: () => toast.error('Error al despachar el pedido'),
+    onError: (err: any) => toast.error(err?.message || 'Error al despachar el pedido'),
   });
 
   const completeMutation = useMutation({
@@ -73,9 +80,30 @@ export default function SalesFulfillmentPage() {
       toast.success('Entrega confirmada');
       setCompleteModal(null);
       setOtp('');
-      queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
+      invalidate();
     },
     onError: () => toast.error('Código incorrecto o pedido no válido'),
+  });
+
+  const completeManualMutation = useMutation({
+    mutationFn: (orderId: string) => shippingApi.completeManual(orderId, 'Completado manualmente desde backoffice'),
+    onSuccess: () => {
+      toast.success('Entrega marcada como completada');
+      setCompleteModal(null);
+      setOtp('');
+      invalidate();
+    },
+    onError: (err: any) => toast.error(err?.message || 'No se pudo completar la entrega'),
+  });
+
+  const pickupStatusMutation = useMutation({
+    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
+      salesApi.updateStatus(orderId, status),
+    onSuccess: () => {
+      toast.success('Estado actualizado');
+      invalidate();
+    },
+    onError: (err: any) => toast.error(err?.message || 'Error al actualizar estado'),
   });
 
   const locationMutation = useMutation({
@@ -84,7 +112,7 @@ export default function SalesFulfillmentPage() {
     onSuccess: () => {
       toast.success('Ubicación GPS actualizada');
       setLocationOrderId(null);
-      queryClient.invalidateQueries({ queryKey: ['shipping', 'deliveries'] });
+      invalidate();
     },
     onError: () => toast.error('No se pudo actualizar la ubicación'),
   });
@@ -189,7 +217,11 @@ export default function SalesFulfillmentPage() {
                 header: 'Envío',
                 render: (f: FulfillmentListItem) => (
                   <div>
-                    <Badge color="blue">{f.saleOrder.shippingMethodName || 'Retiro'}</Badge>
+                    <Badge color={isHomeDelivery(f) ? 'blue' : 'gray'}>
+                      {isHomeDelivery(f)
+                        ? (f.saleOrder.shippingMethodName || 'Envío a domicilio')
+                        : (f.saleOrder.shippingMethodName || 'Retiro en tienda')}
+                    </Badge>
                     {f.saleOrder.shippingAddress && (
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                         {f.saleOrder.shippingAddress.city}
@@ -203,7 +235,11 @@ export default function SalesFulfillmentPage() {
                 header: 'Estado',
                 render: (f: FulfillmentListItem) => (
                   <StatusChip
-                    label={FULFILLMENT_STATUS_LABELS[f.status] || f.status}
+                    label={
+                      !isHomeDelivery(f) && f.saleOrder.status === 'READY_FOR_PICKUP'
+                        ? 'Listo para retiro'
+                        : (FULFILLMENT_STATUS_LABELS[f.status] || f.status)
+                    }
                     color={getStatusColor(f.status) as any}
                   />
                 ),
@@ -225,14 +261,36 @@ export default function SalesFulfillmentPage() {
               {
                 key: 'actions',
                 header: 'Acciones',
-                render: (f: FulfillmentListItem) => (
+                render: (f: FulfillmentListItem) => {
+                  const home = isHomeDelivery(f);
+                  return (
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {['PAID', 'PICKING', 'PACKED'].includes(f.status) && (
+                    {home && ['PAID', 'PICKING', 'PACKED'].includes(f.status) && (
                       <Button variant="primary" size="sm" onClick={() => setDispatchModal(f)}>
                         <Truck size={14} /> Despachar
                       </Button>
                     )}
-                    {f.status === 'SHIPPED' && (
+                    {!home && ['PAID', 'PICKING', 'PACKED'].includes(f.status) && f.saleOrder.status !== 'READY_FOR_PICKUP' && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={pickupStatusMutation.isPending}
+                        onClick={() => pickupStatusMutation.mutate({ orderId: f.saleOrderId, status: 'READY_FOR_PICKUP' })}
+                      >
+                        <PackageCheck size={14} /> Listo p/retiro
+                      </Button>
+                    )}
+                    {!home && f.saleOrder.status === 'READY_FOR_PICKUP' && f.status !== 'DELIVERED' && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        loading={pickupStatusMutation.isPending}
+                        onClick={() => pickupStatusMutation.mutate({ orderId: f.saleOrderId, status: 'DELIVERED' })}
+                      >
+                        <CheckCircle size={14} /> Entregado
+                      </Button>
+                    )}
+                    {home && f.status === 'SHIPPED' && (
                       <>
                         <Button
                           variant="secondary"
@@ -248,7 +306,8 @@ export default function SalesFulfillmentPage() {
                       </>
                     )}
                   </div>
-                ),
+                  );
+                },
               },
             ]}
           />
@@ -278,6 +337,16 @@ export default function SalesFulfillmentPage() {
           }
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {dispatchModal.saleOrder.shippingAddress && (
+              <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: '4px', fontSize: '13px' }}>
+                <strong>{dispatchModal.saleOrder.shippingAddress.fullName}</strong>
+                <div>{dispatchModal.saleOrder.shippingAddress.address}</div>
+                <div>
+                  {dispatchModal.saleOrder.shippingAddress.city}, {dispatchModal.saleOrder.shippingAddress.state}
+                  {dispatchModal.saleOrder.shippingAddress.zipCode ? ` · CP ${dispatchModal.saleOrder.shippingAddress.zipCode}` : ''}
+                </div>
+              </div>
+            )}
             <Input label="Repartidor *" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre del repartidor" />
             <Input label="Teléfono repartidor" value={driverPhone} onChange={e => setDriverPhone(e.target.value)} placeholder="54911..." />
             <div>
@@ -313,6 +382,16 @@ export default function SalesFulfillmentPage() {
           footer={
             <>
               <Button variant="secondary" onClick={() => setCompleteModal(null)}>Cancelar</Button>
+              <Button
+                variant="ghost"
+                loading={completeManualMutation.isPending}
+                onClick={() => {
+                  if (!window.confirm('¿Completar la entrega sin OTP? Solo usá esto si el cliente no tiene el código.')) return;
+                  completeManualMutation.mutate(completeModal.saleOrderId);
+                }}
+              >
+                Completar sin OTP
+              </Button>
               <Button
                 variant="primary"
                 loading={completeMutation.isPending}
