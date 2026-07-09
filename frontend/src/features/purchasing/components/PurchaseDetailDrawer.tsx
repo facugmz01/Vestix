@@ -8,6 +8,7 @@ import { Truck, CheckCircle, Package, XCircle, Send } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatEntityId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -29,10 +30,9 @@ export function PurchaseDetailDrawer({ open, onClose, orderId }: Props) {
 
   useEffect(() => {
     if (order && (order.status === 'ISSUED' || order.status === 'PARTIALLY_RECEIVED') && !receiving) {
-      // Pre-fill reception with remaining quantities to speed up full reception
-      const initial = order.lines.reduce((acc, line) => ({ 
-        ...acc, 
-        [line.variantId]: Math.max(0, line.orderedQuantity - line.receivedQuantity) 
+      const initial = order.lines.reduce((acc, line) => ({
+        ...acc,
+        [line.variantId]: Math.max(0, line.orderedQuantity - line.receivedQuantity)
       }), {});
       setReceptionLines(initial);
     }
@@ -77,79 +77,81 @@ export function PurchaseDetailDrawer({ open, onClose, orderId }: Props) {
     }
   };
 
-
   return (
     <Drawer open={open} onClose={onClose} title="Orden de Compra" width="lg">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+      <div className={styles.stack}>
+
+        <div className={styles.heroCard}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>OC ID</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatEntityId(order.id, 'OC-')}</h3>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{order.supplierName}</p>
+            <p className={styles.heroLabel}>OC ID</p>
+            <h3 className={styles.heroTitleNeutral}>{formatEntityId(order.id, 'OC-')}</h3>
+            <p className={styles.statValue}>{order.supplierName}</p>
           </div>
-          <div style={{ textAlign: 'center' }}>
+          <div className={styles.heroMeta}>
             <Badge color={getStatusColor(order.status)}>{order.status}</Badge>
-            {order.expectedDeliveryDate && <p style={{ margin: '8px 0 0', fontSize: '12px' }}>Entrega: {new Date(order.expectedDeliveryDate).toLocaleDateString()}</p>}
+            {order.expectedDeliveryDate && (
+              <p className={styles.heroDate}>Entrega: {new Date(order.expectedDeliveryDate).toLocaleDateString()}</p>
+            )}
           </div>
         </div>
 
         <div>
-          <h4 style={{ margin: '0 0 12px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4 className={styles.sectionHeading}>
             <Package size={18} /> Detalle de Ítems
           </h4>
-          
+
           <Table
             keyField="variantId"
             data={order.lines}
             columns={[
-              { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
-              { key: 'cost', header: 'Costo U.', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(l.unitCost)}</span> },
-              { key: 'qty', header: 'Cant. Pedida', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.orderedQuantity}</span> },
-              { 
-                key: 'receivedTotal', 
-                header: 'Ingresado', 
+              { key: 'sku', header: 'SKU', render: (l) => <span className={styles.monoBold}>{l.variantSku || l.variantId}</span> },
+              { key: 'cost', header: 'Costo U.', render: (l) => <span className={styles.textMuted}>{formatCurrency(l.unitCost)}</span> },
+              { key: 'qty', header: 'Cant. Pedida', render: (l) => <span className={styles.textBold}>{l.orderedQuantity}</span> },
+              {
+                key: 'receivedTotal',
+                header: 'Ingresado',
                 render: (l) => {
                   const pending = l.orderedQuantity - l.receivedQuantity;
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 'bold', color: l.receivedQuantity >= l.orderedQuantity ? 'var(--green)' : 'var(--text-primary)' }}>{l.receivedQuantity}</span>
-                      {pending > 0 && <span style={{ fontSize: '11px', color: 'var(--orange)' }}>Faltan {pending}</span>}
+                    <div className={styles.lineCol}>
+                      <span className={l.receivedQuantity >= l.orderedQuantity ? styles.textBoldGreen : styles.textBoldPrimary}>
+                        {l.receivedQuantity}
+                      </span>
+                      {pending > 0 && <span className={styles.textOrange}>Faltan {pending}</span>}
                     </div>
                   );
                 }
               },
-              { 
-                key: 'receiveNow', 
-                header: receiving ? 'Recibir Ahora' : '', 
+              {
+                key: 'receiveNow',
+                header: receiving ? 'Recibir Ahora' : '',
                 render: (l) => {
                   if (receiving) {
                     return (
-                      <input 
-                        type="number" 
-                        min="0" 
+                      <input
+                        type="number"
+                        min="0"
                         max={l.orderedQuantity - l.receivedQuantity}
-                        value={receptionLines[l.variantId] ?? ''} 
+                        value={receptionLines[l.variantId] ?? ''}
                         onChange={e => setReceptionLines({ ...receptionLines, [l.variantId]: Number(e.target.value) })}
-                        style={{ width: '80px', padding: '4px', border: '1px solid var(--border)', borderRadius: '4px' }}
+                        className={styles.qtyInput}
                       />
                     );
                   }
                   return null;
                 }
               },
-              { key: 'subtotal', header: 'Subtotal', render: (l) => <span style={{ fontWeight: 600 }}>{formatCurrency(l.orderedQuantity * l.unitCost)}</span> }
+              { key: 'subtotal', header: 'Subtotal', render: (l) => <span className={styles.infoValue}>{formatCurrency(l.orderedQuantity * l.unitCost)}</span> }
             ]}
           />
-          <div style={{ textAlign: 'right', marginTop: '16px' }}>
-            <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Monto Total: </span>
-            <span style={{ fontSize: '20px', fontWeight: 900 }}>{formatCurrency(order.totalAmount)}</span>
+          <div className={styles.totalRow}>
+            <span className={styles.totalLabel}>Monto Total: </span>
+            <span className={styles.totalValue}>{formatCurrency(order.totalAmount)}</span>
           </div>
         </div>
 
-        {/* Actions Contextual to Status */}
-        <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          
+        <div className={styles.footerBetween}>
+
           {order.status === 'DRAFT' && (
             <ActionGuard action="manage" subject="Purchasing">
               <Button variant="primary" onClick={() => issueMutation.mutate()} loading={issueMutation.isPending} icon={<Send size={16} />}>
@@ -167,7 +169,7 @@ export function PurchaseDetailDrawer({ open, onClose, orderId }: Props) {
           )}
 
           {(order.status === 'ISSUED' || order.status === 'PARTIALLY_RECEIVED') && receiving && (
-            <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'flex-end' }}>
+            <div className={styles.actionFooterFull}>
               <Button variant="ghost" onClick={() => setReceiving(false)}>Cancelar</Button>
               <Button variant="primary" onClick={() => receiveMutation.mutate()} loading={receiveMutation.isPending} icon={<CheckCircle size={16} />}>
                 Confirmar Remito
@@ -176,16 +178,16 @@ export function PurchaseDetailDrawer({ open, onClose, orderId }: Props) {
           )}
 
           {order.status === 'COMPLETED' && (
-            <div style={{ padding: '12px', background: 'var(--green-bg)', color: 'var(--green)', borderRadius: 'var(--radius)', width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.alertGreenFull}>
               <CheckCircle size={20} />
-              <span style={{ fontWeight: 600 }}>Orden Cumplida (Mercadería Ingresada y Cuentas a Pagar actualizadas).</span>
+              <span className={styles.alertText}>Orden Cumplida (Mercadería Ingresada y Cuentas a Pagar actualizadas).</span>
             </div>
           )}
 
           {order.status === 'CANCELLED' && (
-            <div style={{ padding: '12px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: 'var(--radius)', width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.alertRedFull}>
               <XCircle size={20} />
-              <span style={{ fontWeight: 600 }}>Orden Cancelada.</span>
+              <span className={styles.alertText}>Orden Cancelada.</span>
             </div>
           )}
 

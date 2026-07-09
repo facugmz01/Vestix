@@ -6,7 +6,7 @@ import type { Customer } from '@/types';
 import { ShoppingCart, Star, CreditCard, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
-
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -17,8 +17,6 @@ interface Props {
 export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
   if (!customer) return null;
 
-
-  // Fetch mock history or real history
   const { data: history, isLoading } = useQuery({
     queryKey: queryKeys.customers.history(customer.id),
     queryFn: () => customersApi.getHistory(customer.id),
@@ -27,16 +25,15 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Ficha del Cliente" width="lg">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
-        {/* Header Profile */}
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 'bold' }}>
+      <div className={styles.stack}>
+
+        <div className={styles.profileHeader}>
+          <div className={styles.avatar}>
             {customer.fullName.charAt(0).toUpperCase()}
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+            <div className={styles.profileTitleRow}>
+              <h3 className={styles.profileTitle}>
                 {customer.fullName}
               </h3>
               <Badge color={customer.type === 'BUSINESS' ? 'blue' : 'gray'}>
@@ -46,78 +43,76 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
               {customer.source === 'POS' && <Badge color="blue">POS</Badge>}
               {customer.credit.onHold && <StatusChip label="Crédito Retenido" color="red" size="sm" />}
             </div>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+            <p className={styles.profileMeta}>
               {customer.email} • {customer.phone} • {customer.taxId ? `DNI/CUIT: ${customer.taxId}` : ''}
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          
-          {/* Credit View */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px', background: 'var(--bg-base)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+        <div className={styles.cardsGrid}>
+          <div className={styles.infoCard}>
+            <div className={styles.infoCardHeader}>
               <CreditCard size={18} color="var(--accent)" />
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Cuenta Corriente</h4>
+              <h4 className={styles.infoCardTitle}>Cuenta Corriente</h4>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Límite Total:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>{formatCurrency(customer.credit.limit)}</span>
+            <div className={styles.infoCardBody}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Límite Total:</span>
+                <span className={styles.infoValue}>{formatCurrency(customer.credit.limit)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Utilizado:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: customer.credit.used > 0 ? 'var(--red)' : 'var(--text-primary)' }}>{formatCurrency(customer.credit.used)}</span>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Utilizado:</span>
+                <span className={customer.credit.used > 0 ? styles.infoValueRed : styles.infoValue}>
+                  {formatCurrency(customer.credit.used)}
+                </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600 }}>Disponible:</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--green)' }}>{formatCurrency(customer.credit.available)}</span>
+              <div className={styles.infoRowTotal}>
+                <span className={styles.infoValue}>Disponible:</span>
+                <span className={styles.infoValueGreen}>{formatCurrency(customer.credit.available)}</span>
               </div>
             </div>
           </div>
 
-          {/* Loyalty Summary */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px', background: 'var(--bg-base)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <div className={styles.infoCard}>
+            <div className={styles.infoCardHeader}>
               <Star size={18} color="var(--yellow)" fill="var(--yellow)" />
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Fidelización</h4>
+              <h4 className={styles.infoCardTitle}>Fidelización</h4>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Nivel:</span>
+            <div className={styles.infoCardBody}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Nivel:</span>
                 <Badge color="purple">Mayorista VIP</Badge>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Lista de Precios:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>LP_MAYORISTA (-15%)</span>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Lista de Precios:</span>
+                <span className={styles.infoValue}>LP_MAYORISTA (-15%)</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Puntos Acumulados:</span>
-                <span style={{ fontSize: '13px', fontWeight: 700 }}>4,250 pts</span>
+              <div className={styles.infoRowTotal}>
+                <span className={styles.infoLabel}>Puntos Acumulados:</span>
+                <span className={styles.infoValueBold}>4,250 pts</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Purchase History */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <div className={styles.historyHeader}>
             <ShoppingCart size={18} color="var(--text-secondary)" />
-            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>Historial de Compras</h4>
+            <h4 className={styles.historyTitle}>Historial de Compras</h4>
           </div>
-          
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+
+          <div className={styles.historyTableWrap}>
             {isLoading ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando historial...</div>
+              <div className={styles.emptyState}>Cargando historial...</div>
             ) : (!history || history.length === 0) ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>El cliente aún no tiene compras registradas.</div>
+              <div className={styles.emptyState}>El cliente aún no tiene compras registradas.</div>
             ) : (
               <Table
                 keyField="id"
                 data={history}
                 columns={[
                   { key: 'date', header: 'Fecha', render: (h) => new Date(h.createdAt).toLocaleDateString() },
-                  { key: 'id', header: 'Ticket / Factura', render: (h) => <span style={{ fontFamily: 'monospace' }}>{formatSaleId(h.id, h.status)}</span> },
+                  { key: 'id', header: 'Ticket / Factura', render: (h) => <span className={styles.mono}>{formatSaleId(h.id, h.status)}</span> },
                   { key: 'source', header: 'Canal', render: (h) => <Badge color={h.source === 'ECOMMERCE' ? 'green' : 'gray'}>{h.source === 'ECOMMERCE' ? 'Tienda' : h.source}</Badge> },
                   { key: 'total', header: 'Total', render: (h) => <strong>{formatCurrency(h.grandTotal)}</strong> },
                   { key: 'method', header: 'Método', render: (h) => <Badge color="gray">{h.paymentMethod}</Badge> },

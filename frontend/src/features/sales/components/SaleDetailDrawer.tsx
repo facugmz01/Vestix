@@ -17,6 +17,7 @@ import {
   type ResolvedRecipient,
 } from '@/utils/notificationRecipient';
 import type { OrderLineItem } from '@/types';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -214,24 +215,14 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
 
   const sendReceiptBlock = showSendReceipt ? (
     <ActionGuard action="read" subject="Sales">
-      <div
-        style={{
-          padding: '16px',
-          background: 'var(--bg-elevated)',
-          borderRadius: 'var(--radius)',
-          border: '1px solid var(--border)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
           <Send size={16} />
-          <span style={{ fontWeight: 700, fontSize: '14px' }}>Enviar comprobante</span>
+          <span className={styles.sectionTitle}>Enviar comprobante</span>
         </div>
 
         {receiptChannels.length > 1 && (
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className={styles.channelRow}>
             {receiptChannels.map((channel) => (
               <Button
                 key={channel.channel}
@@ -245,7 +236,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div className={styles.actionRow}>
           <Button
             variant="primary"
             icon={<Send size={16} />}
@@ -256,11 +247,11 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
             Enviar Comprobante
           </Button>
           {selectedRecipient ? (
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            <span className={styles.hintText}>
               Se enviará a {selectedRecipient.label}
             </span>
           ) : (
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            <span className={styles.hintText}>
               El cliente no tiene teléfono ni email cargado.
             </span>
           )}
@@ -271,48 +262,48 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle del Documento Comercial" width="lg">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
+      <div className={styles.stack}>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+        <div className={styles.heroCard}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>
+            <p className={styles.heroLabel}>
               {isQuotation ? 'Presupuesto Nro' : 'Venta Nro'}
             </p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace', color: 'var(--blue)' }}>
+            <h3 className={styles.heroTitle}>
               {formatSaleId(sale.id, sale.status)}
             </h3>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
-              Cliente: <strong style={{ color: 'var(--text-primary)' }}>{sale.customerName || sale.customer?.fullName || 'Consumidor Final'}</strong>
+            <p className={styles.heroSubtitle}>
+              Cliente: <strong className={styles.heroSubtitleStrong}>{sale.customerName || sale.customer?.fullName || 'Consumidor Final'}</strong>
             </p>
           </div>
-          <div style={{ textAlign: 'center' }}>
+          <div className={styles.heroMeta}>
             <Badge color={statusColor}>{statusLabel}</Badge>
-            <p style={{ margin: '8px 0 0', fontSize: '12px' }}>{new Date(sale.createdAt).toLocaleString()}</p>
+            <p className={styles.heroDate}>{new Date(sale.createdAt).toLocaleString()}</p>
           </div>
         </div>
 
         <div className="grid-responsive grid-cols-3">
-          <div style={{ padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Origen de Venta</span>
-            <p style={{ margin: 0, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Origen de Venta</span>
+            <p className={styles.statValueRow}>
               <ShoppingCart size={14} /> {sale.source}
             </p>
           </div>
-          <div style={{ padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Condición de Pago</span>
-            <p style={{ margin: 0, fontWeight: 600 }}>{PAYMENT_METHOD_NAMES[sale.paymentMethod] || sale.paymentMethod}</p>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Condición de Pago</span>
+            <p className={styles.statValue}>{PAYMENT_METHOD_NAMES[sale.paymentMethod] || sale.paymentMethod}</p>
           </div>
-          <div style={{ padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Monto Final</span>
-            <p style={{ margin: 0, fontWeight: 900, color: 'var(--green)', fontSize: '18px' }}>{formatCurrency(sale.grandTotal)}</p>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Monto Final</span>
+            <p className={styles.statValueGreen}>{formatCurrency(sale.grandTotal)}</p>
           </div>
         </div>
 
         {sendReceiptBlock}
 
         {sale.status === 'PENDING_PAYMENT' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ padding: '12px 16px', background: 'var(--yellow-bg, #fef9c3)', color: 'var(--yellow, #ca8a04)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+          <div className={styles.fieldStack}>
+            <div className={styles.alertYellow}>
               Esta venta tiene el pago pendiente de validación. Al confirmar el pago se descontará el stock reservado y se registrará en tesorería.
             </div>
             <Input
@@ -325,14 +316,14 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
         )}
 
         {savedPaymentReference && sale.status !== 'PENDING_PAYMENT' && (
-          <div style={{ padding: '12px 16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Referencia de pago registrada</span>
-            <p style={{ margin: '4px 0 0', fontWeight: 600, fontFamily: 'monospace' }}>{savedPaymentReference}</p>
+          <div className={styles.refBox}>
+            <span className={styles.refLabel}>Referencia de pago registrada</span>
+            <p className={styles.refValue}>{savedPaymentReference}</p>
           </div>
         )}
 
         <div>
-          <h4 style={{ margin: '0 0 12px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4 className={styles.sectionHeading}>
             <FileText size={18} /> Artículos ({sale.lines.length})
           </h4>
 
@@ -344,43 +335,43 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                 key: 'product',
                 header: 'Artículo / SKU',
                 render: (l) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 700, fontSize: '14px' }}>{lineProductName(l)}</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <div className={styles.lineCol}>
+                    <span className={styles.lineName}>{lineProductName(l)}</span>
+                    <span className={styles.lineSku}>
                       SKU: {lineVariantSku(l)}
                     </span>
                   </div>
                 ),
               },
-              { key: 'price', header: 'Precio Base', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(l.basePrice)}</span> },
-              { key: 'qty', header: 'Cant.', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.quantity}</span> },
-              { key: 'discount', header: 'Desc. L.', render: (l) => l.discountAmount > 0 ? <span style={{ color: 'var(--red)' }}>-{formatCurrency(l.discountAmount)}</span> : '-' },
-              { key: 'final', header: 'Subtotal Final', render: (l) => <span style={{ fontWeight: 800 }}>{formatCurrency(l.finalPrice)}</span> },
+              { key: 'price', header: 'Precio Base', render: (l) => <span className={styles.textMuted}>{formatCurrency(l.basePrice)}</span> },
+              { key: 'qty', header: 'Cant.', render: (l) => <span className={styles.textBold}>{l.quantity}</span> },
+              { key: 'discount', header: 'Desc. L.', render: (l) => l.discountAmount > 0 ? <span className={styles.textRed}>-{formatCurrency(l.discountAmount)}</span> : '-' },
+              { key: 'final', header: 'Subtotal Final', render: (l) => <span className={styles.textStrong}>{formatCurrency(l.finalPrice)}</span> },
             ]}
           />
 
           {sale.cartDiscountTotal > 0 && (
-            <div style={{ textAlign: 'right', marginTop: '12px', padding: '12px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: '4px', fontWeight: 600 }}>
+            <div className={styles.discountBanner}>
               Descuento Global Adicional aplicado al carrito: -{formatCurrency(sale.cartDiscountTotal)}
             </div>
           )}
         </div>
 
-        <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
+        <div className={styles.footer}>
           {sale.status === 'CANCELLED' && (
-            <div style={{ padding: '12px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.alertRed}>
               <XCircle size={20} />
-              <span style={{ fontWeight: 600 }}>Documento Anulado.</span>
+              <span className={styles.alertText}>Documento Anulado.</span>
             </div>
           )}
 
           {isActiveSale(sale.status) && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ padding: '12px', background: 'var(--green-bg)', color: 'var(--green)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.statusStack}>
+              <div className={styles.alertGreen}>
                 <CheckCircle size={20} />
-                <span style={{ fontWeight: 600 }}>Venta Completada. Stock descontado.</span>
+                <span className={styles.alertText}>Venta Completada. Stock descontado.</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
+              <div className={styles.actionFooter}>
                 <ActionGuard action="update" subject="Sales">
                   <Button
                     variant="ghost"
@@ -398,7 +389,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
 
           {isQuotation && (
             <ActionGuard action="manage" subject="Sales">
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
+              <div className={styles.actionFooter}>
                 <Button variant="ghost" onClick={handleCancel} loading={cancelMutation.isPending} disabled={anyPending} icon={<XCircle size={16} />}>
                   Rechazar / Cancelar Presupuesto
                 </Button>
@@ -411,7 +402,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
 
           {sale.status === 'PENDING_PAYMENT' && (
             <ActionGuard action="update" subject="Sales">
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
+              <div className={styles.actionFooter}>
                 <Button variant="ghost" onClick={handleCancel} loading={cancelMutation.isPending} disabled={anyPending} icon={<XCircle size={16} />}>
                   Cancelar Venta
                 </Button>
@@ -423,22 +414,22 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
           )}
 
           {['READY_FOR_PICKUP', 'SHIPPED', 'DELIVERED'].includes(sale.status) && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                <span style={{ fontWeight: 600 }}>Estado logístico: {STATUS_LABELS[sale.status]}</span>
-                <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+            <div className={styles.statusStack}>
+              <div className={styles.logisticsBox}>
+                <span className={styles.logisticsTitle}>Estado logístico: {STATUS_LABELS[sale.status]}</span>
+                <p className={styles.logisticsText}>
                   {sale.status === 'SHIPPED' || sale.shippingAddress
                     ? 'Este pedido es envío a domicilio. Completá el seguimiento GPS y la entrega desde Envíos y Despacho.'
                     : 'Podés cambiar el estado de entrega desde el listado de ventas o anular la venta si corresponde.'}
                 </p>
                 {sale.shippingMethodName && (
-                  <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                  <p className={styles.logisticsText}>
                     Método: {sale.shippingMethodName}
                     {sale.shippingAddress?.city ? ` · ${sale.shippingAddress.city}` : ''}
                   </p>
                 )}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
+              <div className={styles.actionFooter}>
                 <ActionGuard action="update" subject="Sales">
                   <Button
                     variant="ghost"
