@@ -47,6 +47,12 @@ export class IntegrationsService {
         publicKey: intSettings.mpPublicKey,
         accessToken: intSettings.mpAccessToken,
         webhookSecret: intSettings.mpWebhookSecret,
+        environment: intSettings.mpEnvironment
+          ?? MercadoPagoService.inferEnvironmentFromCredentials(
+            intSettings.mpAccessToken,
+            intSettings.mpPublicKey,
+          )
+          ?? 'production',
         externalPosId: intSettings.mpExternalPosId,
       },
       woocommerce: {
@@ -153,6 +159,9 @@ export class IntegrationsService {
       updatedInt.mpPublicKey = config.publicKey;
       updatedInt.mpAccessToken = config.accessToken;
       updatedInt.mpWebhookSecret = config.webhookSecret;
+      if (config.environment === 'test' || config.environment === 'production') {
+        updatedInt.mpEnvironment = config.environment;
+      }
       if (config.externalPosId !== undefined) {
         updatedInt.mpExternalPosId = config.externalPosId;
       }

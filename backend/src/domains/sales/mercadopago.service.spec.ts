@@ -23,10 +23,37 @@ describe('MercadoPagoService', () => {
     });
   });
 
+  describe('resolveEnvironment', () => {
+    it('uses explicit mpEnvironment when set', () => {
+      expect(MercadoPagoService.resolveEnvironment('test', 'APP_USR-123', 'APP_USR-456')).toBe('test');
+      expect(MercadoPagoService.resolveEnvironment('production', 'TEST-123')).toBe('production');
+    });
+
+    it('infers test from TEST- prefixed credentials', () => {
+      expect(MercadoPagoService.resolveEnvironment(undefined, 'TEST-1234567890')).toBe('test');
+      expect(MercadoPagoService.resolveEnvironment(undefined, undefined, 'TEST-pk')).toBe('test');
+    });
+
+    it('defaults APP_USR- credentials to production without explicit environment', () => {
+      expect(MercadoPagoService.resolveEnvironment(undefined, 'APP_USR-1234567890')).toBe('production');
+    });
+  });
+
   describe('isTestCredentials', () => {
     it('detects TEST- prefixed tokens as sandbox', () => {
       expect(MercadoPagoService.isTestCredentials('TEST-1234567890')).toBe(true);
       expect(MercadoPagoService.isTestCredentials('APP_USR-1234567890')).toBe(false);
+    });
+  });
+
+  describe('getCredentialMode', () => {
+    it('reads mpEnvironment from settings', async () => {
+      mockSettingsService.getIntegrationSettings.mockResolvedValue({
+        mpEnvironment: 'test',
+        mpAccessToken: 'APP_USR-prod-looking',
+      });
+
+      await expect(service.getCredentialMode()).resolves.toBe('test');
     });
   });
 
@@ -111,6 +138,32 @@ describe('MercadoPagoService', () => {
           items: [{ id: 'v1', title: 'Producto', quantity: 1, unit_price: 1000 }],
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('uses init_point (not deprecated sandbox_init_point)', async () => {
+      mockSettingsService.getIntegrationSettings.mockResolvedValue({
+        mercadopagoEnabled: true,
+        mpAccessToken: 'TEST-token',
+        mpEnvironment: 'test',
+      });
+
+      const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: 'pref-1',
+          init_point: 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1',
+          sandbox_init_point: 'https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=1',
+        }),
+      } as Response);
+
+      const result = await service.createPreference({
+        externalReference: 'order-1',
+        items: [{ id: 'v1', title: 'Producto', quantity: 1, unit_price: 1000 }],
+      });
+
+      expect(result.initPoint).toContain('mercadopago.com.ar/checkout');
+      expect(result.initPoint).not.toContain('sandbox.mercadopago.com.ar');
+      fetchMock.mockRestore();
     });
   });
 

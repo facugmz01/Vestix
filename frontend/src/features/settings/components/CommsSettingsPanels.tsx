@@ -439,7 +439,11 @@ export function IntegrationSettingsPanel() {
   }, [settings, reset]);
 
   const onSubmit = (data: IntegrationSettingsFormData) => {
-    mutation.mutate(data, { onSuccess: () => reset(data) });
+    const payload = {
+      ...data,
+      ...(data.mpEnvironment === '' ? { mpEnvironment: undefined } : {}),
+    };
+    mutation.mutate(payload, { onSuccess: () => reset(data) });
   };
 
   const mercadopagoEnabled = watch('mercadopagoEnabled');
@@ -486,8 +490,20 @@ export function IntegrationSettingsPanel() {
                 <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>
                   Mercado Pago Developers <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
                 </a>
-                . Usá <code>TEST-...</code> para pruebas o <code>APP_USR-...</code> para producción.
+                . En <strong>Pruebas → Credenciales de prueba</strong> suelen ser <code>APP_USR-...</code> (no solo <code>TEST-...</code>).
+                Elegí el ambiente abajo para que el checkout use pruebas o producción.
               </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600 }}>Ambiente</label>
+                <select
+                  {...register('mpEnvironment')}
+                  style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-base)' }}
+                >
+                  <option value="">Detectar automático (solo si empiezan con TEST-)</option>
+                  <option value="test">Pruebas (sandbox)</option>
+                  <option value="production">Producción</option>
+                </select>
+              </div>
               <Input label="Public Key" placeholder="APP_USR-xxxxxxxx..." {...register('mpPublicKey')} />
               <Input
                 label="Access Token"

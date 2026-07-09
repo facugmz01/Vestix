@@ -147,6 +147,7 @@ export interface IntegrationSettings {
   mpPublicKey?: string;
   mpAccessToken?: string;   // Decrypted at runtime
   mpWebhookSecret?: string; // Decrypted at runtime
+  mpEnvironment?: 'test' | 'production';
   mpExternalPosId?: string; // External POS ID for QR hybrid mode
   mlAppId?: string;
   mlSecretKey?: string;     // Decrypted at runtime

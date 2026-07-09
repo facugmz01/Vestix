@@ -20,8 +20,19 @@ interface Props {
 }
 
 // Config field definitions per provider
-const PROVIDER_FIELDS: Record<string, { key: string; label: string; placeholder: string; secret?: boolean }[]> = {
+const PROVIDER_FIELDS: Record<string, { key: string; label: string; placeholder: string; secret?: boolean; type?: 'select'; options?: { value: string; label: string }[] }[]> = {
   MERCADOPAGO: [
+    {
+      key: 'environment',
+      label: 'Ambiente',
+      placeholder: '',
+      type: 'select',
+      options: [
+        { value: '', label: 'Detectar automático (solo TEST-)' },
+        { value: 'test', label: 'Pruebas (sandbox)' },
+        { value: 'production', label: 'Producción' },
+      ],
+    },
     { key: 'publicKey', label: 'Public Key', placeholder: 'APP_USR-...', secret: false },
     { key: 'accessToken', label: 'Access Token', placeholder: 'TEST-... o APP_USR-...', secret: true },
     { key: 'webhookSecret', label: 'Webhook Secret', placeholder: 'Clave de Tus integraciones', secret: true },
@@ -272,6 +283,22 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                 const isSecret = field.secret ?? false;
                 const isVisible = showSecrets[field.key] ?? false;
                 const currentVal = configValues[field.key] ?? integration.config?.[field.key] ?? '';
+                if (field.type === 'select' && field.options) {
+                  return (
+                    <div key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 600 }}>{field.label}</label>
+                      <select
+                        value={currentVal}
+                        onChange={e => setConfigValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}
+                      >
+                        {field.options.map(opt => (
+                          <option key={opt.value || '__auto'} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                }
                 return (
                   <div key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '13px', fontWeight: 600 }}>{field.label}</label>
