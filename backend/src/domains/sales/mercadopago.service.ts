@@ -53,7 +53,8 @@ export class MercadoPagoService {
   async createPreference(dto: CreatePreferenceDto): Promise<{ initPoint: string; preferenceId: string }> {
     const accessToken = await this.getAccessToken();
     const isMock = !accessToken || accessToken === '';
-    const storeUrl = process.env.MP_STORE_URL || 'http://localhost:5173/store';
+    const storeUrl = (dto.backUrls?.success || process.env.MP_STORE_URL || 'http://localhost:3000/store')
+      .replace(/\/checkout\/success.*$/, '');
 
     if (isMock) {
       // Mock mode: log and return a simulated URL
@@ -66,7 +67,7 @@ export class MercadoPagoService {
 
       return {
         preferenceId: `MOCK-${dto.externalReference}`,
-        initPoint: `${storeUrl}/checkout-success?orderId=${dto.externalReference}&mock=true`,
+        initPoint: `${storeUrl}/checkout/success?orderId=${dto.externalReference}&mock=true`,
       };
     }
 

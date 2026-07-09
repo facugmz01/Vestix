@@ -30,6 +30,7 @@ export default function StorefrontCheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState({ street: '', city: '', state: '', zip: '' });
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [issueInvoice, setIssueInvoice] = useState(false);
+  const [completedOrderId, setCompletedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated && customer) {
@@ -63,7 +64,31 @@ export default function StorefrontCheckoutPage() {
     return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Loader2 size={32} className="spin" color="var(--accent)" /></div>;
   }
 
-  if (items.length === 0 && step !== 4) {
+  if (step === 4) {
+    return (
+      <div style={{ maxWidth: '600px', margin: '80px auto', padding: '48px 32px', textAlign: 'center' }}>
+        <div className="glass" style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ width: '80px', height: '80px', background: 'var(--green-bg)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <CheckCircle size={48} color="var(--green)" />
+          </div>
+          <h1 style={{ margin: '0 0 12px', fontSize: '26px', fontWeight: 900, color: 'var(--text-primary)' }}>¡Gracias por tu compra!</h1>
+          <p style={{ margin: '0 0 32px', color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6 }}>
+            Tu pedido fue procesado exitosamente.
+            {completedOrderId ? ` Número de pedido: ${completedOrderId.slice(0, 8).toUpperCase()}.` : ''}
+            {' '}Te enviamos un comprobante a <strong>{info.email || 'tu correo'}</strong>.
+          </p>
+          <button
+            onClick={() => navigate(`${prefix}/my-orders`)}
+            className="storefront-btn"
+          >
+            Ver estado de mi pedido
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
     navigate(`${prefix}/cart`);
     return null;
   }
@@ -88,7 +113,7 @@ export default function StorefrontCheckoutPage() {
 
       try {
         const res = await storefrontOrdersApi.checkout(payload);
-        return { offline: false, res, payment: (res as any).payment };
+        return { offline: false, res, orderId, payment: (res as any).payment };
       } catch (err: any) {
         const isNetworkError = !err.response || err.code === 'ERR_NETWORK' || err.message?.includes('Network Error');
         if (isNetworkError) {
@@ -107,19 +132,25 @@ export default function StorefrontCheckoutPage() {
       }
     },
     onSuccess: (data: any) => {
-      clearCart();
+      const orderId = data?.res?.id || data?.orderId || null;
+
       // Invalidate catalogs and history optimistically
       queryClient.invalidateQueries({ queryKey: ['storefront'] });
 
       if (data?.offline) {
-        toast.success('Pedido registrado fuera de línea (sincronizará cuando haya conexión) 💾');
+        setCompletedOrderId(orderId);
         setStep(4);
+        clearCart();
+        toast.success('Pedido registrado fuera de línea (sincronizará cuando haya conexión) 💾');
       } else if (data?.payment?.initPoint) {
+        clearCart();
         toast.success('Redirigiendo a Mercado Pago...');
         window.location.href = data.payment.initPoint;
       } else {
-        toast.success('¡Pedido registrado! ✅');
+        setCompletedOrderId(orderId);
         setStep(4);
+        clearCart();
+        toast.success('¡Pedido registrado! ✅');
       }
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Error al procesar el pedido. Intente nuevamente.'),
@@ -157,27 +188,6 @@ export default function StorefrontCheckoutPage() {
     });
   };
 
-  if (step === 4) {
-    return (
-      <div style={{ maxWidth: '600px', margin: '80px auto', padding: '48px 32px', textAlign: 'center' }}>
-        <div className="glass" style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ width: '80px', height: '80px', background: 'var(--green-bg)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-            <CheckCircle size={48} color="var(--green)" />
-          </div>
-          <h1 style={{ margin: '0 0 12px', fontSize: '26px', fontWeight: 900, color: 'var(--text-primary)' }}>¡Gracias por tu compra!</h1>
-          <p style={{ margin: '0 0 32px', color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6 }}>
-            Tu pedido fue procesado exitosamente. Te enviamos un comprobante a <strong>{info.email || 'tu correo'}</strong>.
-          </p>
-          <button
-            onClick={() => navigate(`${prefix}/my-orders`)}
-            className="storefront-btn"
-          >
-            Ver Estado de mi Pedido
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const steps = ['Datos', 'Envío', 'Pago'];
 
