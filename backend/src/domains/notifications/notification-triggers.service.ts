@@ -4,6 +4,11 @@ import { SettingsService } from '../../modules/settings/settings.service';
 import { NotificationsService } from './notifications.service';
 import { StaffInboxService } from './staff-inbox.service';
 import { NotificationChannel, TemplateKey } from './models/notification.model';
+import {
+  ContactRecipients,
+  getEventChannels,
+  resolveRecipient,
+} from './utils/notification-channels.util';
 
 @Injectable()
 export class NotificationTriggersService {
@@ -20,7 +25,7 @@ export class NotificationTriggersService {
 
   async sendManualSaleReceipt(
     orderId: string,
-    channel: 'EMAIL' | 'WHATSAPP',
+    channel: 'EMAIL' | 'WHATSAPP' | 'SMS',
     recipient: string,
   ) {
     const order = await this.prisma.saleOrder.findUnique({
@@ -57,7 +62,7 @@ export class NotificationTriggersService {
 
   async sendManualAccountStatement(
     accountId: string,
-    channel: 'EMAIL' | 'WHATSAPP',
+    channel: 'EMAIL' | 'WHATSAPP' | 'SMS',
     recipient: string,
   ) {
     const account = await this.resolveAccount(accountId);
@@ -85,9 +90,11 @@ export class NotificationTriggersService {
 
   async sendOverdueNotices() {
     const settings = await this.settingsService.getNotificationSettings();
-    const channel = settings.whatsappEnabled !== false
-      ? NotificationChannel.WHATSAPP
-      : NotificationChannel.EMAIL;
+    const channels = getEventChannels(settings, 'saleChannels').length > 0
+      ? getEventChannels(settings, 'saleChannels')
+      : [settings.whatsappEnabled !== false
+          ? NotificationChannel.WHATSAPP
+          : NotificationChannel.EMAIL];
 
     const customers = await this.prisma.customer.findMany({
       where: { isActive: true, usedCredit: { gt: 0 } },
@@ -103,29 +110,35 @@ export class NotificationTriggersService {
         continue;
       }
 
-      const recipient = channel === NotificationChannel.WHATSAPP
-        ? this.normalizePhone(customer.phone)
-        : customer.email;
+      let delivered = false;
+      for (const channel of channels) {
+        const recipient = resolveRecipient(
+          channel,
+          { email: customer.email, phone: customer.phone },
+          (phone) => this.normalizePhone(phone),
+        );
+        if (!recipient) continue;
 
-      if (!recipient) {
-        skipped++;
-        continue;
+        const job = await this.notifications.enqueue({
+          channel,
+          templateKey: TemplateKey.OVERDUE_CURRENT_ACCOUNT,
+          recipient,
+          variables: {
+            customerName:  customer.fullName,
+            balance:       this.formatMoney(customer.usedCredit),
+            overdueAmount: this.formatMoney(overdueAmount),
+          },
+          referenceId: customer.id,
+        });
+
+        if (job) {
+          delivered = true;
+          sent++;
+          break;
+        }
       }
 
-      const job = await this.notifications.enqueue({
-        channel,
-        templateKey: TemplateKey.OVERDUE_CURRENT_ACCOUNT,
-        recipient,
-        variables: {
-          customerName:  customer.fullName,
-          balance:       this.formatMoney(customer.usedCredit),
-          overdueAmount: this.formatMoney(overdueAmount),
-        },
-        referenceId: customer.id,
-      });
-
-      if (job) sent++;
-      else skipped++;
+      if (!delivered) skipped++;
     }
 
     return {
@@ -155,24 +168,17 @@ export class NotificationTriggersService {
       total:   this.formatMoney(order.grandTotal),
     };
 
-    if (order.customer?.email) {
-      await this.notifications.notifyOrderConfirmed(
-        order.customer.email,
-        NotificationChannel.EMAIL,
-        vars,
-        order.id,
-      );
-    }
-
-    const phone = this.normalizePhone(order.customer?.phone);
-    if (phone) {
-      await this.notifications.notifyOrderConfirmed(
-        phone,
-        NotificationChannel.WHATSAPP,
-        vars,
-        order.id,
-      );
-    }
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'saleChannels',
+      contact: {
+        email: order.customer?.email,
+        phone: order.customer?.phone,
+      },
+      templateKey: TemplateKey.SALE_CONFIRMED,
+      variables: vars,
+      referenceId: order.id,
+    });
   }
 
   async checkLowStock(variantId: string, warehouseId: string, branchId?: string | null) {
@@ -185,9 +191,9 @@ export class NotificationTriggersService {
     });
     if (!stock || stock.availableQuantity > threshold) return;
 
-    const managerEmail = await this.resolveManagerEmail();
-    if (!managerEmail) {
-      this.logger.warn('[LowStock] No manager email configured — skipping alert');
+    const managerContact = await this.resolveManagerContact();
+    if (!managerContact.email && !managerContact.phone) {
+      this.logger.warn('[LowStock] No manager contact configured — skipping alert');
       return;
     }
 
@@ -199,11 +205,20 @@ export class NotificationTriggersService {
       ? await this.prisma.branch.findUnique({ where: { id: branchId } })
       : await this.prisma.warehouse.findUnique({ where: { id: warehouseId }, include: { branch: true } }).then(w => w?.branch);
 
-    await this.notifications.notifyLowStock(managerEmail, {
+    const vars = {
       productName: variant?.product?.name || variantId,
       sku:           variant?.sku || 'N/A',
       quantity:      String(stock.availableQuantity),
       branchName:    branch?.name || 'Sucursal',
+    };
+
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'lowStockChannels',
+      contact: managerContact,
+      templateKey: TemplateKey.LOW_STOCK_ALERT,
+      variables: vars,
+      referenceId: variantId,
     });
 
     void this.staffInbox.create({
@@ -222,13 +237,17 @@ export class NotificationTriggersService {
       where: { id: poId },
       include: { supplier: true },
     });
-    if (!po?.supplier?.email) return;
+    if (!po?.supplier) return;
 
     const general = await this.settingsService.getGeneralSettings();
-    await this.notifications.enqueue({
-      channel:     NotificationChannel.EMAIL,
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'purchaseChannels',
+      contact: {
+        email: po.supplier.email,
+        phone: po.supplier.phone,
+      },
       templateKey: TemplateKey.PURCHASE_ORDER_ISSUED,
-      recipient:   po.supplier.email,
       variables: {
         supplierName: po.supplier.companyName,
         orderId:      this.shortId(po.id),
@@ -249,13 +268,14 @@ export class NotificationTriggersService {
     });
     if (!receipt) return;
 
-    const managerEmail = await this.resolveManagerEmail();
-    if (!managerEmail) return;
+    const managerContact = await this.resolveManagerContact();
+    if (!managerContact.email && !managerContact.phone) return;
 
-    await this.notifications.enqueue({
-      channel:     NotificationChannel.EMAIL,
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'purchaseChannels',
+      contact: managerContact,
       templateKey: TemplateKey.GOODS_RECEIPT_RECEIVED,
-      recipient:   managerEmail,
       variables: {
         orderId:    this.shortId(receipt.purchaseOrderId),
         branchName,
@@ -283,13 +303,14 @@ export class NotificationTriggersService {
       }),
     ]);
 
-    const managerEmail = await this.resolveManagerEmail();
-    if (!managerEmail) return;
+    const managerContact = await this.resolveManagerContact();
+    if (!managerContact.email && !managerContact.phone) return;
 
-    await this.notifications.enqueue({
-      channel:     NotificationChannel.EMAIL,
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'transferChannels',
+      contact: managerContact,
       templateKey: TemplateKey.TRANSFER_DISPATCHED,
-      recipient:   managerEmail,
       variables: {
         sourceBranch:      sourceWarehouse?.branch?.name || sourceWarehouse?.name || 'Origen',
         destinationBranch: destWarehouse?.branch?.name || destWarehouse?.name || 'Destino',
@@ -312,13 +333,14 @@ export class NotificationTriggersService {
       include: { branch: true },
     });
 
-    const managerEmail = await this.resolveManagerEmail();
-    if (!managerEmail) return;
+    const managerContact = await this.resolveManagerContact();
+    if (!managerContact.email && !managerContact.phone) return;
 
-    await this.notifications.enqueue({
-      channel:     NotificationChannel.EMAIL,
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'transferChannels',
+      contact: managerContact,
       templateKey: TemplateKey.TRANSFER_RECEIVED,
-      recipient:   managerEmail,
       variables: {
         destinationBranch: destWarehouse?.branch?.name || destWarehouse?.name || 'Destino',
         branchName:        destWarehouse?.branch?.name || 'Sucursal',
@@ -344,21 +366,14 @@ export class NotificationTriggersService {
     const settings = await this.settingsService.getNotificationSettings();
     if (settings.notifyOnDelivery === false) return;
 
-    const phone = this.normalizePhone(payload.customerPhone);
-    const channel = settings.whatsappEnabled !== false
-      ? NotificationChannel.WHATSAPP
-      : NotificationChannel.EMAIL;
-
-    const recipient = channel === NotificationChannel.WHATSAPP
-      ? phone
-      : await this.resolveCustomerEmail(saleOrderId);
-
-    if (!recipient) return;
-
-    await this.notifications.enqueue({
-      channel,
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'deliveryChannels',
+      contact: {
+        email: await this.resolveCustomerEmail(saleOrderId),
+        phone: payload.customerPhone,
+      },
       templateKey: TemplateKey.ORDER_SHIPPED,
-      recipient,
       variables: {
         customerName: payload.customerName,
         orderId: payload.orderRef,
@@ -384,13 +399,11 @@ export class NotificationTriggersService {
     const settings = await this.settingsService.getNotificationSettings();
     if (settings.notifyOnDelivery === false) return;
 
-    const phone = this.normalizePhone(payload.customerPhone);
-    if (!phone || settings.whatsappEnabled === false) return;
-
-    await this.notifications.enqueue({
-      channel: NotificationChannel.WHATSAPP,
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'deliveryChannels',
+      contact: { phone: payload.customerPhone },
       templateKey: TemplateKey.DELIVERY_OTP,
-      recipient: phone,
       variables: { orderId: payload.orderRef, otpCode: payload.otpCode },
       referenceId: `${saleOrderId}:delivery-otp`,
     });
@@ -404,15 +417,16 @@ export class NotificationTriggersService {
       where: { id: saleOrderId },
       include: { customer: true },
     });
-    if (!order?.customer?.phone) return;
+    if (!order?.customer) return;
 
-    const phone = this.normalizePhone(order.customer.phone);
-    if (!phone || settings.whatsappEnabled === false) return;
-
-    await this.notifications.enqueue({
-      channel: NotificationChannel.WHATSAPP,
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'deliveryChannels',
+      contact: {
+        email: order.customer.email,
+        phone: order.customer.phone,
+      },
       templateKey: TemplateKey.DELIVERY_ARRIVED,
-      recipient: phone,
       variables: {
         customerName: order.customer.fullName,
         orderId: this.shortId(order.id),
@@ -431,20 +445,14 @@ export class NotificationTriggersService {
     });
     if (!order?.customer) return;
 
-    const channel = settings.whatsappEnabled !== false
-      ? NotificationChannel.WHATSAPP
-      : NotificationChannel.EMAIL;
-
-    const recipient = channel === NotificationChannel.WHATSAPP
-      ? this.normalizePhone(order.customer.phone)
-      : order.customer.email;
-
-    if (!recipient) return;
-
-    await this.notifications.enqueue({
-      channel,
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'deliveryChannels',
+      contact: {
+        email: order.customer.email,
+        phone: order.customer.phone,
+      },
       templateKey: TemplateKey.ORDER_DELIVERED,
-      recipient,
       variables: {
         customerName: order.customer.fullName,
         orderId: this.shortId(order.id),
@@ -492,6 +500,45 @@ export class NotificationTriggersService {
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
+  private async dispatchToChannels(params: {
+    settings: Awaited<ReturnType<SettingsService['getNotificationSettings']>>;
+    channelKey: 'saleChannels' | 'purchaseChannels' | 'deliveryChannels' | 'lowStockChannels' | 'transferChannels';
+    contact: ContactRecipients;
+    templateKey: TemplateKey;
+    variables: Record<string, string>;
+    referenceId?: string;
+  }) {
+    const channels = getEventChannels(params.settings, params.channelKey);
+
+    for (const channel of channels) {
+      const recipient = resolveRecipient(
+        channel,
+        params.contact,
+        (phone) => this.normalizePhone(phone),
+      );
+      if (!recipient) continue;
+
+      await this.notifications.enqueue({
+        channel,
+        templateKey: params.templateKey,
+        recipient,
+        variables: params.variables,
+        referenceId: params.referenceId,
+      });
+    }
+  }
+
+  private async resolveManagerContact(): Promise<ContactRecipients> {
+    const [general, notifications] = await Promise.all([
+      this.settingsService.getGeneralSettings(),
+      this.settingsService.getNotificationSettings(),
+    ]);
+    return {
+      email: general.email || notifications.smtpUser || null,
+      phone: general.phone || null,
+    };
+  }
+
   private async resolveAccount(accountId: string) {
     const customer = await this.prisma.customer.findUnique({ where: { id: accountId } });
     if (customer) {
@@ -524,11 +571,8 @@ export class NotificationTriggersService {
   }
 
   private async resolveManagerEmail(): Promise<string | null> {
-    const [general, notifications] = await Promise.all([
-      this.settingsService.getGeneralSettings(),
-      this.settingsService.getNotificationSettings(),
-    ]);
-    return general.email || notifications.smtpUser || null;
+    const contact = await this.resolveManagerContact();
+    return contact.email || null;
   }
 
   private formatMoney(amount: number): string {

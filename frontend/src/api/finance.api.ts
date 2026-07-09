@@ -41,6 +41,6 @@ export const financeApi = {
   sendOverdueStatements: () =>
     post<{ success: boolean; message: string }>('/finance/current-accounts/send-overdue'),
 
-  sendManualStatement: (accountId: string, payload: { channel: 'EMAIL' | 'WHATSAPP'; recipient: string }) =>
+  sendManualStatement: (accountId: string, payload: { channel: 'EMAIL' | 'WHATSAPP' | 'SMS'; recipient: string }) =>
     post<{ success: boolean; message: string }>(`/finance/current-accounts/${accountId}/send-statement`, payload),
 };

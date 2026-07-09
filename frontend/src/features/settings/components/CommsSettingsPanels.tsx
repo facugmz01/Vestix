@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, Bell, Plug, Mail, Smartphone, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { notificationSettingsSchema, type NotificationSettingsFormData, integrationSettingsSchema, type IntegrationSettingsFormData } from '../schemas/commsSettings.schema';
 import styles from './SettingsShared.module.css';
 import { WhatsAppEvolutionPanel } from './WhatsAppEvolutionPanel';
+import { NotificationChannelPicker } from './NotificationChannelPicker';
 
 const BACKEND_MASK = '••••••••';
 
@@ -117,7 +118,7 @@ export function NotificationSettingsPanel() {
   const { data: settings, isLoading } = useGetSettings();
   const mutation = useUpdateSettingsSection('notifications');
 
-  const { register, watch, handleSubmit, reset, formState: { isDirty } } = useForm<NotificationSettingsFormData>({
+  const { register, watch, handleSubmit, reset, control, formState: { isDirty } } = useForm<NotificationSettingsFormData>({
     resolver: zodResolver(notificationSettingsSchema),
   });
 
@@ -243,14 +244,85 @@ export function NotificationSettingsPanel() {
         </header>
         <div className={styles.cardBody}>
           <ToggleSwitch label="Venta Confirmada" {...register('notifyOnSale')} />
+          <Controller
+            control={control}
+            name="saleChannels"
+            render={({ field }) => (
+              <NotificationChannelPicker
+                label="Canales para ventas"
+                hint="Se enviará por cada canal seleccionado cuando el cliente tenga el dato de contacto."
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
           <ToggleSwitch label="Orden de Compra Emitida" {...register('notifyOnPurchase')} />
+          <Controller
+            control={control}
+            name="purchaseChannels"
+            render={({ field }) => (
+              <NotificationChannelPicker
+                label="Canales para compras"
+                hint="Notificaciones al proveedor y recepción de mercadería."
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
           <ToggleSwitch label="Alerta de Stock Bajo" {...register('notifyOnLowStock')} />
+          <Controller
+            control={control}
+            name="lowStockChannels"
+            render={({ field }) => (
+              <NotificationChannelPicker
+                label="Canales para alertas de stock"
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
           <ToggleSwitch label="Transferencia entre Depósitos" {...register('notifyOnTransfer')} />
+          <Controller
+            control={control}
+            name="transferChannels"
+            render={({ field }) => (
+              <NotificationChannelPicker
+                label="Canales para transferencias"
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
           <ToggleSwitch label="Envíos y Entregas" hint="Despacho, OTP, llegada del repartidor y confirmación de entrega." {...register('notifyOnDelivery')} />
+          <Controller
+            control={control}
+            name="deliveryChannels"
+            render={({ field }) => (
+              <NotificationChannelPicker
+                label="Canales para envíos y entregas"
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <Controller
+            control={control}
+            name="storeLoginChannels"
+            render={({ field }) => (
+              <NotificationChannelPicker
+                label="Login de la tienda online (OTP)"
+                hint="Canal para enviar el código de verificación al iniciar sesión. Se usa el primero disponible en orden."
+                value={field.value}
+                onChange={field.onChange}
+                singleSelect
+              />
+            )}
+          />
           
           <div style={{ marginTop: '16px' }}>
             <Input type="number" label="Umbral de Stock Bajo (unidades)" {...register('lowStockThreshold', { valueAsNumber: true })} style={{ width: '120px' }} />

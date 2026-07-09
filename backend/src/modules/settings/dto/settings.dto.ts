@@ -1,5 +1,7 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested, IsArray, IsNotEmpty, IsUrl } from 'class-validator';
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested, IsArray, IsNotEmpty, IsUrl, ArrayMinSize } from 'class-validator';
+
+const NOTIFICATION_CHANNEL_VALUES = ['EMAIL', 'WHATSAPP', 'SMS'] as const;
 
 export class GeneralSettingsDto {
   @IsNotEmpty({ message: 'El nombre de la empresa es obligatorio' })
@@ -173,6 +175,42 @@ export class NotificationSettingsDto {
   @IsOptional()
   @IsBoolean()
   notifyOnDelivery?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true })
+  saleChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true })
+  purchaseChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true })
+  deliveryChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true })
+  lowStockChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true })
+  transferChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true })
+  storeLoginChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
 
   @IsOptional()
   @IsString()

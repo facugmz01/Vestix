@@ -52,6 +52,12 @@ export interface NotificationSettings {
   notifyOnLowStock: boolean;
   notifyOnTransfer: boolean;
   notifyOnDelivery: boolean;
+  saleChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  purchaseChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  deliveryChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  lowStockChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  transferChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  storeLoginChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
   smtpHost?: string;
   smtpPort?: number;
   smtpUser?: string;
