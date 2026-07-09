@@ -1,4 +1,5 @@
 import styles from './PageContainer.module.css';
+import { PageHeader } from './PageHeader';
 
 interface Props {
   title:     string;
@@ -15,13 +16,7 @@ interface Props {
 export function PageContainer({ title, subtitle, action, tabs, children }: Props) {
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>{title}</h1>
-          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
-        </div>
-        {action && <div className={styles.action}>{action}</div>}
-      </div>
+      <PageHeader title={title} subtitle={subtitle} action={action} />
       {tabs && <div className={styles.tabsWrapper}>{tabs}</div>}
       <div className={styles.body}>{children}</div>
     </div>

@@ -1,4 +1,4 @@
-.section { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-lg); }
+.section { background:var(--surface-0); border:1px solid var(--border); border-radius:var(--radius-lg); }
 .p-sm { padding:12px; }
 .p-md { padding:20px; }
 .p-lg { padding:28px; }

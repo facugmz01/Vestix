@@ -1,2 +1,53 @@
-/* LoginPage estilos migrados al componente mediante <style> inline.
-   Este archivo existe para evitar errores de import pero está vacío. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.heading {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--red-bg);
+  border: 1px solid rgba(196, 30, 30, 0.25);
+  color: var(--red);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.submit {
+  width: 100%;
+}
+
+@media (max-width: 480px) {
+  .title { font-size: 24px; }
+}

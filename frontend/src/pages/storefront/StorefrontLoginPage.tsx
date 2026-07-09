@@ -6,6 +6,13 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { getStoreLoginChannelConfig } from '@/utils/storeLoginChannel';
 import type { StorefrontSettings } from '@/api/storefront.api';
+import {
+  StorefrontPage,
+  StorefrontCard,
+  StorefrontAlert,
+  StorefrontStepper,
+} from '@/components/storefront';
+import sf from '@/components/storefront/storefront.module.css';
 
 export default function StorefrontLoginPage() {
   const navigate = useNavigate();
@@ -163,110 +170,35 @@ export default function StorefrontLoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: '480px', margin: '64px auto', padding: '0 24px' }}>
-      <div
-        className="glass animate-fade"
-        style={{
-          padding: '40px 32px',
-          borderRadius: '20px',
-          border: '1px solid var(--border)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '16px',
-              background: 'var(--sf-primary, var(--accent))',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-              boxShadow: '0 8px 24px rgba(var(--sf-primary-rgb, 59, 130, 246), 0.25)',
-            }}
-          >
+    <StorefrontPage variant="narrow">
+      <StorefrontCard>
+        <div className={sf.cardHeader}>
+          <div className={sf.cardIcon}>
             <LoginIcon size={30} />
           </div>
-          <h1 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
-            Accedé a tu cuenta
-          </h1>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.5 }}>
+          <h1 className={sf.cardTitle}>Accedé a tu cuenta</h1>
+          <p className={sf.cardSubtitle}>
             {loginConfig.subtitle} en {storeName}
           </p>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
-          <div
-            style={{
-              width: step === 'identifier' ? 28 : 8,
-              height: 8,
-              borderRadius: 4,
-              background: step === 'identifier' ? 'var(--sf-primary, var(--accent))' : 'var(--border-strong)',
-              transition: 'all 0.3s ease',
-            }}
-          />
-          <div
-            style={{
-              width: step === 'otp' ? 28 : 8,
-              height: 8,
-              borderRadius: 4,
-              background: step === 'otp' ? 'var(--sf-primary, var(--accent))' : 'var(--border-strong)',
-              transition: 'all 0.3s ease',
-            }}
-          />
-        </div>
+        <StorefrontStepper
+          steps={['Identificación', 'Código']}
+          currentStep={step === 'identifier' ? 1 : 2}
+          variant="dots"
+        />
 
-        {error && (
-          <div
-            className="animate-fade"
-            style={{
-              background: 'var(--red-bg)',
-              border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: '10px',
-              color: 'var(--red)',
-              padding: '12px 14px',
-              fontSize: '14px',
-              marginBottom: '16px',
-            }}
-          >
-            {error}
-          </div>
-        )}
-        {info && !error && (
-          <div
-            className="animate-fade"
-            style={{
-              background: 'var(--green-bg)',
-              border: '1px solid rgba(16,185,129,0.25)',
-              borderRadius: '10px',
-              color: 'var(--green)',
-              padding: '12px 14px',
-              fontSize: '14px',
-              marginBottom: '16px',
-            }}
-          >
-            {info}
-          </div>
-        )}
+        {error && <StorefrontAlert variant="error">{error}</StorefrontAlert>}
+        {info && !error && <StorefrontAlert variant="success">{info}</StorefrontAlert>}
 
         {step === 'identifier' && (
           <div className="animate-fade">
-            <label
-              style={{
-                display: 'block',
-                color: 'var(--text-primary)',
-                fontSize: '13px',
-                fontWeight: 600,
-                marginBottom: '8px',
-              }}
-            >
+            <label className={sf.label} htmlFor="sf-login-id">
               {loginConfig.inputLabel}
             </label>
             {loginConfig.channel === 'EMAIL' ? (
               <input
+                id="sf-login-id"
                 className="storefront-input"
                 type={loginConfig.inputType}
                 inputMode={loginConfig.inputMode}
@@ -279,27 +211,12 @@ export default function StorefrontLoginPage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
                 autoFocus
                 autoComplete="email"
-                style={{ width: '100%', marginBottom: '8px' }}
               />
             ) : (
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: 'var(--sf-primary-subtle, var(--accent-subtle))',
-                    border: '1px solid rgba(var(--sf-primary-rgb, 59, 130, 246), 0.2)',
-                    borderRadius: '10px',
-                    padding: '0 12px',
-                    color: 'var(--sf-primary, var(--accent))',
-                    fontWeight: 700,
-                    fontSize: '14px',
-                    flexShrink: 0,
-                  }}
-                >
-                  🇦🇷 +54
-                </div>
+              <div className={sf.phoneRow}>
+                <div className={sf.phonePrefix}>🇦🇷 +54</div>
                 <input
+                  id="sf-login-id"
                   className="storefront-input"
                   type={loginConfig.inputType}
                   inputMode={loginConfig.inputMode}
@@ -312,19 +229,16 @@ export default function StorefrontLoginPage() {
                   onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
                   autoFocus
                   autoComplete="tel"
-                  style={{ flex: 1 }}
                 />
               </div>
             )}
-            <p style={{ margin: '0 0 20px', color: 'var(--text-muted)', fontSize: '12px', lineHeight: 1.5 }}>
-              {loginConfig.hint}
-            </p>
+            <p className={sf.hint}>{loginConfig.hint}</p>
 
             <button
-              className="storefront-btn w-full"
+              type="button"
+              className={`storefront-btn ${sf.wFull}`}
               onClick={handleSendOtp}
               disabled={loading}
-              style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               {loading ? (
                 <>
@@ -348,52 +262,26 @@ export default function StorefrontLoginPage() {
                 setError('');
                 setOtp(['', '', '', '', '', '']);
               }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                marginBottom: '16px',
-                padding: 0,
-              }}
+              className={sf.backBtn}
             >
               <ArrowLeft size={14} /> {loginConfig.changeLabel}
             </button>
 
-            <label
-              style={{
-                display: 'block',
-                textAlign: 'center',
-                color: 'var(--text-primary)',
-                fontSize: '13px',
-                fontWeight: 600,
-                marginBottom: '6px',
-              }}
-            >
+            <label className={sf.label} style={{ textAlign: 'center' }}>
               Ingresá el código de 6 dígitos
             </label>
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', margin: '0 0 16px' }}>
+            <p className={sf.hint} style={{ textAlign: 'center', marginBottom: 16 }}>
               Enviado a {loginConfig.sentToLabel(identifier)}
             </p>
 
-            <div
-              style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '20px' }}
-              onPaste={handleOtpPaste}
-            >
+            <div className={sf.otpRow} onPaste={handleOtpPaste}>
               {otp.map((digit, i) => {
                 const focused = focusedOtp === i;
                 const filled = digit !== '';
                 return (
                   <input
                     key={i}
-                    ref={(el) => {
-                      otpRefs.current[i] = el;
-                    }}
+                    ref={(el) => { otpRefs.current[i] = el; }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
@@ -403,43 +291,17 @@ export default function StorefrontLoginPage() {
                     onFocus={() => setFocusedOtp(i)}
                     onBlur={() => setFocusedOtp(-1)}
                     aria-label={`Dígito ${i + 1}`}
-                    style={{
-                      width: '48px',
-                      height: '56px',
-                      borderRadius: '10px',
-                      border: `2px solid ${
-                        focused
-                          ? 'var(--sf-primary, var(--accent))'
-                          : filled
-                            ? 'rgba(var(--sf-primary-rgb, 59, 130, 246), 0.35)'
-                            : 'var(--border)'
-                      }`,
-                      background: focused
-                        ? 'var(--sf-primary-subtle, var(--accent-subtle))'
-                        : 'var(--bg-overlay, #f8fafc)',
-                      color: 'var(--text-primary)',
-                      fontSize: '22px',
-                      fontWeight: 800,
-                      textAlign: 'center',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
-                      boxShadow: focused ? '0 0 0 3px rgba(var(--sf-primary-rgb, 59, 130, 246), 0.12)' : 'none',
-                      caretColor: 'var(--sf-primary, var(--accent))',
-                      fontFamily: 'var(--font-mono, monospace)',
-                    }}
+                    className={`${sf.otpDigit} ${filled ? sf.otpDigitFilled : ''} ${focused ? sf.otpDigitFocused : ''}`}
                   />
                 );
               })}
             </div>
 
             <button
-              className="storefront-btn w-full"
+              type="button"
+              className={`storefront-btn ${sf.wFull}`}
               onClick={() => handleVerifyOtp()}
               disabled={loading || otp.some((d) => d === '')}
-              style={{
-                opacity: loading || otp.some((d) => d === '') ? 0.6 : 1,
-                cursor: loading || otp.some((d) => d === '') ? 'not-allowed' : 'pointer',
-              }}
             >
               {loading ? (
                 <>
@@ -450,28 +312,14 @@ export default function StorefrontLoginPage() {
               )}
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
+            <div className={sf.resendRow}>
               {countdown > 0 ? (
                 <>
                   ¿No llegó? Podés reenviar en{' '}
                   <strong style={{ color: 'var(--sf-primary, var(--accent))' }}>{countdown}s</strong>
                 </>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={loading}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--sf-primary, var(--accent))',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    padding: 0,
-                  }}
-                >
+                <button type="button" onClick={handleResendOtp} disabled={loading} className={sf.resendBtn}>
                   {loginConfig.resendLabel}
                 </button>
               )}
@@ -479,15 +327,10 @@ export default function StorefrontLoginPage() {
           </div>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: '24px' }}>
-          <Link
-            to={`${prefix}/`}
-            style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none', fontWeight: 500 }}
-          >
-            ← Volver a la tienda
-          </Link>
+        <div className={sf.footerLink}>
+          <Link to={`${prefix}/`}>← Volver a la tienda</Link>
         </div>
-      </div>
-    </div>
+      </StorefrontCard>
+    </StorefrontPage>
   );
 }
