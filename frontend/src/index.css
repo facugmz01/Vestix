@@ -1,42 +1,11 @@
-/* ─── DESIGN SYSTEM (APPLE VISION GLASSMORPHISM) ─────────────────────────── */
+/* ─── DESIGN SYSTEM ─────────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Fondo Espacial */
+  /* Decorative page background (not used on controls) */
   --bg-base: radial-gradient(circle at 10% 10%, #E8EFFF 0%, #FFFFFF 40%, #FFF5FA 100%);
-  
-  /* Superficies de Cristal */
-  --bg-sidebar:    rgba(255, 255, 255, 0.45);
-  --bg-surface:    rgba(255, 255, 255, 0.65);
-  --bg-surface-hover: rgba(255, 255, 255, 0.85);
-  --bg-elevated:   rgba(255, 255, 255, 0.95);
-  --bg-overlay:    rgba(0, 0, 0, 0.6);
-  
-  /* Bordes Suaves */
-  --border:        rgba(0, 0, 0, 0.06);
-  --border-strong: rgba(0, 0, 0, 0.12);
-  --border-focus:  rgba(0, 113, 227, 0.4);
-  
-  /* Acentos (Azul Apple) */
-  --accent:        #0071E3;
-  --accent-hover:  #005bb5;
-  --accent-glow:   rgba(0, 113, 227, 0.2);
-  --accent-subtle: rgba(0, 113, 227, 0.08);
 
-  /* Texto */
-  --text-primary:  #1D1D1F;
-  --text-secondary:#515154;
-  --text-muted:    #86868B;
-  --text-inverted: #FFFFFF;
-
-  /* Status Colors */
-  --green:  #10B981; --green-bg:  rgba(16, 185, 129, 0.12);
-  --yellow: #F59E0B; --yellow-bg: rgba(245, 158, 11, 0.12);
-  --red:    #EF4444; --red-bg:    rgba(239, 68, 68, 0.12);
-  --blue:   #3B82F6; --blue-bg:   rgba(59, 130, 246, 0.12);
-  --purple: #A855F7; --purple-bg: rgba(168, 85, 247, 0.12);
-
-  /* Radios Extensos */
+  /* Radios */
   --radius-sm: 8px;
   --radius:    12px;
   --radius-lg: 16px;
@@ -53,46 +22,12 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Efecto Glass Global */
-  --backdrop-blur: blur(40px) saturate(150%);
-  --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --backdrop-blur: blur(20px) saturate(120%);
+  --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ─── DARK THEME (APPLE VISION GLASSMORPHISM) ─────────────────────────── */
 html.dark {
-  /* Fondo Espacial Oscuro */
   --bg-base: radial-gradient(circle at 10% 10%, #1A1A1E 0%, #0F0F13 40%, #050508 100%);
-  
-  /* Superficies de Cristal (Dark) */
-  --bg-sidebar:    rgba(25, 25, 28, 0.45);
-  --bg-surface:    rgba(30, 30, 34, 0.65);
-  --bg-surface-hover: rgba(45, 45, 50, 0.85);
-  --bg-elevated:   rgba(45, 45, 50, 0.95);
-  --bg-overlay:    rgba(0, 0, 0, 0.85);
-  
-  /* Bordes Suaves (Dark) */
-  --border:        rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --border-focus:  rgba(10, 132, 255, 0.5);
-  
-  /* Acentos (Azul Apple Lighter) */
-  --accent:        #0A84FF;
-  --accent-hover:  #409CFF;
-  --accent-glow:   rgba(10, 132, 255, 0.3);
-  --accent-subtle: rgba(10, 132, 255, 0.15);
-
-  /* Texto (Dark) */
-  --text-primary:  #F5F5F7;
-  --text-secondary:#A1A1A6;
-  --text-muted:    #6E6E73;
-  --text-inverted: #1D1D1F;
-
-  /* Status Colors (Adjusted for Dark Mode contrast) */
-  --green:  #32D74B; --green-bg:  rgba(50, 215, 75, 0.15);
-  --yellow: #FFD60A; --yellow-bg: rgba(255, 214, 10, 0.15);
-  --red:    #FF453A; --red-bg:    rgba(255, 69, 58, 0.15);
-  --blue:   #0A84FF; --blue-bg:   rgba(10, 132, 255, 0.15);
-  --purple: #BF5AF2; --purple-bg: rgba(191, 90, 242, 0.15);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -107,10 +42,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden; /* We handle scrolling inside the workspace */
+  margin: 0;
 }
 
 /* Ambient background orbs */
@@ -160,8 +92,10 @@ input, select, textarea { font-family: var(--font-sans); color: var(--text-prima
 /* ─── SCROLLBAR ─────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+html.dark ::-webkit-scrollbar-thumb { background: var(--border-strong); }
+html.dark ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ─── UTILITIES ─────────────────────────────────────────────────────────── */
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
@@ -189,18 +123,14 @@ input, select, textarea { font-family: var(--font-sans); color: var(--text-prima
 
 /* ─── GLASS PANELS (GLOBAL REUSABLE) ────────────────────────────────────── */
 .glass-panel {
-  background: var(--bg-surface);
-  backdrop-filter: var(--backdrop-blur);
-  -webkit-backdrop-filter: var(--backdrop-blur);
+  background: var(--surface-0);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-md);
   transition: var(--transition);
 }
 
 .glass-card {
-  background: var(--bg-surface);
-  backdrop-filter: var(--backdrop-blur);
-  -webkit-backdrop-filter: var(--backdrop-blur);
+  background: var(--surface-0);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
@@ -210,7 +140,7 @@ input, select, textarea { font-family: var(--font-sans); color: var(--text-prima
 .glass-card:hover {
   border-color: var(--border-strong);
   box-shadow: var(--shadow-md);
-  background: var(--bg-surface-hover);
+  background: var(--surface-1);
 }
 
 /* ─── STOREFRONT SHARED UI ────────────────────────────────────────────── */

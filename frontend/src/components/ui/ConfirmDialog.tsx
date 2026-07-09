@@ -26,7 +26,7 @@ export function ConfirmDialog({
   return (
     <Modal
       open={open}
-      title=""
+      title={title}
       onClose={onCancel}
       size="sm"
       footer={
@@ -46,7 +46,6 @@ export function ConfirmDialog({
         }}>
           <AlertTriangle size={24} color={variant === 'danger' ? 'var(--red)' : 'var(--yellow)'} />
         </div>
-        <h3 style={{ fontSize:16, fontWeight:600, color:'var(--text-primary)' }}>{title}</h3>
         <p style={{ fontSize:14, color:'var(--text-secondary)', lineHeight:1.6 }}>{message}</p>
       </div>
     </Modal>

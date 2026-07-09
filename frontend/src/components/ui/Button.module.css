@@ -62,30 +62,31 @@
 }
 
 .variant-secondary {
-  --btn-bg: var(--bg-surface, #ffffff);
-  --btn-color: var(--text-primary, #111827);
-  --btn-border: var(--border, #e5e7eb);
-  --btn-shadow: var(--shadow-sm);
+  --btn-bg: var(--surface-1);
+  --btn-color: var(--text-primary);
+  --btn-border: var(--border-strong);
+  --btn-shadow: none;
 }
 .variant-secondary:hover {
-  --btn-bg: var(--bg-surface-hover, #f3f4f6);
-  --btn-border: var(--border-strong, #d1d5db);
+  --btn-bg: var(--surface-2);
+  --btn-border: var(--border-strong);
 }
 
 .variant-outline {
-  --btn-color: var(--accent, #2563eb);
-  --btn-border: var(--accent, #2563eb);
+  --btn-color: var(--accent);
+  --btn-border: var(--accent);
+  --btn-bg: transparent;
 }
 .variant-outline:hover {
-  --btn-bg: var(--accent-transparent, rgba(37,99,235,0.1));
+  --btn-bg: var(--accent-subtle);
 }
 
 .variant-ghost {
-  --btn-color: var(--text-secondary, #4b5563);
+  --btn-color: var(--text-secondary);
 }
 .variant-ghost:hover {
-  --btn-bg: var(--bg-surface-hover, #f3f4f6);
-  --btn-color: var(--text-primary, #111827);
+  --btn-bg: var(--surface-1);
+  --btn-color: var(--text-primary);
 }
 
 .variant-danger {

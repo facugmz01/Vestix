@@ -6,14 +6,15 @@
   animation: fadeIn 0.18s ease;
 }
 .panel {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
+  background: var(--surface-0);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   display: flex; flex-direction: column;
   max-height: 90dvh;
   animation: slideUp 0.2s ease;
   width: 100%;
+  outline: none;
 }
 .sm { max-width: 420px; }
 .md { max-width: 600px; }
@@ -30,7 +31,7 @@
   color: var(--text-muted); cursor: pointer; background: none; border: none;
   transition: background 0.15s, color 0.15s;
 }
-.close:hover { background: var(--bg-elevated); color: var(--text-primary); }
+.close:hover { background: var(--surface-1); color: var(--text-primary); }
 .body   { padding: 20px 24px; overflow-y: auto; flex: 1; }
 .footer {
   padding: 16px 24px;
