@@ -29,6 +29,8 @@ export class InventoryService {
       throw new BadRequestException('La cantidad del movimiento debe ser mayor a cero.');
     }
 
+    this.assertMovementDirection(data.type, data.sourceWarehouseId, data.destinationWarehouseId);
+
     const execute = async (transaction: any) => {
       // 1. Write the Immutable Ledger Record
       const movement = await transaction.inventoryMovement.create({
@@ -44,12 +46,12 @@ export class InventoryService {
         },
       });
 
-      // 2. Update Source Stock (Outbound)
+      // 2. Update Source Stock (Outbound) — decreases physical/available
       if (data.sourceWarehouseId) {
         await this.updateStock(transaction, data.variantId, data.batchId || null, data.sourceWarehouseId, data.branchId, data.type, -data.quantity);
       }
       
-      // 3. Update Destination Stock (Inbound)
+      // 3. Update Destination Stock (Inbound) — increases physical/available
       if (data.destinationWarehouseId) {
         await this.updateStock(transaction, data.variantId, data.batchId || null, data.destinationWarehouseId, data.branchId, data.type, data.quantity);
       }
@@ -84,37 +86,102 @@ export class InventoryService {
     return movement;
   }
 
+  /**
+   * Ensures outbound types cannot be recorded as inbound (and vice versa).
+   * Prevents sales/returns from accidentally increasing Disponible.
+   */
+  private assertMovementDirection(
+    type: string,
+    sourceWarehouseId: string | null,
+    destinationWarehouseId: string | null,
+  ) {
+    const OUTBOUND = new Set([
+      'SALE',
+      'SALE_EXIT',
+      'TRANSFER_OUT',
+      'SHRINKAGE',
+      'CONSUME_RESERVATION',
+      'SUBTRACT',
+    ]);
+    const INBOUND = new Set([
+      'GOODS_RECEIPT',
+      'SALE_RETURN',
+      'RETURN',
+      'TRANSFER_IN',
+      'POS_CORRECTION',
+      'INITIAL_STOCK',
+      'ADD',
+    ]);
+    // Reservation types use destination/source for warehouse targeting but don't move physical stock
+    const RESERVATION_TYPES = new Set(['RESERVATION', 'RESERVATION_RELEASE']);
+
+    if (OUTBOUND.has(type) && !sourceWarehouseId) {
+      throw new BadRequestException(
+        `El movimiento ${type} requiere depósito de origen (salida de stock).`,
+      );
+    }
+    if (INBOUND.has(type) && !destinationWarehouseId) {
+      throw new BadRequestException(
+        `El movimiento ${type} requiere depósito de destino (entrada de stock).`,
+      );
+    }
+    // Guard against double-sided recording for pure outbound/inbound (would net to zero or double-apply)
+    if (OUTBOUND.has(type) && destinationWarehouseId && !RESERVATION_TYPES.has(type)) {
+      throw new BadRequestException(
+        `El movimiento ${type} no puede tener depósito de destino (es una salida).`,
+      );
+    }
+    if (INBOUND.has(type) && sourceWarehouseId) {
+      throw new BadRequestException(
+        `El movimiento ${type} no puede tener depósito de origen (es una entrada).`,
+      );
+    }
+  }
+
+  /**
+   * Applies a signed quantityChange to a stock node.
+   * quantityChange < 0 = outbound (sale, transfer out, shrinkage, adjustment down)
+   * quantityChange > 0 = inbound (receipt, return, transfer in, adjustment up)
+   *
+   * INVARIANT: availableQuantity is ALWAYS derived as physical − reserved.
+   * Never increment/decrement available independently — that caused Disponible
+   * to drift upward on every movement when physical/reserved got out of sync.
+   */
   private async updateStock(tx: any, variantId: string, batchId: string | null, warehouseId: string, branchId: string | null, type: string, quantityChange: number) {
-    // Determine the absolute new balance to prevent drift from relative increments
-    const stock = await tx.stockLevel.findFirst({ 
-      where: { variantId, warehouseId, batchId: batchId || null } 
+    const stock = await tx.stockLevel.findFirst({
+      where: { variantId, warehouseId, batchId: batchId || null },
     });
 
-    const currentPhysical = stock ? stock.physicalQuantity : 0;
-    const currentAvailable = stock ? stock.availableQuantity : 0;
-    const currentReserved = stock ? stock.reservedQuantity : 0;
-
-    let newPhysical = currentPhysical;
-    let newAvailable = currentAvailable;
-    let newReserved = currentReserved;
+    let newPhysical = stock ? stock.physicalQuantity : 0;
+    let newReserved = stock ? stock.reservedQuantity : 0;
+    const absQty = Math.abs(quantityChange);
 
     if (type === 'RESERVATION') {
-      newReserved += Math.abs(quantityChange);
-      newAvailable -= Math.abs(quantityChange);
+      // Hold sellable units: physical unchanged, reserved up → available down
+      newReserved += absQty;
     } else if (type === 'RESERVATION_RELEASE') {
-      newReserved -= Math.abs(quantityChange);
-      newAvailable += Math.abs(quantityChange);
+      // Free a hold: physical unchanged, reserved down → available up
+      newReserved = Math.max(0, newReserved - absQty);
     } else if (type === 'CONSUME_RESERVATION') {
-      newReserved -= Math.abs(quantityChange);
-      newPhysical -= Math.abs(quantityChange);
+      // Reserved units leave the warehouse (paid sale): both physical and reserved down
+      // → available stays the same (they were never sellable while reserved)
+      newReserved = Math.max(0, newReserved - absQty);
+      newPhysical -= absQty;
     } else {
+      // Standard physical movement (sale, return, receipt, transfer, adjustment, etc.)
       newPhysical += quantityChange;
-      newAvailable += quantityChange;
     }
 
-    if (quantityChange < 0 && type !== 'CONSUME_RESERVATION') {
+    // Single source of truth for the Disponible column
+    const newAvailable = newPhysical - newReserved;
+
+    const affectsSellable =
+      type === 'RESERVATION' ||
+      (type !== 'RESERVATION_RELEASE' && type !== 'CONSUME_RESERVATION' && quantityChange < 0);
+
+    if (affectsSellable && newAvailable < 0) {
       const posSettings = await this.settingsService.getPosSettings();
-      if (!posSettings.allowNegativeStock && newAvailable < 0) {
+      if (!posSettings.allowNegativeStock) {
         throw new BadRequestException(`Stock insuficiente para la variante ${variantId}.`);
       }
     }
@@ -302,10 +369,11 @@ export class InventoryService {
       where: { variantId: dto.variantId, warehouseId: dto.warehouseId },
     });
     const aggregatedPhysical = stockRows.reduce((sum, s) => sum + s.physicalQuantity, 0);
-    const aggregatedAvailable = stockRows.reduce((sum, s) => sum + s.availableQuantity, 0);
+    const aggregatedReserved = stockRows.reduce((sum, s) => sum + s.reservedQuantity, 0);
+    const aggregatedAvailable = aggregatedPhysical - aggregatedReserved;
     const primaryStock =
       stockRows.find((s) => s.batchId == null) ??
-      stockRows.sort((a, b) => b.availableQuantity - a.availableQuantity)[0] ??
+      stockRows.sort((a, b) => (b.physicalQuantity - b.reservedQuantity) - (a.physicalQuantity - a.reservedQuantity))[0] ??
       null;
 
     let diff = 0;
@@ -322,7 +390,6 @@ export class InventoryService {
       }
       diff = -dto.quantity;
     } else if (dto.type === 'SET') {
-      const aggregatedReserved = stockRows.reduce((sum, s) => sum + s.reservedQuantity, 0);
       if (dto.quantity < aggregatedReserved) {
         throw new BadRequestException(
           `No se puede fijar el stock físico en ${dto.quantity}: hay ${aggregatedReserved} unidades reservadas.`,
@@ -377,7 +444,8 @@ export class InventoryService {
 
     const physical = stock?.physicalQuantity ?? 0;
     const reserved = stock?.reservedQuantity ?? 0;
-    const available = stock?.availableQuantity ?? 0;
+    // Derive Disponible — never trust a drifted stored availableQuantity
+    const available = physical - reserved;
 
     return {
       id: stock?.id || `${variantId}-${warehouseId}`,
@@ -424,7 +492,7 @@ export class InventoryService {
         branchId: s.branchId,
         physicalQuantity: s.physicalQuantity,
         reservedQuantity: s.reservedQuantity,
-        availableQuantity: s.availableQuantity,
+        availableQuantity: s.physicalQuantity - s.reservedQuantity,
         variantSku: variant?.sku || '',
         productName: variant?.product?.name || '',
         warehouseName: warehouse?.name || '',
@@ -492,6 +560,8 @@ export class InventoryService {
       const variant = variantMap.get(s.variantId);
       const warehouse = warehouseMap.get(s.warehouseId);
       const branch = s.branchId ? branchMap.get(s.branchId) : null;
+      // Always derive Disponible from the invariant to heal any historical drift
+      const available = s.physicalQuantity - s.reservedQuantity;
       return {
         id: `${s.variantId}-${s.warehouseId}`,
         variantId: s.variantId,
@@ -499,7 +569,7 @@ export class InventoryService {
         branchId: s.branchId,
         physicalQuantity: s.physicalQuantity,
         reservedQuantity: s.reservedQuantity,
-        availableQuantity: s.availableQuantity,
+        availableQuantity: available,
         variantSku: variant?.sku || '',
         productName: variant?.product?.name || '',
         warehouseName: warehouse?.name || '',

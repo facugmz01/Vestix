@@ -147,11 +147,15 @@ export default function InventoryPage() {
               { 
                 key: 'available', 
                 header: 'Disponible',
-                render: (s) => (
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: s.availableQuantity <= 0 ? 'var(--red)' : 'var(--green)' }}>
-                    {s.availableQuantity}
-                  </span>
-                )
+                render: (s) => {
+                  const physical = s.physicalQuantity ?? (s.availableQuantity + s.reservedQuantity);
+                  const available = physical - s.reservedQuantity;
+                  return (
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: available <= 0 ? 'var(--red)' : 'var(--green)' }}>
+                      {available}
+                    </span>
+                  );
+                }
               },
               {
                 key: 'actions',
