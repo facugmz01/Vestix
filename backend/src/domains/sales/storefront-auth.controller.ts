@@ -33,9 +33,17 @@ interface OtpEntry {
   attempts: number;
 }
 
+type OtpIdentifierType = 'phone' | 'email';
+
+interface OtpIdentifier {
+  type: OtpIdentifierType;
+  value: string;
+  contact: { phone?: string; email?: string };
+}
+
 /**
  * Storefront Customer Auth Controller
- * Handles WhatsApp OTP authentication for end-customers (NOT ERP admin users).
+ * Handles OTP authentication for end-customers (NOT ERP admin users).
  * Issues a separate `storefront_token` cookie, independent of the admin `erp_token`.
  */
 @Controller('storefront/auth')
@@ -55,9 +63,17 @@ export class StorefrontAuthController {
     private readonly settingsService: SettingsService,
   ) {}
 
-  private async getOtp(phone: string): Promise<OtpEntry | null> {
+  private otpRedisKey(identifier: OtpIdentifier): string {
+    return `otp:${identifier.type}:${identifier.value}`;
+  }
+
+  private rateLimitSubject(identifier: OtpIdentifier): string {
+    return `${identifier.type}:${identifier.value}`;
+  }
+
+  private async getOtp(identifier: OtpIdentifier): Promise<OtpEntry | null> {
     const redis = this.redisService.getClient();
-    const data = await redis.get(`otp:${phone}`);
+    const data = await redis.get(this.otpRedisKey(identifier));
     if (!data) return null;
     const entry = JSON.parse(data);
     return {
@@ -68,35 +84,54 @@ export class StorefrontAuthController {
     };
   }
 
-  private async setOtp(phone: string, entry: OtpEntry): Promise<void> {
+  private async setOtp(identifier: OtpIdentifier, entry: OtpEntry): Promise<void> {
     const redis = this.redisService.getClient();
     const ttlSeconds = Math.max(1, Math.ceil((entry.expiresAt.getTime() - Date.now()) / 1000));
-    await redis.set(`otp:${phone}`, JSON.stringify(entry), 'EX', ttlSeconds);
+    await redis.set(this.otpRedisKey(identifier), JSON.stringify(entry), 'EX', ttlSeconds);
   }
 
-  private async deleteOtp(phone: string): Promise<void> {
+  private async deleteOtp(identifier: OtpIdentifier): Promise<void> {
     const redis = this.redisService.getClient();
-    await redis.del(`otp:${phone}`);
+    await redis.del(this.otpRedisKey(identifier));
   }
 
-  /**
-   * Step 1 — Send OTP code via WhatsApp.
-   * POST /storefront/auth/send-otp
-   * Body: { phone: string }  — e.g. "5491122334455"
-   */
-  @Post('send-otp')
-  @HttpCode(HttpStatus.OK)
-  async sendOtp(@Body() body: { phone: string }, @Req() req: Request) {
-    const phone = this.normalizePhone(body.phone);
+  private async resolveLoginIdentifier(
+    body: { phone?: string; email?: string },
+    loginChannels: NotificationChannel[],
+  ): Promise<OtpIdentifier> {
+    const primaryChannel = loginChannels[0] ?? NotificationChannel.WHATSAPP;
+
+    if (primaryChannel === NotificationChannel.EMAIL) {
+      const email = this.normalizeEmail(body.email ?? '');
+      if (!email) {
+        throw new BadRequestException('Correo electrónico inválido.');
+      }
+      return { type: 'email', value: email, contact: { email } };
+    }
+
+    const phone = this.normalizePhone(body.phone ?? '');
     if (!phone) {
       throw new BadRequestException('Número de teléfono inválido.');
     }
+    return { type: 'phone', value: phone, contact: { phone } };
+  }
+
+  /**
+   * Step 1 — Send OTP code via configured store-login channel.
+   * POST /storefront/auth/send-otp
+   * Body: { phone?: string, email?: string }
+   */
+  @Post('send-otp')
+  @HttpCode(HttpStatus.OK)
+  async sendOtp(@Body() body: { phone?: string; email?: string }, @Req() req: Request) {
+    const storefrontSettings = await this.settingsService.getStorefrontSettings();
+    const loginChannels = getStoreLoginChannels(storefrontSettings);
+    const identifier = await this.resolveLoginIdentifier(body, loginChannels);
 
     const clientIp = req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim();
-    await this.rateLimitService.assertOtpAllowed(phone, clientIp);
+    await this.rateLimitService.assertOtpAllowed(this.rateLimitSubject(identifier), clientIp);
 
-    // Rate limiting: check if a code was sent recently
-    const existing = await this.getOtp(phone);
+    const existing = await this.getOtp(identifier);
     if (existing) {
       const secondsSinceSent = (Date.now() - existing.sentAt.getTime()) / 1000;
       if (secondsSinceSent < this.RESEND_COOLDOWN_MS / 1000) {
@@ -107,27 +142,22 @@ export class StorefrontAuthController {
       }
     }
 
-    // Generate a random 6-digit OTP
     const code = String(Math.floor(100000 + Math.random() * 900000));
 
-    // Store in Redis
-    await this.setOtp(phone, {
+    await this.setOtp(identifier, {
       code,
       expiresAt: new Date(Date.now() + this.OTP_EXPIRY_MS),
       sentAt: new Date(),
       attempts: 0,
     });
 
-    // Dispatch OTP via configured store-login channel(s)
-    const storefrontSettings = await this.settingsService.getStorefrontSettings();
-    const loginChannels = getStoreLoginChannels(storefrontSettings);
     let sent = false;
     let sentChannel: NotificationChannel | null = null;
 
     for (const channel of loginChannels) {
       const recipient = resolveRecipient(
         channel,
-        { phone },
+        identifier.contact,
         (value) => this.normalizePhone(value),
       );
       if (!recipient) continue;
@@ -148,7 +178,7 @@ export class StorefrontAuthController {
 
     if (!sent) {
       throw new BadRequestException(
-        'No se pudo enviar el código. Verificá que el canal de login esté habilitado y configurado en Ajustes → Tienda Web.',
+        'No se pudo enviar el código. Verificá que el canal de login esté habilitado y configurado en Ajustes → Notificaciones.',
       );
     }
 
@@ -158,7 +188,11 @@ export class StorefrontAuthController {
         ? 'correo electrónico'
         : 'WhatsApp';
 
-    this.logger.log(`[OTP] Code sent to +${phone} via ${sentChannel}`);
+    const targetLabel = identifier.type === 'email'
+      ? identifier.value
+      : `+${identifier.value}`;
+
+    this.logger.log(`[OTP] Code sent to ${targetLabel} via ${sentChannel}`);
 
     return { success: true, message: `Código enviado por ${channelLabel}.` };
   }
@@ -166,90 +200,91 @@ export class StorefrontAuthController {
   /**
    * Step 2 — Verify OTP and issue session cookie.
    * POST /storefront/auth/verify-otp
-   * Body: { phone: string, code: string }
+   * Body: { phone?: string, email?: string, code: string }
    */
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   async verifyOtp(
-    @Body() body: { phone: string; code: string },
+    @Body() body: { phone?: string; email?: string; code: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const phone = this.normalizePhone(body.phone);
-    if (!phone || !body.code) {
-      throw new BadRequestException('Teléfono y código son requeridos.');
+    if (!body.code) {
+      throw new BadRequestException('El código es requerido.');
     }
 
-    const entry = await this.getOtp(phone);
+    const storefrontSettings = await this.settingsService.getStorefrontSettings();
+    const loginChannels = getStoreLoginChannels(storefrontSettings);
+    const identifier = await this.resolveLoginIdentifier(body, loginChannels);
+
+    const entry = await this.getOtp(identifier);
 
     if (!entry) {
-      throw new UnauthorizedException('No hay código activo para este número. Solicitá uno nuevo.');
+      const label = identifier.type === 'email' ? 'este correo' : 'este número';
+      throw new UnauthorizedException(`No hay código activo para ${label}. Solicitá uno nuevo.`);
     }
 
-    // Check expiry
     if (new Date() > entry.expiresAt) {
-      await this.deleteOtp(phone);
+      await this.deleteOtp(identifier);
       throw new UnauthorizedException('El código expiró. Solicitá uno nuevo.');
     }
 
-    // Track attempts
     entry.attempts += 1;
 
     if (entry.attempts > this.MAX_ATTEMPTS) {
-      await this.deleteOtp(phone);
+      await this.deleteOtp(identifier);
       throw new UnauthorizedException('Demasiados intentos fallidos. Solicitá un nuevo código.');
     }
 
     if (entry.code !== body.code.trim()) {
-      await this.setOtp(phone, entry); // Persist updated attempts
+      await this.setOtp(identifier, entry);
       const remaining = this.MAX_ATTEMPTS - entry.attempts;
       throw new UnauthorizedException(
         `Código incorrecto. Te quedan ${remaining} intento${remaining !== 1 ? 's' : ''}.`,
       );
     }
 
-    // ✅ OTP is valid — clean up
-    await this.deleteOtp(phone);
+    await this.deleteOtp(identifier);
 
-    // Find or create the customer
-    let customer = await this.prisma.customer.findFirst({
-      where: { phone },
-    });
+    let customer = identifier.type === 'email'
+      ? await this.prisma.customer.findFirst({ where: { email: identifier.value } })
+      : await this.prisma.customer.findFirst({ where: { phone: identifier.value } });
 
     if (!customer) {
       customer = await this.prisma.customer.create({
         data: {
-          fullName: `Cliente +${phone}`,
-          phone,
+          fullName: identifier.type === 'email'
+            ? identifier.value.split('@')[0]
+            : `Cliente +${identifier.value}`,
+          phone: identifier.type === 'phone' ? identifier.value : null,
+          email: identifier.type === 'email' ? identifier.value : null,
           type: 'INDIVIDUAL',
           source: 'STOREFRONT',
         },
       });
-      this.logger.log(`[OTP] New customer created: ${customer.id} (phone: +${phone})`);
+      this.logger.log(`[OTP] New customer created: ${customer.id}`);
     } else if (customer.source !== 'STOREFRONT' && customer.source !== 'ADMIN') {
-      // Keep ADMIN origin if already set; otherwise mark as storefront-active
       customer = await this.prisma.customer.update({
         where: { id: customer.id },
         data: { source: 'STOREFRONT' },
       });
     }
 
-    // Issue JWT for the customer (separate from admin token)
     const payload = {
       sub: customer.id,
       phone: customer.phone,
+      email: customer.email,
       type: 'STOREFRONT_CUSTOMER',
     };
     const token = this.jwtService.sign(payload);
 
-    // Set as a separate HttpOnly cookie
     res.cookie('storefront_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
-    this.logger.log(`[OTP] ✓ Customer ${customer.id} authenticated via WhatsApp OTP`);
+    this.logger.log(`[OTP] ✓ Customer ${customer.id} authenticated via OTP`);
 
     return {
       success: true,
@@ -296,28 +331,28 @@ export class StorefrontAuthController {
     return { success: true, message: 'Sesión cerrada.' };
   }
 
+  private normalizeEmail(raw: string): string | null {
+    const email = raw.trim().toLowerCase();
+    if (!email || !email.includes('@') || !email.includes('.')) return null;
+    return email;
+  }
+
   /**
    * Normalize phone to international format without '+'.
    * Accepts: "1122334455", "011 1234-5678", "549..." etc.
    */
   private normalizePhone(raw: string): string | null {
     if (!raw) return null;
-    // Remove all non-digit characters
     const digits = raw.replace(/\D/g, '');
     if (digits.length < 8) return null;
 
-    // If already starts with 549 (Argentina mobile), use as-is
     if (digits.startsWith('549') && digits.length >= 12) return digits;
-
-    // If starts with 54 but not 549
     if (digits.startsWith('54') && digits.length >= 11) return digits;
 
-    // If starts with 0 (local format like 0111122334455), strip leading 0 and prepend 54
     if (digits.startsWith('0') && digits.length >= 10) {
       return '54' + digits.slice(1);
     }
 
-    // Assume it's a local number without country code — prepend 549 (Argentina mobile)
     if (digits.length >= 8 && digits.length <= 11) {
       return '549' + digits;
     }

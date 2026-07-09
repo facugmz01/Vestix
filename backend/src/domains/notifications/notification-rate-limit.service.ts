@@ -10,11 +10,11 @@ export class NotificationRateLimitService {
 
   constructor(private readonly redis: RedisService) {}
 
-  async assertOtpAllowed(phone: string, clientIp?: string): Promise<void> {
+  async assertOtpAllowed(subject: string, clientIp?: string): Promise<void> {
     const redis = this.redis.getClient();
 
-    const hourKey = `otp_rate:phone:${phone}:hour`;
-    const dayKey = `otp_rate:phone:${phone}:day`;
+    const hourKey = `otp_rate:${subject}:hour`;
+    const dayKey = `otp_rate:${subject}:day`;
     const ipKey = clientIp ? `otp_rate:ip:${clientIp}:hour` : null;
 
     const [hourCount, dayCount, ipCount] = await Promise.all([

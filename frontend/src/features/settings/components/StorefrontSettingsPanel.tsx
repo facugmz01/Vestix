@@ -120,7 +120,7 @@ export function StorefrontSettingsPanel() {
             render={({ field }) => (
               <NotificationChannelPicker
                 label="Canal de verificación (OTP)"
-                hint="Se usa el primer canal habilitado. El login actual es por teléfono (WhatsApp o SMS recomendado)."
+                hint="Se usa el primer canal habilitado. La tienda adapta el formulario de login según este canal (teléfono o correo)."
                 value={field.value ?? ['WHATSAPP']}
                 onChange={field.onChange}
                 singleSelect
