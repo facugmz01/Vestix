@@ -120,10 +120,13 @@ export function NotificationSettingsPanel() {
 
   const { register, watch, handleSubmit, reset, control, formState: { isDirty } } = useForm<NotificationSettingsFormData>({
     resolver: zodResolver(notificationSettingsSchema),
+    defaultValues: notificationSettingsSchema.parse({}),
   });
 
   useEffect(() => {
-    if (settings?.notifications) reset(settings.notifications);
+    if (settings?.notifications) {
+      reset(notificationSettingsSchema.parse(settings.notifications));
+    }
   }, [settings, reset]);
 
   const onSubmit = (data: NotificationSettingsFormData) => {
@@ -251,7 +254,7 @@ export function NotificationSettingsPanel() {
               <NotificationChannelPicker
                 label="Canales para ventas"
                 hint="Se enviará por cada canal seleccionado cuando el cliente tenga el dato de contacto."
-                value={field.value}
+                value={field.value ?? ['EMAIL', 'WHATSAPP']}
                 onChange={field.onChange}
               />
             )}
@@ -265,7 +268,7 @@ export function NotificationSettingsPanel() {
               <NotificationChannelPicker
                 label="Canales para compras"
                 hint="Notificaciones al proveedor y recepción de mercadería."
-                value={field.value}
+                value={field.value ?? ['EMAIL']}
                 onChange={field.onChange}
               />
             )}
@@ -278,7 +281,7 @@ export function NotificationSettingsPanel() {
             render={({ field }) => (
               <NotificationChannelPicker
                 label="Canales para alertas de stock"
-                value={field.value}
+                value={field.value ?? ['EMAIL']}
                 onChange={field.onChange}
               />
             )}
@@ -291,7 +294,7 @@ export function NotificationSettingsPanel() {
             render={({ field }) => (
               <NotificationChannelPicker
                 label="Canales para transferencias"
-                value={field.value}
+                value={field.value ?? ['EMAIL']}
                 onChange={field.onChange}
               />
             )}
@@ -304,7 +307,7 @@ export function NotificationSettingsPanel() {
             render={({ field }) => (
               <NotificationChannelPicker
                 label="Canales para envíos y entregas"
-                value={field.value}
+                value={field.value ?? ['WHATSAPP']}
                 onChange={field.onChange}
               />
             )}
