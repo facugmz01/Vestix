@@ -6,6 +6,7 @@ export const TEMPLATE_VARIABLES: Record<string, { name: string; description: str
     { name: 'customerName', description: 'Nombre del cliente' },
     { name: 'orderId', description: 'Número/código del pedido' },
     { name: 'total', description: 'Monto total formateado' },
+    { name: 'orderSummary', description: 'Detalle de productos (líneas)' },
   ],
   [TemplateKey.ORDER_SHIPPED]: [
     { name: 'customerName', description: 'Nombre del cliente' },

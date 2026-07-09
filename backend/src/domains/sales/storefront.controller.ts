@@ -22,6 +22,7 @@ import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { StorefrontOptionalAuthGuard } from './storefront-optional-auth.guard';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { ShippingService } from '../shipping/shipping.service';
+import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { resolveStorefrontBaseUrl } from './storefront-url.util';
 import * as crypto from 'crypto';
 
@@ -43,6 +44,7 @@ export class StorefrontController {
     private readonly inventoryService: InventoryService,
     private readonly settingsService: SettingsService,
     private readonly shippingService: ShippingService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {}
 
   /**
@@ -295,6 +297,8 @@ export class StorefrontController {
     }
 
     // For non-MP payments (CASH, BANK_TRANSFER, etc.)
+    void this.notificationTriggers.onSaleCompleted(orderId);
+
     return {
       ...updatedOrder,
       payment: {
@@ -440,62 +444,24 @@ export class StorefrontController {
         if (status === 'approved') {
           const order = await this.prisma.saleOrder.findUnique({
             where: { id: orderId },
-            include: { lines: true },
           });
 
           if (order && order.status === 'PENDING_PAYMENT') {
-            await this.prisma.$transaction(async (tx) => {
-              await tx.saleOrder.update({
-                where: { id: orderId },
-                data: { status: order.source === 'ECOMMERCE' ? 'CONFIRMED' : 'COMPLETED' },
-              });
-
-              if (order.warehouseId) {
-                for (const line of order.lines) {
-                  await this.inventoryService.consumeReservation(
-                    line.variantId,
-                    order.warehouseId,
-                    order.branchId,
-                    line.quantity,
-                    order.id,
-                    tx
-                  );
-                }
-              }
-            });
+            await this.checkoutOrchestrator.confirmPayment(orderId, String(resourceId));
 
             if (order.source === 'ECOMMERCE') {
               await this.shippingService.markFulfillmentPaid(orderId);
             }
 
-            this.logger.log(`[MercadoPago Webhook] ✓ Order ${orderId} marked as ${order.source === 'ECOMMERCE' ? 'CONFIRMED' : 'COMPLETED'} and reservations consumed.`);
+            this.logger.log(`[MercadoPago Webhook] ✓ Order ${orderId} confirmed and customer notified.`);
           }
         } else if (status === 'rejected' || status === 'cancelled') {
           const order = await this.prisma.saleOrder.findUnique({
             where: { id: orderId },
-            include: { lines: true },
           });
 
           if (order && order.status === 'PENDING_PAYMENT') {
-            await this.prisma.$transaction(async (tx) => {
-              await tx.saleOrder.update({
-                where: { id: orderId },
-                data: { status: 'CANCELLED' },
-              });
-
-              if (order.warehouseId) {
-                for (const line of order.lines) {
-                  await this.inventoryService.releaseReservation(
-                    line.variantId,
-                    order.warehouseId,
-                    order.branchId,
-                    line.quantity,
-                    order.id,
-                    tx
-                  );
-                }
-              }
-            });
+            await this.checkoutOrchestrator.cancelOrder(orderId);
             this.logger.log(`[MercadoPago Webhook] ✗ Order ${orderId} marked as CANCELLED and reservations released.`);
           }
         }

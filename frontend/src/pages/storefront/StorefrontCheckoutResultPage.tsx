@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Clock, Package, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/store/cart.store';
@@ -70,8 +70,23 @@ const STATUS_CONFIG: Record<
   },
 };
 
+function resolveMercadoPagoStatus(searchParams: URLSearchParams): CheckoutResultStatus | null {
+  const raw =
+    searchParams.get('collection_status') ||
+    searchParams.get('status');
+
+  if (!raw) return null;
+
+  const normalized = raw.toLowerCase();
+  if (normalized === 'approved' || normalized === 'success') return 'success';
+  if (normalized === 'pending' || normalized === 'in_process' || normalized === 'in_mediation') return 'pending';
+  if (normalized === 'rejected' || normalized === 'failure' || normalized === 'cancelled') return 'failure';
+  return null;
+}
+
 export default function StorefrontCheckoutResultPage({ status }: Props) {
   const prefix = storePrefix();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const clearCart = useCartStore((s) => s.clearCart);
@@ -81,15 +96,26 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
     searchParams.get('external_reference') ||
     searchParams.get('external_reference_id');
 
-  const config = STATUS_CONFIG[status];
+  const mpStatus = resolveMercadoPagoStatus(searchParams);
+  const effectiveStatus = mpStatus && mpStatus !== status ? mpStatus : status;
+
+  const config = STATUS_CONFIG[effectiveStatus];
   const Icon = config.icon;
 
   useEffect(() => {
-    if (status === 'success' || status === 'pending') {
+    if (mpStatus && mpStatus !== status) {
+      const query = searchParams.toString();
+      const target = `${prefix}/checkout/${mpStatus}${query ? `?${query}` : ''}`;
+      navigate(target, { replace: true });
+    }
+  }, [mpStatus, status, navigate, prefix, searchParams]);
+
+  useEffect(() => {
+    if (effectiveStatus === 'success' || effectiveStatus === 'pending') {
       clearCart();
       queryClient.invalidateQueries({ queryKey: ['storefront'] });
     }
-  }, [status, clearCart, queryClient]);
+  }, [effectiveStatus, clearCart, queryClient]);
 
   return (
     <div style={{ maxWidth: '600px', margin: '80px auto', padding: '0 24px' }}>
@@ -139,7 +165,7 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
           {config.description(orderId)}
         </p>
 
-        {status === 'pending' && (
+        {effectiveStatus === 'pending' && (
           <div
             style={{
               display: 'flex',
