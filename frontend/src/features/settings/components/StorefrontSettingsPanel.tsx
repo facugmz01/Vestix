@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Save, ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, MessageCircle, Share2, Globe, Plus, Trash2, Store, Navigation } from 'lucide-react';
+import { Save, ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, MessageCircle, Share2, Globe, Plus, Trash2, Store, Navigation, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -12,6 +12,7 @@ import { storefrontSettingsSchema, type StorefrontSettingsFormData } from '../sc
 import { priceListsApi } from '@/api/priceLists.api';
 import { financeApi } from '@/api/finance.api';
 import styles from './SettingsShared.module.css';
+import { NotificationChannelPicker } from './NotificationChannelPicker';
 
 export function StorefrontSettingsPanel() {
   const { data: settings, isLoading } = useGetSettings();
@@ -112,6 +113,31 @@ export function StorefrontSettingsPanel() {
               <ToggleSwitch label="Incluir nombre del comercio" {...register('showStoreName')} />
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><KeyRound size={18} /> Inicio de sesión de clientes</h3>
+          <p className={styles.cardDescription}>
+            Canal por defecto para enviar el código OTP cuando un cliente ingresa a la tienda online.
+            Los canales deben estar habilitados en Ajustes → Notificaciones.
+          </p>
+        </header>
+        <div className={styles.cardBody}>
+          <Controller
+            control={control}
+            name="storeLoginChannels"
+            render={({ field }) => (
+              <NotificationChannelPicker
+                label="Canal de verificación (OTP)"
+                hint="Se usa el primer canal habilitado. El login actual es por teléfono (WhatsApp o SMS recomendado)."
+                value={field.value ?? ['WHATSAPP']}
+                onChange={field.onChange}
+                singleSelect
+              />
+            )}
+          />
         </div>
       </section>
 

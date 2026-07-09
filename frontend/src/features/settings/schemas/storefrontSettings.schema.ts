@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const notificationChannelSchema = z.enum(['EMAIL', 'WHATSAPP', 'SMS']);
+
 export const shippingMethodSchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'Obligatorio'),
@@ -25,6 +27,7 @@ export const storefrontSettingsSchema = z.object({
   shippingInfo: z.string().catch(''),
   shippingMethods: z.array(shippingMethodSchema).catch([]),
   requireShippingData: z.enum(['optional', 'required', 'none']).catch('optional'),
+  storeLoginChannels: z.array(notificationChannelSchema).min(1).catch(['WHATSAPP']),
   whatsapp: z.string().catch(''),
   instagramUrl: z.string().catch(''),
   facebookUrl: z.string().catch(''),

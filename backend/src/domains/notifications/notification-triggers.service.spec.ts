@@ -33,7 +33,6 @@ const mockSettings = {
     deliveryChannels: ['WHATSAPP'],
     lowStockChannels: ['EMAIL'],
     transferChannels: ['EMAIL'],
-    storeLoginChannels: ['WHATSAPP'],
   }),
   getGeneralSettings: jest.fn<any>().mockResolvedValue({ companyName: 'Vestix', email: 'admin@test.com', phone: '5491122334455' }),
 };
