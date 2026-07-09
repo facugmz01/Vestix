@@ -68,9 +68,6 @@ export const posApi = {
       `/pos/qr-order/${orderId}/status`,
     ),
 
-  confirmQrOrder: (orderId: string) =>
-    post<{ orderId: string; status: string }>(`/pos/qr-order/${orderId}/confirm`),
-
   getShiftOrders: (shiftId: string) =>
     get<PosShiftOrder[]>(`/pos/shift/${shiftId}/orders`),
 };

@@ -1,4 +1,4 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { createHmac } from 'crypto';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
@@ -55,9 +55,8 @@ export interface CreatePosQrOrderDto {
 
 export interface PosQrOrderResult {
   orderId: string;
-  mpOrderId?: string;
+  mpOrderId: string;
   qrData: string;
-  isMock: boolean;
 }
 
 export interface MercadoPagoWebhookUrls {
@@ -111,6 +110,33 @@ export class MercadoPagoService {
     return intSettings.mercadopagoEnabled ?? false;
   }
 
+  /**
+   * Ensures Mercado Pago is enabled and has credentials (TEST- or production).
+   * Throws BadRequestException when not ready — never falls back to mock behavior.
+   */
+  async ensureConfigured(): Promise<string> {
+    const enabled = await this.isIntegrationEnabled();
+    if (!enabled) {
+      throw new BadRequestException(
+        'Mercado Pago no está habilitado. Activá la integración en Admin → Integraciones.',
+      );
+    }
+
+    const accessToken = await this.getAccessToken();
+    if (!accessToken) {
+      throw new BadRequestException(
+        'Mercado Pago no tiene credenciales configuradas. Ingresá Public Key y Access Token (TEST- o APP_USR-) en Admin → Integraciones.',
+      );
+    }
+
+    return accessToken;
+  }
+
+  getCredentialMode(accessToken?: string): 'test' | 'production' {
+    const token = accessToken ?? '';
+    return MercadoPagoService.isTestCredentials(token) ? 'test' : 'production';
+  }
+
   async verifyWebhookSignature(
     headers: Record<string, string | string[] | undefined>,
     resourceId: string | number,
@@ -157,12 +183,8 @@ export class MercadoPagoService {
   }
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
-    const accessToken = await this.getAccessToken();
-    if (!accessToken) {
-      return { success: false, message: 'No hay Access Token configurado' };
-    }
-
     try {
+      const accessToken = await this.ensureConfigured();
       const response = await fetch('https://api.mercadopago.com/users/me', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -183,6 +205,9 @@ export class MercadoPagoService {
         message: `Conexión exitosa (${mode}) — cuenta: ${nickname}`,
       };
     } catch (err: unknown) {
+      if (err instanceof BadRequestException) {
+        return { success: false, message: err.message };
+      }
       const message = err instanceof Error ? err.message : 'Error desconocido';
       return { success: false, message: `Fallo de conexión: ${message}` };
     }
@@ -190,7 +215,10 @@ export class MercadoPagoService {
 
   async fetchPayment(paymentId: string | number): Promise<MercadoPagoPayment | null> {
     const accessToken = await this.getAccessToken();
-    if (!accessToken) return null;
+    if (!accessToken) {
+      this.logger.error('[MercadoPago] Cannot fetch payment: no access token configured');
+      return null;
+    }
 
     const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -206,7 +234,10 @@ export class MercadoPagoService {
 
   async fetchOrder(orderId: string): Promise<Record<string, unknown> | null> {
     const accessToken = await this.getAccessToken();
-    if (!accessToken) return null;
+    if (!accessToken) {
+      this.logger.error('[MercadoPago] Cannot fetch order: no access token configured');
+      return null;
+    }
 
     const response = await fetch(`https://api.mercadopago.com/v1/orders/${orderId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -224,24 +255,9 @@ export class MercadoPagoService {
    * Creates a payment preference on Mercado Pago (Checkout Pro).
    */
   async createPreference(dto: CreatePreferenceDto): Promise<{ initPoint: string; preferenceId: string }> {
-    const accessToken = await this.getAccessToken();
-    const isMock = !accessToken;
+    const accessToken = await this.ensureConfigured();
     const storeUrl = (dto.backUrls?.success || process.env.MP_STORE_URL || 'http://localhost:3000/store')
       .replace(/\/checkout\/success.*$/, '');
-
-    if (isMock) {
-      this.logger.log(
-        `[MercadoPago Mock] Preference requested:\n` +
-        `  Reference: ${dto.externalReference}\n` +
-        `  Items: ${dto.items.map(i => `${i.title} x${i.quantity}`).join(', ')}\n` +
-        `  Total: $${dto.items.reduce((s, i) => s + i.unit_price * i.quantity, 0) + (dto.shippingCost || 0)}`,
-      );
-
-      return {
-        preferenceId: `MOCK-${dto.externalReference}`,
-        initPoint: `${storeUrl}/checkout/success?orderId=${dto.externalReference}&mock=true`,
-      };
-    }
 
     const webhookUrls = this.getWebhookUrls();
     const payload: Record<string, unknown> = {
@@ -311,22 +327,11 @@ export class MercadoPagoService {
 
   /**
    * Creates a dynamic QR order for POS using the unified Orders API.
-   * Falls back to mock QR data when credentials are missing.
    */
   async createPosQrOrder(dto: CreatePosQrOrderDto): Promise<PosQrOrderResult> {
-    const accessToken = await this.getAccessToken();
+    const accessToken = await this.ensureConfigured();
     const mode = dto.mode || (dto.externalPosId ? 'hybrid' : 'dynamic');
     const amountStr = dto.amount.toFixed(2);
-
-    if (!accessToken) {
-      const mockQrData = `00020101021243650016COM.MERCADOPAGO...${dto.externalReference}-AMT${dto.amount}`;
-      this.logger.log(`[MercadoPago Mock] POS QR order: ${dto.externalReference} — $${amountStr}`);
-      return {
-        orderId: dto.externalReference,
-        qrData: mockQrData,
-        isMock: true,
-      };
-    }
 
     const payload: Record<string, unknown> = {
       type: 'qr',
@@ -378,7 +383,7 @@ export class MercadoPagoService {
       }
 
       this.logger.log(`[MercadoPago] ✓ POS QR order created: ${orderId}`);
-      return { orderId: dto.externalReference, mpOrderId: orderId, qrData, isMock: false };
+      return { orderId: dto.externalReference, mpOrderId: orderId, qrData };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`[MercadoPago] Failed to create POS QR order: ${message}`);

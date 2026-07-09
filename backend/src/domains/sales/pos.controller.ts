@@ -93,12 +93,6 @@ export class PosController {
     return this.posService.getQrOrderStatus(orderId);
   }
 
-  @Post('qr-order/:orderId/confirm')
-  @RequirePermissions({ action: 'update', subject: 'Sales' })
-  async confirmQrOrder(@Param('orderId') orderId: string) {
-    return this.posService.confirmQrOrder(orderId);
-  }
-
   @Sse('qr-order/:orderId/events')
   @RequirePermissions({ action: 'read', subject: 'Sales' })
   qrOrderEvents(@Param('orderId') orderId: string) {

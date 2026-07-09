@@ -18,7 +18,6 @@ export class PosService {
   private readonly logger = new Logger(PosService.name);
   private readonly qrStatusEvents = new Subject<{ orderId: string; status: PosQrPaymentStatus }>();
   private static readonly QR_TTL_MS = 15 * 60 * 1000;
-  private static readonly QR_MOCK_AUTO_APPROVE_MS = 25_000;
 
   constructor(
     private readonly checkoutOrchestrator: CheckoutOrchestrator,
@@ -281,7 +280,7 @@ export class PosService {
     const orderId = `POS-QR-${Date.now()}`;
 
     const intSettings = await this.settingsService.getIntegrationSettings();
-    const { orderId: localOrderId, mpOrderId, qrData, isMock } = await this.mercadoPagoService.createPosQrOrder({
+    const { orderId: localOrderId, mpOrderId, qrData } = await this.mercadoPagoService.createPosQrOrder({
       externalReference: orderId,
       amount,
       title,
@@ -296,11 +295,10 @@ export class PosService {
       qrData,
       status: 'PENDING',
       createdAt: Date.now(),
-      isMock,
       mpOrderId,
     });
 
-    return { orderId: localOrderId, qrData, isMock };
+    return { orderId: localOrderId, qrData };
   }
 
   subscribeQrOrderStatus(orderId: string): Observable<{ data: { orderId: string; status: PosQrPaymentStatus } }> {
@@ -394,10 +392,7 @@ export class PosService {
       if (elapsed > PosService.QR_TTL_MS) {
         await this.setQrOrderStatus(orderId, 'EXPIRED');
         order.status = 'EXPIRED';
-      } else if (order.isMock !== false && elapsed > PosService.QR_MOCK_AUTO_APPROVE_MS) {
-        await this.setQrOrderStatus(orderId, 'APPROVED');
-        order.status = 'APPROVED';
-      } else if (order.isMock === false && order.mpOrderId) {
+      } else if (order.mpOrderId) {
         const mpOrder = await this.mercadoPagoService.fetchOrder(order.mpOrderId);
         const mpStatus = mpOrder?.status as string | undefined;
         if (mpStatus === 'paid' || mpStatus === 'processed') {
@@ -416,18 +411,6 @@ export class PosService {
       amount: order.amount,
       title: order.title,
     };
-  }
-
-  async confirmQrOrder(orderId: string) {
-    const order = await this.qrStore.get(orderId);
-    if (!order) {
-      throw new NotFoundException('Orden QR no encontrada o expirada.');
-    }
-    if (order.status === 'EXPIRED') {
-      throw new BadRequestException('La orden QR expiró.');
-    }
-    await this.setQrOrderStatus(orderId, 'APPROVED');
-    return { orderId, status: 'APPROVED' as const };
   }
 
   async getShiftOrders(shiftId: string) {

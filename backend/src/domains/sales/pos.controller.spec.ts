@@ -8,7 +8,6 @@ import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 const mockPosService: any = {
   createQrOrder: jest.fn(),
   getQrOrderStatus: jest.fn(),
-  confirmQrOrder: jest.fn(),
 };
 
 describe('PosController', () => {
@@ -44,11 +43,5 @@ describe('PosController', () => {
     mockPosService.getQrOrderStatus.mockReturnValue({ orderId: 'POS-QR-1', status: 'PENDING', amount: 1000 });
     const result = await controller.getQrOrderStatus('POS-QR-1');
     expect(result.status).toBe('PENDING');
-  });
-
-  it('confirms QR order via service', async () => {
-    mockPosService.confirmQrOrder.mockReturnValue({ orderId: 'POS-QR-1', status: 'APPROVED' });
-    const result = await controller.confirmQrOrder('POS-QR-1');
-    expect(result.status).toBe('APPROVED');
   });
 });

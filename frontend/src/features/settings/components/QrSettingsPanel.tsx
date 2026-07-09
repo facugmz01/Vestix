@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, QrCode, Info } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 import { Input, Button } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
@@ -14,7 +13,7 @@ export function QrSettingsPanel() {
   const { data: settings, isLoading } = useGetSettings();
   const mutation = useUpdateSettingsSection('qr');
 
-  const { register, watch, handleSubmit, reset, setValue, formState: { isDirty } } = useForm<QrSettingsFormData>({
+  const { register, handleSubmit, reset, formState: { isDirty } } = useForm<QrSettingsFormData>({
     resolver: zodResolver(qrSettingsSchema),
   });
 
@@ -26,65 +25,43 @@ export function QrSettingsPanel() {
     mutation.mutate(data, { onSuccess: () => reset(data) });
   };
 
-  const isConfigured = watch('qrGenerated');
-
-  const handleGenerateQr = () => {
-    toast.success('QR generado exitosamente');
-    setValue('qrGenerated', true, { shouldDirty: true });
-  };
-
   if (isLoading) return null;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={styles.panelContainer} noValidate>
-      
       <section className={styles.card}>
         <header className={styles.cardHeader}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <h3 className={styles.cardTitle}><QrCode size={18} /> QR de cobro con MercadoPago</h3>
-            <span style={{ 
-              background: isConfigured ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-elevated)', 
-              color: isConfigured ? '#10b981' : 'var(--text-muted)', 
-              padding: '4px 8px', 
-              borderRadius: '4px', 
-              fontSize: '11px', 
-              fontWeight: 600,
-              border: `1px solid ${isConfigured ? 'rgba(16, 185, 129, 0.2)' : 'var(--border)'}`
-            }}>
-              {isConfigured ? 'Configurado' : 'No configurado'}
-            </span>
-          </div>
+          <h3 className={styles.cardTitle}><QrCode size={18} /> QR de cobro con MercadoPago</h3>
           <p className={styles.cardDescription}>
-            Generá un QR permanente vinculado a tu cuenta de MercadoPago para el mostrador.
+            Configuración de referencia para cobros QR en mostrador. Los QR dinámicos del POS se generan contra la API real de Mercado Pago.
           </p>
         </header>
 
         <div className={styles.cardBody}>
           <div style={{ background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', display: 'flex', gap: '8px' }}>
             <Info size={16} color="#06b6d4" style={{ flexShrink: 0 }} />
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-primary)' }}>
-              <strong>Requisito:</strong> necesitás tener configurado MercadoPago en la pestaña <strong style={{ color: 'var(--accent)' }}>Integraciones</strong>.
-            </p>
+            <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+              <p style={{ margin: '0 0 8px' }}>
+                <strong>Requisitos:</strong> credenciales en <strong style={{ color: 'var(--accent)' }}>Integraciones → Mercado Pago</strong> (Access Token TEST- o APP_USR-).
+              </p>
+              <p style={{ margin: 0 }}>
+                Para QR híbrido con caja fija, configurá también el <strong>External POS ID</strong> en Integraciones. El QR dinámico del POS se crea al cobrar, sin simulaciones.
+              </p>
+            </div>
           </div>
 
           <div style={{ marginBottom: '24px', maxWidth: '400px' }}>
             <Input label="Nombre del comercio en MercadoPago" placeholder="Ej: Facundo Gomez" {...register('mpStoreName')} />
             <p style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>Este nombre aparece en la app de MP cuando el cliente escanea.</p>
           </div>
-
-          <Button type="button" variant="primary" icon={<QrCode size={16} />} style={{ background: '#3b82f6', width: 'fit-content' }} onClick={handleGenerateQr}>
-            Generar QR de cobro
-          </Button>
         </div>
-
       </section>
 
-      {/* Sticky Save Bar */}
       <div className={clsx(styles.stickySaveBar, { [styles.visible]: isDirty })}>
         <p className={styles.unsavedText}>Tienes cambios sin guardar</p>
-        <Button 
-          type="submit" 
-          variant="primary" 
+        <Button
+          type="submit"
+          variant="primary"
           loading={mutation.isPending}
           disabled={!isDirty || mutation.isPending}
           icon={<Save size={16} />}
@@ -93,7 +70,6 @@ export function QrSettingsPanel() {
           {mutation.isPending ? 'Guardando...' : 'Guardar Opciones'}
         </Button>
       </div>
-
     </form>
   );
 }
