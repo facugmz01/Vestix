@@ -42,10 +42,11 @@ export function QrSettingsPanel() {
             <Info size={16} color="#06b6d4" style={{ flexShrink: 0 }} />
             <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
               <p style={{ margin: '0 0 8px' }}>
-                <strong>Requisitos:</strong> credenciales en <strong style={{ color: 'var(--accent)' }}>Integraciones → Mercado Pago</strong> (Access Token TEST- o APP_USR-).
+                <strong>Requisitos:</strong> activá Mercado Pago y cargá credenciales en{' '}
+                <strong style={{ color: 'var(--accent)' }}>Configuración → Integraciones (Apps)</strong>.
               </p>
               <p style={{ margin: 0 }}>
-                Para QR híbrido con caja fija, configurá también el <strong>External POS ID</strong> en Integraciones. El QR dinámico del POS se crea al cobrar, sin simulaciones.
+                Para QR híbrido con caja fija, configurá también el <strong>External POS ID</strong> en esa misma sección.
               </p>
             </div>
           </div>
