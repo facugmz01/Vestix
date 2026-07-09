@@ -16,6 +16,7 @@ import { ReturnFormDrawer } from '@/features/sales/returns/components/ReturnForm
 import { ReturnDetailDrawer } from '@/features/sales/returns/components/ReturnDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId, formatShortId } from '@/utils/formatId';
 
 export default function ReturnsPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
@@ -111,12 +112,12 @@ export default function ReturnsPage() {
               { 
                 key: 'id', 
                 header: 'RMA ID',
-                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{r.id.split('-')[0]}</span>
+                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(r.id)}</span>
               },
               { 
                 key: 'ticket', 
                 header: 'Venta Original',
-                render: (r) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{r.saleOrderId.split('-')[0]}</span>
+                render: (r) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{formatSaleId(r.saleOrderId)}</span>
               },
               { 
                 key: 'date', 

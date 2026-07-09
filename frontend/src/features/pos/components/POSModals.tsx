@@ -6,6 +6,7 @@ import { usePosStore } from '../store/usePosStore';
 import { useAuthStore } from '@/store/auth.store';
 import { customersApi } from '@/api/customers.api';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId } from '@/utils/formatId';
 import { PAYMENT_METHOD_LABELS } from '../constants/posPaymentMethods';
 import { Button, Input, Modal } from '@/components/ui';
 
@@ -251,6 +252,9 @@ export function POSModals({
             {suspendedSales.map(sale => (
               <div key={sale.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
+                  <div style={{ fontWeight: 600, marginBottom: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
+                    {formatSaleId(sale.id)}
+                  </div>
                   <div style={{ fontWeight: 600, marginBottom: '4px' }}>{sale.customerId ? 'Cliente registrado' : 'Consumidor Final'}</div>
                   <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{new Date(sale.date).toLocaleString()}</div>
                 </div>

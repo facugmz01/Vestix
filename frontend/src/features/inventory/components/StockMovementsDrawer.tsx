@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { inventoryApi, type EnrichedStockLevel } from '@/api/inventory.api';
 import { History, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { formatMovementQty, getMovementLabel } from '../utils/movementLabels';
+import { formatMovementReferenceId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -75,7 +76,7 @@ export function StockMovementsDrawer({ open, onClose, stockNode }: Props) {
                       );
                     }
                   },
-                  { key: 'ref', header: 'Documento Ref.', render: (m) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{m.referenceId}</span> },
+                  { key: 'ref', header: 'Documento Ref.', render: (m) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{formatMovementReferenceId(m.referenceId, m.type)}</span> },
                 ]}
               />
             )}

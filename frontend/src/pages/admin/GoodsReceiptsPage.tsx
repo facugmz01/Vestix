@@ -15,6 +15,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { GoodsReceiptFormDrawer } from '@/features/purchasing/receipts/components/GoodsReceiptFormDrawer';
 import { GoodsReceiptDetailDrawer } from '@/features/purchasing/receipts/components/GoodsReceiptDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
+import { formatEntityId, formatShortId } from '@/utils/formatId';
 
 export default function GoodsReceiptsPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
@@ -89,12 +90,12 @@ export default function GoodsReceiptsPage() {
               { 
                 key: 'id', 
                 header: 'Remito ID',
-                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{r.id.split('-')[0]}</span>
+                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(r.id)}</span>
               },
               { 
                 key: 'oc', 
                 header: 'Orden Compra',
-                render: (r) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{r.purchaseOrderId.split('-')[0]}</span>
+                render: (r) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{formatEntityId(r.purchaseOrderId, 'OC-')}</span>
               },
               { 
                 key: 'date', 

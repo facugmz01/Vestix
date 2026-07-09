@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { formatEntityId, formatSaleId } from '../../common/utils/format-id.util';
 
 export interface CurrentAccountView {
   id: string;
@@ -91,7 +92,7 @@ export class CurrentAccountsService {
         data: orders.map(o => ({
           id: o.id,
           type: 'DEBIT',
-          concept: `Venta ${o.id.split('-')[0].toUpperCase()}`,
+          concept: formatSaleId(o.id, o.status),
           amount: o.grandTotal,
           createdAt: o.createdAt.toISOString(),
           balanceAfter: 0,
@@ -114,7 +115,7 @@ export class CurrentAccountsService {
       data: pos.map(po => ({
         id: po.id,
         type: 'CREDIT',
-        concept: `OC ${po.id.split('-')[0].toUpperCase()}`,
+        concept: formatEntityId(po.id, 'OC-'),
         amount: po.totalAmount,
         createdAt: po.createdAt.toISOString(),
         balanceAfter: 0,

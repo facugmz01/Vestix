@@ -12,6 +12,7 @@ import { auditApi } from '@/api/audit.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { AuditLog } from '@/types';
 import { AuditLogDetailDrawer } from '@/features/audit/components/AuditLogDetailDrawer';
+import { formatShortId } from '@/utils/formatId';
 
 const ACTION_META: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   CREATE:  { label: 'Creación',    color: 'green',  icon: <Plus size={12} /> },
@@ -146,7 +147,7 @@ export default function AuditPage() {
                 render: (l: AuditLog) => (
                   <div>
                     <span style={{ fontWeight: 600, fontSize: '13px' }}>{l.entityType}</span>
-                    {l.entityId && <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', marginLeft: '6px' }}>·{l.entityId.split('-')[0]}</span>}
+                    {l.entityId && <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', marginLeft: '6px' }}>·{formatShortId(l.entityId)}</span>}
                   </div>
                 )
               },

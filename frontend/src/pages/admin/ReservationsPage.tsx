@@ -15,6 +15,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { ReservationFormDrawer } from '@/features/inventory/reservations/components/ReservationFormDrawer';
 import { ReservationDetailDrawer } from '@/features/inventory/reservations/components/ReservationDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
+import { formatShortId } from '@/utils/formatId';
 
 const RESERVATION_STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Activa',
@@ -99,7 +100,7 @@ export default function ReservationsPage() {
               { 
                 key: 'id', 
                 header: 'Reserva ID',
-                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{r.id.split('-')[0]}</span>
+                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(r.id)}</span>
               },
               { 
                 key: 'customer', 

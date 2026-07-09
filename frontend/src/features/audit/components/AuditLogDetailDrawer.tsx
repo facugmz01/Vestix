@@ -4,6 +4,7 @@ import {
   Plus, Edit2, Trash2, LogIn, LogOut, Eye, CheckCircle,
   XCircle, FileText, Ban, Clock, User, Monitor
 } from 'lucide-react';
+import { formatShortId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -83,7 +84,7 @@ export function AuditLogDetailDrawer({ open, onClose, log }: Props) {
               </div>
               {log.entityType && (
                 <p style={{ margin: '2px 0 0', fontSize: '12px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                  {log.entityType}{log.entityId ? ` · ${log.entityId.split('-')[0]}` : ''}
+                  {log.entityType}{log.entityId ? ` · ${formatShortId(log.entityId)}` : ''}
                 </p>
               )}
             </div>

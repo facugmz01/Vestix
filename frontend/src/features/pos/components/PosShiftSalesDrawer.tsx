@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Drawer } from '@/components/ui';
 import { posApi } from '@/api/pos.api';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId } from '@/utils/formatId';
 import { PAYMENT_METHOD_LABELS } from '../constants/posPaymentMethods';
 
 export function PosShiftSalesDrawer({
@@ -42,11 +43,16 @@ export function PosShiftSalesDrawer({
                 padding: '12px 14px', background: 'rgba(255,255,255,0.03)',
                 borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 700, color: '#34d399' }}>{formatCurrency(o.grandTotal)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    {formatSaleId(o.id, o.status)}
+                  </span>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                     {new Date(o.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, color: '#34d399' }}>{formatCurrency(o.grandTotal)}</span>
                 </div>
                 <div style={{ fontSize: '13px', marginTop: '4px' }}>{o.customerName}</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>

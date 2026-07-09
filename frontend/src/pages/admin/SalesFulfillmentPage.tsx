@@ -11,6 +11,7 @@ import {
 import { shippingApi, type FulfillmentListItem, type DispatchResult } from '@/api/shipping.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useListPage } from '@/hooks/useListPage';
+import { formatSaleId } from '@/utils/formatId';
 
 const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
   PENDING_PAYMENT: 'Pago pendiente',
@@ -171,7 +172,7 @@ export default function SalesFulfillmentPage() {
                 header: 'ID / Fecha',
                 render: (f: FulfillmentListItem) => (
                   <div>
-                    <div style={{ fontWeight: 600 }}>{f.saleOrderId.split('-')[0]}</div>
+                    <div style={{ fontWeight: 600 }}>{formatSaleId(f.saleOrderId)}</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       {new Date(f.saleOrder.createdAt).toLocaleString()}
                     </div>
@@ -257,7 +258,7 @@ export default function SalesFulfillmentPage() {
       {dispatchModal && (
         <Modal
           open
-          title={`Despachar pedido ${dispatchModal.saleOrderId.split('-')[0]}`}
+          title={`Despachar pedido ${formatSaleId(dispatchModal.saleOrderId)}`}
           onClose={() => { setDispatchModal(null); resetDispatchForm(); }}
           footer={
             <>

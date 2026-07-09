@@ -15,6 +15,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { TransferFormDrawer } from '@/features/inventory/transfers/components/TransferFormDrawer';
 import { TransferDetailDrawer } from '@/features/inventory/transfers/components/TransferDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
+import { formatEntityId, formatShortId } from '@/utils/formatId';
 
 export default function TransfersPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
@@ -106,7 +107,7 @@ export default function TransfersPage() {
               { 
                 key: 'id', 
                 header: 'Remito ID',
-                render: (t) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{t.id.split('-')[0]}</span>
+                render: (t) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatEntityId(t.id, 'TRF-')}</span>
               },
               { 
                 key: 'date', 

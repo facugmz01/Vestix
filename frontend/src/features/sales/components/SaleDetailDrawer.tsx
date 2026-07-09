@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, FileText, ShoppingCart, CreditCard } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId } from '@/utils/formatId';
 import {
   contactMissingMessage,
   resolveManualNotificationRecipient,
@@ -163,7 +164,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
               {isQuotation ? 'Presupuesto Nro' : 'Venta Nro'}
             </p>
             <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace', color: 'var(--blue)' }}>
-              {isQuotation ? 'P-' : 'V-'}{sale.id.split('-')[0].toUpperCase()}
+              {formatSaleId(sale.id, sale.status)}
             </h3>
             <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
               Cliente: <strong style={{ color: 'var(--text-primary)' }}>{sale.customerName || 'Consumidor Final'}</strong>

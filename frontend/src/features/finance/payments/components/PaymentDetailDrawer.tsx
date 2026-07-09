@@ -5,6 +5,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { PaymentStatusBadge } from './PaymentStatusBadge';
 import { CreditCard, Banknote, Landmark, Gift, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatPaymentReferenceId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -49,7 +50,7 @@ export function PaymentDetailDrawer({ open, onClose, paymentId }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>Ticket Referencia</p>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: 'monospace' }}>{payment.referenceId}</h3>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: 'monospace' }}>{formatPaymentReferenceId(payment.referenceId)}</h3>
             {payment.customerName && <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{payment.customerName}</p>}
           </div>
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>

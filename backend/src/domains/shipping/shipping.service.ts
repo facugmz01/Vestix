@@ -13,6 +13,7 @@ import { SettingsService, DeliverySettings } from '../../modules/settings/settin
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { DeliveryValidationService } from './delivery-validation.service';
 import { GeocodingService } from './geocoding.service';
+import { formatSaleId } from '../../common/utils/format-id.util';
 import { DispatchDeliveryDto } from './dto/dispatch-delivery.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { CompleteDeliveryDto } from './dto/complete-delivery.dto';
@@ -265,7 +266,7 @@ export class ShippingService {
     const fulfillment = delivery.fulfillment;
 
     return {
-      orderRef: order.id.split('-')[0],
+      orderRef: formatSaleId(order.id, order.status),
       status: fulfillment.status,
       trackingNumber: fulfillment.trackingNumber,
       courierName: fulfillment.courierName,
@@ -309,7 +310,7 @@ export class ShippingService {
     return {
       deliveryId: delivery.id,
       orderId: order.id,
-      orderRef: order.id.split('-')[0],
+      orderRef: formatSaleId(order.id, order.status),
       status: delivery.status,
       fulfillmentStatus: delivery.fulfillment.status,
       driverName: delivery.driverName,
@@ -375,7 +376,7 @@ export class ShippingService {
     const carrierType = dto.carrierType || 'PROPIO';
     const shipment = await this.courierService.createShipment(carrierType, {
       orderId: saleOrderId,
-      orderRef: saleOrderId.split('-')[0],
+      orderRef: formatSaleId(saleOrderId),
       recipientName: order?.shippingAddress?.fullName || order?.customer?.fullName || 'Cliente',
       recipientPhone: order?.shippingAddress?.phone || order?.customer?.phone || undefined,
       address: order?.shippingAddress?.address || '',
@@ -442,14 +443,14 @@ export class ShippingService {
       await this.notificationTriggers.onOrderShipped(saleOrderId, {
         customerName: order.customer.fullName,
         customerPhone: order.customer.phone,
-        orderRef: saleOrderId.split('-')[0],
+        orderRef: formatSaleId(saleOrderId),
         courierName,
         trackingNumber,
         trackingUrl: links.trackingUrl,
       });
       await this.notificationTriggers.onDeliveryOtp(saleOrderId, {
         customerPhone: order.customer.phone,
-        orderRef: saleOrderId.split('-')[0],
+        orderRef: formatSaleId(saleOrderId),
         otpCode: otp,
       });
     }
@@ -776,7 +777,7 @@ export class ShippingService {
 
   private sanitizePublicEvent(evt: TrackingEventPayload): TrackingEventPayload {
     return {
-      orderId: evt.orderId.split('-')[0],
+      orderId: formatSaleId(evt.orderId),
       status: evt.status,
       deliveryStatus: evt.deliveryStatus,
       lastLatitude: evt.lastLatitude,

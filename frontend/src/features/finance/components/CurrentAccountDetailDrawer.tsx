@@ -11,6 +11,7 @@ import {
   contactMissingMessage,
   resolveManualNotificationRecipient,
 } from '@/utils/notificationRecipient';
+import { formatPaymentReferenceId, formatShortId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -101,7 +102,7 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
           <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
             <Badge color={isCustomer ? 'blue' : 'purple'}>{isCustomer ? 'CLIENTE' : 'PROVEEDOR'}</Badge>
             <h3 style={{ margin: '8px 0 4px', fontSize: '20px', fontWeight: 800 }}>{account.entityName}</h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>ID Entidad: <span style={{ fontFamily: 'monospace' }}>{account.entityId.split('-')[0]}</span></p>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>ID Entidad: <span style={{ fontFamily: 'monospace' }}>{formatShortId(account.entityId)}</span></p>
             
             {account.overdueAmount > 0 && (
               <div style={{ marginTop: '12px', padding: '8px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600 }}>
@@ -193,7 +194,7 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{icon} {m.documentType}</span>
                             </Badge>
                           </div>
-                          <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{m.referenceId}</span>
+                          <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{formatPaymentReferenceId(m.referenceId)}</span>
                         </div>
                       );
                     }

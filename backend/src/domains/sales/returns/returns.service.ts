@@ -3,6 +3,7 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateReturnDto, ReturnAction } from './dto/create-return.dto';
 import { InventoryService } from '../../logistics/inventory.service';
 import { AfipProducer } from '../../invoicing/afip.producer';
+import { formatSaleId } from '../../../common/utils/format-id.util';
 
 @Injectable()
 export class ReturnsService {
@@ -166,7 +167,7 @@ export class ReturnsService {
             amount: -totalRefund, // Negative for outflow
             payerName: sale.customer?.fullName || 'Consumidor Final',
             referenceId: saleReturn.id,
-            description: `Refund for Sale ${sale.id.split('-')[0]}`
+            description: `Refund for Sale ${formatSaleId(sale.id, sale.status)}`
           }
         });
       }

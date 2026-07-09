@@ -4,6 +4,7 @@ import { inventoryApi } from '@/api/inventory.api';
 import { queryKeys } from '@/api/queryKeys';
 import { ArrowUpRight, ArrowDownRight, History, Package, Link2, Clock, MapPin } from 'lucide-react';
 import { formatMovementQty, getMovementLabel } from '../utils/movementLabels';
+import { formatMovementReferenceId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -89,7 +90,7 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', marginBottom: '12px' }}>
                   <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Documento Ref:</span>
-                  <span style={{ fontSize: '14px', fontFamily: 'monospace', fontWeight: 600 }}>{movement.referenceId}</span>
+                  <span style={{ fontSize: '14px', fontFamily: 'monospace', fontWeight: 600 }}>{formatMovementReferenceId(movement.referenceId, movement.type)}</span>
                 </div>
 
                 <div className="grid-responsive grid-cols-120-1" style={{ gap: "12px" }}>
