@@ -83,8 +83,9 @@ describe('NotificationTriggersService', () => {
         recipient: '5491122334455',
         variables: expect.objectContaining({
           customerName: 'Ana García',
-          saleId: 'ORDER',
+          saleId: expect.any(String),
           total: '15.000,00',
+          receiptUrl: expect.stringMatching(/\/comprobante\/order-uuid-1234\?t=[a-f0-9]{32}$/),
         }),
       }),
     );

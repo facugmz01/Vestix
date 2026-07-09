@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 import { v4 as uuidv4 } from 'uuid';
 
 import { CatalogFacade } from '../catalog/catalog.facade';
 import { SaleOrderRepository } from './repositories/sale-order.repository';
+import { verifyReceiptAccessToken } from './utils/receipt-access.util';
 
 @Injectable()
 export class SalesService {
@@ -52,6 +53,47 @@ export class SalesService {
     }
 
     return order;
+  }
+
+  async getPublicReceipt(orderId: string, token: string) {
+    if (!verifyReceiptAccessToken(orderId, token)) {
+      throw new ForbiddenException('Enlace de comprobante inválido o expirado');
+    }
+
+    const order = await this.getOrderById(orderId);
+    if (!order) throw new NotFoundException('Venta no encontrada');
+
+    const branch = await this.prisma.branch.findUnique({
+      where: { id: order.branchId },
+      select: { settings: true },
+    });
+    const branchSettings = (branch?.settings as Record<string, string> | null) || {};
+
+    return {
+      id: order.id,
+      status: order.status,
+      source: order.source,
+      customerName: (order as any).customerName || order.customer?.fullName || 'Consumidor Final',
+      subtotal: order.subtotal,
+      cartDiscountTotal: order.cartDiscountTotal,
+      grandTotal: order.grandTotal,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      lines: (order as any).lines.map((line: any) => ({
+        id: line.id,
+        productName: line.productName || line.historicalName || line.variant?.product?.name || 'Producto',
+        variantSku: line.variantSku || line.historicalSku || line.variant?.sku || null,
+        quantity: line.quantity,
+        basePrice: line.basePrice,
+        discountAmount: line.discountAmount,
+        finalPrice: line.finalPrice,
+        size: line.variant?.size || null,
+      })),
+      branchSettings: {
+        posReceiptHeader: branchSettings.posReceiptHeader || null,
+        posReceiptFooter: branchSettings.posReceiptFooter || null,
+      },
+    };
   }
 
   async listRecentOrders(branchId: string) {

@@ -19,12 +19,41 @@ export interface CheckoutResponse {
   order: SaleOrder;
 }
 
+export interface PublicSaleReceipt {
+  id: string;
+  status: string;
+  source: string;
+  customerName: string;
+  subtotal: number;
+  cartDiscountTotal: number;
+  grandTotal: number;
+  paymentMethod: string;
+  createdAt: string;
+  lines: Array<{
+    id: string;
+    productName: string;
+    variantSku?: string | null;
+    quantity: number;
+    basePrice: number;
+    discountAmount: number;
+    finalPrice: number;
+    size?: string | null;
+  }>;
+  branchSettings: {
+    posReceiptHeader?: string | null;
+    posReceiptFooter?: string | null;
+  };
+}
+
 export const salesApi = {
   getSales: (filters?: SalesFilters) =>
     get<PagedResponse<SaleOrder>>('/sales/orders', { params: cleanParams((filters as any) ?? {}) }),
 
   getSale: (id: string) =>
     get<SaleOrder>(`/sales/orders/${id}`),
+
+  getPublicReceipt: (orderId: string, token: string) =>
+    get<PublicSaleReceipt>(`/receipt/${orderId}`, { params: { t: token } }),
 
   createSale: (dto: CreateSaleDto) =>
     post<CheckoutResponse>('/sales/checkout', dto),
