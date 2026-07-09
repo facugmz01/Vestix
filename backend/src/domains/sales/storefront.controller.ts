@@ -22,6 +22,7 @@ import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { StorefrontOptionalAuthGuard } from './storefront-optional-auth.guard';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { ShippingService } from '../shipping/shipping.service';
+import { resolveStorefrontBaseUrl } from './storefront-url.util';
 import * as crypto from 'crypto';
 
 // Fixed shipping rates
@@ -255,7 +256,7 @@ export class StorefrontController {
 
     // If it's a CREDIT_CARD, build MercadoPago preference
     if (selectedPaymentMethod.type === 'CREDIT_CARD' || selectedPaymentMethod.type === 'DEBIT_CARD') {
-      const storeBase = process.env.MP_STORE_URL || 'http://localhost:5173/store';
+      const storeBase = resolveStorefrontBaseUrl(req);
 
       const { initPoint, preferenceId } = await this.mercadoPagoService.createPreference({
         externalReference: orderId,

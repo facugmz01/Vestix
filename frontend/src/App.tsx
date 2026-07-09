@@ -71,6 +71,9 @@ const OnlineCatalogPage = lazy(() => import('@/pages/storefront/OnlineCatalogPag
 const OnlineProductDetailPage = lazy(() => import('@/pages/storefront/OnlineProductDetailPage'));
 const StorefrontCartPage = lazy(() => import('@/pages/storefront/StorefrontCartPage'));
 const StorefrontCheckoutPage = lazy(() => import('@/pages/storefront/StorefrontCheckoutPage'));
+const StorefrontCheckoutSuccessPage = lazy(() => import('@/pages/storefront/StorefrontCheckoutSuccessPage'));
+const StorefrontCheckoutFailurePage = lazy(() => import('@/pages/storefront/StorefrontCheckoutFailurePage'));
+const StorefrontCheckoutPendingPage = lazy(() => import('@/pages/storefront/StorefrontCheckoutPendingPage'));
 const StorefrontMyOrdersPage = lazy(() => import('@/pages/storefront/StorefrontMyOrdersPage'));
 const StorefrontLoginPage = lazy(() => import('@/pages/storefront/StorefrontLoginPage'));
 const StorefrontProfilePage = lazy(() => import('@/pages/storefront/StorefrontProfilePage'));
@@ -139,6 +142,9 @@ export default function App() {
             <Route path="/store/product/:id" element={<OnlineProductDetailPage />} />
             <Route path="/store/cart" element={<StorefrontCartPage />} />
             <Route path="/store/checkout" element={<StorefrontCheckoutPage />} />
+            <Route path="/store/checkout/success" element={<StorefrontCheckoutSuccessPage />} />
+            <Route path="/store/checkout/failure" element={<StorefrontCheckoutFailurePage />} />
+            <Route path="/store/checkout/pending" element={<StorefrontCheckoutPendingPage />} />
             <Route path="/store/my-orders" element={<StorefrontMyOrdersPage />} />
             <Route path="/store/profile" element={<StorefrontProfilePage />} />
             <Route path="/store/login" element={<StorefrontLoginPage />} />
@@ -149,6 +155,9 @@ export default function App() {
                 <Route path="/product/:id" element={<OnlineProductDetailPage />} />
                 <Route path="/cart" element={<StorefrontCartPage />} />
                 <Route path="/checkout" element={<StorefrontCheckoutPage />} />
+                <Route path="/checkout/success" element={<StorefrontCheckoutSuccessPage />} />
+                <Route path="/checkout/failure" element={<StorefrontCheckoutFailurePage />} />
+                <Route path="/checkout/pending" element={<StorefrontCheckoutPendingPage />} />
                 <Route path="/my-orders" element={<StorefrontMyOrdersPage />} />
                 <Route path="/profile" element={<StorefrontProfilePage />} />
                 <Route path="/login" element={<StorefrontLoginPage />} />
