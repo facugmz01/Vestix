@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, LogIn, ChevronDown, Loader2 } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LogIn, ChevronDown, Loader2, UserCircle } from 'lucide-react';
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCartStore } from '@/store/cart.store';
@@ -233,6 +233,15 @@ export default function StorefrontLayout() {
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       <User size={15} /> Mis pedidos
+                    </Link>
+                    <Link
+                      to={`${prefix}/profile`}
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', textDecoration: 'none', color: '#0f172a', fontSize: '14px', transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <UserCircle size={15} /> Mis datos
                     </Link>
                     <button
                       onClick={handleLogout}

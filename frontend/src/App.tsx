@@ -73,6 +73,7 @@ const StorefrontCartPage = lazy(() => import('@/pages/storefront/StorefrontCartP
 const StorefrontCheckoutPage = lazy(() => import('@/pages/storefront/StorefrontCheckoutPage'));
 const StorefrontMyOrdersPage = lazy(() => import('@/pages/storefront/StorefrontMyOrdersPage'));
 const StorefrontLoginPage = lazy(() => import('@/pages/storefront/StorefrontLoginPage'));
+const StorefrontProfilePage = lazy(() => import('@/pages/storefront/StorefrontProfilePage'));
 const DriverDeliveryPage = lazy(() => import('@/pages/driver/DriverDeliveryPage'));
 const PublicTrackPage = lazy(() => import('@/pages/storefront/PublicTrackPage'));
 
@@ -139,6 +140,7 @@ export default function App() {
             <Route path="/store/cart" element={<StorefrontCartPage />} />
             <Route path="/store/checkout" element={<StorefrontCheckoutPage />} />
             <Route path="/store/my-orders" element={<StorefrontMyOrdersPage />} />
+            <Route path="/store/profile" element={<StorefrontProfilePage />} />
             <Route path="/store/login" element={<StorefrontLoginPage />} />
 
             {isStorefrontDomain() && (
@@ -148,6 +150,7 @@ export default function App() {
                 <Route path="/cart" element={<StorefrontCartPage />} />
                 <Route path="/checkout" element={<StorefrontCheckoutPage />} />
                 <Route path="/my-orders" element={<StorefrontMyOrdersPage />} />
+                <Route path="/profile" element={<StorefrontProfilePage />} />
                 <Route path="/login" element={<StorefrontLoginPage />} />
               </>
             )}

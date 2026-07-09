@@ -1,10 +1,19 @@
-import { get, post } from './client';
+import { get, post, patch } from './client';
 
 export interface StorefrontCustomer {
   id: string;
   fullName: string;
   phone: string | null;
   email?: string | null;
+  taxId?: string | null;
+  profileComplete?: boolean;
+}
+
+export interface UpdateStorefrontProfilePayload {
+  fullName: string;
+  email?: string;
+  phone?: string;
+  taxId?: string;
 }
 
 export interface SendOtpResponse {
@@ -35,6 +44,9 @@ export const storefrontAuthApi = {
 
   me: () =>
     get<StorefrontCustomer>('/storefront/auth/me'),
+
+  updateProfile: (payload: UpdateStorefrontProfilePayload) =>
+    patch<StorefrontCustomer>('/storefront/auth/me', payload),
 
   logout: () =>
     post<{ success: boolean }>('/storefront/auth/logout'),
