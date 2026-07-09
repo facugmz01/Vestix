@@ -12,6 +12,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { CashSessionDetailDrawer } from '@/features/finance/components/CashSessionDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatShortId } from '@/utils/formatId';
 import { useState } from 'react';
 
 export default function CashSessionsPage() {
@@ -71,7 +72,7 @@ export default function CashSessionsPage() {
               { 
                 key: 'id', 
                 header: 'Turno ID',
-                render: (s) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{s.id.split('-')[0]}</span>
+                render: (s) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(s.id)}</span>
               },
               { 
                 key: 'account', 

@@ -8,6 +8,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId } from '@/utils/formatId';
 import { useTrackingSse } from '@/hooks/useTrackingSse';
 import type { OrderTracking } from '@/api/shipping.api';
 
@@ -118,7 +119,7 @@ export default function StorefrontMyOrdersPage() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 800, fontFamily: 'monospace', color: '#0f172a' }}>{o.id.split('-')[0]}</span>
+                    <span style={{ fontWeight: 800, fontFamily: 'monospace', color: '#0f172a' }}>{formatSaleId(o.id, o.status)}</span>
                     <span style={{ fontSize: '13px', color: '#64748b' }}>{new Date(o.createdAt).toLocaleDateString()}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: statusInfo.color, fontWeight: 700, marginBottom: '12px' }}>
@@ -195,7 +196,7 @@ function OrderDetailView({ orderId }: { orderId: string }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
           <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 900 }}>
-            Pedido <span style={{ fontFamily: 'monospace' }}>{tracking.orderId.split('-')[0]}</span>
+            Pedido <span style={{ fontFamily: 'monospace' }}>{formatSaleId(tracking.orderId)}</span>
           </h2>
           {tracking.trackingNumber && (
             <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>

@@ -9,6 +9,7 @@ import {
   getEventChannels,
   resolveRecipient,
 } from './utils/notification-channels.util';
+import { formatEntityId, formatSaleId } from '../../common/utils/format-id.util';
 
 @Injectable()
 export class NotificationTriggersService {
@@ -40,7 +41,7 @@ export class NotificationTriggersService {
       recipient,
       variables: {
         customerName: order.customer?.fullName || 'Cliente',
-        saleId:       this.shortId(order.id),
+        saleId:       formatSaleId(order.id, order.status),
         total:        this.formatMoney(order.grandTotal),
         receiptUrl:   `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/sales/${order.id}`,
       },
@@ -164,7 +165,7 @@ export class NotificationTriggersService {
     const customerName = order.customer?.fullName || 'Cliente';
     const vars = {
       customerName,
-      orderId: this.shortId(order.id),
+      orderId: formatSaleId(order.id, order.status),
       total:   this.formatMoney(order.grandTotal),
     };
 
@@ -250,7 +251,7 @@ export class NotificationTriggersService {
       templateKey: TemplateKey.PURCHASE_ORDER_ISSUED,
       variables: {
         supplierName: po.supplier.companyName,
-        orderId:      this.shortId(po.id),
+        orderId:      formatEntityId(po.id, 'OC-'),
         total:        this.formatMoney(po.totalAmount),
         companyName:  general.companyName || 'Vestix',
       },
@@ -277,7 +278,7 @@ export class NotificationTriggersService {
       contact: managerContact,
       templateKey: TemplateKey.GOODS_RECEIPT_RECEIVED,
       variables: {
-        orderId:    this.shortId(receipt.purchaseOrderId),
+        orderId:    formatEntityId(receipt.purchaseOrderId, 'OC-'),
         branchName,
         date:       new Date().toLocaleDateString('es-AR'),
       },
@@ -429,7 +430,7 @@ export class NotificationTriggersService {
       templateKey: TemplateKey.DELIVERY_ARRIVED,
       variables: {
         customerName: order.customer.fullName,
-        orderId: this.shortId(order.id),
+        orderId: formatSaleId(order.id, order.status),
       },
       referenceId: saleOrderId,
     });
@@ -455,14 +456,14 @@ export class NotificationTriggersService {
       templateKey: TemplateKey.ORDER_DELIVERED,
       variables: {
         customerName: order.customer.fullName,
-        orderId: this.shortId(order.id),
+        orderId: formatSaleId(order.id, order.status),
       },
       referenceId: saleOrderId,
     });
 
     void this.staffInbox.create({
       title: 'Entrega confirmada',
-      body: `Pedido #${this.shortId(order.id)} entregado a ${order.customer.fullName}`,
+      body: `Pedido #${formatSaleId(order.id, order.status)} entregado a ${order.customer.fullName}`,
       event: TemplateKey.ORDER_DELIVERED,
       referenceId: saleOrderId,
     });
@@ -577,10 +578,6 @@ export class NotificationTriggersService {
 
   private formatMoney(amount: number): string {
     return amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  private shortId(id: string): string {
-    return id.split('-')[0].toUpperCase();
   }
 
   private normalizePhone(raw?: string | null): string | null {

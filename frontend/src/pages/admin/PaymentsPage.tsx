@@ -13,6 +13,7 @@ import { PaymentStatusBadge } from '@/features/finance/payments/components/Payme
 import { PaymentDetailDrawer } from '@/features/finance/payments/components/PaymentDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatPaymentReferenceId, formatShortId } from '@/utils/formatId';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   CASH: 'Efectivo',
@@ -83,12 +84,12 @@ export default function PaymentsPage() {
               { 
                 key: 'id', 
                 header: 'Tx ID',
-                render: (p) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{p.id.split('-')[0]}</span>
+                render: (p) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(p.id)}</span>
               },
               { 
                 key: 'ref', 
                 header: 'Ticket Ref',
-                render: (p) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{p.referenceId}</span>
+                render: (p) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{formatPaymentReferenceId(p.referenceId)}</span>
               },
               { 
                 key: 'date', 

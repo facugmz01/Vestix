@@ -8,6 +8,7 @@ import type { SaleOrder, ReturnAction, ItemCondition } from '@/types';
 import toast from 'react-hot-toast';
 import { Search, ShoppingCart, ArrowRightLeft } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId, formatShortId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -34,8 +35,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
       }
 
       if (data.status !== 'CONFIRMED') {
-        const friendlyId = data.status === 'QUOTATION' ? 'P-' : 'V-';
-        toast.error(`El ticket ${friendlyId}${data.id.split('-')[0].toUpperCase()} no es una venta confirmada (Estado: ${data.status}).`);
+        toast.error(`El ticket ${formatSaleId(data.id, data.status)} no es una venta confirmada (Estado: ${data.status}).`);
         return;
       }
       setSaleOrder(data);
@@ -142,7 +142,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
               <div>
                 <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>Ticket Localizado</p>
                 <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: 'monospace', color: 'var(--blue)' }}>
-                  V-{saleOrder.id.split('-')[0].toUpperCase()}
+                  {formatSaleId(saleOrder.id, saleOrder.status)}
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{saleOrder.customerName || 'Consumidor Final'}</p>
               </div>

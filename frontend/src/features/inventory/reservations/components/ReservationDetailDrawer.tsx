@@ -6,6 +6,7 @@ import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Clock, PackageSearch, User } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import { formatShortId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -92,7 +93,7 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>ID Reserva</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{res.id.split('-')[0]}</h3>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatShortId(res.id)}</h3>
             <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <User size={14} /> {res.customerName || 'Consumidor Final (Sin nombre)'}
             </p>
@@ -143,7 +144,7 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
                   <h4 style={{ margin: '0 0 8px', color: 'var(--blue)', fontSize: '14px' }}>¿Se concretó la venta?</h4>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
                     <div style={{ flex: 1 }}>
-                      <Input label="ID del Ticket de Venta (Opcional)" value={saleId} onChange={e => setSaleId(e.target.value)} placeholder="Ej: VENTA-001" />
+                      <Input label="ID del Ticket de Venta (Opcional)" value={saleId} onChange={e => setSaleId(e.target.value)} placeholder="Ej: V-A1B2C3D4" />
                     </div>
                     <Button variant="primary" onClick={() => consumeMutation.mutate()} loading={consumeMutation.isPending} disabled={releaseMutation.isPending}>
                       Consumir Reserva

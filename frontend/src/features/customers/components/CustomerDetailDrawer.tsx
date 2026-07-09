@@ -5,6 +5,7 @@ import { customersApi } from '@/api/customers.api';
 import type { Customer } from '@/types';
 import { ShoppingCart, Star, CreditCard, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId } from '@/utils/formatId';
 
 
 interface Props {
@@ -116,7 +117,7 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
                 data={history}
                 columns={[
                   { key: 'date', header: 'Fecha', render: (h) => new Date(h.createdAt).toLocaleDateString() },
-                  { key: 'id', header: 'Ticket / Factura', render: (h) => <span style={{ fontFamily: 'monospace' }}>#{h.id.slice(-6)}</span> },
+                  { key: 'id', header: 'Ticket / Factura', render: (h) => <span style={{ fontFamily: 'monospace' }}>{formatSaleId(h.id, h.status)}</span> },
                   { key: 'source', header: 'Canal', render: (h) => <Badge color={h.source === 'ECOMMERCE' ? 'green' : 'gray'}>{h.source === 'ECOMMERCE' ? 'Tienda' : h.source}</Badge> },
                   { key: 'total', header: 'Total', render: (h) => <strong>{formatCurrency(h.grandTotal)}</strong> },
                   { key: 'method', header: 'Método', render: (h) => <Badge color="gray">{h.paymentMethod}</Badge> },

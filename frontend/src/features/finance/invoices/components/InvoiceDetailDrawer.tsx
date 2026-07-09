@@ -7,6 +7,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId, formatShortId } from '@/utils/formatId';
 
 interface Props { open: boolean; onClose: () => void; invoiceId: string | null; }
 
@@ -46,7 +47,7 @@ export function InvoiceDetailDrawer({ open, onClose, invoiceId }: Props) {
               <Badge color="blue">{INVOICE_TYPE_LABELS[invoice.type] || invoice.type}</Badge>
             </div>
             <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--text-muted)' }}>Venta Ref.</p>
-            <h3 style={{ margin: 0, fontFamily: 'monospace', fontWeight: 800, fontSize: '18px' }}>{invoice.saleOrderId}</h3>
+            <h3 style={{ margin: 0, fontFamily: 'monospace', fontWeight: 800, fontSize: '18px' }}>{formatSaleId(invoice.saleOrderId)}</h3>
             <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>{new Date(invoice.createdAt).toLocaleString()}</p>
           </div>
           <div style={{ textAlign: 'right' }}>

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { Truck, CheckCircle, Package, XCircle, Send } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatEntityId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -84,7 +85,7 @@ export function PurchaseDetailDrawer({ open, onClose, orderId }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>OC ID</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{order.id.split('-')[0]}</h3>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatEntityId(order.id, 'OC-')}</h3>
             <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{order.supplierName}</p>
           </div>
           <div style={{ textAlign: 'center' }}>

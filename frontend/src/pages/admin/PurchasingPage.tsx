@@ -22,6 +22,7 @@ import { FileSpreadsheet } from 'lucide-react';
 import { useListPage } from '@/hooks/useListPage';
 import { useDeleteMutation } from '@/hooks/useDeleteMutation';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatEntityId } from '@/utils/formatId';
 
 export default function PurchasingPage() {
   const navigate = useNavigate();
@@ -160,7 +161,7 @@ export default function PurchasingPage() {
               { 
                 key: 'id', 
                 header: 'OC ID',
-                render: (o) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{o.id.split('-')[0]}</span>
+                render: (o) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatEntityId(o.id, 'OC-')}</span>
               },
               { 
                 key: 'supplier', 

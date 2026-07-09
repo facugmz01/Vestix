@@ -8,6 +8,7 @@ import { CheckCircle, AlertTriangle, ShieldAlert, Printer } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { BulkPrintLabelsModal } from '@/features/labels/components/BulkPrintLabelsModal';
 import { useAuthStore } from '@/store/auth.store';
+import { formatEntityId, formatShortId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -63,8 +64,8 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>Remito ID / OC Ref</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{receipt.id.split('-')[0]}</h3>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>OC: <span style={{ fontFamily: 'monospace' }}>{receipt.purchaseOrderId.split('-')[0]}</span></p>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatShortId(receipt.id)}</h3>
+            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>OC: <span style={{ fontFamily: 'monospace' }}>{formatEntityId(receipt.purchaseOrderId, 'OC-')}</span></p>
           </div>
           <div style={{ textAlign: 'center' }}>
             <Badge color={getStatusColor(receipt.status)}>{receipt.status}</Badge>

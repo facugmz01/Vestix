@@ -18,6 +18,7 @@ import { FileSpreadsheet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId } from '@/utils/formatId';
 import { useState } from 'react';
 
 export default function SalesPage() {
@@ -165,7 +166,7 @@ export default function SalesPage() {
                 header: 'Doc ID',
                 render: (s) => (
                   <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                    {(s.status === 'QUOTATION' ? 'P-' : 'V-')}{s.id.split('-')[0].toUpperCase()}
+                    {formatSaleId(s.id, s.status)}
                   </span>
                 )
               },

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId, formatShortId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -67,8 +68,8 @@ export function ReturnDetailDrawer({ open, onClose, returnId }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>ID Solicitud / Ticket Ref</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{rma.id.split('-')[0]}</h3>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>Ticket Orig: <span style={{ fontFamily: 'monospace' }}>{rma.saleOrderId.split('-')[0]}</span></p>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatShortId(rma.id)}</h3>
+            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>Ticket Orig: <span style={{ fontFamily: 'monospace' }}>{formatSaleId(rma.saleOrderId)}</span></p>
           </div>
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <Badge color={getStatusColor(rma.status)}>{rma.status}</Badge>

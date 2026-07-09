@@ -12,6 +12,7 @@ import { branchesApi } from '@/api/branches.api';
 import { warehousesApi } from '@/api/warehouses.api';
 import { queryKeys } from '@/api/queryKeys';
 import { formatMovementQty, getMovementLabel } from '@/features/inventory/utils/movementLabels';
+import { formatMovementReferenceId } from '@/utils/formatId';
 
 import { MovementDetailDrawer } from '@/features/inventory/components/MovementDetailDrawer';
 
@@ -161,7 +162,7 @@ export default function StockMovementsPage() {
                 header: 'Doc. Referencia',
                 render: (m) => (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px', fontFamily: 'monospace' }}>{m.referenceId}</span>
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace' }}>{formatMovementReferenceId(m.referenceId, m.type)}</span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{m.referenceType || m.type}</span>
                   </div>
                 )

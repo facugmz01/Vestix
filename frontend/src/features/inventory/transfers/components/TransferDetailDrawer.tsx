@@ -6,6 +6,7 @@ import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { Truck, CheckCircle, Package, ArrowRight, XCircle } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import { formatEntityId } from '@/utils/formatId';
 
 interface Props {
   open: boolean;
@@ -83,7 +84,7 @@ export function TransferDetailDrawer({ open, onClose, transferId }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>Transferencia / Remito ID</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{transfer.id.split('-')[0]}</h3>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatEntityId(transfer.id, 'TRF-')}</h3>
             {transfer.trackingNumber && <p style={{ margin: '4px 0 0', fontSize: '13px' }}>Tracking: <strong>{transfer.trackingNumber}</strong></p>}
           </div>
           <div style={{ textAlign: 'center' }}>

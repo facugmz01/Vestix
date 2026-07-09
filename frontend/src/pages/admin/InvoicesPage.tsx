@@ -16,6 +16,7 @@ import { IssueInvoiceDrawer } from '@/features/finance/invoices/components/Issue
 import { InvoiceDetailDrawer } from '@/features/finance/invoices/components/InvoiceDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatSaleId, formatShortId } from '@/utils/formatId';
 
 const INVOICE_TYPE_LABELS: Record<string, string> = {
   FACTURA_A: 'Factura A', FACTURA_B: 'Factura B', FACTURA_C: 'Factura C',
@@ -102,8 +103,8 @@ export default function InvoicesPage() {
             keyField="id"
             data={invoices}
             columns={[
-              { key: 'id', header: 'ID', render: i => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{i.id.split('-')[0]}</span> },
-              { key: 'saleOrderId', header: 'Venta Ref.', render: i => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{i.saleOrderId.split('-')[0]}</span> },
+              { key: 'id', header: 'ID', render: i => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{formatShortId(i.id)}</span> },
+              { key: 'saleOrderId', header: 'Venta Ref.', render: i => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{formatSaleId(i.saleOrderId)}</span> },
               { key: 'date', header: 'Fecha', render: i => <span style={{ fontSize: '13px' }}>{new Date(i.createdAt).toLocaleString()}</span> },
               { key: 'type', header: 'Tipo', render: i => <Badge color="blue">{INVOICE_TYPE_LABELS[i.type]}</Badge> },
               { key: 'receiver', header: 'Receptor', render: i => <span style={{ fontWeight: 600 }}>{i.receiverName}</span> },
