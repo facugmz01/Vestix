@@ -254,8 +254,12 @@ export class StorefrontController {
 
     const updatedOrder = await this.salesService.getOrderById(orderId);
 
-    // If it's a CREDIT_CARD, build MercadoPago preference
-    if (selectedPaymentMethod.type === 'CREDIT_CARD' || selectedPaymentMethod.type === 'DEBIT_CARD') {
+    // Checkout Pro via Mercado Pago for online card/wallet payments
+    if (MercadoPagoService.isMercadoPagoPaymentMethod(selectedPaymentMethod.type)) {
+      const mpEnabled = await this.mercadoPagoService.isIntegrationEnabled();
+      if (!mpEnabled) {
+        throw new ForbiddenException('Mercado Pago no está habilitado en la configuración de integraciones.');
+      }
       const storeBase = resolveStorefrontBaseUrl(req);
 
       const { initPoint, preferenceId } = await this.mercadoPagoService.createPreference({
@@ -403,69 +407,25 @@ export class StorefrontController {
     }
 
     // Verify webhook signature if MP_WEBHOOK_SECRET is set
-    const mpWebhookSecret = process.env.MP_WEBHOOK_SECRET;
-    if (!mpWebhookSecret) {
-      this.logger.warn('[MercadoPago Webhook] No MP_WEBHOOK_SECRET configured, skipping signature verification');
-    } else {
-      const xSignature = req.headers['x-signature'] as string;
-      const xRequestId = req.headers['x-request-id'] as string;
+    const signatureResult = await this.mercadoPagoService.verifyWebhookSignature(
+      req.headers as Record<string, string | string[] | undefined>,
+      resourceId,
+    );
 
-      if (!xSignature || !xRequestId) {
-        this.logger.warn('[MercadoPago Webhook] Missing x-signature or x-request-id header, rejecting request');
-        return { received: false, error: 'Signature headers missing' };
-      }
-
-      try {
-        const parts = xSignature.split(',');
-        const tsPart = parts.find(p => p.trim().startsWith('ts='));
-        const v1Part = parts.find(p => p.trim().startsWith('v1='));
-
-        if (!tsPart || !v1Part) {
-          this.logger.warn('[MercadoPago Webhook] Invalid x-signature header format');
-          return { received: false, error: 'Invalid signature format' };
-        }
-
-        const ts = tsPart.split('=')[1];
-        const v1 = v1Part.split('=')[1];
-        const dataId = resourceId.toString().toLowerCase();
-
-        const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
-        const crypto = require('crypto');
-        const calculatedHash = crypto
-          .createHmac('sha256', mpWebhookSecret)
-          .update(manifest)
-          .digest('hex');
-
-        if (calculatedHash !== v1) {
-          this.logger.warn('[MercadoPago Webhook] Signature mismatch! Request rejected.');
-          return { received: false, error: 'Signature mismatch' };
-        }
-      } catch (err: any) {
-        this.logger.error(`[MercadoPago Webhook] Signature verification failed: ${err.message}`);
-        return { received: false, error: 'Signature verification error' };
-      }
+    if (!signatureResult.valid) {
+      this.logger.warn(`[MercadoPago Webhook] ${signatureResult.error}`);
+      return { received: false, error: signatureResult.error };
     }
 
     // Only process payment events
     if (type === 'payment' || type === 'payment.updated') {
       try {
         // Fetch payment details from MercadoPago
-        const mpToken = process.env.MP_ACCESS_TOKEN;
-        if (!mpToken) {
-          this.logger.warn('[MercadoPago Webhook] No access token configured, skipping payment verification');
+        const payment = await this.mercadoPagoService.fetchPayment(resourceId);
+        if (!payment) {
+          this.logger.warn('[MercadoPago Webhook] No access token or payment fetch failed');
           return { received: true };
         }
-
-        const response = await fetch(`https://api.mercadopago.com/v1/payments/${resourceId}`, {
-          headers: { 'Authorization': `Bearer ${mpToken}` },
-        });
-
-        if (!response.ok) {
-          this.logger.error(`[MercadoPago Webhook] Failed to fetch payment ${resourceId}`);
-          return { received: true };
-        }
-
-        const payment = await response.json();
         const orderId = payment.external_reference;
         const status = payment.status; // approved, pending, rejected, etc.
 

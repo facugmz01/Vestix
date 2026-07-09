@@ -5,6 +5,7 @@ import * as path from 'path';
 import axios from 'axios';
 import { WooCommerceApiService } from './woocommerce-api.service';
 import { MercadoLibreService } from './mercadolibre.service';
+import { MercadoPagoService } from '../sales/mercadopago.service';
 import { CheckoutOrchestrator } from '../sales/checkout.orchestrator';
 import { OrderSource, PaymentMethod } from '../sales/models/order.model';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -28,6 +29,7 @@ export class IntegrationsService {
   constructor(
     private readonly wcApi: WooCommerceApiService,
     private readonly mlService: MercadoLibreService,
+    private readonly mercadoPagoService: MercadoPagoService,
     private readonly checkoutOrchestrator: CheckoutOrchestrator,
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
@@ -45,6 +47,7 @@ export class IntegrationsService {
         publicKey: intSettings.mpPublicKey,
         accessToken: intSettings.mpAccessToken,
         webhookSecret: intSettings.mpWebhookSecret,
+        externalPosId: intSettings.mpExternalPosId,
       },
       woocommerce: {
         isActive: intSettings.woocommerceEnabled,
@@ -114,7 +117,17 @@ export class IntegrationsService {
         provider: prov,
         status,
         lastSyncAt: provConfig.lastSyncAt ? new Date(provConfig.lastSyncAt).toISOString() : null,
-        webhookUrl: prov === 'WOOCOMMERCE' ? `${process.env.BACKEND_URL || 'http://localhost:3000'}/integrations/woocommerce/webhook` : null,
+        webhookUrl: prov === 'WOOCOMMERCE'
+          ? `${process.env.BACKEND_URL || 'http://localhost:3001'}/integrations/woocommerce/webhook`
+          : prov === 'MERCADOPAGO'
+            ? this.mercadoPagoService.getWebhookUrls().storefront
+            : null,
+        webhookUrls: prov === 'MERCADOPAGO'
+          ? [
+              { label: 'Checkout Pro (tienda online)', url: this.mercadoPagoService.getWebhookUrls().storefront },
+              { label: 'QR POS (punto de venta)', url: this.mercadoPagoService.getWebhookUrls().pos },
+            ]
+          : undefined,
         config: provConfig,
       };
     });
@@ -140,6 +153,9 @@ export class IntegrationsService {
       updatedInt.mpPublicKey = config.publicKey;
       updatedInt.mpAccessToken = config.accessToken;
       updatedInt.mpWebhookSecret = config.webhookSecret;
+      if (config.externalPosId !== undefined) {
+        updatedInt.mpExternalPosId = config.externalPosId;
+      }
     } else if (id === 'mercadolibre') {
       updatedInt.mlAppId = config.clientId ?? config.appId;
       updatedInt.mlSecretKey = config.clientSecret ?? config.secretKey;
@@ -190,6 +206,9 @@ export class IntegrationsService {
     }
     if (id.toLowerCase() === 'mercadolibre') {
       return this.mlService.testConnection();
+    }
+    if (id.toLowerCase() === 'mercadopago') {
+      return this.mercadoPagoService.testConnection();
     }
     return { success: false, message: 'Proveedor no soportado para test' };
   }
