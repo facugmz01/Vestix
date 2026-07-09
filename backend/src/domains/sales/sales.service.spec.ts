@@ -97,4 +97,47 @@ describe('SalesService.getOrderById', () => {
     expect(order.lines[0].productName).toBeNull();
     expect(order.lines[0].variantSku).toBeNull();
   });
+
+  it('returns a public receipt when token is valid', async () => {
+    process.env.JWT_SECRET = 'test-secret';
+    const orderId = 'sale-public-1';
+    const token = require('./utils/receipt-access.util').generateReceiptAccessToken(orderId);
+
+    mockRepository.findById.mockResolvedValueOnce({
+      id: orderId,
+      branchId: 'branch-1',
+      source: 'POS',
+      status: 'COMPLETED',
+      customer: { fullName: 'Juan Pérez' },
+      subtotal: 1000,
+      cartDiscountTotal: 0,
+      grandTotal: 1000,
+      paymentMethod: 'CASH',
+      createdAt: new Date('2026-01-01T12:00:00Z'),
+      lines: [
+        {
+          id: 'line-1',
+          variantId: 'variant-1',
+          historicalName: 'Remera',
+          historicalSku: 'SKU-1',
+          quantity: 1,
+          basePrice: 1000,
+          discountAmount: 0,
+          finalPrice: 1000,
+        },
+      ],
+    });
+    mockCatalogFacade.getVariantsDetails.mockResolvedValueOnce([]);
+    (mockPrisma as any).branch = {
+      findUnique: (jest.fn() as any).mockResolvedValueOnce({
+        settings: { posReceiptHeader: 'RO Indumentaria', posReceiptFooter: 'Gracias' },
+      }),
+    };
+
+    const receipt = await service.getPublicReceipt(orderId, token);
+
+    expect(receipt.customerName).toBe('Juan Pérez');
+    expect(receipt.lines[0].productName).toBe('Remera');
+    expect(receipt.branchSettings.posReceiptHeader).toBe('RO Indumentaria');
+  });
 });

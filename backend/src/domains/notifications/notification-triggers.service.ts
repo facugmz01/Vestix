@@ -10,6 +10,7 @@ import {
   resolveRecipient,
 } from './utils/notification-channels.util';
 import { formatEntityId, formatSaleId } from '../../common/utils/format-id.util';
+import { buildPublicReceiptUrl } from '../sales/utils/receipt-access.util';
 
 @Injectable()
 export class NotificationTriggersService {
@@ -43,7 +44,7 @@ export class NotificationTriggersService {
         customerName: order.customer?.fullName || 'Cliente',
         saleId:       formatSaleId(order.id, order.status),
         total:        this.formatMoney(order.grandTotal),
-        receiptUrl:   `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/sales/${order.id}`,
+        receiptUrl:   buildPublicReceiptUrl(order.id),
       },
       referenceId: order.id,
     });

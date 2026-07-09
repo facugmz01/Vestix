@@ -79,6 +79,7 @@ const StorefrontLoginPage = lazy(() => import('@/pages/storefront/StorefrontLogi
 const StorefrontProfilePage = lazy(() => import('@/pages/storefront/StorefrontProfilePage'));
 const DriverDeliveryPage = lazy(() => import('@/pages/driver/DriverDeliveryPage'));
 const PublicTrackPage = lazy(() => import('@/pages/storefront/PublicTrackPage'));
+const PublicReceiptPage = lazy(() => import('@/pages/PublicReceiptPage'));
 
 import { useThemeStore }    from '@/store/theme.store';
 
@@ -133,6 +134,7 @@ export default function App() {
           {/* ── Public delivery tracking & driver PWA ── */}
           <Route path="/track/:token" element={<PublicTrackPage />} />
           <Route path="/driver/:token" element={<DriverDeliveryPage />} />
+          <Route path="/comprobante/:orderId" element={<PublicReceiptPage />} />
 
           {/* ── Storefront: Public store routes ── */}
           {/* Always available at /store/* on the admin domain */}

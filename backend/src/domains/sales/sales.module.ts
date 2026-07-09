@@ -13,6 +13,7 @@ import { SaleOrderRepository } from './repositories/sale-order.repository';
 
 import { StorefrontController } from './storefront.controller';
 import { StorefrontAuthController } from './storefront-auth.controller';
+import { PublicReceiptController } from './public-receipt.controller';
 import { StorefrontJwtStrategy } from './storefront-jwt.strategy';
 import { MercadoPagoService } from './mercadopago.service';
 
@@ -45,6 +46,7 @@ import { OfflineController } from './offline.controller';
     ReturnsController,
     StorefrontController,
     StorefrontAuthController,
+    PublicReceiptController,
     CustomersController,
     PosController,
     PosWebhooksController,

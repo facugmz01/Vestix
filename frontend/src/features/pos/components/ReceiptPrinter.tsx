@@ -68,23 +68,38 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
             <span style={{ flex: 1 }}>Cant x Desc</span>
             <span style={{ width: '80px', textAlign: 'right' }}>Importe</span>
           </div>
-          {order.lines.map((line: any) => (
+          {order.lines.map((line: any) => {
+            const productName =
+              line.productName ||
+              line.historicalName ||
+              line.variant?.product?.name ||
+              'Producto';
+            const variantSku = line.variantSku || line.historicalSku || line.variant?.sku;
+            const size = line.variant?.size || line.size;
+
+            return (
             <div key={line.id} style={{ display: 'flex', flexDirection: 'column', marginBottom: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {line.quantity}x {line.variant?.product?.name || 'Producto'} {line.variant?.size ? `(${line.variant?.size})` : ''}
+                  {line.quantity}x {productName} {size ? `(${size})` : ''}
                 </span>
                 <span style={{ width: '80px', textAlign: 'right' }}>
                   {formatCurrency(line.finalPrice)}
                 </span>
               </div>
+              {variantSku && (
+                <div style={{ fontSize: '10px', color: '#555' }}>
+                  SKU: {variantSku}
+                </div>
+              )}
               {line.discountAmount > 0 && (
                 <div style={{ fontSize: '10px', color: '#555' }}>
                   Bonif: -{formatCurrency(line.discountAmount)} (Orig: {formatCurrency(line.basePrice * line.quantity)})
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div style={{ margin: '5px 0', borderTop: '1px dashed #000' }}></div>
