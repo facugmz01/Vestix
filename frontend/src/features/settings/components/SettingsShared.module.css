@@ -147,6 +147,47 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+.testConsole {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border, #e5e7eb);
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.testConsoleSuccess {
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.testConsoleError {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.testConsoleEmpty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.testRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.testRecipient {
+  flex: 1;
+  min-width: 200px;
+}
+
 .channelPicker {
   display: flex;
   flex-direction: column;
@@ -199,6 +240,7 @@
   background: rgba(59, 130, 246, 0.1);
   color: var(--accent, #3b82f6);
 }
+
 
 /* Utils */
 .fullWidth {
