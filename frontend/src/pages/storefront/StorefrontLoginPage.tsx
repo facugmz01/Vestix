@@ -112,7 +112,11 @@ export default function StorefrontLoginPage() {
       setCustomer(result.customer);
 
       const from = (location.state as { from?: string } | null)?.from || `${prefix}/`;
-      navigate(from, { replace: true });
+      if (result.customer.profileComplete === false) {
+        navigate(`${prefix}/profile`, { replace: true, state: { from } });
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (e: any) {
       setError(e?.message || 'Código incorrecto. Verificá e intentá de nuevo.');
       setOtp(['', '', '', '', '', '']);

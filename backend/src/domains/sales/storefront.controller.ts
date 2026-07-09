@@ -19,6 +19,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { MercadoPagoService } from './mercadopago.service';
 import { InventoryService } from '../logistics/inventory.service';
 import { StorefrontAuthGuard } from './storefront-auth.guard';
+import { StorefrontOptionalAuthGuard } from './storefront-optional-auth.guard';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { ShippingService } from '../shipping/shipping.service';
 import * as crypto from 'crypto';
@@ -102,24 +103,53 @@ export class StorefrontController {
    * Returns the order + a MercadoPago init_point URL for payment.
    */
   @Post('checkout')
+  @UseGuards(StorefrontOptionalAuthGuard)
   async checkout(@Body() dto: any, @Req() req: Request) {
     // If authenticated via storefront token, use that customer
     const reqUser = (req as any).user;
     let customerId: string | null = reqUser?.customerId || null;
 
+    // If authenticated, optionally enrich profile from checkout data
+    if (customerId && dto.customerInfo) {
+      const existing = await this.prisma.customer.findUnique({ where: { id: customerId } });
+      if (existing) {
+        const patch: Record<string, string | null> = {};
+        const checkoutName = `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim();
+        if (checkoutName && (!existing.fullName || existing.fullName.startsWith('Cliente +'))) {
+          patch.fullName = checkoutName;
+        }
+        if (dto.customerInfo.email && !existing.email) {
+          patch.email = this.normalizeEmail(dto.customerInfo.email);
+        }
+        if (dto.customerInfo.phone && !existing.phone) {
+          patch.phone = this.normalizePhone(dto.customerInfo.phone);
+        }
+        if (dto.customerInfo.documentNumber && !existing.taxId) {
+          patch.taxId = dto.customerInfo.documentNumber.trim() || null;
+        }
+        if (Object.keys(patch).length > 0) {
+          await this.prisma.customer.update({ where: { id: customerId }, data: patch });
+        }
+      }
+    }
+
     // If no authenticated customer, look up or create by phone/email/taxId (guest checkout)
     if (!customerId && dto.customerInfo) {
       const conditions: any[] = [];
       if (dto.customerInfo.phone) {
-        const digits = String(dto.customerInfo.phone).replace(/\D/g, '');
-        if (digits) {
-          conditions.push({ phone: digits });
-          if (!digits.startsWith('54') && digits.length >= 8) {
-            conditions.push({ phone: `549${digits}` });
+        const normalizedPhone = this.normalizePhone(dto.customerInfo.phone);
+        if (normalizedPhone) {
+          conditions.push({ phone: normalizedPhone });
+          const digits = String(dto.customerInfo.phone).replace(/\D/g, '');
+          if (digits && digits !== normalizedPhone) {
+            conditions.push({ phone: digits });
           }
         }
       }
-      if (dto.customerInfo.email) conditions.push({ email: dto.customerInfo.email });
+      if (dto.customerInfo.email) {
+        const normalizedEmail = this.normalizeEmail(dto.customerInfo.email);
+        if (normalizedEmail) conditions.push({ email: normalizedEmail });
+      }
       if (dto.customerInfo.documentNumber) conditions.push({ taxId: dto.customerInfo.documentNumber });
 
       let customer = conditions.length > 0
@@ -130,8 +160,8 @@ export class StorefrontController {
         customer = await this.prisma.customer.create({
           data: {
             fullName: `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim() || 'Cliente Web',
-            email: dto.customerInfo.email || null,
-            phone: dto.customerInfo.phone || null,
+            email: this.normalizeEmail(dto.customerInfo.email || '') || null,
+            phone: this.normalizePhone(dto.customerInfo.phone || '') || null,
             taxId: dto.customerInfo.documentNumber || null,
             type: 'INDIVIDUAL',
             source: 'STOREFRONT',
@@ -144,8 +174,10 @@ export class StorefrontController {
         if (checkoutName && (!customer.fullName || customer.fullName.startsWith('Cliente +'))) {
           patch.fullName = checkoutName;
         }
-        if (dto.customerInfo.email && !customer.email) patch.email = dto.customerInfo.email;
-        if (dto.customerInfo.phone && !customer.phone) patch.phone = dto.customerInfo.phone;
+        const checkoutEmail = this.normalizeEmail(dto.customerInfo.email || '');
+        if (checkoutEmail && !customer.email) patch.email = checkoutEmail;
+        const checkoutPhone = this.normalizePhone(dto.customerInfo.phone || '');
+        if (checkoutPhone && !customer.phone) patch.phone = checkoutPhone;
         if (dto.customerInfo.documentNumber && !customer.taxId) patch.taxId = dto.customerInfo.documentNumber;
         if (customer.source === 'ADMIN' || !customer.source) {
           // leave ADMIN as-is if they already existed in backoffice
@@ -512,5 +544,30 @@ export class StorefrontController {
     }
 
     return { received: true };
+  }
+
+  private normalizeEmail(raw: string): string | null {
+    const email = raw.trim().toLowerCase();
+    if (!email || !email.includes('@') || !email.includes('.')) return null;
+    return email;
+  }
+
+  private normalizePhone(raw: string): string | null {
+    if (!raw) return null;
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length < 8) return null;
+
+    if (digits.startsWith('549') && digits.length >= 12) return digits;
+    if (digits.startsWith('54') && digits.length >= 11) return digits;
+
+    if (digits.startsWith('0') && digits.length >= 10) {
+      return '54' + digits.slice(1);
+    }
+
+    if (digits.length >= 8 && digits.length <= 11) {
+      return '549' + digits;
+    }
+
+    return digits;
   }
 }

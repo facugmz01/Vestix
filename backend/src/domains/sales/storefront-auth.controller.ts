@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   Res,
   Req,
@@ -9,6 +10,7 @@ import {
   HttpStatus,
   UnauthorizedException,
   BadRequestException,
+  ConflictException,
   UseGuards,
   Logger,
 } from '@nestjs/common';
@@ -25,6 +27,8 @@ import {
 } from '../notifications/utils/notification-channels.util';
 import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { RedisService } from '../../core/redis/redis.service';
+import { UpdateStorefrontProfileDto } from './dto/update-storefront-profile.dto';
+import { toStorefrontCustomerResponse } from './storefront-customer.util';
 
 interface OtpEntry {
   code: string;
@@ -288,12 +292,7 @@ export class StorefrontAuthController {
 
     return {
       success: true,
-      customer: {
-        id: customer.id,
-        fullName: customer.fullName,
-        phone: customer.phone,
-        email: customer.email,
-      },
+      customer: toStorefrontCustomerResponse(customer),
     };
   }
 
@@ -307,14 +306,87 @@ export class StorefrontAuthController {
     const reqUser = (req as any).user;
     const customer = await this.prisma.customer.findUnique({
       where: { id: reqUser.customerId },
-      select: { id: true, fullName: true, phone: true, email: true },
+      select: { id: true, fullName: true, phone: true, email: true, taxId: true },
     });
 
     if (!customer) {
       throw new UnauthorizedException('Cliente no encontrado.');
     }
 
-    return customer;
+    return toStorefrontCustomerResponse(customer);
+  }
+
+  /**
+   * PATCH /storefront/auth/me — Update authenticated customer profile.
+   */
+  @Patch('me')
+  @UseGuards(StorefrontAuthGuard)
+  async updateMe(@Req() req: Request, @Body() dto: UpdateStorefrontProfileDto) {
+    const reqUser = (req as any).user;
+    const customerId = reqUser.customerId;
+
+    const fullName = dto.fullName.trim();
+    if (!fullName) {
+      throw new BadRequestException('El nombre es obligatorio.');
+    }
+
+    const email = dto.email !== undefined ? this.normalizeEmail(dto.email) : undefined;
+    if (dto.email !== undefined && dto.email.trim() && !email) {
+      throw new BadRequestException('Correo electrónico inválido.');
+    }
+
+    const phone = dto.phone !== undefined
+      ? (dto.phone.trim() ? this.normalizePhone(dto.phone) : null)
+      : undefined;
+    if (dto.phone !== undefined && dto.phone.trim() && !phone) {
+      throw new BadRequestException('Número de teléfono inválido.');
+    }
+
+    const taxId = dto.taxId !== undefined
+      ? (dto.taxId.trim() || null)
+      : undefined;
+
+    if (email) {
+      const emailTaken = await this.prisma.customer.findFirst({
+        where: { email, id: { not: customerId } },
+      });
+      if (emailTaken) {
+        throw new ConflictException('Este correo electrónico ya está registrado.');
+      }
+    }
+
+    if (phone) {
+      const phoneTaken = await this.prisma.customer.findFirst({
+        where: { phone, id: { not: customerId } },
+      });
+      if (phoneTaken) {
+        throw new ConflictException('Este teléfono ya está registrado.');
+      }
+    }
+
+    if (taxId) {
+      const taxIdTaken = await this.prisma.customer.findFirst({
+        where: { taxId, id: { not: customerId } },
+      });
+      if (taxIdTaken) {
+        throw new ConflictException('Este DNI/CUIT ya está registrado.');
+      }
+    }
+
+    const data: Record<string, string | null> = { fullName };
+    if (email !== undefined) data.email = email;
+    if (phone !== undefined) data.phone = phone;
+    if (taxId !== undefined) data.taxId = taxId;
+
+    const customer = await this.prisma.customer.update({
+      where: { id: customerId },
+      data,
+      select: { id: true, fullName: true, phone: true, email: true, taxId: true },
+    });
+
+    this.logger.log(`[Profile] Customer ${customerId} updated profile`);
+
+    return toStorefrontCustomerResponse(customer);
   }
 
   /**

@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Truck, CheckCircle, Clock, MessageCircle, MapPin, Navigation } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Package, Truck, CheckCircle, Clock, MapPin, Navigation } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { storefrontOrdersApi } from '@/api/storefront-orders.api';
 import { queryKeys } from '@/api/queryKeys';
-import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
-import { storePrefix } from '@/utils/storefrontDomain';
+import { StorefrontRequireAuth } from '@/components/storefront/StorefrontRequireAuth';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
 import { useTrackingSse } from '@/hooks/useTrackingSse';
@@ -42,50 +40,15 @@ function getStatusDisplay(status: string) {
   return { label: status, color: '#64748b', icon: Package };
 }
 
-export default function StorefrontMyOrdersPage() {
+function MyOrdersContent() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { isAuthenticated, isLoading: authLoading } = useStorefrontAuthStore();
-  const prefix = storePrefix();
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.storefront.myOrders(),
     queryFn: () => storefrontOrdersApi.getMyOrders(1, 20),
-    enabled: isAuthenticated,
   });
 
   const orders = data?.data || [];
-
-  if (!authLoading && !isAuthenticated) {
-    return (
-      <div style={{ maxWidth: '500px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
-        <div className="glass" style={{ borderRadius: '20px', padding: '48px 32px' }}>
-          <div style={{
-            width: '72px', height: '72px', borderRadius: '18px',
-            background: 'var(--sf-primary, var(--accent))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 24px',
-            boxShadow: '0 8px 24px rgba(var(--sf-primary-rgb, 59, 130, 246), 0.25)',
-          }}>
-            <MessageCircle size={36} color="white" />
-          </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '12px' }}>
-            Iniciá sesión para ver tus pedidos
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '28px' }}>
-            Con tu número de WhatsApp podés acceder al historial de todos tus pedidos y seguir el estado de tus compras.
-          </p>
-          <Link to={`${prefix}/login`} className="storefront-btn">
-            <MessageCircle size={18} /> Ingresar con WhatsApp
-          </Link>
-          <div style={{ marginTop: '20px' }}>
-            <Link to={`${prefix}/`} style={{ color: 'var(--text-muted)', fontSize: '14px', textDecoration: 'none' }}>
-              ← Volver a la tienda
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ maxWidth: '1000px', margin: '48px auto', padding: '0 24px', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
@@ -380,4 +343,12 @@ function getTimelineProgress(tracking: OrderTracking): number {
   if (tracking.status === 'SHIPPED') return 66;
   if (['PACKED', 'PICKING', 'PAID'].includes(tracking.status)) return 33;
   return 0;
+}
+
+export default function StorefrontMyOrdersPage() {
+  return (
+    <StorefrontRequireAuth requireCompleteProfile>
+      <MyOrdersContent />
+    </StorefrontRequireAuth>
+  );
 }
