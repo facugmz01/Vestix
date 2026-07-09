@@ -1,0 +1,710 @@
+/* Shared layout for admin detail drawers */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+}
+
+.stackMd {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+/* Hero / summary header */
+.heroCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.heroLabel {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+  color: var(--accent);
+}
+
+.heroTitleNeutral {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-primary);
+}
+
+.heroSubtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.heroSubtitleStrong {
+  color: var(--text-primary);
+}
+
+.heroMeta {
+  text-align: center;
+}
+
+.heroDate {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Stat cards grid */
+.statCard {
+  padding: 12px;
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.statValue {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.statValueRow {
+  margin: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-primary);
+}
+
+.statValueGreen {
+  margin: 0;
+  font-weight: 900;
+  color: var(--green);
+  font-size: 18px;
+}
+
+/* Section blocks */
+.section {
+  padding: 16px;
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.sectionHeading {
+  margin: 0 0 12px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.channelRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hintText {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fieldStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Reference / info boxes */
+.refBox {
+  padding: 12px 16px;
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.refLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.refValue {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-primary);
+}
+
+/* Alerts */
+.alertYellow {
+  padding: 12px 16px;
+  background: var(--amber-bg, rgba(249, 115, 22, 0.12));
+  color: var(--amber, #ca8a04);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.alertGreen {
+  padding: 12px;
+  background: var(--green-bg);
+  color: var(--green);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alertRed {
+  padding: 12px;
+  background: var(--red-bg);
+  color: var(--red);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alertRedFull {
+  padding: 12px;
+  background: var(--red-bg);
+  color: var(--red);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.alertGreenFull {
+  padding: 12px;
+  background: var(--green-bg);
+  color: var(--green);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.alertText {
+  font-weight: 600;
+}
+
+.discountBanner {
+  text-align: right;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--red-bg);
+  color: var(--red);
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.overdueAlert {
+  margin-top: 12px;
+  padding: 8px;
+  background: var(--red-bg);
+  color: var(--red);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Table cell helpers */
+.lineCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.lineName {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.lineSku {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mono {
+  font-family: var(--font-mono, monospace);
+}
+
+.monoBold {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.textMuted {
+  color: var(--text-muted);
+}
+
+.textBold {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.textRed {
+  color: var(--red);
+}
+
+.textGreen {
+  color: var(--green);
+}
+
+.textOrange {
+  font-size: 11px;
+  color: var(--orange, #f97316);
+}
+
+.textBoldGreen {
+  font-weight: bold;
+  color: var(--green);
+}
+
+.textBoldPrimary {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.textStrong {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.textMedium {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Footer actions */
+.footer {
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.footerBetween {
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.actionFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.actionFooterFull {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.statusStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.logisticsBox {
+  padding: 12px;
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.logisticsTitle {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.logisticsText {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Totals */
+.totalRow {
+  text-align: right;
+  margin-top: 16px;
+}
+
+.totalLabel {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.totalValue {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+/* Reception input */
+.qtyInput {
+  width: 80px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+/* Customer profile */
+.profileHeader {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--text-inverted, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.profileTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.profileTitle {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.profileMeta {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.infoCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  background: var(--surface-0);
+}
+
+.infoCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.infoCardTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.infoCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.infoRowTotal {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.infoLabel {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.infoValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.infoValueRed {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.infoValueGreen {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.infoValueBold {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.historyHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.historyTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.historyTableWrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.emptyState {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.emptyStateLg {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Current account drawer */
+.summaryCard {
+  padding: 20px;
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.entityTitle {
+  margin: 8px 0 4px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.entityMeta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.statementActions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.balanceCard {
+  padding: 20px;
+  background: var(--surface-0);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.balanceLabel {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.balanceValue {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.balanceLimit {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.tabBar {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.tabContent {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.receiptPanel {
+  flex: 1;
+  padding: 20px;
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.receiptTitle {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.receiptForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.textareaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.textareaLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.textarea {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.receiptSubmit {
+  margin-top: 16px;
+}
+
+.docCol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+}
+
+.badgeInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.docRef {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-muted);
+}
+
+.dueDate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.dueDateOverdue {
+  color: var(--red);
+  font-weight: bold;
+}

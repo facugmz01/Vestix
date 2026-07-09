@@ -12,6 +12,7 @@ import {
   resolveManualNotificationRecipient,
 } from '@/utils/notificationRecipient';
 import { formatPaymentReferenceId, formatShortId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -24,7 +25,6 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
 
   const [activeTab, setActiveTab] = useState<'MOVEMENTS' | 'NEW_RECEIPT'>('MOVEMENTS');
 
-  // New Receipt Form State
   const [receiptAmount, setReceiptAmount] = useState<number>(0);
   const [receiptRef, setReceiptRef] = useState('');
   const [receiptDesc, setReceiptDesc] = useState('');
@@ -59,9 +59,6 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
     return <Drawer open={open} onClose={onClose} title="Cargando Cuenta..." width="lg"><div /></Drawer>;
   }
 
-
-  // Determine if it's a customer (balance > 0 means they owe us) or supplier (balance > 0 means we owe them)
-  // For clarity: Balance > 0 = Deuda. 
   const isCustomer = account.entityType === 'CUSTOMER';
   const oweText = isCustomer ? 'Saldo Deudor (Nos debe)' : 'Saldo Acreedor (Le debemos)';
   const balanceColor = account.balance > 0 ? (isCustomer ? 'var(--red)' : 'var(--orange)') : 'var(--green)';
@@ -95,22 +92,23 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Cuenta Corriente" width="lg">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
-        
-        {/* Header / Summary */}
+      <div className={styles.stackMd}>
+
         <div className="grid-responsive grid-cols-2-1">
-          <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+          <div className={styles.summaryCard}>
             <Badge color={isCustomer ? 'blue' : 'purple'}>{isCustomer ? 'CLIENTE' : 'PROVEEDOR'}</Badge>
-            <h3 style={{ margin: '8px 0 4px', fontSize: '20px', fontWeight: 800 }}>{account.entityName}</h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>ID Entidad: <span style={{ fontFamily: 'monospace' }}>{formatShortId(account.entityId)}</span></p>
-            
+            <h3 className={styles.entityTitle}>{account.entityName}</h3>
+            <p className={styles.entityMeta}>
+              ID Entidad: <span className={styles.mono}>{formatShortId(account.entityId)}</span>
+            </p>
+
             {account.overdueAmount > 0 && (
-              <div style={{ marginTop: '12px', padding: '8px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600 }}>
+              <div className={styles.overdueAlert}>
                 <AlertTriangle size={16} /> Deuda Vencida: {formatCurrency(account.overdueAmount)}
               </div>
             )}
 
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div className={styles.statementActions}>
               <Button
                 variant="outline"
                 size="sm"
@@ -121,11 +119,11 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                 {isCustomer ? 'Enviar Resumen (WhatsApp/Email)' : 'Enviar Resumen (Email)'}
               </Button>
               {statementRecipient ? (
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <span className={styles.hintText}>
                   Se enviará a {statementRecipient.label}
                 </span>
               ) : (
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <span className={styles.hintText}>
                   {isCustomer
                     ? 'El cliente no tiene teléfono ni email cargado.'
                     : 'El proveedor no tiene email cargado.'}
@@ -134,21 +132,20 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
             </div>
           </div>
 
-          <div style={{ padding: '20px', background: 'var(--bg-base)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>{oweText}</p>
-            <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: balanceColor }}>
+          <div className={styles.balanceCard}>
+            <p className={styles.balanceLabel}>{oweText}</p>
+            <h2 className={styles.balanceValue} style={{ color: balanceColor }}>
               {formatCurrency(Math.abs(account.balance))}
             </h2>
             {account.creditLimit && (
-              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <p className={styles.balanceLimit}>
                 Límite de Crédito: {formatCurrency(account.creditLimit)}
               </p>
             )}
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+        <div className={styles.tabBar}>
           <Button variant={activeTab === 'MOVEMENTS' ? 'primary' : 'ghost'} onClick={() => setActiveTab('MOVEMENTS')}>Historial y Movimientos</Button>
           <ActionGuard action="manage" subject="Finance">
             <Button variant={activeTab === 'NEW_RECEIPT' ? 'primary' : 'ghost'} onClick={() => setActiveTab('NEW_RECEIPT')} icon={<Banknote size={16} />}>
@@ -157,30 +154,29 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
           </ActionGuard>
         </div>
 
-        {/* Tab Content */}
         {activeTab === 'MOVEMENTS' && (
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className={styles.tabContent}>
             {movementsLoading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando movimientos...</div>
+              <div className={styles.emptyStateLg}>Cargando movimientos...</div>
             ) : !movementsData?.data.length ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay movimientos en esta cuenta.</div>
+              <div className={styles.emptyStateLg}>No hay movimientos en esta cuenta.</div>
             ) : (
               <Table
                 keyField="id"
                 data={movementsData.data}
                 columns={[
-                  { 
-                    key: 'date', 
-                    header: 'Fecha', 
+                  {
+                    key: 'date',
+                    header: 'Fecha',
                     render: (m) => (
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: 500 }}>{new Date(m.date).toLocaleDateString()}</span>
+                      <div className={styles.lineCol}>
+                        <span className={styles.textMedium}>{new Date(m.date).toLocaleDateString()}</span>
                       </div>
-                    ) 
+                    )
                   },
-                  { 
-                    key: 'doc', 
-                    header: 'Documento', 
+                  {
+                    key: 'doc',
+                    header: 'Documento',
                     render: (m) => {
                       let color = 'gray'; let icon = <FileText size={14} />;
                       if (m.documentType === 'INVOICE') { color = 'blue'; }
@@ -188,37 +184,37 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                       if (m.documentType === 'DEBIT_NOTE') { color = 'red'; }
                       if (m.documentType === 'CREDIT_NOTE') { color = 'orange'; }
                       return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
+                        <div className={styles.docCol}>
+                          <div className={styles.badgeRow}>
                             <Badge color={color as any}>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{icon} {m.documentType}</span>
+                              <span className={styles.badgeInner}>{icon} {m.documentType}</span>
                             </Badge>
                           </div>
-                          <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{formatPaymentReferenceId(m.referenceId)}</span>
+                          <span className={styles.docRef}>{formatPaymentReferenceId(m.referenceId)}</span>
                         </div>
                       );
                     }
                   },
-                  { 
-                    key: 'debit', 
-                    header: 'Débito (+)', 
-                    render: (m) => m.debit > 0 ? <span style={{ fontWeight: 'bold', color: 'var(--red)' }}>{formatCurrency(m.debit)}</span> : '-' 
+                  {
+                    key: 'debit',
+                    header: 'Débito (+)',
+                    render: (m) => m.debit > 0 ? <span className={styles.textBold} style={{ color: 'var(--red)' }}>{formatCurrency(m.debit)}</span> : '-'
                   },
-                  { 
-                    key: 'credit', 
-                    header: 'Crédito (-)', 
-                    render: (m) => m.credit > 0 ? <span style={{ fontWeight: 'bold', color: 'var(--green)' }}>{formatCurrency(m.credit)}</span> : '-' 
+                  {
+                    key: 'credit',
+                    header: 'Crédito (-)',
+                    render: (m) => m.credit > 0 ? <span className={styles.textBold} style={{ color: 'var(--green)' }}>{formatCurrency(m.credit)}</span> : '-'
                   },
-                  { 
-                    key: 'balance', 
-                    header: 'Saldo', 
-                    render: (m) => <span style={{ fontWeight: 800 }}>{formatCurrency(m.balanceAfter)}</span> 
+                  {
+                    key: 'balance',
+                    header: 'Saldo',
+                    render: (m) => <span className={styles.textStrong}>{formatCurrency(m.balanceAfter)}</span>
                   },
-                  { 
-                    key: 'dueDate', 
-                    header: 'Vencimiento', 
+                  {
+                    key: 'dueDate',
+                    header: 'Vencimiento',
                     render: (m) => m.dueDate ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: m.status === 'OVERDUE' ? 'var(--red)' : 'var(--text-secondary)', fontWeight: m.status === 'OVERDUE' ? 'bold' : 'normal' }}>
+                      <div className={`${styles.dueDate} ${m.status === 'OVERDUE' ? styles.dueDateOverdue : ''}`}>
                         <Calendar size={12} /> {new Date(m.dueDate).toLocaleDateString()}
                       </div>
                     ) : '-'
@@ -230,34 +226,34 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
         )}
 
         {activeTab === 'NEW_RECEIPT' && (
-          <div style={{ flex: 1, padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-            <h4 style={{ margin: '0 0 16px', fontSize: '16px' }}>Registrar {isCustomer ? 'Cobranza (Recibo)' : 'Pago (Orden de Pago)'}</h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px' }}>
-              <Input 
-                label="Monto a Aplicar ($)" 
-                type="number" 
-                min="0" 
-                step="0.01" 
-                value={receiptAmount} 
-                onChange={e => setReceiptAmount(Number(e.target.value))} 
+          <div className={styles.receiptPanel}>
+            <h4 className={styles.receiptTitle}>Registrar {isCustomer ? 'Cobranza (Recibo)' : 'Pago (Orden de Pago)'}</h4>
+
+            <div className={styles.receiptForm}>
+              <Input
+                label="Monto a Aplicar ($)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={receiptAmount}
+                onChange={e => setReceiptAmount(Number(e.target.value))}
               />
-              <Input 
-                label="ID de Referencia (Ej: Transferencia Banco X)" 
-                value={receiptRef} 
-                onChange={e => setReceiptRef(e.target.value)} 
+              <Input
+                label="ID de Referencia (Ej: Transferencia Banco X)"
+                value={receiptRef}
+                onChange={e => setReceiptRef(e.target.value)}
               />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600 }}>Descripción / Concepto</label>
-                <textarea 
-                  value={receiptDesc} 
-                  onChange={e => setReceiptDesc(e.target.value)} 
-                  rows={3} 
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} 
+              <div className={styles.textareaGroup}>
+                <label className={styles.textareaLabel}>Descripción / Concepto</label>
+                <textarea
+                  value={receiptDesc}
+                  onChange={e => setReceiptDesc(e.target.value)}
+                  rows={3}
+                  className={styles.textarea}
                 />
               </div>
 
-              <div style={{ marginTop: '16px' }}>
+              <div className={styles.receiptSubmit}>
                 <Button variant="primary" onClick={() => paymentMutation.mutate()} loading={paymentMutation.isPending} disabled={receiptAmount <= 0 || !receiptRef}>
                   Generar y Aplicar Recibo
                 </Button>
