@@ -15,6 +15,7 @@ const FULFILLMENT_STATUS_LABELS: Record<string, { label: string; color: string }
   PAID: { label: 'Pagado - Preparando', color: '#3b82f6' },
   PICKING: { label: 'En Preparación', color: '#3b82f6' },
   PACKED: { label: 'Empaquetado', color: '#6366f1' },
+  READY_FOR_PICKUP: { label: 'Listo para Retiro', color: '#8b5cf6' },
   SHIPPED: { label: 'En Camino', color: '#8b5cf6' },
   DELIVERED: { label: 'Entregado', color: '#22c55e' },
   CANCELLED: { label: 'Cancelado', color: '#ef4444' },
@@ -30,6 +31,7 @@ function getStatusDisplay(status: string) {
       PAID: Package,
       PICKING: Package,
       PACKED: Package,
+      READY_FOR_PICKUP: Package,
       SHIPPED: Truck,
       DELIVERED: CheckCircle,
       CONFIRMED: Package,
@@ -260,8 +262,8 @@ function OrderDetailView({ orderId }: { orderId: string }) {
 
 function Timeline({ tracking, progress }: { tracking: OrderTracking; progress: number }) {
   const steps = [
-    { label: 'Pago', active: !!tracking.timeline.paidAt || ['PAID', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED'].includes(tracking.status) },
-    { label: 'Preparación', active: !!tracking.timeline.packedAt || ['PACKED', 'SHIPPED', 'DELIVERED'].includes(tracking.status) },
+    { label: 'Pago', active: !!tracking.timeline.paidAt || ['PAID', 'PICKING', 'PACKED', 'READY_FOR_PICKUP', 'SHIPPED', 'DELIVERED'].includes(tracking.status) },
+    { label: 'Preparación', active: !!tracking.timeline.packedAt || ['PACKED', 'READY_FOR_PICKUP', 'SHIPPED', 'DELIVERED'].includes(tracking.status) },
     { label: 'Despachado', active: !!tracking.timeline.dispatchedAt || tracking.status === 'SHIPPED' || tracking.status === 'DELIVERED' },
     { label: 'Entregado', active: tracking.status === 'DELIVERED' },
   ];
@@ -341,7 +343,7 @@ function DeliveryDates({ timeline }: { timeline: OrderTracking['timeline'] }) {
 function getTimelineProgress(tracking: OrderTracking): number {
   if (tracking.status === 'DELIVERED') return 100;
   if (tracking.status === 'SHIPPED') return 66;
-  if (['PACKED', 'PICKING', 'PAID'].includes(tracking.status)) return 33;
+  if (['PACKED', 'READY_FOR_PICKUP', 'PICKING', 'PAID'].includes(tracking.status)) return 33;
   return 0;
 }
 

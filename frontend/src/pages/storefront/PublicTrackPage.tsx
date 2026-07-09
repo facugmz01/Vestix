@@ -9,8 +9,10 @@ const STATUS_LABELS: Record<string, string> = {
   PAID: 'Pagado',
   PICKING: 'En preparación',
   PACKED: 'Empaquetado',
+  READY_FOR_PICKUP: 'Listo para retiro',
   SHIPPED: 'En camino',
   DELIVERED: 'Entregado',
+  CANCELLED: 'Cancelado',
   IN_TRANSIT: 'En tránsito',
   ARRIVED: 'Llegó al destino',
 };

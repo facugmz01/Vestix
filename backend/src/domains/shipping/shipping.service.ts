@@ -200,6 +200,101 @@ export class ShippingService {
     return fulfillment;
   }
 
+  /**
+   * Syncs OrderFulfillment when the commercial SaleOrder status is changed
+   * from Historial de Ventas (e.g. READY_FOR_PICKUP / DELIVERED).
+   * Storefront reads fulfillment status first, so without this sync the
+   * customer never sees backoffice status changes.
+   */
+  async applyCommercialStatus(saleOrderId: string, commercialStatus: string) {
+    const fulfillment = await this.getFulfillmentByOrderId(saleOrderId);
+    if (!fulfillment) return null;
+    if (fulfillment.status === OrderStatus.CANCELLED) return fulfillment;
+
+    if (commercialStatus === 'CANCELLED') {
+      return this.cancelFulfillment(saleOrderId);
+    }
+
+    const target = this.mapCommercialToFulfillment(commercialStatus);
+    if (!target) return fulfillment;
+
+    const progression = [
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAID,
+      OrderStatus.PICKING,
+      OrderStatus.PACKED,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+    ];
+    const currentIdx = progression.indexOf(fulfillment.status as OrderStatus);
+    const targetIdx = progression.indexOf(target);
+    if (currentIdx < 0 || targetIdx < 0 || targetIdx <= currentIdx) {
+      return fulfillment;
+    }
+
+    const now = new Date();
+    const data: {
+      status: OrderStatus;
+      paidAt?: Date;
+      pickedAt?: Date;
+      packedAt?: Date;
+      shippedAt?: Date;
+      deliveredAt?: Date;
+    } = { status: target };
+
+    if (targetIdx >= 1 && !fulfillment.paidAt) data.paidAt = now;
+    if (targetIdx >= 2 && !fulfillment.pickedAt) data.pickedAt = now;
+    if (targetIdx >= 3 && !fulfillment.packedAt) data.packedAt = now;
+    if (targetIdx >= 4 && !fulfillment.shippedAt) data.shippedAt = now;
+    if (targetIdx >= 5) data.deliveredAt = now;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.orderFulfillment.update({
+        where: { id: fulfillment.id },
+        data,
+      });
+
+      if (target === OrderStatus.DELIVERED && fulfillment.delivery) {
+        await tx.delivery.update({
+          where: { id: fulfillment.delivery.id },
+          data: { status: DeliveryStatus.DELIVERED },
+        });
+      }
+    });
+
+    this.emitTracking(
+      saleOrderId,
+      target,
+      target === OrderStatus.DELIVERED ? DeliveryStatus.DELIVERED : undefined,
+    );
+    return this.getFulfillmentByOrderId(saleOrderId);
+  }
+
+  private mapCommercialToFulfillment(commercialStatus: string): OrderStatus | null {
+    const map: Record<string, OrderStatus> = {
+      PENDING_PAYMENT: OrderStatus.PENDING_PAYMENT,
+      CONFIRMED: OrderStatus.PAID,
+      COMPLETED: OrderStatus.PAID,
+      READY_FOR_PICKUP: OrderStatus.PACKED,
+      SHIPPED: OrderStatus.SHIPPED,
+      DELIVERED: OrderStatus.DELIVERED,
+      CANCELLED: OrderStatus.CANCELLED,
+    };
+    return map[commercialStatus] ?? null;
+  }
+
+  /**
+   * Prefer fulfillment status for storefront, but surface commercial statuses
+   * that have no direct fulfillment equivalent (e.g. READY_FOR_PICKUP).
+   */
+  resolveStorefrontStatus(saleOrderStatus?: string | null, fulfillmentStatus?: string | null): string {
+    if (saleOrderStatus === 'READY_FOR_PICKUP') return 'READY_FOR_PICKUP';
+    if (saleOrderStatus === 'CANCELLED' || saleOrderStatus === 'DELIVERED') {
+      return saleOrderStatus;
+    }
+    return fulfillmentStatus || saleOrderStatus || 'PENDING_PAYMENT';
+  }
+
   async listDeliveries(params: { status?: string; page?: number; pageSize?: number }) {
     const page = params.page || 1;
     const pageSize = params.pageSize || 20;
@@ -695,7 +790,7 @@ export class ShippingService {
 
     return {
       orderId: order.id,
-      status: fulfillment?.status || order.status,
+      status: this.resolveStorefrontStatus(order.status, fulfillment?.status),
       saleOrderStatus: order.status,
       shippingMethodName: order.shippingMethodName,
       shippingCost: order.shippingCost,
