@@ -58,10 +58,15 @@ function ConnectionTestPanel({
       if (res.success) toast.success(res.message, { id: toastId });
       else toast.error(res.message, { id: toastId });
     } catch (e: any) {
+      const apiErrors = e.response?.data?.errors;
+      const apiMessage = e.response?.data?.message || e.message || 'Error de conexión';
+      const detail = apiErrors
+        ? `${apiMessage}: ${Object.entries(apiErrors).map(([k, v]) => `${k}: ${v}`).join('; ')}`
+        : apiMessage;
       const fallback: ConnectionTestResult = {
         success: false,
-        message: e.response?.data?.message || 'Error de conexión',
-        logs: [`[${new Date().toISOString()}] ${e.response?.data?.message || e.message || 'Error de conexión'}`],
+        message: detail,
+        logs: [`[${new Date().toISOString()}] ${detail}`],
       };
       setResult(fallback);
       toast.error(fallback.message, { id: toastId });
@@ -143,6 +148,31 @@ export function NotificationSettingsPanel() {
   const evolutionKeyMask = useMaskedField(watch('evolutionApiKey'));
   const fcmKeyMask = useMaskedField(watch('fcmServerKey'));
 
+  const buildSmtpTestPayload = (recipient: string) => ({
+    smtpHost: allValues.smtpHost,
+    smtpPort: Number.isFinite(allValues.smtpPort) ? allValues.smtpPort : undefined,
+    smtpUser: allValues.smtpUser,
+    smtpPass: allValues.smtpPass,
+    recipient,
+  });
+
+  const buildSmsTestPayload = (recipient: string) => ({
+    smsGatewayUrl: allValues.smsGatewayUrl,
+    recipient,
+  });
+
+  const buildWhatsappTestPayload = (recipient: string) => ({
+    evolutionApiUrl: allValues.evolutionApiUrl,
+    evolutionApiKey: allValues.evolutionApiKey,
+    evolutionInstance: allValues.evolutionInstance,
+    recipient,
+  });
+
+  const buildPushTestPayload = (recipient: string) => ({
+    fcmServerKey: allValues.fcmServerKey,
+    recipient,
+  });
+
   if (isLoading) return null;
 
   return (
@@ -173,7 +203,7 @@ export function NotificationSettingsPanel() {
                 recipientPlaceholder="admin@empresa.com"
                 recipientType="email"
                 disabled={!watch('smtpHost')}
-                onTest={(recipient) => settingsApi.testSmtp({ ...allValues, recipient })}
+                onTest={(recipient) => settingsApi.testSmtp(buildSmtpTestPayload(recipient))}
               />
             </div>
           )}
@@ -191,7 +221,7 @@ export function NotificationSettingsPanel() {
                 recipientPlaceholder="5491122334455"
                 recipientType="tel"
                 disabled={!watch('smsGatewayUrl')}
-                onTest={(recipient) => settingsApi.testSms({ ...allValues, recipient })}
+                onTest={(recipient) => settingsApi.testSms(buildSmsTestPayload(recipient))}
               />
             </div>
           )}
@@ -214,7 +244,7 @@ export function NotificationSettingsPanel() {
                   recipientPlaceholder="5491122334455"
                   recipientType="tel"
                   disabled={!watch('evolutionApiUrl')}
-                  onTest={(recipient) => settingsApi.testWhatsapp({ ...allValues, recipient })}
+                  onTest={(recipient) => settingsApi.testWhatsapp(buildWhatsappTestPayload(recipient))}
                 />
               </div>
               <WhatsAppEvolutionPanel enabled={whatsappEnabled} />
@@ -233,7 +263,7 @@ export function NotificationSettingsPanel() {
                 recipientLabel="Destinatario de prueba (token FCM)"
                 recipientPlaceholder="fcm-device-token..."
                 disabled={!watch('fcmServerKey') && !fcmKeyMask.isPreloaded}
-                onTest={(recipient) => settingsApi.testPush({ ...allValues, recipient })}
+                onTest={(recipient) => settingsApi.testPush(buildPushTestPayload(recipient))}
               />
             </div>
           )}
