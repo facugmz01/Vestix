@@ -63,16 +63,24 @@ export class ReservationExpiryJob {
           });
 
           // B. Return reserved quantity back to available stock
-          await tx.stockLevel.updateMany({
+          // Keep invariant: available = physical − reserved (only reserved changes)
+          const stock = await tx.stockLevel.findFirst({
             where: {
-              variantId:   reservation.variantId,
+              variantId: reservation.variantId,
               warehouseId: reservation.warehouseId,
             },
-            data: {
-              reservedQuantity:  { decrement: reservation.quantity },
-              availableQuantity: { increment: reservation.quantity },
-            },
+            orderBy: { availableQuantity: 'desc' },
           });
+          if (stock) {
+            const newReserved = Math.max(0, stock.reservedQuantity - reservation.quantity);
+            await tx.stockLevel.update({
+              where: { id: stock.id },
+              data: {
+                reservedQuantity: newReserved,
+                availableQuantity: stock.physicalQuantity - newReserved,
+              },
+            });
+          }
 
           // C. Record an RESERVATION_RELEASE inventory movement for traceability
           await tx.inventoryMovement.create({
