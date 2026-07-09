@@ -1,0 +1,441 @@
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  padding: 80px;
+}
+
+.panel {
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.panelPad {
+  padding: 28px;
+}
+
+.panelPadSm {
+  padding: 24px;
+}
+
+.stepTitle {
+  margin: 0 0 20px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.span2 {
+  grid-column: span 2;
+}
+
+.docRow {
+  display: flex;
+  gap: 8px;
+}
+
+.docSelect {
+  width: 90px;
+}
+
+.docInput {
+  flex: 1;
+}
+
+.checkboxField {
+  grid-column: span 2;
+  margin-top: 8px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.checkbox {
+  accent-color: var(--sf-primary, var(--accent));
+  width: 16px;
+  height: 16px;
+}
+
+.checkboxHint {
+  margin: 4px 0 0 24px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.stepActions {
+  margin-top: 24px;
+  text-align: right;
+}
+
+.stepActionsBetween {
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.optionRow {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.optionCard {
+  flex: 1;
+  min-width: 140px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  background: var(--surface-0);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.optionCardSelected {
+  border: 2px solid var(--sf-primary, var(--accent));
+  background: var(--sf-primary-subtle, var(--accent-subtle));
+}
+
+.optionIcon {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.optionIconSelected {
+  color: var(--sf-primary, var(--accent));
+}
+
+.optionName {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.optionNameSelected {
+  color: var(--text-primary);
+}
+
+.optionPrice {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.optionPriceSelected {
+  color: var(--sf-primary, var(--accent));
+}
+
+.addressRow {
+  display: flex;
+  gap: 8px;
+}
+
+.addressState {
+  flex: 2;
+}
+
+.addressZip {
+  flex: 1;
+}
+
+.paymentList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.paymentOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--surface-0);
+}
+
+.paymentOptionSelected {
+  border: 2px solid var(--sf-primary, var(--accent));
+  background: var(--sf-primary-subtle, var(--accent-subtle));
+}
+
+.paymentRadio {
+  accent-color: var(--sf-primary, var(--accent));
+}
+
+.paymentInfo {
+  flex: 1;
+}
+
+.paymentName {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.paymentType {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.confirmBtn {
+  min-width: 180px;
+}
+
+/* Order summary */
+.summaryTitle {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.summaryTitleLg {
+  margin: 0 0 20px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.lineList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.lineItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.lineName {
+  flex: 1;
+  padding-right: 8px;
+}
+
+.linePrice {
+  font-weight: 700;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.totals {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.totalsLg {
+  border-top: 2px solid var(--border);
+  padding-top: 16px;
+  margin-bottom: 20px;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.totalRowLg {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.totalRowValue {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.totalRowFree {
+  font-weight: 600;
+  color: var(--green);
+}
+
+.grandTotalRow {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 2px solid var(--border);
+}
+
+.grandTotalLabel {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.grandTotalLabelLg {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.grandTotalValue {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.grandTotalValueLg {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.secureHint {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Cart item row */
+.cartItem {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cartItem:last-child {
+  border-bottom: none;
+}
+
+.thumb {
+  width: 68px;
+  height: 68px;
+  background: var(--surface-1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.thumbLetter {
+  font-size: 28px;
+  color: var(--text-muted);
+  font-weight: 900;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 120px;
+}
+
+.itemName {
+  margin: 0 0 3px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemMeta {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono, monospace);
+}
+
+.itemPrice {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.itemControls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.qtyControl {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface-1);
+}
+
+.qtyBtn {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.qtyValue {
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  background: var(--surface-0);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.subtotalCol {
+  width: 90px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.subtotalValue {
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--red);
+  flex-shrink: 0;
+}

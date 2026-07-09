@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation, Link, useOutletContext } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { User, Loader2, Save } from 'lucide-react';
+import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { storefrontAuthApi } from '@/api/storefront-auth.api';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
@@ -8,6 +9,8 @@ import { storePrefix } from '@/utils/storefrontDomain';
 import { getStoreLoginChannelConfig } from '@/utils/storeLoginChannel';
 import type { StorefrontSettings } from '@/api/storefront.api';
 import { StorefrontRequireAuth } from '@/components/storefront/StorefrontRequireAuth';
+import { StorefrontPage, StorefrontCard, StorefrontAlert } from '@/components/storefront';
+import sf from '@/components/storefront/storefront.module.css';
 
 function formatPhoneDisplay(phone: string | null | undefined): string {
   if (!phone) return '';
@@ -97,128 +100,62 @@ function ProfileForm() {
   };
 
   return (
-    <div style={{ maxWidth: '520px', margin: '48px auto', padding: '0 24px' }}>
-      <div
-        className="glass animate-fade"
-        style={{
-          padding: '40px 32px',
-          borderRadius: '20px',
-          border: '1px solid var(--border)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '16px',
-              background: 'var(--sf-primary, var(--accent))',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-            }}
-          >
+    <StorefrontPage variant="narrow">
+      <StorefrontCard>
+        <div className={sf.cardHeader}>
+          <div className={sf.cardIcon}>
             <User size={30} />
           </div>
-          <h1 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>
+          <h1 className={sf.cardTitle}>
             {isOnboarding ? 'Completá tu registro' : 'Mis datos'}
           </h1>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.5 }}>
+          <p className={sf.cardSubtitle}>
             {isOnboarding
               ? 'Necesitamos algunos datos para procesar tus pedidos y facturación.'
               : 'Actualizá tu información personal cuando lo necesites.'}
           </p>
         </div>
 
-        {error && (
-          <div
-            style={{
-              background: 'var(--red-bg)',
-              border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: '10px',
-              color: 'var(--red)',
-              padding: '12px 14px',
-              fontSize: '14px',
-              marginBottom: '16px',
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {error && <StorefrontAlert variant="error">{error}</StorefrontAlert>}
 
         <form onSubmit={handleSubmit}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }}>
-            Nombre y apellido *
-          </label>
+          <label className={sf.label}>Nombre y apellido *</label>
           <input
-            className="storefront-input"
+            className={clsx('storefront-input', sf.inputMb)}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Ej: Juan Pérez"
             autoComplete="name"
-            style={{ width: '100%', marginBottom: '16px' }}
           />
 
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }}>
-            DNI / CUIT *
-          </label>
+          <label className={sf.label}>DNI / CUIT *</label>
           <input
-            className="storefront-input"
+            className={clsx('storefront-input', sf.inputMb)}
             value={taxId}
             onChange={(e) => setTaxId(e.target.value)}
             placeholder="Ej: 30123456"
             inputMode="numeric"
-            style={{ width: '100%', marginBottom: '16px' }}
           />
 
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }}>
-            Correo electrónico *
-          </label>
+          <label className={sf.label}>Correo electrónico *</label>
           <input
-            className="storefront-input"
+            className={clsx('storefront-input', sf.inputMb, loginViaEmail && !!customer?.email && sf.inputReadonly)}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@email.com"
             readOnly={loginViaEmail && !!customer?.email}
             autoComplete="email"
-            style={{
-              width: '100%',
-              marginBottom: '16px',
-              opacity: loginViaEmail && !!customer?.email ? 0.7 : 1,
-            }}
           />
           {loginViaEmail && !!customer?.email && (
-            <p style={{ margin: '-12px 0 16px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              Este es el correo con el que iniciaste sesión.
-            </p>
+            <p className={clsx(sf.hint, sf.hintTight)}>Este es el correo con el que iniciaste sesión.</p>
           )}
 
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }}>
-            Teléfono *
-          </label>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: loginViaEmail ? '20px' : '8px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'var(--sf-primary-subtle, var(--accent-subtle))',
-                border: '1px solid rgba(var(--sf-primary-rgb, 59, 130, 246), 0.2)',
-                borderRadius: '10px',
-                padding: '0 12px',
-                color: 'var(--sf-primary, var(--accent))',
-                fontWeight: 700,
-                fontSize: '14px',
-                flexShrink: 0,
-              }}
-            >
-              🇦🇷 +54
-            </div>
+          <label className={sf.label}>Teléfono *</label>
+          <div className={sf.phoneRow}>
+            <div className={sf.phonePrefix}>🇦🇷 +54</div>
             <input
-              className="storefront-input"
+              className={clsx('storefront-input', !loginViaEmail && !!customer?.phone && sf.inputReadonly)}
               type="tel"
               inputMode="tel"
               value={phone}
@@ -226,18 +163,16 @@ function ProfileForm() {
               placeholder="11 2345 6789"
               readOnly={!loginViaEmail && !!customer?.phone}
               autoComplete="tel"
-              style={{ flex: 1, opacity: !loginViaEmail && !!customer?.phone ? 0.7 : 1 }}
+              style={{ flex: 1 }}
             />
           </div>
           {!loginViaEmail && !!customer?.phone && (
-            <p style={{ margin: '0 0 20px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              Este es el teléfono con el que iniciaste sesión.
-            </p>
+            <p className={sf.hint}>Este es el teléfono con el que iniciaste sesión.</p>
           )}
 
           <button
             type="submit"
-            className="storefront-btn w-full"
+            className={clsx('storefront-btn', sf.wFull)}
             disabled={loading}
             style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
@@ -254,17 +189,12 @@ function ProfileForm() {
         </form>
 
         {!isOnboarding && (
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <Link
-              to={`${prefix}/my-orders`}
-              style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none', fontWeight: 500 }}
-            >
-              ← Volver a mis pedidos
-            </Link>
+          <div className={sf.footerLink}>
+            <Link to={`${prefix}/my-orders`}>← Volver a mis pedidos</Link>
           </div>
         )}
-      </div>
-    </div>
+      </StorefrontCard>
+    </StorefrontPage>
   );
 }
 

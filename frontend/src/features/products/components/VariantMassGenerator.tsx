@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
 import { productsApi } from '@/api/products.api';
 import { Button } from '@/components/ui';
+import clsx from 'clsx';
+import styles from './ProductFormWidgets.module.css';
 
 interface Props {
   costPrice: number;
@@ -89,14 +91,14 @@ export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-      <h4 style={{ fontWeight: 600 }}>Generador Masivo</h4>
+    <div className={styles.generator}>
+      <h4 className={styles.generatorTitle}>Generador Masivo</h4>
       
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+      <div className={styles.attrGrid}>
         {attributes?.map(attr => (
-          <div key={attr.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>{attr.name}</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          <div key={attr.id} className={styles.attrGroup}>
+            <label className={styles.attrLabel}>{attr.name}</label>
+            <div className={styles.attrValues}>
               {attr.values.map((v: any) => {
                 const isSelected = selectedAttributes[attr.name]?.includes(v.value);
                 return (
@@ -104,16 +106,7 @@ export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate
                     key={v.id}
                     type="button"
                     onClick={() => toggleValue(attr.name, v.value)}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '11px',
-                      borderRadius: '4px',
-                      border: '1px solid',
-                      borderColor: isSelected ? 'var(--brand-primary)' : 'var(--border)',
-                      background: isSelected ? 'var(--brand-dim)' : 'var(--bg-base)',
-                      color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
-                      cursor: 'pointer'
-                    }}
+                    className={clsx(styles.attrChip, isSelected && styles.attrChipSelected)}
                   >
                     {v.value}
                   </button>
