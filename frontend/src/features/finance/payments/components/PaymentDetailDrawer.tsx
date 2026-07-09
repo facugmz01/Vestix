@@ -6,6 +6,7 @@ import { PaymentStatusBadge } from './PaymentStatusBadge';
 import { CreditCard, Banknote, Landmark, Gift, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatPaymentReferenceId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -23,7 +24,6 @@ export function PaymentDetailDrawer({ open, onClose, paymentId }: Props) {
   if (!paymentId || isLoading || !payment) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="md"><div /></Drawer>;
   }
-
 
   const getMethodName = (m: string) => {
     switch(m) {
@@ -45,52 +45,52 @@ export function PaymentDetailDrawer({ open, onClose, paymentId }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Cobro" width="md">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+      <div className={styles.stack}>
+
+        <div className={styles.heroCard}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>Ticket Referencia</p>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: 'monospace' }}>{formatPaymentReferenceId(payment.referenceId)}</h3>
-            {payment.customerName && <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{payment.customerName}</p>}
+            <p className={styles.heroLabel}>Ticket Referencia</p>
+            <h3 className={styles.heroTitleNeutral}>{formatPaymentReferenceId(payment.referenceId)}</h3>
+            {payment.customerName && <p className={styles.statValue}>{payment.customerName}</p>}
           </div>
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          <div className={styles.heroAsideCol}>
             <PaymentStatusBadge status={payment.status} />
-            <span style={{ fontSize: '24px', fontWeight: 900 }}>{formatCurrency(payment.amount)}</span>
+            <span className={styles.heroAmountMd}>{formatCurrency(payment.amount)}</span>
           </div>
         </div>
 
         <div>
-          <h4 style={{ margin: '0 0 12px', fontSize: '15px' }}>Desglose de Medios de Pago</h4>
+          <h4 className={styles.sectionHeadingSm}>Desglose de Medios de Pago</h4>
           <Table
             keyField="method"
             data={payment.lines}
             columns={[
-              { 
-                key: 'method', 
+              {
+                key: 'method',
                 header: 'Método',
                 render: (l) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                  <div className={styles.methodRow}>
                     {getMethodIcon(l.method)} {getMethodName(l.method)}
                   </div>
                 )
               },
-              { 
-                key: 'ref', 
+              {
+                key: 'ref',
                 header: 'Referencia',
-                render: (l) => <span style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{l.reference || '-'}</span>
+                render: (l) => <span className={styles.mono}>{l.reference || '-'}</span>
               },
-              { 
-                key: 'amount', 
+              {
+                key: 'amount',
                 header: 'Monto',
-                render: (l) => <span style={{ fontWeight: 800 }}>{formatCurrency(l.amount)}</span>
+                render: (l) => <span className={styles.textStrong}>{formatCurrency(l.amount)}</span>
               }
             ]}
           />
         </div>
 
         {payment.gatewayUrl && payment.status === 'PENDING' && (
-          <div style={{ padding: '20px', background: 'var(--blue-bg)', borderRadius: '8px', border: '1px solid var(--blue)', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 12px', color: 'var(--blue)' }}>Este cobro se gestiona a través de una pasarela externa.</p>
+          <div className={styles.gatewayBox}>
+            <p className={styles.gatewayText}>Este cobro se gestiona a través de una pasarela externa.</p>
             <Button variant="primary" icon={<ExternalLink size={16} />} onClick={() => window.open(payment.gatewayUrl, '_blank')}>
               Ir a la Pasarela de Pago
             </Button>

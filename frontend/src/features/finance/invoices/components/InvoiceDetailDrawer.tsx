@@ -7,7 +7,8 @@ import { queryKeys } from '@/api/queryKeys';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { formatSaleId, formatShortId } from '@/utils/formatId';
+import { formatSaleId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props { open: boolean; onClose: () => void; invoiceId: string | null; }
 
@@ -38,31 +39,35 @@ export function InvoiceDetailDrawer({ open, onClose, invoiceId }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Comprobante Electrónico" width="md">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
+      <div className={styles.stackMd}>
 
-        <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: '10px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className={styles.heroCard}>
           <div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+            <div className={styles.heroBadges}>
               <InvoiceStatusBadge status={invoice.status} />
               <Badge color="blue">{INVOICE_TYPE_LABELS[invoice.type] || invoice.type}</Badge>
             </div>
-            <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--text-muted)' }}>Venta Ref.</p>
-            <h3 style={{ margin: 0, fontFamily: 'monospace', fontWeight: 800, fontSize: '18px' }}>{formatSaleId(invoice.saleOrderId)}</h3>
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>{new Date(invoice.createdAt).toLocaleString()}</p>
+            <p className={styles.heroLabel}>Venta Ref.</p>
+            <h3 className={styles.heroTitleNeutral}>{formatSaleId(invoice.saleOrderId)}</h3>
+            <p className={styles.heroSubtitle}>{new Date(invoice.createdAt).toLocaleString()}</p>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)' }}>Total</p>
-            <span style={{ fontSize: '28px', fontWeight: 900 }}>{formatCurrency(invoice.total)}</span>
+          <div className={styles.heroAside}>
+            <p className={styles.heroLabel}>Total</p>
+            <span className={styles.heroAmountLg}>{formatCurrency(invoice.total)}</span>
           </div>
         </div>
 
         {invoice.status === 'ISSUED' && invoice.cae && (
-          <div style={{ padding: '16px', background: 'var(--green-bg)', borderRadius: '10px', border: '1px solid var(--green)', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+          <div className={styles.caeBox}>
             <ShieldCheck size={24} color="var(--green)" />
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--green)' }}>CAE Aprobado por AFIP</p>
-              <p style={{ margin: '0 0 8px', fontFamily: 'monospace', fontSize: '16px', fontWeight: 900 }}>{invoice.cae}</p>
-              {invoice.caeDueDate && <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Venc.: <strong>{new Date(invoice.caeDueDate).toLocaleDateString()}</strong></p>}
+            <div className={styles.caeBody}>
+              <p className={styles.caeTitle}>CAE Aprobado por AFIP</p>
+              <p className={styles.caeCode}>{invoice.cae}</p>
+              {invoice.caeDueDate && (
+                <p className={styles.caeDue}>
+                  Venc.: <strong>{new Date(invoice.caeDueDate).toLocaleDateString()}</strong>
+                </p>
+              )}
             </div>
             {invoice.pdfUrl && (
               <Button variant="ghost" size="sm" icon={<Download size={16} />} onClick={() => window.open(invoice.pdfUrl!, '_blank')}>PDF</Button>
@@ -71,44 +76,66 @@ export function InvoiceDetailDrawer({ open, onClose, invoiceId }: Props) {
         )}
 
         {invoice.status === 'FAILED' && (
-          <div style={{ padding: '16px', background: 'var(--red-bg)', borderRadius: '10px', border: '1px solid var(--red)', display: 'flex', gap: '12px' }}>
+          <div className={styles.errorBox}>
             <AlertTriangle size={24} color="var(--red)" />
             <div>
-              <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--red)' }}>Error AFIP</p>
-              {invoice.afipCode && <p style={{ margin: '0 0 2px', fontSize: '12px', fontFamily: 'monospace' }}>Cód: {invoice.afipCode}</p>}
-              <p style={{ margin: 0, fontSize: '13px' }}>{invoice.afipMessage || 'Sin detalle disponible.'}</p>
+              <p className={styles.errorTitle}>Error AFIP</p>
+              {invoice.afipCode && <p className={styles.errorCode}>Cód: {invoice.afipCode}</p>}
+              <p className={styles.errorMessage}>{invoice.afipMessage || 'Sin detalle disponible.'}</p>
             </div>
           </div>
         )}
 
-        <div style={{ border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.fiscalPanel}>
+          <div className={styles.fiscalPanelHeader}>
             <Building2 size={14} /> Datos Fiscales del Receptor
           </div>
-          <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px' }}>
-            <div><p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Razón Social</p><p style={{ margin: 0, fontWeight: 700 }}>{invoice.receiverName}</p></div>
-            <div><p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Documento</p><p style={{ margin: 0, fontWeight: 700 }}>{invoice.receiverDocType}: <span style={{ fontFamily: 'monospace' }}>{invoice.receiverDocNumber}</span></p></div>
-            <div><p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Condición IVA</p><p style={{ margin: 0 }}>{invoice.receiverIvaCondition}</p></div>
+          <div className={styles.fiscalGrid}>
+            <div>
+              <p className={styles.fiscalFieldLabel}>Razón Social</p>
+              <p className={styles.fiscalFieldValue}>{invoice.receiverName}</p>
+            </div>
+            <div>
+              <p className={styles.fiscalFieldLabel}>Documento</p>
+              <p className={styles.fiscalFieldValue}>
+                {invoice.receiverDocType}: <span className={styles.mono}>{invoice.receiverDocNumber}</span>
+              </p>
+            </div>
+            <div>
+              <p className={styles.fiscalFieldLabel}>Condición IVA</p>
+              <p className={styles.fiscalFieldValue}>{invoice.receiverIvaCondition}</p>
+            </div>
           </div>
         </div>
 
-        <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}><span>Neto Gravado</span><span style={{ fontWeight: 600 }}>{formatCurrency(invoice.subtotal)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}><span>IVA 21%</span><span style={{ fontWeight: 600 }}>{formatCurrency(invoice.vatAmount)}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '10px', borderTop: '2px solid var(--border)' }}><span style={{ fontWeight: 800, fontSize: '16px' }}>Total</span><span style={{ fontWeight: 900, fontSize: '20px' }}>{formatCurrency(invoice.total)}</span></div>
+        <div className={styles.totalsPanel}>
+          <div className={styles.totalsRow}>
+            <span>Neto Gravado</span>
+            <span className={styles.infoValue}>{formatCurrency(invoice.subtotal)}</span>
+          </div>
+          <div className={styles.totalsRow}>
+            <span>IVA 21%</span>
+            <span className={styles.infoValue}>{formatCurrency(invoice.vatAmount)}</span>
+          </div>
+          <div className={styles.totalsRowFinal}>
+            <span className={styles.totalsFinalLabel}>Total</span>
+            <span className={styles.totalsFinalValue}>{formatCurrency(invoice.total)}</span>
+          </div>
         </div>
 
-        <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--border)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-          {invoice.status === 'FAILED' && (
-            <ActionGuard action="manage" subject="Finance">
-              <Button variant="primary" icon={<RefreshCw size={16} />} onClick={() => retryMutation.mutate()} loading={retryMutation.isPending}>Reintentar Emisión</Button>
-            </ActionGuard>
-          )}
-          {invoice.status === 'ISSUED' && (
-            <ActionGuard action="manage" subject="Finance">
-              <Button variant="ghost" style={{ color: 'var(--red)' }} icon={<XCircle size={16} />} onClick={() => cancelMutation.mutate()} loading={cancelMutation.isPending}>Anular</Button>
-            </ActionGuard>
-          )}
+        <div className={styles.footer}>
+          <div className={styles.actionFooter}>
+            {invoice.status === 'FAILED' && (
+              <ActionGuard action="manage" subject="Finance">
+                <Button variant="primary" icon={<RefreshCw size={16} />} onClick={() => retryMutation.mutate()} loading={retryMutation.isPending}>Reintentar Emisión</Button>
+              </ActionGuard>
+            )}
+            {invoice.status === 'ISSUED' && (
+              <ActionGuard action="manage" subject="Finance">
+                <Button variant="ghost" className={styles.btnDangerGhost} icon={<XCircle size={16} />} onClick={() => cancelMutation.mutate()} loading={cancelMutation.isPending}>Anular</Button>
+              </ActionGuard>
+            )}
+          </div>
         </div>
       </div>
     </Drawer>

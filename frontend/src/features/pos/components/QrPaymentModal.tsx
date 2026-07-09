@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { posApi } from '@/api/pos.api';
 import toast from 'react-hot-toast';
+import styles from '@/pages/pos/POSPage.module.css';
 
 interface QrPaymentModalProps {
   open: boolean;
@@ -92,46 +93,46 @@ export function QrPaymentModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Cobro con QR Mercadopago">
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '10px' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Monto a cobrar</div>
-          <div style={{ fontSize: '36px', fontWeight: 800, color: '#34d399' }}>{formatCurrency(amount)}</div>
+      <div className={styles.qrStack}>
+        <div className={styles.qrAmountBox}>
+          <div className={styles.qrAmountLabel}>Monto a cobrar</div>
+          <div className={styles.qrAmountValue}>{formatCurrency(amount)}</div>
         </div>
 
         {isLoading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '40px' }}>
-            <Loader2 className="spinner" size={48} color="#3b82f6" />
-            <span style={{ color: 'var(--text-secondary)' }}>Generando QR dinámico...</span>
+          <div className={styles.qrLoading}>
+            <Loader2 className="spinner" size={48} color="var(--accent)" />
+            <span className={styles.qrLoadingText}>Generando QR dinámico...</span>
           </div>
         ) : qrData ? (
-          <div style={{ background: '#fff', padding: '16px', borderRadius: '16px', border: '4px solid #009ee3' }}>
+          <div className={styles.qrCodeWrap}>
             <QRCodeSVG value={qrData} size={200} level="H" includeMargin={false} />
           </div>
         ) : (
-          <div style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className={styles.qrError}>
             <AlertCircle size={20} /> Error al generar QR
           </div>
         )}
 
         {qrData && status === 'PENDING' && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%', marginTop: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#60a5fa', fontSize: '14px' }}>
+          <div className={styles.qrPendingStack}>
+            <div className={styles.qrPendingStatus}>
               <Loader2 className="spinner" size={16} /> Esperando confirmación de pago...
             </div>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
+            <span className={styles.qrPendingHint}>
               El pago se confirma automáticamente cuando Mercado Pago notifica el cobro (webhook + polling).
             </span>
           </div>
         )}
 
         {status === 'APPROVED' && (
-          <div style={{ color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className={styles.qrApproved}>
             <Check size={20} /> Pago confirmado
           </div>
         )}
 
         {status === 'EXPIRED' && (
-          <div style={{ color: '#f87171', fontSize: '14px' }}>QR expirado — generá uno nuevo.</div>
+          <div className={styles.qrExpired}>QR expirado — generá uno nuevo.</div>
         )}
       </div>
     </Modal>
