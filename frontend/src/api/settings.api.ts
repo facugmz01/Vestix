@@ -74,6 +74,10 @@ export interface IntegrationSettings {
   mercadolibreEnabled: boolean;
   woocommerceEnabled: boolean;
   shopifyEnabled: boolean;
+  mpPublicKey?: string;
+  mpAccessToken?: string;
+  mpWebhookSecret?: string;
+  mpExternalPosId?: string;
   mlAppId?: string;
   mlSecretKey?: string;
   shopifyStoreUrl?: string;

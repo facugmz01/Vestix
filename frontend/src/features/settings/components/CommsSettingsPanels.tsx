@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Bell, Plug, Mail, Smartphone, MessageSquare } from 'lucide-react';
+import { Save, Bell, Plug, Mail, Smartphone, MessageSquare, TestTube, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { settingsApi, type ConnectionTestResult } from '@/api/settings.api';
+import { integrationsApi } from '@/api/integrations.api';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { notificationSettingsSchema, parseNotificationSettings, type NotificationSettingsFormData, integrationSettingsSchema, parseIntegrationSettings, type IntegrationSettingsFormData } from '../schemas/commsSettings.schema';
 import styles from './SettingsShared.module.css';
@@ -426,6 +427,7 @@ export function NotificationSettingsPanel() {
 export function IntegrationSettingsPanel() {
   const { data: settings, isLoading } = useGetSettings();
   const mutation = useUpdateSettingsSection('integrations');
+  const [mpTestLoading, setMpTestLoading] = useState(false);
 
   const { register, watch, handleSubmit, reset, formState: { isDirty } } = useForm<IntegrationSettingsFormData>({
     resolver: zodResolver(integrationSettingsSchema),
@@ -440,9 +442,26 @@ export function IntegrationSettingsPanel() {
     mutation.mutate(data, { onSuccess: () => reset(data) });
   };
 
+  const mercadopagoEnabled = watch('mercadopagoEnabled');
   const mercadolibreEnabled = watch('mercadolibreEnabled');
   const woocommerceEnabled = watch('woocommerceEnabled');
   const shopifyEnabled = watch('shopifyEnabled');
+  const mpAccessTokenMask = useMaskedField(watch('mpAccessToken'));
+  const mpWebhookSecretMask = useMaskedField(watch('mpWebhookSecret'));
+
+  const handleTestMercadoPago = async () => {
+    setMpTestLoading(true);
+    try {
+      const result = await integrationsApi.testConnection('mercadopago');
+      if (result.success) toast.success(result.message);
+      else toast.error(result.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al probar conexión';
+      toast.error(message);
+    } finally {
+      setMpTestLoading(false);
+    }
+  };
 
   if (isLoading) return null;
 
@@ -455,8 +474,58 @@ export function IntegrationSettingsPanel() {
         </header>
 
         <div className={styles.cardBody}>
-          <ToggleSwitch label="MercadoPago" hint="Procesamiento de cobros con QR." {...register('mercadopagoEnabled')} />
-          
+          <ToggleSwitch
+            label="Mercado Pago"
+            hint="Checkout Pro (tienda web) y QR en POS. Requiere credenciales de Tus integraciones."
+            {...register('mercadopagoEnabled')}
+          />
+          {mercadopagoEnabled && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
+                Obtené las credenciales en{' '}
+                <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>
+                  Mercado Pago Developers <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
+                </a>
+                . Usá <code>TEST-...</code> para pruebas o <code>APP_USR-...</code> para producción.
+              </p>
+              <Input label="Public Key" placeholder="APP_USR-xxxxxxxx..." {...register('mpPublicKey')} />
+              <Input
+                label="Access Token"
+                type="password"
+                placeholder={mpAccessTokenMask.placeholder}
+                {...register('mpAccessToken')}
+                defaultValue={mpAccessTokenMask.defaultDisplayValue}
+              />
+              <Input
+                label="Webhook Secret"
+                type="password"
+                placeholder={mpWebhookSecretMask.placeholder}
+                {...register('mpWebhookSecret')}
+                defaultValue={mpWebhookSecretMask.defaultDisplayValue}
+              />
+              <Input
+                label="External POS ID (opcional, QR híbrido)"
+                placeholder="CAJA001"
+                {...register('mpExternalPosId')}
+              />
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  icon={<TestTube size={16} />}
+                  loading={mpTestLoading}
+                  onClick={handleTestMercadoPago}
+                >
+                  Probar conexión
+                </Button>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Guardá los cambios antes de probar. URLs de webhook en{' '}
+                  <a href="/admin/integrations" style={{ color: 'var(--accent)' }}>Integraciones externas</a>.
+                </span>
+              </div>
+            </div>
+          )}
+
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
           
           <ToggleSwitch label="MercadoLibre" hint="Sincronización de catálogo y pedidos." {...register('mercadolibreEnabled')} />
