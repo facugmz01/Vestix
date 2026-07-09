@@ -475,10 +475,23 @@ export class UpdateSettingsDto {
  * extra field, so we declare the full shape as optional.
  */
 
-export class TestSmtpDto {
+/**
+ * Shared optional fields that may be sent when the UI posts the full
+ * notifications object. Declared here so forbidNonWhitelisted does not 400.
+ */
+class TestNotificationContextDto {
+  @IsOptional() @IsBoolean() notifyOnDelivery?: boolean;
+  @IsOptional() @IsArray() @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true }) saleChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  @IsOptional() @IsArray() @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true }) purchaseChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  @IsOptional() @IsArray() @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true }) deliveryChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  @IsOptional() @IsArray() @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true }) lowStockChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+  @IsOptional() @IsArray() @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true }) transferChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
+}
+
+export class TestSmtpDto extends TestNotificationContextDto {
   @IsOptional() @IsString() recipient?: string;
   @IsOptional() @IsString() smtpHost?: string;
-  @IsOptional() @IsNumber() smtpPort?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() smtpPort?: number;
   @IsOptional() @IsString() smtpUser?: string;
   @IsOptional() @IsString() smtpPass?: string;
   // Extra fields from the full notifications object — ignored by the service
@@ -486,11 +499,12 @@ export class TestSmtpDto {
   @IsOptional() @IsBoolean() smsEnabled?: boolean;
   @IsOptional() @IsBoolean() whatsappEnabled?: boolean;
   @IsOptional() @IsBoolean() pushEnabled?: boolean;
-  @IsOptional() @IsNumber()  lowStockThreshold?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() lowStockThreshold?: number;
   @IsOptional() @IsBoolean() notifyOnSale?: boolean;
   @IsOptional() @IsBoolean() notifyOnPurchase?: boolean;
   @IsOptional() @IsBoolean() notifyOnLowStock?: boolean;
   @IsOptional() @IsBoolean() notifyOnTransfer?: boolean;
+  @IsOptional() @IsBoolean() notifyOnDelivery?: boolean;
   @IsOptional() @IsString()  smsGatewayUrl?: string;
   @IsOptional() @IsString()  evolutionApiUrl?: string;
   @IsOptional() @IsString()  evolutionApiKey?: string;
@@ -498,7 +512,7 @@ export class TestSmtpDto {
   @IsOptional() @IsString()  fcmServerKey?: string;
 }
 
-export class TestSmsDto {
+export class TestSmsDto extends TestNotificationContextDto {
   @IsOptional() @IsString() recipient?: string;
   @IsOptional() @IsString() smsGatewayUrl?: string;
   @IsOptional() @IsBoolean() emailEnabled?: boolean;
@@ -510,8 +524,9 @@ export class TestSmsDto {
   @IsOptional() @IsBoolean() notifyOnPurchase?: boolean;
   @IsOptional() @IsBoolean() notifyOnLowStock?: boolean;
   @IsOptional() @IsBoolean() notifyOnTransfer?: boolean;
+  @IsOptional() @IsBoolean() notifyOnDelivery?: boolean;
   @IsOptional() @IsString()  smtpHost?: string;
-  @IsOptional() @IsNumber()  smtpPort?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() smtpPort?: number;
   @IsOptional() @IsString()  smtpUser?: string;
   @IsOptional() @IsString()  smtpPass?: string;
   @IsOptional() @IsString()  evolutionApiUrl?: string;
@@ -520,7 +535,7 @@ export class TestSmsDto {
   @IsOptional() @IsString()  fcmServerKey?: string;
 }
 
-export class TestWhatsappDto {
+export class TestWhatsappDto extends TestNotificationContextDto {
   @IsOptional() @IsString() recipient?: string;
   @IsOptional() @IsString() evolutionApiUrl?: string;
   @IsOptional() @IsString() evolutionApiKey?: string;
@@ -534,15 +549,16 @@ export class TestWhatsappDto {
   @IsOptional() @IsBoolean() notifyOnPurchase?: boolean;
   @IsOptional() @IsBoolean() notifyOnLowStock?: boolean;
   @IsOptional() @IsBoolean() notifyOnTransfer?: boolean;
+  @IsOptional() @IsBoolean() notifyOnDelivery?: boolean;
   @IsOptional() @IsString()  smtpHost?: string;
-  @IsOptional() @IsNumber()  smtpPort?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() smtpPort?: number;
   @IsOptional() @IsString()  smtpUser?: string;
   @IsOptional() @IsString()  smtpPass?: string;
   @IsOptional() @IsString()  smsGatewayUrl?: string;
   @IsOptional() @IsString()  fcmServerKey?: string;
 }
 
-export class TestPushDto {
+export class TestPushDto extends TestNotificationContextDto {
   @IsOptional() @IsString() recipient?: string;
   @IsOptional() @IsString() fcmServerKey?: string;
   @IsOptional() @IsBoolean() emailEnabled?: boolean;
@@ -554,8 +570,9 @@ export class TestPushDto {
   @IsOptional() @IsBoolean() notifyOnPurchase?: boolean;
   @IsOptional() @IsBoolean() notifyOnLowStock?: boolean;
   @IsOptional() @IsBoolean() notifyOnTransfer?: boolean;
+  @IsOptional() @IsBoolean() notifyOnDelivery?: boolean;
   @IsOptional() @IsString()  smtpHost?: string;
-  @IsOptional() @IsNumber()  smtpPort?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() smtpPort?: number;
   @IsOptional() @IsString()  smtpUser?: string;
   @IsOptional() @IsString()  smtpPass?: string;
   @IsOptional() @IsString()  smsGatewayUrl?: string;
