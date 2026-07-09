@@ -158,15 +158,37 @@ export class NotificationTriggersService {
 
     const order = await this.prisma.saleOrder.findUnique({
       where: { id: orderId },
-      include: { customer: true },
+      include: {
+        customer: true,
+        lines: true,
+      },
     });
     if (!order) return;
+
+    const variantIds = order.lines.map((line) => line.variantId);
+    const variants = variantIds.length
+      ? await this.prisma.productVariant.findMany({
+          where: { id: { in: variantIds } },
+          include: { product: true },
+        })
+      : [];
+    const variantMap = new Map(variants.map((variant) => [variant.id, variant]));
+
+    const orderSummary = order.lines
+      .map((line) => {
+        const variant = variantMap.get(line.variantId);
+        const name = line.historicalName || variant?.product?.name || 'Producto';
+        const lineTotal = line.finalPrice * line.quantity;
+        return `• ${name} x${line.quantity} — $ ${this.formatMoney(lineTotal)}`;
+      })
+      .join('\n');
 
     const customerName = order.customer?.fullName || 'Cliente';
     const vars = {
       customerName,
       orderId: formatSaleId(order.id, order.status),
-      total:   this.formatMoney(order.grandTotal),
+      total: this.formatMoney(order.grandTotal),
+      orderSummary: orderSummary || 'Sin detalle de ítems',
     };
 
     await this.dispatchToChannels({

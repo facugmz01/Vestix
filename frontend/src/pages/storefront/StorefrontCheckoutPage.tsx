@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { CheckCircle, Truck, Store, CreditCard, User, Loader2 } from 'lucide-react';
+import { Truck, Store, CreditCard, User, Loader2 } from 'lucide-react';
 import { storefrontOrdersApi, type CheckoutDto } from '@/api/storefront-orders.api';
 import { storefrontApi } from '@/api/storefront.api';
 import { useCartStore } from '@/store/cart.store';
@@ -17,6 +17,7 @@ export default function StorefrontCheckoutPage() {
   const queryClient = useQueryClient();
   const { items, totalPrice, clearCart } = useCartStore();
   const enqueueOfflineOp = useOfflineQueueStore(s => s.enqueue);
+  const checkoutCompletedRef = useRef(false);
 
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['storefrontSettings', prefix],
@@ -24,74 +25,17 @@ export default function StorefrontCheckoutPage() {
   });
 
   const { customer, isAuthenticated } = useStorefrontAuthStore();
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [info, setInfo] = useState({ firstName: '', lastName: '', email: '', phone: '', docType: 'DNI', docNum: '' });
   const [shippingMethod, setShippingMethod] = useState<string>('');
   const [shippingAddress, setShippingAddress] = useState({ street: '', city: '', state: '', zip: '' });
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [issueInvoice, setIssueInvoice] = useState(false);
-  const [completedOrderId, setCompletedOrderId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isAuthenticated && customer) {
-      const nameParts = customer.fullName ? customer.fullName.split(' ') : [];
-      setInfo(prev => ({
-        ...prev,
-        firstName: nameParts[0] || prev.firstName,
-        lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : prev.lastName,
-        email: customer.email || prev.email,
-        phone: customer.phone || prev.phone,
-      }));
-    }
-  }, [isAuthenticated, customer]);
-
-  useEffect(() => {
-    if (settings?.shippingMethods?.length && !shippingMethod) {
-      setShippingMethod(settings.shippingMethods[0].id);
-    }
-    if (settings?.paymentMethods?.length && !paymentMethod) {
-      setPaymentMethod(settings.paymentMethods[0].id);
-    }
-  }, [settings, shippingMethod, paymentMethod]);
 
   const selectedShipping = settings?.shippingMethods?.find(m => m.id === shippingMethod);
   const SHIPPING_COST = selectedShipping ? selectedShipping.price : 0;
-  
   const subtotal = totalPrice();
   const grandTotal = subtotal + SHIPPING_COST;
-
-  if (isLoadingSettings) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Loader2 size={32} className="spin" color="var(--accent)" /></div>;
-  }
-
-  if (step === 4) {
-    return (
-      <div style={{ maxWidth: '600px', margin: '80px auto', padding: '48px 32px', textAlign: 'center' }}>
-        <div className="glass" style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ width: '80px', height: '80px', background: 'var(--green-bg)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-            <CheckCircle size={48} color="var(--green)" />
-          </div>
-          <h1 style={{ margin: '0 0 12px', fontSize: '26px', fontWeight: 900, color: 'var(--text-primary)' }}>¡Gracias por tu compra!</h1>
-          <p style={{ margin: '0 0 32px', color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6 }}>
-            Tu pedido fue procesado exitosamente.
-            {completedOrderId ? ` Número de pedido: ${completedOrderId.slice(0, 8).toUpperCase()}.` : ''}
-            {' '}Te enviamos un comprobante a <strong>{info.email || 'tu correo'}</strong>.
-          </p>
-          <button
-            onClick={() => navigate(`${prefix}/my-orders`)}
-            className="storefront-btn"
-          >
-            Ver estado de mi pedido
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    navigate(`${prefix}/cart`);
-    return null;
-  }
 
   const mutation = useMutation({
     mutationFn: async (data: CheckoutDto) => {
@@ -133,28 +77,59 @@ export default function StorefrontCheckoutPage() {
     },
     onSuccess: (data: any) => {
       const orderId = data?.res?.id || data?.orderId || null;
-
-      // Invalidate catalogs and history optimistically
+      checkoutCompletedRef.current = true;
       queryClient.invalidateQueries({ queryKey: ['storefront'] });
 
-      if (data?.offline) {
-        setCompletedOrderId(orderId);
-        setStep(4);
-        clearCart();
-        toast.success('Pedido registrado fuera de línea (sincronizará cuando haya conexión) 💾');
-      } else if (data?.payment?.initPoint) {
+      if (data?.payment?.initPoint) {
         clearCart();
         toast.success('Redirigiendo a Mercado Pago...');
         window.location.href = data.payment.initPoint;
+        return;
+      }
+
+      clearCart();
+      const successPath = orderId
+        ? `${prefix}/checkout/success?orderId=${encodeURIComponent(orderId)}`
+        : `${prefix}/checkout/success`;
+      navigate(successPath, { replace: true });
+
+      if (data?.offline) {
+        toast.success('Pedido registrado fuera de línea (sincronizará cuando haya conexión) 💾');
       } else {
-        setCompletedOrderId(orderId);
-        setStep(4);
-        clearCart();
         toast.success('¡Pedido registrado! ✅');
       }
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Error al procesar el pedido. Intente nuevamente.'),
   });
+
+  useEffect(() => {
+    if (isAuthenticated && customer) {
+      const nameParts = customer.fullName ? customer.fullName.split(' ') : [];
+      setInfo(prev => ({
+        ...prev,
+        firstName: nameParts[0] || prev.firstName,
+        lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : prev.lastName,
+        email: customer.email || prev.email,
+        phone: customer.phone || prev.phone,
+      }));
+    }
+  }, [isAuthenticated, customer]);
+
+  useEffect(() => {
+    if (settings?.shippingMethods?.length && !shippingMethod) {
+      setShippingMethod(settings.shippingMethods[0].id);
+    }
+    if (settings?.paymentMethods?.length && !paymentMethod) {
+      setPaymentMethod(settings.paymentMethods[0].id);
+    }
+  }, [settings, shippingMethod, paymentMethod]);
+
+  useEffect(() => {
+    if (isLoadingSettings || mutation.isPending || checkoutCompletedRef.current) return;
+    if (items.length === 0) {
+      navigate(`${prefix}/cart`, { replace: true });
+    }
+  }, [isLoadingSettings, items.length, mutation.isPending, navigate, prefix]);
 
   const handleCheckout = () => {
     if (!info.firstName || !info.email) {
@@ -188,6 +163,13 @@ export default function StorefrontCheckoutPage() {
     });
   };
 
+  if (isLoadingSettings) {
+    return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Loader2 size={32} className="spin" color="var(--accent)" /></div>;
+  }
+
+  if (!isLoadingSettings && items.length === 0 && !mutation.isPending && !checkoutCompletedRef.current) {
+    return null;
+  }
 
   const steps = ['Datos', 'Envío', 'Pago'];
 

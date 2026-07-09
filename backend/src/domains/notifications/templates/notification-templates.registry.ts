@@ -11,17 +11,17 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     key: TemplateKey.SALE_CONFIRMED,
     channel: NotificationChannel.EMAIL,
     subject: 'Tu pedido #{{orderId}} fue confirmado ✅',
-    body: `Hola {{customerName}},\n\nRecibimos tu pedido #{{orderId}} por $ {{total}}.\nEstaremos preparándolo pronto.\n\nGracias por tu compra.`,
+    body: `Hola {{customerName}},\n\nRecibimos tu pedido #{{orderId}} por $ {{total}}.\n\nDetalle:\n{{orderSummary}}\n\nEstaremos preparándolo pronto.\n\nGracias por tu compra.`,
   },
   {
     key: TemplateKey.SALE_CONFIRMED,
     channel: NotificationChannel.WHATSAPP,
-    body: `✅ *Pedido confirmado*\nHola {{customerName}}! Recibimos tu pedido *#{{orderId}}* por *$ {{total}}*. Te avisaremos cuando esté en camino. 🛍️`,
+    body: `✅ *Pedido confirmado*\nHola {{customerName}}! Recibimos tu pedido *#{{orderId}}* por *$ {{total}}*.\n\n{{orderSummary}}\n\nTe avisaremos cuando esté en camino. 🛍️`,
   },
   {
     key: TemplateKey.SALE_CONFIRMED,
     channel: NotificationChannel.SMS,
-    body: `Pedido #{{orderId}} confirmado por $ {{total}}. Gracias {{customerName}}.`,
+    body: `Pedido #{{orderId}} confirmado por $ {{total}}. {{orderSummary}} Gracias {{customerName}}.`,
   },
 
   // ─── ORDER SHIPPED ─────────────────────────────────────────────────────────

@@ -13,7 +13,7 @@ const mockPrisma: any = {
   customer: { findMany: jest.fn(), findUnique: jest.fn() },
   supplier: { findUnique: jest.fn() },
   stockLevel: { findFirst: jest.fn() },
-  productVariant: { findUnique: jest.fn() },
+  productVariant: { findUnique: jest.fn(), findMany: jest.fn() },
   branch: { findUnique: jest.fn() },
   warehouse: { findUnique: jest.fn() },
 };
@@ -113,9 +113,16 @@ describe('NotificationTriggersService', () => {
   it('should notify customer on sale completed when notifyOnSale is enabled', async () => {
     mockPrisma.saleOrder.findUnique.mockResolvedValueOnce({
       id: 'sale-abc-def',
+      status: 'CONFIRMED',
       grandTotal: 5000,
       customer: { fullName: 'Juan', email: 'juan@test.com', phone: '5491111222333' },
+      lines: [
+        { variantId: 'variant-1', quantity: 2, finalPrice: 2500, historicalName: null },
+      ],
     });
+    mockPrisma.productVariant.findMany.mockResolvedValueOnce([
+      { id: 'variant-1', product: { name: 'Remera' } },
+    ]);
 
     await service.onSaleCompleted('sale-abc-def');
 
@@ -125,6 +132,9 @@ describe('NotificationTriggersService', () => {
         channel: NotificationChannel.EMAIL,
         templateKey: TemplateKey.SALE_CONFIRMED,
         recipient: 'juan@test.com',
+        variables: expect.objectContaining({
+          orderSummary: expect.stringContaining('Remera'),
+        }),
       }),
     );
     expect(mockNotifications.enqueue).toHaveBeenCalledWith(
