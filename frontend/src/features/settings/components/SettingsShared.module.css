@@ -157,10 +157,19 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   line-height: 1.5;
-  max-height: 180px;
+  max-height: 320px;
+  min-height: 120px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.testConsoleLoading {
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
+.testConsolePending {
+  color: #93c5fd;
 }
 
 .testConsoleSuccess {

@@ -627,10 +627,19 @@ export class SettingsService implements OnModuleInit {
     return { success, message, logs };
   }
 
-  private logStep(logs: string[], message: string) {
-    const entry = `[${new Date().toISOString()}] ${message}`;
+  private logStep(logs: string[], message: string, step?: string) {
+    const stepPrefix = step ? `[Paso ${step}] ` : '';
+    const entry = `[${new Date().toISOString()}] ${stepPrefix}${message}`;
     logs.push(entry);
+    this.logger.log(`[ConnectionTest] ${stepPrefix}${message}`);
     return entry;
+  }
+
+  private maskSecret(value?: string | null) {
+    if (!value) return '(vacío)';
+    if (value === MASK_VALUE) return '(almacenado en configuración)';
+    if (value.length <= 4) return '****';
+    return `${value.slice(0, 2)}…${value.slice(-2)} (${value.length} chars)`;
   }
 
   async testAfipConnection() {
@@ -648,39 +657,52 @@ export class SettingsService implements OnModuleInit {
     const dto = this.unwrapTestDto(rawDto);
     const logs: string[] = [];
     const recipient = dto.recipient?.trim();
+    const startedAt = Date.now();
 
     try {
-      this.logStep(logs, 'Iniciando prueba SMTP…');
+      this.logStep(logs, 'Iniciando prueba de conexión SMTP', '1/6');
+      this.logStep(logs, `Destinatario de prueba: ${recipient || '(no indicado — solo verificación de credenciales)'}`, '1/6');
+
       if (!dto.smtpHost) {
-        this.logStep(logs, 'Error: host SMTP no configurado.');
+        this.logStep(logs, 'Abortado: host SMTP no configurado.', '2/6');
         return this.buildTestResponse(false, 'Host SMTP no configurado', logs);
       }
 
       let smtpPass = dto.smtpPass;
       if (!smtpPass || smtpPass === MASK_VALUE) {
+        this.logStep(logs, 'Contraseña no enviada en el formulario. Leyendo valor almacenado…', '2/6');
         const stored = await this.getNotificationSettings();
         smtpPass = stored.smtpPass || '';
-        this.logStep(logs, 'Usando contraseña SMTP almacenada en configuración.');
+        this.logStep(logs, smtpPass ? 'Contraseña recuperada desde configuración guardada.' : 'No hay contraseña SMTP almacenada.', '2/6');
+      } else {
+        this.logStep(logs, 'Usando contraseña enviada desde el formulario.', '2/6');
       }
 
       const port = Number(dto.smtpPort) || 587;
-      this.logStep(logs, `Conectando a ${dto.smtpHost}:${port} como ${dto.smtpUser || '(sin usuario)'}…`);
+      const secure = port === 465;
+      this.logStep(
+        logs,
+        `Parámetros: host=${dto.smtpHost}, puerto=${port}, TLS/SSL=${secure ? 'sí' : 'no'}, usuario=${dto.smtpUser || '(sin usuario)'}, pass=${this.maskSecret(smtpPass)}`,
+        '3/6',
+      );
 
+      this.logStep(logs, 'Creando transporte nodemailer…', '4/6');
       const transporter = nodemailer.createTransport({
         host: dto.smtpHost,
         port,
-        secure: port === 465,
+        secure,
         auth: {
           user: dto.smtpUser,
           pass: smtpPass,
         },
       });
 
+      this.logStep(logs, 'Verificando conexión y credenciales (comando VERIFY)…', '5/6');
       await transporter.verify();
-      this.logStep(logs, 'Verificación SMTP exitosa. Credenciales válidas.');
+      this.logStep(logs, 'VERIFY exitoso: el servidor SMTP aceptó la conexión y autenticación.', '5/6');
 
       if (recipient) {
-        this.logStep(logs, `Enviando correo de prueba a ${recipient}…`);
+        this.logStep(logs, `Enviando correo de prueba a ${recipient}…`, '6/6');
         const info = await transporter.sendMail({
           from: dto.smtpUser ? `"Vestix ERP" <${dto.smtpUser}>` : undefined,
           to: recipient,
@@ -688,7 +710,9 @@ export class SettingsService implements OnModuleInit {
           text: 'Este es un mensaje de prueba enviado desde la configuración de notificaciones de Vestix ERP.',
           html: '<p>Este es un <strong>mensaje de prueba</strong> enviado desde la configuración de notificaciones de Vestix ERP.</p>',
         });
-        this.logStep(logs, `Correo enviado. Message-ID: ${info.messageId || 'n/d'}`);
+        this.logStep(logs, `Correo aceptado por el servidor. Message-ID: ${info.messageId || 'n/d'}`, '6/6');
+        if (info.response) this.logStep(logs, `Respuesta SMTP: ${info.response}`, '6/6');
+        this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ÉXITO`, '6/6');
         return this.buildTestResponse(
           true,
           `Conexión SMTP exitosa. Correo de prueba enviado a ${recipient}.`,
@@ -696,6 +720,7 @@ export class SettingsService implements OnModuleInit {
         );
       }
 
+      this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ÉXITO (sin envío)`, '6/6');
       return this.buildTestResponse(
         true,
         'Conexión SMTP exitosa. Credenciales válidas.',
@@ -703,7 +728,10 @@ export class SettingsService implements OnModuleInit {
       );
     } catch (error: any) {
       this.logger.error(`Error SMTP: ${error.message}`);
-      this.logStep(logs, `Error SMTP: ${error.message}`);
+      this.logStep(logs, `Error SMTP: ${error.message}`, 'ERROR');
+      if (error.code) this.logStep(logs, `Código de error: ${error.code}`, 'ERROR');
+      if (error.response) this.logStep(logs, `Respuesta del servidor: ${error.response}`, 'ERROR');
+      this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, 'ERROR');
       return this.buildTestResponse(false, `Error SMTP: ${error.message}`, logs);
     }
   }
@@ -712,62 +740,57 @@ export class SettingsService implements OnModuleInit {
     const dto = this.unwrapTestDto(rawDto);
     const logs: string[] = [];
     const recipient = dto.recipient?.trim();
+    const startedAt = Date.now();
 
     try {
-      this.logStep(logs, 'Iniciando prueba SMS Gateway…');
+      this.logStep(logs, 'Iniciando prueba de SMS Gateway', '1/5');
+      this.logStep(logs, `Destinatario de prueba: ${recipient || '(no indicado — solo ping al gateway)'}`, '1/5');
       if (!dto.smsGatewayUrl) {
-        this.logStep(logs, 'Error: URL del gateway no configurada.');
+        this.logStep(logs, 'Abortado: URL del gateway no configurada.', '2/5');
         return this.buildTestResponse(false, 'URL del Gateway SMS no configurada', logs);
       }
 
-      this.logStep(logs, `Verificando disponibilidad de ${dto.smsGatewayUrl}…`);
+      this.logStep(logs, `Gateway configurado: ${dto.smsGatewayUrl}`, '2/5');
+      this.logStep(logs, 'Enviando HEAD para verificar disponibilidad…', '3/5');
       const res = await fetch(dto.smsGatewayUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) }).catch(() => null);
       if (res && res.ok) {
-        this.logStep(logs, `Gateway responde HTTP ${res.status}.`);
+        this.logStep(logs, `HEAD OK — HTTP ${res.status} ${res.statusText || ''}`.trim(), '3/5');
       } else {
-        this.logStep(logs, `HEAD no respondió OK (status: ${res?.status ?? 'sin respuesta'}). Se intentará envío directo si hay destinatario.`);
+        this.logStep(logs, `HEAD no respondió OK (status: ${res?.status ?? 'sin respuesta'}).`, '3/5');
       }
 
       if (recipient) {
-        this.logStep(logs, `Enviando SMS de prueba a ${recipient}…`);
+        const payload = { to: recipient, message: 'Prueba de conexión SMS — Vestix ERP' };
+        this.logStep(logs, `POST ${dto.smsGatewayUrl}`, '4/5');
+        this.logStep(logs, `Payload: ${JSON.stringify(payload)}`, '4/5');
         const sendRes = await fetch(dto.smsGatewayUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: recipient,
-            message: 'Prueba de conexión SMS — Vestix ERP',
-          }),
+          body: JSON.stringify(payload),
           signal: AbortSignal.timeout(10000),
         });
         const bodyText = await sendRes.text().catch(() => '');
-        this.logStep(logs, `Respuesta del gateway: HTTP ${sendRes.status}${bodyText ? ` — ${bodyText.slice(0, 200)}` : ''}`);
+        this.logStep(logs, `Respuesta HTTP ${sendRes.status} ${sendRes.statusText || ''}`.trim(), '5/5');
+        if (bodyText) this.logStep(logs, `Cuerpo: ${bodyText.slice(0, 500)}`, '5/5');
 
         if (!sendRes.ok) {
-          return this.buildTestResponse(
-            false,
-            `El gateway respondió con error HTTP ${sendRes.status}.`,
-            logs,
-          );
+          this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, '5/5');
+          return this.buildTestResponse(false, `El gateway respondió con error HTTP ${sendRes.status}.`, logs);
         }
 
-        return this.buildTestResponse(
-          true,
-          `SMS de prueba enviado a ${recipient}. Verificá el dispositivo.`,
-          logs,
-        );
+        this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ÉXITO`, '5/5');
+        return this.buildTestResponse(true, `SMS de prueba enviado a ${recipient}. Verificá el dispositivo.`, logs);
       }
 
+      this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ${res && res.ok ? 'ÉXITO' : 'PARCIAL'}`, '5/5');
       if (res && res.ok) {
         return this.buildTestResponse(true, 'Conexión SMS Gateway exitosa.', logs);
       }
 
-      return this.buildTestResponse(
-        true,
-        'Ping enviado. Verificá en el dispositivo si recibió la petición.',
-        logs,
-      );
+      return this.buildTestResponse(true, 'Ping enviado. Verificá en el dispositivo si recibió la petición.', logs);
     } catch (error: any) {
-      this.logStep(logs, `Error: ${error.message}`);
+      this.logStep(logs, `Error: ${error.message}`, 'ERROR');
+      this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, 'ERROR');
       return this.buildTestResponse(false, `Fallo de conexión HTTP: ${error.message}`, logs);
     }
   }
@@ -776,29 +799,36 @@ export class SettingsService implements OnModuleInit {
     const dto = this.unwrapTestDto(rawDto);
     const logs: string[] = [];
     const recipient = dto.recipient?.replace(/\D/g, '');
+    const startedAt = Date.now();
 
     try {
-      this.logStep(logs, 'Iniciando prueba Evolution API (WhatsApp)…');
+      this.logStep(logs, 'Iniciando prueba Evolution API (WhatsApp)', '1/7');
+      this.logStep(logs, `Destinatario de prueba: ${recipient ? `+${recipient}` : '(no indicado — solo estado de sesión)'}`, '1/7');
       const url = dto.evolutionApiUrl;
       if (!url) {
-        this.logStep(logs, 'Error: URL de Evolution API no configurada.');
+        this.logStep(logs, 'Abortado: URL de Evolution API no configurada.', '2/7');
         return this.buildTestResponse(false, 'URL de Evolution API no configurada', logs);
       }
 
       let apiKey = dto.evolutionApiKey;
       if (!apiKey || apiKey === MASK_VALUE) {
+        this.logStep(logs, 'API Key no enviada. Leyendo valor almacenado…', '2/7');
         const stored = await this.getNotificationSettings();
         apiKey = stored.evolutionApiKey || '';
-        this.logStep(logs, 'Usando API Key almacenada en configuración.');
+        this.logStep(logs, apiKey ? 'API Key recuperada desde configuración.' : 'No hay API Key almacenada.', '2/7');
+      } else {
+        this.logStep(logs, 'Usando API Key enviada desde el formulario.', '2/7');
       }
       if (!apiKey) {
-        this.logStep(logs, 'Error: API Key no configurada.');
+        this.logStep(logs, 'Abortado: API Key no configurada.', '2/7');
         return this.buildTestResponse(false, 'API Key de Evolution no configurada', logs);
       }
 
       const instance = dto.evolutionInstance || 'store-main';
       const endpoint = `${url.replace(/\/+$/, '')}/instance/connectionState/${instance}`;
-      this.logStep(logs, `Consultando estado de instancia "${instance}"…`);
+      this.logStep(logs, `Instancia: ${instance}`, '3/7');
+      this.logStep(logs, `GET ${endpoint}`, '4/7');
+      this.logStep(logs, `API Key: ${this.maskSecret(apiKey)}`, '4/7');
 
       const res = await fetch(endpoint, {
         method: 'GET',
@@ -807,7 +837,8 @@ export class SettingsService implements OnModuleInit {
       }).catch(() => null);
 
       if (!res || !res.ok) {
-        this.logStep(logs, `Evolution API no responde. Status: ${res?.status ?? 'sin respuesta'}.`);
+        this.logStep(logs, `Evolution API no responde. HTTP ${res?.status ?? 'sin respuesta'}`, '5/7');
+        this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, '5/7');
         return this.buildTestResponse(
           false,
           `Evolution API no responde. Status: ${res?.status ?? 'sin respuesta'}. Revisá la URL y API Key.`,
@@ -818,11 +849,13 @@ export class SettingsService implements OnModuleInit {
       const data = await res.json().catch(() => ({})) as any;
       const state = data?.instance?.state ?? data?.state ?? 'desconocido';
       const isReady = state === 'open';
-      this.logStep(logs, `Estado de sesión: ${state}${isReady ? ' (conectada)' : ' (no conectada)'}.`);
+      this.logStep(logs, `Respuesta HTTP ${res.status}. Estado de sesión: ${state}${isReady ? ' (conectada)' : ' (no conectada)'}`, '5/7');
+      if (data) this.logStep(logs, `JSON: ${JSON.stringify(data).slice(0, 400)}`, '5/7');
 
       if (recipient) {
         if (!isReady) {
-          this.logStep(logs, 'No se puede enviar mensaje: la sesión no está conectada.');
+          this.logStep(logs, 'No se puede enviar: la sesión WhatsApp no está conectada.', '6/7');
+          this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, '6/7');
           return this.buildTestResponse(
             false,
             'Evolution API alcanzable, pero la sesión no está conectada. Escaneá el QR antes de enviar.',
@@ -831,34 +864,29 @@ export class SettingsService implements OnModuleInit {
         }
 
         const sendEndpoint = `${url.replace(/\/+$/, '')}/message/sendText/${instance}`;
-        this.logStep(logs, `Enviando WhatsApp de prueba a +${recipient}…`);
+        const payload = { number: recipient, text: 'Prueba de conexión WhatsApp — Vestix ERP' };
+        this.logStep(logs, `POST ${sendEndpoint}`, '6/7');
+        this.logStep(logs, `Payload: ${JSON.stringify(payload)}`, '6/7');
         const sendRes = await fetch(sendEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: apiKey },
-          body: JSON.stringify({
-            number: recipient,
-            text: 'Prueba de conexión WhatsApp — Vestix ERP',
-          }),
+          body: JSON.stringify(payload),
           signal: AbortSignal.timeout(10000),
         });
         const sendBody = await sendRes.text().catch(() => '');
-        this.logStep(logs, `Respuesta de envío: HTTP ${sendRes.status}${sendBody ? ` — ${sendBody.slice(0, 200)}` : ''}`);
+        this.logStep(logs, `Respuesta HTTP ${sendRes.status}`, '7/7');
+        if (sendBody) this.logStep(logs, `Cuerpo: ${sendBody.slice(0, 500)}`, '7/7');
 
         if (!sendRes.ok) {
-          return this.buildTestResponse(
-            false,
-            `Evolution API rechazó el envío (HTTP ${sendRes.status}).`,
-            logs,
-          );
+          this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, '7/7');
+          return this.buildTestResponse(false, `Evolution API rechazó el envío (HTTP ${sendRes.status}).`, logs);
         }
 
-        return this.buildTestResponse(
-          true,
-          `WhatsApp de prueba enviado a +${recipient}.`,
-          logs,
-        );
+        this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ÉXITO`, '7/7');
+        return this.buildTestResponse(true, `WhatsApp de prueba enviado a +${recipient}.`, logs);
       }
 
+      this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ${isReady ? 'ÉXITO' : 'PARCIAL'}`, '7/7');
       return this.buildTestResponse(
         true,
         isReady
@@ -867,7 +895,8 @@ export class SettingsService implements OnModuleInit {
         logs,
       );
     } catch (error: any) {
-      this.logStep(logs, `Error: ${error.message}`);
+      this.logStep(logs, `Error: ${error.message}`, 'ERROR');
+      this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, 'ERROR');
       return this.buildTestResponse(false, `Fallo al conectar con Evolution API: ${error.message}`, logs);
     }
   }
@@ -876,65 +905,76 @@ export class SettingsService implements OnModuleInit {
     const dto = this.unwrapTestDto(rawDto);
     const logs: string[] = [];
     const recipient = dto.recipient?.trim();
+    const startedAt = Date.now();
 
     try {
-      this.logStep(logs, 'Iniciando prueba FCM Push…');
+      this.logStep(logs, 'Iniciando prueba FCM Push', '1/5');
+      this.logStep(logs, `Destinatario de prueba: ${recipient ? `token …${recipient.slice(-8)}` : '(no indicado — validación de Server Key)'}`, '1/5');
+
       let fcmServerKey = dto.fcmServerKey;
       if (!fcmServerKey || fcmServerKey === MASK_VALUE) {
+        this.logStep(logs, 'Server Key no enviada. Leyendo valor almacenado…', '2/5');
         const stored = await this.getNotificationSettings();
         fcmServerKey = stored.fcmServerKey || '';
-        this.logStep(logs, 'Usando Server Key almacenada en configuración.');
+        this.logStep(logs, fcmServerKey ? 'Server Key recuperada desde configuración.' : 'No hay Server Key almacenada.', '2/5');
+      } else {
+        this.logStep(logs, 'Usando Server Key enviada desde el formulario.', '2/5');
       }
       if (!fcmServerKey) {
-        this.logStep(logs, 'Error: Server Key de FCM no configurada.');
+        this.logStep(logs, 'Abortado: Server Key de FCM no configurada.', '2/5');
         return this.buildTestResponse(false, 'Server Key de FCM no configurada', logs);
       }
 
       const token = recipient || 'test-token';
-      this.logStep(logs, recipient
-        ? `Enviando notificación de prueba al token …${token.slice(-8)}`
-        : 'Validando credenciales FCM con token de prueba…');
+      const payload = {
+        to: token,
+        notification: {
+          title: 'Prueba Vestix ERP',
+          body: 'Notificación de prueba desde configuración de notificaciones.',
+        },
+      };
+      this.logStep(logs, `Server Key: ${this.maskSecret(fcmServerKey)}`, '3/5');
+      this.logStep(logs, 'POST https://fcm.googleapis.com/fcm/send', '4/5');
+      this.logStep(logs, `Payload: ${JSON.stringify({ ...payload, to: recipient ? `…${token.slice(-8)}` : token })}`, '4/5');
 
       const res = await fetch('https://fcm.googleapis.com/fcm/send', {
         method: 'POST',
         headers: { Authorization: `key=${fcmServerKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: token,
-          notification: {
-            title: 'Prueba Vestix ERP',
-            body: 'Notificación de prueba desde configuración de notificaciones.',
-          },
-        }),
+        body: JSON.stringify(payload),
         signal: AbortSignal.timeout(8000),
       });
 
       const result = await res.json().catch(() => ({})) as any;
-      this.logStep(logs, `Respuesta FCM: HTTP ${res.status}`);
+      this.logStep(logs, `Respuesta HTTP ${res.status}`, '5/5');
+      if (result && Object.keys(result).length > 0) {
+        this.logStep(logs, `JSON: ${JSON.stringify(result).slice(0, 500)}`, '5/5');
+      }
 
       if (res.status === 401) {
-        this.logStep(logs, 'Server Key inválida o rechazada por Google.');
+        this.logStep(logs, 'Server Key inválida o rechazada por Google.', '5/5');
+        this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, '5/5');
         return this.buildTestResponse(false, 'FCM Server Key inválida.', logs);
       }
 
       if (recipient) {
         if (!res.ok || result.failure > 0) {
           const errMsg = result.results?.[0]?.error || `FCM HTTP ${res.status}`;
-          this.logStep(logs, `Error de entrega: ${errMsg}`);
+          this.logStep(logs, `Error de entrega: ${errMsg}`, '5/5');
+          this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, '5/5');
           return this.buildTestResponse(false, `FCM delivery failed: ${errMsg}`, logs);
         }
 
-        this.logStep(logs, 'Notificación push entregada correctamente.');
-        return this.buildTestResponse(
-          true,
-          'Notificación push de prueba enviada correctamente.',
-          logs,
-        );
+        this.logStep(logs, 'Notificación push entregada correctamente.', '5/5');
+        this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ÉXITO`, '5/5');
+        return this.buildTestResponse(true, 'Notificación push de prueba enviada correctamente.', logs);
       }
 
-      this.logStep(logs, 'Credenciales FCM validadas correctamente.');
+      this.logStep(logs, 'Credenciales FCM validadas correctamente.', '5/5');
+      this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ÉXITO`, '5/5');
       return this.buildTestResponse(true, 'Credenciales FCM validadas correctamente.', logs);
     } catch (error: any) {
-      this.logStep(logs, `Error: ${error.message}`);
+      this.logStep(logs, `Error: ${error.message}`, 'ERROR');
+      this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, 'ERROR');
       return this.buildTestResponse(false, `Error FCM: ${error.message}`, logs);
     }
   }
