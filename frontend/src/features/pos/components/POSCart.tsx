@@ -72,12 +72,7 @@ export function POSCart({
   return (
     <div className={styles.cartArea}>
       {isOffline && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '10px 14px', marginBottom: '10px', borderRadius: '10px',
-          background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.25)',
-          fontSize: '13px', color: '#fb923c',
-        }}>
+        <div className={styles.offlineBanner}>
           <CloudOff size={16} />
           <span>
             Modo offline
@@ -93,7 +88,7 @@ export function POSCart({
       <div className={styles.tableContainer}>
         <div className={styles.cartList}>
           {cart.length === 0 ? (
-            <div className={styles.emptyState} style={{ marginTop: '40px' }}>
+            <div className={`${styles.emptyState} ${styles.emptyStateTop}`}>
               <p>Escaneá o buscá productos</p>
             </div>
           ) : (
@@ -133,7 +128,7 @@ export function POSCart({
                   aria-label="Descuento porcentaje"
                   value={item.discountPct}
                   onChange={e => updateDiscount(item.variant.id, Math.min(100, Math.max(0, Number(e.target.value))))}
-                  style={{ width: '48px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', color: '#fff', textAlign: 'center', fontSize: '12px' }}
+                  className={styles.discountInput}
                 />
 
                 <button type="button" className={styles.removeBtn} aria-label="Eliminar línea" onClick={() => removeLine(item.variant.id)}>
@@ -158,20 +153,20 @@ export function POSCart({
           <span>Items: {totalItems}</span>
           <span>Subtotal: {formatCurrency(subtotal)}</span>
         </div>
-        <div className={styles.summaryRow} style={{ alignItems: 'center' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={`${styles.summaryRow} ${styles.summaryRowCenter}`}>
+          <span className={styles.discountLabelRow}>
             Descuento Global %:
             <input
               type="number"
               min={0}
               max={100}
               aria-label="Descuento global porcentaje"
-              style={{ width: '60px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', color: '#fff', textAlign: 'center' }}
+              className={styles.discountInputLg}
               value={cartDiscountPct}
               onChange={e => setCartDiscountPct(Math.min(100, Math.max(0, Number(e.target.value))))}
             />
           </span>
-          <span style={{ color: '#f87171' }}>(-) {formatCurrency(lineDiscounts + globalDiscount)}</span>
+          <span className={styles.discountTotal}>(-) {formatCurrency(lineDiscounts + globalDiscount)}</span>
         </div>
         <div className={styles.summaryRow}>
           <span>Neto gravado (21%)</span>

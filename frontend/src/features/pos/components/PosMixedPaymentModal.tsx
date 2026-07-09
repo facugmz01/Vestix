@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { usePosStore } from '../store/usePosStore';
 import type { PaymentMethodType } from '@/types';
+import styles from '@/pages/pos/POSPage.module.css';
 
 export interface PosPaymentSplit {
   id: string;
@@ -84,23 +85,23 @@ export function PosMixedPaymentModal({ open, grandTotal, onClose, onConfirm, isL
 
   return (
     <Modal open={open} onClose={onClose} title="Pago Mixto">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(99,102,241,0.1)', borderRadius: '12px' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Total a cobrar</div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#a5b4fc' }}>{formatCurrency(grandTotal)}</div>
+      <div className={styles.mixedStack}>
+        <div className={styles.mixedTotalBox}>
+          <div className={styles.mixedTotalLabel}>Total a cobrar</div>
+          <div className={styles.mixedTotalValue}>{formatCurrency(grandTotal)}</div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 600 }}>Medios de pago</span>
+        <div className={styles.mixedHeader}>
+          <span>Medios de pago</span>
           <Button variant="ghost" size="sm" onClick={addLine} icon={<Plus size={16} />}>Agregar</Button>
         </div>
 
         {lines.map(line => (
-          <div key={line.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 2fr auto', gap: '8px', alignItems: 'center' }}>
+          <div key={line.id} className={styles.mixedLine}>
             <select
               value={line.method}
               onChange={e => updateLine(line.id, 'method', e.target.value)}
-              style={{ padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
+              className={styles.mixedSelect}
             >
               {METHOD_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -120,14 +121,16 @@ export function PosMixedPaymentModal({ open, grandTotal, onClose, onConfirm, isL
                 onChange={e => updateLine(line.id, 'reference', e.target.value)}
               />
             ) : <div />}
-            <button onClick={() => removeLine(line.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171' }}>
+            <button type="button" onClick={() => removeLine(line.id)} className={styles.mixedRemoveBtn}>
               <Trash2 size={18} />
             </button>
           </div>
         ))}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-          <span>Falta: <strong style={{ color: remaining === 0 ? '#34d399' : '#f87171' }}>{formatCurrency(remaining)}</strong></span>
+        <div className={styles.mixedSummary}>
+          <span>
+            Falta: <strong className={remaining === 0 ? styles.mixedOk : styles.mixedFail}>{formatCurrency(remaining)}</strong>
+          </span>
           <span>Ingresado: <strong>{formatCurrency(totalAdded)}</strong></span>
         </div>
 
@@ -136,7 +139,7 @@ export function PosMixedPaymentModal({ open, grandTotal, onClose, onConfirm, isL
           onClick={handleConfirm}
           loading={isLoading}
           disabled={Math.abs(remaining) > 0.01}
-          style={{ height: '48px' }}
+          className={styles.mixedConfirmBtn}
         >
           Confirmar Pago Mixto
         </Button>

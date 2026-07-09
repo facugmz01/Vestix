@@ -745,6 +745,397 @@
   font-weight: 500;
 }
 
+.emptyStateTop {
+  margin-top: 40px;
+}
+
+/* Offline banner */
+.offlineBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: var(--amber-bg, rgba(249, 115, 22, 0.12));
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  font-size: 13px;
+  color: var(--amber, #fb923c);
+}
+
+/* Cart discount inputs */
+.discountInput {
+  width: 48px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  text-align: center;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.discountInputLg {
+  width: 60px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  text-align: center;
+  font-family: inherit;
+}
+
+.summaryRowCenter {
+  align-items: center;
+}
+
+.discountLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.discountTotal {
+  color: var(--red);
+}
+
+/* Product grid filters */
+.filterSelect {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  border-radius: 12px;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* Header badges & actions */
+.navBadgeCount {
+  background: var(--yellow, #eab308);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--text-inverted, #000);
+}
+
+.iconBtnDanger {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: rgba(196, 30, 30, 0.4);
+}
+
+.iconBtnDanger:hover {
+  background: rgba(196, 30, 30, 0.15);
+  color: var(--red);
+}
+
+/* Customer search */
+.customerRow {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.customerSearchWrap {
+  position: relative;
+  flex: 1;
+}
+
+.customerInputWrap {
+  position: relative;
+}
+
+.customerInputIcon {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  color: var(--text-muted);
+  z-index: 1;
+}
+
+.customerInput {
+  width: 100%;
+  padding: 12px 36px 12px 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+}
+
+.customerInputWarning {
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.customerClearBtn {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.customerDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: var(--shadow-lg);
+}
+
+.customerDropdownEmpty {
+  padding: 12px 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.customerOption {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.customerOption:hover {
+  background: var(--surface-1);
+}
+
+.customerOption:last-child {
+  border-bottom: none;
+}
+
+.customerOptionName {
+  font-weight: 600;
+}
+
+.customerOptionCredit {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.customerCreditHint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.customerCreditHintLow {
+  color: var(--red);
+}
+
+.customerAddBtn {
+  padding: 0 16px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb, 0, 102, 204), 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* Calculator modal */
+.calcStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calcDisplay {
+  padding: 16px;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: right;
+  background: var(--surface-1);
+  border-radius: 12px;
+  font-family: var(--font-mono, monospace);
+  overflow: hidden;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.calcGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.calcBtn {
+  padding: 14px;
+  font-size: 18px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.calcBtnOp {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.calcBtnEquals {
+  grid-row: span 2;
+}
+
+/* Variant picker */
+.variantList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.variantOption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--text-primary);
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+
+.variantOption:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.variantName {
+  font-weight: 600;
+}
+
+.variantMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.variantPrice {
+  font-weight: 700;
+  color: var(--green);
+}
+
+.variantCancel {
+  margin-top: 16px;
+  width: 100%;
+}
+
+/* Mixed payment modal */
+.mixedStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mixedTotalBox {
+  text-align: center;
+  padding: 12px;
+  background: var(--accent-subtle);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.mixedTotalLabel {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.mixedTotalValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.mixedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mixedLine {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 2fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.mixedSelect {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.mixedRemoveBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--red);
+  padding: 4px;
+  display: flex;
+}
+
+.mixedSummary {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--surface-1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.mixedOk {
+  color: var(--green);
+}
+
+.mixedFail {
+  color: var(--red);
+}
+
+.mixedConfirmBtn {
+  height: 48px;
+}
+
 /* RESPONSIVE DESIGN (Mobile / Tablets) */
 @media (max-width: 1024px) {
   .navbar {
