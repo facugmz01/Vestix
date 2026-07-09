@@ -5,6 +5,7 @@ import { inventoryApi, type AdjustStockDto, type EnrichedStockLevel } from '@/ap
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { ArrowRightLeft } from 'lucide-react';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -72,7 +73,6 @@ export function StockAdjustmentModal({ open, onClose, stockNode }: Props) {
 
   if (!stockNode) return null;
 
-  // Projection: ADD/SUBTRACT change available; SET sets physical (available = physical - reserved)
   let projectedAvailable = available;
   let projectedPhysical = physical;
   if (type === 'ADD') {
@@ -99,71 +99,71 @@ export function StockAdjustmentModal({ open, onClose, stockNode }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
-        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-          <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-secondary)' }}>Variante afectada:</p>
-          <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>{stockNode.productName}</p>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>SKU: {stockNode.variantSku}</p>
-          
-          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13px' }}>Ubicación:</span>
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>{stockNode.warehouseName} ({stockNode.branchName})</span>
+      <form onSubmit={handleSubmit} className={styles.stackMd}>
+
+        <div className={styles.adjustTargetBox}>
+          <p className={styles.adjustTargetLabel}>Variante afectada:</p>
+          <p className={styles.adjustTargetName}>{stockNode.productName}</p>
+          <p className={styles.adjustTargetSku}>SKU: {stockNode.variantSku}</p>
+
+          <div className={styles.adjustLocationRow}>
+            <span className={styles.adjustLocationLabel}>Ubicación:</span>
+            <span className={styles.adjustLocationValue}>{stockNode.warehouseName} ({stockNode.branchName})</span>
           </div>
 
-          <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+          <div className={styles.stockStatsGrid}>
             <div>
-              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Físico</p>
-              <p style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{physical}</p>
+              <p className={styles.stockStatLabel}>Físico</p>
+              <p className={styles.stockStatValue}>{physical}</p>
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Reservado</p>
-              <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: reserved > 0 ? 'var(--orange)' : undefined }}>{reserved}</p>
+              <p className={styles.stockStatLabel}>Reservado</p>
+              <p className={`${styles.stockStatValue} ${reserved > 0 ? styles.stockStatWarning : ''}`}>{reserved}</p>
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>Disponible</p>
-              <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: available <= 0 ? 'var(--red)' : 'var(--green)' }}>{available}</p>
+              <p className={styles.stockStatLabel}>Disponible</p>
+              <p className={`${styles.stockStatValue} ${available <= 0 ? styles.stockStatDanger : styles.stockStatOk}`}>{available}</p>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600 }}>Tipo de Operación</label>
-          <select value={type} onChange={e => setType(e.target.value as any)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <div className={styles.selectGroup}>
+          <label className={styles.selectLabel}>Tipo de Operación</label>
+          <select value={type} onChange={e => setType(e.target.value as AdjustStockDto['type'])} className={styles.select}>
             <option value="ADD">Entrada (+ Sumar al stock)</option>
             <option value="SUBTRACT">Salida (- Restar al stock)</option>
             <option value="SET">Inventario Físico (= Reemplazar stock físico)</option>
           </select>
         </div>
 
-        <Input 
-          label={type === 'SET' ? 'Cantidad Física Contada' : 'Cantidad a Ajustar'} 
-          type="number" 
-          min={type === 'SET' ? "0" : "1"} 
-          value={quantity} 
-          onChange={e => setQuantity(Number(e.target.value))} 
+        <Input
+          label={type === 'SET' ? 'Cantidad Física Contada' : 'Cantidad a Ajustar'}
+          type="number"
+          min={type === 'SET' ? '0' : '1'}
+          value={quantity}
+          onChange={e => setQuantity(Number(e.target.value))}
         />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600 }}>Motivo de Auditoría *</label>
-          <textarea 
-            value={reason} 
-            onChange={e => setReason(e.target.value)} 
+        <div className={styles.textareaGroup}>
+          <label className={styles.textareaLabel}>Motivo de Auditoría *</label>
+          <textarea
+            value={reason}
+            onChange={e => setReason(e.target.value)}
             placeholder="Ej: Mercadería dañada, Ajuste cíclico, Sobrante..."
             rows={3}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', resize: 'vertical' }}
+            className={styles.textarea}
           />
         </div>
 
-        <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Actual (Fís / Disp)</p>
-            <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>{physical} / {available}</p>
+        <div className={styles.projectionBox}>
+          <div className={styles.projectionCol}>
+            <p className={styles.projectionLabel}>Actual (Fís / Disp)</p>
+            <p className={styles.projectionValue}>{physical} / {available}</p>
           </div>
-          <ArrowRightLeft size={20} color="var(--text-muted)" />
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--blue)' }}>Proyección (Fís / Disp)</p>
-            <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'var(--blue)' }}>{projectedPhysical} / {projectedAvailable}</p>
+          <ArrowRightLeft size={20} className={styles.projectionArrow} />
+          <div className={styles.projectionCol}>
+            <p className={styles.projectionLabelAccent}>Proyección (Fís / Disp)</p>
+            <p className={styles.projectionValueAccent}>{projectedPhysical} / {projectedAvailable}</p>
           </div>
         </div>
 

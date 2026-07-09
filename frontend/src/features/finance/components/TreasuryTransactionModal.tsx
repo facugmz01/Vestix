@@ -5,6 +5,7 @@ import { treasuryApi } from '@/api/treasury.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -40,45 +41,45 @@ export function TreasuryTransactionModal({ open, onClose, shiftId }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Nuevo Movimiento Manual" width="sm">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ fontWeight: 600 }}>Tipo de Movimiento</label>
-          <div className="grid-responsive grid-cols-2" style={{ gap: "12px" }}>
-            <Button variant={type === 'EXPENSE' ? 'primary' : 'outline'} onClick={() => setType('EXPENSE')} icon={<ArrowUpRight size={18} color={type === 'EXPENSE' ? 'var(--bg-base)' : 'var(--red)'} />}>
+      <div className={styles.stackMd}>
+
+        <div className={styles.typeToggleGroup}>
+          <label className={styles.typeToggleLabel}>Tipo de Movimiento</label>
+          <div className="grid-responsive grid-cols-2">
+            <Button variant={type === 'EXPENSE' ? 'primary' : 'outline'} onClick={() => setType('EXPENSE')} icon={<ArrowUpRight size={18} color={type === 'EXPENSE' ? 'var(--text-inverted, #fff)' : 'var(--red)'} />}>
               Retiro / Gasto
             </Button>
-            <Button variant={type === 'INCOME' ? 'primary' : 'outline'} onClick={() => setType('INCOME')} icon={<ArrowDownRight size={18} color={type === 'INCOME' ? 'var(--bg-base)' : 'var(--green)'} />}>
+            <Button variant={type === 'INCOME' ? 'primary' : 'outline'} onClick={() => setType('INCOME')} icon={<ArrowDownRight size={18} color={type === 'INCOME' ? 'var(--text-inverted, #fff)' : 'var(--green)'} />}>
               Ingreso Extra
             </Button>
           </div>
         </div>
 
-        <Input 
-          label="Monto ($)" 
-          type="number" 
-          min="0" 
-          step="0.01" 
-          value={amount} 
-          onChange={e => setAmount(Number(e.target.value))} 
+        <Input
+          label="Monto ($)"
+          type="number"
+          min="0"
+          step="0.01"
+          value={amount}
+          onChange={e => setAmount(Number(e.target.value))}
         />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600 }}>Concepto / Justificación</label>
-          <textarea 
-            value={concept} 
-            onChange={e => setConcept(e.target.value)} 
-            rows={3} 
+        <div className={styles.textareaGroup}>
+          <label className={styles.textareaLabel}>Concepto / Justificación</label>
+          <textarea
+            value={concept}
+            onChange={e => setConcept(e.target.value)}
+            rows={3}
             placeholder="Ej: Pago a proveedor de limpieza, Flete, etc."
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} 
+            className={styles.textarea}
           />
         </div>
 
-        <Button 
-          variant="primary" 
-          onClick={handleSubmit} 
-          loading={mutation.isPending} 
-          style={{ marginTop: '12px', height: '48px' }}
+        <Button
+          variant="primary"
+          onClick={handleSubmit}
+          loading={mutation.isPending}
+          className={styles.submitBtn}
         >
           Guardar Movimiento
         </Button>

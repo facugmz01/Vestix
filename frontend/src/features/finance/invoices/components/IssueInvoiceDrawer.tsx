@@ -3,11 +3,11 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { FileText, Building2, User } from 'lucide-react';
-
 import { Drawer, Button, Input } from '@/components/ui';
 import { invoicesApi, type IssueInvoiceDto } from '@/api/invoices.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { InvoiceType } from '@/types';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -73,54 +73,53 @@ export function IssueInvoiceDrawer({ open, onClose, saleOrderId }: Props) {
         </>
       }
     >
-      <form style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <form className={styles.formStack}>
 
-        {/* Invoice type */}
         <div>
-          <label style={{ display: 'block', fontWeight: 600, marginBottom: '10px', fontSize: '13px' }}>Tipo de Comprobante *</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-            {invoiceTypes.map(t => (
-              <button
-                key={t.value}
-                type="button"
-                onClick={() => setInvoiceType(t.value)}
-                style={{
-                  padding: '12px 8px', borderRadius: '8px', border: invoiceType === t.value ? '2px solid var(--accent)' : '1px solid var(--border)',
-                  background: invoiceType === t.value ? 'var(--blue-bg)' : 'var(--bg-base)',
-                  cursor: 'pointer', textAlign: 'center',
-                }}
-              >
-                <span style={{ display: 'block', fontWeight: 800, fontSize: '14px', color: invoiceType === t.value ? 'var(--blue)' : 'var(--text-primary)' }}>{t.label}</span>
-                <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>{t.desc}</span>
-              </button>
-            ))}
+          <label className={styles.formLabel}>Tipo de Comprobante *</label>
+          <div className={styles.typeGrid}>
+            {invoiceTypes.map(t => {
+              const active = invoiceType === t.value;
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setInvoiceType(t.value)}
+                  className={`${styles.typeOption} ${active ? styles.typeOptionActive : ''}`}
+                >
+                  <span className={`${styles.typeOptionLabel} ${active ? styles.typeOptionLabelActive : ''}`}>{t.label}</span>
+                  <span className={styles.typeOptionDesc}>{t.desc}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {saleOrderId && (
-          <div style={{ padding: '12px 16px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className={styles.linkedSaleBox}>
             <FileText size={16} color="var(--accent)" />
-            <span style={{ fontSize: '13px' }}>Vinculado a Venta <strong style={{ fontFamily: 'monospace' }}>{saleOrderId}</strong></span>
+            <span className={styles.linkedSaleText}>
+              Vinculado a Venta <strong className={styles.mono}>{saleOrderId}</strong>
+            </span>
           </div>
         )}
 
-        {/* Fiscal receiver data */}
-        <fieldset style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '20px' }}>
-          <legend style={{ padding: '0 8px', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>
             <User size={14} /> Datos Fiscales del Receptor
           </legend>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className={styles.fieldGroup}>
             <Input
               label="Razón Social / Nombre *"
               {...register('receiverName', { required: 'Campo obligatorio' })}
               error={errors.receiverName?.message}
             />
 
-            <div className="grid-responsive grid-cols-120-1" style={{ gap: "12px" }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600 }}>Tipo Doc.</label>
-                <select {...register('receiverDocType')} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
+            <div className="grid-responsive grid-cols-120-1">
+              <div className={styles.selectGroup}>
+                <label className={styles.selectLabel}>Tipo Doc.</label>
+                <select {...register('receiverDocType')} className={styles.select}>
                   <option value="CUIT">CUIT</option>
                   <option value="CUIL">CUIL</option>
                   <option value="DNI">DNI</option>
@@ -136,28 +135,27 @@ export function IssueInvoiceDrawer({ open, onClose, saleOrderId }: Props) {
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 600 }}>Condición IVA</label>
-              <select {...register('receiverIvaCondition')} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
+            <div className={styles.selectGroup}>
+              <label className={styles.selectLabel}>Condición IVA</label>
+              <select {...register('receiverIvaCondition')} className={styles.select}>
                 {IVA_CONDITIONS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
           </div>
         </fieldset>
 
-        {/* Address (optional for Factura A) */}
         {(invoiceType === 'FACTURA_A' || invoiceType === 'NOTA_CREDITO_A') && (
-          <fieldset style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '20px' }}>
-            <legend style={{ padding: '0 8px', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <fieldset className={styles.fieldset}>
+            <legend className={styles.legend}>
               <Building2 size={14} /> Domicilio Fiscal (Factura A — Requerido)
             </legend>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className={styles.fieldGroup}>
               <Input
                 label="Calle y Número"
                 {...register('receiverAddress.street', { required: invoiceType === 'FACTURA_A' ? 'Requerido para Factura A' : false })}
                 error={errors.receiverAddress?.street?.message}
               />
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 80px', gap: '12px' }}>
+              <div className={styles.addressGrid}>
                 <Input label="Ciudad" {...register('receiverAddress.city')} />
                 <Input label="Provincia" {...register('receiverAddress.state')} />
                 <Input label="C.P." {...register('receiverAddress.zipCode')} />
@@ -166,7 +164,7 @@ export function IssueInvoiceDrawer({ open, onClose, saleOrderId }: Props) {
           </fieldset>
         )}
 
-        <div style={{ padding: '12px 16px', background: 'var(--orange-bg)', borderRadius: '8px', border: '1px solid var(--orange)', fontSize: '13px', color: 'var(--orange)' }}>
+        <div className={styles.warningBox}>
           <strong>Nota:</strong> Una vez enviado a AFIP, el comprobante queda registrado en el libro fiscal y no puede eliminarse. Para anular, se emite una Nota de Crédito.
         </div>
 
