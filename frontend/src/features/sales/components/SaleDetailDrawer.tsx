@@ -31,6 +31,7 @@ const STATUS_LABELS: Record<string, string> = {
   CONFIRMED: 'Confirmado',
   COMPLETED: 'Completado',
   READY_FOR_PICKUP: 'Listo para Retiro',
+  SHIPPED: 'En Tránsito',
   DELIVERED: 'Entregado',
   CANCELLED: 'Cancelado',
 };
@@ -42,6 +43,7 @@ const STATUS_COLORS: Record<string, 'gray' | 'green' | 'red' | 'yellow' | 'blue'
   CONFIRMED: 'green',
   COMPLETED: 'green',
   READY_FOR_PICKUP: 'purple',
+  SHIPPED: 'purple',
   DELIVERED: 'green',
   CANCELLED: 'red',
 };
@@ -420,13 +422,21 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
             </ActionGuard>
           )}
 
-          {['READY_FOR_PICKUP', 'DELIVERED'].includes(sale.status) && (
+          {['READY_FOR_PICKUP', 'SHIPPED', 'DELIVERED'].includes(sale.status) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
                 <span style={{ fontWeight: 600 }}>Estado logístico: {STATUS_LABELS[sale.status]}</span>
                 <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Podés cambiar el estado de entrega desde el listado de ventas o anular la venta si corresponde.
+                  {sale.status === 'SHIPPED' || sale.shippingAddress
+                    ? 'Este pedido es envío a domicilio. Completá el seguimiento GPS y la entrega desde Envíos y Despacho.'
+                    : 'Podés cambiar el estado de entrega desde el listado de ventas o anular la venta si corresponde.'}
                 </p>
+                {sale.shippingMethodName && (
+                  <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                    Método: {sale.shippingMethodName}
+                    {sale.shippingAddress?.city ? ` · ${sale.shippingAddress.city}` : ''}
+                  </p>
+                )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
                 <ActionGuard action="update" subject="Sales">
@@ -434,7 +444,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                     variant="ghost"
                     onClick={handleCancel}
                     loading={cancelMutation.isPending}
-                    disabled={anyPending}
+                    disabled={anyPending || sale.status === 'SHIPPED'}
                     icon={<XCircle size={16} />}
                   >
                     Anular Venta

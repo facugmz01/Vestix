@@ -29,7 +29,10 @@ export default function PublicTrackPage() {
 
   const { liveData } = useTrackingSse(
     token ? `/api/track/${token}/live` : null,
-    { enabled: !!token && data?.status === 'SHIPPED', onUpdate: () => refetch() },
+    {
+      enabled: !!token && data?.status === 'SHIPPED',
+      onUpdate: () => refetch(),
+    },
   );
 
   const lat = liveData?.lastLatitude ?? data?.delivery?.lastLatitude;
@@ -48,7 +51,11 @@ export default function PublicTrackPage() {
     );
   }
 
-  const statusLabel = STATUS_LABELS[data.status] || data.status;
+  const deliveryStatus = data.delivery?.status || data.deliveryStatus;
+  const statusLabel =
+    (deliveryStatus === 'ARRIVED' && data.status === 'SHIPPED'
+      ? STATUS_LABELS.ARRIVED
+      : STATUS_LABELS[data.status]) || data.status;
   const mapUrl = lat && lng
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01}%2C${lat - 0.01}%2C${lng + 0.01}%2C${lat + 0.01}&layer=mapnik&marker=${lat}%2C${lng}`
     : null;

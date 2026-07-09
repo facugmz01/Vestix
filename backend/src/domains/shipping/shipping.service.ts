@@ -202,9 +202,8 @@ export class ShippingService {
 
   /**
    * Syncs OrderFulfillment when the commercial SaleOrder status is changed
-   * from Historial de Ventas (e.g. READY_FOR_PICKUP / DELIVERED).
-   * Storefront reads fulfillment status first, so without this sync the
-   * customer never sees backoffice status changes.
+   * from Historial de Ventas (pickup shortcut: READY_FOR_PICKUP / DELIVERED).
+   * Home-delivery orders must complete via the shipping module (dispatch → GPS → OTP).
    */
   async applyCommercialStatus(saleOrderId: string, commercialStatus: string) {
     const fulfillment = await this.getFulfillmentByOrderId(saleOrderId);
@@ -213,6 +212,25 @@ export class ShippingService {
 
     if (commercialStatus === 'CANCELLED') {
       return this.cancelFulfillment(saleOrderId);
+    }
+
+    const saleOrder = await this.prisma.saleOrder.findUnique({
+      where: { id: saleOrderId },
+      include: { shippingAddress: true },
+    });
+    const isHomeDelivery = !!saleOrder?.shippingAddress;
+
+    if (isHomeDelivery) {
+      if (commercialStatus === 'READY_FOR_PICKUP') {
+        throw new BadRequestException(
+          'Este pedido es envío a domicilio. Gestioná el despacho desde Envíos y Despacho.',
+        );
+      }
+      if (commercialStatus === 'DELIVERED') {
+        throw new BadRequestException(
+          'Este pedido es envío a domicilio. Completá la entrega desde Envíos y Despacho (OTP o validación manual).',
+        );
+      }
     }
 
     const target = this.mapCommercialToFulfillment(commercialStatus);
@@ -245,8 +263,9 @@ export class ShippingService {
     if (targetIdx >= 1 && !fulfillment.paidAt) data.paidAt = now;
     if (targetIdx >= 2 && !fulfillment.pickedAt) data.pickedAt = now;
     if (targetIdx >= 3 && !fulfillment.packedAt) data.packedAt = now;
-    if (targetIdx >= 4 && !fulfillment.shippedAt) data.shippedAt = now;
-    if (targetIdx >= 5) data.deliveredAt = now;
+    // Only stamp shippedAt when actually shipping — not for in-store pickup delivery.
+    if (target === OrderStatus.SHIPPED && !fulfillment.shippedAt) data.shippedAt = now;
+    if (target === OrderStatus.DELIVERED) data.deliveredAt = now;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.orderFulfillment.update({
@@ -267,6 +286,11 @@ export class ShippingService {
       target,
       target === OrderStatus.DELIVERED ? DeliveryStatus.DELIVERED : undefined,
     );
+
+    if (target === OrderStatus.DELIVERED && !isHomeDelivery) {
+      void this.notificationTriggers.onOrderDelivered(saleOrderId);
+    }
+
     return this.getFulfillmentByOrderId(saleOrderId);
   }
 
@@ -289,6 +313,7 @@ export class ShippingService {
    */
   resolveStorefrontStatus(saleOrderStatus?: string | null, fulfillmentStatus?: string | null): string {
     if (saleOrderStatus === 'READY_FOR_PICKUP') return 'READY_FOR_PICKUP';
+    if (saleOrderStatus === 'SHIPPED') return fulfillmentStatus || 'SHIPPED';
     if (saleOrderStatus === 'CANCELLED' || saleOrderStatus === 'DELIVERED') {
       return saleOrderStatus;
     }
@@ -363,6 +388,7 @@ export class ShippingService {
     return {
       orderRef: formatSaleId(order.id, order.status),
       status: fulfillment.status,
+      deliveryStatus: delivery.status,
       trackingNumber: fulfillment.trackingNumber,
       courierName: fulfillment.courierName,
       city: order.shippingAddress?.city,
@@ -379,6 +405,7 @@ export class ShippingService {
         lastLatitude: delivery.lastLatitude,
         lastLongitude: delivery.lastLongitude,
         lastLocationAt: delivery.lastLocationAt,
+        driverName: delivery.driverName,
       },
       itemCount: order.lines.reduce((acc, l) => acc + l.quantity, 0),
     };
@@ -442,6 +469,16 @@ export class ShippingService {
   async dispatch(saleOrderId: string, dto: DispatchDeliveryDto) {
     let fulfillment = await this.requireFulfillment(saleOrderId);
 
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: saleOrderId },
+      include: { customer: true, shippingAddress: true },
+    });
+    if (!order?.shippingAddress) {
+      throw new BadRequestException(
+        'Este pedido es retiro en tienda. Usá "Listo para retiro" / "Entregado" desde Ventas o Envíos.',
+      );
+    }
+
     if (fulfillment.status === OrderStatus.PENDING_PAYMENT) {
       await this.fulfillmentService.markAsPaid(fulfillment.id);
       fulfillment = await this.requireFulfillment(saleOrderId);
@@ -462,11 +499,6 @@ export class ShippingService {
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
     const trackingToken = crypto.randomBytes(16).toString('hex');
     const driverToken = crypto.randomBytes(24).toString('hex');
-
-    const order = await this.prisma.saleOrder.findUnique({
-      where: { id: saleOrderId },
-      include: { customer: true, shippingAddress: true },
-    });
 
     const carrierType = dto.carrierType || 'PROPIO';
     const shipment = await this.courierService.createShipment(carrierType, {
@@ -534,17 +566,18 @@ export class ShippingService {
       carrierTrackingUrl: this.courierService.getTrackingUrl(carrierType, trackingNumber),
     };
 
-    if (order?.customer?.phone) {
+    const notifyPhone = order.shippingAddress?.phone || order.customer?.phone;
+    if (notifyPhone) {
       await this.notificationTriggers.onOrderShipped(saleOrderId, {
-        customerName: order.customer.fullName,
-        customerPhone: order.customer.phone,
+        customerName: order.shippingAddress?.fullName || order.customer?.fullName || 'Cliente',
+        customerPhone: notifyPhone,
         orderRef: formatSaleId(saleOrderId),
         courierName,
         trackingNumber,
         trackingUrl: links.trackingUrl,
       });
       await this.notificationTriggers.onDeliveryOtp(saleOrderId, {
-        customerPhone: order.customer.phone,
+        customerPhone: notifyPhone,
         orderRef: formatSaleId(saleOrderId),
         otpCode: otp,
       });
