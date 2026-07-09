@@ -34,7 +34,7 @@
 .input {
   width: 100%;
   padding: 12px 14px;
-  background: var(--bg-surface);
+  background: var(--surface-0);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm, 8px);
   color: var(--text-primary);
@@ -46,7 +46,7 @@
 
 .input::placeholder {
   color: var(--text-muted);
-  opacity: 0.7;
+  opacity: 1;
 }
 
 /* Hover State */
@@ -57,14 +57,14 @@
 /* Focus State */
 .input:focus-visible {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow, rgba(59, 130, 246, 0.15));
-  background: var(--bg-surface-hover);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  background: var(--surface-0);
 }
 
 /* Disabled State */
 .input:disabled {
   opacity: 0.6;
-  background: var(--bg-disabled, rgba(0,0,0,0.05));
+  background: var(--bg-disabled);
   cursor: not-allowed;
   pointer-events: none;
 }

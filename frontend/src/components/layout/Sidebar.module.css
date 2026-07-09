@@ -1,9 +1,7 @@
 .dock {
   width: 90px;
-  border-radius: var(--radius-full);
-  background: var(--bg-sidebar);
-  backdrop-filter: var(--backdrop-blur);
-  -webkit-backdrop-filter: var(--backdrop-blur);
+  border-radius: var(--radius-lg);
+  background: var(--surface-0);
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -112,36 +110,44 @@
 }
 
 .dockItem:hover {
-  background: var(--bg-surface-hover);
-  color: var(--accent);
-  transform: scale(1.1);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  transform: scale(1.05);
 }
 
 .dock.expanded .dockItem:hover {
-  transform: translateX(4px);
+  transform: translateX(2px);
 }
 
 .dockItem.active {
-  background: var(--bg-elevated);
+  background: var(--accent-subtle);
   color: var(--accent);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
+  border: 1px solid var(--accent);
 }
 
 .dockItem.active::after {
   content: '';
   position: absolute;
-  right: -6px;
+  left: -1px;
   top: 50%;
   transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 3px;
+  height: 24px;
+  border-radius: 0 2px 2px 0;
   background: var(--accent);
 }
 
+.dock:not(.expanded) .dockItem.active::after {
+  display: none;
+}
+
 .dock.expanded .dockItem.active::after {
+  left: 0;
   right: auto;
-  left: -8px;
+  width: 3px;
+  height: 60%;
+  border-radius: 0 2px 2px 0;
 }
 
 .navIcon { flex-shrink: 0; }

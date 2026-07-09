@@ -14,6 +14,7 @@ import '@fontsource/jetbrains-mono/500.css';
 import '@fontsource/jetbrains-mono/600.css';
 
 import App from './App';
+import './styles/tokens.css';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -35,14 +36,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           position="bottom-right"
           toastOptions={{
             style: {
-              background: '#1a1e2a',
-              color: '#f1f3f9',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'var(--toast-bg)',
+              color: 'var(--toast-text)',
+              border: '1px solid var(--toast-border)',
               fontFamily: 'Inter, sans-serif',
               fontSize: '14px',
+              boxShadow: 'var(--shadow-md)',
             },
-            success: { iconTheme: { primary: '#22c55e', secondary: '#0d0f14' } },
-            error:   { iconTheme: { primary: '#ef4444', secondary: '#0d0f14' } },
+            success: { iconTheme: { primary: 'var(--green)', secondary: 'var(--surface-0)' } },
+            error:   { iconTheme: { primary: 'var(--red)', secondary: 'var(--surface-0)' } },
           }}
         />
       </BrowserRouter>

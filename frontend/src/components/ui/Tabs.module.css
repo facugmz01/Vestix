@@ -17,28 +17,29 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.5rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
   border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
   white-space: nowrap;
   margin-bottom: -1px;
 }
 
 .tabLink:hover {
-  color: var(--text);
-  border-bottom-color: var(--border-hover);
+  color: var(--text-primary);
+  border-bottom-color: var(--border-strong);
 }
 
 .tabLink.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+  color: var(--accent);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
 }
 
 .icon {
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .tabLink.active .icon {
