@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, Bell, Plug, Mail, Smartphone, MessageSquare } from 'lucide-react';
@@ -25,6 +25,7 @@ function useMaskedField(rawValue: string | undefined) {
 }
 
 interface ConnectionTestPanelProps {
+  testName: string;
   toastId: string;
   loadingLabel: string;
   recipientLabel: string;
@@ -34,7 +35,12 @@ interface ConnectionTestPanelProps {
   onTest: (recipient: string) => Promise<ConnectionTestResult>;
 }
 
+function formatConsoleLine(message: string) {
+  return `[${new Date().toISOString()}] ${message}`;
+}
+
 function ConnectionTestPanel({
+  testName,
   toastId,
   loadingLabel,
   recipientLabel,
@@ -45,31 +51,70 @@ function ConnectionTestPanel({
 }: ConnectionTestPanelProps) {
   const [recipient, setRecipient] = useState('');
   const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
   const [result, setResult] = useState<ConnectionTestResult | null>(null);
+  const consoleRef = useRef<HTMLDivElement>(null);
+
+  const appendLog = (message: string) => {
+    setLogs((prev) => [...prev, formatConsoleLine(message)]);
+  };
+
+  useEffect(() => {
+    if (consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [logs, loading]);
 
   const handleClick = async () => {
     if (loading) return;
+    const trimmedRecipient = recipient.trim();
     setLoading(true);
     setResult(null);
+    setLogs([]);
+    appendLog(`━━━ Inicio de prueba: ${testName} ━━━`);
+    appendLog(`Destinatario: ${trimmedRecipient || '(no indicado — solo verificación de conexión)'}`);
+    appendLog('Preparando solicitud al servidor…');
     toast.loading(loadingLabel, { id: toastId });
+
+    const startedAt = Date.now();
     try {
-      const res = await onTest(recipient.trim());
+      appendLog('Enviando petición POST al backend…');
+      const res = await onTest(trimmedRecipient);
+      appendLog(`Respuesta HTTP recibida en ${Date.now() - startedAt}ms`);
+      if (res.logs?.length) {
+        appendLog('─── Proceso ejecutado en el servidor ───');
+        res.logs.forEach((line) => appendLog(line.replace(/^\[[^\]]+\]\s*/, '')));
+      }
+      appendLog(`─── Resultado: ${res.success ? 'ÉXITO ✓' : 'FALLO ✗'} ───`);
+      appendLog(res.message);
       setResult(res);
       if (res.success) toast.success(res.message, { id: toastId });
       else toast.error(res.message, { id: toastId });
     } catch (e: any) {
+      const status = e.response?.status;
       const apiErrors = e.response?.data?.errors;
       const apiMessage = e.response?.data?.message || e.message || 'Error de conexión';
       const detail = apiErrors
         ? `${apiMessage}: ${Object.entries(apiErrors).map(([k, v]) => `${k}: ${v}`).join('; ')}`
         : apiMessage;
+      appendLog(`─── Error HTTP ${status ?? 'sin respuesta'} ───`);
+      if (status === 401) appendLog('Sesión expirada o no autorizado. Volvé a iniciar sesión.');
+      if (status === 400) appendLog('Solicitud rechazada por validación del servidor.');
+      if (apiErrors) {
+        Object.entries(apiErrors).forEach(([field, msg]) => appendLog(`Validación → ${field}: ${msg}`));
+      }
+      appendLog(detail);
+      if (e.response?.data?.logs?.length) {
+        appendLog('─── Logs parciales del servidor ───');
+        e.response.data.logs.forEach((line: string) => appendLog(line.replace(/^\[[^\]]+\]\s*/, '')));
+      }
+      appendLog(`Prueba abortada tras ${Date.now() - startedAt}ms`);
       const fallback: ConnectionTestResult = {
         success: false,
         message: detail,
-        logs: [`[${new Date().toISOString()}] ${detail}`],
       };
       setResult(fallback);
-      toast.error(fallback.message, { id: toastId });
+      toast.error(detail, { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -103,16 +148,21 @@ function ConnectionTestPanel({
           Consola de prueba
         </p>
         <div
+          ref={consoleRef}
           className={clsx(styles.testConsole, {
             [styles.testConsoleSuccess]: result?.success,
             [styles.testConsoleError]: result && !result.success,
+            [styles.testConsoleLoading]: loading,
           })}
           role="log"
           aria-live="polite"
         >
-          {result?.logs?.length
-            ? result.logs.join('\n')
+          {logs.length > 0
+            ? logs.join('\n')
             : <span className={styles.testConsoleEmpty}>Los resultados de la prueba aparecerán aquí.</span>}
+          {loading && logs.length > 0 && (
+            <span className={styles.testConsolePending}>{'\n'}⏳ Ejecutando prueba en el servidor…</span>
+          )}
         </div>
       </div>
     </div>
@@ -197,6 +247,7 @@ export function NotificationSettingsPanel() {
                 </div>
               </div>
               <ConnectionTestPanel
+                testName="SMTP"
                 toastId="test-smtp"
                 loadingLabel="Probando SMTP..."
                 recipientLabel="Destinatario de prueba (email)"
@@ -215,6 +266,7 @@ export function NotificationSettingsPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
               <Input placeholder="URL del Gateway" {...register('smsGatewayUrl')} />
               <ConnectionTestPanel
+                testName="SMS Gateway"
                 toastId="test-sms"
                 loadingLabel="Probando SMS..."
                 recipientLabel="Destinatario de prueba (teléfono)"
@@ -238,6 +290,7 @@ export function NotificationSettingsPanel() {
                   <Input placeholder="Instancia" {...register('evolutionInstance')} style={{ flex: 1 }} />
                 </div>
                 <ConnectionTestPanel
+                  testName="WhatsApp (Evolution API)"
                   toastId="test-wpp"
                   loadingLabel="Probando WhatsApp..."
                   recipientLabel="Destinatario de prueba (WhatsApp)"
@@ -258,6 +311,7 @@ export function NotificationSettingsPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
               <Input type="password" placeholder={fcmKeyMask.placeholder} {...register('fcmServerKey')} defaultValue={fcmKeyMask.defaultDisplayValue} />
               <ConnectionTestPanel
+                testName="Push (FCM)"
                 toastId="test-push"
                 loadingLabel="Enviando push..."
                 recipientLabel="Destinatario de prueba (token FCM)"
