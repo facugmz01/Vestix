@@ -8,6 +8,7 @@ import { Wallet, CheckCircle, Calculator, AlertTriangle, ArrowDownRight, ArrowUp
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { TreasuryTransactionModal } from './TreasuryTransactionModal';
 import { formatCurrency } from '@/utils/formatCurrency';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -19,8 +20,6 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
   const queryClient = useQueryClient();
 
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
-  
-  // Close Shift Form State
   const [isClosing, setIsClosing] = useState(false);
   const [closingAmount, setClosingAmount] = useState(0);
 
@@ -51,40 +50,37 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="lg"><div /></Drawer>;
   }
 
-
   const diffColor = shift.difference && shift.difference < 0 ? 'var(--red)' : (shift.difference && shift.difference > 0 ? 'var(--orange)' : 'var(--green)');
 
   return (
     <Drawer open={open} onClose={onClose} title="Auditoría de Turno (Caja)" width="lg">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
-        
-        {/* HEADER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+      <div className={styles.stackMd}>
+
+        <div className={styles.heroCard}>
           <div>
             <Badge color={shift.status === 'OPEN' ? 'green' : 'gray'}>{shift.status === 'OPEN' ? 'TURNO ABIERTO' : 'CERRADO'}</Badge>
-            <h3 style={{ margin: '8px 0 4px', fontSize: '18px', fontWeight: 800 }}>{shift.accountName || 'Caja Registradora'}</h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Apertura: {new Date(shift.openedAt).toLocaleString()} por {shift.openedByUserName}</p>
+            <h3 className={styles.sessionTitle}>{shift.accountName || 'Caja Registradora'}</h3>
+            <p className={styles.sessionMeta}>Apertura: {new Date(shift.openedAt).toLocaleString()} por {shift.openedByUserName}</p>
           </div>
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Saldo Inicial (Apertura)</span>
-            <span style={{ fontSize: '20px', fontWeight: 900 }}>{formatCurrency(shift.openingBalance)}</span>
+          <div className={styles.openingAside}>
+            <span className={styles.openingLabel}>Saldo Inicial (Apertura)</span>
+            <span className={styles.openingValue}>{formatCurrency(shift.openingBalance)}</span>
           </div>
         </div>
 
-        {/* RESULTS GRID */}
         {shift.status === 'CLOSED' && (
           <div className="grid-responsive grid-cols-3">
-            <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Esperado por Sistema</p>
-              <h2 style={{ margin: 0, fontSize: '24px' }}>{formatCurrency(shift.expectedClosingBalance || 0)}</h2>
+            <div className={styles.resultCard}>
+              <p className={styles.resultTitle}>Esperado por Sistema</p>
+              <h2 className={styles.resultValue}>{formatCurrency(shift.expectedClosingBalance || 0)}</h2>
             </div>
-            <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Conteo Físico Real</p>
-              <h2 style={{ margin: 0, fontSize: '24px' }}>{formatCurrency(shift.actualClosingBalance || 0)}</h2>
+            <div className={styles.resultCard}>
+              <p className={styles.resultTitle}>Conteo Físico Real</p>
+              <h2 className={styles.resultValue}>{formatCurrency(shift.actualClosingBalance || 0)}</h2>
             </div>
-            <div style={{ padding: '16px', background: 'var(--bg-base)', border: `2px solid ${diffColor}`, borderRadius: '8px', color: diffColor }}>
-              <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'inherit' }}>Diferencia (Faltante/Sobrante)</p>
-              <h2 style={{ margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.diffCard} style={{ borderColor: diffColor, color: diffColor }}>
+              <p className={styles.diffTitle}>Diferencia (Faltante/Sobrante)</p>
+              <h2 className={styles.diffValue}>
                 {shift.difference === 0 ? <CheckCircle /> : <AlertTriangle />}
                 {formatCurrency(shift.difference || 0)}
               </h2>
@@ -92,25 +88,24 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
           </div>
         )}
 
-        {/* MOVEMENTS */}
-        <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '8px' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-base)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h4 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Wallet size={16} /> Movimientos Manuales</h4>
+        <div className={styles.movementsPanel}>
+          <div className={styles.movementsHeader}>
+            <h4 className={styles.movementsTitle}><Wallet size={16} /> Movimientos Manuales</h4>
             {shift.status === 'OPEN' && (
               <ActionGuard action="manage" subject="Finance">
                 <Button variant="ghost" size="sm" onClick={() => setTransactionModalOpen(true)}>+ Retiro / Ingreso</Button>
               </ActionGuard>
             )}
           </div>
-          
+
           <Table
             keyField="id"
             data={movements || []}
             columns={[
-              { key: 'time', header: 'Hora', render: (m) => <span style={{ fontSize: '13px' }}>{new Date(m.createdAt).toLocaleTimeString()}</span> },
-              { 
-                key: 'type', 
-                header: 'Tipo', 
+              { key: 'time', header: 'Hora', render: (m) => <span className={styles.timeCell}>{new Date(m.createdAt).toLocaleTimeString()}</span> },
+              {
+                key: 'type',
+                header: 'Tipo',
                 render: (m) => (
                   <Badge color={m.type === 'INCOME' ? 'green' : 'red'}>
                     {m.type === 'INCOME' ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />} {m.type}
@@ -118,11 +113,11 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
                 )
               },
               { key: 'concept', header: 'Concepto / Justificación', render: (m) => m.concept },
-              { 
-                key: 'amount', 
-                header: 'Monto', 
+              {
+                key: 'amount',
+                header: 'Monto',
                 render: (m) => (
-                  <span style={{ fontWeight: 800, color: m.type === 'INCOME' ? 'var(--green)' : 'var(--red)' }}>
+                  <span className={m.type === 'INCOME' ? styles.amountIncome : styles.amountExpense}>
                     {m.type === 'INCOME' ? '+' : '-'}{formatCurrency(m.amount)}
                   </span>
                 )
@@ -131,31 +126,30 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
           />
         </div>
 
-        {/* CLOSE SHIFT FORM */}
         {shift.status === 'OPEN' && (
-          <div style={{ padding: '20px', background: 'var(--blue-bg)', border: '1px solid var(--blue)', borderRadius: '8px' }}>
+          <div className={styles.closePanel}>
             {!isClosing ? (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className={styles.closePanelRow}>
                 <div>
-                  <h4 style={{ margin: '0 0 4px', color: 'var(--blue)' }}>Arqueo y Cierre de Caja</h4>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Contá el dinero físico y decláralo para calcular diferencias.</p>
+                  <h4 className={styles.closePanelTitle}>Arqueo y Cierre de Caja</h4>
+                  <p className={styles.closePanelText}>Contá el dinero físico y decláralo para calcular diferencias.</p>
                 </div>
                 <ActionGuard action="manage" subject="Finance">
                   <Button variant="primary" onClick={() => setIsClosing(true)} icon={<Calculator size={16} />}>Iniciar Cierre (Blind Count)</Button>
                 </ActionGuard>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h4 style={{ margin: 0, color: 'var(--blue)' }}>Declaración de Conteo (Blind Count)</h4>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
-                    <Input 
-                      label="Efectivo Total en Cajón ($)" 
-                      type="number" 
-                      min="0" 
-                      step="0.01" 
-                      value={closingAmount} 
-                      onChange={e => setClosingAmount(Number(e.target.value))} 
+              <div className={styles.closeForm}>
+                <h4 className={styles.closeFormTitle}>Declaración de Conteo (Blind Count)</h4>
+                <div className={styles.closeFormRow}>
+                  <div className={styles.closeFormInput}>
+                    <Input
+                      label="Efectivo Total en Cajón ($)"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={closingAmount}
+                      onChange={e => setClosingAmount(Number(e.target.value))}
                     />
                   </div>
                   <Button variant="ghost" onClick={() => setIsClosing(false)} disabled={closeMutation.isPending}>Cancelar</Button>
@@ -168,10 +162,10 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
           </div>
         )}
 
-        <TreasuryTransactionModal 
-          open={transactionModalOpen} 
-          onClose={() => setTransactionModalOpen(false)} 
-          shiftId={shiftId} 
+        <TreasuryTransactionModal
+          open={transactionModalOpen}
+          onClose={() => setTransactionModalOpen(false)}
+          shiftId={shiftId}
         />
 
       </div>
