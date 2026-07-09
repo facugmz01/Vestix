@@ -214,6 +214,10 @@ export class StorefrontController {
       throw new Error('Método de pago no válido.');
     }
 
+    if (MercadoPagoService.isMercadoPagoPaymentMethod(selectedPaymentMethod.type)) {
+      await this.mercadoPagoService.ensureConfigured();
+    }
+
     const orderId = dto.id || crypto.randomUUID();
 
     // Record the order in the ERP (status: PENDING_PAYMENT)
@@ -256,10 +260,6 @@ export class StorefrontController {
 
     // Checkout Pro via Mercado Pago for online card/wallet payments
     if (MercadoPagoService.isMercadoPagoPaymentMethod(selectedPaymentMethod.type)) {
-      const mpEnabled = await this.mercadoPagoService.isIntegrationEnabled();
-      if (!mpEnabled) {
-        throw new ForbiddenException('Mercado Pago no está habilitado en la configuración de integraciones.');
-      }
       const storeBase = resolveStorefrontBaseUrl(req);
 
       const { initPoint, preferenceId } = await this.mercadoPagoService.createPreference({

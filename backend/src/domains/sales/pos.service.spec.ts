@@ -67,11 +67,11 @@ const mockCashService: any = {
 };
 
 const mockMercadoPagoService: any = {
-  createPreference: jest.fn<any>().mockResolvedValue({ preferenceId: 'mock', initPoint: 'http://mock' }),
+  createPreference: jest.fn<any>().mockResolvedValue({ preferenceId: 'pref-1', initPoint: 'http://mp.test' }),
   createPosQrOrder: jest.fn<any>().mockResolvedValue({
     orderId: 'POS-QR-1',
-    qrData: 'mock-qr',
-    isMock: true,
+    mpOrderId: 'ORD0001',
+    qrData: 'qr-emv-data',
   }),
   fetchOrder: jest.fn<any>().mockResolvedValue(null),
 };
@@ -218,13 +218,6 @@ describe('PosService', () => {
       const status = await service.getQrOrderStatus(orderId);
       expect(status.status).toBe('PENDING');
       expect(status.amount).toBe(1500);
-    });
-
-    it('confirms a QR order manually', async () => {
-      const { orderId } = await service.createQrOrder(500, 'Test');
-      await service.confirmQrOrder(orderId);
-      const status = await service.getQrOrderStatus(orderId);
-      expect(status.status).toBe('APPROVED');
     });
   });
 

@@ -126,10 +126,6 @@ export function POSModals({
           setQrModalOpen(false);
           setPaymentModalOpen(true);
         }}
-        onForceConfirm={() => {
-          setQrModalOpen(false);
-          setPaymentModalOpen(true);
-        }} 
       />
 
       <PosMixedPaymentModal

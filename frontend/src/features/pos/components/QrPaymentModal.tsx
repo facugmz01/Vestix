@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Modal, Button } from '@/components/ui';
+import { Modal } from '@/components/ui';
 import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -14,7 +14,6 @@ interface QrPaymentModalProps {
   isLoading: boolean;
   onClose: () => void;
   onPaymentConfirmed: () => void;
-  onForceConfirm: () => void;
 }
 
 export function QrPaymentModal({
@@ -25,10 +24,8 @@ export function QrPaymentModal({
   isLoading,
   onClose,
   onPaymentConfirmed,
-  onForceConfirm,
 }: QrPaymentModalProps) {
   const [status, setStatus] = useState<'PENDING' | 'APPROVED' | 'EXPIRED' | 'REJECTED'>('PENDING');
-  const [isConfirming, setIsConfirming] = useState(false);
   const confirmedRef = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -93,23 +90,6 @@ export function QrPaymentModal({
     };
   }, [open, orderId, qrData, onPaymentConfirmed]);
 
-  const handleForceConfirm = async () => {
-    if (!orderId) {
-      onForceConfirm();
-      return;
-    }
-    setIsConfirming(true);
-    try {
-      await posApi.confirmQrOrder(orderId);
-      setStatus('APPROVED');
-      handleApproved();
-    } catch {
-      onForceConfirm();
-    } finally {
-      setIsConfirming(false);
-    }
-  };
-
   return (
     <Modal open={open} onClose={onClose} title="Cobro con QR Mercadopago">
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '10px' }}>
@@ -138,19 +118,8 @@ export function QrPaymentModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#60a5fa', fontSize: '14px' }}>
               <Loader2 className="spinner" size={16} /> Esperando confirmación de pago...
             </div>
-
-            <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }} />
-
-            <Button
-              variant="primary"
-              onClick={handleForceConfirm}
-              loading={isConfirming}
-              style={{ width: '100%', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
-            >
-              <Check size={18} style={{ marginRight: '8px' }} /> Confirmar Pago Manualmente
-            </Button>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
-              Confirmación en tiempo real vía SSE + polling de respaldo.
+              El pago se confirma automáticamente cuando Mercado Pago notifica el cobro (webhook + polling).
             </span>
           </div>
         )}
@@ -162,9 +131,7 @@ export function QrPaymentModal({
         )}
 
         {status === 'EXPIRED' && (
-          <div style={{ color: '#f87171', fontSize: '14px', textAlign: 'center' }}>
-            El código QR expiró. Cerrá este modal y generá uno nuevo.
-          </div>
+          <div style={{ color: '#f87171', fontSize: '14px' }}>QR expirado — generá uno nuevo.</div>
         )}
       </div>
     </Modal>

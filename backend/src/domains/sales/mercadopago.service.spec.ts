@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { BadRequestException } from '@nestjs/common';
 import { MercadoPagoService } from './mercadopago.service';
 
 const mockSettingsService = {
@@ -42,6 +43,35 @@ describe('MercadoPagoService', () => {
     });
   });
 
+  describe('ensureConfigured', () => {
+    it('throws when integration is disabled', async () => {
+      mockSettingsService.getIntegrationSettings.mockResolvedValue({
+        mercadopagoEnabled: false,
+        mpAccessToken: 'TEST-token',
+      });
+
+      await expect(service.ensureConfigured()).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws when access token is missing', async () => {
+      mockSettingsService.getIntegrationSettings.mockResolvedValue({
+        mercadopagoEnabled: true,
+        mpAccessToken: '',
+      });
+
+      await expect(service.ensureConfigured()).rejects.toThrow(BadRequestException);
+    });
+
+    it('returns token when integration is ready', async () => {
+      mockSettingsService.getIntegrationSettings.mockResolvedValue({
+        mercadopagoEnabled: true,
+        mpAccessToken: 'TEST-token',
+      });
+
+      await expect(service.ensureConfigured()).resolves.toBe('TEST-token');
+    });
+  });
+
   describe('verifyWebhookSignature', () => {
     it('skips verification when no secret is configured', async () => {
       mockSettingsService.getIntegrationSettings.mockResolvedValue({});
@@ -72,33 +102,29 @@ describe('MercadoPagoService', () => {
   });
 
   describe('createPreference', () => {
-    it('returns mock init point when no access token is configured', async () => {
-      mockSettingsService.getIntegrationSettings.mockResolvedValue({});
+    it('throws when Mercado Pago is not configured', async () => {
+      mockSettingsService.getIntegrationSettings.mockResolvedValue({ mercadopagoEnabled: false });
 
-      const result = await service.createPreference({
-        externalReference: 'order-1',
-        items: [{ id: 'v1', title: 'Producto', quantity: 1, unit_price: 1000 }],
-        backUrls: { success: 'http://localhost:3000/store/checkout/success?orderId=order-1' },
-      });
-
-      expect(result.preferenceId).toBe('MOCK-order-1');
-      expect(result.initPoint).toContain('mock=true');
+      await expect(
+        service.createPreference({
+          externalReference: 'order-1',
+          items: [{ id: 'v1', title: 'Producto', quantity: 1, unit_price: 1000 }],
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('createPosQrOrder', () => {
-    it('returns mock QR when no access token is configured', async () => {
-      mockSettingsService.getIntegrationSettings.mockResolvedValue({});
+    it('throws when Mercado Pago is not configured', async () => {
+      mockSettingsService.getIntegrationSettings.mockResolvedValue({ mercadopagoEnabled: false });
 
-      const result = await service.createPosQrOrder({
-        externalReference: 'POS-QR-123',
-        amount: 1500,
-        title: 'Cobro POS',
-      });
-
-      expect(result.isMock).toBe(true);
-      expect(result.orderId).toBe('POS-QR-123');
-      expect(result.qrData).toContain('POS-QR-123');
+      await expect(
+        service.createPosQrOrder({
+          externalReference: 'POS-QR-123',
+          amount: 1500,
+          title: 'Cobro POS',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });
