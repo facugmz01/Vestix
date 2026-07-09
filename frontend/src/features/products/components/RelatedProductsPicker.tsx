@@ -32,14 +32,14 @@ export function RelatedProductsPicker({ selectedIds, onChange, excludeProductId 
 
   return (
     <div className={styles.pickerStack}>
-      <div className={styles.searchWrap}>
+      <div className={styles.pickerSearchWrap}>
         <Search size={16} className={styles.searchIcon} />
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar productos relacionados..."
-          className={styles.searchInput}
+          className={styles.pickerSearchInput}
         />
       </div>
 
