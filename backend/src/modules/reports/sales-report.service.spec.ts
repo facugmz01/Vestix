@@ -5,7 +5,9 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 
 const mockPrismaService: any = {
   saleOrder: { findMany: jest.fn() },
+  saleReturn: { findMany: jest.fn() },
   orderLineItem: { findMany: jest.fn() },
+  saleReturnLine: { findMany: jest.fn() },
   inventoryMovement: { findMany: jest.fn() },
   warehouse: { findMany: jest.fn() },
   productVariant: { findMany: (jest.fn() as any).mockResolvedValue([]) },
@@ -24,6 +26,8 @@ describe('SalesReportService', () => {
 
     service = module.get<SalesReportService>(SalesReportService);
     jest.clearAllMocks();
+    mockPrismaService.saleReturn.findMany.mockResolvedValue([]);
+    mockPrismaService.saleReturnLine.findMany.mockResolvedValue([]);
   });
 
   it('should be defined', () => {
@@ -75,6 +79,22 @@ describe('SalesReportService', () => {
       expect(result.byChannel).toEqual({ POS: 900, ECOMMERCE: 500 });
     });
 
+    it('should subtract approved returns from net revenue', async () => {
+      mockPrismaService.saleOrder.findMany.mockResolvedValueOnce([
+        {
+          subtotal: 1000, cartDiscountTotal: 0, grandTotal: 1000, source: 'POS',
+          paymentMethod: 'CASH', payments: [],
+        },
+      ]);
+      mockPrismaService.saleReturn.findMany.mockResolvedValueOnce([
+        { totalRefundAmount: 300 },
+        { totalRefundAmount: 200 },
+      ]);
+
+      const result = await service.getSalesSummary(filter);
+      expect(result.netRevenue).toBe(500);
+    });
+
     it('should use paymentMethod field when payments array is empty', async () => {
       mockPrismaService.saleOrder.findMany.mockResolvedValueOnce([
         {
@@ -84,6 +104,18 @@ describe('SalesReportService', () => {
       ]);
       const result = await service.getSalesSummary(filter);
       expect(result.byPaymentMethod[0].method).toBe('CASH');
+    });
+
+    it('should only include revenue-eligible order statuses', async () => {
+      mockPrismaService.saleOrder.findMany.mockResolvedValueOnce([]);
+      await service.getSalesSummary(filter);
+      expect(mockPrismaService.saleOrder.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { in: ['COMPLETED', 'CONFIRMED', 'READY_FOR_PICKUP', 'DELIVERED'] },
+          }),
+        }),
+      );
     });
   });
 
@@ -115,6 +147,27 @@ describe('SalesReportService', () => {
       expect(result[1].totalUnitsSold).toBe(8);
       expect(result[1].totalRevenue).toBe(800);
     });
+
+    it('should subtract returned units and revenue', async () => {
+      mockPrismaService.orderLineItem.findMany.mockResolvedValueOnce([
+        { variantId: 'v1', quantity: 10, finalPrice: 1000, historicalName: 'Shirt', historicalSku: 'SKU-1' },
+      ]);
+      mockPrismaService.saleReturnLine.findMany.mockResolvedValueOnce([
+        {
+          variantId: 'v1',
+          quantity: 3,
+          orderLine: { quantity: 10, finalPrice: 1000, historicalName: 'Shirt', historicalSku: 'SKU-1' },
+        },
+      ]);
+      mockPrismaService.productVariant.findMany.mockResolvedValueOnce([
+        { id: 'v1', sku: 'SKU-1', product: { name: 'Shirt' } },
+      ]);
+
+      const result = await service.getTopSellers(filter, 5);
+      expect(result).toHaveLength(1);
+      expect(result[0].totalUnitsSold).toBe(7);
+      expect(result[0].totalRevenue).toBe(700);
+    });
   });
 
   describe('getCogsReport', () => {
@@ -122,8 +175,8 @@ describe('SalesReportService', () => {
 
     it('should calculate COGS, profit, and margin', async () => {
       mockPrismaService.inventoryMovement.findMany.mockResolvedValueOnce([
-        { quantity: 10, unitCost: 50 },
-        { quantity: 5, unitCost: 30 },
+        { type: 'SALE', quantity: 10, unitCost: 50 },
+        { type: 'SALE', quantity: 5, unitCost: 30 },
       ]);
       mockPrismaService.saleOrder.findMany.mockResolvedValueOnce([
         { subtotal: 1000, cartDiscountTotal: 0, grandTotal: 1000, source: 'POS', payments: [], paymentMethod: 'CASH' },
@@ -134,6 +187,19 @@ describe('SalesReportService', () => {
       expect(result.totalRevenue).toBe(1000);
       expect(result.grossProfit).toBe(350);
       expect(result.grossMarginPct).toBe(35);
+    });
+
+    it('should subtract SALE_RETURN movements from COGS', async () => {
+      mockPrismaService.inventoryMovement.findMany.mockResolvedValueOnce([
+        { type: 'SALE', quantity: 10, unitCost: 50 },
+        { type: 'SALE_RETURN', quantity: 4, unitCost: 50 },
+      ]);
+      mockPrismaService.saleOrder.findMany.mockResolvedValueOnce([
+        { subtotal: 1000, cartDiscountTotal: 0, grandTotal: 1000, source: 'POS', payments: [], paymentMethod: 'CASH' },
+      ]);
+
+      const result = await service.getCogsReport(filter);
+      expect(result.totalCOGS).toBe(300); // 500 - 200
     });
 
     it('should return 0 margin when no revenue', async () => {

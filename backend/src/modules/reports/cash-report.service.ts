@@ -36,7 +36,7 @@ export class CashReportService {
     const dailyMap = new Map<string, { income: number, expenses: number }>();
 
     for (const t of transactions) {
-      // CREDIT = Income, DEBIT = Expense (typically)
+      // DEBIT = money in (sales, deposits); CREDIT = money out (refunds, cancellations)
       const dateKey = t.createdAt.toISOString().split('T')[0];
       if (!dailyMap.has(dateKey)) {
         dailyMap.set(dateKey, { income: 0, expenses: 0 });
@@ -45,11 +45,11 @@ export class CashReportService {
 
       const method = t.account.type; // CASH, BANK, etc.
 
-      if (t.type === 'CREDIT') {
+      if (t.type === 'DEBIT') {
         totalIncome += t.amount;
         dayStats.income += t.amount;
         methodMap.set(method, (methodMap.get(method) ?? 0) + t.amount);
-      } else if (t.type === 'DEBIT') {
+      } else if (t.type === 'CREDIT') {
         totalExpenses += t.amount;
         dayStats.expenses += t.amount;
       }

@@ -3,6 +3,7 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 import { CreateReturnDto, ReturnAction } from './dto/create-return.dto';
 import { InventoryService } from '../../logistics/inventory.service';
 import { AfipProducer } from '../../invoicing/afip.producer';
+import { AccountsService } from '../../finance/accounts.service';
 import { formatSaleId } from '../../../common/utils/format-id.util';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class ReturnsService {
     private readonly prisma: PrismaService,
     private readonly inventoryService: InventoryService,
     private readonly afipProducer: AfipProducer,
+    private readonly accountsService: AccountsService,
   ) {}
 
   async getReturns(params: { page?: any; pageSize?: any; search?: string; status?: string }) {
@@ -161,13 +163,22 @@ export class ReturnsService {
           throw new BadRequestException('No existe ninguna cuenta de tesorería configurada para procesar el reembolso. Por favor, cree una caja o cuenta bancaria primero.');
         }
 
+        const refundDescription = `Reembolso venta ${formatSaleId(sale.id, sale.status)}`;
+        await this.accountsService.postTransactionInTx(
+          tx,
+          accountId,
+          'CREDIT',
+          totalRefund,
+          saleReturn.id,
+          refundDescription,
+        );
         await tx.treasuryReceipt.create({
           data: {
             accountId,
-            amount: -totalRefund, // Negative for outflow
+            amount: -totalRefund,
             payerName: sale.customer?.fullName || 'Consumidor Final',
             referenceId: saleReturn.id,
-            description: `Refund for Sale ${formatSaleId(sale.id, sale.status)}`
+            description: refundDescription,
           }
         });
       }

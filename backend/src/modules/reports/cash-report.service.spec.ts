@@ -42,10 +42,10 @@ describe('CashReportService', () => {
 
     it('should correctly aggregate income and expenses', async () => {
       mockPrismaService.financialTransaction.findMany.mockResolvedValueOnce([
-        { type: 'CREDIT', amount: 1000, createdAt: new Date('2026-01-15'), account: { type: 'CASH' } },
-        { type: 'CREDIT', amount: 500, createdAt: new Date('2026-01-15'), account: { type: 'BANK' } },
-        { type: 'DEBIT', amount: 300, createdAt: new Date('2026-01-15'), account: { type: 'CASH' } },
-        { type: 'DEBIT', amount: 200, createdAt: new Date('2026-01-16'), account: { type: 'CASH' } },
+        { type: 'DEBIT', amount: 1000, createdAt: new Date('2026-01-15'), account: { type: 'CASH' } },
+        { type: 'DEBIT', amount: 500, createdAt: new Date('2026-01-15'), account: { type: 'BANK' } },
+        { type: 'CREDIT', amount: 300, createdAt: new Date('2026-01-15'), account: { type: 'CASH' } },
+        { type: 'CREDIT', amount: 200, createdAt: new Date('2026-01-16'), account: { type: 'CASH' } },
       ]);
 
       const result = await service.getCashSummary({ from, to });
@@ -60,10 +60,22 @@ describe('CashReportService', () => {
       );
     });
 
+    it('should count cancellation reversals as expenses, not income', async () => {
+      mockPrismaService.financialTransaction.findMany.mockResolvedValueOnce([
+        { type: 'DEBIT', amount: 5000, createdAt: new Date('2026-01-15'), account: { type: 'CASH' } },
+        { type: 'CREDIT', amount: 5000, createdAt: new Date('2026-01-15'), account: { type: 'CASH' } },
+      ]);
+
+      const result = await service.getCashSummary({ from, to });
+      expect(result.totalIncome).toBe(5000);
+      expect(result.totalExpenses).toBe(5000);
+      expect(result.netCash).toBe(0);
+    });
+
     it('should produce sorted daily series', async () => {
       mockPrismaService.financialTransaction.findMany.mockResolvedValueOnce([
-        { type: 'CREDIT', amount: 100, createdAt: new Date('2026-01-20'), account: { type: 'CASH' } },
-        { type: 'CREDIT', amount: 200, createdAt: new Date('2026-01-10'), account: { type: 'CASH' } },
+        { type: 'DEBIT', amount: 100, createdAt: new Date('2026-01-20'), account: { type: 'CASH' } },
+        { type: 'DEBIT', amount: 200, createdAt: new Date('2026-01-10'), account: { type: 'CASH' } },
       ]);
 
       const result = await service.getCashSummary({ from, to });

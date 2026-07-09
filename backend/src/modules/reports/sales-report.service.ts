@@ -6,6 +6,7 @@ import {
   TopSellingVariant,
   CogsReport,
 } from './models/report.model';
+import { REVENUE_ELIGIBLE_STATUSES } from './report.constants';
 
 @Injectable()
 export class SalesReportService {
@@ -18,18 +19,27 @@ export class SalesReportService {
     
     const branchFilter = filter.branchId ? { branchId: filter.branchId } : {};
 
-    const orders = await this.prisma.saleOrder.findMany({
-      where: {
-        createdAt: { gte: filter.from, lte: filter.to },
-        status: { not: 'CANCELLED' },
-        ...branchFilter,
-      },
-      include: {
-        payments: {
-          include: { paymentMethod: true }
+    const [orders, returns] = await Promise.all([
+      this.prisma.saleOrder.findMany({
+        where: {
+          createdAt: { gte: filter.from, lte: filter.to },
+          status: { in: [...REVENUE_ELIGIBLE_STATUSES] },
+          ...branchFilter,
+        },
+        include: {
+          payments: {
+            include: { paymentMethod: true }
+          }
         }
-      }
-    });
+      }),
+      this.prisma.saleReturn.findMany({
+        where: {
+          createdAt: { gte: filter.from, lte: filter.to },
+          status: 'APPROVED',
+          ...branchFilter,
+        },
+      }),
+    ]);
 
     let totalOrders = 0;
     let totalRevenue = 0;
@@ -65,6 +75,9 @@ export class SalesReportService {
       }
     }
 
+    const totalReturns = returns.reduce((sum, r) => sum + r.totalRefundAmount, 0);
+    netRevenue -= totalReturns;
+
     const byPaymentMethod = Array.from(methodMap.entries()).map(([method, data]) => ({
       method,
       count: data.count,
@@ -88,17 +101,32 @@ export class SalesReportService {
   async getTopSellers(filter: DateRangeFilter, limit = 10): Promise<TopSellingVariant[]> {
     const branchFilter = filter.branchId ? { branchId: filter.branchId } : {};
 
-    const lineItems = await this.prisma.orderLineItem.findMany({
-      where: {
-        order: {
-          createdAt: { gte: filter.from, lte: filter.to },
-          status: { not: 'CANCELLED' },
-          ...branchFilter,
+    const [lineItems, returnLines] = await Promise.all([
+      this.prisma.orderLineItem.findMany({
+        where: {
+          order: {
+            createdAt: { gte: filter.from, lte: filter.to },
+            status: { in: [...REVENUE_ELIGIBLE_STATUSES] },
+            ...branchFilter,
+          }
         }
-      }
-    });
+      }),
+      this.prisma.saleReturnLine.findMany({
+        where: {
+          return: {
+            createdAt: { gte: filter.from, lte: filter.to },
+            status: 'APPROVED',
+            ...branchFilter,
+          },
+        },
+        include: { orderLine: true },
+      }),
+    ]);
 
-    const variantIds = [...new Set(lineItems.map(l => l.variantId))];
+    const variantIds = [...new Set([
+      ...lineItems.map(l => l.variantId),
+      ...returnLines.map(l => l.variantId),
+    ])];
     const variants = await this.prisma.productVariant.findMany({
       where: { id: { in: variantIds } },
       include: { product: true }
@@ -124,7 +152,30 @@ export class SalesReportService {
       v.totalRevenue += item.finalPrice;
     }
 
+    for (const line of returnLines) {
+      if (!line.orderLine) continue;
+
+      if (!reportMap.has(line.variantId)) {
+        const v = variantMap.get(line.variantId);
+        reportMap.set(line.variantId, {
+          variantId: line.variantId,
+          name: v?.product?.name || line.orderLine.historicalName || 'Unknown',
+          sku: v?.sku || line.orderLine.historicalSku || 'Unknown',
+          totalUnitsSold: 0,
+          totalRevenue: 0,
+        });
+      }
+
+      const unitRevenue = line.orderLine.quantity > 0
+        ? line.orderLine.finalPrice / line.orderLine.quantity
+        : 0;
+      const entry = reportMap.get(line.variantId)!;
+      entry.totalUnitsSold -= line.quantity;
+      entry.totalRevenue -= unitRevenue * line.quantity;
+    }
+
     return Array.from(reportMap.values())
+      .filter(v => v.totalUnitsSold > 0)
       .sort((a, b) => b.totalUnitsSold - a.totalUnitsSold)
       .slice(0, limit);
   }
@@ -138,14 +189,18 @@ export class SalesReportService {
         where: { branchId: filter.branchId },
         select: { id: true }
       });
+      const warehouseIds = warehouses.map(w => w.id);
       warehouseFilter = {
-        sourceWarehouseId: { in: warehouses.map(w => w.id) }
+        OR: [
+          { sourceWarehouseId: { in: warehouseIds } },
+          { destinationWarehouseId: { in: warehouseIds } },
+        ],
       };
     }
 
     const movements = await this.prisma.inventoryMovement.findMany({
       where: {
-        type: 'SALE',
+        type: { in: ['SALE', 'SALE_RETURN'] },
         createdAt: { gte: filter.from, lte: filter.to },
         ...warehouseFilter,
       }
@@ -153,8 +208,10 @@ export class SalesReportService {
 
     let totalCOGS = 0;
     for (const m of movements) {
-      totalCOGS += (m.quantity * m.unitCost);
+      const cost = m.quantity * m.unitCost;
+      totalCOGS += m.type === 'SALE_RETURN' ? -cost : cost;
     }
+    totalCOGS = Math.max(0, totalCOGS);
 
     // Reuse precomputed revenue from the caller (e.g. DashboardService) to avoid a double DB round-trip.
     // Falls back to fetching its own summary when called in isolation (e.g. from the controller directly).
