@@ -1,6 +1,7 @@
 import { Modal, Button } from '@/components/ui';
 import { formatCurrency } from '@/utils/formatCurrency';
 import type { ProductVariant } from '@/types';
+import styles from '@/pages/pos/POSPage.module.css';
 
 type PosVariant = ProductVariant & { name?: string; productName?: string; size?: string; color?: string };
 
@@ -19,30 +20,25 @@ export function PosVariantPickerModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Seleccionar variante">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
+      <div className={styles.variantList}>
         {variants.map(v => (
           <button
             key={v.id}
             type="button"
             onClick={() => { onSelect(v); onClose(); }}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '14px 16px', background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px',
-              cursor: 'pointer', color: '#fff', textAlign: 'left',
-            }}
+            className={styles.variantOption}
           >
             <div>
-              <div style={{ fontWeight: 600 }}>{getName(v)}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <div className={styles.variantName}>{getName(v)}</div>
+              <div className={styles.variantMeta}>
                 {[v.size, v.color, v.sku].filter(Boolean).join(' · ')}
               </div>
             </div>
-            <div style={{ fontWeight: 700, color: '#34d399' }}>{formatCurrency(v.basePrice)}</div>
+            <div className={styles.variantPrice}>{formatCurrency(v.basePrice)}</div>
           </button>
         ))}
       </div>
-      <Button variant="ghost" onClick={onClose} style={{ marginTop: '16px', width: '100%' }}>Cancelar</Button>
+      <Button variant="ghost" onClick={onClose} className={styles.variantCancel}>Cancelar</Button>
     </Modal>
   );
 }

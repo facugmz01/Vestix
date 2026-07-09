@@ -75,7 +75,7 @@ export function POSProductGrid({
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}
           aria-label="Filtrar por categoría"
-          style={{ flex: 1, padding: '10px 14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: '12px', outline: 'none' }}
+          className={styles.filterSelect}
         >
           <option value="">Todas las Categorías</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -84,7 +84,7 @@ export function POSProductGrid({
           value={brandFilter}
           onChange={e => setBrandFilter(e.target.value)}
           aria-label="Filtrar por marca"
-          style={{ flex: 1, padding: '10px 14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: '12px', outline: 'none' }}
+          className={styles.filterSelect}
         >
           <option value="">Todas las Marcas</option>
           {brands.map(b => <option key={b} value={b}>{b}</option>)}

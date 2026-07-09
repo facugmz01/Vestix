@@ -122,7 +122,7 @@ export function POSHeader({
           <button type="button" className={styles.iconBtn} onClick={() => setSuspendModalOpen(true)} title="Ventas Suspendidas">
             <PauseCircle size={18} />
             {suspendedSales.length > 0 && (
-              <span style={{ background: 'var(--yellow)', padding: '2px 6px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>
+              <span className={styles.navBadgeCount}>
                 {suspendedSales.length}
               </span>
             )}
@@ -135,7 +135,7 @@ export function POSHeader({
           <button type="button" className={styles.iconBtn} onClick={toggleTheme} title={theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}>
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button type="button" className={styles.iconBtn} onClick={() => setShiftModalOpen(true)} style={{ background: 'rgba(220,38,38,0.2)', color: '#f87171', border: '1px solid rgba(220,38,38,0.4)' }} title="Cerrar Caja">
+          <button type="button" className={`${styles.iconBtn} ${styles.iconBtnDanger}`} onClick={() => setShiftModalOpen(true)} title="Cerrar Caja">
             <LogOut size={16} /> Cerrar Caja
           </button>
           <button type="button" className={styles.iconBtn} onClick={() => navigate('/')} title="Volver al Dashboard"><LogOut size={18} /> Volver</button>
