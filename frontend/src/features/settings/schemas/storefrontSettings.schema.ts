@@ -10,16 +10,16 @@ export const shippingMethodSchema = z.object({
 });
 
 export const storefrontSettingsSchema = z.object({
-  enabled: z.boolean(),
+  enabled: z.boolean().catch(false),
   primaryColor: z.string().catch('#3b82f6'),
   fontFamily: z.string().catch('Inter'),
-  showHeader: z.boolean(),
+  showHeader: z.boolean().catch(true),
   storeName: z.string().optional(),
-  showStoreName: z.boolean(),
+  showStoreName: z.boolean().catch(true),
   imagesCarousel: z.array(z.any()).catch([]),
   priceListToShow: z.string().catch(''),
   defaultSort: z.string().catch('name_asc'),
-  hideOutOfStock: z.boolean(),
+  hideOutOfStock: z.boolean().catch(false),
   hideBrandFilters: z.boolean().optional(),
   allowedPaymentMethods: z.array(z.string()).catch([]),
   transferCbu: z.string().optional(),
