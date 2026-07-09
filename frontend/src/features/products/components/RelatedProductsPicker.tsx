@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, X, Plus } from 'lucide-react';
 import { productsApi } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';
+import styles from './ProductFormWidgets.module.css';
 
 interface Props {
   selectedIds: string[];
@@ -30,28 +31,23 @@ export function RelatedProductsPicker({ selectedIds, onChange, excludeProductId 
   const removeProduct = (id: string) => onChange(selectedIds.filter(x => x !== id));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ position: 'relative' }}>
-        <Search size={16} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)' }} />
+    <div className={styles.pickerStack}>
+      <div className={styles.pickerSearchWrap}>
+        <Search size={16} className={styles.searchIcon} />
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar productos relacionados..."
-          style={{ width: '100%', padding: '8px 12px 8px 34px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)' }}
+          className={styles.pickerSearchInput}
         />
       </div>
 
       {search.length >= 2 && results.length > 0 && (
-        <div style={{ border: '1px solid var(--border)', borderRadius: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+        <div className={styles.resultList}>
           {results.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => addProduct(p.id)}
-              style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-            >
-              <span style={{ fontSize: '13px' }}>{p.name}</span>
+            <button key={p.id} type="button" onClick={() => addProduct(p.id)} className={styles.resultItem}>
+              <span className={styles.resultName}>{p.name}</span>
               <Plus size={14} />
             </button>
           ))}
@@ -59,13 +55,13 @@ export function RelatedProductsPicker({ selectedIds, onChange, excludeProductId 
       )}
 
       {selectedIds.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        <div className={styles.chipList}>
           {selectedIds.map(id => {
             const p = selectedProducts.find(x => x.id === id);
             return (
-              <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', background: 'var(--bg-elevated)', borderRadius: '99px', fontSize: '12px', border: '1px solid var(--border)' }}>
+              <span key={id} className={styles.chip}>
                 {p?.name || id.slice(0, 8)}
-                <button type="button" onClick={() => removeProduct(id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                <button type="button" onClick={() => removeProduct(id)} className={styles.chipRemove}>
                   <X size={12} />
                 </button>
               </span>
