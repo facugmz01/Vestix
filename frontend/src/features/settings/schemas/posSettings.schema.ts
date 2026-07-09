@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { receiptStyleSchema } from './receiptStyle.schema';
 
 export const posSettingsSchema = z.object({
   allowNegativeStock: z.boolean(),
@@ -12,7 +13,8 @@ export const posSettingsSchema = z.object({
   requireDescription: z.boolean(),
   requireShippingDimensions: z.boolean(),
   officialDollarQuote: z.number().min(0),
-  blueDollarQuote: z.number().min(0)
+  blueDollarQuote: z.number().min(0),
+  receiptStyle: receiptStyleSchema.optional(),
 });
 
 export type PosSettingsFormData = z.infer<typeof posSettingsSchema>;

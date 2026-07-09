@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Building2, FileText, Bell, Plug, ChevronRight,
-  Settings as SettingsIcon, ShoppingCart, QrCode, Smartphone, Tag
+  Settings as SettingsIcon, ShoppingCart, QrCode, Smartphone, Tag, Receipt,
 } from 'lucide-react';
 
 import { PageContainer } from '@/components/ui';
@@ -12,6 +12,7 @@ import { queryKeys } from '@/api/queryKeys';
 
 import { GeneralSettingsPanel } from '@/features/settings/components/GeneralSettingsPanel';
 import { SalesOptionsPanel } from '@/features/settings/components/SalesOptionsPanel';
+import { ReceiptStylePanel } from '@/features/settings/components/ReceiptStylePanel';
 import { InvoicingSettingsPanel, LabelPrintingSettingsPanel } from '@/features/settings/components/OtherSettingsPanels';
 import { StorefrontSettingsPanel } from '@/features/settings/components/StorefrontSettingsPanel';
 import { QrSettingsPanel } from '@/features/settings/components/QrSettingsPanel';
@@ -22,6 +23,7 @@ import { PwaSettingsPanel } from '@/features/settings/components/PwaSettingsPane
 type SettingsTab =
   | 'general'
   | 'pos'
+  | 'receipt'
   | 'fiscal'
   | 'labels'
   | 'storefront'
@@ -34,6 +36,7 @@ type SettingsTab =
 const TABS: { id: SettingsTab; label: string; icon: React.ReactNode; description: string }[] = [
   { id: 'general',       label: 'Datos del comercio',     icon: <Building2 size={16} />, description: '' },
   { id: 'pos',           label: 'Opciones de venta',      icon: <SettingsIcon size={16} />, description: '' },
+  { id: 'receipt',       label: 'Comprobante de venta',   icon: <Receipt size={16} />, description: '' },
   { id: 'fiscal',        label: 'Configuración fiscal',   icon: <FileText size={16} />, description: '' },
   { id: 'labels',        label: 'Etiquetas',              icon: <Tag size={16} />, description: '' },
   { id: 'storefront',    label: 'Tienda Web',             icon: <ShoppingCart size={16} />, description: '' },
@@ -97,6 +100,7 @@ export default function SettingsPage() {
           <div className={styles.contentArea}>
             {activeTab === 'general' && <GeneralSettingsPanel />}
             {activeTab === 'pos' && <SalesOptionsPanel />}
+            {activeTab === 'receipt' && <ReceiptStylePanel />}
             {activeTab === 'fiscal' && <InvoicingSettingsPanel />}
             {activeTab === 'labels' && <LabelPrintingSettingsPanel />}
             {activeTab === 'storefront' && <StorefrontSettingsPanel />}

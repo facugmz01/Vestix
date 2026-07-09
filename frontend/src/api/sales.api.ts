@@ -2,6 +2,7 @@ import { get, post, patch } from './client';
 import { cleanParams } from './requestUtils';
 import type { SaleOrder, PagedResponse } from '@/types';
 import type { SharedCreateSaleDto } from '@shared/types';
+import type { ReceiptStyleSettings } from '@/features/receipts/types/receiptStyle.types';
 
 export interface SalesFilters {
   page?: number;
@@ -43,6 +44,7 @@ export interface PublicSaleReceipt {
     posReceiptHeader?: string | null;
     posReceiptFooter?: string | null;
   };
+  receiptStyle?: ReceiptStyleSettings;
 }
 
 export const salesApi = {

@@ -5,6 +5,7 @@ jest.mock('uuid', () => ({
 }));
 
 import { SalesService } from './sales.service';
+import { DEFAULT_RECEIPT_STYLE } from './models/receipt-style.model';
 
 describe('SalesService.getOrderById', () => {
   const mockRepository: any = {
@@ -14,12 +15,15 @@ describe('SalesService.getOrderById', () => {
     getVariantsDetails: jest.fn(),
   };
   const mockPrisma: any = {};
+  const mockSettingsService: any = {
+    getPosSettings: (jest.fn() as any).mockResolvedValue({ receiptStyle: DEFAULT_RECEIPT_STYLE }),
+  };
 
   let service: SalesService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new SalesService(mockPrisma, mockRepository, mockCatalogFacade);
+    service = new SalesService(mockPrisma, mockRepository, mockCatalogFacade, mockSettingsService);
   });
 
   it('maps productName and variantSku from historical fields and live catalog', async () => {
@@ -139,5 +143,6 @@ describe('SalesService.getOrderById', () => {
     expect(receipt.customerName).toBe('Juan Pérez');
     expect(receipt.lines[0].productName).toBe('Remera');
     expect(receipt.branchSettings.posReceiptHeader).toBe('RO Indumentaria');
+    expect(receipt.receiptStyle?.paperWidthMm).toBe(80);
   });
 });

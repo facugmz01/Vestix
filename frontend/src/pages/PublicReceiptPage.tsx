@@ -91,6 +91,7 @@ export default function PublicReceiptPage() {
           ref={printRef}
           order={receiptOrder}
           branchSettings={data.branchSettings}
+          receiptStyle={data.receiptStyle}
         />
       </div>
 

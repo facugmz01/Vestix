@@ -96,6 +96,8 @@ export interface OfflineSettings {
   conflictStrategy: 'ASK_USER' | 'SERVER_WINS' | 'CLIENT_WINS';
 }
 
+import type { ReceiptStyleSettings } from '@/features/receipts/types/receiptStyle.types';
+
 export interface PosSettings {
   allowNegativeStock: boolean;
   thermalPrint80mm: boolean;
@@ -109,6 +111,7 @@ export interface PosSettings {
   requireShippingDimensions: boolean;
   officialDollarQuote: number;
   blueDollarQuote: number;
+  receiptStyle?: ReceiptStyleSettings;
 }
 
 export interface ArcaSettings {

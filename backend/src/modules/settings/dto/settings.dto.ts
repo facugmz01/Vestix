@@ -314,6 +314,26 @@ export class OfflineSettingsDto {
   conflictStrategy?: 'ASK_USER' | 'SERVER_WINS' | 'CLIENT_WINS';
 }
 
+export class ReceiptStyleDto {
+  @IsOptional() @IsIn([58, 70, 80]) paperWidthMm?: 58 | 70 | 80;
+  @IsOptional() @IsIn(['monospace', 'sans-serif', 'serif']) fontFamily?: 'monospace' | 'sans-serif' | 'serif';
+  @IsOptional() @IsNumber() fontSizePx?: number;
+  @IsOptional() @IsNumber() headerFontSizePx?: number;
+  @IsOptional() @IsString() textColor?: string;
+  @IsOptional() @IsString() backgroundColor?: string;
+  @IsOptional() @IsString() accentColor?: string;
+  @IsOptional() @IsIn(['dashed', 'solid', 'dotted', 'none']) dividerStyle?: 'dashed' | 'solid' | 'dotted' | 'none';
+  @IsOptional() @IsBoolean() showSku?: boolean;
+  @IsOptional() @IsBoolean() showLineDiscounts?: boolean;
+  @IsOptional() @IsBoolean() showPaymentMethod?: boolean;
+  @IsOptional() @IsBoolean() showCustomer?: boolean;
+  @IsOptional() @IsBoolean() showSubtotal?: boolean;
+  @IsOptional() @IsBoolean() showDate?: boolean;
+  @IsOptional() @IsBoolean() showTicketNumber?: boolean;
+  @IsOptional() @IsString() logoUrl?: string;
+  @IsOptional() @IsString() titleFallback?: string;
+}
+
 export class PosSettingsDto {
   @IsOptional() @IsBoolean() allowNegativeStock?: boolean;
   @IsOptional() @IsBoolean() thermalPrint80mm?: boolean;
@@ -327,6 +347,7 @@ export class PosSettingsDto {
   @IsOptional() @IsBoolean() requireShippingDimensions?: boolean;
   @IsOptional() @IsNumber() officialDollarQuote?: number;
   @IsOptional() @IsNumber() blueDollarQuote?: number;
+  @IsOptional() @ValidateNested() @Type(() => ReceiptStyleDto) receiptStyle?: ReceiptStyleDto;
 }
 
 export class ArcaSettingsDto {
