@@ -9,6 +9,7 @@ export { Spinner, PageSpinner } from './Spinner';
 
 // ─── New components ────────────────────────────────────────────────────────────
 export { PageContainer }  from './PageContainer';
+export { PageHeader }     from './PageHeader';
 export { Section }        from './Section';
 export { SearchInput }    from './SearchInput';
 export { FiltersBar }     from './FiltersBar';

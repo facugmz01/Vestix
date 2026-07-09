@@ -1,0 +1,339 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.pageNarrow {
+  max-width: 480px;
+  margin: 48px auto;
+  padding: 0 24px;
+}
+
+.pageMedium {
+  max-width: 800px;
+  margin: 48px auto;
+  padding: 0 24px;
+}
+
+.card {
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.cardPad { padding: 32px 24px; }
+
+@media (min-width: 768px) {
+  .cardPad { padding: 40px 32px; }
+}
+
+.cardHeader {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.cardIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--sf-primary, var(--accent));
+  color: var(--text-inverted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 24px rgba(var(--sf-primary-rgb, var(--accent-rgb, 0, 102, 204)), 0.2);
+}
+
+.cardTitle {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.cardSubtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.pageTitleRow {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.linkBack {
+  color: var(--sf-primary, var(--accent));
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.linkBack:hover { text-decoration: underline; }
+
+.alert {
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.alertError {
+  background: var(--red-bg);
+  border: 1px solid rgba(196, 30, 30, 0.25);
+  color: var(--red);
+}
+
+.alertSuccess {
+  background: var(--green-bg);
+  border: 1px solid rgba(27, 127, 58, 0.25);
+  color: var(--green);
+}
+
+.alertInfo {
+  background: var(--blue-bg);
+  border: 1px solid rgba(0, 102, 204, 0.25);
+  color: var(--blue);
+}
+
+.label {
+  display: block;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.hint {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  padding: 0;
+}
+
+.backBtn:hover { color: var(--text-primary); }
+
+.phoneRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.phonePrefix {
+  display: flex;
+  align-items: center;
+  background: var(--sf-primary-subtle, var(--accent-subtle));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 12px;
+  color: var(--sf-primary, var(--accent));
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Stepper — numbered (checkout) */
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.stepperTrack {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.stepperItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+  flex: 1;
+}
+
+.stepperCircle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  margin-bottom: 6px;
+  font-size: 14px;
+  transition: all 0.3s;
+  border: 2px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-muted);
+}
+
+.stepperCircleActive {
+  background: var(--sf-primary, var(--accent));
+  color: var(--text-inverted);
+  border-color: var(--sf-primary, var(--accent));
+}
+
+.stepperLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.stepperLabelActive {
+  color: var(--sf-primary, var(--accent));
+}
+
+/* Stepper — dots (login) */
+.dotStepper {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.dot {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border-strong);
+  width: 8px;
+  transition: all 0.3s ease;
+}
+
+.dotActive {
+  width: 28px;
+  background: var(--sf-primary, var(--accent));
+}
+
+.emptyState {
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.emptyIcon {
+  margin: 0 auto 20px;
+  display: block;
+  color: var(--text-muted);
+}
+
+.emptyTitle {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.emptyText {
+  margin: 0 0 28px;
+  color: var(--text-secondary);
+}
+
+.otpRow {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.otpDigit {
+  width: 48px;
+  height: 56px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  caret-color: var(--sf-primary, var(--accent));
+  font-family: var(--font-mono, monospace);
+}
+
+.otpDigitFilled {
+  border-color: var(--border-strong);
+}
+
+.otpDigitFocused {
+  border-color: var(--sf-primary, var(--accent));
+  background: var(--sf-primary-subtle, var(--accent-subtle));
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.resendRow {
+  text-align: center;
+  margin-top: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.resendBtn {
+  background: none;
+  border: none;
+  color: var(--sf-primary, var(--accent));
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.footerLink {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.footerLink a {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footerLink a:hover {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
+.wFull { width: 100%; }

@@ -10,6 +10,7 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { StorefrontStepper } from '@/components/storefront';
 
 export default function StorefrontCheckoutPage() {
   const navigate = useNavigate();
@@ -179,22 +180,7 @@ export default function StorefrontCheckoutPage() {
       {/* Left: Form */}
       <div className="storefront-checkout-left">
         
-        {/* Progress steps */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '16px', left: '16px', right: '16px', height: '2px', background: 'var(--border)', zIndex: 0 }} />
-          {steps.map((label, idx) => {
-            const s = idx + 1;
-            const active = step >= s;
-            return (
-              <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, flex: 1 }}>
-                <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: active ? 'var(--accent)' : 'var(--bg-surface)', color: active ? '#fff' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, marginBottom: '6px', border: active ? 'none' : '2px solid var(--border)', fontSize: '14px', transition: 'all 0.3s' }}>
-                  {s}
-                </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: active ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
-              </div>
-            );
-          })}
-        </div>
+        <StorefrontStepper steps={steps} currentStep={step} />
 
         <div className="glass" style={{ overflow: 'hidden' }}>
 

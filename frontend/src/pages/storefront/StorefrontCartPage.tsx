@@ -4,6 +4,8 @@ import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { StorefrontPage, StorefrontCard } from '@/components/storefront';
+import sf from '@/components/storefront/storefront.module.css';
 
 export default function StorefrontCartPage() {
   const navigate = useNavigate();
@@ -18,16 +20,16 @@ export default function StorefrontCartPage() {
 
   if (items.length === 0) {
     return (
-      <div style={{ maxWidth: '800px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
-        <div className="glass" style={{ padding: '64px' }}>
-          <PackageX size={56} color="var(--text-muted)" style={{ margin: '0 auto 20px', display: 'block' }} />
-          <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>Tu carrito está vacío</h2>
-          <p style={{ margin: '0 0 28px', color: 'var(--text-secondary)' }}>Explorá el catálogo para encontrar los mejores productos.</p>
+      <StorefrontPage variant="medium">
+        <StorefrontCard className={sf.emptyState}>
+          <PackageX size={56} className={sf.emptyIcon} />
+          <h2 className={sf.emptyTitle}>Tu carrito está vacío</h2>
+          <p className={sf.emptyText}>Explorá el catálogo para encontrar los mejores productos.</p>
           <Link to={`${prefix}/`} className="storefront-btn">
             Ver Catálogo
           </Link>
-        </div>
-      </div>
+        </StorefrontCard>
+      </StorefrontPage>
     );
   }
 
@@ -36,9 +38,9 @@ export default function StorefrontCartPage() {
   return (
     <div className="storefront-checkout-container">
       
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
-        <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)' }}>Mi Carrito</h1>
-        <Link to={`${prefix}/`} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>← Seguir comprando</Link>
+      <div className={sf.pageTitleRow}>
+        <h1 className={sf.pageTitle}>Mi Carrito</h1>
+        <Link to={`${prefix}/`} className={sf.linkBack}>← Seguir comprando</Link>
       </div>
 
       {/* Items list */}
