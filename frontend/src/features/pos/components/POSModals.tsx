@@ -9,13 +9,13 @@ import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
 import { PAYMENT_METHOD_LABELS } from '../constants/posPaymentMethods';
 import { Button, Input, Modal } from '@/components/ui';
-
 import { QrPaymentModal } from './QrPaymentModal';
 import { PrintReceiptModal } from './PrintReceiptModal';
 import { PosMixedPaymentModal } from './PosMixedPaymentModal';
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
 import { ShiftManagerModal } from '@/features/sales/components/ShiftManagerModal';
 import type { CashShift, CashRegister } from '@/types';
+import styles from '@/pages/pos/POSPage.module.css';
 
 export function POSModals({
   grandTotal,
@@ -98,8 +98,8 @@ export function POSModals({
 
   return (
     <>
-      <ShiftManagerModal 
-        open={!activeShift && !isShiftLoading} 
+      <ShiftManagerModal
+        open={!activeShift && !isShiftLoading}
         mode="OPEN"
         activeShift={null}
         registers={registersData}
@@ -107,21 +107,21 @@ export function POSModals({
         onDismiss={() => navigate('/')}
         onClose={() => {}}
       />
-      
-      <ShiftManagerModal 
-        open={shiftModalOpen} 
+
+      <ShiftManagerModal
+        open={shiftModalOpen}
         mode="CLOSE"
         activeShift={activeShift || null}
         onClose={() => setShiftModalOpen(false)}
       />
 
-      <QrPaymentModal 
-        open={qrModalOpen} 
+      <QrPaymentModal
+        open={qrModalOpen}
         amount={grandTotal}
         orderId={qrOrderId}
-        qrData={qrData} 
-        isLoading={isGeneratingQr} 
-        onClose={() => setQrModalOpen(false)} 
+        qrData={qrData}
+        isLoading={isGeneratingQr}
+        onClose={() => setQrModalOpen(false)}
         onPaymentConfirmed={() => {
           setQrModalOpen(false);
           setPaymentModalOpen(true);
@@ -140,37 +140,37 @@ export function POSModals({
         }}
       />
 
-      <PrintReceiptModal 
-        open={printModalOpen} 
-        order={completedOrder} 
-        onClose={() => setPrintModalOpen(false)} 
+      <PrintReceiptModal
+        open={printModalOpen}
+        order={completedOrder}
+        onClose={() => setPrintModalOpen(false)}
         branchSettings={user?.branchId === 'CENTRAL' ? { posReceiptHeader: 'VESTIX - SUCURSAL CENTRAL', posReceiptFooter: 'Gracias por tu compra' } : {}}
       />
 
       <Modal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title={`Confirmar Pago — ${paymentLabel}`}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1))', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)', padding: '24px', textAlign: 'center', borderRadius: '16px' }}>
-            <div style={{ fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, opacity: 0.8 }}>Monto a Cobrar</div>
-            <div style={{ fontSize: '48px', fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{formatCurrency(grandTotal)}</div>
+        <div className={styles.modalStack}>
+          <div className={styles.payHero}>
+            <div className={styles.payHeroLabel}>Monto a Cobrar</div>
+            <div className={styles.payHeroAmount}>{formatCurrency(grandTotal)}</div>
           </div>
 
           {paymentMethod === 'CASH' && (
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <label style={{ fontWeight: '600', display: 'block', marginBottom: '10px', color: 'var(--text-secondary)' }}>Monto Recibido</label>
-              <Input 
-                type="number" 
+            <div className={styles.payFieldBox}>
+              <label className={styles.payFieldLabel}>Monto Recibido</label>
+              <Input
+                type="number"
                 min={grandTotal}
-                value={amountTendered} 
-                onChange={e => setAmountTendered(Number(e.target.value))} 
-                style={{ fontSize: '24px', padding: '14px', background: 'rgba(0,0,0,0.3)' }}
+                value={amountTendered}
+                onChange={e => setAmountTendered(Number(e.target.value))}
+                className={styles.payFieldInput}
               />
               {amountTendered > grandTotal && (
-                <div style={{ marginTop: '16px', color: '#f87171', fontSize: '22px', fontWeight: 'bold' }}>
+                <div className={styles.payChange}>
                   Vuelto a entregar: {formatCurrency(amountTendered - grandTotal)}
                 </div>
               )}
               {amountTendered < grandTotal && (
-                <div style={{ marginTop: '12px', color: '#f87171', fontSize: '14px' }}>
+                <div className={styles.payInsufficient}>
                   El monto recibido debe ser al menos {formatCurrency(grandTotal)}
                 </div>
               )}
@@ -178,8 +178,8 @@ export function POSModals({
           )}
 
           {paymentMethod === 'BANK_TRANSFER' && (
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <label style={{ fontWeight: '600', display: 'block', marginBottom: '10px', color: 'var(--text-secondary)' }}>Referencia de Transferencia</label>
+            <div className={styles.payFieldBox}>
+              <label className={styles.payFieldLabel}>Referencia de Transferencia</label>
               <Input
                 placeholder="Ej: CBU, alias o número de operación"
                 value={paymentReference}
@@ -189,8 +189,8 @@ export function POSModals({
           )}
 
           {paymentMethod === 'CREDIT_CARD' && (
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <label style={{ fontWeight: '600', display: 'block', marginBottom: '10px', color: 'var(--text-secondary)' }}>Cupón / Lote (opcional)</label>
+            <div className={styles.payFieldBox}>
+              <label className={styles.payFieldLabel}>Cupón / Lote (opcional)</label>
               <Input
                 placeholder="Ej: Lote 1234"
                 value={paymentReference}
@@ -200,34 +200,39 @@ export function POSModals({
           )}
 
           {paymentMethod === 'CUSTOMER_CREDIT' && (
-            <div style={{ padding: '16px', background: 'rgba(234,179,8,0.1)', borderRadius: '12px', border: '1px solid rgba(234,179,8,0.2)', color: '#fbbf24', fontSize: '14px' }}>
+            <div className={styles.alertCredit}>
               Se cargará a cuenta corriente de{' '}
               <strong>{selectedCustomer?.fullName || 'cliente seleccionado'}</strong>.
             </div>
           )}
 
           {paymentMethod === 'QR_MERCADOPAGO' && (
-            <div style={{ padding: '16px', background: 'rgba(59,130,246,0.1)', borderRadius: '12px', border: '1px solid rgba(59,130,246,0.2)', color: '#93c5fd', fontSize: '14px' }}>
+            <div className={styles.alertQr}>
               Pago QR MercadoPago confirmado{qrOrderId ? ` — ref. ${qrOrderId}` : ''}.
             </div>
           )}
 
           {paymentMethod === 'MULTIPLE' && (
-            <div style={{ padding: '16px', background: 'rgba(99,102,241,0.1)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc', fontSize: '14px' }}>
+            <div className={styles.alertMixed}>
               Pago mixto configurado. Revisá el total y confirmá la venta.
             </div>
           )}
 
-          <div style={{ padding: '10px 0' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '15px' }}>
-              <input type="checkbox" checked={issueInvoice} onChange={e => setIssueInvoice(e.target.checked)} style={{ width: '20px', height: '20px' }} />
+          <div className={styles.invoiceCheck}>
+            <label className={styles.invoiceCheckLabel}>
+              <input
+                type="checkbox"
+                checked={issueInvoice}
+                onChange={e => setIssueInvoice(e.target.checked)}
+                className={styles.invoiceCheckbox}
+              />
               Emitir e Imprimir Factura Electrónica (AFIP)
             </label>
           </div>
 
-          <Button 
-            variant="primary" 
-            style={{ height: '56px', fontSize: '18px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', boxShadow: '0 8px 20px rgba(16,185,129,0.3)' }}
+          <Button
+            variant="primary"
+            className={styles.confirmSaleBtn}
             onClick={handleConfirmSale}
             loading={isCheckoutLoading}
             disabled={!canConfirmSale}
@@ -239,24 +244,24 @@ export function POSModals({
 
       <Modal open={suspendModalOpen} onClose={() => setSuspendModalOpen(false)} title="Ventas Suspendidas">
         {suspendedSales.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', opacity: 0.5 }}>
-            <PauseCircle size={48} style={{ margin: '0 auto 16px' }} />
+          <div className={styles.suspendEmpty}>
+            <PauseCircle size={48} className={styles.suspendEmptyIcon} />
             <p>No hay ventas en suspenso.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className={styles.suspendList}>
             {suspendedSales.map(sale => (
-              <div key={sale.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div key={sale.id} className={styles.suspendCard}>
                 <div>
-                  <div style={{ fontWeight: 600, marginBottom: '4px', fontFamily: 'monospace', fontSize: '12px' }}>
+                  <div className={styles.suspendId}>
                     {formatSaleId(sale.id)}
                   </div>
-                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>{sale.customerId ? 'Cliente registrado' : 'Consumidor Final'}</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{new Date(sale.date).toLocaleString()}</div>
+                  <div className={styles.suspendCustomer}>{sale.customerId ? 'Cliente registrado' : 'Consumidor Final'}</div>
+                  <div className={styles.suspendDate}>{new Date(sale.date).toLocaleString()}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ fontWeight: 800, fontSize: '18px', color: '#34d399' }}>{formatCurrency(sale.total)}</div>
-                  <Button variant="primary" style={{ padding: '8px 16px', fontSize: '13px' }} onClick={() => resumeSale(sale.id)}>
+                <div className={styles.suspendRow}>
+                  <div className={styles.suspendTotal}>{formatCurrency(sale.total)}</div>
+                  <Button variant="primary" className={styles.suspendResumeBtn} onClick={() => resumeSale(sale.id)}>
                     Retomar
                   </Button>
                 </div>

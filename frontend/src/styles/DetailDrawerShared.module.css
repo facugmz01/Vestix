@@ -708,3 +708,201 @@
   color: var(--red);
   font-weight: bold;
 }
+
+/* Invoice / payment drawers */
+.heroBadges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.heroAside {
+  text-align: right;
+}
+
+.heroAmountLg {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.caeBox {
+  padding: 16px;
+  background: var(--green-bg);
+  border-radius: 10px;
+  border: 1px solid var(--green);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.caeBody {
+  flex: 1;
+}
+
+.caeTitle {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.caeCode {
+  margin: 0 0 8px;
+  font-family: var(--font-mono, monospace);
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.caeDue {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.errorBox {
+  padding: 16px;
+  background: var(--red-bg);
+  border-radius: 10px;
+  border: 1px solid var(--red);
+  display: flex;
+  gap: 12px;
+}
+
+.errorTitle {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+.errorCode {
+  margin: 0 0 2px;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+}
+
+.errorMessage {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.fiscalPanel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.fiscalPanelHeader {
+  padding: 12px 16px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.fiscalGrid {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+.fiscalFieldLabel {
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.fiscalFieldValue {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.totalsPanel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.totalsRow {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+}
+
+.totalsRowFinal {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 2px solid var(--border);
+}
+
+.totalsFinalLabel {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.totalsFinalValue {
+  font-weight: 900;
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.gatewayBox {
+  padding: 20px;
+  background: var(--accent-subtle);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.gatewayText {
+  margin: 0 0 12px;
+  color: var(--accent);
+}
+
+.sectionHeadingSm {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.methodRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.heroAsideCol {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.heroAmountMd {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.btnDangerGhost {
+  color: var(--red);
+}

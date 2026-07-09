@@ -6,6 +6,7 @@ import type { SaleOrder } from '@/types';
 import type { ReceiptStyleSettings } from '@/features/receipts/types/receiptStyle.types';
 import { useGetSettings } from '@/features/settings/hooks/useSettings';
 import { resolveReceiptStyle } from '@/features/receipts/types/receiptStyle.types';
+import styles from '@/pages/pos/POSPage.module.css';
 
 interface PrintReceiptModalProps {
   open: boolean;
@@ -33,26 +34,17 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
 
   return (
     <Modal open={open} onClose={onClose} title="Imprimir Ticket">
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-        
-        {/* Scrollable preview area */}
-        <div style={{ 
-          maxHeight: '50vh', 
-          overflowY: 'auto', 
-          border: '1px solid rgba(255,255,255,0.1)', 
-          borderRadius: '8px',
-          padding: '10px',
-          background: 'rgba(255,255,255,0.05)'
-        }}>
+      <div className={styles.printStack}>
+        <div className={styles.printPreview}>
           <ReceiptPrinter ref={printRef} order={order} branchSettings={branchSettings} receiptStyle={resolvedStyle} />
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
-          <Button variant="secondary" onClick={onClose} style={{ flex: 1 }}>
-            <X size={18} style={{ marginRight: '6px' }} /> Omitir
+        <div className={styles.printActions}>
+          <Button variant="secondary" onClick={onClose} className={styles.printBtn}>
+            <X size={18} /> Omitir
           </Button>
-          <Button variant="primary" onClick={handlePrint} style={{ flex: 1, background: 'var(--accent)' }}>
-            <Printer size={18} style={{ marginRight: '6px' }} /> Imprimir
+          <Button variant="primary" onClick={handlePrint} className={styles.printBtn}>
+            <Printer size={18} /> Imprimir
           </Button>
         </div>
       </div>

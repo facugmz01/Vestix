@@ -4,7 +4,8 @@ import { Modal, Button } from '@/components/ui';
 import { db } from '@/core/db/db';
 import { CatalogSyncService } from '@/core/sync/CatalogSyncService';
 import toast from 'react-hot-toast';
-import styles from '@/features/offline/components/SyncStatusIndicator.module.css';
+import indicatorStyles from '@/features/offline/components/SyncStatusIndicator.module.css';
+import styles from '@/pages/pos/POSPage.module.css';
 
 interface SyncPanelProps {
   open: boolean;
@@ -65,42 +66,33 @@ export function PosSyncPanel({
 
   return (
     <Modal open={open} onClose={onClose} title="Estado de sincronización">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '12px',
-          padding: '16px', borderRadius: '12px',
-          background: isOnline ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-          border: `1px solid ${isOnline ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
-        }}>
-          {isOnline ? <Cloud size={24} color="#34d399" /> : <CloudOff size={24} color="#f87171" />}
+      <div className={styles.syncStack}>
+        <div className={`${styles.syncStatusBanner} ${isOnline ? styles.syncStatusOnline : styles.syncStatusOffline}`}>
+          {isOnline ? <Cloud size={24} color="var(--green)" /> : <CloudOff size={24} color="var(--red)" />}
           <div>
-            <div style={{ fontWeight: 700 }}>{isOnline ? 'En línea' : 'Sin conexión'}</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            <div className={styles.syncStatusTitle}>{isOnline ? 'En línea' : 'Sin conexión'}</div>
+            <div className={styles.syncStatusSub}>
               {isOnline ? 'Ventas en tiempo real' : 'Modo offline — catálogo y cola local'}
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div className={styles.syncStatGrid}>
           <StatCard icon={<Database size={18} />} label="Catálogo offline" value={String(catalogCount)} />
           <StatCard icon={<RefreshCw size={18} />} label="Ventas pendientes" value={String(pendingItems?.length ?? 0)} />
         </div>
 
-        <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          Última sync catálogo: <strong style={{ color: 'var(--text-primary)' }}>{lastSyncLabel}</strong>
+        <div className={styles.syncMeta}>
+          Última sync catálogo: <strong className={styles.syncMetaStrong}>{lastSyncLabel}</strong>
         </div>
 
         {(errorItems?.length ?? 0) > 0 && (
-          <div style={{
-            padding: '12px', borderRadius: '10px',
-            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
-            fontSize: '13px', color: '#f87171',
-          }}>
+          <div className={styles.syncErrorBanner}>
             <strong>{errorItems!.length} operación(es) con error</strong>
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className={styles.syncActions}>
           <Button
             variant="primary"
             onClick={onForceSync}
@@ -123,15 +115,12 @@ export function PosSyncPanel({
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div style={{
-      padding: '14px', borderRadius: '12px',
-      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+    <div className={styles.syncStatCard}>
+      <div className={styles.syncStatCardHeader}>
         {icon}
-        <span style={{ fontSize: '12px' }}>{label}</span>
+        <span className={styles.syncStatCardLabel}>{label}</span>
       </div>
-      <div style={{ fontSize: '22px', fontWeight: 800 }}>{value}</div>
+      <div className={styles.syncStatCardValue}>{value}</div>
     </div>
   );
 }
@@ -159,19 +148,19 @@ export function SyncStatusIndicatorClickable({
       : 'Sin conexión · descargá el catálogo cuando tengas red';
 
   const className = isOnline
-    ? pendingCount ? styles.syncing : styles.online
-    : offlineReady ? styles.offlineReady : styles.offline;
+    ? pendingCount ? indicatorStyles.syncing : indicatorStyles.online
+    : offlineReady ? indicatorStyles.offlineReady : indicatorStyles.offline;
 
   return (
-    <button type="button" className={`${styles.indicator} ${styles.clickable} ${className}`} title={title} onClick={onClick}>
+    <button type="button" className={`${indicatorStyles.indicator} ${indicatorStyles.clickable} ${className}`} title={title} onClick={onClick}>
       {isOnline ? (
-        pendingCount ? <RefreshCw size={18} className={styles.spin} /> : <Cloud size={18} />
+        pendingCount ? <RefreshCw size={18} className={indicatorStyles.spin} /> : <Cloud size={18} />
       ) : (
         <CloudOff size={18} />
       )}
-      {pendingCount > 0 && <span className={styles.count}>{pendingCount}</span>}
+      {pendingCount > 0 && <span className={indicatorStyles.count}>{pendingCount}</span>}
       {!isOnline && offlineReady && pendingCount === 0 && (
-        <span className={styles.count}>{catalogCount}</span>
+        <span className={indicatorStyles.count}>{catalogCount}</span>
       )}
     </button>
   );
