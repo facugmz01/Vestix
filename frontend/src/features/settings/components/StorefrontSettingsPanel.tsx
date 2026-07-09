@@ -8,7 +8,7 @@ import clsx from 'clsx';
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
-import { storefrontSettingsSchema, type StorefrontSettingsFormData } from '../schemas/storefrontSettings.schema';
+import { storefrontSettingsSchema, parseStorefrontSettings, type StorefrontSettingsFormData } from '../schemas/storefrontSettings.schema';
 import { priceListsApi } from '@/api/priceLists.api';
 import { financeApi } from '@/api/finance.api';
 import styles from './SettingsShared.module.css';
@@ -30,7 +30,7 @@ export function StorefrontSettingsPanel() {
 
   const { register, control, handleSubmit, reset, formState: { isDirty } } = useForm<StorefrontSettingsFormData>({
     resolver: zodResolver(storefrontSettingsSchema),
-    defaultValues: storefrontSettingsSchema.parse({}),
+    defaultValues: parseStorefrontSettings({}),
   });
 
   const { fields: shippingFields, append: appendShipping, remove: removeShipping } = useFieldArray({
@@ -40,7 +40,7 @@ export function StorefrontSettingsPanel() {
 
   useEffect(() => {
     if (settings?.storefront) {
-      reset(storefrontSettingsSchema.parse(settings.storefront));
+      reset(parseStorefrontSettings(settings.storefront));
     }
   }, [settings, reset]);
 
