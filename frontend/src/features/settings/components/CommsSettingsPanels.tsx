@@ -8,7 +8,7 @@ import clsx from 'clsx';
 import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { settingsApi, type ConnectionTestResult } from '@/api/settings.api';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
-import { notificationSettingsSchema, type NotificationSettingsFormData, integrationSettingsSchema, type IntegrationSettingsFormData } from '../schemas/commsSettings.schema';
+import { notificationSettingsSchema, parseNotificationSettings, type NotificationSettingsFormData, integrationSettingsSchema, parseIntegrationSettings, type IntegrationSettingsFormData } from '../schemas/commsSettings.schema';
 import styles from './SettingsShared.module.css';
 import { WhatsAppEvolutionPanel } from './WhatsAppEvolutionPanel';
 import { NotificationChannelPicker } from './NotificationChannelPicker';
@@ -120,12 +120,12 @@ export function NotificationSettingsPanel() {
 
   const { register, watch, handleSubmit, reset, control, formState: { isDirty } } = useForm<NotificationSettingsFormData>({
     resolver: zodResolver(notificationSettingsSchema),
-    defaultValues: notificationSettingsSchema.parse({}),
+    defaultValues: parseNotificationSettings({}),
   });
 
   useEffect(() => {
     if (settings?.notifications) {
-      reset(notificationSettingsSchema.parse(settings.notifications));
+      reset(parseNotificationSettings(settings.notifications));
     }
   }, [settings, reset]);
 
@@ -345,10 +345,11 @@ export function IntegrationSettingsPanel() {
 
   const { register, watch, handleSubmit, reset, formState: { isDirty } } = useForm<IntegrationSettingsFormData>({
     resolver: zodResolver(integrationSettingsSchema),
+    defaultValues: parseIntegrationSettings({}),
   });
 
   useEffect(() => {
-    if (settings?.integrations) reset(settings.integrations);
+    if (settings?.integrations) reset(parseIntegrationSettings(settings.integrations));
   }, [settings, reset]);
 
   const onSubmit = (data: IntegrationSettingsFormData) => {
