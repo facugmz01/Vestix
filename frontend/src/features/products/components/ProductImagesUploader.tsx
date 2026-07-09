@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
+import clsx from 'clsx';
 import { upload } from '@/api/client';
 import { productsApi } from '@/api/products.api';
 import toast from 'react-hot-toast';
+import styles from './ProductFormWidgets.module.css';
 
 interface Props {
   images: string[];
@@ -82,48 +84,43 @@ export function ProductImagesUploader({ images, onChange, productId }: Props) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className={styles.uploaderStack}>
       <div
-        onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
-        style={{
-          border: `2px dashed ${isDragging ? 'var(--accent)' : 'var(--border)'}`,
-          borderRadius: 'var(--radius-lg)',
-          padding: '32px',
-          textAlign: 'center',
-          background: isDragging ? 'var(--accent-muted)' : 'var(--bg-elevated)',
-          transition: 'all 0.2s ease',
-          cursor: uploading ? 'wait' : 'pointer',
-          position: 'relative',
-          opacity: uploading ? 0.7 : 1,
-        }}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        className={clsx(
+          styles.dropzone,
+          isDragging && styles.dropzoneDragging,
+          uploading && styles.dropzoneUploading,
+        )}
       >
-        {uploading ? <Loader2 size={32} className="spin" style={{ margin: '0 auto 12px' }} /> : <UploadCloud size={32} color="var(--text-secondary)" style={{ margin: '0 auto 12px' }} />}
-        <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+        {uploading ? (
+          <Loader2 size={32} className={clsx('spin', styles.dropzoneIcon)} />
+        ) : (
+          <UploadCloud size={32} color="var(--text-secondary)" className={styles.dropzoneIcon} />
+        )}
+        <p className={styles.dropzoneTitle}>
           {productId ? 'Subir al servidor' : 'Arrastrá imágenes (se guardan al crear el producto)'}
         </p>
-        <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-          PNG, JPG, WebP hasta 5MB
-        </p>
+        <p className={styles.dropzoneHint}>PNG, JPG, WebP hasta 5MB</p>
         <input
           type="file"
           multiple
           accept="image/*"
           disabled={uploading}
           onChange={handleFileSelect}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+          className={styles.fileInput}
         />
       </div>
 
       {images.length > 0 && (
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+        <div className={styles.previewRow}>
           {images.map((img, i) => (
-            <div key={i} style={{ position: 'relative', width: '80px', height: '80px', flexShrink: 0, borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-              <img src={img} alt={`Preview ${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <button
-                type="button"
-                onClick={() => handleRemove(i)}
-                style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-              >
+            <div key={i} className={styles.previewItem}>
+              <img src={img} alt={`Preview ${i}`} className={styles.previewImg} />
+              <button type="button" onClick={() => handleRemove(i)} className={styles.previewRemove}>
                 <X size={12} />
               </button>
             </div>

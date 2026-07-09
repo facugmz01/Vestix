@@ -2,6 +2,7 @@ import { SearchInput, FiltersBar, Badge } from '@/components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/api/queryKeys';
 import { productsApi } from '@/api/products.api';
+import styles from './ProductFilters.module.css';
 
 interface Props {
   total: number;
@@ -22,11 +23,11 @@ export function ProductFilters({ total, search, onSearchChange, categoryId, onCa
   return (
     <FiltersBar actions={<Badge color="gray">{total} productos madre</Badge>}>
       <SearchInput placeholder="Buscar por nombre..." onSearch={onSearchChange} value={search} />
-      
+
       <select
         value={categoryId}
         onChange={(e) => onCategoryChange(e.target.value)}
-        style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px' }}
+        className={styles.select}
       >
         <option value="">Todas las Categorías</option>
         {categories?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -35,7 +36,7 @@ export function ProductFilters({ total, search, onSearchChange, categoryId, onCa
       <select
         value={statusFilter}
         onChange={(e) => onStatusChange(e.target.value)}
-        style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px' }}
+        className={styles.select}
       >
         <option value="">Todos los Estados</option>
         <option value="ACTIVE">Activos</option>

@@ -6,6 +6,7 @@ import {
   Plus, Package, LayoutGrid, List,
   Edit2, Trash2, Tag, Globe, Archive, Copy, ImageIcon
 } from 'lucide-react';
+import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 import {
@@ -22,27 +23,30 @@ import { ProductDetailDrawer } from '@/features/products/components/ProductDetai
 import { ProductTable } from '@/features/products/components/ProductTable';
 import { ImportProductsModal } from '@/features/products/components/ImportProductsModal';
 import { BulkPriceUpdaterModal } from '@/features/products/components/BulkPriceUpdaterModal';
+import styles from './CatalogPage.module.css';
 
-// ── Status Badge ────────────────────────────────────────────────────────────
 function StatusPill({ isActive, isPublished }: { isActive: boolean; isPublished: boolean }) {
-  if (!isActive) return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '99px', fontSize: '11px', fontWeight: 600, background: 'rgba(107,114,128,0.15)', color: '#6b7280', border: '1px solid rgba(107,114,128,0.2)' }}>
-      <Archive size={10} /> Inactivo
-    </span>
-  );
-  if (isPublished) return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '99px', fontSize: '11px', fontWeight: 600, background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>
-      <Globe size={10} /> Publicado
-    </span>
-  );
+  if (!isActive) {
+    return (
+      <span className={clsx(styles.pill, styles.pillInactive)}>
+        <Archive size={10} /> Inactivo
+      </span>
+    );
+  }
+  if (isPublished) {
+    return (
+      <span className={clsx(styles.pill, styles.pillPublished)}>
+        <Globe size={10} /> Publicado
+      </span>
+    );
+  }
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '99px', fontSize: '11px', fontWeight: 600, background: 'rgba(234,179,8,0.12)', color: '#eab308', border: '1px solid rgba(234,179,8,0.25)' }}>
+    <span className={clsx(styles.pill, styles.pillDraft)}>
       <Tag size={10} /> Borrador
     </span>
   );
 }
 
-// ── Product Card ─────────────────────────────────────────────────────────────
 function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
   product: Product;
   onView: (p: Product) => void;
@@ -50,55 +54,25 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
   onDelete: (p: Product) => void;
   onDuplicate?: (p: Product) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   const cat = (product as any).category?.name || '—';
 
   return (
-    <div
-      className="glass-card"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={() => onView(product)}
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        transform: hovered ? 'translateY(-4px)' : 'none',
-      }}
-    >
-      {/* Image area */}
-      <div style={{
-        height: '140px',
-        background: 'var(--bg-surface-hover)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        borderBottom: '1px solid var(--border)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
+    <div className={styles.card} onClick={() => onView(product)}>
+      <div className={styles.cardImage}>
         {product.images && product.images.length > 0 ? (
-          <img
-            src={product.images[0]}
-            alt={product.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+          <img src={product.images[0]} alt={product.name} className={styles.cardImg} />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-            <Package size={36} color="rgba(99,102,241,0.3)" />
+          <div className={styles.cardPlaceholder}>
+            <Package size={36} />
           </div>
         )}
 
-        {/* Floating action buttons on hover */}
-        <div style={{
-          position: 'absolute', top: '8px', right: '8px',
-          display: 'flex', gap: '6px',
-          opacity: hovered ? 1 : 0,
-          transform: hovered ? 'translateY(0)' : 'translateY(-8px)',
-          transition: 'all 0.2s ease',
-        }}>
+        <div className={styles.cardActions}>
           <ActionGuard action="create" subject="Catalog">
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); onDuplicate?.(product); }}
-              style={{ width: '30px', height: '30px', borderRadius: '8px', border: 'none', background: 'rgba(26,30,42,0.9)', backdropFilter: 'blur(8px)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+              className={styles.cardActionBtn}
               title="Duplicar"
             >
               <Copy size={13} />
@@ -106,8 +80,9 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
           </ActionGuard>
           <ActionGuard action="manage" subject="Catalog">
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); onEdit(product); }}
-              style={{ width: '30px', height: '30px', borderRadius: '8px', border: 'none', background: 'rgba(26,30,42,0.9)', backdropFilter: 'blur(8px)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+              className={styles.cardActionBtn}
               title="Editar"
             >
               <Edit2 size={13} />
@@ -115,8 +90,9 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
           </ActionGuard>
           <ActionGuard action="manage" subject="Catalog">
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(product); }}
-              style={{ width: '30px', height: '30px', borderRadius: '8px', border: 'none', background: 'rgba(239,68,68,0.85)', backdropFilter: 'blur(8px)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+              className={clsx(styles.cardActionBtn, styles.cardActionBtnDanger)}
               title="Eliminar"
             >
               <Trash2 size={13} />
@@ -125,36 +101,23 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
         </div>
       </div>
 
-      {/* Info */}
-      <div style={{ padding: '14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '6px' }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.3, flex: 1 }}>
-            {product.name}
-          </p>
-        </div>
-
-        <p style={{ margin: '0 0 10px', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <div className={styles.cardBody}>
+        <p className={styles.cardName}>{product.name}</p>
+        <p className={styles.cardCategory}>
           <Tag size={11} /> {cat}
         </p>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className={styles.cardFooter}>
           <StatusPill isActive={product.isActive} isPublished={product.isPublished} />
           {product.basePrice != null && (
-            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--green)' }}>
+            <span className={styles.cardPrice}>
               ${product.basePrice.toLocaleString('es-AR')}
             </span>
           )}
         </div>
       </div>
 
-      {/* Variants count chip */}
       {product.variants && product.variants.length > 0 && (
-        <div style={{
-          position: 'absolute', top: '8px', left: '8px',
-          background: 'rgba(26,30,42,0.85)', backdropFilter: 'blur(8px)',
-          borderRadius: '8px', padding: '3px 8px',
-          fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)',
-        }}>
+        <div className={styles.variantChip}>
           {product.variants.length} variantes
         </div>
       )}
@@ -162,39 +125,30 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
   );
 }
 
-// ── Summary Stats ────────────────────────────────────────────────────────────
-function SummaryBar({ products, globalTotal }: { products: Product[], globalTotal: number }) {
+function SummaryBar({ products, globalTotal }: { products: Product[]; globalTotal: number }) {
   const active = products.filter(p => p.isActive).length;
   const published = products.filter(p => p.isPublished).length;
   const inactive = products.filter(p => !p.isActive).length;
 
   const stats = [
-    { label: 'Total (Todos)', value: globalTotal, color: 'var(--accent)', bg: 'rgba(99,102,241,0.1)' },
-    { label: 'Activos (en esta pág)', value: active, color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
-    { label: 'Publicados (en esta pág)', value: published, color: '#0ea5e9', bg: 'rgba(14,165,233,0.1)' },
-    { label: 'Inactivos (en esta pág)', value: inactive, color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+    { label: 'Total (Todos)', value: globalTotal, valueClass: styles.statValueAccent, boxClass: styles.statAccent },
+    { label: 'Activos (en esta pág)', value: active, valueClass: styles.statValueGreen, boxClass: styles.statGreen },
+    { label: 'Publicados (en esta pág)', value: published, valueClass: styles.statValueBlue, boxClass: styles.statBlue },
+    { label: 'Inactivos (en esta pág)', value: inactive, valueClass: styles.statValueMuted, boxClass: styles.statMuted },
   ];
 
   return (
-    <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+    <div className={styles.summary}>
       {stats.map(s => (
-        <div key={s.label} style={{
-          flex: '1 1 100px', minWidth: '100px',
-          background: s.bg,
-          border: `1px solid ${s.color}30`,
-          borderRadius: '12px',
-          padding: '14px 18px',
-          display: 'flex', flexDirection: 'column', gap: '4px',
-        }}>
-          <span style={{ fontSize: '22px', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</span>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>{s.label}</span>
+        <div key={s.label} className={clsx(styles.stat, s.boxClass)}>
+          <span className={clsx(styles.statValue, s.valueClass)}>{s.value}</span>
+          <span className={styles.statLabel}>{s.label}</span>
         </div>
       ))}
     </div>
   );
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
 export default function CatalogPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -298,20 +252,20 @@ export default function CatalogPage() {
       title="Catálogo Maestro"
       subtitle="Gestioná los productos base, su categorización y publicación en el e-commerce."
       action={
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-
-          {/* View mode toggle */}
-          <div style={{ display: 'flex', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', flexShrink: 0 }}>
+        <div className={styles.toolbar}>
+          <div className={styles.viewToggle}>
             <button
+              type="button"
               onClick={() => setViewMode('grid')}
-              style={{ padding: '8px 12px', border: 'none', cursor: 'pointer', background: viewMode === 'grid' ? 'var(--accent)' : 'transparent', color: viewMode === 'grid' ? '#fff' : 'var(--text-muted)', transition: 'all 0.15s', display: 'flex', alignItems: 'center' }}
+              className={clsx(styles.viewBtn, viewMode === 'grid' && styles.viewBtnActive)}
               title="Vista grilla"
             >
               <LayoutGrid size={16} />
             </button>
             <button
+              type="button"
               onClick={() => setViewMode('list')}
-              style={{ padding: '8px 12px', border: 'none', cursor: 'pointer', background: viewMode === 'list' ? 'var(--accent)' : 'transparent', color: viewMode === 'list' ? '#fff' : 'var(--text-muted)', transition: 'all 0.15s', display: 'flex', alignItems: 'center' }}
+              className={clsx(styles.viewBtn, viewMode === 'list' && styles.viewBtnActive)}
               title="Vista lista"
             >
               <List size={16} />
@@ -319,42 +273,26 @@ export default function CatalogPage() {
           </div>
 
           <ActionGuard action="update" subject="Catalog">
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button
-                onClick={() => setBulkUpdaterOpen(true)}
-                style={{
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  color: 'var(--text-primary)', padding: '8px 14px', borderRadius: 'var(--radius)',
-                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
-                  fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
-                }}
-              >
+            <div className={styles.toolGroup}>
+              <button type="button" onClick={() => setBulkUpdaterOpen(true)} className={styles.toolBtn}>
                 Actualización Masiva
               </button>
               <button
+                type="button"
                 onClick={() => migrateImagesMutation.mutate()}
                 disabled={migrateImagesMutation.isPending}
-                style={{
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  color: 'var(--text-primary)', padding: '8px 14px', borderRadius: 'var(--radius)',
-                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
-                  fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
-                }}
+                className={styles.toolBtn}
               >
                 <ImageIcon size={15} /> Migrar imágenes
               </button>
               <button
+                type="button"
                 onClick={() => {
                   if (window.confirm('¿Estás seguro de que querés publicar todos los productos en el ecommerce?')) {
                     publishAllMutation.mutate();
                   }
                 }}
-                style={{
-                  background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)',
-                  color: '#0ea5e9', padding: '8px 14px', borderRadius: 'var(--radius)',
-                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
-                  fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
-                }}
+                className={clsx(styles.toolBtn, styles.toolBtnInfo)}
                 disabled={publishAllMutation.isPending}
               >
                 <Globe size={15} /> Publicar Todos
@@ -363,33 +301,14 @@ export default function CatalogPage() {
           </ActionGuard>
 
           <ActionGuard action="delete" subject="Catalog">
-            <button
-              onClick={() => setClearDialogOpen(true)}
-              style={{
-                background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#ef4444', padding: '8px 14px', borderRadius: 'var(--radius)',
-                display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
-                fontWeight: 500, fontSize: '13px', transition: 'all 0.2s',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
-            >
+            <button type="button" onClick={() => setClearDialogOpen(true)} className={clsx(styles.toolBtn, styles.toolBtnDanger)}>
               <Trash2 size={15} /> Vaciar Catálogo
             </button>
           </ActionGuard>
 
           <ActionGuard action="create" subject="Catalog">
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button
-                onClick={() => setImportOpen(true)}
-                style={{
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  color: 'var(--text-primary)', padding: '8px 14px', borderRadius: 'var(--radius)',
-                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
-                  fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0,
-                }}
-              >
+            <div className={styles.toolGroup}>
+              <button type="button" onClick={() => setImportOpen(true)} className={styles.toolBtn}>
                 <Package size={15} /> Importar CSV
               </button>
               <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/admin/catalog/new')}>
@@ -397,21 +316,11 @@ export default function CatalogPage() {
               </Button>
             </div>
           </ActionGuard>
-
         </div>
       }
     >
-      {/* ── Filters bar ─────────────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', gap: '12px', alignItems: 'center',
-        marginBottom: '20px', flexWrap: 'wrap',
-        padding: '14px 16px',
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid var(--border)',
-        borderRadius: '12px',
-        backdropFilter: 'blur(8px)',
-      }}>
-        <div style={{ flex: '1 1 220px' }}>
+      <div className={styles.filters}>
+        <div className={styles.searchGrow}>
           <SearchInput
             placeholder="Buscar por nombre..."
             onSearch={(v) => { setSearch(v); setPage(1); }}
@@ -422,7 +331,7 @@ export default function CatalogPage() {
         <select
           value={categoryId}
           onChange={(e) => { setCategoryId(e.target.value); setPage(1); }}
-          style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-overlay)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none' }}
+          className={styles.select}
         >
           <option value="">Todas las Categorías</option>
           {categories?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -431,7 +340,7 @@ export default function CatalogPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-overlay)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none' }}
+          className={styles.select}
         >
           <option value="">Todos los Estados</option>
           <option value="ACTIVE">Activos</option>
@@ -439,17 +348,13 @@ export default function CatalogPage() {
           <option value="INACTIVE">Inactivos / Archivados</option>
         </select>
 
-        <span style={{ marginLeft: 'auto', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-          {total} productos
-        </span>
+        <span className={styles.totalCount}>{total} productos</span>
       </div>
 
-      {/* ── Summary stats ───────────────────────────────────────────────────── */}
       {!isLoading && !error && products.length > 0 && (
         <SummaryBar products={products} globalTotal={total} />
       )}
 
-      {/* ── Content ─────────────────────────────────────────────────────────── */}
       {isLoading ? (
         <TableSkeleton rows={8} />
       ) : error ? (
@@ -461,12 +366,7 @@ export default function CatalogPage() {
           message="Creá productos madre para luego poder asignarles talles, colores y precios."
         />
       ) : viewMode === 'grid' ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
-        }}>
+        <div className={styles.grid}>
           {products.map(product => (
             <ProductCard
               key={product.id}
@@ -479,7 +379,7 @@ export default function CatalogPage() {
           ))}
         </div>
       ) : (
-        <div style={{ marginBottom: '24px', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', backdropFilter: 'blur(8px)' }}>
+        <div className={styles.listWrap}>
           <ProductTable
             products={products}
             onView={handleView}
@@ -491,7 +391,6 @@ export default function CatalogPage() {
 
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
 
-      {/* Drawers */}
       {detailProduct && (
         <ProductDetailDrawer
           open={!!detailProduct}
@@ -528,13 +427,13 @@ export default function CatalogPage() {
         onCancel={() => { setClearDialogOpen(false); setClearConfirmText(''); }}
       />
       {clearDialogOpen && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'var(--bg-elevated)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)' }}>
+        <div className={styles.clearConfirm}>
           <input
             type="text"
             placeholder="Escribí VACIAR"
             value={clearConfirmText}
             onChange={e => setClearConfirmText(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', minWidth: 200 }}
+            className={styles.clearInput}
           />
         </div>
       )}
