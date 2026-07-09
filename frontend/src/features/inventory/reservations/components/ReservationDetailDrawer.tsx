@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Clock, PackageSearch, User } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatShortId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -47,7 +48,6 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
     onError: (err: any) => toast.error(err.message || 'Error al liberar'),
   });
 
-  // Calculate Expiration
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isExpiredLocally, setIsExpiredLocally] = useState(false);
 
@@ -87,63 +87,58 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
 
   return (
     <Drawer open={open} onClose={onClose} title="Auditoría de Reserva de Stock" width="md">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
-        
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+      <div className={styles.stackMd}>
+
+        <div className={styles.heroCard}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>ID Reserva</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatShortId(res.id)}</h3>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <p className={styles.heroLabel}>ID Reserva</p>
+            <h3 className={styles.heroTitleNeutral}>{formatShortId(res.id)}</h3>
+            <p className={styles.reservationCustomer}>
               <User size={14} /> {res.customerName || 'Consumidor Final (Sin nombre)'}
             </p>
           </div>
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+          <div className={styles.heroAsideStack}>
             <Badge color={getStatusColor(res.status)}>{res.status}</Badge>
             {res.status === 'ACTIVE' && (
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', width: 'fit-content' }}>
-                <Badge color={isExpiredLocally ? 'red' : 'warning'}>
-                  <span style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}><Clock size={12} /> Expira en: {timeLeft}</span>
-                </Badge>
-              </div>
+              <Badge color={isExpiredLocally ? 'red' : 'warning'}>
+                <span className={styles.expireBadgeInner}><Clock size={12} /> Expira en: {timeLeft}</span>
+              </Badge>
             )}
           </div>
         </div>
 
-        {/* Lines */}
         <div>
-          <h4 style={{ margin: '0 0 12px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4 className={styles.sectionHeading}>
             <PackageSearch size={18} /> Artículos Retenidos
           </h4>
-          
+
           <Table
             keyField="id"
             data={res.lines}
             columns={[
-              { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
-              { key: 'qty', header: 'Cant. Retenida', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.quantity}</span> },
+              { key: 'sku', header: 'SKU', render: (l) => <span className={styles.monoBold}>{l.variantSku || l.variantId}</span> },
+              { key: 'qty', header: 'Cant. Retenida', render: (l) => <span className={styles.textBold}>{l.quantity}</span> },
             ]}
           />
         </div>
 
         {res.notes && (
-          <div style={{ padding: '12px', background: 'var(--bg-base)', border: '1px dashed var(--border)', borderRadius: '4px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Notas:</span>
-            <p style={{ margin: '4px 0 0', fontSize: '13px' }}>{res.notes}</p>
+          <div className={styles.notesBox}>
+            <span className={styles.notesLabel}>Notas:</span>
+            <p className={styles.notesText}>{res.notes}</p>
           </div>
         )}
 
-        {/* Actions Contextual to Status */}
-        <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
-          
+        <div className={styles.footer}>
+
           {res.status === 'ACTIVE' && (
             <ActionGuard action="manage" subject="Inventory">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                
-                <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: '8px', border: '1px solid var(--blue)' }}>
-                  <h4 style={{ margin: '0 0 8px', color: 'var(--blue)', fontSize: '14px' }}>¿Se concretó la venta?</h4>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                    <div style={{ flex: 1 }}>
+              <div className={styles.actionStack}>
+
+                <div className={styles.consumePanel}>
+                  <h4 className={styles.consumeTitle}>¿Se concretó la venta?</h4>
+                  <div className={styles.consumeRow}>
+                    <div className={styles.consumeInput}>
                       <Input label="ID del Ticket de Venta (Opcional)" value={saleId} onChange={e => setSaleId(e.target.value)} placeholder="Ej: V-A1B2C3D4" />
                     </div>
                     <Button variant="primary" onClick={() => consumeMutation.mutate()} loading={consumeMutation.isPending} disabled={releaseMutation.isPending}>
@@ -152,8 +147,8 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
                   </div>
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
-                  <Button variant="ghost" onClick={() => releaseMutation.mutate()} loading={releaseMutation.isPending} disabled={consumeMutation.isPending} style={{ color: 'var(--red)' }}>
+                <div className={styles.releaseRow}>
+                  <Button variant="ghost" onClick={() => releaseMutation.mutate()} loading={releaseMutation.isPending} disabled={consumeMutation.isPending} className={styles.btnDangerGhost}>
                     Liberar Mercadería (Cancelar)
                   </Button>
                 </div>
@@ -162,16 +157,16 @@ export function ReservationDetailDrawer({ open, onClose, reservationId }: Props)
           )}
 
           {res.status === 'CONSUMED' && (
-            <div style={{ padding: '12px', background: 'var(--blue-bg)', color: 'var(--blue)', borderRadius: 'var(--radius)', width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.alertBlueFull}>
               <CheckCircle size={20} />
-              <span style={{ fontWeight: 600 }}>Reserva Concretada. La mercadería se vendió.</span>
+              <span className={styles.alertText}>Reserva Concretada. La mercadería se vendió.</span>
             </div>
           )}
 
           {(res.status === 'RELEASED' || res.status === 'EXPIRED') && (
-            <div style={{ padding: '12px', background: 'var(--gray-bg)', color: 'var(--text-secondary)', borderRadius: 'var(--radius)', width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.alertGrayFull}>
               <XCircle size={20} />
-              <span style={{ fontWeight: 600 }}>Reserva Anulada o Vencida. Stock liberado.</span>
+              <span className={styles.alertText}>Reserva Anulada o Vencida. Stock liberado.</span>
             </div>
           )}
 

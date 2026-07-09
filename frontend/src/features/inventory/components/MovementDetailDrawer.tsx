@@ -5,6 +5,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { ArrowUpRight, ArrowDownRight, History, Package, Link2, Clock, MapPin } from 'lucide-react';
 import { formatMovementQty, getMovementLabel } from '../utils/movementLabels';
 import { formatMovementReferenceId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -25,83 +26,90 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
     ? formatMovementQty(movement.type, movement.quantity, movement.sourceWarehouseId, movement.destinationWarehouseId)
     : null;
 
+  const iconClass = qty?.direction === 'IN'
+    ? styles.movementIconIn
+    : qty?.direction === 'OUT'
+      ? styles.movementIconOut
+      : styles.movementIconNeutral;
+
+  const qtyColor = qty?.direction === 'IN'
+    ? 'var(--green)'
+    : qty?.direction === 'OUT'
+      ? 'var(--red)'
+      : 'var(--text-primary)';
+
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Movimiento" width="md">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
+      <div className={styles.stack}>
+
         {isLoading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando detalles de auditoría...</div>
+          <div className={styles.emptyStateLg}>Cargando detalles de auditoría...</div>
         ) : movement && qty ? (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '24px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-              <div style={{ 
-                width: 56, height: 56, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: qty.direction === 'IN' ? 'var(--green-bg)' : qty.direction === 'OUT' ? 'var(--red-bg)' : 'var(--blue-bg)',
-                color: qty.direction === 'IN' ? 'var(--green)' : qty.direction === 'OUT' ? 'var(--red)' : 'var(--blue)'
-              }}>
+            <div className={styles.movementHero}>
+              <div className={`${styles.movementIcon} ${iconClass}`}>
                 {qty.direction === 'IN' ? <ArrowUpRight size={32} /> : qty.direction === 'OUT' ? <ArrowDownRight size={32} /> : <History size={32} />}
               </div>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 800 }}>
+              <div className={styles.movementHeroBody}>
+                <h3 className={styles.movementTitle}>
                   {getMovementLabel(movement.type)}
                 </h3>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <p className={styles.movementMeta}>
                   <Clock size={12} /> {new Date(movement.createdAt).toLocaleString()}
                 </p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>Cantidad</p>
-                <p style={{ margin: 0, fontSize: '28px', fontWeight: 900, color: qty.direction === 'IN' ? 'var(--green)' : qty.direction === 'OUT' ? 'var(--red)' : 'var(--text-primary)' }}>
+              <div className={styles.movementQtyAside}>
+                <p className={styles.movementQtyLabel}>Cantidad</p>
+                <p className={styles.movementQtyValue} style={{ color: qtyColor }}>
                   {qty.text}
                 </p>
               </div>
             </div>
 
             <div>
-              <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h4 className={styles.sectionLabel}>
                 <Package size={16} /> Artículo Afectado
               </h4>
-              <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-                <p style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{movement.productName}</p>
-                <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>SKU: {movement.variantSku}</p>
+              <div className={styles.detailBox}>
+                <p className={styles.detailTitle}>{movement.productName}</p>
+                <p className={styles.detailSub}>SKU: {movement.variantSku}</p>
               </div>
             </div>
 
             <div>
-              <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h4 className={styles.sectionLabel}>
                 <MapPin size={16} /> Ubicación Física
               </h4>
-              <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-                <p style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>{movement.warehouseName}</p>
-                <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>Sucursal: {movement.branchName}</p>
+              <div className={styles.detailBox}>
+                <p className={styles.detailTitle}>{movement.warehouseName}</p>
+                <p className={styles.detailSub}>Sucursal: {movement.branchName}</p>
               </div>
             </div>
 
             <div>
-              <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h4 className={styles.sectionLabel}>
                 <Link2 size={16} /> Trazabilidad (Auditoría)
               </h4>
-              <div style={{ padding: '16px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Origen / Tipo:</span>
+              <div className={styles.auditPanel}>
+                <div className={styles.auditGrid}>
+                  <span className={styles.auditLabel}>Origen / Tipo:</span>
                   <Badge color="purple">{movement.referenceType || movement.type}</Badge>
                 </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Documento Ref:</span>
-                  <span style={{ fontSize: '14px', fontFamily: 'monospace', fontWeight: 600 }}>{formatMovementReferenceId(movement.referenceId, movement.type)}</span>
+
+                <div className={styles.auditGrid}>
+                  <span className={styles.auditLabel}>Documento Ref:</span>
+                  <span className={styles.auditValueMono}>{formatMovementReferenceId(movement.referenceId, movement.type)}</span>
                 </div>
 
-                <div className="grid-responsive grid-cols-120-1" style={{ gap: "12px" }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Motivo:</span>
-                  <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{movement.reason || 'Sin motivo especificado'}</span>
+                <div className={`${styles.auditGridNoMargin} grid-responsive grid-cols-120-1`}>
+                  <span className={styles.auditLabel}>Motivo:</span>
+                  <span className={styles.auditValue}>{movement.reason || 'Sin motivo especificado'}</span>
                 </div>
-                
+
                 {movement.unitCost != null && movement.unitCost > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border)' }}>
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Costo Unitario:</span>
-                    <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  <div className={styles.auditDivider}>
+                    <span className={styles.auditLabel}>Costo Unitario:</span>
+                    <span className={styles.auditValue} style={{ fontWeight: 600 }}>
                       {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(movement.unitCost)}
                     </span>
                   </div>
@@ -111,7 +119,7 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
 
           </>
         ) : (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--red)' }}>No se pudo cargar el movimiento.</div>
+          <div className={styles.errorEmpty}>No se pudo cargar el movimiento.</div>
         )}
 
       </div>
