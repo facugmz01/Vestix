@@ -187,6 +187,12 @@ export interface SystemSettings {
   labelPrinting: LabelPrintingSettings;
 }
 
+export interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  logs?: string[];
+}
+
 export const settingsApi = {
   getSettings: () =>
     get<SystemSettings>('/settings'),
@@ -198,19 +204,19 @@ export const settingsApi = {
     put<SystemSettings>('/settings', dto),
 
   testAfip: () => 
-    post<{success: boolean; message: string}>('/settings/invoicing/test-afip', {}),
+    post<ConnectionTestResult>('/settings/invoicing/test-afip', {}),
   
   testSmtp: (data: any) => 
-    post<{success: boolean; message: string}>('/settings/notifications/test-smtp', data),
+    post<ConnectionTestResult>('/settings/notifications/test-smtp', data),
     
   testSms: (data: any) => 
-    post<{success: boolean; message: string}>('/settings/notifications/test-sms', data),
+    post<ConnectionTestResult>('/settings/notifications/test-sms', data),
     
   testWhatsapp: (data: any) => 
-    post<{success: boolean; message: string}>('/settings/notifications/test-whatsapp', data),
+    post<ConnectionTestResult>('/settings/notifications/test-whatsapp', data),
 
   testPush: (data: any) => 
-    post<{success: boolean; message: string}>('/settings/notifications/test-push', data),
+    post<ConnectionTestResult>('/settings/notifications/test-push', data),
 
   uploadLogo: (file: File) => {
     const fd = new FormData();

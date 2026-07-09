@@ -439,6 +439,7 @@ export class UpdateSettingsDto {
  */
 
 export class TestSmtpDto {
+  @IsOptional() @IsString() recipient?: string;
   @IsOptional() @IsString() smtpHost?: string;
   @IsOptional() @IsNumber() smtpPort?: number;
   @IsOptional() @IsString() smtpUser?: string;
@@ -461,6 +462,7 @@ export class TestSmtpDto {
 }
 
 export class TestSmsDto {
+  @IsOptional() @IsString() recipient?: string;
   @IsOptional() @IsString() smsGatewayUrl?: string;
   @IsOptional() @IsBoolean() emailEnabled?: boolean;
   @IsOptional() @IsBoolean() smsEnabled?: boolean;
@@ -482,6 +484,7 @@ export class TestSmsDto {
 }
 
 export class TestWhatsappDto {
+  @IsOptional() @IsString() recipient?: string;
   @IsOptional() @IsString() evolutionApiUrl?: string;
   @IsOptional() @IsString() evolutionApiKey?: string;
   @IsOptional() @IsString() evolutionInstance?: string;
@@ -503,6 +506,7 @@ export class TestWhatsappDto {
 }
 
 export class TestPushDto {
+  @IsOptional() @IsString() recipient?: string;
   @IsOptional() @IsString() fcmServerKey?: string;
   @IsOptional() @IsBoolean() emailEnabled?: boolean;
   @IsOptional() @IsBoolean() smsEnabled?: boolean;

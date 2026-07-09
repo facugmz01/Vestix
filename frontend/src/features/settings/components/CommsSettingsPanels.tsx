@@ -3,12 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, Bell, Plug, Mail, Smartphone, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
-import { settingsApi } from '@/api/settings.api';
+import { settingsApi, type ConnectionTestResult } from '@/api/settings.api';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { notificationSettingsSchema, type NotificationSettingsFormData, integrationSettingsSchema, type IntegrationSettingsFormData } from '../schemas/commsSettings.schema';
-import clsx from 'clsx';
 import styles from './SettingsShared.module.css';
 import { WhatsAppEvolutionPanel } from './WhatsAppEvolutionPanel';
 
@@ -23,33 +23,93 @@ function useMaskedField(rawValue: string | undefined) {
   };
 }
 
-interface TestButtonProps {
+interface ConnectionTestPanelProps {
   toastId: string;
   loadingLabel: string;
-  onClick: () => Promise<{ success: boolean; message: string }>;
+  recipientLabel: string;
+  recipientPlaceholder: string;
+  recipientType?: string;
   disabled?: boolean;
+  onTest: (recipient: string) => Promise<ConnectionTestResult>;
 }
 
-function TestButton({ toastId, loadingLabel, onClick, disabled }: TestButtonProps) {
+function ConnectionTestPanel({
+  toastId,
+  loadingLabel,
+  recipientLabel,
+  recipientPlaceholder,
+  recipientType = 'text',
+  disabled,
+  onTest,
+}: ConnectionTestPanelProps) {
+  const [recipient, setRecipient] = useState('');
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<ConnectionTestResult | null>(null);
+
   const handleClick = async () => {
     if (loading) return;
     setLoading(true);
+    setResult(null);
     toast.loading(loadingLabel, { id: toastId });
     try {
-      const res = await onClick();
+      const res = await onTest(recipient.trim());
+      setResult(res);
       if (res.success) toast.success(res.message, { id: toastId });
       else toast.error(res.message, { id: toastId });
     } catch (e: any) {
-      toast.error(e.response?.data?.message || 'Error de conexión', { id: toastId });
+      const fallback: ConnectionTestResult = {
+        success: false,
+        message: e.response?.data?.message || 'Error de conexión',
+        logs: [`[${new Date().toISOString()}] ${e.response?.data?.message || e.message || 'Error de conexión'}`],
+      };
+      setResult(fallback);
+      toast.error(fallback.message, { id: toastId });
     } finally {
       setLoading(false);
     }
   };
+
   return (
-    <Button variant="outline" type="button" onClick={handleClick} disabled={loading || disabled} loading={loading}>
-      Probar Conexión
-    </Button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+      <div className={styles.testRow}>
+        <div className={styles.testRecipient}>
+          <Input
+            label={recipientLabel}
+            type={recipientType}
+            placeholder={recipientPlaceholder}
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+          />
+        </div>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={handleClick}
+          disabled={loading || disabled}
+          loading={loading}
+        >
+          Probar Conexión
+        </Button>
+      </div>
+
+      <div>
+        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+          Consola de prueba
+        </p>
+        <div
+          className={clsx(styles.testConsole, {
+            [styles.testConsoleSuccess]: result?.success,
+            [styles.testConsoleError]: result && !result.success,
+          })}
+          role="log"
+          aria-live="polite"
+        >
+          {result?.logs?.length
+            ? result.logs.join('\n')
+            : <span className={styles.testConsoleEmpty}>Los resultados de la prueba aparecerán aquí.</span>}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -93,14 +153,24 @@ export function NotificationSettingsPanel() {
         <div className={styles.cardBody}>
           <ToggleSwitch label="Email (SMTP)" hint="Servidor saliente de correos." {...register('emailEnabled')} />
           {emailEnabled && (
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <Input placeholder="Host" {...register('smtpHost')} style={{ flex: 1 }} />
-              <Input type="number" placeholder="Port" {...register('smtpPort', { valueAsNumber: true })} style={{ width: '80px' }} />
-              <Input placeholder="Usuario" {...register('smtpUser')} style={{ flex: 1 }} />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Input type="password" placeholder={smtpPassMask.placeholder} {...register('smtpPass')} defaultValue={smtpPassMask.defaultDisplayValue} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <Input placeholder="Host" {...register('smtpHost')} style={{ flex: 1 }} />
+                <Input type="number" placeholder="Port" {...register('smtpPort', { valueAsNumber: true })} style={{ width: '80px' }} />
+                <Input placeholder="Usuario" {...register('smtpUser')} style={{ flex: 1 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Input type="password" placeholder={smtpPassMask.placeholder} {...register('smtpPass')} defaultValue={smtpPassMask.defaultDisplayValue} />
+                </div>
               </div>
-              <TestButton toastId="test-smtp" loadingLabel="Probando..." disabled={!watch('smtpHost')} onClick={() => settingsApi.testSmtp({ notifications: allValues })} />
+              <ConnectionTestPanel
+                toastId="test-smtp"
+                loadingLabel="Probando SMTP..."
+                recipientLabel="Destinatario de prueba (email)"
+                recipientPlaceholder="admin@empresa.com"
+                recipientType="email"
+                disabled={!watch('smtpHost')}
+                onTest={(recipient) => settingsApi.testSmtp({ ...allValues, recipient })}
+              />
             </div>
           )}
 
@@ -108,9 +178,17 @@ export function NotificationSettingsPanel() {
 
           <ToggleSwitch label="SMS (Android Gateway)" hint="Envía SMS gratis usando una app local en un celular." {...register('smsEnabled')} />
           {smsEnabled && (
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <Input placeholder="URL del Gateway" {...register('smsGatewayUrl')} style={{ flex: 1 }} />
-              <TestButton toastId="test-sms" loadingLabel="Ping..." disabled={!watch('smsGatewayUrl')} onClick={() => settingsApi.testSms({ notifications: allValues })} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input placeholder="URL del Gateway" {...register('smsGatewayUrl')} />
+              <ConnectionTestPanel
+                toastId="test-sms"
+                loadingLabel="Probando SMS..."
+                recipientLabel="Destinatario de prueba (teléfono)"
+                recipientPlaceholder="5491122334455"
+                recipientType="tel"
+                disabled={!watch('smsGatewayUrl')}
+                onTest={(recipient) => settingsApi.testSms({ ...allValues, recipient })}
+              />
             </div>
           )}
 
@@ -119,11 +197,21 @@ export function NotificationSettingsPanel() {
           <ToggleSwitch label="WhatsApp (Evolution API)" hint="Integración con instancia local de WhatsApp." {...register('whatsappEnabled')} />
           {whatsappEnabled && (
             <>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <Input placeholder="URL API" {...register('evolutionApiUrl')} style={{ flex: 1 }} />
-                <Input type="password" placeholder={evolutionKeyMask.placeholder} {...register('evolutionApiKey')} defaultValue={evolutionKeyMask.defaultDisplayValue} style={{ flex: 1 }} />
-                <Input placeholder="Instancia" {...register('evolutionInstance')} style={{ flex: 1 }} />
-                <TestButton toastId="test-wpp" loadingLabel="Probando..." disabled={!watch('evolutionApiUrl')} onClick={() => settingsApi.testWhatsapp({ notifications: allValues })} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <Input placeholder="URL API" {...register('evolutionApiUrl')} style={{ flex: 1 }} />
+                  <Input type="password" placeholder={evolutionKeyMask.placeholder} {...register('evolutionApiKey')} defaultValue={evolutionKeyMask.defaultDisplayValue} style={{ flex: 1 }} />
+                  <Input placeholder="Instancia" {...register('evolutionInstance')} style={{ flex: 1 }} />
+                </div>
+                <ConnectionTestPanel
+                  toastId="test-wpp"
+                  loadingLabel="Probando WhatsApp..."
+                  recipientLabel="Destinatario de prueba (WhatsApp)"
+                  recipientPlaceholder="5491122334455"
+                  recipientType="tel"
+                  disabled={!watch('evolutionApiUrl')}
+                  onTest={(recipient) => settingsApi.testWhatsapp({ ...allValues, recipient })}
+                />
               </div>
               <WhatsAppEvolutionPanel enabled={whatsappEnabled} />
             </>
@@ -133,9 +221,16 @@ export function NotificationSettingsPanel() {
 
           <ToggleSwitch label="Push (FCM)" hint="Notificaciones nativas a la app móvil." {...register('pushEnabled')} />
           {pushEnabled && (
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <Input type="password" placeholder={fcmKeyMask.placeholder} {...register('fcmServerKey')} defaultValue={fcmKeyMask.defaultDisplayValue} style={{ flex: 1 }} />
-              <TestButton toastId="test-push" loadingLabel="Enviando..." disabled={!watch('fcmServerKey') && !fcmKeyMask.isPreloaded} onClick={() => settingsApi.testPush({ notifications: allValues })} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <Input type="password" placeholder={fcmKeyMask.placeholder} {...register('fcmServerKey')} defaultValue={fcmKeyMask.defaultDisplayValue} />
+              <ConnectionTestPanel
+                toastId="test-push"
+                loadingLabel="Enviando push..."
+                recipientLabel="Destinatario de prueba (token FCM)"
+                recipientPlaceholder="fcm-device-token..."
+                disabled={!watch('fcmServerKey') && !fcmKeyMask.isPreloaded}
+                onTest={(recipient) => settingsApi.testPush({ ...allValues, recipient })}
+              />
             </div>
           )}
         </div>

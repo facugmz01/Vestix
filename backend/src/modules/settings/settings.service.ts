@@ -550,107 +550,326 @@ export class SettingsService implements OnModuleInit {
   // CONNECTION TESTS
   // ───────────────────────────────────────────────────────────────────────────
 
-  async testAfipConnection() {
-    // TODO: Implement actual AFIP ping when AFIP module is production-ready.
-    // Currently returns a simulated response.
-    return {
-      success: false,
-      message: 'Prueba de conexión AFIP no disponible aún. Configurá los certificados en la pestaña ARCA.',
-    };
+  private unwrapTestDto<T extends Record<string, any>>(dto: T): T {
+    if (dto && typeof dto === 'object' && dto.notifications && typeof dto.notifications === 'object') {
+      return { ...dto.notifications, recipient: dto.recipient } as T;
+    }
+    return dto;
   }
 
-  async testSmtpConnection(dto: any) {
+  private buildTestResponse(success: boolean, message: string, logs: string[]) {
+    return { success, message, logs };
+  }
+
+  private logStep(logs: string[], message: string) {
+    const entry = `[${new Date().toISOString()}] ${message}`;
+    logs.push(entry);
+    return entry;
+  }
+
+  async testAfipConnection() {
+    const logs: string[] = [];
+    this.logStep(logs, 'Iniciando prueba de conexión AFIP/ARCA…');
+    this.logStep(logs, 'Módulo AFIP aún no implementado en producción.');
+    return this.buildTestResponse(
+      false,
+      'Prueba de conexión AFIP no disponible aún. Configurá los certificados en la pestaña ARCA.',
+      logs,
+    );
+  }
+
+  async testSmtpConnection(rawDto: any) {
+    const dto = this.unwrapTestDto(rawDto);
+    const logs: string[] = [];
+    const recipient = dto.recipient?.trim();
+
     try {
-      if (!dto.smtpHost) return { success: false, message: 'Host SMTP no configurado' };
-      // Resolve the real password if the UI sent back the mask sentinel
+      this.logStep(logs, 'Iniciando prueba SMTP…');
+      if (!dto.smtpHost) {
+        this.logStep(logs, 'Error: host SMTP no configurado.');
+        return this.buildTestResponse(false, 'Host SMTP no configurado', logs);
+      }
+
       let smtpPass = dto.smtpPass;
       if (!smtpPass || smtpPass === MASK_VALUE) {
         const stored = await this.getNotificationSettings();
         smtpPass = stored.smtpPass || '';
+        this.logStep(logs, 'Usando contraseña SMTP almacenada en configuración.');
       }
+
+      const port = Number(dto.smtpPort) || 587;
+      this.logStep(logs, `Conectando a ${dto.smtpHost}:${port} como ${dto.smtpUser || '(sin usuario)'}…`);
+
       const transporter = nodemailer.createTransport({
         host: dto.smtpHost,
-        port: Number(dto.smtpPort) || 587,
-        secure: Number(dto.smtpPort) === 465,
+        port,
+        secure: port === 465,
         auth: {
           user: dto.smtpUser,
           pass: smtpPass,
         },
       });
+
       await transporter.verify();
-      return { success: true, message: 'Conexión SMTP exitosa. Credenciales válidas.' };
+      this.logStep(logs, 'Verificación SMTP exitosa. Credenciales válidas.');
+
+      if (recipient) {
+        this.logStep(logs, `Enviando correo de prueba a ${recipient}…`);
+        const info = await transporter.sendMail({
+          from: dto.smtpUser ? `"Vestix ERP" <${dto.smtpUser}>` : undefined,
+          to: recipient,
+          subject: 'Prueba de conexión SMTP — Vestix ERP',
+          text: 'Este es un mensaje de prueba enviado desde la configuración de notificaciones de Vestix ERP.',
+          html: '<p>Este es un <strong>mensaje de prueba</strong> enviado desde la configuración de notificaciones de Vestix ERP.</p>',
+        });
+        this.logStep(logs, `Correo enviado. Message-ID: ${info.messageId || 'n/d'}`);
+        return this.buildTestResponse(
+          true,
+          `Conexión SMTP exitosa. Correo de prueba enviado a ${recipient}.`,
+          logs,
+        );
+      }
+
+      return this.buildTestResponse(
+        true,
+        'Conexión SMTP exitosa. Credenciales válidas.',
+        logs,
+      );
     } catch (error: any) {
       this.logger.error(`Error SMTP: ${error.message}`);
-      return { success: false, message: `Error SMTP: ${error.message}` };
+      this.logStep(logs, `Error SMTP: ${error.message}`);
+      return this.buildTestResponse(false, `Error SMTP: ${error.message}`, logs);
     }
   }
 
-  async testSmsConnection(dto: any) {
+  async testSmsConnection(rawDto: any) {
+    const dto = this.unwrapTestDto(rawDto);
+    const logs: string[] = [];
+    const recipient = dto.recipient?.trim();
+
     try {
-      if (!dto.smsGatewayUrl) return { success: false, message: 'URL del Gateway SMS no configurada' };
+      this.logStep(logs, 'Iniciando prueba SMS Gateway…');
+      if (!dto.smsGatewayUrl) {
+        this.logStep(logs, 'Error: URL del gateway no configurada.');
+        return this.buildTestResponse(false, 'URL del Gateway SMS no configurada', logs);
+      }
+
+      this.logStep(logs, `Verificando disponibilidad de ${dto.smsGatewayUrl}…`);
       const res = await fetch(dto.smsGatewayUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) }).catch(() => null);
       if (res && res.ok) {
-        return { success: true, message: 'Conexión SMS Gateway exitosa.' };
+        this.logStep(logs, `Gateway responde HTTP ${res.status}.`);
+      } else {
+        this.logStep(logs, `HEAD no respondió OK (status: ${res?.status ?? 'sin respuesta'}). Se intentará envío directo si hay destinatario.`);
       }
-      return { success: true, message: 'Ping enviado. Verificá en el dispositivo si recibió la petición.' };
+
+      if (recipient) {
+        this.logStep(logs, `Enviando SMS de prueba a ${recipient}…`);
+        const sendRes = await fetch(dto.smsGatewayUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: recipient,
+            message: 'Prueba de conexión SMS — Vestix ERP',
+          }),
+          signal: AbortSignal.timeout(10000),
+        });
+        const bodyText = await sendRes.text().catch(() => '');
+        this.logStep(logs, `Respuesta del gateway: HTTP ${sendRes.status}${bodyText ? ` — ${bodyText.slice(0, 200)}` : ''}`);
+
+        if (!sendRes.ok) {
+          return this.buildTestResponse(
+            false,
+            `El gateway respondió con error HTTP ${sendRes.status}.`,
+            logs,
+          );
+        }
+
+        return this.buildTestResponse(
+          true,
+          `SMS de prueba enviado a ${recipient}. Verificá el dispositivo.`,
+          logs,
+        );
+      }
+
+      if (res && res.ok) {
+        return this.buildTestResponse(true, 'Conexión SMS Gateway exitosa.', logs);
+      }
+
+      return this.buildTestResponse(
+        true,
+        'Ping enviado. Verificá en el dispositivo si recibió la petición.',
+        logs,
+      );
     } catch (error: any) {
-      return { success: false, message: `Fallo de conexión HTTP: ${error.message}` };
+      this.logStep(logs, `Error: ${error.message}`);
+      return this.buildTestResponse(false, `Fallo de conexión HTTP: ${error.message}`, logs);
     }
   }
 
-  async testWhatsappConnection(dto: any) {
+  async testWhatsappConnection(rawDto: any) {
+    const dto = this.unwrapTestDto(rawDto);
+    const logs: string[] = [];
+    const recipient = dto.recipient?.replace(/\D/g, '');
+
     try {
+      this.logStep(logs, 'Iniciando prueba Evolution API (WhatsApp)…');
       const url = dto.evolutionApiUrl;
-      if (!url) return { success: false, message: 'URL de Evolution API no configurada' };
-      // Resolve the real API key if the UI sent back the mask sentinel
+      if (!url) {
+        this.logStep(logs, 'Error: URL de Evolution API no configurada.');
+        return this.buildTestResponse(false, 'URL de Evolution API no configurada', logs);
+      }
+
       let apiKey = dto.evolutionApiKey;
       if (!apiKey || apiKey === MASK_VALUE) {
         const stored = await this.getNotificationSettings();
         apiKey = stored.evolutionApiKey || '';
+        this.logStep(logs, 'Usando API Key almacenada en configuración.');
       }
-      if (!apiKey) return { success: false, message: 'API Key de Evolution no configurada' };
+      if (!apiKey) {
+        this.logStep(logs, 'Error: API Key no configurada.');
+        return this.buildTestResponse(false, 'API Key de Evolution no configurada', logs);
+      }
+
       const instance = dto.evolutionInstance || 'store-main';
       const endpoint = `${url.replace(/\/+$/, '')}/instance/connectionState/${instance}`;
+      this.logStep(logs, `Consultando estado de instancia "${instance}"…`);
+
       const res = await fetch(endpoint, {
         method: 'GET',
-        headers: { 'apikey': apiKey },
+        headers: { apikey: apiKey },
         signal: AbortSignal.timeout(8000),
       }).catch(() => null);
-      if (res && res.ok) {
-        const data = await res.json().catch(() => ({})) as any;
-        const isReady = data?.instance?.state === 'open';
-        return {
-          success: true,
-          message: isReady
-            ? 'Evolution API conectada y sesión activa ✓'
-            : 'Evolution API alcanzable, pero la sesión no está conectada (escanea el QR en el Manager).',
-        };
+
+      if (!res || !res.ok) {
+        this.logStep(logs, `Evolution API no responde. Status: ${res?.status ?? 'sin respuesta'}.`);
+        return this.buildTestResponse(
+          false,
+          `Evolution API no responde. Status: ${res?.status ?? 'sin respuesta'}. Revisá la URL y API Key.`,
+          logs,
+        );
       }
-      return { success: false, message: `Evolution API no responde. Status: ${res?.status ?? 'sin respuesta'}. Revisá la URL y API Key.` };
+
+      const data = await res.json().catch(() => ({})) as any;
+      const state = data?.instance?.state ?? data?.state ?? 'desconocido';
+      const isReady = state === 'open';
+      this.logStep(logs, `Estado de sesión: ${state}${isReady ? ' (conectada)' : ' (no conectada)'}.`);
+
+      if (recipient) {
+        if (!isReady) {
+          this.logStep(logs, 'No se puede enviar mensaje: la sesión no está conectada.');
+          return this.buildTestResponse(
+            false,
+            'Evolution API alcanzable, pero la sesión no está conectada. Escaneá el QR antes de enviar.',
+            logs,
+          );
+        }
+
+        const sendEndpoint = `${url.replace(/\/+$/, '')}/message/sendText/${instance}`;
+        this.logStep(logs, `Enviando WhatsApp de prueba a +${recipient}…`);
+        const sendRes = await fetch(sendEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: apiKey },
+          body: JSON.stringify({
+            number: recipient,
+            text: 'Prueba de conexión WhatsApp — Vestix ERP',
+          }),
+          signal: AbortSignal.timeout(10000),
+        });
+        const sendBody = await sendRes.text().catch(() => '');
+        this.logStep(logs, `Respuesta de envío: HTTP ${sendRes.status}${sendBody ? ` — ${sendBody.slice(0, 200)}` : ''}`);
+
+        if (!sendRes.ok) {
+          return this.buildTestResponse(
+            false,
+            `Evolution API rechazó el envío (HTTP ${sendRes.status}).`,
+            logs,
+          );
+        }
+
+        return this.buildTestResponse(
+          true,
+          `WhatsApp de prueba enviado a +${recipient}.`,
+          logs,
+        );
+      }
+
+      return this.buildTestResponse(
+        true,
+        isReady
+          ? 'Evolution API conectada y sesión activa ✓'
+          : 'Evolution API alcanzable, pero la sesión no está conectada (escaneá el QR en el Manager).',
+        logs,
+      );
     } catch (error: any) {
-      return { success: false, message: `Fallo al conectar con Evolution API: ${error.message}` };
+      this.logStep(logs, `Error: ${error.message}`);
+      return this.buildTestResponse(false, `Fallo al conectar con Evolution API: ${error.message}`, logs);
     }
   }
 
-  async testPushConnection(dto: any) {
+  async testPushConnection(rawDto: any) {
+    const dto = this.unwrapTestDto(rawDto);
+    const logs: string[] = [];
+    const recipient = dto.recipient?.trim();
+
     try {
-      // Resolve the real FCM key if the UI sent back the mask sentinel
+      this.logStep(logs, 'Iniciando prueba FCM Push…');
       let fcmServerKey = dto.fcmServerKey;
       if (!fcmServerKey || fcmServerKey === MASK_VALUE) {
         const stored = await this.getNotificationSettings();
         fcmServerKey = stored.fcmServerKey || '';
+        this.logStep(logs, 'Usando Server Key almacenada en configuración.');
       }
-      if (!fcmServerKey) return { success: false, message: 'Server Key de FCM no configurada' };
+      if (!fcmServerKey) {
+        this.logStep(logs, 'Error: Server Key de FCM no configurada.');
+        return this.buildTestResponse(false, 'Server Key de FCM no configurada', logs);
+      }
+
+      const token = recipient || 'test-token';
+      this.logStep(logs, recipient
+        ? `Enviando notificación de prueba al token …${token.slice(-8)}`
+        : 'Validando credenciales FCM con token de prueba…');
+
       const res = await fetch('https://fcm.googleapis.com/fcm/send', {
         method: 'POST',
-        headers: { 'Authorization': `key=${fcmServerKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: 'test-token', notification: { title: 'Test', body: 'Test Push' } }),
+        headers: { Authorization: `key=${fcmServerKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: token,
+          notification: {
+            title: 'Prueba Vestix ERP',
+            body: 'Notificación de prueba desde configuración de notificaciones.',
+          },
+        }),
         signal: AbortSignal.timeout(8000),
       });
-      if (res.status === 401) return { success: false, message: 'FCM Server Key inválida.' };
-      return { success: true, message: 'Credenciales FCM validadas correctamente.' };
+
+      const result = await res.json().catch(() => ({})) as any;
+      this.logStep(logs, `Respuesta FCM: HTTP ${res.status}`);
+
+      if (res.status === 401) {
+        this.logStep(logs, 'Server Key inválida o rechazada por Google.');
+        return this.buildTestResponse(false, 'FCM Server Key inválida.', logs);
+      }
+
+      if (recipient) {
+        if (!res.ok || result.failure > 0) {
+          const errMsg = result.results?.[0]?.error || `FCM HTTP ${res.status}`;
+          this.logStep(logs, `Error de entrega: ${errMsg}`);
+          return this.buildTestResponse(false, `FCM delivery failed: ${errMsg}`, logs);
+        }
+
+        this.logStep(logs, 'Notificación push entregada correctamente.');
+        return this.buildTestResponse(
+          true,
+          'Notificación push de prueba enviada correctamente.',
+          logs,
+        );
+      }
+
+      this.logStep(logs, 'Credenciales FCM validadas correctamente.');
+      return this.buildTestResponse(true, 'Credenciales FCM validadas correctamente.', logs);
     } catch (error: any) {
-      return { success: false, message: `Error FCM: ${error.message}` };
+      this.logStep(logs, `Error: ${error.message}`);
+      return this.buildTestResponse(false, `Error FCM: ${error.message}`, logs);
     }
   }
 
