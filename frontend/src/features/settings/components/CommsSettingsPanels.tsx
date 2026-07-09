@@ -94,13 +94,16 @@ function ConnectionTestPanel({
       const status = e.response?.status;
       const apiErrors = e.response?.data?.errors;
       const apiMessage = e.response?.data?.message || e.message || 'Error de conexión';
+      const detail = apiErrors
+        ? `${apiMessage}: ${Object.entries(apiErrors).map(([k, v]) => `${k}: ${v}`).join('; ')}`
+        : apiMessage;
       appendLog(`─── Error HTTP ${status ?? 'sin respuesta'} ───`);
       if (status === 401) appendLog('Sesión expirada o no autorizado. Volvé a iniciar sesión.');
       if (status === 400) appendLog('Solicitud rechazada por validación del servidor.');
       if (apiErrors) {
         Object.entries(apiErrors).forEach(([field, msg]) => appendLog(`Validación → ${field}: ${msg}`));
       }
-      appendLog(apiMessage);
+      appendLog(detail);
       if (e.response?.data?.logs?.length) {
         appendLog('─── Logs parciales del servidor ───');
         e.response.data.logs.forEach((line: string) => appendLog(line.replace(/^\[[^\]]+\]\s*/, '')));
@@ -108,11 +111,10 @@ function ConnectionTestPanel({
       appendLog(`Prueba abortada tras ${Date.now() - startedAt}ms`);
       const fallback: ConnectionTestResult = {
         success: false,
-        message: apiMessage,
-        logs,
+        message: detail,
       };
       setResult(fallback);
-      toast.error(apiMessage, { id: toastId });
+      toast.error(detail, { id: toastId });
     } finally {
       setLoading(false);
     }
