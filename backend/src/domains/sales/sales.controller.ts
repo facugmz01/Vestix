@@ -40,7 +40,10 @@ export class SalesController {
   @Patch(':id/status')
   @RequirePermissions({ action: 'manage', subject: 'Sales' })
   async updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
-    return this.salesService.updateOrderStatus(id, body.status);
+    const order = await this.salesService.updateOrderStatus(id, body.status);
+    // Keep storefront tracking in sync: Mis Compras reads OrderFulfillment first.
+    await this.shippingService.applyCommercialStatus(id, body.status);
+    return order;
   }
 
   @Post('bulk-import')

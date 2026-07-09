@@ -349,7 +349,10 @@ export class StorefrontController {
       data: data.map(order => ({
         ...order,
         customerName: order.customer?.fullName || 'Consumidor Final',
-        trackingStatus: order.fulfillment?.status || order.status,
+        trackingStatus: this.shippingService.resolveStorefrontStatus(
+          order.status,
+          order.fulfillment?.status,
+        ),
         trackingNumber: order.fulfillment?.trackingNumber,
         courierName: order.fulfillment?.courierName,
         dispatchedAt: order.fulfillment?.delivery?.dispatchedAt,
@@ -389,7 +392,10 @@ export class StorefrontController {
     return {
       ...fullOrder,
       customerName: fullOrder?.customer?.fullName || 'Consumidor Final',
-      trackingStatus: fullOrder?.fulfillment?.status || fullOrder?.status,
+      trackingStatus: this.shippingService.resolveStorefrontStatus(
+        fullOrder?.status,
+        fullOrder?.fulfillment?.status,
+      ),
     };
   }
 
