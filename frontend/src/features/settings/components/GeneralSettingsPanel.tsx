@@ -32,7 +32,7 @@ export function GeneralSettingsPanel() {
   };
 
   if (isLoading) {
-    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Cargando configuraciones...</div>;
+    return <div className={styles.loadingState}>Cargando configuraciones...</div>;
   }
 
   return (
@@ -105,7 +105,7 @@ export function GeneralSettingsPanel() {
               containerClassName={styles.fullWidth}
             />
           </div>
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <hr className={styles.divider} />
           <div className={clsx(styles.grid, styles.grid2)}>
             <Input label="Dirección" {...register('address')} error={errors.address?.message} />
             <Input label="Ciudad" {...register('city')} error={errors.city?.message} />
@@ -133,7 +133,7 @@ export function GeneralSettingsPanel() {
               <select id="timezone-select" {...register('timezone')} className={styles.select}>
                 {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
               </select>
-              {errors.timezone && <span style={{color: 'var(--red)', fontSize: '12px'}}>{errors.timezone.message}</span>}
+              {errors.timezone && <span className={styles.fieldError}>{errors.timezone.message}</span>}
             </div>
             
             <div className={styles.selectGroup}>
@@ -143,7 +143,7 @@ export function GeneralSettingsPanel() {
                 <option value="USD">USD — Dólar Estadounidense</option>
                 <option value="CLP">CLP — Peso Chileno</option>
               </select>
-              {errors.currency && <span style={{color: 'var(--red)', fontSize: '12px'}}>{errors.currency.message}</span>}
+              {errors.currency && <span className={styles.fieldError}>{errors.currency.message}</span>}
             </div>
           </div>
         </div>

@@ -38,22 +38,22 @@ export function QrSettingsPanel() {
         </header>
 
         <div className={styles.cardBody}>
-          <div style={{ background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', display: 'flex', gap: '8px' }}>
-            <Info size={16} color="#06b6d4" style={{ flexShrink: 0 }} />
-            <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
-              <p style={{ margin: '0 0 8px' }}>
+          <div className={styles.infoBox}>
+            <Info size={16} className={styles.infoBoxIcon} aria-hidden="true" />
+            <div className={styles.infoBoxBody}>
+              <p className={styles.infoBoxParagraph}>
                 <strong>Requisitos:</strong> activá Mercado Pago y cargá credenciales en{' '}
-                <strong style={{ color: 'var(--accent)' }}>Configuración → Integraciones (Apps)</strong>.
+                <strong className={styles.infoBoxAccent}>Configuración → Integraciones (Apps)</strong>.
               </p>
-              <p style={{ margin: 0 }}>
+              <p className={styles.infoBoxParagraph}>
                 Para QR híbrido con caja fija, configurá también el <strong>External POS ID</strong> en esa misma sección.
               </p>
             </div>
           </div>
 
-          <div style={{ marginBottom: '24px', maxWidth: '400px' }}>
+          <div className={styles.constrainedField}>
             <Input label="Nombre del comercio en MercadoPago" placeholder="Ej: Facundo Gomez" {...register('mpStoreName')} />
-            <p style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>Este nombre aparece en la app de MP cuando el cliente escanea.</p>
+            <p className={styles.fieldHint}>Este nombre aparece en la app de MP cuando el cliente escanea.</p>
           </div>
         </div>
       </section>

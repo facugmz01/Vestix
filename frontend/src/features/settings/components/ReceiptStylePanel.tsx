@@ -46,13 +46,13 @@ export function ReceiptStylePanel() {
   };
 
   if (isLoading) {
-    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Cargando configuraciones...</div>;
+    return <div className={styles.loadingState}>Cargando configuraciones...</div>;
   }
 
   return (
     <div className={styles.panelContainer}>
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.panelContainer} style={{ animation: 'none', gap: 'var(--space-6)' }} noValidate>
-        <div className={clsx(styles.grid, styles.grid2)} style={{ alignItems: 'start' }}>
+      <form onSubmit={handleSubmit(onSubmit)} className={clsx(styles.panelContainer, styles.formStatic)} noValidate>
+        <div className={clsx(styles.grid, styles.grid2, styles.gridStart)}>
           <section className={styles.card}>
             <header className={styles.cardHeader}>
               <h3 className={styles.cardTitle}>
@@ -89,7 +89,7 @@ export function ReceiptStylePanel() {
                 <Input label="Tamaño encabezado" type="number" min={10} max={24} {...register('headerFontSizePx', { valueAsNumber: true })} />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
+              <div className={styles.colorGrid}>
                 <Input label="Color texto" type="color" {...register('textColor')} />
                 <Input label="Color fondo" type="color" {...register('backgroundColor')} />
                 <Input label="Color acento" type="color" {...register('accentColor')} />
@@ -108,7 +108,7 @@ export function ReceiptStylePanel() {
               <Input label="Título por defecto (sin cabecera de sucursal)" {...register('titleFallback')} />
               <Input label="URL del logo (opcional)" placeholder="https://..." {...register('logoUrl')} />
 
-              <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+              <hr className={styles.divider} />
 
               <ToggleSwitch label="Mostrar fecha y hora" {...register('showDate')} />
               <ToggleSwitch label="Mostrar número de ticket" {...register('showTicketNumber')} />
@@ -128,8 +128,8 @@ export function ReceiptStylePanel() {
               </h3>
               <p className={styles.cardDescription}>Así verá el cliente el comprobante al abrir el link o al imprimir.</p>
             </header>
-            <div className={styles.cardBody} style={{ display: 'flex', justifyContent: 'center', background: 'var(--bg-base)' }}>
-              <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', maxWidth: '100%' }}>
+            <div className={clsx(styles.cardBody, styles.previewBody)}>
+              <div className={styles.previewFrame}>
                 <ReceiptPrinter
                   order={RECEIPT_PREVIEW_ORDER}
                   branchSettings={RECEIPT_PREVIEW_BRANCH}

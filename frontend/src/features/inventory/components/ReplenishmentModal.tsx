@@ -4,6 +4,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { purchasingApi } from '@/api/purchasing.api';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
+import styles from './InventoryModals.module.css';
 
 interface Props {
   open: boolean;
@@ -23,10 +25,10 @@ export function ReplenishmentModal({ open, onClose, onSuccess }: Props) {
       if (res.ordersCreated > 0) {
         toast.success(res.message);
       } else {
-        toast.success('El análisis finalizó sin requerir nuevas órdenes.');
+        toast.success('El an?lisis finaliz? sin requerir nuevas ?rdenes.');
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al ejecutar la regla de reposición.');
+      toast.error(err.response?.data?.message || 'Error al ejecutar la regla de reposici?n.');
     } finally {
       setIsProcessing(false);
     }
@@ -43,51 +45,48 @@ export function ReplenishmentModal({ open, onClose, onSuccess }: Props) {
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Reglas de Reposición">
-      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+    <Modal open={open} onClose={handleClose} title="Reglas de Reposici?n">
+      <div className={styles.modalBody}>
         {!result ? (
-          <>
-            <div style={{ background: 'var(--bg-surface)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid var(--accent)' }}>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <Settings2 size={24} color="var(--accent)" style={{ flexShrink: 0 }} />
+          <div className={styles.modalStack}>
+            <div className={styles.calloutAccent}>
+              <div className={styles.calloutAccentRow}>
+                <Settings2 size={24} className={styles.calloutAccentIcon} aria-hidden="true" />
                 <div>
-                  <p style={{ margin: '0 0 8px', fontWeight: 600, fontSize: '15px' }}>Ejecución Manual de Reposición</p>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    El sistema analizará todos los niveles de stock en todas las sucursales. Si encuentra productos cuyo nivel disponible sea igual o menor a su <strong>Punto de Reposición</strong>, calculará la cantidad necesaria para alcanzar el <strong>Stock Mínimo</strong> y generará Órdenes de Compra en Borrador agrupadas por proveedor.
+                  <p className={styles.calloutAccentTitle}>Ejecuci?n Manual de Reposici?n</p>
+                  <p className={styles.calloutAccentText}>
+                    El sistema analizar? todos los niveles de stock en todas las sucursales. Si encuentra productos cuyo nivel disponible sea igual o menor a su <strong>Punto de Reposici?n</strong>, calcular? la cantidad necesaria para alcanzar el <strong>Stock M?nimo</strong> y generar? ?rdenes de Compra en Borrador agrupadas por proveedor.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '12px', background: 'rgba(234, 179, 8, 0.1)', color: '#ca8a04', borderRadius: '8px' }}>
-              <AlertTriangle size={20} style={{ flexShrink: 0 }} />
-              <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.4 }}>
-                Las órdenes se generarán en estado <strong>DRAFT (Borrador)</strong>. Un supervisor deberá revisarlas y emitirlas desde el módulo de Compras.
+            <div className={styles.warningBanner}>
+              <AlertTriangle size={20} aria-hidden="true" />
+              <p className={styles.warningBannerText}>
+                Las ?rdenes se generar?n en estado <strong>DRAFT (Borrador)</strong>. Un supervisor deber? revisarlas y emitirlas desde el m?dulo de Compras.
               </p>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <Button variant="ghost" onClick={handleClose} disabled={isProcessing} style={{ marginRight: '8px' }}>
+            <div className={styles.actionsEnd}>
+              <Button variant="ghost" onClick={handleClose} disabled={isProcessing}>
                 Cancelar
               </Button>
               <Button variant="primary" onClick={handleRun} disabled={isProcessing} icon={isProcessing ? <RefreshCw size={16} className="spin" /> : <Play size={16} />}>
-                {isProcessing ? 'Analizando Stock...' : 'Ejecutar Reposición Ahora'}
+                {isProcessing ? 'Analizando Stock...' : 'Ejecutar Reposici?n Ahora'}
               </Button>
             </div>
-          </>
+          </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '32px', background: result.ordersCreated > 0 ? '#10b98120' : 'var(--bg-surface)', color: result.ordersCreated > 0 ? '#10b981' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className={styles.resultCenter}>
+            <div className={clsx(styles.resultIcon, result.ordersCreated > 0 ? styles.resultIconSuccess : styles.resultIconNeutral)}>
               <CheckCircle size={32} />
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 8px', fontSize: '18px' }}>Análisis Completado</h3>
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {result.message}
-              </p>
+            <div className={styles.resultTextCenter}>
+              <h3 className={styles.resultTitle}>An?lisis Completado</h3>
+              <p className={styles.resultText}>{result.message}</p>
             </div>
-            <Button variant="primary" onClick={handleClose} style={{ marginTop: '10px' }}>
+            <Button variant="primary" onClick={handleClose} className={styles.resultBtn}>
               Entendido
             </Button>
           </div>
