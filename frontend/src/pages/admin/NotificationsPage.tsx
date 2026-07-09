@@ -16,6 +16,8 @@ import { TemplateFormDrawer } from '@/features/notifications/components/Template
 import { TestNotificationDrawer } from '@/features/notifications/components/TestNotificationDrawer';
 import { NOTIFICATION_EVENT_LABELS } from '@/features/notifications/constants';
 import styles from '@/features/notifications/components/Notifications.module.css';
+import adminStyles from '@/styles/AdminListShared.module.css';
+import detailStyles from '@/styles/DetailDrawerShared.module.css';
 
 function DeliveryStatusBadge({ status }: { status: string }) {
   switch (status) {
@@ -30,7 +32,7 @@ function DeliveryStatusBadge({ status }: { status: string }) {
 
 function ChannelIcon({ channel }: { channel: string }) {
   if (channel === 'EMAIL')    return <Mail size={14} />;
-  if (channel === 'WHATSAPP') return <MessageSquare size={14} style={{ color: '#25D366' }} />;
+  if (channel === 'WHATSAPP') return <MessageSquare size={14} className={styles.channelWhatsapp} />;
   if (channel === 'SMS')      return <MessageSquare size={14} />;
   return <Bell size={14} />;
 }
@@ -54,11 +56,19 @@ function StatsBar() {
     { label: 'Plantillas activas', value: `${stats.templates.active}/${stats.templates.total}`, color: 'var(--text-primary)' },
   ];
 
+  const colorClass: Record<string, string> = {
+    'var(--blue)': styles.statValueBlue,
+    'var(--green)': styles.statValueGreen,
+    'var(--red)': styles.statValueRed,
+    'var(--orange)': styles.statValueOrange,
+    'var(--text-primary)': styles.statValuePrimary,
+  };
+
   return (
     <div className={styles.statsGrid}>
       {cards.map(c => (
         <div key={c.label} className={styles.statCard}>
-          <p className={styles.statValue} style={{ color: c.color }}>{c.value}</p>
+          <p className={clsx(styles.statValue, colorClass[c.color])}>{c.value}</p>
           <p className={styles.statLabel}>{c.label}</p>
         </div>
       ))}
@@ -155,7 +165,7 @@ export default function NotificationsPage() {
       title="Notificaciones"
       subtitle="Plantillas, monitoreo de entregas y cola de envío (Email, SMS, WhatsApp)."
       action={
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={adminStyles.toolbarActions}>
           <ActionGuard action="manage" subject="Settings">
             <Button variant="outline" icon={<Send size={16} />} onClick={() => setTestOpen(true)}>
               Prueba de envío
@@ -186,7 +196,7 @@ export default function NotificationsPage() {
         <button className={clsx(styles.tab, activeTab === 'inbox' && styles.tabActive)} onClick={() => setActiveTab('inbox')}>
           Bandeja interna
           {(inboxData?.unreadCount ?? 0) > 0 && (
-            <Badge color="red" style={{ marginLeft: '8px' }}>{inboxData!.unreadCount}</Badge>
+            <Badge color="red" className={styles.badgeMl}>{inboxData!.unreadCount}</Badge>
           )}
         </button>
       </div>
@@ -202,14 +212,14 @@ export default function NotificationsPage() {
               keyField="id"
               data={templates}
               columns={[
-                { key: 'name', header: 'Nombre', render: t => <span style={{ fontWeight: 700 }}>{t.name}</span> },
+                { key: 'name', header: 'Nombre', render: t => <span className={adminStyles.cellPrimary}>{t.name}</span> },
                 { key: 'event', header: 'Evento', render: t => <Badge color="blue">{NOTIFICATION_EVENT_LABELS[t.event] || t.event}</Badge> },
                 { key: 'channel', header: 'Canal', render: t => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '13px' }}>
+                  <div className={styles.channelRow}>
                     <ChannelIcon channel={t.channel} /> {t.channel}
                   </div>
                 )},
-                { key: 'subject', header: 'Asunto', render: t => <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{t.subject || '—'}</span> },
+                { key: 'subject', header: 'Asunto', render: t => <span className={styles.subjectCell}>{t.subject || '—'}</span> },
                 {
                   key: 'active', header: 'Estado',
                   render: t => (
@@ -272,21 +282,21 @@ export default function NotificationsPage() {
                 keyField="id"
                 data={logs}
                 columns={[
-                  { key: 'date', header: 'Fecha', render: l => <span style={{ fontSize: '13px' }}>{new Date(l.createdAt).toLocaleString()}</span> },
+                  { key: 'date', header: 'Fecha', render: l => <span className={adminStyles.cellDate}>{new Date(l.createdAt).toLocaleString()}</span> },
                   { key: 'channel', header: 'Canal', render: l => (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }}>
+                    <div className={styles.channelRow}>
                       <ChannelIcon channel={l.channel} /> {l.channel}
                     </div>
                   )},
                   { key: 'event', header: 'Evento', render: l => <Badge color="blue">{NOTIFICATION_EVENT_LABELS[l.event] || l.event}</Badge> },
-                  { key: 'recipient', header: 'Destinatario', render: l => <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>{l.recipient}</span> },
+                  { key: 'recipient', header: 'Destinatario', render: l => <span className={styles.recipientMono}>{l.recipient}</span> },
                   {
                     key: 'status', header: 'Estado',
                     render: l => (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div className={adminStyles.cellStackGapSm}>
                         <DeliveryStatusBadge status={l.status} />
                         {l.status === 'FAILED' && l.errorMessage && (
-                          <p style={{ margin: 0, fontSize: '11px', color: 'var(--red)' }}>{l.errorMessage}</p>
+                          <p className={styles.logError}>{l.errorMessage}</p>
                         )}
                         {l.status === 'FAILED' && (
                           <ActionGuard action="manage" subject="Settings">
@@ -318,13 +328,13 @@ export default function NotificationsPage() {
               keyField="id"
               data={queueJobs}
               columns={[
-                { key: 'id', header: 'Job ID', render: j => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{j.id}</span> },
+                { key: 'id', header: 'Job ID', render: j => <span className={styles.jobId}>{j.id}</span> },
                 { key: 'template', header: 'Plantilla', render: j => <Badge color="blue">{NOTIFICATION_EVENT_LABELS[j.templateKey] || j.templateKey}</Badge> },
                 { key: 'channel', header: 'Canal', render: j => j.channel },
-                { key: 'recipient', header: 'Destinatario', render: j => <span style={{ fontFamily: 'monospace' }}>{j.recipient}</span> },
+                { key: 'recipient', header: 'Destinatario', render: j => <span className={detailStyles.mono}>{j.recipient}</span> },
                 { key: 'status', header: 'Estado', render: j => <Badge color={j.status === 'FAILED' ? 'red' : 'gray'}>{j.status}</Badge> },
                 { key: 'attempts', header: 'Intentos', render: j => j.attempts },
-                { key: 'error', header: 'Error', render: j => j.lastError ? <span style={{ fontSize: '11px', color: 'var(--red)' }}>{j.lastError}</span> : '—' },
+                { key: 'error', header: 'Error', render: j => j.lastError ? <span className={styles.logError}>{j.lastError}</span> : '—' },
               ]}
             />
           )}
@@ -333,7 +343,7 @@ export default function NotificationsPage() {
 
       {activeTab === 'inbox' && (
         <Section>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div className={styles.inboxHeader}>
             <Badge color="gray">{inboxData?.unreadCount ?? 0} sin leer</Badge>
             <Button variant="outline" size="sm" icon={<CheckCircle size={14} />}
               onClick={() => markAllReadMutation.mutate()} loading={markAllReadMutation.isPending}
@@ -354,12 +364,12 @@ export default function NotificationsPage() {
                   key: 'title', header: 'Alerta',
                   render: n => (
                     <div>
-                      <span style={{ fontWeight: n.readAt ? 500 : 800 }}>{n.title}</span>
-                      {!n.readAt && <Badge color="blue" style={{ marginLeft: '8px' }}>Nueva</Badge>}
+                      <span className={n.readAt ? styles.inboxTitle : styles.inboxTitleUnread}>{n.title}</span>
+                      {!n.readAt && <Badge color="blue" className={styles.badgeMl}>Nueva</Badge>}
                     </div>
                   ),
                 },
-                { key: 'body', header: 'Detalle', render: n => <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{n.body}</span> },
+                { key: 'body', header: 'Detalle', render: n => <span className={adminStyles.cellSecondaryMuted}>{n.body}</span> },
                 { key: 'event', header: 'Evento', render: n => n.event ? <Badge color="gray">{NOTIFICATION_EVENT_LABELS[n.event] || n.event}</Badge> : '—' },
                 { key: 'date', header: 'Fecha', render: n => new Date(n.createdAt).toLocaleString() },
                 {

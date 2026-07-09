@@ -21,6 +21,7 @@ import { VariantDetailDrawer } from '@/features/variants/components/VariantDetai
 import { VariantGeneratorModal } from '@/features/variants/components/VariantGeneratorModal';
 import { PrintLabelsModal } from '@/features/variants/components/PrintLabelsModal';
 import { BulkPrintLabelsModal } from '@/features/labels/components/BulkPrintLabelsModal';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function ProductVariantsPage() {
   const { productId } = useParams<{ productId: string }>();
@@ -107,7 +108,7 @@ export default function ProductVariantsPage() {
   };
 
   const selectedVariants = (variants ?? []).filter((v) => selectedIds.has(v.id));
-  if (loadingProduct) return <PageContainer title="Cargando..."><p style={{ color: 'var(--text-muted)' }}>Cargando producto...</p></PageContainer>;
+  if (loadingProduct) return <PageContainer title="Cargando..."><p className={adminStyles.textLoading}>Cargando producto...</p></PageContainer>;
   if (!product) return <PageContainer title="Producto no encontrado" action={<Button onClick={() => navigate('/admin/catalog')}>Volver</Button>}><p>El producto solicitado no existe.</p></PageContainer>;
 
   return (
@@ -115,7 +116,7 @@ export default function ProductVariantsPage() {
       title={`Variantes: ${product.name}`}
       subtitle="Gestioná los SKUs físicos asociados a este producto base."
       action={
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={adminStyles.toolbarActions}>
           <Button variant="outline" icon={<ArrowLeft size={16} />} onClick={() => navigate('/admin/catalog')}>
             Volver
           </Button>
@@ -175,28 +176,28 @@ export default function ProductVariantsPage() {
               { 
                 key: 'sku', 
                 header: 'SKU',
-                render: (v) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{v.sku}</span>
+                render: (v) => <span className={adminStyles.cellMonoBold}>{v.sku}</span>
               },
               { 
                 key: 'attributes', 
                 header: 'Atributos',
                 render: (v) => (
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className={adminStyles.toolbarActions}>
                     {v.color && <Badge color="blue">{v.color}</Badge>}
                     {v.size && <Badge color="purple">{v.size}</Badge>}
-                    {!v.color && !v.size && <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Única</span>}
+                    {!v.color && !v.size && <span className={adminStyles.cellSecondaryMuted}>Única</span>}
                   </div>
                 )
               },
               { 
                 key: 'barcode', 
                 header: 'Cód. Barras',
-                render: (v) => <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{v.barcode || '-'}</span>
+                render: (v) => <span className={adminStyles.cellSecondaryMuted}>{v.barcode || '-'}</span>
               },
               { 
                 key: 'price', 
                 header: 'Precio Base',
-                render: (v) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(v.basePrice)}</span>
+                render: (v) => <span className={adminStyles.pricePrimary}>{formatCurrency(v.basePrice)}</span>
               },
               { 
                 key: 'isActive', 
@@ -207,7 +208,7 @@ export default function ProductVariantsPage() {
                 key: 'actions',
                 header: '',
                 render: (v) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <ActionGuard action="print" subject="Labels">
                       <Button variant="ghost" size="sm" onClick={() => handlePrint(v)} aria-label="Imprimir Etiquetas" title="Imprimir etiquetas de código de barras">
                         <Printer size={16} />

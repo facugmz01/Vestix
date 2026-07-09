@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { Package, Truck, CheckCircle, Navigation } from 'lucide-react';
 import { shippingApi } from '@/api/shipping.api';
@@ -78,10 +79,10 @@ export default function PublicTrackPage() {
 
       {mapUrl && data.status !== 'DELIVERED' && (
         <div className={styles.card}>
-          <div className={styles.cardTitle} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className={clsx(styles.cardTitle, styles.cardTitleRow)}>
             <Navigation size={16} color="var(--purple)" /> Ubicación en vivo
             {liveData?.lastLocationAt && (
-              <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+              <span className={styles.liveTime}>
                 {new Date(liveData.lastLocationAt).toLocaleTimeString()}
               </span>
             )}
@@ -98,13 +99,13 @@ export default function PublicTrackPage() {
           { label: 'Despachado', date: data.timeline.dispatchedAt || data.timeline.shippedAt },
           { label: 'Entregado', date: data.timeline.deliveredAt },
         ].filter(e => e.date).map((e, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
-            <span style={{ color: 'var(--text-secondary)' }}>{e.label}</span>
-            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{new Date(e.date!).toLocaleString()}</span>
+          <div key={i} className={styles.timelineRow}>
+            <span className={styles.timelineLabel}>{e.label}</span>
+            <span className={styles.timelineDate}>{new Date(e.date!).toLocaleString()}</span>
           </div>
         ))}
         {data.city && (
-          <p style={{ margin: '16px 0 0', fontSize: 14, color: 'var(--text-secondary)' }}>
+          <p className={styles.destination}>
             Destino: {data.city}{data.state ? `, ${data.state}` : ''} · {data.itemCount} artículos
           </p>
         )}

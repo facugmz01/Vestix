@@ -1,10 +1,21 @@
 import styles from './Table.module.css';
+import { useLayoutEffect, useRef } from 'react';
 
 interface Column<T> {
   key: string;
   header: string;
   render?: (row: T) => React.ReactNode;
   width?: string;
+}
+
+function ThWithWidth({ width, children }: { width?: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLTableCellElement>(null);
+  useLayoutEffect(() => {
+    if (ref.current && width) ref.current.style.setProperty('--col-width', width);
+  }, [width]);
+  return (
+    <th ref={ref} className={width ? styles.colWidth : undefined}>{children}</th>
+  );
 }
 
 interface Props<T> {
@@ -25,7 +36,7 @@ export function Table<T>({
         <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.key} style={{ width: col.width }}>{col.header}</th>
+              <ThWithWidth key={col.key} width={col.width}>{col.header}</ThWithWidth>
             ))}
           </tr>
         </thead>
@@ -36,7 +47,7 @@ export function Table<T>({
             </td></tr>
           ) : data.length === 0 ? (
             <tr><td colSpan={columns.length} className={styles.center}>
-              <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{emptyMessage}</span>
+              <span className={styles.emptyMessage}>{emptyMessage}</span>
             </td></tr>
           ) : (
             data.map((row) => (

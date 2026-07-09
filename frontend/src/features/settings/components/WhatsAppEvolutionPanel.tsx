@@ -3,8 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { CheckCircle, RefreshCw, Link2, QrCode, Copy } from 'lucide-react';
 
+import clsx from 'clsx';
+
 import { Button } from '@/components/ui';
 import { notificationsApi } from '@/api/notifications.api';
+import styles from './SettingsShared.module.css';
 
 interface Props {
   enabled: boolean;
@@ -70,29 +73,18 @@ export function WhatsAppEvolutionPanel({ enabled }: Props) {
   if (!enabled) return null;
 
   return (
-    <div
-      style={{
-        marginTop: 12,
-        padding: 16,
-        background: 'var(--bg-surface-hover)',
-        borderRadius: 8,
-        border: '1px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+    <div className={clsx(styles.configPanel, styles.whatsAppPanel)}>
+      <div className={styles.whatsAppHeader}>
         <div>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }}>Vinculación WhatsApp (Evolution)</p>
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+          <p className={styles.whatsAppTitle}>Vinculación WhatsApp (Evolution)</p>
+          <p className={styles.whatsAppMeta}>
             Instancia: <code>{status?.instance ?? '—'}</code>
             {status?.state && (
               <> · Estado: <strong>{status.state}</strong></>
             )}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div className={styles.whatsAppActions}>
           <Button
             variant="outline"
             type="button"
@@ -118,46 +110,46 @@ export function WhatsAppEvolutionPanel({ enabled }: Props) {
       </div>
 
       {isLoading ? (
-        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13 }}>Consultando estado…</p>
+        <p className={styles.textMutedSm}>Consultando estado…</p>
       ) : status?.state === 'not_configured' ? (
-        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13 }}>
+        <p className={styles.textMutedSm}>
           Guardá la URL, API Key e instancia de Evolution y probá la conexión antes de vincular.
         </p>
       ) : status?.isReady ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: 'rgba(37,211,102,0.08)', borderRadius: 8 }}>
+        <div className={styles.connectedBanner}>
           <CheckCircle size={28} color="#25D366" />
           <div>
-            <p style={{ margin: 0, fontWeight: 700 }}>Sesión activa</p>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+            <p className={styles.connectedTitle}>Sesión activa</p>
+            <p className={styles.connectedText}>
               WhatsApp está listo para enviar notificaciones.
             </p>
           </div>
         </div>
       ) : status?.qrCode ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' }}>
+        <div className={styles.qrSection}>
+          <p className={styles.qrHint}>
             Abrí WhatsApp → Dispositivos vinculados → Vincular dispositivo y escaneá el código.
           </p>
-          <div style={{ padding: 12, background: '#fff', borderRadius: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <img src={status.qrCode} alt="QR WhatsApp" style={{ width: 220, height: 220, display: 'block' }} />
+          <div className={styles.qrWhiteFrame}>
+            <img src={status.qrCode} alt="QR WhatsApp" className={styles.qrLargeImage} />
           </div>
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
+          <p className={styles.qrRefreshHint}>
             El QR se actualiza automáticamente cada pocos segundos.
           </p>
         </div>
       ) : (
-        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13 }}>
+        <p className={styles.textMutedSm}>
           Presioná &quot;Conectar / QR&quot; para iniciar el emparejamiento con Evolution API.
         </p>
       )}
 
       {status?.webhookUrl && (
-        <div style={{ padding: 12, background: 'var(--bg-elevated)', borderRadius: 8, border: '1px solid var(--border)' }}>
-          <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>
+        <div className={styles.webhookBox}>
+          <p className={styles.webhookLabel}>
             Webhook de entrega (configurar en Evolution)
           </p>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <code style={{ fontSize: 11, wordBreak: 'break-all', flex: 1 }}>{status.webhookUrl}</code>
+          <div className={styles.webhookRow}>
+            <code className={styles.webhookCode}>{status.webhookUrl}</code>
             <Button variant="ghost" type="button" size="sm" icon={<Copy size={12} />} onClick={copyWebhookUrl}>
               Copiar
             </Button>
@@ -172,7 +164,7 @@ export function WhatsAppEvolutionPanel({ enabled }: Props) {
               Auto-configurar
             </Button>
           </div>
-          <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>
+          <p className={styles.webhookHint}>
             Si usás <code>EVOLUTION_WEBHOOK_SECRET</code>, Evolution debe enviar ese valor en el header <code>apikey</code>.
           </p>
         </div>

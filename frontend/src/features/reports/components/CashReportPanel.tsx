@@ -7,6 +7,7 @@ import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { KpiCard, BarChart, StackedBar, EmptyState, ErrorState } from './ChartPrimitives';
 import { formatCurrency } from '@/utils/formatCurrency';
+import rs from '@/styles/ReportsShared.module.css';
 
 interface Props { from: string; to: string; branchId?: string; }
 
@@ -33,7 +34,7 @@ export function CashReportPanel({ from, to, branchId }: Props) {
     onError:    () => toast.error('Error al exportar'),
   });
 
-  if (isLoading) return <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando datos de caja...</div>;
+  if (isLoading) return <div className={rs.loadingState}>Cargando datos de caja...</div>;
 
   if (isError) {
     return (
@@ -49,8 +50,8 @@ export function CashReportPanel({ from, to, branchId }: Props) {
   const dailySeries = summary.dailySeries ?? [];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <div className={rs.panelStack}>
+      <div className={rs.panelActions}>
         <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>
           Exportar Excel
         </Button>
@@ -68,8 +69,8 @@ export function CashReportPanel({ from, to, branchId }: Props) {
       </div>
 
       {summary.byMethod && summary.byMethod.length > 0 && (
-        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-          <h4 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700 }}>Distribución por Medio de Cobro</h4>
+        <div className={rs.sectionCard}>
+          <h4 className={rs.sectionTitle}>Distribución por Medio de Cobro</h4>
           <StackedBar
             segments={summary.byMethod.map(m => ({
               label: m.method,
@@ -83,8 +84,8 @@ export function CashReportPanel({ from, to, branchId }: Props) {
       )}
 
       {dailySeries.length > 0 && (
-        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-          <h4 style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: 700 }}>Evolución Diaria de Caja (Ingresos)</h4>
+        <div className={rs.sectionCard}>
+          <h4 className={rs.sectionTitleLg}>Evolución Diaria de Caja (Ingresos)</h4>
           <BarChart
             data={dailySeries.map(d => ({
               label: new Date(d.date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }),

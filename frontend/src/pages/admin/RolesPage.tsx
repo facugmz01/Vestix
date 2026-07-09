@@ -14,6 +14,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { RoleFormDrawer } from '@/features/roles/components/RoleFormDrawer';
 import { RoleDetailDrawer } from '@/features/roles/components/RoleDetailDrawer';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function RolesPage() {
   const queryClient = useQueryClient();
@@ -111,7 +112,7 @@ export default function RolesPage() {
               { 
                 key: 'name', 
                 header: 'Nombre del Rol',
-                render: (r) => <span style={{ fontWeight: 600 }}>{r.name}</span>
+                render: (r) => <span className={adminStyles.cellPrimary}>{r.name}</span>
               },
               { 
                 key: 'userCount', 
@@ -134,7 +135,7 @@ export default function RolesPage() {
                 key: 'actions',
                 header: '',
                 render: (r) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(r)} aria-label="Ver" title="Ver detalle">
                       <Eye size={16} />
                     </Button>

@@ -8,6 +8,7 @@ import {
 } from '@/components/ui';
 import { productsApi } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function TaxonomyPage() {
   const queryClient = useQueryClient();
@@ -58,7 +59,7 @@ export default function TaxonomyPage() {
         </Button>
       }
     >
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+      <div className={adminStyles.tabButtonsRow}>
         <Button 
           variant={activeTab === 'categories' ? 'primary' : 'ghost'} 
           onClick={() => setActiveTab('categories')}
@@ -90,20 +91,12 @@ export default function TaxonomyPage() {
 
 function TaxonomyList({ items, icon }: { items: any[], icon: React.ReactNode }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
+    <div className={adminStyles.entityCardGridWide}>
       {items.map(item => (
-        <div key={item.id} style={{ 
-          padding: '16px', 
-          background: 'var(--bg-elevated)', 
-          borderRadius: 'var(--radius)', 
-          border: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ color: 'var(--accent)' }}>{icon}</span>
-            <span style={{ fontWeight: 600 }}>{item.name}</span>
+        <div key={item.id} className={adminStyles.entityCardElevated}>
+          <div className={adminStyles.entityCardInner}>
+            <span className={adminStyles.accentIcon}>{icon}</span>
+            <span className={adminStyles.cellPrimary}>{item.name}</span>
           </div>
           <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => toast.error('Funcionalidad de borrado en desarrollo')} />
         </div>

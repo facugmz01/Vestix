@@ -5,6 +5,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { ArrowUpRight, ArrowDownRight, History, Package, Link2, Clock, MapPin } from 'lucide-react';
 import { formatMovementQty, getMovementLabel } from '../utils/movementLabels';
 import { formatMovementReferenceId } from '@/utils/formatId';
+import clsx from 'clsx';
 import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
@@ -32,11 +33,11 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
       ? styles.movementIconOut
       : styles.movementIconNeutral;
 
-  const qtyColor = qty?.direction === 'IN'
-    ? 'var(--green)'
+  const qtyClass = qty?.direction === 'IN'
+    ? styles.qtyPositive
     : qty?.direction === 'OUT'
-      ? 'var(--red)'
-      : 'var(--text-primary)';
+      ? styles.qtyNegative
+      : styles.movementQtyNeutral;
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Movimiento" width="md">
@@ -60,7 +61,7 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
               </div>
               <div className={styles.movementQtyAside}>
                 <p className={styles.movementQtyLabel}>Cantidad</p>
-                <p className={styles.movementQtyValue} style={{ color: qtyColor }}>
+                <p className={clsx(styles.movementQtyValue, qtyClass)}>
                   {qty.text}
                 </p>
               </div>
@@ -109,7 +110,7 @@ export function MovementDetailDrawer({ open, onClose, movementId }: Props) {
                 {movement.unitCost != null && movement.unitCost > 0 && (
                   <div className={styles.auditDivider}>
                     <span className={styles.auditLabel}>Costo Unitario:</span>
-                    <span className={styles.auditValue} style={{ fontWeight: 600 }}>
+                    <span className={styles.auditValueSemibold}>
                       {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(movement.unitCost)}
                     </span>
                   </div>

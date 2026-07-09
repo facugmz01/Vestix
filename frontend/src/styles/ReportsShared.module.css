@@ -1,0 +1,334 @@
+.chartContainer {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+}
+
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.chartLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.chartLegendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.reportPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reportFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.reportFilterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.reportFilterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.reportKpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.reportKpiCard {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-0);
+}
+
+.reportKpiLabel {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.reportKpiValue {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.reportTableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+}
+
+.reportTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.reportTableTh {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.reportTableTd {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.reportTableTdRight {
+  text-align: right;
+  font-weight: 600;
+}
+
+/* Loading / empty states */
+.loadingState {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Panel sections */
+.panelStack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.panelActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sectionCard {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.sectionTitle {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sectionTitleLg {
+  margin: 0 0 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sectionTitleRow {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.kpiCardBase {
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.kpiCardNeutral {
+  background: var(--bg-base);
+}
+
+.kpiCardGreen {
+  background: var(--green-bg);
+  border-color: var(--green);
+}
+
+.kpiCardBlue {
+  background: var(--blue-bg);
+  border-color: var(--blue);
+}
+
+.kpiCardElevated {
+  background: var(--bg-elevated);
+}
+
+.kpiLabel {
+  margin: 0 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.kpiLabelMuted {
+  color: var(--text-muted);
+}
+
+.kpiLabelGreen {
+  color: var(--green);
+}
+
+.kpiLabelBlue {
+  color: var(--blue);
+}
+
+.kpiValue {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.kpiValueMd {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.kpiValueGreen {
+  color: var(--green);
+}
+
+.kpiValueBlue {
+  color: var(--blue);
+}
+
+.kpiGrid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.kpiGrid3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.tableCard {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableCardAlert {
+  border-color: var(--orange, #f97316);
+}
+
+.tableCardHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tableCardBody {
+  padding: 16px;
+}
+
+.tableCardLoading {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.monoBold {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+}
+
+.stockLow {
+  font-weight: 800;
+  color: var(--red);
+}
+
+.stockWarn {
+  font-weight: 800;
+  color: var(--orange, #f97316);
+}
+
+.textMuted {
+  color: var(--text-muted);
+}
+
+/* Simple data table inside panels */
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dataTableHead {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.dataTableTh {
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.dataTableThRight {
+  text-align: right;
+}
+
+.dataTableRow {
+  border-bottom: 1px solid var(--border);
+}
+
+.dataTableTd {
+  padding: 10px 8px;
+}
+
+.dataTableTdRight {
+  text-align: right;
+}
+
+.dataTableTdBold {
+  font-weight: 700;
+}
+
+.dataTableTdMuted {
+  text-align: right;
+  color: var(--text-muted);
+}
+
+.dataTableTdStrong {
+  font-weight: 600;
+}
+

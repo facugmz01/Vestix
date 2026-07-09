@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -59,19 +61,19 @@ export function BulkPriceUpdaterModal({ open, onClose }: Props) {
 
   return (
     <Modal open={open} onClose={onClose} title="Actualización Masiva de Precios">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '400px' }}>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+      <div className={styles.modalBody}>
+        <p className={styles.modalIntro}>
           Esta herramienta modificará el <strong>Precio de Costo</strong> de los productos filtrados, lo cual impactará automáticamente en todas las listas de precios en cascada.
         </p>
 
         <div>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 500 }}>
+          <label className={styles.formLabelBlock}>
             Categoría (Opcional)
           </label>
           <select 
             value={categoryId} 
             onChange={e => setCategoryId(e.target.value)}
-            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+            className={styles.select}
           >
             <option value="">Todas las categorías</option>
             {categories?.map(c => (
@@ -81,13 +83,13 @@ export function BulkPriceUpdaterModal({ open, onClose }: Props) {
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 500 }}>
+          <label className={styles.formLabelBlock}>
             Marca (Opcional)
           </label>
           <select 
             value={brandId} 
             onChange={e => setBrandId(e.target.value)}
-            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+            className={styles.select}
           >
             <option value="">Todas las marcas</option>
             {brands?.map(b => (
@@ -97,7 +99,7 @@ export function BulkPriceUpdaterModal({ open, onClose }: Props) {
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 500 }}>
+          <label className={styles.formLabelBlock}>
             Porcentaje de Ajuste (%)
           </label>
           <Input 
@@ -105,11 +107,11 @@ export function BulkPriceUpdaterModal({ open, onClose }: Props) {
             placeholder="Ej: 15 (para aumentar 15%) o -5 (para descontar 5%)"
             value={percentage}
             onChange={e => setPercentage(e.target.value)}
-            style={{ width: '100%' }}
+            className={styles.selectFull}
           />
         </div>
 
-        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+        <div className={styles.actionFooter}>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button 
             variant="primary" 

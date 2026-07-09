@@ -14,6 +14,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { WarehouseFormDrawer } from '@/features/warehouses/components/WarehouseFormDrawer';
 import { WarehouseDetailDrawer } from '@/features/warehouses/components/WarehouseDetailDrawer';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function WarehousesPage() {
   const queryClient = useQueryClient();
@@ -113,7 +114,7 @@ export default function WarehousesPage() {
               { 
                 key: 'name', 
                 header: 'Nombre',
-                render: (w) => <span style={{ fontWeight: 600 }}>{w.name}</span>
+                render: (w) => <span className={adminStyles.cellPrimary}>{w.name}</span>
               },
               { key: 'code', header: 'Código' },
               { 
@@ -124,7 +125,7 @@ export default function WarehousesPage() {
               { 
                 key: 'branch', 
                 header: 'Sucursal',
-                render: (w) => <span style={{ color: 'var(--text-secondary)' }}>{w.branchName || w.branchId}</span>
+                render: (w) => <span className={adminStyles.textSecondary}>{w.branchName || w.branchId}</span>
               },
               { 
                 key: 'isActive', 
@@ -135,7 +136,7 @@ export default function WarehousesPage() {
                 key: 'actions',
                 header: '',
                 render: (w) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(w)} aria-label="Ver" title="Ver detalle">
                       <Eye size={16} />
                     </Button>

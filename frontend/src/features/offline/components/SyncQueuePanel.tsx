@@ -5,16 +5,18 @@
  * Shows all pending, syncing, failed and conflict operations.
  * Allows retry and manual dismissal.
  */
+import clsx from 'clsx';
 import { useOfflineQueueStore, type OfflineOperation } from '@/store/offlineQueue.store';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import {
   Clock, RefreshCw, XCircle, AlertTriangle, CheckCircle, Wifi, WifiOff, Trash2, RotateCcw
 } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
+import styles from './OfflineShared.module.css';
 
 const STATUS_META: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   PENDING:  { label: 'Pendiente',  color: 'orange', icon: <Clock size={14} /> },
-  SYNCING:  { label: 'Enviando…',  color: 'blue',   icon: <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> },
+  SYNCING:  { label: 'Enviando…',  color: 'blue',   icon: <RefreshCw size={14} className={styles.spinIcon} /> },
   FAILED:   { label: 'Con Error',  color: 'red',    icon: <XCircle size={14} /> },
   CONFLICT: { label: 'Conflicto',  color: 'red',    icon: <AlertTriangle size={14} /> },
 };
@@ -31,109 +33,99 @@ export function SyncQueuePanel() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-      {/* Status Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderRadius: '10px', border: '1px solid var(--border)', background: isOnline ? 'var(--green-bg)' : 'var(--red-bg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div className={styles.panel}>
+      <div className={clsx(styles.statusHeader, isOnline ? styles.statusOnline : styles.statusOffline)}>
+        <div className={styles.statusRow}>
           {isOnline
             ? <Wifi size={20} color="var(--green)" />
             : <WifiOff size={20} color="var(--red)" />
           }
           <div>
-            <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: isOnline ? 'var(--green)' : 'var(--red)' }}>
+            <p className={clsx(styles.statusTitle, isOnline ? styles.statusTitleOnline : styles.statusTitleOffline)}>
               {isOnline ? 'Conectado — Sincronización Activa' : 'Sin Conexión — Modo Offline'}
             </p>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
+            <p className={styles.statusMeta}>
               {operations.length} operación(es) en cola · {grouped.pending.length + grouped.syncing.length} pendientes
             </p>
           </div>
         </div>
         {operations.length > 0 && (
-          <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={clearAll} style={{ color: 'var(--red)' }}>
+          <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={clearAll} className={styles.btnDanger}>
             Limpiar todo
           </Button>
         )}
       </div>
 
-      {/* Empty */}
       {operations.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-          <CheckCircle size={40} color="var(--green)" style={{ margin: '0 auto 12px' }} />
-          <p style={{ margin: 0, fontWeight: 600, fontSize: '15px' }}>Sin Operaciones Pendientes</p>
-          <p style={{ margin: '4px 0 0', fontSize: '13px' }}>Todo está sincronizado con el servidor.</p>
+        <div className={styles.emptyState}>
+          <CheckCircle size={40} color="var(--green)" className={styles.emptyIcon} />
+          <p className={styles.emptyTitle}>Sin Operaciones Pendientes</p>
+          <p className={styles.emptyText}>Todo está sincronizado con el servidor.</p>
         </div>
       )}
 
-      {/* Operation list */}
       {operations.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className={styles.opList}>
           {operations.map(op => <OperationCard key={op.id} op={op} onRetry={() => resetStatus(op.id)} onRemove={() => remove(op.id)} />)}
         </div>
       )}
-
     </div>
   );
 }
-
-// ── Single Operation Card ──────────────────────────────────────────────────────
 
 function OperationCard({ op, onRetry, onRemove }: { op: OfflineOperation; onRetry: () => void; onRemove: () => void }) {
   const meta = STATUS_META[op.status];
 
   return (
-    <div style={{
-      border: op.status === 'CONFLICT' ? '2px solid var(--orange)' : op.status === 'FAILED' ? '2px solid var(--red)' : '1px solid var(--border)',
-      borderRadius: '10px', padding: '16px 20px', background: 'var(--bg-base)',
-      display: 'flex', flexDirection: 'column', gap: '12px',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+    <div className={clsx(
+      styles.opCard,
+      op.status === 'CONFLICT' ? styles.opCardConflict : op.status === 'FAILED' ? styles.opCardFailed : styles.opCardDefault,
+    )}>
+      <div className={styles.opHeader}>
+        <div className={styles.opBody}>
+          <div className={styles.opBadges}>
             <Badge color={meta.color as any}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{meta.icon} {meta.label}</span>
+              <span className={styles.badgeInner}>{meta.icon} {meta.label}</span>
             </Badge>
             <Badge color="gray">{op.module}</Badge>
           </div>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{op.description}</p>
-          <p style={{ margin: '2px 0 0', fontSize: '12px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+          <p className={styles.opTitle}>{op.description}</p>
+          <p className={styles.opEndpoint}>
             {op.method} {op.endpoint}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <div className={styles.opActions}>
           {(op.status === 'FAILED' || op.status === 'CONFLICT') && (
             <Button variant="ghost" size="sm" icon={<RotateCcw size={14} />} onClick={onRetry}>Reintentar</Button>
           )}
-          <Button variant="ghost" size="sm" onClick={onRemove} style={{ color: 'var(--red)' }}>
+          <Button variant="ghost" size="sm" onClick={onRemove} className={styles.btnDanger}>
             <XCircle size={16} />
           </Button>
         </div>
       </div>
 
-      {/* Error info */}
       {op.lastErrorMessage && (
-        <div style={{ padding: '8px 12px', background: 'var(--red-bg)', borderRadius: '6px', border: '1px solid var(--red)', fontSize: '12px', color: 'var(--red)' }}>
+        <div className={styles.errorBox}>
           <strong>Error:</strong> {op.lastErrorMessage}
-          {op.retryCount > 0 && <span style={{ marginLeft: '8px', color: 'var(--text-muted)' }}>({op.retryCount} intento(s))</span>}
+          {op.retryCount > 0 && <span className={styles.retryCount}>({op.retryCount} intento(s))</span>}
         </div>
       )}
 
-      {/* Conflict view */}
       {op.status === 'CONFLICT' && (
-        <div style={{ padding: '12px', background: 'var(--orange-bg)', borderRadius: '6px', border: '1px solid var(--orange)' }}>
-          <p style={{ margin: '0 0 8px', fontWeight: 700, color: 'var(--orange)', fontSize: '13px' }}>
+        <div className={styles.conflictBox}>
+          <p className={styles.conflictTitle}>
             Conflicto de datos: {op.conflictReason}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+          <div className={styles.conflictGrid}>
             <div>
-              <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-secondary)' }}>Tus cambios (Local)</p>
-              <pre style={{ margin: 0, background: 'var(--bg-base)', padding: '8px', borderRadius: '4px', overflowX: 'auto', fontSize: '11px' }}>
+              <p className={styles.conflictColLabel}>Tus cambios (Local)</p>
+              <pre className={styles.conflictPre}>
                 {JSON.stringify(op.localValue ?? op.payload, null, 2)}
               </pre>
             </div>
             <div>
-              <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-secondary)' }}>Valor del Servidor</p>
-              <pre style={{ margin: 0, background: 'var(--bg-base)', padding: '8px', borderRadius: '4px', overflowX: 'auto', fontSize: '11px' }}>
+              <p className={styles.conflictColLabel}>Valor del Servidor</p>
+              <pre className={styles.conflictPre}>
                 {JSON.stringify(op.serverValue, null, 2)}
               </pre>
             </div>
@@ -141,8 +133,7 @@ function OperationCard({ op, onRetry, onRemove }: { op: OfflineOperation; onRetr
         </div>
       )}
 
-      {/* Timestamp */}
-      <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>
+      <p className={styles.timestamp}>
         Creado: {new Date(op.createdAt).toLocaleString()}
         {op.lastAttemptAt && ` · Último intento: ${new Date(op.lastAttemptAt).toLocaleString()}`}
       </p>

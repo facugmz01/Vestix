@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, Truck, CheckCircle, Clock, MapPin, Navigation } from 'lucide-react';
 import clsx from 'clsx';
@@ -11,6 +11,39 @@ import { formatSaleId } from '@/utils/formatId';
 import { useTrackingSse } from '@/hooks/useTrackingSse';
 import type { OrderTracking } from '@/api/shipping.api';
 import styles from './StorefrontMyOrdersPage.module.css';
+
+function useCssVar<T extends HTMLElement>(varName: string, value: string) {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    ref.current?.style.setProperty(varName, value);
+  }, [varName, value]);
+  return ref;
+}
+
+function StatusRow({ statusInfo }: { statusInfo: ReturnType<typeof getStatusDisplay> }) {
+  const ref = useCssVar<HTMLDivElement>('--status-color', statusInfo.color);
+  const Icon = statusInfo.icon;
+  return (
+    <div ref={ref} className={clsx(styles.statusRow, styles.statusRowDynamic)}>
+      <Icon size={16} /> {statusInfo.label}
+    </div>
+  );
+}
+
+function StatusBadge({ statusInfo }: { statusInfo: ReturnType<typeof getStatusDisplay> }) {
+  const ref = useCssVar<HTMLDivElement>('--status-color', statusInfo.color);
+  const Icon = statusInfo.icon;
+  return (
+    <div ref={ref} className={clsx(styles.statusBadge, styles.statusBadgeDynamic)}>
+      <Icon size={18} /> {statusInfo.label}
+    </div>
+  );
+}
+
+function TimelineProgressBar({ progress }: { progress: number }) {
+  const ref = useCssVar<HTMLDivElement>('--progress-pct', `${progress}%`);
+  return <div ref={ref} className={clsx(styles.timelineProgress, styles.timelineProgressDynamic)} />;
+}
 
 const FULFILLMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
   PENDING_PAYMENT: { label: 'Pendiente de Pago', color: 'var(--amber, #f59e0b)' },
@@ -83,9 +116,7 @@ function MyOrdersContent() {
                     <span className={styles.orderId}>{formatSaleId(o.id, o.status)}</span>
                     <span className={styles.orderDate}>{new Date(o.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <div className={styles.statusRow} style={{ color: statusInfo.color }}>
-                    <statusInfo.icon size={16} /> {statusInfo.label}
-                  </div>
+                  <StatusRow statusInfo={statusInfo} />
                   {o.dispatchedAt && (
                     <div className={styles.dispatched}>
                       Despachado: {new Date(o.dispatchedAt).toLocaleString()}
@@ -166,9 +197,7 @@ function OrderDetailView({ orderId }: { orderId: string }) {
             </p>
           )}
         </div>
-        <div className={styles.statusBadge} style={{ borderColor: statusInfo.color, color: statusInfo.color }}>
-          <statusInfo.icon size={18} /> {statusInfo.label}
-        </div>
+        <StatusBadge statusInfo={statusInfo} />
       </div>
 
       <Timeline tracking={tracking} progress={progress} />
@@ -264,7 +293,7 @@ function Timeline({ tracking, progress }: { tracking: OrderTracking; progress: n
   return (
     <div className={styles.timeline}>
       <div className={styles.timelineTrack} />
-      <div className={styles.timelineProgress} style={{ width: `${progress}%` }} />
+      <TimelineProgressBar progress={progress} />
       {steps.map((step, i) => (
         <div key={i} className={styles.timelineStep}>
           <div className={clsx(styles.timelineCircle, step.active && styles.timelineCircleActive)}>

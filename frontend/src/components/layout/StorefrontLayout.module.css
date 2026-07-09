@@ -1,4 +1,14 @@
 /* Removed .shell because it's replaced by global .spatial-workspace */
+.spatialColumn {
+  flex-direction: column;
+}
+
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  padding: 80px;
+}
+
 .headerIsland {
   height: 72px;
   background: var(--bg-surface);
@@ -41,7 +51,7 @@
 .iconBtn {
   width:36px; height:36px; border-radius:var(--radius);
   background:var(--bg-elevated); border:1px solid var(--border);
-  display:flex; align-items:center; justify-content:center;
+  display: flex; align-items:center; justify-content:center;
   color:var(--text-secondary); cursor:pointer; transition:background .14s, color .14s;
 }
 .iconBtn:hover { background:var(--bg-overlay); color:var(--text-primary); }

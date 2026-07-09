@@ -1,0 +1,213 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.statusHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.statusOnline {
+  background: var(--green-bg);
+}
+
+.statusOffline {
+  background: var(--red-bg);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusTitle {
+  margin: 0;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.statusTitleOnline {
+  color: var(--green);
+}
+
+.statusTitleOffline {
+  color: var(--red);
+}
+
+.statusMeta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.btnDanger {
+  color: var(--red);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.emptyIcon {
+  margin: 0 auto 12px;
+  display: block;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.emptyText {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+.opList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.opCard {
+  border-radius: 10px;
+  padding: 16px 20px;
+  background: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.opCardDefault {
+  border: 1px solid var(--border);
+}
+
+.opCardConflict {
+  border: 2px solid var(--orange, #f97316);
+}
+
+.opCardFailed {
+  border: 2px solid var(--red);
+}
+
+.opHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.opBody {
+  flex: 1;
+}
+
+.opBadges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.badgeInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.opTitle {
+  margin: 0;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.opEndpoint {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-muted);
+}
+
+.opActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.errorBox {
+  padding: 8px 12px;
+  background: var(--red-bg);
+  border-radius: 6px;
+  border: 1px solid var(--red);
+  font-size: 12px;
+  color: var(--red);
+}
+
+.retryCount {
+  margin-left: 8px;
+  color: var(--text-muted);
+}
+
+.conflictBox {
+  padding: 12px;
+  background: var(--yellow-bg);
+  border-radius: 6px;
+  border: 1px solid var(--yellow);
+}
+
+.conflictTitle {
+  margin: 0 0 8px;
+  font-weight: 700;
+  color: var(--yellow);
+  font-size: 13px;
+}
+
+.conflictGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.conflictColLabel {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.conflictPre {
+  margin: 0;
+  background: var(--bg-base);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+}
+
+.timestamp {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

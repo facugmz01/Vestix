@@ -304,3 +304,21 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
+.optionsSelect {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: inherit;
+  width: 100%;
+}
+
+.statValueDanger {
+  color: var(--danger, var(--red));
+}
+
+.errorLine {
+  display: block;
+}

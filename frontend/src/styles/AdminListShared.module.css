@@ -1,0 +1,596 @@
+/* Shared table cell and toolbar patterns for admin list pages */
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.rowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.filterSelect {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.filterSelect:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+
+.cellPrimary {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cellSecondary {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.cellMuted {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.cellMutedStrong {
+  color: var(--text-primary);
+}
+
+.cellMono {
+  font-family: var(--font-mono, monospace);
+  color: var(--text-primary);
+}
+
+.cellMonoBold {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cellStack {
+  display: flex;
+  flex-direction: column;
+}
+
+.cellStackGapSm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cellAmount {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.cellDate {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.avatarSm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.alertBannerRed {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border: 1px solid var(--red-bg);
+  border-radius: 8px;
+  background: var(--red-bg);
+  color: var(--red);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.alertTitleRed {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--red);
+}
+
+.alertBody {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.statCardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-0);
+}
+
+.statCardValue {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.statCardLabel {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.entityCardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.entityCard {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-0);
+}
+
+.pageStack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pageSection {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-0);
+}
+
+.flexBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.flexEnd {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.textCenterMuted {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Extended cell helpers */
+.cellSecondaryMuted {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.cellMutedXs {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cellMutedTiny {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cellMedium {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.cellStrong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cellMonoMuted {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.cellMonoSecondary {
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+}
+
+.cellStackXs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cellRowXs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cellRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rowActionsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.avatarAccent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--text-inverted, #fff);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.accentIcon {
+  color: var(--accent);
+}
+
+.textSecondary {
+  color: var(--text-secondary);
+}
+
+.balanceDue {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+.balanceOk {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.qtyIn {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.qtyOut {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--red);
+}
+
+.qtyNeutral {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.expiryRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.expiryOverdue {
+  color: var(--red);
+  font-weight: bold;
+}
+
+.expiryNormal {
+  color: var(--text-primary);
+  font-weight: normal;
+}
+
+.expiryMuted {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.tabButtonsRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.entityCardGridWide {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.entityCardElevated {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-1);
+}
+
+.entityCardInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statCardGrid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCardLg {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-0);
+}
+
+.statCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.statCardLabelSecondary {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.statCardValueLg {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.statIconGreen {
+  color: var(--green);
+}
+
+.statIconRed {
+  color: var(--red);
+}
+
+.statIconOrange {
+  color: var(--orange, #f97316);
+}
+
+.statIconMuted {
+  color: var(--text-muted);
+}
+
+.statValueGreen {
+  color: var(--green);
+}
+
+.statValueRed {
+  color: var(--red);
+}
+
+.statValueOrange {
+  color: var(--orange, #f97316);
+}
+
+.statValueMuted {
+  color: var(--text-muted);
+}
+
+.filterInput {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.filterInput:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+
+.cellStackGapXs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cellRowMd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cellMonoCode {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.modifierPositive {
+  font-weight: 600;
+  color: var(--green);
+}
+
+.modifierNegative {
+  font-weight: 600;
+  color: var(--red);
+}
+
+.textBold800 {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.textBold900 {
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.pricePrimary {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stockReserved {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--orange, #f97316);
+}
+
+.stockReservedNone {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.stockAvailable {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.stockAvailableOk {
+  color: var(--green);
+}
+
+.stockAvailableEmpty {
+  color: var(--red);
+}
+
+.balanceOverdue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: bold;
+  color: var(--red);
+}
+
+.balanceCurrent {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.balanceCredit {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--green);
+}
+
+.creditUsed {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.creditClear {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.textMutedDash {
+  color: var(--text-muted);
+}
+
+.textLoading {
+  color: var(--text-muted);
+}
+
+.thColCenterWide {
+  width: 200px;
+  text-align: center;
+}
+
+.thColSm {
+  width: 50px;
+}
+
+.actionGapSm {
+  display: flex;
+  gap: 4px;
+}
+
+.actionGapXs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.actionGap8 {
+  display: flex;
+  gap: 8px;
+}
+
+.filterSelectRadius {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.codeMonoBold {
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+

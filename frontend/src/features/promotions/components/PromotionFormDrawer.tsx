@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
@@ -5,6 +6,8 @@ import { promotionsApi, type CreatePromotionDto } from '@/api/promotions.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Promotion } from '@/types';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -92,24 +95,24 @@ export function PromotionFormDrawer({ open, onClose, promoToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
         
         <Input label="Nombre de la Promo *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600 }}>Descripción (Interna)</label>
+        <div className={styles.fieldGroupSm}>
+          <label className={styles.selectLabel}>Descripción (Interna)</label>
           <textarea 
             value={formData.description} 
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', resize: 'vertical' }}
+            className={styles.textarea}
             rows={3}
           />
         </div>
 
         <div className="grid-responsive grid-cols-2">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Tipo de Regla</label>
-            <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as any })} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+          <div className={styles.fieldGroupSm}>
+            <label className={styles.selectLabel}>Tipo de Regla</label>
+            <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as any })} className={styles.select}>
               <option value="PERCENTAGE_DISCOUNT">Descuento Porcentual (%)</option>
               <option value="FIXED_DISCOUNT">Descuento Fijo ($)</option>
               <option value="BOGO">2x1 / Llevá X Pagá Y (BOGO)</option>
@@ -131,12 +134,12 @@ export function PromotionFormDrawer({ open, onClose, promoToEdit }: Props) {
           <Input label="Fecha Fin (Opcional)" type="date" value={formData.endDate || ''} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} />
         </div>
 
-        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)' }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: '14px' }}>Alcance (Applicable To)</h4>
+        <div className={styles.sectionPanel}>
+          <h4 className={styles.sectionPanelTitle}>Alcance (Applicable To)</h4>
           <select 
             value={formData.applicableTo.type} 
             onChange={(e) => setFormData({ ...formData, applicableTo: { type: e.target.value as any, ids: [] } })}
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', marginBottom: '8px' }}
+            className={clsx(styles.select, styles.selectFullMb)}
           >
             <option value="ALL">Todo el Catálogo</option>
             <option value="CATEGORY">Categoría Específica</option>
@@ -144,15 +147,15 @@ export function PromotionFormDrawer({ open, onClose, promoToEdit }: Props) {
             <option value="PRODUCT">Productos Específicos</option>
           </select>
           {formData.applicableTo.type !== 'ALL' && (
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+            <p className={styles.scopeHint}>
               * ID Selector modal can be implemented here based on selection. For now, it applies to the selected filter via backend logic.
             </p>
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.checkboxRow}>
           <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />
-          <label htmlFor="isActive" style={{ fontSize: '14px' }}>Activar Promoción</label>
+          <label htmlFor="isActive" className={styles.checkboxLabel}>Activar Promoción</label>
         </div>
 
       </form>

@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useLayoutEffect, useRef } from 'react';
+import clsx from 'clsx';
 import { DndContext, type DragEndEvent, useDraggable } from '@dnd-kit/core';
 import type { LabelElement, LabelLayout, LabelPrintData } from '../../types/label.types';
 import { FIELD_LABELS } from '../../types/label.types';
@@ -103,6 +104,14 @@ export function TemplateCanvas({
 
   const canvasW = widthMm * PX_PER_MM * zoom;
   const canvasH = heightMm * PX_PER_MM * zoom;
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (canvasRef.current) {
+      canvasRef.current.style.width = `${canvasW}px`;
+      canvasRef.current.style.height = `${canvasH}px`;
+    }
+  }, [canvasW, canvasH]);
 
   return (
     <div className={styles.canvasArea}>
@@ -113,7 +122,7 @@ export function TemplateCanvas({
           <span>{Math.round(zoom * 100)}%</span>
           <button type="button" onClick={() => setZoom((z) => Math.min(3, z + 0.25))}>+</button>
         </div>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+        <span className={styles.canvasMeta}>
           {widthMm} × {heightMm} mm — arrastrá los elementos para posicionarlos
         </span>
       </div>
@@ -130,8 +139,8 @@ export function TemplateCanvas({
             />
           ) : (
             <div
-              className={styles.canvas}
-              style={{ width: canvasW, height: canvasH }}
+              ref={canvasRef}
+              className={clsx(styles.canvas, styles.canvasSized)}
               onClick={() => onSelect(null)}
             >
               {layout.elements.map((el) => (

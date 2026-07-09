@@ -20,6 +20,8 @@ import { FileSpreadsheet } from 'lucide-react';
 import { useListPage } from '@/hooks/useListPage';
 import { useDeleteMutation } from '@/hooks/useDeleteMutation';
 import { formatCurrency } from '@/utils/formatCurrency';
+import clsx from 'clsx';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function SuppliersPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ debt: '' });
@@ -84,7 +86,7 @@ export default function SuppliersPage() {
       subtitle="Gestioná a tus abastecedores y mantené el control de tus cuentas por pagar."
       action={
         <ActionGuard action="manage" subject="Purchasing">
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={adminStyles.toolbarActions}>
             <Button 
               variant="secondary" 
               icon={<FileSpreadsheet size={16} />} 
@@ -104,10 +106,7 @@ export default function SuppliersPage() {
         <select
           value={debtFilter}
           onChange={(e) => { setFilter('debt', e.target.value); }}
-          style={{
-            padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
-          }}
+          className={adminStyles.filterSelect}
         >
           <option value="">Todos los Proveedores</option>
           <option value="DEBT">Solo con Deuda (Saldo {'>'} 0)</option>
@@ -134,9 +133,9 @@ export default function SuppliersPage() {
                 key: 'company', 
                 header: 'Razón Social',
                 render: (s) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 600 }}>{s.companyName}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.taxId || 'Sin CUIT'}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellPrimary}>{s.companyName}</span>
+                    <span className={adminStyles.cellMuted}>{s.taxId || 'Sin CUIT'}</span>
                   </div>
                 )
               },
@@ -144,9 +143,9 @@ export default function SuppliersPage() {
                 key: 'contact', 
                 header: 'Contacto',
                 render: (s) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px' }}>{s.contactName || '-'}</span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{s.email || '-'}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellDate}>{s.contactName || '-'}</span>
+                    <span className={adminStyles.cellMuted}>{s.email || '-'}</span>
                   </div>
                 )
               },
@@ -154,8 +153,8 @@ export default function SuppliersPage() {
                 key: 'balance', 
                 header: 'Saldo (A Pagar)',
                 render: (s) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: s.account?.balance > 0 ? 700 : 400, color: s.account?.balance > 0 ? 'var(--red)' : 'var(--text-primary)' }}>
+                  <div className={adminStyles.cellRow}>
+                    <span className={clsx(s.account?.balance > 0 ? adminStyles.balanceDue : adminStyles.balanceOk)}>
                       {formatCurrency(s.account?.balance || 0, s.account?.currency)}
                     </span>
                   </div>
@@ -165,7 +164,7 @@ export default function SuppliersPage() {
                 key: 'actions',
                 header: '',
                 render: (s) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(s)} aria-label="Ver" title="Ver ficha y cuenta">
                       <Eye size={16} />
                     </Button>

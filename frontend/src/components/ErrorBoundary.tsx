@@ -1,5 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import styles from './ErrorBoundary.module.css';
 
 interface Props   { children: ReactNode; fallback?: ReactNode; }
 interface State   { hasError: boolean; error: Error | null; }
@@ -20,29 +21,22 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.props.fallback)  return this.props.fallback;
 
     return (
-      <div style={{
-        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 16,
-        background: 'var(--bg-base)', color: 'var(--text-primary)',
-        padding: 32, textAlign: 'center',
-      }}>
+      <div className={styles.shell}>
         <AlertTriangle size={48} color="var(--red)" />
-        <h2 style={{ fontSize: 20, fontWeight: 600 }}>Ocurrió un error inesperado</h2>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: 420, fontSize: 14 }}>
+        <h2 className={styles.title}>Ocurrió un error inesperado</h2>
+        <p className={styles.message}>
           {this.state.error?.message ?? 'Error desconocido'}
         </p>
-        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+        <div className={styles.actions}>
           <button
+            type="button"
             onClick={() => window.location.reload()}
-            style={{
-              padding: '10px 24px', borderRadius: 8,
-              background: 'var(--accent)', color: '#fff', fontWeight: 600,
-              fontSize: 14, cursor: 'pointer', border: 'none',
-            }}
+            className={styles.btnPrimary}
           >
             Recargar página
           </button>
           <button
+            type="button"
             onClick={async () => {
               if (window.confirm('¿Estás seguro de que deseas limpiar la caché local? Perderás ventas offline no sincronizadas.')) {
                 localStorage.clear();
@@ -51,11 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 window.location.reload();
               }
             }}
-            style={{
-              padding: '10px 24px', borderRadius: 8,
-              background: 'var(--surface-hover)', color: 'var(--text-primary)', fontWeight: 600,
-              fontSize: 14, cursor: 'pointer', border: '1px solid var(--border-color)',
-            }}
+            className={styles.btnSecondary}
           >
             Limpiar caché
           </button>

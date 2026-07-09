@@ -7,6 +7,7 @@ import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { KpiCard, BarChart, EmptyState, ErrorState } from './ChartPrimitives';
 import { formatCurrency } from '@/utils/formatCurrency';
+import rs from '@/styles/ReportsShared.module.css';
 
 interface Props { from: string; to: string; branchId?: string; }
 
@@ -25,7 +26,7 @@ export function PurchasesReportPanel({ from, to, branchId }: Props) {
     onError:    () => toast.error('Error al exportar'),
   });
 
-  if (isLoading) return <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando datos de compras...</div>;
+  if (isLoading) return <div className={rs.loadingState}>Cargando datos de compras...</div>;
 
   if (isError) {
     return (
@@ -39,8 +40,8 @@ export function PurchasesReportPanel({ from, to, branchId }: Props) {
   if (!summary) return <EmptyState message="No hay datos de compras para el período seleccionado." />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <div className={rs.panelStack}>
+      <div className={rs.panelActions}>
         <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>
           Exportar Excel
         </Button>
@@ -53,8 +54,8 @@ export function PurchasesReportPanel({ from, to, branchId }: Props) {
       </div>
 
       {summary.topSuppliers && summary.topSuppliers.length > 0 ? (
-        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-          <h4 style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: 700 }}>Top Proveedores (por monto)</h4>
+        <div className={rs.sectionCard}>
+          <h4 className={rs.sectionTitleLg}>Top Proveedores (por monto)</h4>
           <BarChart
             data={summary.topSuppliers.map(s => ({
               label: s.supplierName,

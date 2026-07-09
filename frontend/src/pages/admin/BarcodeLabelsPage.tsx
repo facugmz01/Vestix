@@ -11,6 +11,7 @@ import type { LabelTemplate, LabelPrintData } from '@/features/labels/types/labe
 import toast from 'react-hot-toast';
 
 import styles from './BarcodeLabelsPage.module.css';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 interface LabelItem {
   id: string;
@@ -240,8 +241,8 @@ export default function BarcodeLabelsPage() {
                     <tr>
                       <th>Producto</th>
                       <th>SKU / Código</th>
-                      <th style={{ width: '120px', textAlign: 'center' }}>Cantidad</th>
-                      <th style={{ width: '50px' }} />
+                      <th className={adminStyles.thColCenter}>Cantidad</th>
+                      <th className={adminStyles.thColSm} />
                     </tr>
                   </thead>
                   <tbody>

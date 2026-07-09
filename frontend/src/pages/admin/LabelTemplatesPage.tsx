@@ -12,6 +12,7 @@ import { labelsApi } from '@/api/labels.api';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { exportTemplateToJson, parseImportedTemplate } from '@/features/labels/utils/labelExport';
 import type { LabelTemplate } from '@/features/labels/types/label.types';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function LabelTemplatesPage() {
   const navigate = useNavigate();
@@ -80,7 +81,7 @@ export default function LabelTemplatesPage() {
       title="Plantillas de Etiquetas"
       actions={
         <ActionGuard action="manage" subject="Labels">
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className={adminStyles.toolbarActions}>
             <input ref={fileInputRef} type="file" accept=".json" hidden onChange={handleImport} />
             <Button variant="ghost" icon={<Upload size={16} />} onClick={() => fileInputRef.current?.click()}>
               Importar
@@ -119,28 +120,28 @@ export default function LabelTemplatesPage() {
               <th>Tamaño</th>
               <th>Tipo</th>
               <th>Estado</th>
-              <th style={{ width: 200 }}>Acciones</th>
+              <th className={adminStyles.thColCenterWide}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {templates.map((tpl) => (
               <tr key={tpl.id}>
                 <td>
-                  <div style={{ fontWeight: 500 }}>{tpl.name}</div>
+                  <div className={adminStyles.cellMedium}>{tpl.name}</div>
                   {tpl.description && (
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{tpl.description}</div>
+                    <div className={adminStyles.cellMuted}>{tpl.description}</div>
                   )}
                 </td>
                 <td>{tpl.labelWidth} × {tpl.labelHeight} mm</td>
                 <td>{tpl.paperType === 'ROLL' ? 'Rollo' : 'Hoja'}</td>
                 <td>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <div className={adminStyles.actionGapXs}>
                     {tpl.isDefault && <Badge color="green">Default</Badge>}
                     {tpl.isSystem && <Badge color="gray">Sistema</Badge>}
                   </div>
                 </td>
                 <td>
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                  <div className={adminStyles.actionGapSm}>
                     <ActionGuard action="manage" subject="Labels">
                       <Button variant="ghost" size="sm" icon={<Edit2 size={14} />} onClick={() => navigate(`/admin/label-templates/${tpl.id}/edit`)} title="Editor visual" />
                       <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportTemplateToJson(tpl)} title="Exportar JSON" />

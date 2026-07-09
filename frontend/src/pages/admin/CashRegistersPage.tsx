@@ -14,6 +14,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { CashRegisterFormDrawer } from '@/features/cashRegisters/components/CashRegisterFormDrawer';
 import { CashRegisterDetailDrawer } from '@/features/cashRegisters/components/CashRegisterDetailDrawer';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function CashRegistersPage() {
   const queryClient = useQueryClient();
@@ -94,10 +95,7 @@ export default function CashRegistersPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          style={{
-            padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
-          }}
+          className={adminStyles.filterSelect}
         >
           <option value="">Todos los estados</option>
           <option value="OPEN">Abiertas</option>
@@ -124,12 +122,12 @@ export default function CashRegistersPage() {
               { 
                 key: 'name', 
                 header: 'Nombre',
-                render: (r) => <span style={{ fontWeight: 600 }}>{r.name}</span>
+                render: (r) => <span className={adminStyles.cellPrimary}>{r.name}</span>
               },
               { 
                 key: 'branch', 
                 header: 'Sucursal',
-                render: (r) => <span style={{ color: 'var(--text-secondary)' }}>{r.branchName || r.branchId}</span>
+                render: (r) => <span className={adminStyles.textSecondary}>{r.branchName || r.branchId}</span>
               },
               { 
                 key: 'status', 
@@ -142,8 +140,8 @@ export default function CashRegistersPage() {
                 key: 'operator', 
                 header: 'Operador',
                 render: (r) => r.status === 'OPEN' && r.operatorName 
-                  ? <span style={{ fontSize: '13px', fontWeight: 500 }}>{r.operatorName}</span> 
-                  : <span style={{ color: 'var(--text-muted)' }}>-</span>
+                  ? <span className={adminStyles.cellMedium}>{r.operatorName}</span> 
+                  : <span className={adminStyles.textMutedDash}>-</span>
               },
               { 
                 key: 'isActive', 
@@ -154,7 +152,7 @@ export default function CashRegistersPage() {
                 key: 'actions',
                 header: '',
                 render: (r) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(r)} aria-label="Ver" title="Ver detalle">
                       <Eye size={16} />
                     </Button>

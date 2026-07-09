@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
@@ -61,7 +62,9 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
 
   const isCustomer = account.entityType === 'CUSTOMER';
   const oweText = isCustomer ? 'Saldo Deudor (Nos debe)' : 'Saldo Acreedor (Le debemos)';
-  const balanceColor = account.balance > 0 ? (isCustomer ? 'var(--red)' : 'var(--orange)') : 'var(--green)';
+  const balanceClass = account.balance > 0
+    ? (isCustomer ? styles.balanceAmountCustomerDebt : styles.balanceAmountSupplierDebt)
+    : styles.balanceAmountOk;
 
   const statementRecipient = resolveManualNotificationRecipient(
     { phone: account.phone, email: account.email },
@@ -134,7 +137,7 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
 
           <div className={styles.balanceCard}>
             <p className={styles.balanceLabel}>{oweText}</p>
-            <h2 className={styles.balanceValue} style={{ color: balanceColor }}>
+            <h2 className={clsx(styles.balanceValue, balanceClass)}>
               {formatCurrency(Math.abs(account.balance))}
             </h2>
             {account.creditLimit && (
@@ -198,12 +201,12 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                   {
                     key: 'debit',
                     header: 'Débito (+)',
-                    render: (m) => m.debit > 0 ? <span className={styles.textBold} style={{ color: 'var(--red)' }}>{formatCurrency(m.debit)}</span> : '-'
+                    render: (m) => m.debit > 0 ? <span className={clsx(styles.textBold, styles.textRed)}>{formatCurrency(m.debit)}</span> : '-'
                   },
                   {
                     key: 'credit',
                     header: 'Crédito (-)',
-                    render: (m) => m.credit > 0 ? <span className={styles.textBold} style={{ color: 'var(--green)' }}>{formatCurrency(m.credit)}</span> : '-'
+                    render: (m) => m.credit > 0 ? <span className={clsx(styles.textBold, styles.textGreen)}>{formatCurrency(m.credit)}</span> : '-'
                   },
                   {
                     key: 'balance',

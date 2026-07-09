@@ -13,6 +13,8 @@ import { queryKeys } from '@/api/queryKeys';
 import type { AuditLog } from '@/types';
 import { AuditLogDetailDrawer } from '@/features/audit/components/AuditLogDetailDrawer';
 import { formatShortId } from '@/utils/formatId';
+import adminStyles from '@/styles/AdminListShared.module.css';
+import styles from './AuditPage.module.css';
 
 const ACTION_META: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   CREATE:  { label: 'Creación',    color: 'green',  icon: <Plus size={12} /> },
@@ -57,34 +59,32 @@ export default function AuditPage() {
       title="Auditoría y Trazabilidad"
       subtitle="Registro inmutable de todas las acciones realizadas por usuarios y el sistema en el ERP."
     >
-      {/* Filters */}
       <FiltersBar actions={<Badge color="gray">{total} eventos</Badge>}>
-        {/* Search */}
-        <div style={{ position: 'relative' }}>
+        <div className={styles.searchWrap}>
           <input
             type="text"
             placeholder="Buscar por usuario, entidad, descripción..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
-            style={{ padding: '8px 12px 8px 36px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', width: '280px' }}
+            className={styles.searchInput}
           />
-          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+          <Search size={16} className={styles.searchIcon} />
         </div>
 
-        <select value={module} onChange={e => { setModule(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
+        <select value={module} onChange={e => { setModule(e.target.value); setPage(1); }} className={styles.filterSelect}>
           <option value="">Todos los Módulos</option>
           {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
 
-        <select value={action} onChange={e => { setAction(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}>
+        <select value={action} onChange={e => { setAction(e.target.value); setPage(1); }} className={styles.filterSelect}>
           <option value="">Todas las Acciones</option>
           {ACTIONS.map(a => <option key={a} value={a}>{ACTION_META[a]?.label || a}</option>)}
         </select>
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px' }} />
-          <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>—</span>
-          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px' }} />
+        <div className={styles.dateGroup}>
+          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className={styles.dateInput} />
+          <span className={styles.dateSep}>—</span>
+          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className={styles.dateInput} />
         </div>
 
         {(search || module || action || dateFrom || dateTo) && (
@@ -94,8 +94,7 @@ export default function AuditPage() {
         )}
       </FiltersBar>
 
-      {/* Immutability notice */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: 'var(--blue-bg)', border: '1px solid var(--blue)', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', color: 'var(--blue)' }}>
+      <div className={styles.infoBanner}>
         <Shield size={16} />
         <span><strong>Registro Inmutable:</strong> Los eventos de auditoría no pueden ser modificados ni eliminados. Son un trazado fiel de toda la actividad del sistema.</span>
       </div>
@@ -119,7 +118,7 @@ export default function AuditPage() {
               {
                 key: 'date', header: 'Fecha y Hora',
                 render: (l: AuditLog) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <div className={styles.cellDateRow}>
                     <Clock size={13} />
                     {new Date(l.createdAt).toLocaleString()}
                   </div>
@@ -130,8 +129,8 @@ export default function AuditPage() {
                 render: (l: AuditLog) => {
                   const m = ACTION_META[l.action] ?? { label: l.action, color: 'gray', icon: null };
                   return (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Badge color={m.color as any}>
+                    <div className={styles.badgeInner}>
+                      <Badge color={m.color as 'green' | 'blue' | 'red' | 'gray' | 'orange'}>
                         {m.icon} {m.label}
                       </Badge>
                     </div>
@@ -146,8 +145,8 @@ export default function AuditPage() {
                 key: 'entity', header: 'Entidad',
                 render: (l: AuditLog) => (
                   <div>
-                    <span style={{ fontWeight: 600, fontSize: '13px' }}>{l.entityType}</span>
-                    {l.entityId && <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', marginLeft: '6px' }}>·{formatShortId(l.entityId)}</span>}
+                    <span className={styles.entityType}>{l.entityType}</span>
+                    {l.entityId && <span className={styles.entityId}>·{formatShortId(l.entityId)}</span>}
                   </div>
                 )
               },
@@ -155,28 +154,28 @@ export default function AuditPage() {
                 key: 'user', header: 'Usuario',
                 render: (l: AuditLog) => (
                   <div>
-                    <p style={{ margin: '0 0 2px', fontWeight: 600, fontSize: '13px' }}>{l.userName}</p>
-                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>{l.userEmail}</p>
+                    <p className={styles.userName}>{l.userName}</p>
+                    <p className={styles.userEmail}>{l.userEmail}</p>
                   </div>
                 )
               },
               {
                 key: 'description', header: 'Descripción',
                 render: (l: AuditLog) => (
-                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', maxWidth: '300px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span className={styles.summaryCell}>
                     {l.description}
                   </span>
                 )
               },
               {
                 key: 'ip', header: 'IP',
-                render: (l: AuditLog) => <span style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{l.ipAddress || '—'}</span>
+                render: (l: AuditLog) => <span className={styles.ipCell}>{l.ipAddress || '—'}</span>
               },
               {
                 key: 'changes', header: 'Cambios',
                 render: (l: AuditLog) => l.changes && Object.keys(l.changes).length > 0
                   ? <div><Badge color="warning">{Object.keys(l.changes).length} campos</Badge></div>
-                  : <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>—</span>
+                  : <span className={styles.emptyDash}>—</span>
               },
               {
                 key: 'actions', header: '',

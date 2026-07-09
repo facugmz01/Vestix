@@ -14,6 +14,7 @@ import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatShortId } from '@/utils/formatId';
 import { useState } from 'react';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function CashSessionsPage() {
   const { page, pageSize, filters, setPage, setFilter } = useListPage({ status: '' });
@@ -46,7 +47,7 @@ export default function CashSessionsPage() {
       subtitle="Monitor de sesiones de caja de todas las sucursales, retiros manuales y control de diferencias."
     >
       <FiltersBar actions={<Badge color="gray">{total} sesiones</Badge>}>
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Turnos</option>
           <option value="OPEN">Turnos Abiertos (Operando)</option>
           <option value="CLOSED">Turnos Cerrados (Arqueados)</option>
@@ -72,28 +73,28 @@ export default function CashSessionsPage() {
               { 
                 key: 'id', 
                 header: 'Turno ID',
-                render: (s) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(s.id)}</span>
+                render: (s) => <span className={adminStyles.cellMonoBold}>{formatShortId(s.id)}</span>
               },
               { 
                 key: 'account', 
                 header: 'Caja Física',
-                render: (s) => <span style={{ fontWeight: 500 }}>{s.accountName || 'Caja Registradora'}</span>
+                render: (s) => <span className={adminStyles.cellMedium}>{s.accountName || 'Caja Registradora'}</span>
               },
               { 
                 key: 'openTime', 
                 header: 'Apertura',
-                render: (s) => <span style={{ fontSize: '13px' }}>{new Date(s.openedAt).toLocaleString()}</span>
+                render: (s) => <span className={adminStyles.cellDate}>{new Date(s.openedAt).toLocaleString()}</span>
               },
               { 
                 key: 'operator', 
                 header: 'Operador',
-                render: (s) => <span style={{ color: 'var(--text-secondary)' }}>{s.openedByUserName}</span>
+                render: (s) => <span className={adminStyles.textSecondary}>{s.openedByUserName}</span>
               },
               { 
                 key: 'diff', 
                 header: 'Diferencia de Arqueo',
                 render: (s) => {
-                  if (s.status === 'OPEN') return <span style={{ color: 'var(--text-muted)' }}>Operando...</span>;
+                  if (s.status === 'OPEN') return <span className={adminStyles.textMutedDash}>Operando...</span>;
                   const diff = s.difference || 0;
                   if (diff === 0) return <Badge color="green"><CheckCircle size={12} /> Exacto</Badge>;
                   return <Badge color={diff < 0 ? 'red' : 'yellow'}>{diff < 0 ? 'Faltante' : 'Sobrante'} {formatCurrency(diff)}</Badge>;
@@ -108,7 +109,7 @@ export default function CashSessionsPage() {
                 key: 'actions',
                 header: '',
                 render: (s) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(s.id)} aria-label="Ver Auditoría">
                       <Eye size={16} />
                     </Button>

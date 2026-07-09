@@ -1,4 +1,5 @@
 import { Input, ToggleSwitch } from '@/components/ui';
+import clsx from 'clsx';
 import type { LabelElement, LabelField, BarcodeSymbology } from '../../types/label.types';
 import { FIELD_LABELS } from '../../types/label.types';
 import styles from './TemplateEditor.module.css';
@@ -69,8 +70,7 @@ export function PropertiesPanel({
           </select>
           {priceSource === 'PRICE_LIST' && (
             <select
-              className={styles.select}
-              style={{ marginTop: 8 }}
+              className={clsx(styles.select, styles.selectSpaced)}
               value={priceListId ?? ''}
               onChange={(e) => onPriceListIdChange(e.target.value)}
             >

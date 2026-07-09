@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, User, LogOut, LogIn, ChevronDown, Loader2, UserCircle, Search } from 'lucide-react';
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCartStore } from '@/store/cart.store';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
@@ -62,8 +62,14 @@ export default function StorefrontLayout() {
       : customer.fullName
     : customer?.phone || 'Mi Cuenta';
 
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (shellRef.current) shellRef.current.style.fontFamily = fontFamily;
+  }, [fontFamily]);
+
   return (
-    <div className={styles.shell} style={{ fontFamily }}>
+    <div ref={shellRef} className={styles.shell}>
       <style>{buildStorefrontThemeCss(primaryColor)}</style>
 
       <header className={styles.header}>

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Save, ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, MessageCircle, Share2, Globe, Plus, Trash2, Store, Navigation, KeyRound } from 'lucide-react';
+import { Save, ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, Share2, Globe, Plus, Trash2, Store, Navigation, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -66,10 +66,10 @@ export function StorefrontSettingsPanel() {
         </header>
 
         <div className={styles.cardBody}>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            <div style={{ flex: 1, background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 500 }}>
+          <div className={styles.urlBarRow}>
+            <div className={styles.urlBar}>
               <Globe size={16} />
-              <a href={storefrontUrl} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{storefrontUrl}</a>
+              <a href={storefrontUrl} target="_blank" rel="noreferrer" className={styles.urlBarLink}>{storefrontUrl}</a>
             </div>
             <Button type="button" variant="outline" icon={<Copy size={16} />} onClick={copyUrl} title="Copiar" />
             <Button type="button" variant="outline" icon={<ExternalLink size={16} />} onClick={() => window.open(storefrontUrl, '_blank')} title="Abrir" />
@@ -77,14 +77,14 @@ export function StorefrontSettingsPanel() {
 
           <ToggleSwitch label="Habilitar Tienda web pública" hint="Los clientes pueden visitar tu catálogo cuando está activo." {...register('enabled')} />
           
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
 
           <div className={clsx(styles.grid, styles.grid2)}>
             <div>
               <label className={styles.selectLabel}>Color principal</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input type="color" {...register('primaryColor')} style={{ width: '40px', height: '40px', padding: 0, border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
-                <Input {...register('primaryColor')} style={{ width: '100px' }} />
+              <div className={styles.colorPickerRow}>
+                <input type="color" {...register('primaryColor')} className={styles.colorInputCompact} />
+                <Input {...register('primaryColor')} containerClassName={styles.inputFixed100} />
               </div>
             </div>
 
@@ -97,7 +97,7 @@ export function StorefrontSettingsPanel() {
               </select>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+            <div className={styles.toggleStack}>
               <ToggleSwitch label="Mostrar encabezado" {...register('showHeader')} />
               <ToggleSwitch label="Incluir nombre del comercio" {...register('showStoreName')} />
             </div>
@@ -137,12 +137,12 @@ export function StorefrontSettingsPanel() {
         </header>
         <div className={styles.cardBody}>
           <div className={styles.emptyStateCard}>
-            <ImageIcon size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
-            <p style={{ margin: 0, fontWeight: 500, color: 'var(--text-primary)' }}>Arrastrá imágenes acá o hacé click para seleccionar</p>
-            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>PNG, JPG o WebP. Hasta 5MB por imagen. máx 5 en total</p>
+            <ImageIcon size={32} color="var(--text-muted)" className={styles.emptyStateIcon} />
+            <p className={styles.emptyStateTitle}>Arrastrá imágenes acá o hacé click para seleccionar</p>
+            <p className={styles.emptyStateHint}>PNG, JPG o WebP. Hasta 5MB por imagen. máx 5 en total</p>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '16px' }}>
-            No hay categorías con foto cargada. <a href="/admin/catalog?tab=categories" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Cargar fotos</a> a tus categorías para destacarlas.
+          <p className={styles.catalogHint}>
+            No hay categorías con foto cargada. <a href="/admin/catalog?tab=categories" className={styles.inlineLink}>Cargar fotos</a> a tus categorías para destacarlas.
           </p>
         </div>
       </section>
@@ -173,28 +173,28 @@ export function StorefrontSettingsPanel() {
             </div>
           </div>
           
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className={styles.stackColGap16}>
             <ToggleSwitch label="Ocultar productos sin stock" {...register('hideOutOfStock')} />
             <ToggleSwitch label="Ocultar filtros por marca" {...register('hideBrandFilters')} />
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
 
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '14px' }}>Medios de pago permitidos</h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h4 className={styles.sectionSubtitle}>Medios de pago permitidos</h4>
+          <div className={styles.paymentMethodList}>
             {paymentMethods?.map(pm => (
-              <label key={pm.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'var(--bg-surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer' }}>
+              <label key={pm.id} className={styles.checkboxCard}>
                 <input type="checkbox" value={pm.id} {...register('allowedPaymentMethods')} />
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>{pm.name}</span>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-base)', padding: '2px 6px', borderRadius: '4px', marginLeft: 'auto' }}>{pm.type}</span>
+                <span className={styles.paymentMethodName}>{pm.name}</span>
+                <span className={styles.paymentMethodBadge}>{pm.type}</span>
               </label>
             ))}
           </div>
 
-          <div style={{ marginTop: '24px' }}>
-            <Input label="CBU / Alias para transferencia" placeholder="0000003100000000000000 / alias.banco" {...register('transferCbu')} style={{ maxWidth: '400px' }} />
+          <div className={styles.marginTop24}>
+            <Input label="CBU / Alias para transferencia" placeholder="0000003100000000000000 / alias.banco" {...register('transferCbu')} containerClassName={styles.inputMax400} />
           </div>
         </div>
       </section>
@@ -204,10 +204,10 @@ export function StorefrontSettingsPanel() {
           <h3 className={styles.cardTitle}><Truck size={18} /> Opciones de Envío / Retiro</h3>
         </header>
         <div className={styles.cardBody}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className={styles.shippingList}>
             {shippingFields.map((field, index) => (
-              <div key={field.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', background: 'var(--bg-surface-hover)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+              <div key={field.id} className={styles.shippingRow}>
+                <div className={clsx(styles.shippingFields, styles.shippingFieldsGrid)}>
                   <Input label="Nombre" placeholder="Ej: Envío a Domicilio" {...register(`shippingMethods.${index}.name` as const)} />
                   <div className={styles.selectGroup}>
                     <label className={styles.selectLabel}>Tipo</label>
@@ -218,17 +218,17 @@ export function StorefrontSettingsPanel() {
                   </div>
                   <Input type="number" label="Costo ($)" {...register(`shippingMethods.${index}.price` as const, { valueAsNumber: true })} />
                 </div>
-                <Button type="button" variant="outline" icon={<Trash2 size={16} />} onClick={() => removeShipping(index)} style={{ color: '#ef4444', borderColor: '#ef4444', marginTop: '22px' }} />
+                <Button type="button" variant="outline" icon={<Trash2 size={16} />} onClick={() => removeShipping(index)} className={clsx(styles.btnDangerOutline, styles.deleteShippingBtn)} />
               </div>
             ))}
-            <Button type="button" variant="outline" icon={<Plus size={16} />} onClick={() => appendShipping({ id: crypto.randomUUID(), name: '', price: 0, type: 'SHIPPING' })} style={{ alignSelf: 'flex-start' }}>
+            <Button type="button" variant="outline" icon={<Plus size={16} />} onClick={() => appendShipping({ id: crypto.randomUUID(), name: '', price: 0, type: 'SHIPPING' })} className={styles.btnAlignStart}>
               Agregar opción
             </Button>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
 
-          <div className={styles.selectGroup} style={{ maxWidth: '300px' }}>
+          <div className={clsx(styles.selectGroup, styles.selectConstrained)}>
             <label className={styles.selectLabel}>Pedir datos de envío en el checkout</label>
             <select {...register('requireShippingData')} className={styles.select}>
               <option value="optional">Opcional</option>
@@ -265,14 +265,14 @@ export function StorefrontSettingsPanel() {
         </header>
         <div className={styles.cardBody}>
           <ToggleSwitch label="Andreani habilitado" {...register('deliverySettings.carriers.andreani.enabled')} />
-          <div className={clsx(styles.grid, styles.grid2)} style={{ marginTop: '12px' }}>
+          <div className={clsx(styles.grid, styles.grid2, styles.marginTop12)}>
             <Input label="API Key Andreani" type="password" {...register('deliverySettings.carriers.andreani.apiKey')} />
             <Input label="Client ID" {...register('deliverySettings.carriers.andreani.clientId')} />
             <Input label="Contrato" {...register('deliverySettings.carriers.andreani.contract')} />
           </div>
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+          <hr className={clsx(styles.divider, styles.marginTop16)} />
           <ToggleSwitch label="Mercado Envíos habilitado" {...register('deliverySettings.carriers.mercadoEnvios.enabled')} />
-          <div className={clsx(styles.grid, styles.grid2)} style={{ marginTop: '12px' }}>
+          <div className={clsx(styles.grid, styles.grid2, styles.marginTop12)}>
             <Input label="Access Token" type="password" {...register('deliverySettings.carriers.mercadoEnvios.accessToken')} />
             <Input label="User ID" {...register('deliverySettings.carriers.mercadoEnvios.userId')} />
           </div>

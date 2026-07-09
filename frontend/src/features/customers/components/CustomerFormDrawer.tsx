@@ -12,6 +12,7 @@ import { priceListsApi } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
 import { db } from '@/core/db/db';
 import type { Customer } from '@/types';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 const customerSchema = z.object({
   type: z.enum(['INDIVIDUAL', 'BUSINESS']),
@@ -128,7 +129,7 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
       footer={
         <>
           {!isOnline && (
-            <span style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--orange)', fontSize: '12px', fontWeight: 600 }}>
+            <span className={styles.warningInline}>
               <CloudOff size={16} /> Modo Offline
             </span>
           )}
@@ -141,14 +142,10 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} noValidate>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600 }}>Tipo de Cliente</label>
-          <select
-            {...register('type')}
-            style={{ padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', outline: 'none' }}
-          >
+      <form onSubmit={handleSubmit(onSubmit)} className={styles.formStackMd} noValidate>
+        <div className={styles.selectGroup}>
+          <label className={styles.selectLabel}>Tipo de Cliente</label>
+          <select {...register('type')} className={styles.select}>
             <option value="INDIVIDUAL">Consumidor Final / Individuo</option>
             <option value="BUSINESS">Empresa (B2B)</option>
           </select>
@@ -180,10 +177,10 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
           error={errors.email?.message}
         />
 
-        <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+        <hr className={styles.formDivider} />
 
-        <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: 'var(--radius)' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>Condiciones Comerciales</h4>
+        <div className={styles.sectionPanel}>
+          <h4 className={styles.sectionPanelTitle}>Condiciones Comerciales</h4>
           <Input
             label="Límite de Crédito Autorizado ($)"
             type="number"
@@ -193,12 +190,9 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
             helperText={isEditing ? "* Se edita desde el módulo de Riesgo/Finanzas" : undefined}
           />
           
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Lista de Precios Asignada</label>
-            <select
-              {...register('priceListId')}
-              style={{ padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
-            >
+          <div className={`${styles.fieldGroupSm} ${styles.fieldGroupMd}`}>
+            <label className={styles.selectLabel}>Lista de Precios Asignada</label>
+            <select {...register('priceListId')} className={styles.select}>
               <option value="">(Lista por Defecto)</option>
               {priceListsData?.data.map(list => (
                 <option key={list.id} value={list.id}>{list.name} ({list.type})</option>
@@ -206,7 +200,6 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
             </select>
           </div>
         </div>
-
       </form>
     </Drawer>
   );

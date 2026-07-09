@@ -7,6 +7,7 @@ import { warehousesApi } from '@/api/warehouses.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { Plus, X } from 'lucide-react';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -20,21 +21,18 @@ export function TransferFormDrawer({ open, onClose }: Props) {
   const [destinationWarehouseId, setDestinationWarehouseId] = useState('');
   const [lines, setLines] = useState<{ variantId: string; variantSku: string; quantity: number }[]>([]);
 
-  // We need warehouses
   const { data: warehousesData } = useQuery({ 
     queryKey: queryKeys.warehouses.all(), 
     queryFn: () => warehousesApi.getWarehouses({}),
     enabled: open
   });
 
-  // Mock variant search state
   const [variantSearch, setVariantSearch] = useState('');
   const [variantQty, setVariantQty] = useState(1);
 
   const addLine = () => {
     if (!variantSearch.trim()) return;
     if (variantQty <= 0) return;
-    // Real implementation would select from a dropdown. Here we simulate typing a SKU/ID.
     setLines([...lines, { variantId: variantSearch, variantSku: variantSearch, quantity: variantQty }]);
     setVariantSearch('');
     setVariantQty(1);
@@ -50,7 +48,6 @@ export function TransferFormDrawer({ open, onClose }: Props) {
       toast.success('Transferencia creada en estado BORRADOR');
       queryClient.invalidateQueries({ queryKey: queryKeys.transfers.all() });
       onClose();
-      // Reset
       setSourceWarehouseId('');
       setDestinationWarehouseId('');
       setLines([]);
@@ -95,55 +92,53 @@ export function TransferFormDrawer({ open, onClose }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
         <div className="grid-responsive grid-cols-2">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Depósito de Origen (Sale)</label>
-            <select value={sourceWarehouseId} onChange={e => setSourceWarehouseId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} required>
+          <div className={styles.fieldGroupSm}>
+            <label className={styles.selectLabel}>Depósito de Origen (Sale)</label>
+            <select value={sourceWarehouseId} onChange={e => setSourceWarehouseId(e.target.value)} className={styles.select} required>
               <option value="">Seleccionar Origen...</option>
               {warehousesData?.data.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Depósito de Destino (Entra)</label>
-            <select value={destinationWarehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} required>
+          <div className={styles.fieldGroupSm}>
+            <label className={styles.selectLabel}>Depósito de Destino (Entra)</label>
+            <select value={destinationWarehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} className={styles.select} required>
               <option value="">Seleccionar Destino...</option>
               {warehousesData?.data.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
         </div>
 
-        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: '14px' }}>Artículos a Transferir</h4>
+        <div className={styles.sectionPanel}>
+          <h4 className={styles.sectionPanelTitle}>Artículos a Transferir</h4>
           
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            <div style={{ flex: 1 }}>
+          <div className={styles.addLineRow}>
+            <div className={styles.flex1}>
               <Input placeholder="Buscar SKU o Variante ID..." value={variantSearch} onChange={e => setVariantSearch(e.target.value)} />
             </div>
-            <div style={{ width: '100px' }}>
+            <div className={styles.inputNarrow}>
               <Input type="number" min="1" value={variantQty} onChange={e => setVariantQty(Number(e.target.value))} />
             </div>
             <Button type="button" variant="ghost" onClick={addLine}><Plus size={16} /></Button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {lines.length === 0 && <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>No hay artículos en la lista.</p>}
+          <div className={styles.lineItemsStack}>
+            {lines.length === 0 && <p className={styles.emptyLineHint}>No hay artículos en la lista.</p>}
             {lines.map((l, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '4px' }}>
+              <div key={i} className={styles.lineItemRow}>
                 <div>
-                  <span style={{ fontSize: '14px', fontWeight: 600, fontFamily: 'monospace' }}>{l.variantSku}</span>
+                  <span className={styles.lineItemSku}>{l.variantSku}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 'bold' }}>Cant: {l.quantity}</span>
-                  <X size={16} color="var(--red)" style={{ cursor: 'pointer' }} onClick={() => removeLine(i)} />
+                <div className={styles.lineItemActions}>
+                  <span className={styles.lineItemQty}>Cant: {l.quantity}</span>
+                  <X size={16} color="var(--red)" className={styles.clickable} onClick={() => removeLine(i)} />
                 </div>
               </div>
             ))}
           </div>
         </div>
-
       </form>
     </Drawer>
   );

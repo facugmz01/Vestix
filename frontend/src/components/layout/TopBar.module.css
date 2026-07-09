@@ -133,8 +133,23 @@
   }
 }
 
-@media (min-width: 1024px) {
-  .searchBar {
-    width: 320px;
-  }
+.themeBtn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  margin-left: 12px;
+  transition: all 0.2s;
+  font-family: inherit;
+  padding: 0;
+}
+
+.themeBtn:hover {
+  background: var(--bg-surface-hover);
 }

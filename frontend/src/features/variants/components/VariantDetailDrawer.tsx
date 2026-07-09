@@ -3,6 +3,8 @@ import type { ProductVariant } from '@/types';
 import { Package, Barcode } from 'lucide-react';
 import { VariantPricingPanel } from './VariantPricingPanel';
 import { formatCurrency } from '@/utils/formatCurrency';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -16,27 +18,27 @@ export function VariantDetailDrawer({ open, onClose, variant }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Variante" width="sm">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div className={styles.stack}>
         
-        <div style={{ textAlign: 'center', padding: '24px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
-          <Package size={48} color="var(--accent)" style={{ margin: '0 auto 12px' }} />
-          <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 800, fontFamily: 'monospace' }}>{variant.sku}</h3>
-          <p style={{ margin: '8px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
+        <div className={styles.variantHero}>
+          <Package size={48} color="var(--accent)" className={styles.variantHeroIcon} />
+          <h3 className={styles.variantHeroTitle}>{variant.sku}</h3>
+          <p className={styles.variantHeroMeta}>
             {variant.isActive ? <Badge color="green">Activa</Badge> : <Badge color="gray">Inactiva</Badge>}
           </p>
         </div>
 
-        <div className="grid-responsive grid-cols-2" style={{ gap: "12px" }}>
+        <div className={`grid-responsive grid-cols-2 ${styles.infoGrid}`}>
           <InfoBox label="Talle / Tamaño" value={variant.size || '-'} />
           <InfoBox label="Color" value={variant.color || '-'} />
           <InfoBox label="Precio Base" value={formatCurrency(variant.basePrice)} />
         </div>
 
         {variant.barcode && (
-          <div style={{ padding: '16px', background: '#fff', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--border)' }}>
-            <Barcode size={32} color="#000" style={{ margin: '0 auto 8px' }} />
-            <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Código de Barras</p>
-            <p style={{ margin: '4px 0 0', fontSize: '16px', color: '#000', fontWeight: 'bold', fontFamily: 'monospace' }}>{variant.barcode}</p>
+          <div className={styles.barcodePanel}>
+            <Barcode size={32} color="#000" className={styles.barcodeIcon} />
+            <p className={styles.barcodeLabel}>Código de Barras</p>
+            <p className={styles.barcodeValue}>{variant.barcode}</p>
           </div>
         )}
 
@@ -49,9 +51,9 @@ export function VariantDetailDrawer({ open, onClose, variant }: Props) {
 
 function InfoBox({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ background: 'var(--bg-elevated)', padding: '12px', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{label}</span>
-      <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>{value}</span>
+    <div className={styles.infoCardVertical}>
+      <span className={styles.infoCardVerticalLabel}>{label}</span>
+      <span className={styles.infoCardVerticalValue}>{value}</span>
     </div>
   );
 }

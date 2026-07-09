@@ -1,6 +1,8 @@
 import { AlertTriangle } from 'lucide-react';
+import clsx from 'clsx';
 import { Modal }  from './Modal';
 import { Button } from './Button';
+import styles from './ConfirmDialog.module.css';
 
 interface Props {
   open:        boolean;
@@ -38,15 +40,11 @@ export function ConfirmDialog({
         </>
       }
     >
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12, textAlign:'center', padding:'8px 0' }}>
-        <div style={{
-          width:52, height:52, borderRadius:'50%',
-          background: variant === 'danger' ? 'var(--red-bg)' : 'var(--yellow-bg)',
-          display:'flex', alignItems:'center', justifyContent:'center',
-        }}>
+      <div className={styles.confirmBody}>
+        <div className={clsx(styles.iconWrap, variant === 'danger' ? styles.iconDanger : styles.iconWarning)}>
           <AlertTriangle size={24} color={variant === 'danger' ? 'var(--red)' : 'var(--yellow)'} />
         </div>
-        <p style={{ fontSize:14, color:'var(--text-secondary)', lineHeight:1.6 }}>{message}</p>
+        <p className={styles.message}>{message}</p>
       </div>
     </Modal>
   );

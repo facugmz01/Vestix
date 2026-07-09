@@ -1,9 +1,11 @@
+import clsx from 'clsx';
 import { useState } from 'react';
 import { Button, Input } from '@/components/ui';
 import type { PaymentMethodType } from '@/types';
 import { Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 export interface MixedPaymentLine {
   id: string;
@@ -34,7 +36,7 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
     setLines([...lines, { id: Math.random().toString(), method: 'CREDIT_CARD', amount: remaining, reference: '' }]);
   };
 
-  const updateLine = (id: string, field: keyof MixedPaymentLine, value: any) => {
+  const updateLine = (id: string, field: keyof MixedPaymentLine, value: string | number) => {
     setLines(prev => prev.map(l => l.id === id ? { ...l, [field]: value } : l));
   };
 
@@ -50,24 +52,21 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
     onPay(lines.map(l => ({ method: l.method, amount: l.amount, reference: l.reference })));
   };
 
-
-
   return (
-    <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', padding: '16px' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h3 style={{ margin: 0, fontSize: '16px' }}>Medios de Pago</h3>
+    <div className={styles.paymentPanel}>
+      <div className={styles.paymentPanelHeader}>
+        <h3 className={styles.paymentPanelTitle}>Medios de Pago</h3>
         <Button variant="ghost" size="sm" onClick={addLine} icon={<Plus size={16} />}>Dividir Pago</Button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+      <div className={styles.paymentLines}>
         {lines.map((l) => (
-          <div key={l.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-            <div style={{ flex: 2 }}>
+          <div key={l.id} className={styles.paymentLine}>
+            <div className={styles.paymentLineGrow2}>
               <select 
                 value={l.method} 
                 onChange={e => updateLine(l.id, 'method', e.target.value)}
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '14px' }}
+                className={clsx(styles.select, styles.selectFull)}
               >
                 <option value="CASH">Efectivo</option>
                 <option value="CREDIT_CARD">Tarjeta de Crédito</option>
@@ -77,7 +76,7 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
               </select>
             </div>
             
-            <div style={{ flex: 2 }}>
+            <div className={styles.paymentLineGrow2}>
               <Input 
                 type="number" min="0" step="0.01" 
                 value={l.amount} 
@@ -86,7 +85,7 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
             </div>
 
             {l.method !== 'CASH' && (
-              <div style={{ flex: 2 }}>
+              <div className={styles.paymentLineGrow2}>
                 <Input 
                   placeholder="Referencia (Ej: L4T 1234)" 
                   value={l.reference} 
@@ -95,36 +94,35 @@ export function MixedPaymentForm({ targetAmount, onPay, isLoading }: Props) {
               </div>
             )}
 
-            <div style={{ paddingTop: '8px' }}>
-              <Trash2 size={20} color="var(--red)" style={{ cursor: 'pointer' }} onClick={() => removeLine(l.id)} />
+            <div className={styles.paymentLineActions}>
+              <Trash2 size={20} color="var(--red)" className={styles.clickable} onClick={() => removeLine(l.id)} />
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ padding: '16px', background: remaining === 0 ? 'var(--green-bg)' : 'var(--bg-elevated)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.3s' }}>
+      <div className={clsx(styles.paymentSummary, remaining === 0 ? styles.paymentSummaryOk : styles.paymentSummaryPending)}>
         <div>
-          <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Falta Pagar</p>
-          <span style={{ fontSize: '18px', fontWeight: 800, color: remaining === 0 ? 'var(--green)' : 'var(--orange)' }}>
+          <p className={styles.paymentSummaryLabel}>Falta Pagar</p>
+          <span className={clsx(styles.paymentSummaryAmount, remaining === 0 ? styles.paymentSummaryAmountOk : styles.paymentSummaryAmountPending)}>
             {formatCurrency(remaining)}
           </span>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-secondary)' }}>Total Ingresado</p>
-          <span style={{ fontSize: '20px', fontWeight: 900 }}>{formatCurrency(totalAdded)}</span>
+        <div className={styles.paymentSummaryAside}>
+          <p className={styles.paymentSummaryLabel}>Total Ingresado</p>
+          <span className={styles.paymentSummaryTotal}>{formatCurrency(totalAdded)}</span>
         </div>
       </div>
 
       <Button 
         variant="primary" 
-        style={{ width: '100%', marginTop: '16px', height: '48px', fontSize: '16px' }}
+        className={styles.paymentSubmitBtn}
         onClick={handleSubmit}
         disabled={totalAdded !== targetAmount || isLoading}
         loading={isLoading}
       >
         Procesar Pago ({lines.length} métodos)
       </Button>
-
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { Button } from '@/components/ui';
 import { Eye, Edit2, Trash2 } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import type { Product } from '@/types';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   product: Product;
@@ -12,7 +13,7 @@ interface Props {
 
 export function ProductActionsMenu({ product, onView, onEdit, onDelete }: Props) {
   return (
-    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+    <div className={styles.actionFooter}>
       <Button variant="ghost" size="sm" onClick={() => onView(product)} aria-label="Ver ficha" title="Ver producto">
         <Eye size={16} />
       </Button>

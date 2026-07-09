@@ -1,0 +1,41 @@
+.offlineBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  color: var(--text-inverted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.offlineDisconnected {
+  background: #1e293b;
+  padding: 10px 16px;
+  font-size: 14px;
+  border-bottom: 2px solid #ef4444;
+  animation: slideDown 0.3s ease;
+}
+
+.syncing {
+  background: #0f172a;
+  padding: 8px 16px;
+  font-size: 13px;
+  border-bottom: 2px solid #f59e0b;
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

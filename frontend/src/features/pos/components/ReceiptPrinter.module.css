@@ -1,0 +1,118 @@
+.root {
+  max-width: 100%;
+  padding: 10px;
+  margin: 0 auto;
+  line-height: 1.4;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.logo {
+  max-width: 70%;
+  max-height: 64px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.headerText {
+  white-space: pre-wrap;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.headerTitle {
+  font-weight: bold;
+}
+
+.divider {
+  margin: 5px 0;
+}
+
+.meta {
+  text-align: left;
+}
+
+.linesSection {
+  margin-bottom: 15px;
+}
+
+.linesHeader {
+  display: flex;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.colDesc {
+  flex: 1;
+}
+
+.colAmount {
+  width: 80px;
+  text-align: right;
+}
+
+.lineItem {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 6px;
+}
+
+.lineRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.lineName {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lineSub {
+  opacity: 0.75;
+}
+
+.totals {
+  text-align: right;
+  margin-bottom: 15px;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.totalFinal {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-top: 5px;
+  padding-top: 5px;
+}
+
+.totalFinalBordered {
+  border-top: 1px solid var(--receipt-accent, var(--accent));
+}
+
+.paymentRow {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.footerText {
+  white-space: pre-wrap;
+}
+
+.caeBlock {
+  margin-bottom: 10px;
+}

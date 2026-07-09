@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useLayoutEffect } from 'react';
+import clsx from 'clsx';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Clock, Package, Loader2 } from 'lucide-react';
@@ -103,6 +104,11 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
 
   const config = STATUS_CONFIG[effectiveStatus];
   const Icon = config.icon;
+  const iconWrapRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (iconWrapRef.current) iconWrapRef.current.style.background = config.iconBg;
+  }, [config.iconBg]);
 
   useEffect(() => {
     if (mpStatus && mpStatus !== status) {
@@ -122,7 +128,7 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
   return (
     <StorefrontPage variant="medium" className={sf.resultPage}>
       <StorefrontCard className={sf.resultCard} padded={false}>
-        <div className={sf.resultIconWrap} style={{ background: config.iconBg }}>
+        <div ref={iconWrapRef} className={sf.resultIconWrap}>
           <Icon size={48} color={config.iconColor} />
         </div>
 
@@ -138,7 +144,7 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
         )}
 
         <div className={sf.resultActions}>
-          <Link to={config.primaryTo(prefix)} className="storefront-btn" style={{ textDecoration: 'none' }}>
+          <Link to={config.primaryTo(prefix)} className={clsx('storefront-btn', sf.resultPrimaryLink)}>
             <Package size={18} />
             {config.primaryLabel}
           </Link>

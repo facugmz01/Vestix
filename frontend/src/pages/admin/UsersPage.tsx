@@ -17,6 +17,7 @@ import { useAuthStore } from '@/store/auth.store';
 
 import { UserFormDrawer } from '@/features/users/components/UserFormDrawer';
 import { UserDetailDrawer } from '@/features/users/components/UserDetailDrawer';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
@@ -105,10 +106,7 @@ export default function UsersPage() {
         <select
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-          style={{
-            padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
-          }}
+          className={adminStyles.filterSelect}
         >
           <option value="">Todos los roles</option>
           {availableRoles.map((r) => (
@@ -138,11 +136,11 @@ export default function UsersPage() {
                 key: 'fullName', 
                 header: 'Nombre',
                 render: (u) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>
+                  <div className={adminStyles.userRow}>
+                    <div className={adminStyles.avatarAccent}>
                       {u.fullName?.charAt(0) || '?'}
                     </div>
-                    <span style={{ fontWeight: 600 }}>{u.fullName}</span>
+                    <span className={adminStyles.cellPrimary}>{u.fullName}</span>
                   </div>
                 )
               },
@@ -161,7 +159,7 @@ export default function UsersPage() {
                 key: 'actions',
                 header: '',
                 render: (u) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(u)} aria-label="Ver" title="Ver detalle">
                       <Eye size={16} />
                     </Button>

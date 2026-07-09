@@ -4,6 +4,8 @@ import { priceListsApi } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 export function VariantPricingPanel({ variantId, basePrice }: { variantId: string, basePrice: number }) {
   const queryClient = useQueryClient();
@@ -36,37 +38,37 @@ export function VariantPricingPanel({ variantId, basePrice }: { variantId: strin
     mutation.mutate({ listId, price: val });
   };
 
-  if (isLoading) return <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Cargando listas...</div>;
+  if (isLoading) return <div className={styles.loadingPanel}>Cargando listas...</div>;
 
   if (baseLists.length === 0) {
     return (
-      <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>No hay listas de precios base configuradas.</p>
+      <div className={styles.sectionPanel}>
+        <p className={styles.scopeHint}>No hay listas de precios base configuradas.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-      <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 600 }}>Precios por Lista</h4>
+    <div className={styles.sectionPanel}>
+      <h4 className={styles.sectionPanelTitle}>Precios por Lista</h4>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className={styles.lineItemsStack}>
         {baseLists.map(list => {
           const isEditing = editingList === list.id;
           
           return (
-            <div key={list.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-base)', borderRadius: '6px', border: '1px solid var(--border)' }}>
+            <div key={list.id} className={styles.priceListRow}>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 600 }}>{list.name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{list.currency}</div>
+                <div className={styles.selectLabel}>{list.name}</div>
+                <div className={styles.textOrange}>{list.currency}</div>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className={styles.checkboxRow}>
                 {isEditing ? (
                   <>
                     <input 
                       type="number" 
-                      style={{ width: '100px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+                      className={styles.priceInputNarrow}
                       value={overrides[list.id] ?? ''}
                       onChange={e => setOverrides({ ...overrides, [list.id]: Number(e.target.value) })}
                       placeholder="Precio..."

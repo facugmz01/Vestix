@@ -1,0 +1,351 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.footerBetween {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.footerActions {
+  display: flex;
+  gap: 12px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.fieldSelect {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.fieldSelectDisabled {
+  opacity: 0.5;
+}
+
+.cartPanel {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.cartTitle {
+  margin: 0 0 16px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.searchRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: flex-end;
+}
+
+.searchWrap {
+  flex: 3;
+  position: relative;
+}
+
+.searchLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.searchInputWrap {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border-radius: 6px;
+  border: 2px solid var(--accent);
+  font-size: 14px;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.dropdownEmpty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.dropdownItem {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.dropdownItem:hover {
+  background: var(--bg-elevated);
+}
+
+.productName {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.productVariant {
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+.productMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.productSku {
+  font-family: var(--font-mono, monospace);
+}
+
+.productAside {
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.productPrice {
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.stockRow {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.qtyCol {
+  flex: 0.6;
+}
+
+.linesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.linesTh {
+  padding: 8px 4px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.linesTd {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.linesEmpty {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+.lineName {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.lineSku {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-muted);
+}
+
+.inputPrice {
+  width: 80px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-weight: 700;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.inputQty {
+  width: 55px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-weight: 600;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.inputDiscount {
+  width: 55px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.inputDiscountDisabled {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.lineTotal {
+  font-weight: bold;
+}
+
+.removeCell {
+  text-align: right;
+}
+
+.removeBtn {
+  cursor: pointer;
+  color: var(--red);
+  display: inline-flex;
+}
+
+.totalsPanel {
+  margin-left: auto;
+  width: 350px;
+  padding: 20px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.totalsRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.totalsRowDiscount {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--red);
+}
+
+.totalsDiscountRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  color: var(--text-primary);
+}
+
+.discountLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.discountInput {
+  width: 60px;
+  padding: 4px;
+  text-align: right;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.discountInputDisabled {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.grandTotal {
+  display: flex;
+  justify-content: space-between;
+  font-size: 20px;
+  font-weight: 900;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.grandTotalValue {
+  color: var(--accent);
+}

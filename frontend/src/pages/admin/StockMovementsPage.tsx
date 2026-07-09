@@ -15,6 +15,8 @@ import { formatMovementQty, getMovementLabel } from '@/features/inventory/utils/
 import { formatMovementReferenceId } from '@/utils/formatId';
 
 import { MovementDetailDrawer } from '@/features/inventory/components/MovementDetailDrawer';
+import clsx from 'clsx';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function StockMovementsPage() {
   const [page, setPage] = useState(1);
@@ -66,25 +68,25 @@ export default function StockMovementsPage() {
       <FiltersBar actions={<Badge color="gray">{total} transacciones</Badge>}>
         <SearchInput placeholder="Buscar por Producto o Doc. Ref..." onSearch={(val) => { setSearch(val); setPage(1); }} />
         
-        <select value={type} onChange={e => { setType(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={type} onChange={e => { setType(e.target.value); setPage(1); }} className={adminStyles.filterSelect}>
           <option value="">Todas las Operaciones</option>
           <option value="ADD">Entradas (+)</option>
           <option value="SUBTRACT">Salidas (-)</option>
           <option value="SET">Ajustes</option>
         </select>
 
-        <select value={branchId} onChange={e => { setBranchId(e.target.value); setWarehouseId(''); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={branchId} onChange={e => { setBranchId(e.target.value); setWarehouseId(''); setPage(1); }} className={adminStyles.filterSelect}>
           <option value="">Todas las Sucursales</option>
           {branchesData?.data.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
 
-        <select value={warehouseId} onChange={e => { setWarehouseId(e.target.value); setPage(1); }} disabled={!branchId} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={warehouseId} onChange={e => { setWarehouseId(e.target.value); setPage(1); }} disabled={!branchId} className={adminStyles.filterSelect}>
           <option value="">Todos los Depósitos</option>
           {warehousesData?.data.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
         </select>
 
-        <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }} title="Fecha desde" />
-        <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }} title="Fecha hasta" />
+        <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(1); }} className={adminStyles.filterSelect} title="Fecha desde" />
+        <input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(1); }} className={adminStyles.filterSelect} title="Fecha hasta" />
       </FiltersBar>
 
       <Section>
@@ -106,9 +108,9 @@ export default function StockMovementsPage() {
                 key: 'date', 
                 header: 'Fecha',
                 render: (m) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 500 }}>{new Date(m.createdAt).toLocaleDateString()}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{new Date(m.createdAt).toLocaleTimeString()}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellMedium}>{new Date(m.createdAt).toLocaleDateString()}</span>
+                    <span className={adminStyles.cellMutedXs}>{new Date(m.createdAt).toLocaleTimeString()}</span>
                   </div>
                 )
               },
@@ -118,9 +120,9 @@ export default function StockMovementsPage() {
                 render: (m) => {
                   const { direction } = formatMovementQty(m.type, m.quantity, m.sourceWarehouseId, m.destinationWarehouseId);
                   return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className={adminStyles.cellRow}>
                       {direction === 'IN' ? <ArrowUpRight size={16} color="var(--green)" /> : direction === 'OUT' ? <ArrowDownRight size={16} color="var(--red)" /> : <History size={16} color="var(--blue)" />}
-                      <span style={{ fontSize: '13px', fontWeight: 600 }}>{getMovementLabel(m.type)}</span>
+                      <span className={adminStyles.cellStrong}>{getMovementLabel(m.type)}</span>
                     </div>
                   );
                 }
@@ -129,9 +131,9 @@ export default function StockMovementsPage() {
                 key: 'product', 
                 header: 'SKU / Producto',
                 render: (m) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{m.variantSku}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{m.productName}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellMonoBold}>{m.variantSku}</span>
+                    <span className={adminStyles.cellSecondaryMuted}>{m.productName}</span>
                   </div>
                 )
               },
@@ -139,9 +141,9 @@ export default function StockMovementsPage() {
                 key: 'location', 
                 header: 'Depósito',
                 render: (m) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 500 }}>{m.warehouseName}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{m.branchName}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellMedium}>{m.warehouseName}</span>
+                    <span className={adminStyles.cellMutedXs}>{m.branchName}</span>
                   </div>
                 )
               },
@@ -151,7 +153,9 @@ export default function StockMovementsPage() {
                 render: (m) => {
                   const { text, direction } = formatMovementQty(m.type, m.quantity, m.sourceWarehouseId, m.destinationWarehouseId);
                   return (
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: direction === 'IN' ? 'var(--green)' : direction === 'OUT' ? 'var(--red)' : 'var(--text-primary)' }}>
+                    <span className={clsx(
+                      direction === 'IN' ? adminStyles.qtyIn : direction === 'OUT' ? adminStyles.qtyOut : adminStyles.qtyNeutral
+                    )}>
                       {text}
                     </span>
                   );
@@ -161,9 +165,9 @@ export default function StockMovementsPage() {
                 key: 'ref', 
                 header: 'Doc. Referencia',
                 render: (m) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px', fontFamily: 'monospace' }}>{formatMovementReferenceId(m.referenceId, m.type)}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{m.referenceType || m.type}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellMonoMuted}>{formatMovementReferenceId(m.referenceId, m.type)}</span>
+                    <span className={adminStyles.cellMutedXs}>{m.referenceType || m.type}</span>
                   </div>
                 )
               },

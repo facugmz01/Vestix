@@ -14,6 +14,7 @@ import { usePosOffline } from '@/features/pos/hooks/usePosOffline';
 import { useDexieSync } from '@/hooks/useDexieSync';
 import { usePosKeyboard } from '@/features/pos/hooks/usePosKeyboard';
 
+import styles from './POSPage.module.css';
 import { POSHeader } from '@/features/pos/components/POSHeader';
 import { POSProductGrid } from '@/features/pos/components/POSProductGrid';
 import { POSCart } from '@/features/pos/components/POSCart';
@@ -23,8 +24,6 @@ import { PosShiftSalesDrawer } from '@/features/pos/components/PosShiftSalesDraw
 
 import type { PosPaymentMethodId } from '@/features/pos/constants/posPaymentMethods';
 import type { ProductVariant } from '@/types';
-
-import styles from './POSPage.module.css';
 
 export default function POSPage() {
   const { user } = useAuthStore();
@@ -218,7 +217,7 @@ export default function POSPage() {
   };
 
   if (isShiftLoading) {
-    return <div style={{ padding: '40px', textAlign: 'center', fontWeight: 600 }}>Cargando estado de caja...</div>;
+    return <div className={styles.loadingState}>Cargando estado de caja...</div>;
   }
 
   return (

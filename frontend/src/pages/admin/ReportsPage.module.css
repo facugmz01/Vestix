@@ -1,0 +1,117 @@
+.tabNav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding: 6px;
+  border-radius: var(--radius-lg);
+  width: fit-content;
+  overflow-x: auto;
+}
+
+.tabBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.tabBtnActive {
+  background: var(--accent);
+  color: var(--text-inverted, #fff);
+}
+
+.datePickerBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+}
+
+.dateLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dateInput {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.dateSep {
+  color: var(--text-muted);
+}
+
+.presetGroup {
+  display: flex;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.presetBtn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-0);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.kpiSkeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpiSkeleton {
+  height: 140px;
+  border-radius: 12px;
+  background: var(--surface-1);
+  animation: pulse 1.5s ease infinite;
+}
+
+.pendingCard {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-0);
+}
+
+.pendingTitle {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pendingValue {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--orange, #f59e0b);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

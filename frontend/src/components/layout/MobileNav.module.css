@@ -24,3 +24,47 @@
   background: var(--accent-subtle);
 }
 .label { line-height: 1.2; }
+
+.menuStack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 0;
+}
+
+.menuGroupTitle {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+  padding-left: 12px;
+  font-weight: 600;
+}
+
+.menuLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menuLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  text-decoration: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.menuLink:hover {
+  background: var(--bg-elevated);
+}
+
+.menuLinkActive {
+  color: var(--accent);
+  background: var(--bg-elevated);
+  font-weight: 600;
+}

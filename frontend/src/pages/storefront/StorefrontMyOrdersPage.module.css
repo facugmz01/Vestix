@@ -99,6 +99,19 @@
   margin-bottom: 12px;
 }
 
+.statusRowDynamic {
+  color: var(--status-color, var(--text-primary));
+}
+
+.statusBadgeDynamic {
+  border-color: var(--status-color, var(--border));
+  color: var(--status-color, var(--text-primary));
+}
+
+.timelineProgressDynamic {
+  width: var(--progress-pct, 0%);
+}
+
 .dispatched {
   font-size: 12px;
   color: var(--text-secondary);

@@ -6,6 +6,7 @@ import { branchesApi } from '@/api/branches.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { CashRegister } from '@/types';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -23,7 +24,6 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
     isActive: true,
   });
 
-  // Fetch branches
   const { data: branchesData, isLoading: isLoadingBranches } = useQuery({
     queryKey: queryKeys.branches.all({ pageSize: 100 }),
     queryFn: () => branchesApi.getBranches({ pageSize: 100 }),
@@ -89,10 +89,9 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
         {registerToEdit && registerToEdit.status === 'OPEN' && (
-          <div style={{ padding: '12px', background: 'var(--yellow-bg)', color: 'var(--yellow)', borderRadius: 'var(--radius)', fontSize: '13px' }}>
+          <div className={styles.alertYellow}>
             Atención: Esta caja se encuentra actualmente abierta y en uso. Los cambios de sucursal o nombre podrían afectar la sesión actual del cajero.
           </div>
         )}
@@ -102,17 +101,16 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
-         
         />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Sucursal Asociada *</label>
+        <div className={styles.selectGroup}>
+          <label className={styles.selectLabel}>Sucursal Asociada *</label>
           <select
             value={formData.branchId}
             onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
             required
             disabled={isLoadingBranches}
-            style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+            className={styles.select}
           >
             <option value="" disabled>Seleccionar sucursal...</option>
             {branches.map(b => (
@@ -121,14 +119,14 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
           </select>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+        <div className={styles.checkboxRow}>
           <input
             type="checkbox"
             id="isActive"
             checked={formData.isActive}
             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
           />
-          <label htmlFor="isActive" style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+          <label htmlFor="isActive" className={styles.checkboxLabel}>
             Caja Activa (Visible en el POS)
           </label>
         </div>

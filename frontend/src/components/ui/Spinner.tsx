@@ -8,7 +8,7 @@ export function Spinner({ size = 'md', className }: { size?: Size; className?: s
 
 export function PageSpinner() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+    <div className={styles.loadingCenter}>
       <Spinner size="lg" />
     </div>
   );

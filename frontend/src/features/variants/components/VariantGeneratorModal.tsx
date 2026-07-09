@@ -5,6 +5,8 @@ import { variantsApi, type GenerateCombinationsDto } from '@/api/variants.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { X, Plus, Shuffle } from 'lucide-react';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -70,17 +72,17 @@ export function VariantGeneratorModal({ open, onClose, productId }: Props) {
         </>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div className={styles.stack}>
         
-        <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+        <div className={styles.sectionPanel}>
           Ingresá los atributos. El sistema generará automáticamente todas las permutaciones posibles y les asignará SKUs secuenciales.
         </div>
 
         <div>
-          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
+          <label className={styles.formLabelBlock}>
             Colores
           </label>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          <div className={styles.tagInputRow}>
             <Input 
               value={colorInput} 
               onChange={e => setColorInput(e.target.value)} 
@@ -89,20 +91,20 @@ export function VariantGeneratorModal({ open, onClose, productId }: Props) {
             />
             <Button variant="outline" onClick={handleAddColor}><Plus size={16} /></Button>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div className={styles.tagList}>
             {colors.map(c => (
-              <span key={c} style={{ padding: '4px 8px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {c} <X size={12} style={{ cursor: 'pointer' }} onClick={() => setColors(colors.filter(x => x !== c))} />
+              <span key={c} className={styles.tagChip}>
+                {c} <X size={12} className={styles.clickable} onClick={() => setColors(colors.filter(x => x !== c))} />
               </span>
             ))}
           </div>
         </div>
 
         <div>
-          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
+          <label className={styles.formLabelBlock}>
             Talles / Tamaños
           </label>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          <div className={styles.tagInputRow}>
             <Input 
               value={sizeInput} 
               onChange={e => setSizeInput(e.target.value)} 
@@ -111,10 +113,10 @@ export function VariantGeneratorModal({ open, onClose, productId }: Props) {
             />
             <Button variant="outline" onClick={handleAddSize}><Plus size={16} /></Button>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div className={styles.tagList}>
             {sizes.map(s => (
-              <span key={s} style={{ padding: '4px 8px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {s} <X size={12} style={{ cursor: 'pointer' }} onClick={() => setSizes(sizes.filter(x => x !== s))} />
+              <span key={s} className={styles.tagChip}>
+                {s} <X size={12} className={styles.clickable} onClick={() => setSizes(sizes.filter(x => x !== s))} />
               </span>
             ))}
           </div>

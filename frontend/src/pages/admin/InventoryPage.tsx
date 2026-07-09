@@ -17,6 +17,8 @@ import { StockAdjustmentModal } from '@/features/inventory/components/StockAdjus
 import { StockMovementsDrawer } from '@/features/inventory/components/StockMovementsDrawer';
 import { StockAuditModal } from '@/features/inventory/components/StockAuditModal';
 import { ReplenishmentModal } from '@/features/inventory/components/ReplenishmentModal';
+import clsx from 'clsx';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function InventoryPage() {
   const [page, setPage] = useState(1);
@@ -66,7 +68,7 @@ export default function InventoryPage() {
       subtitle="Visualización consolidada de existencias, disponibilidades y reservas por depósito."
       action={
         <ActionGuard action="manage" subject="Inventory">
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={adminStyles.toolbarActions}>
             <Button variant="primary" icon={<ClipboardCheck size={16} />} onClick={() => setAuditOpen(true)}>
               Auditoría de Stock (Masivo)
             </Button>
@@ -80,12 +82,12 @@ export default function InventoryPage() {
       <FiltersBar actions={<Badge color="gray">{total} nodos de stock</Badge>}>
         <SearchInput placeholder="Buscar por SKU o Producto..." onSearch={(val) => { setSearch(val); setPage(1); }} />
         
-        <select value={branchId} onChange={e => { setBranchId(e.target.value); setWarehouseId(''); setPage(1); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={branchId} onChange={e => { setBranchId(e.target.value); setWarehouseId(''); setPage(1); }} className={adminStyles.filterSelect}>
           <option value="">Todas las Sucursales</option>
           {branchesData?.data.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
 
-        <select value={warehouseId} onChange={e => { setWarehouseId(e.target.value); setPage(1); }} disabled={!branchId} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={warehouseId} onChange={e => { setWarehouseId(e.target.value); setPage(1); }} disabled={!branchId} className={adminStyles.filterSelect}>
           <option value="">Todos los Depósitos</option>
           {warehousesData?.data.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
         </select>
@@ -110,9 +112,9 @@ export default function InventoryPage() {
                 key: 'product', 
                 header: 'SKU / Producto',
                 render: (s) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{s.variantSku}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{s.productName}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellMonoBold}>{s.variantSku}</span>
+                    <span className={adminStyles.cellSecondaryMuted}>{s.productName}</span>
                   </div>
                 )
               },
@@ -120,9 +122,9 @@ export default function InventoryPage() {
                 key: 'location', 
                 header: 'Ubicación (Rama)',
                 render: (s) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 500 }}>{s.warehouseName}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{s.branchName}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellMedium}>{s.warehouseName}</span>
+                    <span className={adminStyles.cellMutedXs}>{s.branchName}</span>
                   </div>
                 )
               },
@@ -130,7 +132,7 @@ export default function InventoryPage() {
                 key: 'physical', 
                 header: 'Stock Físico',
                 render: (s) => (
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <span className={adminStyles.cellStrong}>
                     {s.physicalQuantity ?? (s.availableQuantity + s.reservedQuantity)}
                   </span>
                 )
@@ -139,7 +141,7 @@ export default function InventoryPage() {
                 key: 'reserved', 
                 header: 'Reservado',
                 render: (s) => (
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: s.reservedQuantity > 0 ? 'var(--orange)' : 'var(--text-muted)' }}>
+                  <span className={clsx(s.reservedQuantity > 0 ? adminStyles.stockReserved : adminStyles.stockReservedNone)}>
                     {s.reservedQuantity > 0 ? s.reservedQuantity : '0'}
                   </span>
                 )
@@ -151,7 +153,7 @@ export default function InventoryPage() {
                   const physical = s.physicalQuantity ?? (s.availableQuantity + s.reservedQuantity);
                   const available = physical - s.reservedQuantity;
                   return (
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: available <= 0 ? 'var(--red)' : 'var(--green)' }}>
+                    <span className={clsx(adminStyles.stockAvailable, available <= 0 ? adminStyles.stockAvailableEmpty : adminStyles.stockAvailableOk)}>
                       {available}
                     </span>
                   );
@@ -161,7 +163,7 @@ export default function InventoryPage() {
                 key: 'actions',
                 header: '',
                 render: (s) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleKardex(s)} aria-label="Ver Kardex" title="Historial de movimientos">
                       <History size={16} />
                     </Button>

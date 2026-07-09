@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import clsx from 'clsx';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Scan, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui';
+import styles from './QRScannerPage.module.css';
 
 export default function QRScannerPage() {
   const [isScanning, setIsScanning] = useState(false);
@@ -38,7 +40,7 @@ export default function QRScannerPage() {
         }
       );
       setIsScanning(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('No se pudo acceder a la cámara. Asegúrate de dar los permisos.');
       console.error(err);
     }
@@ -54,78 +56,54 @@ export default function QRScannerPage() {
   const handleAction = () => {
     if (!scanResult) return;
     
-    // Si el QR tiene un prefijo de orden, llevarlo al POS o Facturas
     if (scanResult.startsWith('ORD-') || scanResult.startsWith('CART-')) {
-      // Logica de navegacion hipotetica (e.g. buscar orden)
       navigate('/pos', { state: { loadCartId: scanResult } });
     } else {
-      // Por defecto, buscar producto en catálogo
       navigate(`/admin/catalog?search=${encodeURIComponent(scanResult)}`);
     }
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div className={styles.headerIcon}>
           <Scan size={24} />
         </div>
         <div>
-          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>Escáner Inteligente</h1>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>
+          <h1 className={styles.title}>Escáner Inteligente</h1>
+          <p className={styles.subtitle}>
             Escanea códigos de barras o QR de productos y comprobantes.
           </p>
         </div>
       </header>
 
-      <div style={{ 
-        background: 'var(--bg-surface)', 
-        border: '1px solid var(--border)', 
-        borderRadius: 'var(--radius-lg)', 
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '20px'
-      }}>
-        {/* Lector Container */}
-        <div 
-          id="qr-reader" 
-          style={{ 
-            width: '100%', 
-            maxWidth: '320px', 
-            minHeight: isScanning ? '320px' : '200px',
-            background: 'var(--bg-base)',
-            borderRadius: 'var(--radius)',
-            border: isScanning ? '2px solid var(--accent)' : '1px dashed var(--border)',
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+      <div className={styles.panel}>
+        <div
+          id="qr-reader"
+          className={clsx(styles.reader, isScanning ? styles.readerActive : styles.readerIdle)}
         >
           {!isScanning && !scanResult && (
-            <p style={{ color: 'var(--text-muted)' }}>Cámara inactiva</p>
+            <p className={styles.readerPlaceholder}>Cámara inactiva</p>
           )}
         </div>
 
-        {error && <p style={{ color: 'var(--red)', fontSize: '14px', margin: 0 }}>{error}</p>}
+        {error && <p className={styles.errorText}>{error}</p>}
 
         {scanResult ? (
-          <div style={{ textAlign: 'center', width: '100%' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#10b981', marginBottom: '16px' }}>
+          <div className={styles.resultPanel}>
+            <div className={styles.successRow}>
               <CheckCircle2 size={24} />
-              <h3 style={{ margin: 0 }}>¡Código detectado!</h3>
+              <h3 className={styles.successTitle}>¡Código detectado!</h3>
             </div>
-            <div style={{ padding: '12px', background: 'var(--bg-base)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', wordBreak: 'break-all', marginBottom: '20px', fontSize: '18px', fontWeight: 600 }}>
+            <div className={styles.resultCode}>
               {scanResult}
             </div>
             
-            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
-              <Button onClick={startScanning} variant="outline" style={{ flex: 1 }}>
+            <div className={styles.actionRow}>
+              <Button onClick={startScanning} variant="outline" className={styles.btnFlex1}>
                 <RefreshCw size={16} /> Re-escanear
               </Button>
-              <Button onClick={handleAction} style={{ flex: 2 }}>
+              <Button onClick={handleAction} className={styles.btnFlex2}>
                 Procesar
               </Button>
             </div>
@@ -134,7 +112,7 @@ export default function QRScannerPage() {
           <Button 
             onClick={isScanning ? stopScanning : startScanning} 
             variant={isScanning ? 'outline' : 'primary'}
-            style={{ width: '100%', maxWidth: '320px' }}
+            className={styles.scanBtn}
           >
             {isScanning ? 'Detener Cámara' : 'Iniciar Escáner'}
           </Button>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, RefreshCw, Trash2, ShoppingCart, Settings2, Package, Calculator } from 'lucide-react';
+import { Save, RefreshCw, Trash2, ShoppingCart, Package, Calculator } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -9,7 +9,7 @@ import { Input, Button, ConfirmDialog, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { posSettingsSchema, type PosSettingsFormData } from '../schemas/posSettings.schema';
 import { settingsApi } from '@/api/settings.api';
-import styles from './SettingsShared.module.css'; // Reusing the same grid/card styles
+import styles from './SettingsShared.module.css';
 
 export function SalesOptionsPanel() {
   const { data: settings, isLoading } = useGetSettings();
@@ -47,12 +47,12 @@ export function SalesOptionsPanel() {
   };
 
   if (isLoading) {
-    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Cargando configuraciones...</div>;
+    return <div className={styles.loadingState}>Cargando configuraciones...</div>;
   }
 
   return (
     <div className={styles.panelContainer}>
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.panelContainer} style={{ animation: 'none', gap: 'var(--space-6)' }} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className={clsx(styles.panelContainer, styles.formStatic)} noValidate>
         
         {/* 1. Opciones de venta y caja */}
         <section className={styles.card}>
@@ -73,7 +73,7 @@ export function SalesOptionsPanel() {
               {...register('allowNegativeStock')} 
             />
             
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             
             <ToggleSwitch 
               label="Impresión en ticket (80mm)" 
@@ -81,7 +81,7 @@ export function SalesOptionsPanel() {
               {...register('thermalPrint80mm')} 
             />
             
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             
             <ToggleSwitch 
               label="Ticket fiscal térmico (70mm)" 
@@ -89,7 +89,7 @@ export function SalesOptionsPanel() {
               {...register('fiscalPrint70mm')} 
             />
             
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             
             <div className={clsx(styles.grid, styles.grid2)}>
               <div className={styles.selectGroup}>
@@ -98,7 +98,7 @@ export function SalesOptionsPanel() {
                   <option value="SHARED">Compartido — cajas comunes</option>
                   <option value="STRICT">Estricto — caja por empleado</option>
                 </select>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <p className={styles.fieldHint}>
                   Compartido: turnos comunes. Estricto: cada empleado abre su turno.
                 </p>
               </div>
@@ -109,7 +109,7 @@ export function SalesOptionsPanel() {
                   <option value="minorista">Minorista</option>
                   <option value="mayorista">Mayorista</option>
                 </select>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <p className={styles.fieldHint}>
                   Aplica automáticamente a menos que el cliente tenga otro preferido.
                 </p>
               </div>
@@ -133,22 +133,22 @@ export function SalesOptionsPanel() {
               label="Código interno obligatorio" 
               {...register('requireInternalCode')} 
             />
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             <ToggleSwitch 
               label="Código de barras obligatorio" 
               {...register('requireBarcode')} 
             />
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             <ToggleSwitch 
               label="Marca obligatoria" 
               {...register('requireBrand')} 
             />
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             <ToggleSwitch 
               label="Descripción obligatoria" 
               {...register('requireDescription')} 
             />
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
             <ToggleSwitch 
               label="Datos de envío (dimensiones) obligatorios" 
               hint="Exigir peso, alto, ancho y largo."
@@ -170,27 +170,27 @@ export function SalesOptionsPanel() {
           </header>
           <div className={styles.cardBody}>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600 }}>Cotización Oficial (ARS por US$1)</label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                <div style={{ width: '200px' }}>
+            <div className={styles.quoteBlock}>
+              <label className={styles.fieldLabel}>Cotización Oficial (ARS por US$1)</label>
+              <div className={styles.quoteRow}>
+                <div className={styles.inputFixed200}>
                   <Input type="number" prefix="$" placeholder="Ej: 1400" {...register('officialDollarQuote', { valueAsNumber: true })} />
                 </div>
-                <Button variant="outline" type="button" icon={<RefreshCw size={14} color="#eab308" />} onClick={() => handleRecotizar('Oficial')} style={{ color: '#eab308', borderColor: '#eab308' }}>
+                <Button variant="outline" type="button" icon={<RefreshCw size={14} color="#eab308" />} onClick={() => handleRecotizar('Oficial')} className={styles.btnYellowOutline}>
                   Recotizar productos
                 </Button>
               </div>
             </div>
 
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+            <hr className={styles.divider} />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600 }}>Cotización Blue (ARS por US$1)</label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                <div style={{ width: '200px' }}>
+            <div className={styles.quoteBlock}>
+              <label className={styles.fieldLabel}>Cotización Blue (ARS por US$1)</label>
+              <div className={styles.quoteRow}>
+                <div className={styles.inputFixed200}>
                   <Input type="number" prefix="$" placeholder="Ej: 1600" {...register('blueDollarQuote', { valueAsNumber: true })} />
                 </div>
-                <Button variant="outline" type="button" icon={<RefreshCw size={14} color="#0ea5e9" />} onClick={() => handleRecotizar('Blue')} style={{ color: '#0ea5e9', borderColor: '#0ea5e9' }}>
+                <Button variant="outline" type="button" icon={<RefreshCw size={14} color="#0ea5e9" />} onClick={() => handleRecotizar('Blue')} className={styles.btnCyanOutline}>
                   Recotizar productos
                 </Button>
               </div>
@@ -216,15 +216,15 @@ export function SalesOptionsPanel() {
       </form>
 
       {/* Zona de peligro - Fuera del form */}
-      <section className={styles.card} style={{ border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.02)' }}>
-        <div className={styles.cardBody} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={clsx(styles.card, styles.dangerCard)}>
+        <div className={clsx(styles.cardBody, styles.dangerCardBody)}>
           <div>
-            <h4 style={{ margin: '0 0 4px 0', color: '#ef4444', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h4 className={styles.dangerTitle}>
               <Trash2 size={16} /> Vaciar catálogo de productos
             </h4>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>Elimina todos los productos activos. El historial de ventas no se verá afectado.</p>
+            <p className={styles.dangerHint}>Elimina todos los productos activos. El historial de ventas no se verá afectado.</p>
           </div>
-          <Button variant="outline" type="button" onClick={() => setClearCatalogOpen(true)} style={{ color: '#ef4444', borderColor: '#ef4444' }}>
+          <Button variant="outline" type="button" onClick={() => setClearCatalogOpen(true)} className={styles.btnDangerOutline}>
             Vaciar catálogo
           </Button>
         </div>

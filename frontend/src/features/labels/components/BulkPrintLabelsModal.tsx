@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
@@ -5,6 +6,8 @@ import { labelsApi } from '@/api/labels.api';
 import { settingsApi } from '@/api/settings.api';
 import toast from 'react-hot-toast';
 import { Printer, FileDown, Tag } from 'lucide-react';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 export interface LabelPrintItem {
   variantId: string;
@@ -116,22 +119,22 @@ export function BulkPrintLabelsModal({ open, onClose, items, title = 'Impresión
         </>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ padding: '12px 16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+      <div className={styles.formStackMd}>
+        <div className={styles.sectionPanel}>
+          <p className={styles.entitySubtitle}>
             {items.length} variante{items.length !== 1 ? 's' : ''} · {totalLabels} etiqueta{totalLabels !== 1 ? 's' : ''} en total
           </p>
         </div>
 
         <div>
-          <label style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-            <Tag size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+          <label className={styles.formLabelBlock}>
+            <Tag size={14} className={styles.badgeInner} />
             Plantilla
           </label>
           <select
             value={templateId}
             onChange={(e) => setTemplateId(e.target.value)}
-            style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+            className={clsx(styles.select, styles.selectFull)}
           >
             {templates.map((t) => (
               <option key={t.id} value={t.id}>
@@ -152,17 +155,17 @@ export function BulkPrintLabelsModal({ open, onClose, items, title = 'Impresión
           />
         )}
 
-        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: 'var(--text-secondary)', maxHeight: 160, overflowY: 'auto' }}>
+        <ul className={styles.scopeHint}>
           {items.map((item) => (
             <li key={item.variantId}>
-              <span style={{ fontFamily: 'monospace' }}>{item.sku || item.variantId.slice(0, 8)}</span>
+              <span className={styles.mono}>{item.sku || item.variantId.slice(0, 8)}</span>
               {item.productName && ` — ${item.productName}`}
               {' '}× {item.quantity > 0 ? item.quantity : defaultQty}
             </li>
           ))}
         </ul>
 
-        <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
+        <p className={styles.hintSm}>
           ZPL es compatible con impresoras Zebra (GK420d, ZD220, etc.). Enviá el archivo al puerto 9100 de la impresora o usá Zebra Setup Utilities.
         </p>
       </div>

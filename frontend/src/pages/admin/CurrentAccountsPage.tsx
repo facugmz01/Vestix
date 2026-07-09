@@ -13,6 +13,8 @@ import { queryKeys } from '@/api/queryKeys';
 import { CurrentAccountDetailDrawer } from '@/features/finance/components/CurrentAccountDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
+import clsx from 'clsx';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function CurrentAccountsPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '' });
@@ -58,7 +60,7 @@ export default function CurrentAccountsPage() {
       <FiltersBar actions={<Badge color="gray">{total} cuentas activas</Badge>}>
         <SearchInput placeholder="Buscar por Nombre de Entidad..." onSearch={setSearch} />
         
-        <select value={typeFilter} onChange={e => { setFilter('type', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={typeFilter} onChange={e => { setFilter('type', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos (Clientes y Proveedores)</option>
           <option value="CUSTOMER">Solo Clientes (Cobrar)</option>
           <option value="SUPPLIER">Solo Proveedores (Pagar)</option>
@@ -85,9 +87,9 @@ export default function CurrentAccountsPage() {
                 key: 'entity', 
                 header: 'Entidad (Cliente/Proveedor)',
                 render: (a) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 600 }}>{a.entityName}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellPrimary}>{a.entityName}</span>
+                    <span className={adminStyles.cellMuted}>
                       {a.entityType === 'CUSTOMER' ? 'CLIENTE' : 'PROVEEDOR'}
                     </span>
                   </div>
@@ -98,16 +100,16 @@ export default function CurrentAccountsPage() {
                 header: 'Saldo Total',
                 render: (a) => {
                   const isRed = a.balance > 0; // If they owe us, or we owe them. We highlight non-zero.
-                  return <span style={{ fontWeight: 800, fontSize: '15px', color: isRed ? 'var(--text-primary)' : 'var(--green)' }}>{formatCurrency(a.balance)}</span>;
+                  return <span className={clsx(isRed ? adminStyles.balanceCurrent : adminStyles.balanceCredit)}>{formatCurrency(a.balance)}</span>;
                 }
               },
               { 
                 key: 'overdue', 
                 header: 'Vencido / Exigible',
                 render: (a) => {
-                  if (a.overdueAmount <= 0) return <span style={{ color: 'var(--text-muted)' }}>Al día</span>;
+                  if (a.overdueAmount <= 0) return <span className={adminStyles.textMutedDash}>Al día</span>;
                   return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--red)', fontWeight: 'bold' }}>
+                    <div className={adminStyles.balanceOverdue}>
                       <AlertTriangle size={14} /> {formatCurrency(a.overdueAmount)}
                     </div>
                   );
@@ -116,13 +118,13 @@ export default function CurrentAccountsPage() {
               { 
                 key: 'lastMove', 
                 header: 'Últ. Movimiento',
-                render: (a) => <span style={{ fontSize: '13px' }}>{a.lastMovementDate ? new Date(a.lastMovementDate).toLocaleDateString() : '-'}</span>
+                render: (a) => <span className={adminStyles.cellDate}>{a.lastMovementDate ? new Date(a.lastMovementDate).toLocaleDateString() : '-'}</span>
               },
               {
                 key: 'actions',
                 header: '',
                 render: (a) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(a.id)} aria-label="Ver Detalles" title="Ver Libro Mayor y Recibos">
                       <FileText size={16} />
                     </Button>

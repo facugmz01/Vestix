@@ -14,6 +14,7 @@ import { PaymentDetailDrawer } from '@/features/finance/payments/components/Paym
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatPaymentReferenceId, formatShortId } from '@/utils/formatId';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   CASH: 'Efectivo',
@@ -56,7 +57,7 @@ export default function PaymentsPage() {
       <FiltersBar actions={<Badge color="gray">{total} transacciones</Badge>}>
         <SearchInput placeholder="Buscar Ref / Cliente..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Estados</option>
           <option value="PENDING">Pendientes</option>
           <option value="COMPLETED">Completados / Acreditados</option>
@@ -84,17 +85,17 @@ export default function PaymentsPage() {
               { 
                 key: 'id', 
                 header: 'Tx ID',
-                render: (p) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(p.id)}</span>
+                render: (p) => <span className={adminStyles.cellMonoBold}>{formatShortId(p.id)}</span>
               },
               { 
                 key: 'ref', 
                 header: 'Ticket Ref',
-                render: (p) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{formatPaymentReferenceId(p.referenceId)}</span>
+                render: (p) => <span className={adminStyles.cellMonoSecondary}>{formatPaymentReferenceId(p.referenceId)}</span>
               },
               { 
                 key: 'date', 
                 header: 'Fecha',
-                render: (p) => <span style={{ fontSize: '13px' }}>{new Date(p.createdAt).toLocaleString()}</span>
+                render: (p) => <span className={adminStyles.cellDate}>{new Date(p.createdAt).toLocaleString()}</span>
               },
               { 
                 key: 'customer', 
@@ -105,7 +106,7 @@ export default function PaymentsPage() {
                 key: 'methods', 
                 header: 'Medios',
                 render: (p) => (
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                  <div className={adminStyles.cellRowXs}>
                     {p.lines.map((l, i) => (
                       <Badge key={i} color="gray">{PAYMENT_METHOD_LABELS[l.method] || l.method}</Badge>
                     ))}
@@ -115,7 +116,7 @@ export default function PaymentsPage() {
               { 
                 key: 'amount', 
                 header: 'Total Cobrado',
-                render: (p) => <span style={{ fontWeight: 900 }}>{formatCurrency(p.amount)}</span>
+                render: (p) => <span className={adminStyles.textBold900}>{formatCurrency(p.amount)}</span>
               },
               { 
                 key: 'status', 
@@ -126,7 +127,7 @@ export default function PaymentsPage() {
                 key: 'actions',
                 header: '',
                 render: (p) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(p.id)} aria-label="Ver Detalle">
                       <Eye size={16} />
                     </Button>

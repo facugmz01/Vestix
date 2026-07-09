@@ -16,6 +16,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { PromotionFormDrawer } from '@/features/promotions/components/PromotionFormDrawer';
 import { PromotionDetailDrawer } from '@/features/promotions/components/PromotionDetailDrawer';
 import { BulkPriceUpdateModal } from '@/features/promotions/components/BulkPriceUpdateModal';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function PromotionsPage() {
   const queryClient = useQueryClient();
@@ -84,7 +85,7 @@ export default function PromotionsPage() {
       title="Promociones y Reglas de Precio" 
       subtitle="Definí descuentos temporales, 2x1 y analizá el impacto en tu rentabilidad."
       action={
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={adminStyles.toolbarActions}>
           <ActionGuard action="manage" subject="Catalog">
             <Button variant="secondary" icon={<Zap size={16} />} onClick={() => setBulkOpen(true)}>
               Modificación Masiva
@@ -97,11 +98,11 @@ export default function PromotionsPage() {
       }
     >
       {activeConflicts.length > 0 && (
-        <div style={{ padding: '16px', marginBottom: '24px', background: 'var(--red-bg)', border: '1px solid var(--red)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className={adminStyles.alertBannerRed}>
           <AlertCircle color="var(--red)" size={24} />
           <div>
-            <h4 style={{ margin: '0 0 4px', fontSize: '14px', color: 'var(--red)' }}>Atención: Conflictos Activos</h4>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-primary)' }}>
+            <h4 className={adminStyles.alertTitleRed}>Atención: Conflictos Activos</h4>
+            <p className={adminStyles.alertBody}>
               Existen {activeConflicts.length} solapamientos de promociones detectados por el motor de precios. Revisá las condiciones para evitar descuentos indeseados en el POS.
             </p>
           </div>
@@ -131,8 +132,8 @@ export default function PromotionsPage() {
                 key: 'name', 
                 header: 'Promoción',
                 render: (p) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600 }}>{p.name}</span>
+                  <div className={adminStyles.cellRowMd}>
+                    <span className={adminStyles.cellPrimary}>{p.name}</span>
                     {(p.conflictsWith?.length || 0) > 0 && <AlertCircle size={14} color="var(--red)" />}
                   </div>
                 )
@@ -145,18 +146,18 @@ export default function PromotionsPage() {
               { 
                 key: 'value', 
                 header: 'Valor',
-                render: (p) => <span style={{ fontWeight: 600 }}>{p.type.includes('PERCENTAGE') ? `${p.value}%` : p.value}</span>
+                render: (p) => <span className={adminStyles.cellPrimary}>{p.type.includes('PERCENTAGE') ? `${p.value}%` : p.value}</span>
               },
               { 
                 key: 'scope', 
                 header: 'Alcance',
-                render: (p) => <span style={{ fontSize: '13px' }}>{p.applicableTo.type}</span>
+                render: (p) => <span className={adminStyles.cellDate}>{p.applicableTo.type}</span>
               },
               { 
                 key: 'dates', 
                 header: 'Vigencia',
                 render: (p) => (
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  <span className={adminStyles.cellSecondaryMuted}>
                     {new Date(p.startDate).toLocaleDateString()} - {p.endDate ? new Date(p.endDate).toLocaleDateString() : 'Indef.'}
                   </span>
                 )
@@ -170,7 +171,7 @@ export default function PromotionsPage() {
                 key: 'actions',
                 header: '',
                 render: (p) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(p)} aria-label="Analizar Impacto" title="Ver análisis de impacto">
                       <Eye size={16} />
                     </Button>

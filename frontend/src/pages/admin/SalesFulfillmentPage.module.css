@@ -1,0 +1,77 @@
+.modalStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.infoBox {
+  padding: 12px;
+  border-radius: 4px;
+  background: var(--surface-1);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.formSelectFull {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.hintMuted {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.modalIntro {
+  margin-bottom: 16px;
+  color: var(--text-muted);
+}
+
+.otpInput {
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 4px;
+}
+
+.linkStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.linkLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.linkRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.linkInput {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+}

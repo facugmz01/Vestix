@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useLayoutEffect } from 'react';
 import JsBarcode from 'jsbarcode';
 import { QRCodeSVG } from 'qrcode.react';
 import type { LabelLayout, LabelPrintData, BarcodeSymbology, LabelElement } from '../types/label.types';
@@ -73,6 +73,12 @@ function BarcodeElement({
     }
   }, [value, format, heightMm]);
 
+  useLayoutEffect(() => {
+    if (!svgRef.current) return;
+    svgRef.current.style.maxWidth = `${widthMm}mm`;
+    svgRef.current.style.maxHeight = `${heightMm}mm`;
+  }, [widthMm, heightMm]);
+
   if (!value || format === 'NONE') return null;
 
   if (format === 'QR') {
@@ -88,16 +94,23 @@ function BarcodeElement({
     <svg
       ref={svgRef}
       className={styles.barcodeSvg}
-      style={{ maxWidth: `${widthMm}mm`, maxHeight: `${heightMm}mm` }}
     />
   );
 }
 
 export function LabelRenderer({ data, layout, widthMm, heightMm, className }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!rootRef.current) return;
+    rootRef.current.style.width = `${widthMm}mm`;
+    rootRef.current.style.height = `${heightMm}mm`;
+  }, [widthMm, heightMm]);
+
   return (
     <div
+      ref={rootRef}
       className={`${styles.label} ${className ?? ''}`}
-      style={{ width: `${widthMm}mm`, height: `${heightMm}mm` }}
     >
       {layout.elements.filter((el) => el.visible).map((element) => {
         const elementWidth = element.width ?? widthMm - element.x * 2;

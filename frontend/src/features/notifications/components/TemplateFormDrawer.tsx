@@ -18,6 +18,7 @@ import {
 } from '../constants';
 import styles from './Notifications.module.css';
 
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -190,9 +191,9 @@ export function TemplateFormDrawer({ open, onClose, template }: Props) {
           {errors.body && <p className={styles.errorText}>{errors.body.message}</p>}
 
           {preview && (
-            <div className={styles.previewBox} style={{ marginTop: '12px' }}>
-              <strong style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Vista previa en vivo</strong>
-              {preview.subject && <p style={{ margin: '8px 0 4px' }}><strong>Asunto:</strong> {preview.subject}</p>}
+            <div className={clsx(styles.previewBox, styles.previewBoxSpaced)}>
+              <strong className={styles.previewLabel}>Vista previa en vivo</strong>
+              {preview.subject && <p className={styles.previewSubject}><strong>Asunto:</strong> {preview.subject}</p>}
               <pre className={styles.previewBody}>{preview.body}</pre>
             </div>
           )}

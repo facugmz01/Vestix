@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import styles from '@/components/ui/ImportBalancesModal.module.css'; // Reuse CSS
 import { branchesApi } from '@/api/branches.api';
 
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -179,7 +180,7 @@ export function ImportSalesModal({ open, onClose, onSuccess, onImport }: Props) 
               <select 
                 value={branchId} 
                 onChange={e => setBranchId(e.target.value)}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                className={styles.optionsSelect}
               >
                 {branches.map(b => (
                   <option key={b.id} value={b.id}>{b.name}</option>
@@ -273,7 +274,7 @@ export function ImportSalesModal({ open, onClose, onSuccess, onImport }: Props) 
                 </div>
                 <div className={styles.statBox}>
                   <span>Errores</span>
-                  <strong style={{ color: result.errorCount > 0 ? 'var(--danger)' : 'inherit'}}>{result.errorCount}</strong>
+                  <strong className={result.errorCount > 0 ? styles.statValueDanger : undefined}>{result.errorCount}</strong>
                 </div>
               </div>
 
@@ -281,7 +282,7 @@ export function ImportSalesModal({ open, onClose, onSuccess, onImport }: Props) 
                 <div className={styles.notFoundBox}>
                   <strong>No se pudieron procesar algunas ventas:</strong>
                   <div className={styles.notFoundList}>
-                    {result.errors.map((err, i) => <span key={i} style={{display:'block'}}>{err}</span>)}
+                    {result.errors.map((err, i) => <span key={i} className={styles.errorLine}>{err}</span>)}
                   </div>
                 </div>
               )}

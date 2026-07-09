@@ -5,7 +5,10 @@ import { promotionsApi, type BulkUpdateDto } from '@/api/promotions.api';
 import { priceListsApi } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 import { Zap } from 'lucide-react';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -62,21 +65,21 @@ export function BulkPriceUpdateModal({ open, onClose }: Props) {
         </>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div className={styles.stack}>
         
-        <div style={{ padding: '16px', background: 'var(--orange-bg, #fff3e0)', border: '1px solid var(--orange, #ff9800)', borderRadius: 'var(--radius)', color: 'var(--orange, #e65100)' }}>
-          <h4 style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 'bold' }}>⚠️ Operación Destructiva</h4>
-          <p style={{ margin: 0, fontSize: '13px' }}>
+        <div className={styles.warningPanel}>
+          <h4 className={styles.warningPanelTitle}>⚠️ Operación Destructiva</h4>
+          <p className={styles.warningPanelText}>
             Las actualizaciones masivas alteran la base de datos de precios fijos. Si aplicás una lista modificadora, sobrescribirá los precios base. Se recomienda generar un backup antes de proceder.
           </p>
         </div>
 
         <div>
-          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>Acción a Ejecutar</label>
+          <label className={styles.formLabelBlock}>Acción a Ejecutar</label>
           <select 
             value={action} 
             onChange={e => setAction(e.target.value as any)}
-            style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid var(--border)' }}
+            className={clsx(styles.select, styles.selectFull)}
           >
             <option value="APPLY_PRICE_LIST_MODIFIER">Aplicar Lista Modificadora al Precio Base</option>
             <option value="FLATTEN_PRICES">Aplanar Precios (Remover todas las reglas manuales)</option>
@@ -85,18 +88,18 @@ export function BulkPriceUpdateModal({ open, onClose }: Props) {
 
         {action === 'APPLY_PRICE_LIST_MODIFIER' && (
           <div>
-            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>Seleccionar Lista Modificadora</label>
+            <label className={styles.formLabelBlock}>Seleccionar Lista Modificadora</label>
             <select 
               value={priceListId} 
               onChange={e => setPriceListId(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid var(--border)' }}
+              className={clsx(styles.select, styles.selectFull)}
             >
               <option value="">-- Seleccionar --</option>
               {priceLists?.data.map(pl => (
                 <option key={pl.id} value={pl.id}>{pl.name} ({pl.modifierPercentage}%)</option>
               ))}
             </select>
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <p className={styles.hintSm}>
               Aplica el porcentaje de la lista seleccionada sobre los precios base de todas las variantes activas.
             </p>
           </div>

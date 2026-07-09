@@ -237,7 +237,7 @@ export default function OnlineCatalogPage() {
             </div>
           ) : products.length === 0 ? (
             <div className={styles.empty}>
-              <PackageX size={64} color="var(--text-muted)" style={{ margin: '0 auto 24px', display: 'block', opacity: 0.5 }} />
+              <PackageX size={64} color="var(--text-muted)" className={styles.emptyIcon} />
               <h3 className={styles.emptyTitle}>No encontramos productos</h3>
               <p className={styles.emptyText}>
                 {search
@@ -264,7 +264,7 @@ export default function OnlineCatalogPage() {
                         <img src={p.images![0]} alt={p.name} className={styles.productImage} loading="lazy" />
                       ) : (
                         <div className={styles.placeholder}>
-                          <ShoppingBag size={48} color="var(--text-primary)" style={{ marginBottom: 12 }} />
+                          <ShoppingBag size={48} color="var(--text-primary)" className={styles.placeholderIcon} />
                           <span className={styles.placeholderLetter}>{p.name.charAt(0).toUpperCase()}</span>
                         </div>
                       )}
@@ -277,7 +277,7 @@ export default function OnlineCatalogPage() {
                     </div>
 
                     <div className={styles.productBody}>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
+                      <span className={styles.categoryLabel}>
                         {p.brand || p.category || 'Categoría'}
                       </span>
                       <h3 className={styles.productName}>{p.name}</h3>
