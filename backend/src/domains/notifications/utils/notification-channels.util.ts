@@ -6,8 +6,7 @@ export type EventChannelKey =
   | 'purchaseChannels'
   | 'deliveryChannels'
   | 'lowStockChannels'
-  | 'transferChannels'
-  | 'storeLoginChannels';
+  | 'transferChannels';
 
 export const NOTIFICATION_CHANNEL_ORDER: NotificationChannel[] = [
   NotificationChannel.EMAIL,
@@ -21,8 +20,9 @@ const DEFAULT_CHANNELS: Record<EventChannelKey, NotificationChannel[]> = {
   deliveryChannels: [NotificationChannel.WHATSAPP],
   lowStockChannels: [NotificationChannel.EMAIL],
   transferChannels: [NotificationChannel.EMAIL],
-  storeLoginChannels: [NotificationChannel.WHATSAPP],
 };
+
+const DEFAULT_STORE_LOGIN_CHANNELS: NotificationChannel[] = [NotificationChannel.WHATSAPP];
 
 export interface ContactRecipients {
   email?: string | null;
@@ -59,6 +59,19 @@ export function resolveRecipient(
     default:
       return null;
   }
+}
+
+export function getStoreLoginChannels(
+  storefront: { storeLoginChannels?: NotificationChannelPreference[] },
+): NotificationChannel[] {
+  const configured = storefront.storeLoginChannels;
+  if (Array.isArray(configured) && configured.length > 0) {
+    const valid = new Set<string>(Object.values(NotificationChannel));
+    return NOTIFICATION_CHANNEL_ORDER.filter(
+      (channel) => configured.includes(channel as NotificationChannelPreference) && valid.has(channel),
+    );
+  }
+  return DEFAULT_STORE_LOGIN_CHANNELS;
 }
 
 export function pickPrimaryChannel(

@@ -88,7 +88,6 @@ export interface NotificationSettings {
   deliveryChannels?: NotificationChannelPreference[];
   lowStockChannels?: NotificationChannelPreference[];
   transferChannels?: NotificationChannelPreference[];
-  storeLoginChannels?: NotificationChannelPreference[];
   smtpHost?: string;
   smtpPort?: number;
   smtpUser?: string;
@@ -125,6 +124,7 @@ export interface StorefrontSettings {
   allowedPaymentMethods?: string[];
   shippingMethods?: any[];
   deliverySettings?: DeliverySettings;
+  storeLoginChannels?: NotificationChannelPreference[];
 }
 
 export interface DeliverySettings {
@@ -397,13 +397,22 @@ export class SettingsService implements OnModuleInit {
       deliveryChannels: stored.deliveryChannels?.length ? stored.deliveryChannels : ['WHATSAPP'],
       lowStockChannels: stored.lowStockChannels?.length ? stored.lowStockChannels : ['EMAIL'],
       transferChannels: stored.transferChannels?.length ? stored.transferChannels : ['EMAIL'],
-      storeLoginChannels: stored.storeLoginChannels?.length ? stored.storeLoginChannels : ['WHATSAPP'],
     };
   }
 
   async getStorefrontSettings(): Promise<StorefrontSettings> {
     const row = await this.getCachedRaw();
-    return (row?.storefront as StorefrontSettings) ?? {} as StorefrontSettings;
+    const stored = (row?.storefront as StorefrontSettings) ?? {} as StorefrontSettings;
+    const legacyLogin = (row?.notifications as { storeLoginChannels?: NotificationChannelPreference[] })
+      ?.storeLoginChannels;
+    return {
+      ...stored,
+      storeLoginChannels: stored.storeLoginChannels?.length
+        ? stored.storeLoginChannels
+        : legacyLogin?.length
+          ? legacyLogin
+          : ['WHATSAPP'],
+    };
   }
 
   async getIntegrationSettings(): Promise<IntegrationSettings> {
@@ -760,7 +769,6 @@ export class SettingsService implements OnModuleInit {
             deliveryChannels: ['WHATSAPP'],
             lowStockChannels: ['EMAIL'],
             transferChannels: ['EMAIL'],
-            storeLoginChannels: ['WHATSAPP'],
             smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
             smsGatewayUrl: '', evolutionApiUrl: '', evolutionApiKey: '',
             evolutionInstance: 'store-main', fcmServerKey: '',
@@ -793,6 +801,7 @@ export class SettingsService implements OnModuleInit {
             hideOutOfStock: false, hideBrandFilters: false,
             transferCbu: '', acceptCash: false, shippingInfo: '',
             requireShippingData: 'optional', whatsapp: '',
+            storeLoginChannels: ['WHATSAPP'],
             instagramUrl: '', facebookUrl: '', tiktokUrl: '', youtubeUrl: '', xUrl: '',
             deliverySettings: {
               enableGpsTracking: true,

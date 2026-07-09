@@ -1,6 +1,7 @@
 import { NotificationChannel } from '../models/notification.model';
 import {
   getEventChannels,
+  getStoreLoginChannels,
   resolveRecipient,
   NOTIFICATION_CHANNEL_ORDER,
 } from './notification-channels.util';
@@ -33,9 +34,16 @@ describe('notification-channels.util', () => {
   });
 
   it('falls back to defaults when channels are missing', () => {
-    expect(getEventChannels(baseSettings, 'storeLoginChannels')).toEqual([
+    expect(getEventChannels(baseSettings, 'deliveryChannels')).toEqual([
       NotificationChannel.WHATSAPP,
     ]);
+  });
+
+  it('returns configured store login channels', () => {
+    expect(getStoreLoginChannels({ storeLoginChannels: ['SMS'] })).toEqual([
+      NotificationChannel.SMS,
+    ]);
+    expect(getStoreLoginChannels({})).toEqual([NotificationChannel.WHATSAPP]);
   });
 
   it('resolves recipients per channel', () => {

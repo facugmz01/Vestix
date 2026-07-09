@@ -57,7 +57,6 @@ export interface NotificationSettings {
   deliveryChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
   lowStockChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
   transferChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
-  storeLoginChannels: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
   smtpHost?: string;
   smtpPort?: number;
   smtpUser?: string;
@@ -142,6 +141,7 @@ export interface StorefrontSettings {
   subdomain?: string;
   allowedPaymentMethods?: string[];
   shippingMethods?: Array<{ id: string; name: string; price: number; type: 'SHIPPING' | 'PICKUP' }>;
+  storeLoginChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
   deliverySettings?: {
     enableGpsTracking: boolean;
     enableGeofence: boolean;

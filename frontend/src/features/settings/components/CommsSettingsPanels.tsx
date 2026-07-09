@@ -214,20 +214,6 @@ export function NotificationSettingsPanel() {
               />
             )}
           />
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
-          <Controller
-            control={control}
-            name="storeLoginChannels"
-            render={({ field }) => (
-              <NotificationChannelPicker
-                label="Login de la tienda online (OTP)"
-                hint="Canal para enviar el código de verificación al iniciar sesión. Se usa el primero disponible en orden."
-                value={field.value}
-                onChange={field.onChange}
-                singleSelect
-              />
-            )}
-          />
           
           <div style={{ marginTop: '16px' }}>
             <Input type="number" label="Umbral de Stock Bajo (unidades)" {...register('lowStockThreshold', { valueAsNumber: true })} style={{ width: '120px' }} />

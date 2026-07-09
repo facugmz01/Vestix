@@ -207,12 +207,6 @@ export class NotificationSettingsDto {
   transferChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
 
   @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1)
-  @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true })
-  storeLoginChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
-
-  @IsOptional()
   @IsString()
   smtpHost?: string;
 
@@ -367,6 +361,11 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsString() subdomain?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) allowedPaymentMethods?: string[];
   @IsOptional() @IsArray() shippingMethods?: any[];
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsIn(NOTIFICATION_CHANNEL_VALUES, { each: true })
+  storeLoginChannels?: Array<'EMAIL' | 'WHATSAPP' | 'SMS'>;
   @IsOptional() deliverySettings?: {
     enableGpsTracking?: boolean;
     enableGeofence?: boolean;
