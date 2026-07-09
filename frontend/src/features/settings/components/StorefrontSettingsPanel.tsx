@@ -30,20 +30,7 @@ export function StorefrontSettingsPanel() {
 
   const { register, control, handleSubmit, reset, formState: { isDirty } } = useForm<StorefrontSettingsFormData>({
     resolver: zodResolver(storefrontSettingsSchema),
-    defaultValues: {
-      shippingMethods: [],
-      deliverySettings: {
-        enableGpsTracking: true,
-        enableGeofence: true,
-        geofenceRadiusMeters: 150,
-        requirePhotoOnDelivery: false,
-        showMapToCustomer: true,
-        carriers: {
-          andreani: { enabled: false, apiKey: '', clientId: '', contract: '' },
-          mercadoEnvios: { enabled: false, accessToken: '', userId: '' },
-        },
-      },
-    },
+    defaultValues: storefrontSettingsSchema.parse({}),
   });
 
   const { fields: shippingFields, append: appendShipping, remove: removeShipping } = useFieldArray({
@@ -52,7 +39,9 @@ export function StorefrontSettingsPanel() {
   });
 
   useEffect(() => {
-    if (settings?.storefront) reset(settings.storefront);
+    if (settings?.storefront) {
+      reset(storefrontSettingsSchema.parse(settings.storefront));
+    }
   }, [settings, reset]);
 
   const onSubmit = (data: StorefrontSettingsFormData) => {

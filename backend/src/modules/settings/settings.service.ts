@@ -284,6 +284,34 @@ export class SettingsService implements OnModuleInit {
     return result;
   }
 
+  private withNotificationDefaults(notifications: Record<string, any> | null | undefined) {
+    if (!notifications) return notifications;
+    return {
+      ...notifications,
+      saleChannels: notifications.saleChannels?.length ? notifications.saleChannels : ['EMAIL', 'WHATSAPP'],
+      purchaseChannels: notifications.purchaseChannels?.length ? notifications.purchaseChannels : ['EMAIL'],
+      deliveryChannels: notifications.deliveryChannels?.length ? notifications.deliveryChannels : ['WHATSAPP'],
+      lowStockChannels: notifications.lowStockChannels?.length ? notifications.lowStockChannels : ['EMAIL'],
+      transferChannels: notifications.transferChannels?.length ? notifications.transferChannels : ['EMAIL'],
+    };
+  }
+
+  private withStorefrontDefaults(
+    storefront: Record<string, any> | null | undefined,
+    legacyNotifications?: Record<string, any>,
+  ) {
+    if (!storefront) return storefront;
+    const legacyLogin = legacyNotifications?.storeLoginChannels;
+    return {
+      ...storefront,
+      storeLoginChannels: storefront.storeLoginChannels?.length
+        ? storefront.storeLoginChannels
+        : legacyLogin?.length
+          ? legacyLogin
+          : ['WHATSAPP'],
+    };
+  }
+
   /**
    * Decrypts all sections of a raw DB row for internal use.
    */
@@ -307,8 +335,11 @@ export class SettingsService implements OnModuleInit {
     return {
       ...decrypted,
       notifications: decrypted.notifications
-        ? this.maskSection('notifications', decrypted.notifications as any)
+        ? this.withNotificationDefaults(this.maskSection('notifications', decrypted.notifications as any))
         : decrypted.notifications,
+      storefront: decrypted.storefront
+        ? this.withStorefrontDefaults(decrypted.storefront, decrypted.notifications)
+        : decrypted.storefront,
       integrations: decrypted.integrations
         ? this.maskSection('integrations', decrypted.integrations as any)
         : decrypted.integrations,
@@ -392,26 +423,16 @@ export class SettingsService implements OnModuleInit {
       evolutionInstance: 'store-main',
       fcmServerKey: '',
       ...stored,
-      saleChannels: stored.saleChannels?.length ? stored.saleChannels : ['EMAIL', 'WHATSAPP'],
-      purchaseChannels: stored.purchaseChannels?.length ? stored.purchaseChannels : ['EMAIL'],
-      deliveryChannels: stored.deliveryChannels?.length ? stored.deliveryChannels : ['WHATSAPP'],
-      lowStockChannels: stored.lowStockChannels?.length ? stored.lowStockChannels : ['EMAIL'],
-      transferChannels: stored.transferChannels?.length ? stored.transferChannels : ['EMAIL'],
+      ...this.withNotificationDefaults(stored),
     };
   }
 
   async getStorefrontSettings(): Promise<StorefrontSettings> {
     const row = await this.getCachedRaw();
     const stored = (row?.storefront as StorefrontSettings) ?? {} as StorefrontSettings;
-    const legacyLogin = (row?.notifications as { storeLoginChannels?: NotificationChannelPreference[] })
-      ?.storeLoginChannels;
     return {
       ...stored,
-      storeLoginChannels: stored.storeLoginChannels?.length
-        ? stored.storeLoginChannels
-        : legacyLogin?.length
-          ? legacyLogin
-          : ['WHATSAPP'],
+      ...this.withStorefrontDefaults(stored, row?.notifications as Record<string, any>),
     };
   }
 
