@@ -4,14 +4,19 @@ import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
 import { salesApi } from '@/api/sales.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { CheckCircle, XCircle, FileText, ShoppingCart, CreditCard } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, ShoppingCart, CreditCard, Send } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
 import {
   contactMissingMessage,
+  normalizePhone,
+  resolveEmailRecipient,
   resolveManualNotificationRecipient,
+  type NotificationChannel,
+  type ResolvedRecipient,
 } from '@/utils/notificationRecipient';
+import type { OrderLineItem } from '@/types';
 
 interface Props {
   open: boolean;
@@ -54,12 +59,49 @@ function isActiveSale(status: string) {
   return status === 'CONFIRMED' || status === 'COMPLETED';
 }
 
+function canSendReceipt(status: string) {
+  return !['CANCELLED', 'QUOTATION', 'QUOTE'].includes(status);
+}
+
+function lineProductName(l: OrderLineItem) {
+  return (
+    l.productName ||
+    l.historicalName ||
+    l.variant?.product?.name ||
+    'Producto Desconocido'
+  );
+}
+
+function lineVariantSku(l: OrderLineItem) {
+  return l.variantSku || l.historicalSku || l.variant?.sku || 'N/A';
+}
+
+function availableReceiptChannels(contact: {
+  phone?: string | null;
+  email?: string | null;
+}): ResolvedRecipient[] {
+  const channels: ResolvedRecipient[] = [];
+  const phone = normalizePhone(contact.phone);
+  const email = resolveEmailRecipient(contact.email);
+  if (phone) {
+    channels.push({ channel: 'WHATSAPP', recipient: phone, label: `WhatsApp +${phone}` });
+  }
+  if (email) {
+    channels.push({ channel: 'EMAIL', recipient: email, label: `Email ${email}` });
+  }
+  return channels;
+}
+
 export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
   const queryClient = useQueryClient();
   const [paymentReference, setPaymentReference] = useState('');
+  const [receiptChannel, setReceiptChannel] = useState<NotificationChannel | null>(null);
 
   useEffect(() => {
-    if (open) setPaymentReference('');
+    if (open) {
+      setPaymentReference('');
+      setReceiptChannel(null);
+    }
   }, [saleId, open]);
 
   const { data: sale, isLoading } = useQuery({
@@ -103,35 +145,44 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
     onError: (err: any) => toast.error(err.message || 'Error al cancelar'),
   });
 
+  const sendReceiptMutation = useMutation({
+    mutationFn: (payload: { channel: NotificationChannel; recipient: string }) =>
+      salesApi.sendManualReceipt(saleId!, payload),
+    onSuccess: (res, vars) => {
+      const channelLabel = vars.channel === 'EMAIL' ? 'Email' : vars.channel === 'SMS' ? 'SMS' : 'WhatsApp';
+      toast.success(`${res.message} (${channelLabel}: ${vars.recipient})`);
+    },
+    onError: (err: any) => toast.error(err.message || 'Error al enviar comprobante'),
+  });
+
   if (!saleId || isLoading || !sale) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="lg"><div /></Drawer>;
   }
 
-  const receiptRecipient = resolveManualNotificationRecipient({
+  const receiptChannels = availableReceiptChannels({
     phone: sale.customer?.phone,
     email: sale.customer?.email,
   });
+  const preferredRecipient = resolveManualNotificationRecipient({
+    phone: sale.customer?.phone,
+    email: sale.customer?.email,
+  });
+  const selectedChannel =
+    receiptChannel && receiptChannels.some((c) => c.channel === receiptChannel)
+      ? receiptChannel
+      : preferredRecipient?.channel || receiptChannels[0]?.channel || null;
+  const selectedRecipient =
+    receiptChannels.find((c) => c.channel === selectedChannel) || preferredRecipient || null;
 
-  const handleSendReceipt = async () => {
-    const resolved = resolveManualNotificationRecipient({
-      phone: sale.customer?.phone,
-      email: sale.customer?.email,
-    });
-
-    if (!resolved) {
+  const handleSendReceipt = () => {
+    if (!selectedRecipient) {
       toast.error(contactMissingMessage('El cliente'));
       return;
     }
-
-    try {
-      const res = await salesApi.sendManualReceipt(sale.id, {
-        channel: resolved.channel,
-        recipient: resolved.recipient,
-      });
-      toast.success(`${res.message} (${resolved.label})`);
-    } catch {
-      toast.error('Error al enviar comprobante');
-    }
+    sendReceiptMutation.mutate({
+      channel: selectedRecipient.channel,
+      recipient: selectedRecipient.recipient,
+    });
   };
 
   const handleCancel = () => {
@@ -151,8 +202,70 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
   const isQuotation = sale.status === 'QUOTATION' || sale.status === 'QUOTE';
   const statusLabel = STATUS_LABELS[sale.status] || sale.status;
   const statusColor = STATUS_COLORS[sale.status] || 'gray';
-  const anyPending = confirmMutation.isPending || confirmPaymentMutation.isPending || cancelMutation.isPending;
+  const anyPending =
+    confirmMutation.isPending ||
+    confirmPaymentMutation.isPending ||
+    cancelMutation.isPending ||
+    sendReceiptMutation.isPending;
   const savedPaymentReference = sale.payments?.find(p => p.referenceId)?.referenceId;
+  const showSendReceipt = canSendReceipt(sale.status);
+
+  const sendReceiptBlock = showSendReceipt ? (
+    <ActionGuard action="read" subject="Sales">
+      <div
+        style={{
+          padding: '16px',
+          background: 'var(--bg-elevated)',
+          borderRadius: 'var(--radius)',
+          border: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Send size={16} />
+          <span style={{ fontWeight: 700, fontSize: '14px' }}>Enviar comprobante</span>
+        </div>
+
+        {receiptChannels.length > 1 && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {receiptChannels.map((channel) => (
+              <Button
+                key={channel.channel}
+                size="sm"
+                variant={selectedChannel === channel.channel ? 'primary' : 'outline'}
+                onClick={() => setReceiptChannel(channel.channel)}
+              >
+                {channel.channel === 'EMAIL' ? 'Email' : 'WhatsApp'}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <Button
+            variant="primary"
+            icon={<Send size={16} />}
+            onClick={handleSendReceipt}
+            loading={sendReceiptMutation.isPending}
+            disabled={!selectedRecipient || anyPending}
+          >
+            Enviar Comprobante
+          </Button>
+          {selectedRecipient ? (
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              Se enviará a {selectedRecipient.label}
+            </span>
+          ) : (
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              El cliente no tiene teléfono ni email cargado.
+            </span>
+          )}
+        </div>
+      </div>
+    </ActionGuard>
+  ) : null;
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle del Documento Comercial" width="lg">
@@ -167,7 +280,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
               {formatSaleId(sale.id, sale.status)}
             </h3>
             <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
-              Cliente: <strong style={{ color: 'var(--text-primary)' }}>{sale.customerName || 'Consumidor Final'}</strong>
+              Cliente: <strong style={{ color: 'var(--text-primary)' }}>{sale.customerName || sale.customer?.fullName || 'Consumidor Final'}</strong>
             </p>
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -192,6 +305,8 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
             <p style={{ margin: 0, fontWeight: 900, color: 'var(--green)', fontSize: '18px' }}>{formatCurrency(sale.grandTotal)}</p>
           </div>
         </div>
+
+        {sendReceiptBlock}
 
         {sale.status === 'PENDING_PAYMENT' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -228,9 +343,9 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                 header: 'Artículo / SKU',
                 render: (l) => (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 700, fontSize: '14px' }}>{l.productName || 'Producto Desconocido'}</span>
+                    <span style={{ fontWeight: 700, fontSize: '14px' }}>{lineProductName(l)}</span>
                     <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      SKU: {l.variantSku || 'N/A'}
+                      SKU: {lineVariantSku(l)}
                     </span>
                   </div>
                 ),
@@ -263,28 +378,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                 <CheckCircle size={20} />
                 <span style={{ fontWeight: 600 }}>Venta Completada. Stock descontado.</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
-                <ActionGuard action="read" subject="Sales">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <Button
-                      variant="outline"
-                      icon={<FileText size={16} />}
-                      onClick={handleSendReceipt}
-                      disabled={!receiptRecipient}
-                    >
-                      Enviar Comprobante
-                    </Button>
-                    {receiptRecipient ? (
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        Se enviará a {receiptRecipient.label}
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        El cliente no tiene teléfono ni email cargado.
-                      </span>
-                    )}
-                  </div>
-                </ActionGuard>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
                 <ActionGuard action="update" subject="Sales">
                   <Button
                     variant="ghost"
@@ -334,19 +428,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                   Podés cambiar el estado de entrega desde el listado de ventas o anular la venta si corresponde.
                 </p>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
-                <ActionGuard action="read" subject="Sales">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <Button
-                      variant="outline"
-                      icon={<FileText size={16} />}
-                      onClick={handleSendReceipt}
-                      disabled={!receiptRecipient}
-                    >
-                      Enviar Comprobante
-                    </Button>
-                  </div>
-                </ActionGuard>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
                 <ActionGuard action="update" subject="Sales">
                   <Button
                     variant="ghost"

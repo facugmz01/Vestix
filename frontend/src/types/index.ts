@@ -235,7 +235,7 @@ export interface GoodsReceipt {
 export type PaymentMethod = 'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'|'QR_MERCADOPAGO';
 export interface PaymentMethodEntity { id: string; name: string; type: string; isActive: boolean; }
 export type OrderSource   = 'POS'|'ECOMMERCE'|'BACKOFFICE';
-export type SaleOrderStatus = 'QUOTATION' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'COMPLETED' | 'READY_FOR_PICKUP' | 'DELIVERED' | 'CANCELLED';
+export type SaleOrderStatus = 'QUOTATION' | 'QUOTE' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'COMPLETED' | 'READY_FOR_PICKUP' | 'DELIVERED' | 'CANCELLED';
 
 export interface SaleOrder {
   id: string; branchId: string; source: OrderSource; status: SaleOrderStatus;
@@ -255,7 +255,9 @@ export interface SaleOrderPayment {
 }
 export interface OrderLineItem {
   id: string; variantId: string; variantSku?: string; productName?: string;
+  historicalSku?: string | null; historicalName?: string | null;
   quantity: number; basePrice: number; discountAmount: number; finalPrice: number;
+  variant?: { sku?: string; product?: { name?: string } | null } | null;
 }
 
 export type ReturnStatus = 'PENDING' | 'APPROVED' | 'REJECTED';

@@ -19,22 +19,36 @@ export class SalesService {
    * All complex writes have been offloaded to the CheckoutOrchestrator.
    */
   async getOrderById(id: string) {
-    // If the ID is a friendly ID (e.g. SL-123 or just the first part of UUID)
-    // Strip prefixes like V- or P-
-    const cleanId = id.replace(/^[VP]-/i, '');
-
     const order = await this.repository.findById(id);
 
     if (order) {
-      // Hydrate variants
       const variantIds = order.lines.map(l => l.variantId);
       const variants = await this.catalogFacade.getVariantsDetails(variantIds);
-      const variantMap = new Map(variants.map(v => [v.id, v]));
+      const variantMap = new Map<string, any>(variants.map((v: any) => [v.id, v]));
 
-      (order as any).lines = order.lines.map(l => ({
-        ...l,
-        variant: variantMap.get(l.variantId)
-      }));
+      (order as any).lines = order.lines.map(l => {
+        const variant = variantMap.get(l.variantId) as
+          | { sku?: string; product?: { name?: string } | null }
+          | undefined;
+        const productName =
+          l.historicalName ||
+          variant?.product?.name ||
+          null;
+        const variantSku =
+          l.historicalSku ||
+          variant?.sku ||
+          null;
+
+        return {
+          ...l,
+          variant,
+          productName,
+          variantSku,
+        };
+      });
+
+      (order as any).customerName =
+        order.customer?.fullName || (order as any).customerName || 'Consumidor Final';
     }
 
     return order;
