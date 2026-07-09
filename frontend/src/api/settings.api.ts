@@ -77,6 +77,7 @@ export interface IntegrationSettings {
   mpPublicKey?: string;
   mpAccessToken?: string;
   mpWebhookSecret?: string;
+  mpEnvironment?: 'test' | 'production';
   mpExternalPosId?: string;
   mlAppId?: string;
   mlSecretKey?: string;

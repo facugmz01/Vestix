@@ -64,6 +64,8 @@ export interface MercadoPagoWebhookUrls {
   pos: string;
 }
 
+export type MercadoPagoEnvironment = 'test' | 'production';
+
 const MP_PAYMENT_METHOD_TYPES = new Set(['CREDIT_CARD', 'DEBIT_CARD', 'DIGITAL_WALLET']);
 
 @Injectable()
@@ -79,8 +81,30 @@ export class MercadoPagoService {
     return MP_PAYMENT_METHOD_TYPES.has(paymentMethodType);
   }
 
+  /** @deprecated Use resolveEnvironment — TEST- prefix only; modern test creds use APP_USR- */
   static isTestCredentials(accessToken: string): boolean {
     return accessToken.startsWith('TEST-');
+  }
+
+  static inferEnvironmentFromCredentials(
+    accessToken?: string,
+    publicKey?: string,
+  ): MercadoPagoEnvironment | null {
+    if (accessToken?.startsWith('TEST-') || publicKey?.startsWith('TEST-')) {
+      return 'test';
+    }
+    return null;
+  }
+
+  static resolveEnvironment(
+    mpEnvironment: MercadoPagoEnvironment | undefined,
+    accessToken?: string,
+    publicKey?: string,
+  ): MercadoPagoEnvironment {
+    if (mpEnvironment === 'test' || mpEnvironment === 'production') {
+      return mpEnvironment;
+    }
+    return MercadoPagoService.inferEnvironmentFromCredentials(accessToken, publicKey) ?? 'production';
   }
 
   getBackendBaseUrl(): string {
@@ -97,7 +121,20 @@ export class MercadoPagoService {
 
   async getAccessToken(): Promise<string> {
     const intSettings = await this.settingsService.getIntegrationSettings();
-    return intSettings.mpAccessToken || process.env.MP_ACCESS_TOKEN || '';
+    const dbToken = intSettings.mpAccessToken?.trim();
+    if (dbToken) {
+      return dbToken;
+    }
+
+    const envToken = process.env.MP_ACCESS_TOKEN?.trim();
+    if (envToken) {
+      this.logger.warn(
+        '[MercadoPago] Using MP_ACCESS_TOKEN from environment. Guardá las credenciales en Admin → Integraciones para evitar que el .env pise la configuración.',
+      );
+      return envToken;
+    }
+
+    return '';
   }
 
   async getWebhookSecret(): Promise<string> {
@@ -132,9 +169,14 @@ export class MercadoPagoService {
     return accessToken;
   }
 
-  getCredentialMode(accessToken?: string): 'test' | 'production' {
-    const token = accessToken ?? '';
-    return MercadoPagoService.isTestCredentials(token) ? 'test' : 'production';
+  async getCredentialMode(accessToken?: string): Promise<MercadoPagoEnvironment> {
+    const intSettings = await this.settingsService.getIntegrationSettings();
+    const token = accessToken ?? intSettings.mpAccessToken ?? '';
+    return MercadoPagoService.resolveEnvironment(
+      intSettings.mpEnvironment,
+      token,
+      intSettings.mpPublicKey,
+    );
   }
 
   async verifyWebhookSignature(
@@ -198,7 +240,7 @@ export class MercadoPagoService {
       }
 
       const profile = await response.json();
-      const mode = MercadoPagoService.isTestCredentials(accessToken) ? 'sandbox (TEST)' : 'producción';
+      const mode = (await this.getCredentialMode(accessToken)) === 'test' ? 'pruebas' : 'producción';
       const nickname = profile.nickname || profile.email || profile.id;
       return {
         success: true,
@@ -308,11 +350,15 @@ export class MercadoPagoService {
       }
 
       const preference: MercadoPagoPreference = await response.json();
-      this.logger.log(`[MercadoPago] ✓ Preference created: ${preference.id}`);
+      const mode = await this.getCredentialMode(accessToken);
 
-      const initPoint = MercadoPagoService.isTestCredentials(accessToken)
-        ? preference.sandbox_init_point
-        : preference.init_point;
+      // MP deprecated sandbox_init_point; init_point respects test vs prod credentials.
+      const initPoint = preference.init_point || preference.sandbox_init_point;
+      if (!initPoint) {
+        throw new Error('MercadoPago preference response missing init_point');
+      }
+
+      this.logger.log(`[MercadoPago] ✓ Preference created: ${preference.id} (${mode})`);
 
       return {
         preferenceId: preference.id,
