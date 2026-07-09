@@ -120,10 +120,13 @@ export function NotificationSettingsPanel() {
 
   const { register, watch, handleSubmit, reset, control, formState: { isDirty } } = useForm<NotificationSettingsFormData>({
     resolver: zodResolver(notificationSettingsSchema),
+    defaultValues: notificationSettingsSchema.parse({}),
   });
 
   useEffect(() => {
-    if (settings?.notifications) reset(settings.notifications);
+    if (settings?.notifications) {
+      reset(notificationSettingsSchema.parse(settings.notifications));
+    }
   }, [settings, reset]);
 
   const onSubmit = (data: NotificationSettingsFormData) => {

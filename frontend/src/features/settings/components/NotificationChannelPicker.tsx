@@ -29,21 +29,23 @@ export function NotificationChannelPicker({
   onChange,
   singleSelect = false,
 }: NotificationChannelPickerProps) {
+  const selected = value ?? [];
+
   const toggle = (channel: NotificationChannelOption) => {
     if (singleSelect) {
       onChange([channel]);
       return;
     }
 
-    if (value.includes(channel)) {
-      const next = value.filter((item) => item !== channel);
+    if (selected.includes(channel)) {
+      const next = selected.filter((item) => item !== channel);
       onChange(next.length > 0 ? next : [channel]);
       return;
     }
 
     const next = CHANNEL_OPTIONS
       .map((option) => option.value)
-      .filter((option) => option === channel || value.includes(option));
+      .filter((option) => option === channel || selected.includes(option));
     onChange(next);
   };
 
@@ -55,7 +57,7 @@ export function NotificationChannelPicker({
       </div>
       <div className={styles.channelPickerOptions}>
         {CHANNEL_OPTIONS.map(({ value: channel, label: channelLabel, icon: Icon }) => {
-          const active = value.includes(channel);
+          const active = selected.includes(channel);
           return (
             <button
               key={channel}
