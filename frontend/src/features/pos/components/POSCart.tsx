@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { FileText, PauseCircle, CloudOff } from 'lucide-react';
+import { FileText, PauseCircle, CloudOff, Tags } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePosStore } from '../store/usePosStore';
 import { customersApi } from '@/api/customers.api';
@@ -8,6 +8,16 @@ import { computeIvaBreakdown } from '../utils/posTax';
 import { POS_PAYMENT_METHODS, type PosPaymentMethodId } from '../constants/posPaymentMethods';
 import { PosCustomerSearch } from './PosCustomerSearch';
 import styles from '@/pages/pos/POSPage.module.css';
+
+type CartVariant = {
+  id: string;
+  name?: string;
+  productName?: string;
+  size?: string;
+  basePrice: number;
+  imageUrl?: string | null;
+  product?: { name?: string; images?: string[] };
+};
 
 export function POSCart({
   subtotal,
@@ -50,8 +60,11 @@ export function POSCart({
 
   const iva = computeIvaBreakdown(grandTotal);
 
-  const getVariantName = (variant: { name?: string; productName?: string; size?: string }) =>
-    variant.name || variant.productName || 'Producto';
+  const getVariantName = (variant: CartVariant) =>
+    variant.name || variant.productName || variant.product?.name || 'Producto';
+
+  const getVariantImage = (variant: CartVariant) =>
+    variant.imageUrl || variant.product?.images?.[0] || null;
 
   const handlePaymentClick = (method: typeof POS_PAYMENT_METHODS[number]) => {
     if (method.requiresCustomer && !selectedCustomerId) {
@@ -92,50 +105,70 @@ export function POSCart({
               <p>Escaneá o buscá productos</p>
             </div>
           ) : (
-            cart.map((item, index) => (
-              <div key={`${item.variant.id}-${index}`} className={styles.cartItem}>
-                <div className={styles.cartItemDetails}>
-                  <span className={styles.cartItemName}>
-                    {getVariantName(item.variant as { name?: string; productName?: string; size?: string })}
-                    {item.variant.size ? ` (${item.variant.size})` : ''}
-                  </span>
-                  <span className={styles.cartItemSku}>
-                    {formatCurrency((item.variant.basePrice * item.qty) * (1 - item.discountPct / 100))}
-                  </span>
-                </div>
+            <>
+              <div className={styles.cartListHeader}>
+                <span>Seleccionados</span>
+                <span>{totalItems} ítem{totalItems === 1 ? '' : 's'}</span>
+              </div>
+              {cart.map((item, index) => {
+              const variant = item.variant as CartVariant;
+              const imageUrl = getVariantImage(variant);
+              const lineTotal = (variant.basePrice * item.qty) * (1 - item.discountPct / 100);
+              return (
+                <div key={`${variant.id}-${index}`} className={styles.cartItem}>
+                  <div className={styles.cartItemThumb} aria-hidden={!imageUrl}>
+                    {imageUrl ? (
+                      <img src={imageUrl} alt="" className={styles.cartItemThumbImg} />
+                    ) : (
+                      <Tags size={18} />
+                    )}
+                  </div>
 
-                <div className={styles.qtyControl}>
-                  <button type="button" className={styles.qtyBtn} aria-label="Reducir cantidad" onClick={() => updateQty(item.variant.id, item.qty - 1)}>
-                    −
-                  </button>
+                  <div className={styles.cartItemDetails}>
+                    <span className={styles.cartItemName}>
+                      {getVariantName(variant)}
+                      {variant.size ? ` (${variant.size})` : ''}
+                    </span>
+                    <span className={styles.cartItemSku}>
+                      {formatCurrency(lineTotal)}
+                    </span>
+                  </div>
+
+                  <div className={styles.qtyControl}>
+                    <button type="button" className={styles.qtyBtn} aria-label="Reducir cantidad" onClick={() => updateQty(variant.id, item.qty - 1)}>
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      className={styles.qtyInput}
+                      value={item.qty}
+                      min={1}
+                      aria-label="Cantidad"
+                      onChange={e => updateQty(variant.id, Number(e.target.value))}
+                    />
+                    <button type="button" className={styles.qtyBtn} aria-label="Aumentar cantidad" onClick={() => updateQty(variant.id, item.qty + 1)}>
+                      +
+                    </button>
+                  </div>
+
                   <input
                     type="number"
-                    className={styles.qtyInput}
-                    value={item.qty}
-                    min={1}
-                    aria-label="Cantidad"
-                    onChange={e => updateQty(item.variant.id, Number(e.target.value))}
+                    min={0}
+                    max={100}
+                    aria-label="Descuento porcentaje"
+                    value={item.discountPct}
+                    onChange={e => updateDiscount(variant.id, Math.min(100, Math.max(0, Number(e.target.value))))}
+                    className={styles.discountInput}
+                    title="Desc. %"
                   />
-                  <button type="button" className={styles.qtyBtn} aria-label="Aumentar cantidad" onClick={() => updateQty(item.variant.id, item.qty + 1)}>
-                    +
+
+                  <button type="button" className={styles.removeBtn} aria-label="Eliminar línea" onClick={() => removeLine(variant.id)}>
+                    ×
                   </button>
                 </div>
-
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  aria-label="Descuento porcentaje"
-                  value={item.discountPct}
-                  onChange={e => updateDiscount(item.variant.id, Math.min(100, Math.max(0, Number(e.target.value))))}
-                  className={styles.discountInput}
-                />
-
-                <button type="button" className={styles.removeBtn} aria-label="Eliminar línea" onClick={() => removeLine(item.variant.id)}>
-                  ×
-                </button>
-              </div>
-            ))
+              );
+            })}
+            </>
           )}
         </div>
       </div>
