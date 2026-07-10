@@ -7,7 +7,7 @@ export interface PermissionTuple {
   subject: string;
 }
 
-const SETTINGS_UMBRELLA_SUBJECTS = new Set(['Settings', 'System', 'Branch', 'Integrations']);
+const SETTINGS_UMBRELLA_SUBJECTS = new Set(['Settings', 'System', 'Branch', 'Integrations', 'Backups']);
 
 export function permissionMatches(
   held: PermissionTuple,

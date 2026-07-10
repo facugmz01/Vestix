@@ -33,6 +33,7 @@ export const Subjects = {
   SYSTEM:     'System',
   PRICING:    'Pricing',
   INTEGRATIONS: 'Integrations',
+  BACKUPS:      'Backups',
   ALL:        'all',
 } as const;
 export type Subject = (typeof Subjects)[keyof typeof Subjects];

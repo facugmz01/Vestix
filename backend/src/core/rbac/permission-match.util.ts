@@ -6,7 +6,7 @@ export interface PermissionTuple {
 }
 
 /** Subjects covered by manage/Settings (settings umbrella). */
-const SETTINGS_UMBRELLA_SUBJECTS = new Set(['Settings', 'System', 'Branch', 'Integrations']);
+const SETTINGS_UMBRELLA_SUBJECTS = new Set(['Settings', 'System', 'Branch', 'Integrations', 'Backups']);
 
 /**
  * Returns true when a role's permission tuple satisfies a required permission.

@@ -432,6 +432,27 @@ export interface EntityTraceEntry {
   changes?: Record<string, { before: unknown; after: unknown }>;
 }
 
+export type BackupStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+export type BackupType = 'MANUAL' | 'RESTORE';
+
+export interface BackupJob {
+  id: string;
+  filename: string | null;
+  filePath: string | null;
+  fileSize: number | null;
+  format: string;
+  status: BackupStatus;
+  type: BackupType;
+  description: string | null;
+  error: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdById: string | null;
+  createdByEmail: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type IntegrationStatus = 'ACTIVE' | 'INACTIVE' | 'ERROR' | 'PENDING_CONFIG';
 export type IntegrationProvider =
   | 'MERCADOPAGO'

@@ -121,6 +121,10 @@ export const queryKeys = {
     detail: (id: string)       => ['audit', 'log', id] as const,
     trace:  (entityType: string, entityId: string) => ['audit', 'trace', entityType, entityId] as const,
   },
+  backups: {
+    all:    (filters?: object) => withFilters(['backups', 'list'], filters),
+    detail: (id: string)       => ['backups', 'detail', id] as const,
+  },
   sales: {
     all:    (filters?: object) => withFilters(['sales', 'list'], filters),
     detail: (id: string)       => ['sales', 'detail', id]    as const,
