@@ -5,6 +5,8 @@ import { PauseCircle } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { useAuthStore } from '@/store/auth.store';
 import { customersApi } from '@/api/customers.api';
+import { branchesApi } from '@/api/branches.api';
+import { queryKeys } from '@/api/queryKeys';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
 import { PAYMENT_METHOD_LABELS } from '../constants/posPaymentMethods';
@@ -50,6 +52,12 @@ export function POSModals({
     queryKey: ['customer', selectedCustomerId],
     queryFn: () => customersApi.getCustomer(selectedCustomerId),
     enabled: !!selectedCustomerId,
+  });
+
+  const { data: branch } = useQuery({
+    queryKey: queryKeys.branches.detail(user?.branchId ?? ''),
+    queryFn: () => branchesApi.getBranch(user!.branchId!),
+    enabled: !!user?.branchId,
   });
   const paymentReference = usePosStore(s => s.paymentReference);
   const setPaymentReference = usePosStore(s => s.setPaymentReference);
@@ -144,7 +152,7 @@ export function POSModals({
         open={printModalOpen}
         order={completedOrder}
         onClose={() => setPrintModalOpen(false)}
-        branchSettings={user?.branchId === 'CENTRAL' ? { posReceiptHeader: 'VESTIX - SUCURSAL CENTRAL', posReceiptFooter: 'Gracias por tu compra' } : {}}
+        branchSettings={branch?.settings}
       />
 
       <Modal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title={`Confirmar Pago — ${paymentLabel}`}>

@@ -187,6 +187,10 @@ export class MercadoPagoService {
     const secret = webhookSecret ?? await this.getWebhookSecret();
 
     if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error('[MercadoPago] No webhook secret configured in production');
+        return { valid: false, error: 'Webhook secret not configured' };
+      }
       this.logger.warn('[MercadoPago] No webhook secret configured, skipping signature verification');
       return { valid: true, skipped: true };
     }

@@ -198,26 +198,84 @@ export class MercadoLibreService {
   async handleWebhook(topic: string, resource: string, payload?: any) {
     this.logger.log(`[ML Webhook] ${topic} → ${resource}`);
 
-    await this.prisma.integrationLog.create({
+    const isOrderEvent = topic === 'orders_v2' || resource?.includes('/orders/');
+
+    const job = await this.prisma.integrationLog.create({
       data: {
         provider: 'MERCADOLIBRE',
         direction: 'INBOUND',
-        action: topic || 'WEBHOOK',
-        status: 'SUCCESS',
-        payload: payload ?? { resource },
+        action: isOrderEvent ? 'ML_ORDER_WEBHOOK' : (topic || 'WEBHOOK'),
+        status: 'PENDING',
+        payload: payload ?? { resource, topic },
+        attempts: 0,
       },
     });
 
-    if (topic === 'orders_v2' || resource?.includes('/orders/')) {
-      this.logger.log(`ML order received: ${resource}`);
-      // Order ingestion can be wired to CheckoutOrchestrator in a follow-up
+    if (isOrderEvent) {
+      this.logger.log(`[ML Webhook] Order event enqueued for processing — job ${job.id}`);
+      setImmediate(() => this.processOrderWebhook(job.id));
+    } else if (topic === 'items' || resource?.includes('/items/')) {
+      this.logger.log(`[ML Webhook] Item update received: ${resource}`);
+      void this.prisma.integrationLog.update({
+        where: { id: job.id },
+        data: { status: 'SUCCESS', response: { acknowledged: true } as any },
+      });
+    } else {
+      void this.prisma.integrationLog.update({
+        where: { id: job.id },
+        data: { status: 'SUCCESS', response: { acknowledged: true } as any },
+      });
     }
 
-    if (topic === 'items' || resource?.includes('/items/')) {
-      this.logger.log(`ML item update received: ${resource}`);
-    }
+    return { received: true, jobId: job.id };
+  }
 
-    return { success: true };
+  /**
+   * Processes inbound ML order webhooks (async, enqueued from handleWebhook).
+   */
+  private async processOrderWebhook(jobId: string) {
+    const job = await this.prisma.integrationLog.findUnique({ where: { id: jobId } });
+    if (!job) return;
+
+    await this.prisma.integrationLog.update({
+      where: { id: jobId },
+      data: { status: 'PROCESSING', attempts: { increment: 1 } },
+    });
+
+    try {
+      const payload = (job.payload ?? {}) as Record<string, any>;
+      const resource = payload.resource || '';
+      const orderIdMatch = String(resource).match(/\/orders\/(\d+)/);
+      const mlOrderId = orderIdMatch?.[1] || payload.id;
+
+      this.logger.log(`[ML Order Webhook] Processing order ${mlOrderId} (job ${jobId})`);
+
+      // TODO: Fetch order details from ML API using getAccessToken()
+      // TODO: Map line items via mlVariantMapping or SKU
+      // TODO: Wire to CheckoutOrchestrator.processCheckout
+      this.logger.warn(
+        `[ML Order Webhook] Order import not implemented — order ${mlOrderId} logged only (job ${jobId})`,
+      );
+
+      await this.prisma.integrationLog.update({
+        where: { id: jobId },
+        data: {
+          status: 'SUCCESS',
+          response: {
+            mlOrderId,
+            orderMapping: 'not_implemented',
+            message: 'Order webhook processed; ERP import pending implementation',
+          } as any,
+        },
+      });
+    } catch (err: any) {
+      const errorMessage = err.message || 'Unknown error';
+      this.logger.error(`[ML Order Webhook] Job ${jobId} failed: ${errorMessage}`);
+      await this.prisma.integrationLog.update({
+        where: { id: jobId },
+        data: { status: 'FAILED', error: errorMessage },
+      });
+    }
   }
 
   async getMappings() {

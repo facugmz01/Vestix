@@ -201,4 +201,25 @@ export class ReturnsService {
 
     return result;
   }
+
+  async rejectReturn(id: string) {
+    const saleReturn = await this.prisma.saleReturn.findUnique({
+      where: { id },
+      include: { lines: true, saleOrder: true },
+    });
+
+    if (!saleReturn) throw new NotFoundException('Return record not found');
+    if (saleReturn.status === 'REJECTED') {
+      throw new BadRequestException('La devolución ya fue rechazada');
+    }
+    if (saleReturn.status === 'APPROVED') {
+      throw new BadRequestException('No se puede rechazar una devolución ya aprobada');
+    }
+
+    return this.prisma.saleReturn.update({
+      where: { id },
+      data: { status: 'REJECTED' },
+      include: { lines: true, saleOrder: { include: { customer: true } } },
+    });
+  }
 }

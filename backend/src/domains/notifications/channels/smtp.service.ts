@@ -18,39 +18,35 @@ export class SmtpService {
     const smtpPass = notificationsConfig.smtpPass || process.env.SMTP_PASS;
     const storeName = process.env.STORE_NAME || 'Vestix ERP';
 
-    if (smtpHost && smtpUser && smtpPass) {
-      try {
-        const nodemailer = require('nodemailer');
-
-        const transporter = nodemailer.createTransport({
-          host: smtpHost,
-          port: smtpPort ? parseInt(smtpPort, 10) : 587,
-          secure: smtpPort === '465',
-          auth: { user: smtpUser, pass: smtpPass },
-        });
-
-        await transporter.sendMail({
-          from: `"${storeName}" <${smtpUser}>`,
-          to,
-          subject,
-          text: body,
-          html: this.toHtml(body),
-        });
-
-        this.logger.log(`[SMTP] ✓ Real email sent to ${to} | Subject: "${subject}"`);
-        return { success: true };
-      } catch (err: any) {
-        this.logger.error(`[SMTP] Failed to send real email to ${to}: ${err.message}`);
-        throw err;
-      }
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      this.logger.warn(`[SMTP] Not configured — cannot send to ${to}`);
+      return { success: false, error: 'SMTP not configured' };
     }
 
-    this.logger.log(
-      `[SMTP Mock] → Recipient: ${to}\n` +
-      `  Subject: "${subject}"\n` +
-      `  Body: "${body.replace(/\n/g, ' ')}"`,
-    );
-    return { success: true };
+    try {
+      const nodemailer = require('nodemailer');
+
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort ? parseInt(smtpPort, 10) : 587,
+        secure: smtpPort === '465',
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+
+      await transporter.sendMail({
+        from: `"${storeName}" <${smtpUser}>`,
+        to,
+        subject,
+        text: body,
+        html: this.toHtml(body),
+      });
+
+      this.logger.log(`[SMTP] ✓ Real email sent to ${to} | Subject: "${subject}"`);
+      return { success: true };
+    } catch (err: any) {
+      this.logger.error(`[SMTP] Failed to send real email to ${to}: ${err.message}`);
+      throw err;
+    }
   }
 
   private toHtml(text: string): string {

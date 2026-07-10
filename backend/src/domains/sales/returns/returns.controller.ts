@@ -31,8 +31,12 @@ export class ReturnsController {
   @Post(':id/approve')
   @RequirePermissions({ action: 'update', subject: 'Sales' })
   async approveReturn(@Param('id') id: string) {
-    // For now, processReturn already approves and processes stock/money.
-    // This could be used for a two-step approval process in the future.
     return { status: 'ALREADY_APPROVED' };
+  }
+
+  @Post(':id/reject')
+  @RequirePermissions({ action: 'update', subject: 'Sales' })
+  async rejectReturn(@Param('id') id: string) {
+    return this.returnsService.rejectReturn(id);
   }
 }

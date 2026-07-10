@@ -1,14 +1,16 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { MovementType } from './models/inventory-movement.model';
+import { PrismaService } from '../../core/prisma/prisma.service';
 
-// import { CostingService } from '../../modules/finance/costing.service'; // For WAC calculations
+// CostingService (domains/finance/costing.service) is not implemented yet.
+// WAC is computed inline in calculateSimpleWac using variant.costPrice.
 
 @Injectable()
 export class StockMovementService {
   constructor(
     private readonly inventoryLedger: InventoryService,
-    // private readonly costingService: CostingService 
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -20,26 +22,68 @@ export class StockMovementService {
     destinationWarehouseId: string;
     branchId: string;
     quantity: number;
-    purchaseCost: number; // The actual cost paid on the supplier invoice
+    purchaseCost: number;
     purchaseOrderId: string;
     batchId?: string;
   }, tx?: any) {
-    // 1. Calculate the new Weighted Average Cost (WAC). 
-    // In production, this fetches current stock & current WAC, blending it with the new incoming batch cost.
-    // const newUnitCost = this.costingService.calculateWAC(...);
-    const mockUnitCost = payload.purchaseCost;
+    // Weighted Average Cost (WAC): blends existing stock cost with incoming purchase cost.
+    // CostingService (not yet implemented) would centralize this; until then we use
+    // variant.costPrice as the current unit cost and recompute on each goods receipt.
+    const unitCost = await this.calculateSimpleWac(
+      payload.variantId,
+      payload.destinationWarehouseId,
+      payload.quantity,
+      payload.purchaseCost,
+      tx,
+    );
 
     return this.inventoryLedger.recordMovement({
       variantId: payload.variantId,
-      sourceWarehouseId: null, // Goods originate from outside the internal warehouse system
+      sourceWarehouseId: null,
       destinationWarehouseId: payload.destinationWarehouseId,
       branchId: payload.branchId,
       type: MovementType.GOODS_RECEIPT,
       quantity: payload.quantity,
-      unitCost: mockUnitCost,
+      unitCost,
       referenceId: payload.purchaseOrderId,
       batchId: payload.batchId,
     }, tx);
+  }
+
+  /**
+   * Simple WAC: (currentQty × currentCost + incomingQty × purchaseCost) / (currentQty + incomingQty).
+   * Persists the new average on ProductVariant.costPrice when stock exists.
+   */
+  private async calculateSimpleWac(
+    variantId: string,
+    warehouseId: string,
+    incomingQty: number,
+    purchaseCost: number,
+    tx?: any,
+  ): Promise<number> {
+    const prisma = tx || this.prisma;
+    const [variant, stockLevels] = await Promise.all([
+      prisma.productVariant.findUnique({ where: { id: variantId } }),
+      prisma.stockLevel.findMany({ where: { variantId, warehouseId } }),
+    ]);
+
+    const currentQty = stockLevels.reduce((sum: number, s: any) => sum + s.physicalQuantity, 0);
+    const currentCost = variant?.costPrice ?? purchaseCost;
+
+    if (currentQty <= 0) {
+      await prisma.productVariant.update({
+        where: { id: variantId },
+        data: { costPrice: purchaseCost },
+      });
+      return purchaseCost;
+    }
+
+    const newWac = (currentQty * currentCost + incomingQty * purchaseCost) / (currentQty + incomingQty);
+    await prisma.productVariant.update({
+      where: { id: variantId },
+      data: { costPrice: newWac },
+    });
+    return newWac;
   }
 
   /**

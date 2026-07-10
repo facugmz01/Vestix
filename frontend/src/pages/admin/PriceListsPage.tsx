@@ -4,12 +4,13 @@ import { Plus, Edit2, Trash2, Eye, Tag, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip, Modal
 } from '@/components/ui';
 
 import { priceListsApi } from '@/api/priceLists.api';
+import { customersApi } from '@/api/customers.api';
 import { queryKeys } from '@/api/queryKeys';
-import type { PriceList } from '@/types';
+import type { PriceList, Customer } from '@/types';
 import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { PriceListFormDrawer } from '@/features/priceLists/components/PriceListFormDrawer';
@@ -28,11 +29,34 @@ export default function PriceListsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const [selectedList, setSelectedList] = useState<PriceList | null>(null);
+  const [assignSearch, setAssignSearch] = useState('');
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.priceLists.all({ page, pageSize, search, type: typeFilter }),
     queryFn: () => priceListsApi.getPriceLists({ page, pageSize, search, type: typeFilter as any }),
+  });
+
+  const { data: customersData, isLoading: loadingCustomers } = useQuery({
+    queryKey: queryKeys.customers.all({ search: assignSearch, pageSize: 100 }),
+    queryFn: () => customersApi.getCustomers({ search: assignSearch, pageSize: 100 }),
+    enabled: assignOpen,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: ({ priceListId, customerIds }: { priceListId: string; customerIds: string[] }) =>
+      priceListsApi.assignToCustomers(priceListId, customerIds),
+    onSuccess: () => {
+      toast.success('Clientes asignados correctamente');
+      setAssignOpen(false);
+      setSelectedCustomerIds([]);
+      setAssignSearch('');
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Error al asignar clientes');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -67,11 +91,20 @@ export default function PriceListsPage() {
     setDeleteOpen(true);
   };
 
-  const handleAssign = (_list: PriceList) => {
-    // Mock action since we don't have a full Assign UI implemented in this turn
-    toast('La asignación a clientes se realiza desde la ficha de cada Cliente (CRM).', { icon: 'ℹ️' });
+  const handleAssign = (list: PriceList) => {
+    setSelectedList(list);
+    setSelectedCustomerIds([]);
+    setAssignSearch('');
+    setAssignOpen(true);
   };
 
+  const toggleCustomer = (id: string) => {
+    setSelectedCustomerIds(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
+
+  const customers = customersData?.data ?? [];
   const lists = data?.data ?? [];
   const total = data?.total ?? 0;
 
@@ -206,6 +239,51 @@ export default function PriceListsPage() {
         onConfirm={() => selectedList && deleteMutation.mutate(selectedList.id)}
         onCancel={() => setDeleteOpen(false)}
       />
+
+      <Modal
+        open={assignOpen}
+        title={`Asignar clientes — ${selectedList?.name ?? ''}`}
+        onClose={() => setAssignOpen(false)}
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAssignOpen(false)} disabled={assignMutation.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              loading={assignMutation.isPending}
+              disabled={selectedCustomerIds.length === 0}
+              onClick={() => selectedList && assignMutation.mutate({ priceListId: selectedList.id, customerIds: selectedCustomerIds })}
+            >
+              Asignar ({selectedCustomerIds.length})
+            </Button>
+          </>
+        }
+      >
+        <div className={adminStyles.cellStackGapXs}>
+          <SearchInput placeholder="Buscar cliente..." onSearch={setAssignSearch} />
+          {loadingCustomers ? (
+            <TableSkeleton rows={4} />
+          ) : customers.length === 0 ? (
+            <EmptyState title="Sin clientes" message="No se encontraron clientes para asignar." />
+          ) : (
+            <div className={adminStyles.entityCardGridWide}>
+              {customers.map((c: Customer) => (
+                <label key={c.id} className={adminStyles.entityCardElevated}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCustomerIds.includes(c.id)}
+                    onChange={() => toggleCustomer(c.id)}
+                  />
+                  <span className={adminStyles.cellPrimary}>{c.fullName}</span>
+                  {c.email && <span className={adminStyles.cellMonoCode}>{c.email}</span>}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
     </PageContainer>
   );
 }

@@ -3,6 +3,7 @@ import { AccountsService } from './accounts.service';
 import { CashService } from './cash/cash.service';
 import { PaymentsService } from './payments.service';
 import { CurrentAccountsService } from './current-accounts.service';
+import { FinanceDocumentsService } from './finance-documents.service';
 import { FinanceController } from './finance.controller';
 import { PrismaModule } from '../../core/prisma/prisma.module';
 
@@ -15,12 +16,14 @@ import { PrismaModule } from '../../core/prisma/prisma.module';
     CashService,
     PaymentsService,
     CurrentAccountsService,
+    FinanceDocumentsService,
   ],
   exports: [
     AccountsService,
     CashService,
     PaymentsService,
     CurrentAccountsService,
+    FinanceDocumentsService,
   ],
 })
 export class FinanceModule {}

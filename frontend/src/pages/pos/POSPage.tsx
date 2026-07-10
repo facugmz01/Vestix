@@ -12,6 +12,8 @@ import { usePosStore } from '@/features/pos/store/usePosStore';
 import { usePosCheckout } from '@/features/pos/hooks/usePosCheckout';
 import { usePosOffline } from '@/features/pos/hooks/usePosOffline';
 import { useDexieSync } from '@/hooks/useDexieSync';
+import { useSyncEngine } from '@/hooks/useSyncEngine';
+import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import { usePosKeyboard } from '@/features/pos/hooks/usePosKeyboard';
 
 import styles from './POSPage.module.css';
@@ -55,12 +57,15 @@ export default function POSPage() {
 
   const {
     isOnline,
-    isSyncing,
+    isCatalogSyncing,
     lastCatalogSync,
     catalogCount,
-    forceSync,
     forceCatalogSync,
   } = useDexieSync(currentBranchId);
+
+  const { forceSync } = useSyncEngine();
+  const queueSyncing = useOfflineQueueStore(s => s.operations.some(o => o.status === 'SYNCING'));
+  const isSyncing = isCatalogSyncing || queueSyncing;
 
   const {
     gridProducts,

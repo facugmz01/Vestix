@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/core/db/db';
+import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import styles from './SyncStatusIndicator.module.css';
 
 export function SyncStatusIndicator() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  
+  const pendingCount = useOfflineQueueStore(
+    s => s.operations.filter(o => o.status === 'PENDING' || o.status === 'SYNCING').length,
+  );
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -18,14 +20,7 @@ export function SyncStatusIndicator() {
     };
   }, []);
 
-  const pendingCount = useLiveQuery(
-    () => db.syncQueue.where('status').equals('PENDING').count(),
-    []
-  );
-
-  // Consider it "syncing" if online and there are items to process
-  // The actual background sync logic is handled elsewhere, we just reflect the state.
-  const isSyncing = isOnline && (pendingCount || 0) > 0;
+  const isSyncing = isOnline && pendingCount > 0;
 
   if (isOnline && pendingCount === 0) {
     return (

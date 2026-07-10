@@ -1,8 +1,7 @@
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Cloud, CloudOff, RefreshCw, Database } from 'lucide-react';
 import { Modal, Button } from '@/components/ui';
-import { db } from '@/core/db/db';
 import { CatalogSyncService } from '@/core/sync/CatalogSyncService';
+import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import toast from 'react-hot-toast';
 import indicatorStyles from '@/features/offline/components/SyncStatusIndicator.module.css';
 import styles from '@/pages/pos/POSPage.module.css';
@@ -30,14 +29,9 @@ export function PosSyncPanel({
   onForceSync,
   onForceCatalogSync,
 }: SyncPanelProps) {
-  const pendingItems = useLiveQuery(
-    () => db.syncQueue.where('status').equals('PENDING').toArray(),
-    [],
-  );
-  const errorItems = useLiveQuery(
-    () => db.syncQueue.where('status').equals('ERROR').toArray(),
-    [],
-  );
+  const operations = useOfflineQueueStore(s => s.operations);
+  const pendingItems = operations.filter(o => o.status === 'PENDING' || o.status === 'SYNCING');
+  const errorItems = operations.filter(o => o.status === 'FAILED' || o.status === 'CONFLICT');
 
   const handleCatalogSync = async (full: boolean) => {
     if (!navigator.onLine) {
@@ -79,16 +73,16 @@ export function PosSyncPanel({
 
         <div className={styles.syncStatGrid}>
           <StatCard icon={<Database size={18} />} label="Catálogo offline" value={String(catalogCount)} />
-          <StatCard icon={<RefreshCw size={18} />} label="Ventas pendientes" value={String(pendingItems?.length ?? 0)} />
+          <StatCard icon={<RefreshCw size={18} />} label="Operaciones pendientes" value={String(pendingItems.length)} />
         </div>
 
         <div className={styles.syncMeta}>
           Última sync catálogo: <strong className={styles.syncMetaStrong}>{lastSyncLabel}</strong>
         </div>
 
-        {(errorItems?.length ?? 0) > 0 && (
+        {(errorItems.length) > 0 && (
           <div className={styles.syncErrorBanner}>
-            <strong>{errorItems!.length} operación(es) con error</strong>
+            <strong>{errorItems.length} operación(es) con error</strong>
           </div>
         )}
 
@@ -97,9 +91,9 @@ export function PosSyncPanel({
             variant="primary"
             onClick={onForceSync}
             loading={isSyncing}
-            disabled={!isOnline || (pendingItems?.length ?? 0) === 0}
+            disabled={!isOnline || pendingItems.length === 0}
           >
-            Sincronizar ventas ({pendingItems?.length ?? 0})
+            Sincronizar operaciones ({pendingItems.length})
           </Button>
           <Button variant="ghost" onClick={() => handleCatalogSync(false)} disabled={!isOnline}>
             Actualizar catálogo (incremental)

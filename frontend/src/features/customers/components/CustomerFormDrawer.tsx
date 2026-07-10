@@ -10,7 +10,7 @@ import { Drawer, Button, Input } from '@/components/ui';
 import { customersApi, type CreateCustomerDto } from '@/api/customers.api';
 import { priceListsApi } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
-import { db } from '@/core/db/db';
+import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import type { Customer } from '@/types';
 import styles from '@/styles/DetailDrawerShared.module.css';
 
@@ -37,6 +37,7 @@ interface Props {
 
 export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
   const queryClient = useQueryClient();
+  const enqueueOfflineOp = useOfflineQueueStore(s => s.enqueue);
   const isEditing = !!customerToEdit;
   
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -85,22 +86,50 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
   const mutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
       const dto = data as CreateCustomerDto;
-      
+
+      const enqueueOffline = () => {
+        if (isEditing && customerToEdit) {
+          enqueueOfflineOp({
+            module: 'Customers',
+            action: 'updateCustomer',
+            description: `Actualizar cliente: ${data.fullName}`,
+            endpoint: `/customers/${customerToEdit.id}`,
+            method: 'PATCH',
+            maxRetries: 5,
+            payload: dto,
+          });
+        } else {
+          enqueueOfflineOp({
+            module: 'Customers',
+            action: 'createCustomer',
+            description: `Crear cliente: ${data.fullName}`,
+            endpoint: '/customers',
+            method: 'POST',
+            maxRetries: 5,
+            payload: dto,
+          });
+        }
+      };
+
       if (!isOnline) {
-        await db.syncQueue.add({
-          type: isEditing ? 'UPDATE_CUSTOMER' : 'CREATE_CUSTOMER',
-          payload: { ...dto, localId: crypto.randomUUID(), targetId: customerToEdit?.id },
-          createdAt: new Date().toISOString(),
-          status: 'PENDING',
-          retryCount: 0,
-        });
+        enqueueOffline();
         return { offline: true };
       }
 
-      if (isEditing && customerToEdit) {
-        return { offline: false, res: await customersApi.updateCustomer(customerToEdit.id, dto) };
+      try {
+        if (isEditing && customerToEdit) {
+          return { offline: false, res: await customersApi.updateCustomer(customerToEdit.id, dto) };
+        }
+        return { offline: false, res: await customersApi.createCustomer(dto) };
+      } catch (err: unknown) {
+        const axiosErr = err as { response?: unknown; code?: string; message?: string };
+        const isNetworkError = !axiosErr.response || axiosErr.code === 'ERR_NETWORK' || axiosErr.message?.includes('Network Error');
+        if (isNetworkError) {
+          enqueueOffline();
+          return { offline: true };
+        }
+        throw err;
       }
-      return { offline: false, res: await customersApi.createCustomer(dto) };
     },
     onSuccess: (result) => {
       if (result.offline) {

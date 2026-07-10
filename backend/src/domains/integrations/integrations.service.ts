@@ -1,7 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
 import axios from 'axios';
 import { WooCommerceApiService } from './woocommerce-api.service';
 import { MercadoLibreService } from './mercadolibre.service';
@@ -10,6 +8,7 @@ import { CheckoutOrchestrator } from '../sales/checkout.orchestrator';
 import { OrderSource, PaymentMethod } from '../sales/models/order.model';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { AfipService } from '../invoicing/afip.service';
 
 const MAX_ATTEMPTS = 5;
 const BASE_DELAY_MS = 2000; // 2s base for exponential backoff
@@ -24,7 +23,6 @@ export interface WebhookLogsFilters {
 @Injectable()
 export class IntegrationsService {
   private readonly logger = new Logger(IntegrationsService.name);
-  private readonly configPath = path.join(__dirname, 'integrations-config.json');
 
   constructor(
     private readonly wcApi: WooCommerceApiService,
@@ -33,6 +31,7 @@ export class IntegrationsService {
     private readonly checkoutOrchestrator: CheckoutOrchestrator,
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly afipService: AfipService,
   ) { }
 
   // ─── CONFIGURATION MANAGEMENT ──────────────────────────────────────────────
@@ -63,7 +62,7 @@ export class IntegrationsService {
       },
       afip: {
         isActive: arcaSettings.enabled,
-        cuit: arcaSettings.iibb, // Usually CUIT and IIBB are related or we store CUIT in general settings
+        cuit: arcaSettings.cuit,
         environment: arcaSettings.environment,
       },
       mercadolibre: {
@@ -202,8 +201,8 @@ export class IntegrationsService {
   async testConnection(id: string) {
     if (id.toLowerCase() === 'woocommerce') {
       try {
-        const baseUrl = this.wcApi['getBaseUrl']();
-        const auth = this.wcApi['getAuth']();
+        const baseUrl = await this.wcApi['getBaseUrl']();
+        const auth = await this.wcApi['getAuth']();
         await axios.get(`${baseUrl}/products`, { auth, params: { per_page: 1 }, timeout: 5000 });
         return { success: true, message: 'Conexión exitosa' };
       } catch (err: any) {
@@ -211,7 +210,19 @@ export class IntegrationsService {
       }
     }
     if (id.toLowerCase() === 'afip') {
-      return { success: true, message: 'Conexión simulada con AFIP homologación exitosa' };
+      const status = await this.afipService.getConfigurationStatus();
+      if (!status.configured) {
+        return {
+          success: false,
+          message: `AFIP no configurado: ${status.missing.join(', ')}`,
+        };
+      }
+      return {
+        success: false,
+        message:
+          'AFIP configurado, pero la integración WSFE aún no está implementada. ' +
+          'Los comprobantes no se autorizarán hasta conectar el SDK con certificados reales.',
+      };
     }
     if (id.toLowerCase() === 'mercadolibre') {
       return this.mlService.testConnection();
@@ -322,14 +333,24 @@ export class IntegrationsService {
   // ─── INBOUND: Receive webhooks FROM WooCommerce ──────────────────────────────
 
   async handleInboundWebhook(event: string, payload: Record<string, any>, wcSignature: string, rawBody: Buffer) {
-    const expectedSig = crypto
-      .createHmac('sha256', process.env.WC_WEBHOOK_SECRET ?? 'mock-secret')
-      .update(rawBody)
-      .digest('base64');
+    const webhookSecret = process.env.WC_WEBHOOK_SECRET?.trim();
 
-    if (expectedSig !== wcSignature) {
-      this.logger.error('[Webhook] ✗ Invalid signature — possible spoofed request');
-      throw new BadRequestException('Invalid webhook signature');
+    if (!webhookSecret) {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error('[Webhook] WC_WEBHOOK_SECRET not configured in production');
+        throw new BadRequestException('Webhook secret not configured');
+      }
+      this.logger.warn('[Webhook] WC_WEBHOOK_SECRET not set — skipping HMAC verification in non-production');
+    } else {
+      const expectedSig = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('base64');
+
+      if (expectedSig !== wcSignature) {
+        this.logger.error('[Webhook] ✗ Invalid signature — possible spoofed request');
+        throw new BadRequestException('Invalid webhook signature');
+      }
     }
 
     const job = await this.prisma.integrationLog.create({
@@ -461,17 +482,35 @@ export class IntegrationsService {
       }
       const warehouse = await this.prisma.warehouse.findFirst({ where: { branchId: branch.id } });
 
+      const lines: { variantId: string; categoryId: string; quantity: number }[] = [];
+
+      for (const item of wcOrder.line_items) {
+        const variantId = await this.resolveWcLineItemToVariant(item);
+        if (!variantId) {
+          this.logger.error(
+            `[Inbound] Skipping unmapped WC line item — order ${payload.id}, ` +
+            `product ${item.product_id}, variation ${item.variation_id ?? 0}, sku ${item.sku ?? 'n/a'}`,
+          );
+          continue;
+        }
+        lines.push({
+          variantId,
+          categoryId: 'ECOMMERCE',
+          quantity: item.quantity,
+        });
+      }
+
+      if (lines.length === 0) {
+        throw new Error(`WooCommerce order ${payload.id} has no mappable line items`);
+      }
+
       const erpOrderDto = {
         id: crypto.randomUUID(),
         branchId: branch.id,
         warehouseId: warehouse?.id || null,
         source: OrderSource.ECOMMERCE,
         customerId: undefined,
-        lines: wcOrder.line_items.map((item: any) => ({
-          variantId: `wc-variation-${item.variation_id}`,
-          categoryId: 'ECOMMERCE',
-          quantity: item.quantity,
-        })),
+        lines,
         paymentMethod: PaymentMethod.CREDIT_CARD,
         paymentAccountId: undefined,
         createdAtIso: new Date().toISOString(),
@@ -480,6 +519,31 @@ export class IntegrationsService {
       await this.checkoutOrchestrator.processCheckout(erpOrderDto as any);
       this.logger.log(`[Inbound] ✓ WooCommerce Order ${payload.id} imported into ERP`);
     }
+  }
+
+  // ─── WC LINE ITEM RESOLUTION ───────────────────────────────────────────────
+
+  private async resolveWcLineItemToVariant(item: {
+    product_id: number;
+    variation_id?: number;
+    sku?: string;
+  }): Promise<string | null> {
+    const wcProductId = item.product_id;
+    const wcVariationId = item.variation_id ?? 0;
+
+    const mapping = await this.prisma.wcVariantMapping.findFirst({
+      where: { wcProductId, wcVariationId },
+    });
+    if (mapping) return mapping.variantId;
+
+    if (item.sku?.trim()) {
+      const variant = await this.prisma.productVariant.findFirst({
+        where: { sku: item.sku.trim() },
+      });
+      if (variant) return variant.id;
+    }
+
+    return null;
   }
 
   // ─── OUTBOUND HANDLERS ───────────────────────────────────────────────────────

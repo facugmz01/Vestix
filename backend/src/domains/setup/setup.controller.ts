@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, BadRequestException, UseGuards } from '@nestjs/common';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { SetupService } from './setup.service';
 
 @Controller('setup')
+@UseGuards(ThrottlerGuard)
 export class SetupController {
   constructor(private readonly setupService: SetupService) {}
 
@@ -14,6 +16,7 @@ export class SetupController {
 
   // Step 1: Create super admin (only works if no admin exists)
   @Post('admin')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async createAdmin(@Body() body: {
     email: string;
     password: string;
@@ -28,6 +31,7 @@ export class SetupController {
 
   // Step 2: Save company info (only works if system is NOT fully configured yet)
   @Post('company')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async saveCompany(@Body() body: {
     companyName: string;
     cuit?: string;
