@@ -53,6 +53,7 @@ const ReportsPage    = lazy(() => import('@/pages/admin/ReportsPage'));
 const NotificationsPage = lazy(() => import('@/pages/admin/NotificationsPage'));
 const IntegrationsPage = lazy(() => import('@/pages/admin/IntegrationsPage'));
 const AuditPage      = lazy(() => import('@/pages/admin/AuditPage'));
+const BackupsPage    = lazy(() => import('@/pages/admin/BackupsPage'));
 const SyncStatusPage = lazy(() => import('@/pages/admin/SyncStatusPage'));
 const SettingsPage   = lazy(() => import('@/pages/admin/SettingsPage'));
 const UsersPage      = lazy(() => import('@/pages/admin/UsersPage'));
@@ -229,6 +230,10 @@ export default function App() {
                 <Route path="/admin/reports"      element={<ReportsPage />} />
                 <Route path="/admin/audit"         element={<AuditPage />} />
                 <Route path="/admin/sync"          element={<SyncStatusPage />} />
+              </Route>
+
+              <Route element={<RequirePermission action="read"   subject="Backups" />}>
+                <Route path="/admin/backups"      element={<BackupsPage />} />
               </Route>
 
               <Route element={<RequirePermission action="manage" subject="Settings" />}>

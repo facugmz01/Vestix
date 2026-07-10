@@ -914,6 +914,32 @@ model OfflineSyncLog {
   @@schema("core")
 }
 
+// ==========================================
+// 13. BACKUPS MODULE
+// ==========================================
+
+model BackupJob {
+  id             String    @id @default(uuid())
+  filename       String?
+  filePath       String?
+  fileSize       BigInt?
+  format         String    @default("SQL") // SQL
+  status         String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  type           String    @default("MANUAL") // MANUAL, RESTORE
+  description    String?
+  error          String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdById    String?
+  createdByEmail String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@schema("core")
+}
+
 model WcVariantMapping {
   id            String   @id @default(uuid())
   variantId     String   @unique

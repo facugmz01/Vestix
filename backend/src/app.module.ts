@@ -31,6 +31,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ShippingModule } from './domains/shipping/shipping.module';
+import { BackupsModule } from './modules/backups/backups.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { ShippingModule } from './domains/shipping/shipping.module';
     // domains/logistics (inventory/transfers) and domains/finance (treasury/shifts)
     // with PermissionsGuard. Legacy modules/* controllers kept for reference only.
     ShippingModule,
+    BackupsModule,
   ],
 })
 export class AppModule {}
