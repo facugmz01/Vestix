@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Bell, Plug, Mail, Smartphone, MessageSquare, TestTube, ExternalLink } from 'lucide-react';
+import { Save, Bell, Plug, MessageSquare, TestTube, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -122,7 +122,7 @@ function ConnectionTestPanel({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+    <div className={styles.stackCol}>
       <div className={styles.testRow}>
         <div className={styles.testRecipient}>
           <Input
@@ -145,7 +145,7 @@ function ConnectionTestPanel({
       </div>
 
       <div>
-        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+        <p className={styles.consoleLabel}>
           Consola de prueba
         </p>
         <div
@@ -238,12 +238,12 @@ export function NotificationSettingsPanel() {
         <div className={styles.cardBody}>
           <ToggleSwitch label="Email (SMTP)" hint="Servidor saliente de correos." {...register('emailEnabled')} />
           {emailEnabled && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <Input placeholder="Host" {...register('smtpHost')} style={{ flex: 1 }} />
-                <Input type="number" placeholder="Port" {...register('smtpPort', { valueAsNumber: true })} style={{ width: '80px' }} />
-                <Input placeholder="Usuario" {...register('smtpUser')} style={{ flex: 1 }} />
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className={styles.configPanel}>
+              <div className={styles.configPanelRow}>
+                <Input placeholder="Host" {...register('smtpHost')} containerClassName={styles.inputGrow} />
+                <Input type="number" placeholder="Port" {...register('smtpPort', { valueAsNumber: true })} containerClassName={styles.inputFixed80} />
+                <Input placeholder="Usuario" {...register('smtpUser')} containerClassName={styles.inputGrow} />
+                <div className={styles.inputGrow}>
                   <Input type="password" placeholder={smtpPassMask.placeholder} {...register('smtpPass')} defaultValue={smtpPassMask.defaultDisplayValue} />
                 </div>
               </div>
@@ -260,11 +260,11 @@ export function NotificationSettingsPanel() {
             </div>
           )}
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
 
           <ToggleSwitch label="SMS (Android Gateway)" hint="Envía SMS gratis usando una app local en un celular." {...register('smsEnabled')} />
           {smsEnabled && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div className={styles.configPanel}>
               <Input placeholder="URL del Gateway" {...register('smsGatewayUrl')} />
               <ConnectionTestPanel
                 testName="SMS Gateway"
@@ -279,16 +279,16 @@ export function NotificationSettingsPanel() {
             </div>
           )}
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
 
           <ToggleSwitch label="WhatsApp (Evolution API)" hint="Integración con instancia local de WhatsApp." {...register('whatsappEnabled')} />
           {whatsappEnabled && (
             <>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <Input placeholder="URL API" {...register('evolutionApiUrl')} style={{ flex: 1 }} />
-                  <Input type="password" placeholder={evolutionKeyMask.placeholder} {...register('evolutionApiKey')} defaultValue={evolutionKeyMask.defaultDisplayValue} style={{ flex: 1 }} />
-                  <Input placeholder="Instancia" {...register('evolutionInstance')} style={{ flex: 1 }} />
+              <div className={styles.configPanel}>
+                <div className={styles.configPanelRow}>
+                  <Input placeholder="URL API" {...register('evolutionApiUrl')} containerClassName={styles.inputGrow} />
+                  <Input type="password" placeholder={evolutionKeyMask.placeholder} {...register('evolutionApiKey')} defaultValue={evolutionKeyMask.defaultDisplayValue} containerClassName={styles.inputGrow} />
+                  <Input placeholder="Instancia" {...register('evolutionInstance')} containerClassName={styles.inputGrow} />
                 </div>
                 <ConnectionTestPanel
                   testName="WhatsApp (Evolution API)"
@@ -305,11 +305,11 @@ export function NotificationSettingsPanel() {
             </>
           )}
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
 
           <ToggleSwitch label="Push (FCM)" hint="Notificaciones nativas a la app móvil." {...register('pushEnabled')} />
           {pushEnabled && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div className={styles.configPanel}>
               <Input type="password" placeholder={fcmKeyMask.placeholder} {...register('fcmServerKey')} defaultValue={fcmKeyMask.defaultDisplayValue} />
               <ConnectionTestPanel
                 testName="Push (FCM)"
@@ -344,7 +344,7 @@ export function NotificationSettingsPanel() {
               />
             )}
           />
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <hr className={styles.divider} />
           <ToggleSwitch label="Orden de Compra Emitida" {...register('notifyOnPurchase')} />
           <Controller
             control={control}
@@ -358,7 +358,7 @@ export function NotificationSettingsPanel() {
               />
             )}
           />
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <hr className={styles.divider} />
           <ToggleSwitch label="Alerta de Stock Bajo" {...register('notifyOnLowStock')} />
           <Controller
             control={control}
@@ -371,7 +371,7 @@ export function NotificationSettingsPanel() {
               />
             )}
           />
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <hr className={styles.divider} />
           <ToggleSwitch label="Transferencia entre Depósitos" {...register('notifyOnTransfer')} />
           <Controller
             control={control}
@@ -384,7 +384,7 @@ export function NotificationSettingsPanel() {
               />
             )}
           />
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '8px 0' }} />
+          <hr className={styles.divider} />
           <ToggleSwitch label="Envíos y Entregas" hint="Despacho, OTP, llegada del repartidor y confirmación de entrega." {...register('notifyOnDelivery')} />
           <Controller
             control={control}
@@ -398,8 +398,8 @@ export function NotificationSettingsPanel() {
             )}
           />
           
-          <div style={{ marginTop: '16px' }}>
-            <Input type="number" label="Umbral de Stock Bajo (unidades)" {...register('lowStockThreshold', { valueAsNumber: true })} style={{ width: '120px' }} />
+          <div className={styles.marginTop16}>
+            <Input type="number" label="Umbral de Stock Bajo (unidades)" {...register('lowStockThreshold', { valueAsNumber: true })} containerClassName={styles.inputFixed120} />
           </div>
         </div>
       </section>
@@ -484,20 +484,20 @@ export function IntegrationSettingsPanel() {
             {...register('mercadopagoEnabled')}
           />
           {mercadopagoEnabled && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
+            <div className={styles.configPanel}>
+              <p className={styles.hintText}>
                 Obtené las credenciales en{' '}
-                <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>
-                  Mercado Pago Developers <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
+                <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer" className={styles.accentLink}>
+                  Mercado Pago Developers <ExternalLink size={12} className={styles.iconInline} />
                 </a>
                 . En <strong>Pruebas → Credenciales de prueba</strong> suelen ser <code>APP_USR-...</code> (no solo <code>TEST-...</code>).
                 Elegí el ambiente abajo para que el checkout use pruebas o producción.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600 }}>Ambiente</label>
+              <div className={styles.selectGroup}>
+                <label className={styles.fieldLabel}>Ambiente</label>
                 <select
                   {...register('mpEnvironment')}
-                  style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-base)' }}
+                  className={styles.select}
                 >
                   <option value="">Detectar automático (solo si empiezan con TEST-)</option>
                   <option value="test">Pruebas (sandbox)</option>
@@ -524,7 +524,7 @@ export function IntegrationSettingsPanel() {
                 placeholder="CAJA001"
                 {...register('mpExternalPosId')}
               />
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className={styles.actionRow}>
                 <Button
                   type="button"
                   variant="secondary"
@@ -534,42 +534,42 @@ export function IntegrationSettingsPanel() {
                 >
                   Probar conexión
                 </Button>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <span className={styles.hintText}>
                   Guardá los cambios antes de probar. URLs de webhook en{' '}
-                  <a href="/admin/integrations" style={{ color: 'var(--accent)' }}>Integraciones externas</a>.
+                  <a href="/admin/integrations" className={styles.accentLink}>Integraciones externas</a>.
                 </span>
               </div>
             </div>
           )}
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
           
           <ToggleSwitch label="MercadoLibre" hint="Sincronización de catálogo y pedidos." {...register('mercadolibreEnabled')} />
           {mercadolibreEnabled && (
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <Input placeholder="App ID" {...register('mlAppId')} style={{ flex: 1 }} />
-              <Input type="password" placeholder="Secret Key" {...register('mlSecretKey')} style={{ flex: 2 }} />
+            <div className={clsx(styles.configPanel, styles.configPanelRow)}>
+              <Input placeholder="App ID" {...register('mlAppId')} containerClassName={styles.inputGrow} />
+              <Input type="password" placeholder="Secret Key" {...register('mlSecretKey')} containerClassName={styles.inputFlex2} />
             </div>
           )}
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
 
           <ToggleSwitch label="WooCommerce" hint="Tienda WordPress externa." {...register('woocommerceEnabled')} />
           {woocommerceEnabled && (
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', flexWrap: 'wrap', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <Input placeholder="Store URL" {...register('wooStoreUrl')} style={{ flex: '1 1 100%' }} />
-              <Input placeholder="Consumer Key" {...register('wooConsumerKey')} style={{ flex: 1 }} />
-              <Input type="password" placeholder="Consumer Secret" {...register('wooConsumerSecret')} style={{ flex: 1 }} />
+            <div className={clsx(styles.configPanel, styles.configPanelRow)}>
+              <Input placeholder="Store URL" {...register('wooStoreUrl')} containerClassName={styles.inputFlexFull} />
+              <Input placeholder="Consumer Key" {...register('wooConsumerKey')} containerClassName={styles.inputGrow} />
+              <Input type="password" placeholder="Consumer Secret" {...register('wooConsumerSecret')} containerClassName={styles.inputGrow} />
             </div>
           )}
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+          <hr className={styles.divider} />
 
           <ToggleSwitch label="Shopify" hint="Sincronizar catálogo y ventas de Shopify." {...register('shopifyEnabled')} />
           {shopifyEnabled && (
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <Input placeholder="Shopify Store URL" {...register('shopifyStoreUrl')} style={{ flex: 1 }} />
-              <Input type="password" placeholder="Admin API Access Token" {...register('shopifyAccessToken')} style={{ flex: 2 }} />
+            <div className={clsx(styles.configPanel, styles.configPanelRow)}>
+              <Input placeholder="Shopify Store URL" {...register('shopifyStoreUrl')} containerClassName={styles.inputGrow} />
+              <Input type="password" placeholder="Admin API Access Token" {...register('shopifyAccessToken')} containerClassName={styles.inputFlex2} />
             </div>
           )}
         </div>

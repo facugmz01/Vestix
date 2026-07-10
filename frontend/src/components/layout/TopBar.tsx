@@ -46,16 +46,10 @@ export function TopBar() {
       </div>
 
       <button 
+        type="button"
         onClick={toggleTheme} 
-        style={{ 
-          background: 'var(--bg-surface)', border: '1px solid var(--border)', 
-          borderRadius: '50%', width: '36px', height: '36px',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-          color: 'var(--text-secondary)', marginLeft: '12px', transition: 'all 0.2s'
-        }}
+        className={styles.themeBtn}
         title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
-        onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-surface-hover)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-surface)' }}
       >
         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
       </button>

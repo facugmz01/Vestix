@@ -6,6 +6,7 @@ import { branchesApi } from '@/api/branches.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Warehouse } from '@/types';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -26,7 +27,6 @@ export function WarehouseFormDrawer({ open, onClose, warehouseToEdit }: Props) {
     isActive: true,
   });
 
-  // Fetch branches for the dropdown
   const { data: branchesData, isLoading: isLoadingBranches } = useQuery({
     queryKey: queryKeys.branches.all({ pageSize: 100 }),
     queryFn: () => branchesApi.getBranches({ pageSize: 100 }),
@@ -98,8 +98,7 @@ export function WarehouseFormDrawer({ open, onClose, warehouseToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
         <div className="grid-responsive grid-cols-2">
           <Input
             label="Nombre del Depósito"
@@ -116,14 +115,14 @@ export function WarehouseFormDrawer({ open, onClose, warehouseToEdit }: Props) {
         </div>
 
         <div className="grid-responsive grid-cols-2">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Sucursal Asociada *</label>
+          <div className={styles.selectGroup}>
+            <label className={styles.selectLabel}>Sucursal Asociada *</label>
             <select
               value={formData.branchId}
               onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
               required
               disabled={isLoadingBranches}
-              style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+              className={styles.select}
             >
               <option value="" disabled>Seleccionar sucursal...</option>
               {branches.map(b => (
@@ -132,12 +131,12 @@ export function WarehouseFormDrawer({ open, onClose, warehouseToEdit }: Props) {
             </select>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Tipo de Depósito</label>
+          <div className={styles.selectGroup}>
+            <label className={styles.selectLabel}>Tipo de Depósito</label>
             <select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-              style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value as CreateWarehouseDto['type'] })}
+              className={styles.select}
             >
               <option value="RETAIL">Venta al Público (Retail)</option>
               <option value="STORAGE">Almacenamiento Interno</option>
@@ -153,14 +152,14 @@ export function WarehouseFormDrawer({ open, onClose, warehouseToEdit }: Props) {
           helperText="Útil si el depósito principal de una sucursal está en otra ubicación física."
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+        <div className={styles.checkboxRow}>
           <input
             type="checkbox"
             id="isActive"
             checked={formData.isActive}
             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
           />
-          <label htmlFor="isActive" style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+          <label htmlFor="isActive" className={styles.checkboxLabel}>
             Depósito Activo (Acepta movimientos)
           </label>
         </div>

@@ -21,4 +21,11 @@ tbody tr { transition: background 0.15s; }
 tbody tr:hover { background: var(--surface-1); }
 .clickable { cursor: pointer; }
 .center { text-align: center; padding: 32px; }
-.loadingRow { color: var(--text-muted); font-size: 14px; }
+.emptyMessage {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.colWidth {
+  width: var(--col-width);
+}

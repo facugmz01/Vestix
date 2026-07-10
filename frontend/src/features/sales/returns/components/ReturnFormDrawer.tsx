@@ -9,6 +9,8 @@ import toast from 'react-hot-toast';
 import { Search, ShoppingCart, ArrowRightLeft } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId, formatShortId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -122,15 +124,15 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
         </>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className={styles.formStackMd}>
         
         {!saleOrder ? (
-          <div style={{ padding: '24px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', textAlign: 'center' }}>
-            <Search size={32} color="var(--text-muted)" style={{ margin: '0 auto 16px' }} />
-            <h4 style={{ margin: '0 0 8px' }}>Buscar Ticket Original</h4>
-            <p style={{ margin: '0 0 16px', fontSize: '14px', color: 'var(--text-secondary)' }}>No se pueden realizar devoluciones sin el ticket de venta o número de orden.</p>
-            <div style={{ display: 'flex', gap: '8px', maxWidth: '400px', margin: '0 auto' }}>
-              <div style={{ flex: 1 }}>
+          <div className={styles.searchPanel}>
+            <Search size={32} className={styles.searchPanelIcon} />
+            <h4 className={styles.searchPanelTitle}>Buscar Ticket Original</h4>
+            <p className={styles.searchPanelText}>No se pueden realizar devoluciones sin el ticket de venta o número de orden.</p>
+            <div className={styles.searchPanelRow}>
+              <div className={styles.flex1}>
                 <Input placeholder="Ej: SL-001..." value={saleSearchId} onChange={e => setSaleSearchId(e.target.value)} />
               </div>
               <Button onClick={searchSale}>Buscar Venta</Button>
@@ -138,25 +140,25 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
           </div>
         ) : (
           <>
-            <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className={styles.saleLocatedCard}>
               <div>
-                <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>Ticket Localizado</p>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: 'monospace', color: 'var(--blue)' }}>
+                <p className={styles.heroLabel}>Ticket Localizado</p>
+                <h3 className={styles.heroTitleAccent}>
                   {formatSaleId(saleOrder.id, saleOrder.status)}
                 </h3>
-                <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{saleOrder.customerName || 'Consumidor Final'}</p>
+                <p className={styles.customerName}>{saleOrder.customerName || 'Consumidor Final'}</p>
               </div>
-              <div style={{ textAlign: 'right' }}>
+              <div className={styles.openingAside}>
                 <Badge color="gray">{new Date(saleOrder.createdAt).toLocaleDateString()}</Badge>
-                <div style={{ marginTop: '8px' }}>
+                <div className={styles.balanceAction}>
                   <Button variant="secondary" size="sm" onClick={() => setSaleOrder(null)}>Cambiar Ticket</Button>
                 </div>
               </div>
             </div>
 
-            <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--blue)' }}>
-              <h4 style={{ margin: '0 0 12px', color: 'var(--blue)' }}>Acción Requerida</h4>
-              <div className="grid-responsive grid-cols-3" style={{ gap: "12px" }}>
+            <div className={styles.actionPanelBlue}>
+              <h4 className={styles.actionPanelBlueTitle}>Acción Requerida</h4>
+              <div className={`grid-responsive grid-cols-3 ${styles.actionGrid}`}>
                 <Button variant={action === 'REFUND' ? 'primary' : 'secondary'} onClick={() => setAction('REFUND')}>Reembolso (Refund)</Button>
                 <Button variant={action === 'EXCHANGE' ? 'primary' : 'secondary'} onClick={() => setAction('EXCHANGE')} icon={<ArrowRightLeft size={16} />}>Cambio de Producto</Button>
                 <Button variant={action === 'STORE_CREDIT' ? 'primary' : 'secondary'} onClick={() => setAction('STORE_CREDIT')}>Crédito a Favor</Button>
@@ -164,7 +166,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
             </div>
 
             <div>
-              <h4 style={{ margin: '0 0 12px', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h4 className={styles.sectionTitleRow}>
                 <ShoppingCart size={18} /> Artículos del Ticket
               </h4>
               <Table
@@ -175,9 +177,9 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                     key: 'sku', 
                     header: 'Artículo / SKU', 
                     render: (l) => (
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: 700, fontSize: '13px' }}>{l.productName || 'Producto'}</span>
-                        <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <div className={styles.lineCol}>
+                        <span className={styles.lineName}>{l.productName || 'Producto'}</span>
+                        <span className={styles.lineSku}>
                           {l.variantSku || l.variantId.split('-')[0]}
                         </span>
                       </div>
@@ -191,7 +193,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                       return <span>{formatCurrency(unitPrice)}</span>;
                     } 
                   },
-                  { key: 'max', header: 'Max. Devol.', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.quantity}</span> },
+                  { key: 'max', header: 'Max. Devol.', render: (l) => <span className={styles.textBold}>{l.quantity}</span> },
                   { 
                     key: 'qty', 
                     header: 'Devuelve', 
@@ -200,7 +202,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                         type="number" min="0" max={l.quantity}
                         value={returnItems[l.id]?.qty ?? 0} 
                         onChange={e => updateItem(l.id, 'qty', Number(e.target.value))}
-                        style={{ width: '60px', padding: '4px', border: '1px solid var(--border)', borderRadius: '4px', textAlign: 'right' }}
+                        className={styles.qtyInputNarrow}
                       />
                     )
                   },
@@ -211,7 +213,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                       <select 
                         value={returnItems[l.id]?.condition ?? 'SELLABLE'} 
                         onChange={e => updateItem(l.id, 'condition', e.target.value)}
-                        style={{ padding: '4px', border: '1px solid var(--border)', borderRadius: '4px' }}
+                        className={styles.selectCompact}
                       >
                         <option value="SELLABLE">Impecable (Sellable)</option>
                         <option value="DAMAGED">Dañado (Damaged)</option>
@@ -224,9 +226,9 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
             </div>
             
             {Object.values(returnItems).some(i => i.qty > 0) && (
-              <div style={{ marginTop: '16px', padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', textAlign: 'right' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Monto Total Implicado:</span>
-                <span style={{ fontSize: '24px', fontWeight: 900, marginLeft: '12px' }}>
+              <div className={styles.returnTotalPanel}>
+                <span className={styles.returnTotalLabel}>Monto Total Implicado:</span>
+                <span className={styles.returnTotalValue}>
                   {formatCurrency(
                     saleOrder.lines.reduce((acc, line) => {
                       const unitPrice = line.finalPrice > 0 ? (line.finalPrice / line.quantity) : line.basePrice;
@@ -234,7 +236,7 @@ export function ReturnFormDrawer({ open, onClose }: Props) {
                     }, 0)
                   )}
                 </span>
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                <p className={styles.hintSm}>
                   {action === 'REFUND' ? 'A reembolsar al cliente.' : (action === 'EXCHANGE' ? 'A favor del cliente para nueva compra.' : 'Se sumará a la cuenta corriente.')}
                 </p>
               </div>

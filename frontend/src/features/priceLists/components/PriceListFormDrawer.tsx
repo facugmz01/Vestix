@@ -5,6 +5,8 @@ import { priceListsApi, type CreatePriceListDto } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { PriceList } from '@/types';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -87,22 +89,22 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
         
         <Input label="Nombre de la Lista *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
         <Input label="Código (Ej: MAYORISTA_A) *" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required />
 
         <div className="grid-responsive grid-cols-2">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Moneda</label>
-            <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+          <div className={styles.fieldGroupSm}>
+            <label className={styles.selectLabel}>Moneda</label>
+            <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} className={styles.select}>
               <option value="ARS">ARS</option>
               <option value="USD">USD</option>
             </select>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Tipo de Lista</label>
-            <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as 'BASE'|'MODIFIER' })} disabled={isEditing} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+          <div className={styles.fieldGroupSm}>
+            <label className={styles.selectLabel}>Tipo de Lista</label>
+            <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as 'BASE'|'MODIFIER' })} disabled={isEditing} className={styles.select}>
               <option value="BASE">Base (Precios fijos)</option>
               <option value="MODIFIER">Modificadora (%)</option>
             </select>
@@ -110,7 +112,7 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
         </div>
 
         {formData.type === 'MODIFIER' && (
-          <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)' }}>
+          <div className={styles.sectionPanel}>
             <Input 
               label="Porcentaje de Modificación (%)" 
               type="number" 
@@ -122,14 +124,14 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.checkboxRow}>
           <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />
-          <label htmlFor="isActive" style={{ fontSize: '14px' }}>Lista Activa</label>
+          <label htmlFor="isActive" className={styles.checkboxLabel}>Lista Activa</label>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.checkboxRow}>
           <input type="checkbox" id="isDefault" checked={!!formData.isDefault} onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })} />
-          <label htmlFor="isDefault" style={{ fontSize: '14px' }}>Lista por defecto (POS y ventas sin cliente asignado)</label>
+          <label htmlFor="isDefault" className={styles.checkboxLabel}>Lista por defecto (POS y ventas sin cliente asignado)</label>
         </div>
 
       </form>

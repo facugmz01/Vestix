@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -177,25 +178,24 @@ export function TemplateEditor({ template }: Props) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+      <div className={styles.metaGrid}>
         <Input label="Nombre" value={name} onChange={(e) => setName(e.target.value)} />
         <Input label="Descripción" value={description} onChange={(e) => setDescription(e.target.value)} />
         <Input label="Ancho (mm)" type="number" value={labelWidth} onChange={(e) => setLabelWidth(Number(e.target.value))} />
         <Input label="Alto (mm)" type="number" value={labelHeight} onChange={(e) => setLabelHeight(Number(e.target.value))} />
       </div>
 
-      <div className={styles.previewBar} style={{ marginBottom: 12 }}>
+      <div className={clsx(styles.previewBar, styles.previewBarSpaced)}>
         <Input
           label="Variante de ejemplo (buscar SKU)"
           placeholder="Mín. 3 caracteres..."
           value={variantSearch}
           onChange={(e) => setVariantSearch(e.target.value)}
-          style={{ maxWidth: 280 }}
+          className={styles.inputNarrow}
         />
         {variantResults && variantResults.length > 0 && (
           <select
-            className={styles.select}
-            style={{ maxWidth: 280, alignSelf: 'flex-end' }}
+            className={clsx(styles.select, styles.selectNarrow)}
             value={previewVariantId ?? ''}
             onChange={(e) => setPreviewVariantId(e.target.value || null)}
           >
@@ -207,7 +207,7 @@ export function TemplateEditor({ template }: Props) {
             ))}
           </select>
         )}
-        <div style={{ alignSelf: 'flex-end' }}>
+        <div className={styles.alignEnd}>
           <label className={styles.label}>Tipo papel</label>
           <select className={styles.select} value={paperType} onChange={(e) => setPaperType(e.target.value as 'ROLL' | 'SHEET')}>
             <option value="ROLL">Rollo</option>

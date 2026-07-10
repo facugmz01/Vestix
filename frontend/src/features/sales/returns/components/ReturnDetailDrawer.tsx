@@ -7,6 +7,8 @@ import { CheckCircle, XCircle } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId, formatShortId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -62,35 +64,35 @@ export function ReturnDetailDrawer({ open, onClose, returnId }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Auditoría de Devolución (RMA)" width="lg">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
+      <div className={styles.stack}>
         
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+        <div className={styles.heroCard}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>ID Solicitud / Ticket Ref</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatShortId(rma.id)}</h3>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>Ticket Orig: <span style={{ fontFamily: 'monospace' }}>{formatSaleId(rma.saleOrderId)}</span></p>
+            <p className={styles.heroLabel}>ID Solicitud / Ticket Ref</p>
+            <h3 className={styles.heroTitle}>{formatShortId(rma.id)}</h3>
+            <p className={styles.heroSubtitle}>Ticket Orig: <span className={styles.mono}>{formatSaleId(rma.saleOrderId)}</span></p>
           </div>
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className={styles.heroAsideStack}>
             <Badge color={getStatusColor(rma.status)}>{rma.status}</Badge>
             <Badge color={getActionColor(rma.action)}>{rma.action}</Badge>
           </div>
         </div>
 
         {/* Amount Box */}
-        <div style={{ padding: '16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className={styles.rmaAmountPanel}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: '14px', color: 'var(--text-muted)' }}>Monto a favor del cliente</p>
-            <h2 style={{ margin: 0, fontSize: '28px', fontWeight: 900 }}>{formatCurrency(rma.totalRefundAmount)}</h2>
+            <p className={styles.rmaAmountLabel}>Monto a favor del cliente</p>
+            <h2 className={styles.rmaAmountValue}>{formatCurrency(rma.totalRefundAmount)}</h2>
           </div>
-          <div style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '13px', maxWidth: '200px' }}>
+          <div className={styles.rmaAmountAside}>
             {rma.action === 'EXCHANGE' ? 'Al aprobarse, el cliente podrá usar este saldo para llevar otro artículo.' : 'Al aprobarse, se extraerá este monto de la caja/cuenta correspondiente.'}
           </div>
         </div>
 
         {/* Lines */}
         <div>
-          <h4 style={{ margin: '0 0 12px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4 className={styles.sectionHeading}>
             Artículos Entregados Físicamente
           </h4>
           
@@ -98,8 +100,8 @@ export function ReturnDetailDrawer({ open, onClose, returnId }: Props) {
             keyField="id"
             data={rma.items}
             columns={[
-              { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
-              { key: 'qty', header: 'Cant. Devuelta', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.quantity}</span> },
+              { key: 'sku', header: 'SKU', render: (l) => <span className={styles.monoBold}>{l.variantSku || l.variantId}</span> },
+              { key: 'qty', header: 'Cant. Devuelta', render: (l) => <span className={styles.textBold}>{l.quantity}</span> },
               { 
                 key: 'cond', 
                 header: 'Condición Física', 
@@ -110,13 +112,13 @@ export function ReturnDetailDrawer({ open, onClose, returnId }: Props) {
                   return <Badge color={color as any}>{l.condition}</Badge>;
                 }
               },
-              { key: 'refund', header: 'Monto Reconocido', render: (l) => <span style={{ fontWeight: 800 }}>{formatCurrency(l.refundAmount)}</span> }
+              { key: 'refund', header: 'Monto Reconocido', render: (l) => <span className={styles.textStrong}>{formatCurrency(l.refundAmount)}</span> }
             ]}
           />
         </div>
 
         {/* Contextual Actions */}
-        <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div className={styles.footerBetween}>
           
           {rma.status === 'PENDING' && (
             <ActionGuard action="manage" subject="Sales">
@@ -130,16 +132,16 @@ export function ReturnDetailDrawer({ open, onClose, returnId }: Props) {
           )}
 
           {rma.status === 'APPROVED' && (
-            <div style={{ padding: '12px', background: 'var(--green-bg)', color: 'var(--green)', borderRadius: 'var(--radius)', width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.alertGreenFull}>
               <CheckCircle size={20} />
-              <span style={{ fontWeight: 600 }}>Solicitud Completada. Stock sumado, fondos acreditados al cliente.</span>
+              <span className={styles.textMedium}>Solicitud Completada. Stock sumado, fondos acreditados al cliente.</span>
             </div>
           )}
 
           {rma.status === 'REJECTED' && (
-            <div style={{ padding: '12px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: 'var(--radius)', width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.alertRedFull}>
               <XCircle size={20} />
-              <span style={{ fontWeight: 600 }}>Solicitud Denegada. Sin efecto comercial.</span>
+              <span className={styles.textMedium}>Solicitud Denegada. Sin efecto comercial.</span>
             </div>
           )}
 

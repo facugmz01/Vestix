@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
@@ -50,7 +51,11 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="lg"><div /></Drawer>;
   }
 
-  const diffColor = shift.difference && shift.difference < 0 ? 'var(--red)' : (shift.difference && shift.difference > 0 ? 'var(--orange)' : 'var(--green)');
+  const diffClass = !shift.difference || shift.difference === 0
+    ? styles.diffNeutral
+    : shift.difference < 0
+      ? styles.diffNegative
+      : styles.diffPositive;
 
   return (
     <Drawer open={open} onClose={onClose} title="Auditoría de Turno (Caja)" width="lg">
@@ -78,7 +83,7 @@ export function CashSessionDetailDrawer({ open, onClose, shiftId }: Props) {
               <p className={styles.resultTitle}>Conteo Físico Real</p>
               <h2 className={styles.resultValue}>{formatCurrency(shift.actualClosingBalance || 0)}</h2>
             </div>
-            <div className={styles.diffCard} style={{ borderColor: diffColor, color: diffColor }}>
+            <div className={clsx(styles.diffCard, diffClass)}>
               <p className={styles.diffTitle}>Diferencia (Faltante/Sobrante)</p>
               <h2 className={styles.diffValue}>
                 {shift.difference === 0 ? <CheckCircle /> : <AlertTriangle />}

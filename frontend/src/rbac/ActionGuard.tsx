@@ -1,7 +1,9 @@
 import React, { cloneElement, isValidElement } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import clsx from 'clsx';
 import { usePermissions } from './usePermissions';
 import type { Action, Subject } from './permissions';
+import styles from './ActionGuard.module.css';
 
 interface ActionGuardProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   action:   Action | string;
@@ -35,15 +37,14 @@ export function ActionGuard({
 
   if (!allowed && onDeny === 'disable') {
     return (
-      <span title={denyTitle} style={{ cursor: 'not-allowed', display: 'inline-flex' }}>
+      <span className={styles.deniedWrap} title={denyTitle}>
         {cloneElement(children as React.ReactElement, {
           disabled: true,
           onClick: undefined,
-          style: {
-            ...(children.props as { style?: React.CSSProperties }).style,
-            pointerEvents: 'none',
-            opacity: 0.45,
-          },
+          className: clsx(
+            (children.props as { className?: string }).className,
+            styles.deniedChild,
+          ),
         })}
       </span>
     );

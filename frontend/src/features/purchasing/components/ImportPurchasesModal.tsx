@@ -179,7 +179,7 @@ export function ImportPurchasesModal({ open, onClose, onSuccess }: Props) {
               <select 
                 value={warehouseId} 
                 onChange={e => setWarehouseId(e.target.value)}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                className={styles.optionsSelect}
               >
                 {warehouses.map(w => (
                   <option key={w.id} value={w.id}>{w.name}</option>
@@ -273,7 +273,7 @@ export function ImportPurchasesModal({ open, onClose, onSuccess }: Props) {
                 </div>
                 <div className={styles.statBox}>
                   <span>Errores</span>
-                  <strong style={{ color: result.errorCount > 0 ? 'var(--danger)' : 'inherit'}}>{result.errorCount}</strong>
+                  <strong className={result.errorCount > 0 ? styles.statValueDanger : undefined}>{result.errorCount}</strong>
                 </div>
               </div>
 
@@ -281,7 +281,7 @@ export function ImportPurchasesModal({ open, onClose, onSuccess }: Props) {
                 <div className={styles.notFoundBox}>
                   <strong>No se pudieron procesar algunas compras:</strong>
                   <div className={styles.notFoundList}>
-                    {result.errors.map((err, i) => <span key={i} style={{display:'block'}}>{err}</span>)}
+                    {result.errors.map((err, i) => <span key={i} className={styles.errorLine}>{err}</span>)}
                   </div>
                 </div>
               )}

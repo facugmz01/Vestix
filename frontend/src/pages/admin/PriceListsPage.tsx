@@ -14,6 +14,8 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { PriceListFormDrawer } from '@/features/priceLists/components/PriceListFormDrawer';
 import { PriceListDetailDrawer } from '@/features/priceLists/components/PriceListDetailDrawer';
+import adminStyles from '@/styles/AdminListShared.module.css';
+import clsx from 'clsx';
 
 export default function PriceListsPage() {
   const queryClient = useQueryClient();
@@ -90,7 +92,7 @@ export default function PriceListsPage() {
         <select
           value={typeFilter}
           onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-          style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
+          className={adminStyles.filterSelectRadius}
         >
           <option value="">Todos los Tipos</option>
           <option value="BASE">Base (Precios fijos)</option>
@@ -118,9 +120,9 @@ export default function PriceListsPage() {
                 key: 'name', 
                 header: 'Nombre / Código',
                 render: (l) => (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span style={{ fontWeight: 600 }}>{l.name}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{l.code}</span>
+                  <div className={adminStyles.cellStackGapXs}>
+                    <span className={adminStyles.cellPrimary}>{l.name}</span>
+                    <span className={adminStyles.cellMonoCode}>{l.code}</span>
                     {l.isDefault && <Badge color="green">Por defecto</Badge>}
                   </div>
                 )
@@ -136,13 +138,13 @@ export default function PriceListsPage() {
                 key: 'rule', 
                 header: 'Regla',
                 render: (l) => l.type === 'MODIFIER' 
-                  ? <span style={{ fontWeight: 600, color: (l.modifierPercentage || 0) < 0 ? 'var(--red)' : 'var(--green)' }}>{l.modifierPercentage}%</span> 
-                  : <span style={{ color: 'var(--text-muted)' }}>Fija (Override)</span>
+                  ? <span className={clsx((l.modifierPercentage || 0) < 0 ? adminStyles.modifierNegative : adminStyles.modifierPositive)}>{l.modifierPercentage}%</span> 
+                  : <span className={adminStyles.textMutedDash}>Fija (Override)</span>
               },
               { 
                 key: 'currency', 
                 header: 'Moneda',
-                render: (l) => <span style={{ fontWeight: 500 }}>{l.currency}</span>
+                render: (l) => <span className={adminStyles.cellMedium}>{l.currency}</span>
               },
               { 
                 key: 'isActive', 
@@ -153,7 +155,7 @@ export default function PriceListsPage() {
                 key: 'actions',
                 header: '',
                 render: (l) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <ActionGuard action="manage" subject="Customers">
                       <Button variant="ghost" size="sm" onClick={() => handleAssign(l)} aria-label="Asignar" title="Asignar a Clientes">
                         <Users size={16} />

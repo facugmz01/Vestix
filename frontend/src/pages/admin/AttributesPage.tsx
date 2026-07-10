@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import clsx from 'clsx';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Tag, List, Pencil, Check, X, Layers, DollarSign } from 'lucide-react';
@@ -8,10 +9,11 @@ import {
   PageContainer, Section, Button, Input, EmptyState, TableSkeleton, ConfirmDialog, Tabs
 } from '@/components/ui';
 import { productsApi } from '@/api/products.api';
+import adminStyles from '@/styles/AdminListShared.module.css';
+import styles from './AttributesPage.module.css';
 
 type Tab = 'categories' | 'brands' | 'attributes' | 'price-lists';
 
-// ─── Inline Edit Row Component ────────────────────────────────────────────────
 function InlineEditRow({
   label,
   extraLabel,
@@ -44,45 +46,37 @@ function InlineEditRow({
 
   return (
     <>
-      <tr style={{ borderBottom: '1px solid var(--border)' }}>
-        <td style={{ padding: '12px 16px' }}>
+      <tr className={styles.tr}>
+        <td className={styles.td}>
           {editing ? (
             <input
               value={name}
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSave()}
               autoFocus
-              style={{
-                width: '100%', padding: '6px 10px', borderRadius: 'var(--radius)',
-                border: '1px solid var(--accent)', background: 'var(--bg-base)',
-                color: 'var(--text-primary)', fontSize: '14px', outline: 'none'
-              }}
+              className={styles.editInput}
             />
           ) : (
-            <span style={{ fontWeight: 500 }}>{label}</span>
+            <span className={adminStyles.cellMedium}>{label}</span>
           )}
         </td>
         {extraLabel && (
-          <td style={{ padding: '12px 16px' }}>
+          <td className={styles.td}>
             {editing ? (
               <input
                 value={extra}
                 onChange={e => setExtra(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSave()}
                 placeholder={extraLabel}
-                style={{
-                  width: '100%', padding: '6px 10px', borderRadius: 'var(--radius)',
-                  border: '1px solid var(--accent)', background: 'var(--bg-base)',
-                  color: 'var(--text-primary)', fontSize: '14px', outline: 'none'
-                }}
+                className={styles.editInput}
               />
             ) : (
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{extraValue ?? '-'}</span>
+              <span className={adminStyles.cellSecondaryMuted}>{extraValue ?? '-'}</span>
             )}
           </td>
         )}
-        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+        <td className={styles.tdRight}>
+          <div className={adminStyles.rowActions}>
             {editing ? (
               <>
                 <Button variant="primary" size="sm" icon={<Check size={14} />} onClick={handleSave} />
@@ -110,15 +104,14 @@ function InlineEditRow({
   );
 }
 
-// ─── Attribute Row (special: shows chip values) ───────────────────────────────
 function AttributeRow({ attr, onSave, onDelete }: {
-  attr: any;
+  attr: { id: string; name: string; values?: { id: string; value: string }[] };
   onSave: (id: string, name: string, values: string[]) => void;
   onDelete: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(attr.name);
-  const [valStr, setValStr] = useState(attr.values?.map((v: any) => v.value).join(', ') ?? '');
+  const [valStr, setValStr] = useState(attr.values?.map((v) => v.value).join(', ') ?? '');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleSave = () => {
@@ -130,57 +123,45 @@ function AttributeRow({ attr, onSave, onDelete }: {
 
   const handleCancel = () => {
     setName(attr.name);
-    setValStr(attr.values?.map((v: any) => v.value).join(', ') ?? '');
+    setValStr(attr.values?.map((v) => v.value).join(', ') ?? '');
     setEditing(false);
   };
 
   return (
     <>
-      <tr style={{ borderBottom: '1px solid var(--border)' }}>
-        <td style={{ padding: '12px 16px', width: '200px' }}>
+      <tr className={styles.tr}>
+        <td className={clsx(styles.td, styles.tdName)}>
           {editing ? (
             <input
               value={name}
               onChange={e => setName(e.target.value)}
               autoFocus
-              style={{
-                width: '100%', padding: '6px 10px', borderRadius: 'var(--radius)',
-                border: '1px solid var(--accent)', background: 'var(--bg-base)',
-                color: 'var(--text-primary)', fontSize: '14px', outline: 'none'
-              }}
+              className={styles.editInput}
             />
           ) : (
-            <span style={{ fontWeight: 600 }}>{attr.name}</span>
+            <span className={adminStyles.cellPrimary}>{attr.name}</span>
           )}
         </td>
-        <td style={{ padding: '12px 16px' }}>
+        <td className={styles.td}>
           {editing ? (
             <input
               value={valStr}
               onChange={e => setValStr(e.target.value)}
               placeholder="S, M, L, XL"
-              style={{
-                width: '100%', padding: '6px 10px', borderRadius: 'var(--radius)',
-                border: '1px solid var(--accent)', background: 'var(--bg-base)',
-                color: 'var(--text-primary)', fontSize: '14px', outline: 'none'
-              }}
+              className={styles.editInput}
             />
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-              {attr.values?.map((v: any) => (
-                <span key={v.id} style={{
-                  padding: '2px 8px', borderRadius: '99px',
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  fontSize: '12px', color: 'var(--text-secondary)'
-                }}>
+            <div className={styles.chipRow}>
+              {attr.values?.map((v) => (
+                <span key={v.id} className={styles.chip}>
                   {v.value}
                 </span>
               ))}
             </div>
           )}
         </td>
-        <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+        <td className={styles.tdRight}>
+          <div className={adminStyles.rowActions}>
             {editing ? (
               <>
                 <Button variant="primary" size="sm" icon={<Check size={14} />} onClick={handleSave} />
@@ -208,12 +189,10 @@ function AttributeRow({ attr, onSave, onDelete }: {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AttributesPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('categories');
 
-  // ── Queries ──
   const { data: categories, isLoading: loadingCats } = useQuery({
     queryKey: ['categories'],
     queryFn: () => productsApi.getCategories(),
@@ -231,11 +210,9 @@ export default function AttributesPage() {
     queryFn: () => productsApi.getPriceLists(),
   });
 
-  // ── New item form state ──
   const [newName, setNewName] = useState('');
   const [newExtra, setNewExtra] = useState('');
 
-  // ── Mutations: Categories ──
   const createCatMut = useMutation({
     mutationFn: (d: { name: string }) => productsApi.createCategory(d),
     onSuccess: () => { toast.success('Categoría creada'); queryClient.invalidateQueries({ queryKey: ['categories'] }); resetForm(); }
@@ -249,7 +226,6 @@ export default function AttributesPage() {
     onSuccess: () => { toast.success('Categoría eliminada'); queryClient.invalidateQueries({ queryKey: ['categories'] }); }
   });
 
-  // ── Mutations: Brands ──
   const createBrandMut = useMutation({
     mutationFn: (d: { name: string }) => productsApi.createBrand(d),
     onSuccess: () => { toast.success('Marca creada'); queryClient.invalidateQueries({ queryKey: ['brands'] }); resetForm(); }
@@ -263,7 +239,6 @@ export default function AttributesPage() {
     onSuccess: () => { toast.success('Marca eliminada'); queryClient.invalidateQueries({ queryKey: ['brands'] }); }
   });
 
-  // ── Mutations: Attributes ──
   const createAttrMut = useMutation({
     mutationFn: (d: { name: string; values: string[] }) => productsApi.createAttribute(d),
     onSuccess: () => { toast.success('Atributo creado'); queryClient.invalidateQueries({ queryKey: ['attributes'] }); resetForm(); }
@@ -278,7 +253,6 @@ export default function AttributesPage() {
     onSuccess: () => { toast.success('Atributo eliminado'); queryClient.invalidateQueries({ queryKey: ['attributes'] }); }
   });
 
-  // ── Mutations: Price Lists ──
   const createPriceMut = useMutation({
     mutationFn: (d: { name: string; margin: number }) => productsApi.createPriceList(d),
     onSuccess: () => { toast.success('Lista creada'); queryClient.invalidateQueries({ queryKey: ['price-lists'] }); resetForm(); }
@@ -327,34 +301,25 @@ export default function AttributesPage() {
   return (
     <PageContainer
       tabs={<Tabs items={CATALOG_TABS} />}
-            title="Taxonomía y Precios"
+      title="Taxonomía y Precios"
       subtitle="Gestioná categorías, marcas, atributos y listas de precios."
     >
-      {/* Tab Bar */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', background: 'var(--bg-elevated)', padding: '4px', borderRadius: 'var(--radius)', width: 'fit-content' }}>
+      <div className={styles.tabBar}>
         {tabs.map(t => (
           <button
             key={t.key}
+            type="button"
             onClick={() => { setActiveTab(t.key); resetForm(); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '8px 16px', borderRadius: 'var(--radius)',
-              border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500,
-              background: activeTab === t.key ? 'var(--bg-base)' : 'transparent',
-              color: activeTab === t.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-              boxShadow: activeTab === t.key ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
-              transition: 'all 0.15s ease'
-            }}
+            className={clsx(styles.tabBtn, activeTab === t.key && styles.tabBtnActive)}
           >
             {t.icon} {t.label}
           </button>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', alignItems: 'start' }}>
-        {/* ── Create Form ── */}
+      <div className={styles.layout}>
         <Section title={`Nuevo${activeTab === 'categories' ? 'a Categoría' : activeTab === 'brands' ? 'a Marca' : activeTab === 'attributes' ? ' Atributo' : 'a Lista'}`}>
-          <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <form onSubmit={handleCreate} className={styles.createForm}>
             <Input
               label="Nombre *"
               value={newName}
@@ -383,7 +348,7 @@ export default function AttributesPage() {
                   placeholder="50"
                 />
                 {newExtra && parseFloat(newExtra) > 0 && (
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-elevated)', padding: '8px', borderRadius: 'var(--radius)' }}>
+                  <p className={styles.marginHint}>
                     💡 Costo $1000 → Precio de venta <strong>${(1000 * (1 + parseFloat(newExtra) / 100)).toFixed(0)}</strong>
                   </p>
                 )}
@@ -395,39 +360,36 @@ export default function AttributesPage() {
           </form>
         </Section>
 
-        {/* ── List ── */}
         <Section title={`${tabs.find(t => t.key === activeTab)?.label} configuradas`}>
           {isLoading ? <TableSkeleton rows={5} /> : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <div className={styles.tableWrap}>
+              <table className={styles.dataTable}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                    <th style={{ textAlign: 'left', padding: '10px 16px', color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nombre</th>
+                  <tr>
+                    <th className={styles.th}>Nombre</th>
                     {activeTab === 'attributes' && (
-                      <th style={{ textAlign: 'left', padding: '10px 16px', color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Valores</th>
+                      <th className={styles.th}>Valores</th>
                     )}
                     {activeTab === 'price-lists' && (
-                      <th style={{ textAlign: 'left', padding: '10px 16px', color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Margen</th>
+                      <th className={styles.th}>Margen</th>
                     )}
                     {activeTab === 'categories' && (
-                      <th style={{ textAlign: 'left', padding: '10px 16px', color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Categoría Padre</th>
+                      <th className={styles.th}>Categoría Padre</th>
                     )}
-                    <th style={{ padding: '10px 16px', width: '120px' }}></th>
+                    <th className={styles.thActions} />
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Categories */}
                   {activeTab === 'categories' && categories?.map(cat => (
                     <InlineEditRow
                       key={cat.id}
                       label={cat.name}
                       extraLabel="Categoría Padre"
-                      extraValue={(cat as any).parent?.name ?? ''}
+                      extraValue={(cat as { parent?: { name?: string } }).parent?.name ?? ''}
                       onSave={(name) => updateCatMut.mutate({ id: cat.id, name })}
                       onDelete={() => deleteCatMut.mutate(cat.id)}
                     />
                   ))}
-                  {/* Brands */}
                   {activeTab === 'brands' && brands?.map(brand => (
                     <InlineEditRow
                       key={brand.id}
@@ -436,7 +398,6 @@ export default function AttributesPage() {
                       onDelete={() => deleteBrandMut.mutate(brand.id)}
                     />
                   ))}
-                  {/* Attributes */}
                   {activeTab === 'attributes' && attributes?.map(attr => (
                     <AttributeRow
                       key={attr.id}
@@ -445,7 +406,6 @@ export default function AttributesPage() {
                       onDelete={(id) => deleteAttrMut.mutate(id)}
                     />
                   ))}
-                  {/* Price Lists */}
                   {activeTab === 'price-lists' && priceLists?.map(pl => (
                     <PriceListRow
                       key={pl.id}
@@ -457,7 +417,6 @@ export default function AttributesPage() {
                 </tbody>
               </table>
 
-              {/* Empty states */}
               {activeTab === 'categories' && categories?.length === 0 && <EmptyState title="No hay categorías" icon={<Layers size={32} />} />}
               {activeTab === 'brands' && brands?.length === 0 && <EmptyState title="No hay marcas" icon={<Tag size={32} />} />}
               {activeTab === 'attributes' && attributes?.length === 0 && <EmptyState title="No hay atributos" icon={<List size={32} />} />}
@@ -470,9 +429,8 @@ export default function AttributesPage() {
   );
 }
 
-// ─── Price List Row (special: margin %) ──────────────────────────────────────
 function PriceListRow({ pl, onSave, onDelete }: {
-  pl: any;
+  pl: { id: string; name: string; margin: number };
   onSave: (id: string, name: string, margin: number) => void;
   onDelete: (id: string) => void;
 }) {
@@ -495,28 +453,26 @@ function PriceListRow({ pl, onSave, onDelete }: {
 
   return (
     <>
-      <tr style={{ borderBottom: '1px solid var(--border)' }}>
-        <td style={{ padding: '12px 16px' }}>
+      <tr className={styles.tr}>
+        <td className={styles.td}>
           {editing ? (
-            <input value={name} onChange={e => setName(e.target.value)} autoFocus
-              style={{ width: '100%', padding: '6px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--accent)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none' }} />
+            <input value={name} onChange={e => setName(e.target.value)} autoFocus className={styles.editInput} />
           ) : (
-            <span style={{ fontWeight: 600 }}>{pl.name}</span>
+            <span className={adminStyles.cellPrimary}>{pl.name}</span>
           )}
         </td>
-        <td style={{ padding: '12px 16px' }}>
+        <td className={styles.td}>
           {editing ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <input type="number" value={marginPct} onChange={e => setMarginPct(e.target.value)}
-                style={{ width: '80px', padding: '6px 10px', borderRadius: 'var(--radius)', border: '1px solid var(--accent)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none' }} />
-              <span style={{ color: 'var(--text-secondary)' }}>%</span>
+            <div className={styles.marginRow}>
+              <input type="number" value={marginPct} onChange={e => setMarginPct(e.target.value)} className={clsx(styles.editInput, styles.editInputNarrow)} />
+              <span className={styles.percentSign}>%</span>
             </div>
           ) : (
-            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>+{Math.round((pl.margin - 1) * 100)}%</span>
+            <span className={styles.marginAccent}>+{Math.round((pl.margin - 1) * 100)}%</span>
           )}
         </td>
-        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+        <td className={styles.tdRight}>
+          <div className={adminStyles.rowActions}>
             {editing ? (
               <>
                 <Button variant="primary" size="sm" icon={<Check size={14} />} onClick={handleSave} />

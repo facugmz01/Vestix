@@ -7,6 +7,7 @@ import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { BarChart, KpiCard, EmptyState, ErrorState } from './ChartPrimitives';
 import { formatCurrency } from '@/utils/formatCurrency';
+import rs from '@/styles/ReportsShared.module.css';
 
 interface Props {
   from: string;
@@ -16,8 +17,6 @@ interface Props {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 
-// ─── PaymentMethodTable ───────────────────────────────────────────────────────
-
 function PaymentMethodTable({
   rows,
   totalRevenue,
@@ -26,24 +25,24 @@ function PaymentMethodTable({
   totalRevenue: number;
 }) {
   return (
-    <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-      <h4 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700 }}>Ventas por Medio de Pago</h4>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+    <div className={rs.sectionCard}>
+      <h4 className={rs.sectionTitle}>Ventas por Medio de Pago</h4>
+      <table className={rs.dataTable}>
         <thead>
-          <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-            <th style={{ padding: '8px', textAlign: 'left' }}>Método</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>Transacciones</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>%</th>
+          <tr className={rs.dataTableHead}>
+            <th className={rs.dataTableTh}>Método</th>
+            <th className={`${rs.dataTableTh} ${rs.dataTableThRight}`}>Transacciones</th>
+            <th className={`${rs.dataTableTh} ${rs.dataTableThRight}`}>Total</th>
+            <th className={`${rs.dataTableTh} ${rs.dataTableThRight}`}>%</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((m, i) => (
-            <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-              <td style={{ padding: '10px 8px', fontWeight: 600 }}>{m.method}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right' }}>{m.count}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(m.amount)}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right', color: 'var(--text-muted)' }}>
+            <tr key={i} className={rs.dataTableRow}>
+              <td className={`${rs.dataTableTd} ${rs.dataTableTdStrong}`}>{m.method}</td>
+              <td className={`${rs.dataTableTd} ${rs.dataTableTdRight}`}>{m.count}</td>
+              <td className={`${rs.dataTableTd} ${rs.dataTableTdRight} ${rs.dataTableTdBold}`}>{formatCurrency(m.amount)}</td>
+              <td className={`${rs.dataTableTd} ${rs.dataTableTdMuted}`}>
                 {totalRevenue > 0 ? ((m.amount / totalRevenue) * 100).toFixed(1) : 0}%
               </td>
             </tr>
@@ -53,8 +52,6 @@ function PaymentMethodTable({
     </div>
   );
 }
-
-// ─── SalesReportPanel ─────────────────────────────────────────────────────────
 
 export function SalesReportPanel({ from, to, branchId }: Props) {
   const qc = useQueryClient();
@@ -83,7 +80,7 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
     onError:    () => toast.error('Error al exportar'),
   });
 
-  if (sl) return <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando datos de ventas...</div>;
+  if (sl) return <div className={rs.loadingState}>Cargando datos de ventas...</div>;
 
   if (se) {
     return (
@@ -97,14 +94,13 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
   if (!summary) return <EmptyState message="No hay datos de ventas para el período seleccionado." />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <div className={rs.panelStack}>
+      <div className={rs.panelActions}>
         <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>
           Exportar Excel
         </Button>
       </div>
 
-      {/* KPIs */}
       <div className="grid-responsive grid-cols-4">
         <KpiCard label="Total Facturado"  value={formatCurrency(summary.totalRevenue)}      icon={<TrendingUp  size={20} />} color="#3b82f6" />
         <KpiCard label="Transacciones"    value={String(summary.totalOrders)}               icon={<ShoppingBag size={20} />} color="#10b981" />
@@ -112,28 +108,26 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
         <KpiCard label="Descuentos"       value={formatCurrency(summary.totalDiscounts)}    icon={<TrendingUp  size={20} />} color="#8b5cf6" />
       </div>
 
-      {/* COGS */}
       {cogs && (
-        <div className="grid-responsive grid-cols-3">
-          <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>CMV</p>
-            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900 }}>{formatCurrency(cogs.totalCOGS)}</h3>
+        <div className={rs.kpiGrid3}>
+          <div className={`${rs.kpiCardBase} ${rs.kpiCardElevated}`}>
+            <p className={`${rs.kpiLabel} ${rs.kpiLabelMuted}`}>CMV</p>
+            <h3 className={rs.kpiValueMd}>{formatCurrency(cogs.totalCOGS)}</h3>
           </div>
-          <div style={{ padding: '20px', background: 'var(--green-bg)', borderRadius: '12px', border: '1px solid var(--green)', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--green)', textTransform: 'uppercase', fontWeight: 600 }}>Ganancia Bruta</p>
-            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: 'var(--green)' }}>{formatCurrency(cogs.grossProfit)}</h3>
+          <div className={`${rs.kpiCardBase} ${rs.kpiCardGreen}`}>
+            <p className={`${rs.kpiLabel} ${rs.kpiLabelGreen}`}>Ganancia Bruta</p>
+            <h3 className={`${rs.kpiValueMd} ${rs.kpiValueGreen}`}>{formatCurrency(cogs.grossProfit)}</h3>
           </div>
-          <div style={{ padding: '20px', background: 'var(--blue-bg)', borderRadius: '12px', border: '1px solid var(--blue)', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--blue)', textTransform: 'uppercase', fontWeight: 600 }}>Margen Bruto</p>
-            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: 'var(--blue)' }}>{cogs.grossMarginPct.toFixed(1)}%</h3>
+          <div className={`${rs.kpiCardBase} ${rs.kpiCardBlue}`}>
+            <p className={`${rs.kpiLabel} ${rs.kpiLabelBlue}`}>Margen Bruto</p>
+            <h3 className={`${rs.kpiValueMd} ${rs.kpiValueBlue}`}>{cogs.grossMarginPct.toFixed(1)}%</h3>
           </div>
         </div>
       )}
 
-      {/* Top Sellers */}
       {!tsl && topSellers && topSellers.length > 0 && (
-        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-          <h4 style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: 700 }}>Top 10 Productos más Vendidos</h4>
+        <div className={rs.sectionCard}>
+          <h4 className={rs.sectionTitleLg}>Top 10 Productos más Vendidos</h4>
           <BarChart
             data={topSellers.slice(0, 10).map((t, i) => ({
               label: t.name?.split(' ').slice(0, 2).join(' ') ?? `SKU ${i + 1}`,
@@ -147,7 +141,6 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
         </div>
       )}
 
-      {/* Payment methods */}
       {summary.byPaymentMethod && summary.byPaymentMethod.length > 0 && (
         <PaymentMethodTable rows={summary.byPaymentMethod} totalRevenue={summary.totalRevenue} />
       )}

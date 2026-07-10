@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import clsx from 'clsx';
 import { Menu } from 'lucide-react';
 import { useNavItems, useNavGroups } from '@/navigation/useNav';
 import { Drawer } from '@/components/ui/Drawer';
@@ -12,7 +13,7 @@ import styles from './MobileNav.module.css';
 export function MobileNav() {
   const items = useNavItems();
   const groups = useNavGroups();
-  const mainItems = items.slice(0, 4); // First 4 items go to the bottom bar
+  const mainItems = items.slice(0, 4);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -38,6 +39,7 @@ export function MobileNav() {
         })}
         {items.length > 4 && (
           <button 
+            type="button"
             className={styles.tab} 
             onClick={() => setIsMenuOpen(true)}
             aria-label="Más opciones"
@@ -54,13 +56,13 @@ export function MobileNav() {
         title="Menú Principal"
         side="right"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px 0' }}>
+        <div className={styles.menuStack}>
           {groups.map(group => (
             <div key={group.id}>
-              <h4 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px', paddingLeft: '12px', fontWeight: 600 }}>
+              <h4 className={styles.menuGroupTitle}>
                 {group.label}
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div className={styles.menuLinks}>
                 {group.items.map(item => {
                   const Icon = item.icon;
                   return (
@@ -69,14 +71,7 @@ export function MobileNav() {
                       to={item.to}
                       end={item.end}
                       onClick={() => setIsMenuOpen(false)}
-                      style={({ isActive }) => ({
-                        display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
-                        textDecoration: 'none', borderRadius: '8px',
-                        color: isActive ? 'var(--accent)' : 'var(--text-primary)',
-                        background: isActive ? 'var(--bg-elevated)' : 'transparent',
-                        fontWeight: isActive ? 600 : 500,
-                        transition: 'background 0.2s'
-                      })}
+                      className={({ isActive }) => clsx(styles.menuLink, isActive && styles.menuLinkActive)}
                     >
                       <Icon size={18} />
                       {item.label}

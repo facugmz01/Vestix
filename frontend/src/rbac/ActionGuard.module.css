@@ -1,0 +1,9 @@
+.deniedWrap {
+  cursor: not-allowed;
+  display: inline-flex;
+}
+
+.deniedChild {
+  pointer-events: none;
+  opacity: 0.45;
+}

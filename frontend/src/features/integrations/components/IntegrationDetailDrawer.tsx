@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 import {
   RefreshCw, TestTube, Eye, EyeOff, Save, CheckCircle,
   AlertTriangle, Clock, XCircle, Wifi, WifiOff, RotateCcw
@@ -12,6 +13,8 @@ import { queryKeys } from '@/api/queryKeys';
 import { notificationsApi } from '@/api/notifications.api';
 import type { Integration, WebhookLog } from '@/types';
 import { ActionGuard } from '@/rbac/ActionGuard';
+import drawerStyles from '@/styles/DetailDrawerShared.module.css';
+import styles from './IntegrationDetailDrawer.module.css';
 
 interface Props {
   open: boolean;
@@ -197,13 +200,6 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
 
   if (!integration) return <Drawer open={open} onClose={onClose} title="..." width="lg"><div /></Drawer>;
 
-  const tabStyle = (tab: string) => ({
-    padding: '8px 20px', borderRadius: '6px', border: 'none',
-    background: activeTab === tab ? 'var(--accent)' : 'transparent',
-    color: activeTab === tab ? '#fff' : 'var(--text-secondary)',
-    fontWeight: 700, cursor: 'pointer', fontSize: '14px',
-  });
-
   const getStatusIcon = (s: string) => {
     if (s === 'ACTIVE')         return <Wifi size={14} color="var(--green)" />;
     if (s === 'ERROR')          return <AlertTriangle size={14} color="var(--red)" />;
@@ -214,21 +210,21 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title={integration.name} width="lg">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
+      <div className={styles.stack}>
 
         {/* Header Status */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: 'var(--bg-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+        <div className={styles.headerCard}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <div className={styles.headerTitleRow}>
               {getStatusIcon(integration.status)}
-              <span style={{ fontWeight: 800, fontSize: '16px' }}>{integration.provider}</span>
+              <span className={styles.headerProvider}>{integration.provider}</span>
             </div>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{integration.description}</p>
+            <p className={styles.headerDesc}>{integration.description}</p>
             {integration.lastSyncAt && (
-              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>Última sincronización: {new Date(integration.lastSyncAt).toLocaleString()}</p>
+              <p className={styles.headerSync}>Última sincronización: {new Date(integration.lastSyncAt).toLocaleString()}</p>
             )}
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={styles.headerActions}>
             <ActionGuard action="manage" subject="Settings">
               <Button variant="ghost" size="sm" onClick={() => testMutation.mutate()} loading={testMutation.isPending} icon={<TestTube size={14} />}>Probar</Button>
               <Button variant="ghost" size="sm" onClick={() => syncMutation.mutate()} loading={syncMutation.isPending} icon={<RefreshCw size={14} />}>Sincronizar</Button>
@@ -237,47 +233,47 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-elevated)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)', width: 'fit-content' }}>
-          <button style={tabStyle('config')} onClick={() => setActiveTab('config')}>Credenciales</button>
+        <div className={styles.tabBar}>
+          <button type="button" className={clsx(styles.tab, activeTab === 'config' && styles.tabActive)} onClick={() => setActiveTab('config')}>Credenciales</button>
           {integration.provider === 'AFIP' ? (
-            <button style={tabStyle('failed-afip')} onClick={() => setActiveTab('failed-afip')}>Facturas Fallidas</button>
+            <button type="button" className={clsx(styles.tab, activeTab === 'failed-afip' && styles.tabActive)} onClick={() => setActiveTab('failed-afip')}>Facturas Fallidas</button>
           ) : (
-            <button style={tabStyle('webhooks')} onClick={() => setActiveTab('webhooks')}>Webhook Logs</button>
+            <button type="button" className={clsx(styles.tab, activeTab === 'webhooks' && styles.tabActive)} onClick={() => setActiveTab('webhooks')}>Webhook Logs</button>
           )}
           {integration.provider === 'WOOCOMMERCE' && (
-            <button style={tabStyle('mappings')} onClick={() => setActiveTab('mappings')}>Mapeo de Variantes</button>
+            <button type="button" className={clsx(styles.tab, activeTab === 'mappings' && styles.tabActive)} onClick={() => setActiveTab('mappings')}>Mapeo de Variantes</button>
           )}
           {integration.provider === 'WHATSAPP' && (
-            <button style={tabStyle('qr')} onClick={() => setActiveTab('qr')}>Vincular Dispositivo (QR)</button>
+            <button type="button" className={clsx(styles.tab, activeTab === 'qr' && styles.tabActive)} onClick={() => setActiveTab('qr')}>Vincular Dispositivo (QR)</button>
           )}
         </div>
 
         {/* Config Tab */}
         {activeTab === 'config' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className={styles.configStack}>
             {integration.webhookUrls?.length ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className={styles.webhookStack}>
                 {integration.webhookUrls.map(endpoint => (
-                  <div key={endpoint.url} style={{ padding: '12px 16px', background: 'var(--blue-bg)', border: '1px solid var(--blue)', borderRadius: '8px' }}>
-                    <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: 'var(--blue)' }}>
+                  <div key={endpoint.url} className={styles.webhookBox}>
+                    <p className={styles.webhookLabel}>
                       Webhook — {endpoint.label}
                     </p>
-                    <code style={{ fontSize: '13px', wordBreak: 'break-all' }}>{endpoint.url}</code>
+                    <code className={styles.webhookCode}>{endpoint.url}</code>
                   </div>
                 ))}
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
+                <p className={styles.webhookHint}>
                   Configurá estos URLs en Tus integraciones de Mercado Pago. Para QR POS, suscribite al tópico <strong>Order (Mercado Pago)</strong>; para Checkout Pro, al tópico <strong>Payments</strong>.
                 </p>
               </div>
             ) : integration.webhookUrl ? (
-              <div style={{ padding: '12px 16px', background: 'var(--blue-bg)', border: '1px solid var(--blue)', borderRadius: '8px' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: 'var(--blue)' }}>URL del Webhook Entrante (configurá en el proveedor)</p>
-                <code style={{ fontSize: '13px', wordBreak: 'break-all' }}>{integration.webhookUrl}</code>
+              <div className={styles.webhookBox}>
+                <p className={styles.webhookLabel}>URL del Webhook Entrante (configurá en el proveedor)</p>
+                <code className={styles.webhookCode}>{integration.webhookUrl}</code>
               </div>
             ) : null}
 
             {fields.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '24px' }}>No hay campos de configuración para este proveedor.</p>
+              <p className={drawerStyles.emptyCenter}>No hay campos de configuración para este proveedor.</p>
             ) : (
               fields.map(field => {
                 const isSecret = field.secret ?? false;
@@ -285,12 +281,12 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                 const currentVal = configValues[field.key] ?? integration.config?.[field.key] ?? '';
                 if (field.type === 'select' && field.options) {
                   return (
-                    <div key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '13px', fontWeight: 600 }}>{field.label}</label>
+                    <div key={field.key} className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>{field.label}</label>
                       <select
                         value={currentVal}
                         onChange={e => setConfigValues(prev => ({ ...prev, [field.key]: e.target.value }))}
-                        style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}
+                        className={styles.fieldSelect}
                       >
                         {field.options.map(opt => (
                           <option key={opt.value || '__auto'} value={opt.value}>{opt.label}</option>
@@ -300,18 +296,18 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                   );
                 }
                 return (
-                  <div key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '13px', fontWeight: 600 }}>{field.label}</label>
-                    <div style={{ position: 'relative' }}>
+                  <div key={field.key} className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>{field.label}</label>
+                    <div className={styles.fieldInputWrap}>
                       <input
                         type={isSecret && !isVisible ? 'password' : 'text'}
                         value={currentVal}
                         placeholder={currentVal ? '••••••••••• (guardado)' : field.placeholder}
                         onChange={e => setConfigValues(prev => ({ ...prev, [field.key]: e.target.value }))}
-                        style={{ width: '100%', padding: isSecret ? '10px 44px 10px 12px' : '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px' }}
+                        className={clsx(styles.fieldInput, isSecret && styles.fieldInputSecret)}
                       />
                       {isSecret && (
-                        <button type="button" onClick={() => setShowSecrets(p => ({ ...p, [field.key]: !p[field.key] }))} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                        <button type="button" onClick={() => setShowSecrets(p => ({ ...p, [field.key]: !p[field.key] }))} className={styles.toggleSecret}>
                           {isVisible ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       )}
@@ -333,11 +329,11 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
 
         {/* Webhooks Tab */}
         {activeTab === 'webhooks' && (
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className={styles.scrollPanel}>
             {isLoadingLogs ? (
-              <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>Cargando logs...</p>
+              <p className={drawerStyles.emptyCenter}>Cargando logs...</p>
             ) : !webhookData || webhookData.data.length === 0 ? (
-              <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No hay registros de webhooks.</p>
+              <p className={drawerStyles.emptyCenter}>No hay registros de webhooks.</p>
             ) : (
               <Table
                 keyField="id"
@@ -345,7 +341,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                 columns={[
                   {
                     key: 'date', header: 'Fecha',
-                    render: (l: WebhookLog) => <span style={{ fontSize: '12px' }}>{new Date(l.createdAt).toLocaleString()}</span>
+                    render: (l: WebhookLog) => <span className={styles.cellDate}>{new Date(l.createdAt).toLocaleString()}</span>
                   },
                   {
                     key: 'dir', header: 'Dirección',
@@ -353,19 +349,19 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                   },
                   {
                     key: 'event', header: 'Evento',
-                    render: (l: WebhookLog) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{l.event}</span>
+                    render: (l: WebhookLog) => <span className={styles.cellMono}>{l.event}</span>
                   },
                   {
                     key: 'status', header: 'HTTP',
                     render: (l: WebhookLog) => l.statusCode
                       ? <Badge color={l.success ? 'green' : 'red'}>{l.statusCode}</Badge>
-                      : <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      : <span className={styles.cellMuted}>—</span>
                   },
                   {
                     key: 'time', header: 'Resp.',
                     render: (l: WebhookLog) => l.responseTime
-                      ? <span style={{ fontSize: '12px' }}>{l.responseTime}ms</span>
-                      : <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      ? <span className={styles.cellDate}>{l.responseTime}ms</span>
+                      : <span className={styles.cellMuted}>—</span>
                   },
                   {
                     key: 'result', header: 'Resultado',
@@ -389,11 +385,11 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
 
         {/* Failed AFIP Jobs Tab */}
         {activeTab === 'failed-afip' && (
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className={styles.scrollPanel}>
             {isLoadingFailedAfip ? (
-              <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>Cargando facturas fallidas...</p>
+              <p className={drawerStyles.emptyCenter}>Cargando facturas fallidas...</p>
             ) : !failedAfipJobs || failedAfipJobs.length === 0 ? (
-              <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No hay facturas fallidas pendientes.</p>
+              <p className={drawerStyles.emptyCenter}>No hay facturas fallidas pendientes.</p>
             ) : (
               <Table
                 keyField="id"
@@ -401,15 +397,15 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                 columns={[
                   {
                     key: 'date', header: 'Fecha Fallo',
-                    render: (j: any) => <span style={{ fontSize: '12px' }}>{new Date(j.failedAt).toLocaleString()}</span>
+                    render: (j: any) => <span className={styles.cellDate}>{new Date(j.failedAt).toLocaleString()}</span>
                   },
                   {
                     key: 'orderId', header: 'ID Pedido',
-                    render: (j: any) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{j.data?.orderId || '—'}</span>
+                    render: (j: any) => <span className={styles.cellMono}>{j.data?.orderId || '—'}</span>
                   },
                   {
                     key: 'reason', header: 'Razón del Fallo',
-                    render: (j: any) => <span style={{ color: 'var(--red)', fontSize: '13px', fontWeight: 500 }}>{j.failedReason}</span>
+                    render: (j: any) => <span className={styles.cellError}>{j.failedReason}</span>
                   },
                   {
                     key: 'attempts', header: 'Intentos',
@@ -439,17 +435,17 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
 
         {/* Mappings Tab */}
         {activeTab === 'mappings' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, overflowY: 'auto' }}>
+          <div className={styles.mappingsStack}>
             
             {/* Create Mapping Form */}
-            <div style={{ padding: '16px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>Crear Nuevo Mapeo</h4>
+            <div className={styles.mappingForm}>
+              <h4 className={styles.mappingTitle}>Crear Nuevo Mapeo</h4>
               
-              <div className="grid-responsive grid-cols-3" style={{ gap: "12px" }}>
+              <div className={clsx('grid-responsive grid-cols-3', styles.mappingGrid)}>
                 
                 {/* Variant Search Autocomplete */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>Variante ERP (Buscar por SKU/Nombre)</label>
+                <div className={styles.typeaheadWrap}>
+                  <label className={styles.typeaheadLabel}>Variante ERP (Buscar por SKU/Nombre)</label>
                   <input
                     type="text"
                     value={variantSearch}
@@ -458,10 +454,10 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                       setVariantSearch(e.target.value);
                       if (selectedVariantId) setSelectedVariantId('');
                     }}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--bg-base)' }}
+                    className={styles.typeaheadInput}
                   />
                   {variantSearch.length >= 2 && !selectedVariantId && searchedVariants && searchedVariants.length > 0 && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '6px', maxHeight: '150px', overflowY: 'auto', zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+                    <div className={styles.typeaheadDropdown}>
                       {searchedVariants.map((v: any) => (
                         <div
                           key={v.id}
@@ -469,9 +465,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                             setSelectedVariantId(v.id);
                             setVariantSearch(`${v.product?.name} (${v.sku})`);
                           }}
-                          style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '12px', borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-base)'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                          className={styles.typeaheadItem}
                         >
                           <strong>{v.product?.name}</strong> - SKU: {v.sku} {v.size ? `| Talle: ${v.size}` : ''} {v.color ? `| Color: ${v.color}` : ''}
                         </div>
@@ -480,25 +474,25 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>WooCommerce Product ID</label>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.typeaheadLabel}>WooCommerce Product ID</label>
                   <input
                     type="number"
                     value={wcProductId}
                     placeholder="Ej. 101"
                     onChange={e => setWcProductId(e.target.value)}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--bg-base)' }}
+                    className={styles.typeaheadInput}
                   />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600 }}>WooCommerce Variation ID</label>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.typeaheadLabel}>WooCommerce Variation ID</label>
                   <input
                     type="number"
                     value={wcVariationId}
                     placeholder="Ej. 202 (0 si es producto simple)"
                     onChange={e => setWcVariationId(e.target.value)}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--bg-base)' }}
+                    className={styles.typeaheadInput}
                   />
                 </div>
 
@@ -516,19 +510,19 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                     wcVariationId: parseInt(wcVariationId || '0', 10),
                   });
                 }}
-                style={{ width: 'fit-content', alignSelf: 'flex-end' }}
+                className={styles.saveMappingBtn}
               >
                 Guardar Mapeo
               </Button>
             </div>
 
             {/* Mappings Table */}
-            <div style={{ flex: 1 }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 800 }}>Mapeos Existentes</h4>
+            <div>
+              <h4 className={styles.mappingsTableTitle}>Mapeos Existentes</h4>
               {isLoadingMappings ? (
-                <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>Cargando mapeos...</p>
+                <p className={drawerStyles.emptyCenter}>Cargando mapeos...</p>
               ) : !mappingsData || mappingsData.length === 0 ? (
-                <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No hay variantes mapeadas con WooCommerce aún.</p>
+                <p className={drawerStyles.emptyCenter}>No hay variantes mapeadas con WooCommerce aún.</p>
               ) : (
                 <Table
                   keyField="id"
@@ -537,9 +531,9 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                     {
                       key: 'product', header: 'Producto ERP',
                       render: (m: any) => (
-                        <div style={{ fontSize: '13px' }}>
+                        <div className={styles.productCell}>
                           <strong>{m.variant?.product?.name || '—'}</strong>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <div className={styles.productMeta}>
                             {m.variant?.size ? `Talle: ${m.variant.size} ` : ''}
                             {m.variant?.color ? `| Color: ${m.variant.color}` : ''}
                           </div>
@@ -548,15 +542,15 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                     },
                     {
                       key: 'sku', header: 'SKU ERP',
-                      render: (m: any) => <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{m.variant?.sku || '—'}</span>
+                      render: (m: any) => <span className={styles.cellMono}>{m.variant?.sku || '—'}</span>
                     },
                     {
                       key: 'wcProduct', header: 'WC Product ID',
-                      render: (m: any) => <span style={{ fontSize: '13px' }}>{m.wcProductId}</span>
+                      render: (m: any) => <span className={styles.cellText}>{m.wcProductId}</span>
                     },
                     {
                       key: 'wcVariation', header: 'WC Variation ID',
-                      render: (m: any) => <span style={{ fontSize: '13px' }}>{m.wcVariationId || '—'}</span>
+                      render: (m: any) => <span className={styles.cellText}>{m.wcVariationId || '—'}</span>
                     },
                     {
                       key: 'actions', header: '',
@@ -567,7 +561,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                             size="sm"
                             onClick={() => deleteMappingMutation.mutate(m.variantId)}
                             loading={deleteMappingMutation.isPending && deleteMappingMutation.variables === m.variantId}
-                            style={{ color: 'var(--red)' }}
+                            className={styles.btnDanger}
                           >
                             Eliminar
                           </Button>
@@ -584,33 +578,33 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
 
         {/* WhatsApp QR Tab */}
         {activeTab === 'qr' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border)', padding: '40px', gap: 16 }}>
+          <div className={styles.qrPanel}>
             {isLoadingWa ? (
-              <p style={{ color: 'var(--text-muted)' }}>Cargando estado de sesión...</p>
+              <p className={styles.qrMuted}>Cargando estado de sesión...</p>
             ) : waStatus?.isReady ? (
               <>
-                <div style={{ width: 80, height: 80, borderRadius: 40, background: 'rgba(37,211,102,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                <div className={styles.qrSuccessIcon}>
                   <CheckCircle size={40} color="#25D366" />
                 </div>
-                <h3 style={{ margin: 0, fontSize: 20 }}>Dispositivo Vinculado</h3>
-                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: 10 }}>Tu sesión de WhatsApp está activa y lista para enviar mensajes.</p>
-                <Button variant="outline" style={{ marginTop: 20 }} onClick={() => refetchWa()}>Verificar de nuevo</Button>
+                <h3 className={styles.qrTitle}>Dispositivo Vinculado</h3>
+                <p className={styles.qrText}>Tu sesión de WhatsApp está activa y lista para enviar mensajes.</p>
+                <Button variant="outline" className={styles.qrVerifyBtn} onClick={() => refetchWa()}>Verificar de nuevo</Button>
               </>
             ) : waStatus?.qrCode ? (
               <>
-                <h3 style={{ margin: '0 0 10px', fontSize: 18 }}>Escanea este código QR</h3>
-                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: 24, fontSize: 14 }}>Abre WhatsApp en tu teléfono, ve a Dispositivos vinculados y escanea el código.</p>
-                <div style={{ padding: 16, background: '#fff', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                  <img src={waStatus.qrCode} alt="WhatsApp QR Code" style={{ width: 256, height: 256 }} />
+                <h3 className={styles.qrTitleSm}>Escanea este código QR</h3>
+                <p className={styles.qrTextMb}>Abre WhatsApp en tu teléfono, ve a Dispositivos vinculados y escanea el código.</p>
+                <div className={styles.qrFrame}>
+                  <img src={waStatus.qrCode} alt="WhatsApp QR Code" className={styles.qrImage} />
                 </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 24, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <p className={styles.qrRefresh}>
                   <RefreshCw size={12} />
                   Actualizando automáticamente...
                 </p>
               </>
             ) : (
               <>
-                <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+                <p className={styles.qrMuted}>
                   {waStatus?.state === 'not_configured'
                     ? 'Configurá Evolution API en Ajustes → Notificaciones antes de vincular.'
                     : 'Iniciá el emparejamiento para obtener el código QR.'}
@@ -634,9 +628,9 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
               </>
             )}
             {waStatus?.webhookUrl && (
-              <div style={{ marginTop: 16, padding: 12, background: 'var(--bg-elevated)', borderRadius: 8, border: '1px solid var(--border)', width: '100%', maxWidth: 480 }}>
-                <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700 }}>Webhook de entrega</p>
-                <code style={{ fontSize: 11, wordBreak: 'break-all' }}>{waStatus.webhookUrl}</code>
+              <div className={styles.webhookDelivery}>
+                <p className={styles.webhookDeliveryLabel}>Webhook de entrega</p>
+                <code className={styles.webhookDeliveryCode}>{waStatus.webhookUrl}</code>
               </div>
             )}
           </div>

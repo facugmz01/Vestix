@@ -1,4 +1,5 @@
 import { Outlet, Link } from 'react-router-dom';
+import clsx from 'clsx';
 import { ShoppingBag } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { APP_CONFIG } from '@/config/app.config';
@@ -24,7 +25,7 @@ export function StorefrontLayout() {
   }
 
   return (
-    <div className="spatial-workspace" style={{ flexDirection: 'column' }}>
+    <div className={clsx('spatial-workspace', styles.spatialColumn)}>
       <header className={styles.headerIsland}>
         <Link to="/store" className={styles.brand}>
           <div className={styles.logoMark} aria-hidden />

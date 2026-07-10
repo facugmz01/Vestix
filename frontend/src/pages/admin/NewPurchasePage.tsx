@@ -9,16 +9,15 @@ import { queryKeys } from '@/api/queryKeys';
 import { apiClient } from '@/api/client';
 import type { ProductVariant } from '@/types';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { 
-  Button, Input, Drawer
-} from '@/components/ui';
+import { Button, Input, Drawer } from '@/components/ui';
+import adminStyles from '@/styles/AdminListShared.module.css';
+import styles from './NewPurchasePage.module.css';
 
 export default function NewPurchasePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // 1. Data Fetching
   const { data: suppliers } = useQuery({
     queryKey: queryKeys.suppliers.all(),
     queryFn: () => purchasingApi.getSuppliers(),
@@ -34,7 +33,6 @@ export default function NewPurchasePage() {
     queryFn: () => apiClient.get('/warehouses').then(res => res.data),
   });
 
-  // 2. State
   const [search, setSearch] = useState('');
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
@@ -51,7 +49,6 @@ export default function NewPurchasePage() {
     enabled: search.length >= 3,
   });
 
-  // 3. Logic
   const handleAddToCart = (variant: ProductVariant) => {
     setCart(prev => {
       const exists = prev.find(i => i.variant.id === variant.id);
@@ -78,13 +75,13 @@ export default function NewPurchasePage() {
   const total = subtotal - totalDiscount;
 
   const purchaseMutation = useMutation({
-    mutationFn: (data: any) => purchasingApi.processDirect(data),
+    mutationFn: (data: unknown) => purchasingApi.processDirect(data),
     onSuccess: () => {
       toast.success('Compra registrada correctamente');
       queryClient.invalidateQueries({ queryKey: queryKeys.stock.all() });
       navigate('/admin/purchasing');
     },
-    onError: (err: any) => toast.error(err.message || 'Error al procesar compra'),
+    onError: (err: { message?: string }) => toast.error(err.message || 'Error al procesar compra'),
   });
 
   const handleSave = () => {
@@ -95,56 +92,54 @@ export default function NewPurchasePage() {
     setPaymentAmount(total);
   };
 
-
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', background: 'var(--bg-elevated)', position: 'fixed', top: '64px', left: 0, right: 0, bottom: 0, zIndex: 100 }}>
-      
-      {/* HEADER BAR */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '60px', background: 'var(--bg-base)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}><ArrowLeft /></button>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>Nueva Compra de Mercadería</h2>
+    <div className={styles.shell}>
+      <div className={styles.headerBar}>
+        <div className={styles.headerLeft}>
+          <button type="button" onClick={() => navigate(-1)} className={styles.backBtn} aria-label="Volver">
+            <ArrowLeft />
+          </button>
+          <h2 className={styles.pageTitle}>Nueva Compra de Mercadería</h2>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className={styles.headerActions}>
           <Button variant="secondary" onClick={() => navigate(-1)}>Cancelar</Button>
           <Button variant="primary" icon={<Save size={18} />} onClick={handleSave}>Procesar Compra</Button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', width: '100%', marginTop: '60px' }}>
-        {/* LEFT: Product Search */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border)' }}>
-          <div style={{ padding: '24px', background: 'var(--bg-base)', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={20} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--text-muted)' }} />
+      <div className={styles.body}>
+        <div className={styles.searchPane}>
+          <div className={styles.searchHeader}>
+            <div className={styles.searchWrap}>
+              <Search size={20} className={styles.searchIcon} />
               <input 
                 ref={searchInputRef}
                 type="text"
                 placeholder="Buscar productos en el catálogo por nombre, SKU o código..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: '12px', border: '2px solid var(--accent)', fontSize: '16px', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+                className={styles.searchInput}
               />
             </div>
           </div>
 
-          <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+          <div className={styles.resultsArea}>
             {search.length < 3 ? (
-              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', textAlign: 'center' }}>
+              <div className={styles.emptySearch}>
                 <div>
-                  <Truck size={64} style={{ opacity: 0.1, marginBottom: '16px' }} />
+                  <Truck size={64} className={styles.emptyIcon} />
                   <p>Buscá los artículos que recibiste para agregarlos a la compra.</p>
                 </div>
               </div>
             ) : isSearching ? (
               <div>Cargando catálogo...</div>
             ) : searchResults?.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
-                {searchResults.map((p: any) => (
-                  <div key={p.id} onClick={() => handleAddToCart(p)} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}>
-                    <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{p.sku}</p>
-                    <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700, minHeight: '40px' }}>{p.name} {p.size && `(${p.size})`}</p>
-                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(p.costPrice)}</p>
+              <div className={styles.productGrid}>
+                {searchResults.map((p: ProductVariant & { name?: string; size?: string }) => (
+                  <div key={p.id} onClick={() => handleAddToCart(p)} className={styles.productCard} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handleAddToCart(p)}>
+                    <p className={styles.productSku}>{p.sku}</p>
+                    <p className={styles.productName}>{p.name} {p.size && `(${p.size})`}</p>
+                    <p className={styles.productPrice}>{formatCurrency(p.costPrice)}</p>
                   </div>
                 ))}
               </div>
@@ -154,166 +149,177 @@ export default function NewPurchasePage() {
           </div>
         </div>
 
-        {/* RIGHT: Purchase Setup & Cart */}
-        <div style={{ width: '450px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', boxShadow: '-5px 0 15px rgba(0,0,0,0.05)' }}>
-          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600 }}>Proveedor</label>
+        <div className={styles.sidebar}>
+          <div className={styles.sidebarForm}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel} htmlFor="supplier-select">Proveedor</label>
               <select 
+                id="supplier-select"
                 value={selectedSupplierId} 
                 onChange={e => setSelectedSupplierId(e.target.value)}
-                style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+                className={styles.fieldSelect}
               >
                 <option value="">-- Seleccionar Proveedor --</option>
-                {(suppliers?.data || []).map((s: any) => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+                {(suppliers?.data || []).map((s: { id: string; companyName: string }) => (
+                  <option key={s.id} value={s.id}>{s.companyName}</option>
+                ))}
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600 }}>Destino (Depósito)</label>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel} htmlFor="warehouse-select">Destino (Depósito)</label>
               <select 
+                id="warehouse-select"
                 value={selectedWarehouseId} 
                 onChange={e => setSelectedWarehouseId(e.target.value)}
-                style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+                className={styles.fieldSelect}
               >
                 <option value="">-- Seleccionar Depósito --</option>
-                {(warehouses?.data || warehouses || []).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                {(warehouses?.data || warehouses || []).map((w: { id: string; name: string }) => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
               </select>
             </div>
           </div>
 
-          {/* Cart Items */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className={styles.cartArea}>
             {cart.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                <ShoppingCart size={32} style={{ marginBottom: '12px', opacity: 0.3 }} />
+              <div className={styles.emptyCart}>
+                <ShoppingCart size={32} className={styles.emptyCartIcon} />
                 <p>Carrito de compra vacío</p>
               </div>
             ) : (
               cart.map(item => (
-                <div key={item.variant.id} style={{ padding: '16px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <span style={{ fontWeight: 700 }}>{item.variant.sku}</span>
-                    <Trash2 size={16} color="var(--red)" style={{ cursor: 'pointer' }} onClick={() => setCart(c => c.filter(i => i.variant.id !== item.variant.id))} />
+                <div key={item.variant.id} className={styles.cartItem}>
+                  <div className={styles.cartItemHeader}>
+                    <span className={styles.cartSku}>{item.variant.sku}</span>
+                    <Trash2
+                      size={16}
+                      color="var(--red)"
+                      className={styles.deleteIcon}
+                      onClick={() => setCart(c => c.filter(i => i.variant.id !== item.variant.id))}
+                    />
                   </div>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div className={styles.cartGrid}>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Cantidad</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                      <label className={styles.miniLabel}>Cantidad</label>
+                      <div className={styles.qtyRow}>
                         <Button variant="secondary" size="sm" onClick={() => updateLine(item.variant.id, 'qty', Math.max(1, item.qty - 1))}><Minus size={12}/></Button>
-                        <span style={{ width: '30px', textAlign: 'center', fontWeight: 700 }}>{item.qty}</span>
+                        <span className={styles.qtyValue}>{item.qty}</span>
                         <Button variant="secondary" size="sm" onClick={() => updateLine(item.variant.id, 'qty', item.qty + 1)}><Plus size={12}/></Button>
                       </div>
                     </div>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Costo Unitario ($)</label>
+                      <label className={styles.miniLabel}>Costo Unitario ($)</label>
                       <input 
                         type="number" 
                         value={item.cost} 
                         onChange={e => updateLine(item.variant.id, 'cost', Number(e.target.value))}
-                        style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', marginTop: '4px', fontWeight: 700 }}
+                        className={styles.costInput}
                       />
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px dashed var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 600 }}>Desc. ($)</label>
+                  <div className={styles.cartFooter}>
+                    <div className={styles.discountRow}>
+                      <label className={styles.miniLabel}>Desc. ($)</label>
                       <input 
                         type="number" 
                         value={item.discount} 
                         onChange={e => updateLine(item.variant.id, 'discount', Number(e.target.value))}
-                        style={{ width: '70px', padding: '4px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                        className={styles.discountInput}
                       />
                     </div>
-                    <span style={{ fontWeight: 800, fontSize: '16px' }}>{formatCurrency((item.cost * item.qty) - item.discount)}</span>
+                    <span className={styles.lineTotal}>{formatCurrency((item.cost * item.qty) - item.discount)}</span>
                   </div>
                 </div>
               ))
             )}
           </div>
 
-          {/* TOTALS */}
-          <div style={{ padding: '24px', background: 'var(--bg-elevated)', borderTop: '2px solid var(--border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-              <span style={{ fontWeight: 600 }}>{formatCurrency(subtotal)}</span>
+          <div className={styles.totalsPanel}>
+            <div className={styles.totalRow}>
+              <span className={styles.totalLabelMuted}>Subtotal</span>
+              <span className={styles.totalValue}>{formatCurrency(subtotal)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: 'var(--red)' }}>
+            <div className={styles.totalRowDiscount}>
               <span>Descuentos</span>
               <span>- {formatCurrency(totalDiscount)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '20px', fontWeight: 800 }}>Total Compra</span>
-              <span style={{ fontSize: '32px', fontWeight: 900, color: 'var(--accent)' }}>{formatCurrency(total)}</span>
+            <div className={styles.totalRowFinal}>
+              <span className={styles.totalLabel}>Total Compra</span>
+              <span className={styles.totalValueLg}>{formatCurrency(total)}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Payment Modal */}
       <Drawer open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar Compra y Pago" width="sm">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
-          <div style={{ textAlign: 'center', padding: '24px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <p style={{ margin: '0 0 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Facturado</p>
-            <h1 style={{ margin: 0, fontSize: '42px', color: 'var(--text-primary)' }}>{formatCurrency(total)}</h1>
+        <div className={styles.drawerStack}>
+          <div className={styles.paymentHero}>
+            <p className={styles.paymentHeroLabel}>Total Facturado</p>
+            <h1 className={styles.paymentHeroValue}>{formatCurrency(total)}</h1>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontWeight: 600 }}>Cuenta de Origen (Pago)</label>
+          <div className={styles.drawerField}>
+            <label className={styles.drawerLabel} htmlFor="payment-account">Cuenta de Origen (Pago)</label>
             <select 
+              id="payment-account"
               value={paymentAccountId} 
               onChange={e => setPaymentAccountId(e.target.value)}
-              style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+              className={styles.drawerSelect}
             >
               <option value="">-- No pagar ahora (Deuda) --</option>
-              {(accounts?.data || accounts || []).map((a: any) => <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>)}
+              {(accounts?.data || accounts || []).map((a: { id: string; name: string; balance: number }) => (
+                <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>
+              ))}
             </select>
           </div>
 
           {paymentAccountId && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontWeight: 600 }}>Monto a Pagar ($)</label>
+            <div className={styles.drawerField}>
+              <label className={styles.drawerLabel} htmlFor="payment-amount">Monto a Pagar ($)</label>
               <Input 
+                id="payment-amount"
                 type="number" 
                 max={total}
                 value={paymentAmount} 
                 onChange={e => setPaymentAmount(Number(e.target.value))} 
-                style={{ fontSize: '24px', padding: '12px' }}
+                className={styles.paymentInputLg}
               />
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+              <p className={styles.hintText}>
                 Si pagás menos del total, la diferencia se cargará como deuda al proveedor.
               </p>
             </div>
           )}
 
           {!paymentAccountId && (
-            <div style={{ padding: '16px', background: 'var(--red-bg)', color: 'var(--red)', borderRadius: '8px', fontSize: '14px' }}>
+            <div className={styles.debtAlert}>
               <strong>Atención:</strong> Se generará una deuda de <strong>{formatCurrency(total)}</strong> con el proveedor.
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontWeight: 600 }}>Observaciones</label>
+          <div className={styles.drawerField}>
+            <label className={styles.drawerLabel} htmlFor="payment-notes">Observaciones</label>
             <textarea 
+              id="payment-notes"
               value={notes} 
               onChange={e => setNotes(e.target.value)}
               placeholder="Ej: Factura A nro 0001-..."
-              style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', height: '80px', background: 'var(--bg-elevated)' }}
+              className={styles.drawerTextarea}
             />
           </div>
 
-          <div style={{ marginTop: 'auto', paddingTop: '24px' }}>
+          <div className={styles.drawerFooter}>
             <Button 
               variant="primary" 
-              style={{ width: '100%', height: '56px', fontSize: '18px' }}
+              className={styles.submitBtnFull}
               loading={purchaseMutation.isPending}
               onClick={() => purchaseMutation.mutate({
                 supplierId: selectedSupplierId,
                 warehouseId: selectedWarehouseId,
-                branchId: 'main', // Hardcoded for now, should be from context
+                branchId: 'main',
                 paymentAccountId,
                 paymentAmount,
                 notes,
@@ -328,10 +334,8 @@ export default function NewPurchasePage() {
               Generar Orden y Pago
             </Button>
           </div>
-
         </div>
       </Drawer>
-
     </div>
   );
 }

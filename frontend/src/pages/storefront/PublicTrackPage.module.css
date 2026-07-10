@@ -98,6 +98,40 @@
   text-decoration: none;
 }
 
-.linkBtn:hover {
-  text-decoration: underline;
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.liveTime {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.timelineRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.timelineLabel {
+  color: var(--text-secondary);
+}
+
+.timelineDate {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.destination {
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
 }

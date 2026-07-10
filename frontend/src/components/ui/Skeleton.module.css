@@ -1,13 +1,35 @@
-@keyframes shimmer {
-  0%   { background-position: -600px 0; }
-  100% { background-position:  600px 0; }
-}
 .skeleton {
-  display:inline-block;
+  display: inline-block;
+  width: var(--sk-w, 100%);
+  height: var(--sk-h, 16px);
+  border-radius: var(--sk-radius, 6px);
   background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-overlay) 50%, var(--bg-elevated) 75%);
   background-size: 600px 100%;
   animation: shimmer 1.4s infinite linear;
 }
+
+.headerRow {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Size utilities */
+.w40p { --sk-w: 40%; }
+.w50p { --sk-w: 50%; }
+.w65p { --sk-w: 65%; }
+.w70p { --sk-w: 70%; }
+.h11 { --sk-h: 11px; }
+.h12 { --sk-h: 12px; }
+.h14 { --sk-h: 14px; }
+.h28 { --sk-h: 28px; }
+.h160 { --sk-h: 160px; }
+.r10 { --sk-radius: 10px; }
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
 .tableWrapper { display:flex; flex-direction:column; gap:0; }
 .row {
   display:flex; align-items:center; gap:20px;

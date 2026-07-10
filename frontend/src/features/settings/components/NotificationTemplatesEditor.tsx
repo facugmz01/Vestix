@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi } from '@/api/notifications.api';
 import { Button, Input, Modal } from '@/components/ui';
 import { toast } from 'react-hot-toast';
-import { Pencil, Check, X, MessageSquare, Mail, Smartphone, BellRing } from 'lucide-react';
+import { Pencil, MessageSquare, Mail, Smartphone, BellRing } from 'lucide-react';
+import clsx from 'clsx';
 import { NOTIFICATION_EVENT_LABELS } from '@/features/notifications/constants';
 import { NotificationTemplate } from '@/types';
+import styles from './SettingsShared.module.css';
 
 export function NotificationTemplatesEditor() {
   const queryClient = useQueryClient();
@@ -36,7 +38,7 @@ export function NotificationTemplatesEditor() {
 
   const templates = data?.data || [];
 
-  if (isLoading) return <div style={{ padding: '20px', color: 'var(--text-muted)' }}>Cargando plantillas...</div>;
+  if (isLoading) return <div className={styles.loadingState}>Cargando plantillas...</div>;
 
   const getChannelIcon = (channel: string) => {
     switch (channel) {
@@ -50,37 +52,24 @@ export function NotificationTemplatesEditor() {
   const getEventName = (event: string) => NOTIFICATION_EVENT_LABELS[event] || event;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className={styles.templateList}>
       {templates.map(tpl => (
-        <div key={tpl.id} style={{ 
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-          padding: '12px 16px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', 
-          borderRadius: '8px' 
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ color: 'var(--accent)', background: 'var(--bg-overlay)', padding: '8px', borderRadius: '6px' }}>
+        <div key={tpl.id} className={styles.templateRow}>
+          <div className={styles.templateMain}>
+            <div className={styles.templateIcon}>
               {getChannelIcon(tpl.channel)}
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>{getEventName(tpl.event)}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Canal: {tpl.channel}</div>
+              <div className={styles.templateTitle}>{getEventName(tpl.event)}</div>
+              <div className={styles.templateMeta}>Canal: {tpl.channel}</div>
             </div>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className={styles.templateActions}>
             <button 
               type="button"
               onClick={() => toggleMutation.mutate({ id: tpl.id, isActive: !tpl.isActive })}
-              style={{
-                background: tpl.isActive ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-overlay)',
-                color: tpl.isActive ? '#10b981' : 'var(--text-muted)',
-                border: `1px solid ${tpl.isActive ? 'rgba(16, 185, 129, 0.2)' : 'var(--border)'}`,
-                padding: '4px 12px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
+              className={clsx(styles.statusToggle, { [styles.statusToggleActive]: tpl.isActive })}
             >
               {tpl.isActive ? 'Activo' : 'Inactivo'}
             </button>
@@ -91,8 +80,8 @@ export function NotificationTemplatesEditor() {
 
       {editingTemplate && (
         <Modal open={true} title={`Editar Plantilla: ${getEventName(editingTemplate.event)} (${editingTemplate.channel})`} onClose={() => setEditingTemplate(null)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 0' }}>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+          <div className={styles.modalForm}>
+            <p className={styles.modalHint}>
               Variables disponibles: {'{customerName}'}, {'{orderId}'}, {'{total}'}, {'{trackingNumber}'}, {'{productName}'}, {'{quantity}'}.
             </p>
             {editingTemplate.channel === 'EMAIL' && (
@@ -103,15 +92,15 @@ export function NotificationTemplatesEditor() {
               />
             )}
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Cuerpo del mensaje</label>
+              <label className={styles.fieldLabel}>Cuerpo del mensaje</label>
               <textarea 
                 id="edit-body"
                 defaultValue={editingTemplate.body}
-                style={{ width: '100%', minHeight: '120px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+                className={styles.modalTextarea}
               />
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+            <div className={styles.modalActions}>
               <Button variant="secondary" onClick={() => setEditingTemplate(null)}>Cancelar</Button>
               <Button 
                 onClick={() => {

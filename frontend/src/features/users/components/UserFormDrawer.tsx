@@ -8,6 +8,7 @@ import { queryKeys } from '@/api/queryKeys';
 import type { SystemUser } from '@/types';
 import { ROLE_LABELS } from '@/rbac/permissions';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -125,7 +126,7 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
         <Input
           label="Nombre Completo"
           value={formData.fullName}
@@ -149,7 +150,7 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <p className={styles.hintSm}>
               La contraseña debe tener al menos 8 caracteres.
             </p>
           </div>
@@ -163,24 +164,18 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <p className={styles.hintSm}>
               Dejá en blanco si no querés cambiarla.
             </p>
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Rol</label>
+        <div className={styles.selectGroup}>
+          <label className={styles.selectLabel}>Rol</label>
           <select
             value={formData.role}
             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 'var(--radius)',
-              border: '1px solid var(--border)',
-              background: 'var(--bg-elevated)',
-              color: 'var(--text-primary)',
-            }}
+            className={styles.select}
           >
             {roles.length === 0 ? (
               <option value={formData.role}>{roleLabel(formData.role)}</option>
@@ -194,18 +189,12 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Sucursal (opcional)</label>
+        <div className={styles.selectGroup}>
+          <label className={styles.selectLabel}>Sucursal (opcional)</label>
           <select
             value={formData.branchId || ''}
             onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 'var(--radius)',
-              border: '1px solid var(--border)',
-              background: 'var(--bg-elevated)',
-              color: 'var(--text-primary)',
-            }}
+            className={styles.select}
           >
             <option value="">Sin sucursal asignada</option>
             {branches.map((b) => (
@@ -216,14 +205,14 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
           </select>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+        <div className={styles.checkboxRow}>
           <input
             type="checkbox"
             id="isActive"
             checked={formData.isActive}
             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
           />
-          <label htmlFor="isActive" style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+          <label htmlFor="isActive" className={styles.checkboxLabel}>
             Usuario Activo
           </label>
         </div>

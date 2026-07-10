@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
+import clsx from 'clsx';
 import { useNavigate, useLocation, Link, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { storefrontAuthApi } from '@/api/storefront-auth.api';
@@ -267,10 +268,10 @@ export default function StorefrontLoginPage() {
               <ArrowLeft size={14} /> {loginConfig.changeLabel}
             </button>
 
-            <label className={sf.label} style={{ textAlign: 'center' }}>
+            <label className={clsx(sf.label, sf.textCenter)}>
               Ingresá el código de 6 dígitos
             </label>
-            <p className={sf.hint} style={{ textAlign: 'center', marginBottom: 16 }}>
+            <p className={clsx(sf.hint, sf.hintCenter)}>
               Enviado a {loginConfig.sentToLabel(identifier)}
             </p>
 
@@ -316,7 +317,7 @@ export default function StorefrontLoginPage() {
               {countdown > 0 ? (
                 <>
                   ¿No llegó? Podés reenviar en{' '}
-                  <strong style={{ color: 'var(--sf-primary, var(--accent))' }}>{countdown}s</strong>
+                  <strong className={sf.countdownAccent}>{countdown}s</strong>
                 </>
               ) : (
                 <button type="button" onClick={handleResendOtp} disabled={loading} className={sf.resendBtn}>

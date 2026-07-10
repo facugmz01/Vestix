@@ -17,6 +17,7 @@ import { InvoiceDetailDrawer } from '@/features/finance/invoices/components/Invo
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId, formatShortId } from '@/utils/formatId';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 const INVOICE_TYPE_LABELS: Record<string, string> = {
   FACTURA_A: 'Factura A', FACTURA_B: 'Factura B', FACTURA_C: 'Factura C',
@@ -59,7 +60,7 @@ export default function InvoicesPage() {
       <FiltersBar actions={<Badge color="gray">{total} comprobantes</Badge>}>
         <SearchInput placeholder="Buscar por CAE, Venta, CUIT..." onSearch={setSearch} />
 
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Estados</option>
           <option value="PENDING">Pendiente</option>
           <option value="ISSUED">Emitidas (CAE OK)</option>
@@ -67,7 +68,7 @@ export default function InvoicesPage() {
           <option value="CANCELLED">Anuladas</option>
         </select>
 
-        <select value={typeFilter} onChange={e => { setFilter('type', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={typeFilter} onChange={e => { setFilter('type', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Tipos</option>
           <option value="FACTURA_A">Factura A</option>
           <option value="FACTURA_B">Factura B</option>
@@ -79,9 +80,9 @@ export default function InvoicesPage() {
 
       {/* Summary stats */}
       {!isLoading && invoices.some(i => i.status === 'FAILED') && (
-        <div style={{ padding: '12px 16px', background: 'var(--red-bg)', border: '1px solid var(--red)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+        <div className={adminStyles.alertBannerRed}>
           <AlertTriangle size={18} color="var(--red)" />
-          <span style={{ fontSize: '13px', color: 'var(--red)', fontWeight: 600 }}>
+          <span className={adminStyles.alertBody}>
             Hay {invoices.filter(i => i.status === 'FAILED').length} comprobante(s) con error de AFIP. Revisá y reintentá la emisión.
           </span>
         </div>
@@ -103,18 +104,18 @@ export default function InvoicesPage() {
             keyField="id"
             data={invoices}
             columns={[
-              { key: 'id', header: 'ID', render: i => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{formatShortId(i.id)}</span> },
-              { key: 'saleOrderId', header: 'Venta Ref.', render: i => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{formatSaleId(i.saleOrderId)}</span> },
-              { key: 'date', header: 'Fecha', render: i => <span style={{ fontSize: '13px' }}>{new Date(i.createdAt).toLocaleString()}</span> },
+              { key: 'id', header: 'ID', render: i => <span className={adminStyles.cellMonoBold}>{formatShortId(i.id)}</span> },
+              { key: 'saleOrderId', header: 'Venta Ref.', render: i => <span className={adminStyles.cellMonoSecondary}>{formatSaleId(i.saleOrderId)}</span> },
+              { key: 'date', header: 'Fecha', render: i => <span className={adminStyles.cellDate}>{new Date(i.createdAt).toLocaleString()}</span> },
               { key: 'type', header: 'Tipo', render: i => <Badge color="blue">{INVOICE_TYPE_LABELS[i.type]}</Badge> },
-              { key: 'receiver', header: 'Receptor', render: i => <span style={{ fontWeight: 600 }}>{i.receiverName}</span> },
-              { key: 'cae', header: 'CAE', render: i => i.cae ? <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{i.cae}</span> : <span style={{ color: 'var(--text-muted)' }}>—</span> },
-              { key: 'total', header: 'Total', render: i => <span style={{ fontWeight: 900 }}>{formatCurrency(i.total)}</span> },
+              { key: 'receiver', header: 'Receptor', render: i => <span className={adminStyles.cellPrimary}>{i.receiverName}</span> },
+              { key: 'cae', header: 'CAE', render: i => i.cae ? <span className={adminStyles.cellMonoCode}>{i.cae}</span> : <span className={adminStyles.textMutedDash}>—</span> },
+              { key: 'total', header: 'Total', render: i => <span className={adminStyles.textBold900}>{formatCurrency(i.total)}</span> },
               { key: 'status', header: 'Estado', render: i => <InvoiceStatusBadge status={i.status} /> },
               {
                 key: 'actions', header: '',
                 render: i => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(i.id)} aria-label="Ver Detalle"><Eye size={16} /></Button>
                   </div>
                 )

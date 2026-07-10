@@ -227,6 +227,46 @@
   flex-wrap: wrap;
 }
 
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.previewBarSpaced {
+  margin-bottom: 12px;
+}
+
+.inputNarrow {
+  max-width: 280px;
+}
+
+.selectNarrow {
+  max-width: 280px;
+  align-self: flex-end;
+}
+
+.selectSpaced {
+  margin-top: 8px;
+}
+
+.alignEnd {
+  align-self: flex-end;
+}
+
+.canvasMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.canvasSized {
+  position: relative;
+  background: #fff;
+  box-shadow: var(--shadow-md);
+  flex-shrink: 0;
+}
+
 @media (max-width: 1100px) {
   .workspace {
     grid-template-columns: 1fr;

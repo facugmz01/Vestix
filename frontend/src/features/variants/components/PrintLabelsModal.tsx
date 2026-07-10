@@ -3,6 +3,7 @@ import { Drawer, Button, Input } from '@/components/ui';
 import { BulkPrintLabelsModal } from '@/features/labels/components/BulkPrintLabelsModal';
 import { Printer } from 'lucide-react';
 import type { ProductVariant } from '@/types';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -32,15 +33,15 @@ export function PrintLabelsModal({ open, onClose, variant }: Props) {
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Variante:</p>
-            <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', fontFamily: 'monospace' }}>{variant.sku}</p>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>Cód. de Barras: {variant.barcode || 'No posee'}</p>
+        <div className={styles.stack}>
+          <div className={styles.sectionPanel}>
+            <p className={styles.variantInfoLabel}>Variante:</p>
+            <p className={styles.variantInfoSku}>{variant.sku}</p>
+            <p className={styles.variantInfoBarcode}>Cód. de Barras: {variant.barcode || 'No posee'}</p>
           </div>
 
           {!variant.barcode && (
-            <div style={{ padding: '12px', background: 'var(--yellow-bg)', color: 'var(--yellow)', borderRadius: 'var(--radius)', fontSize: '13px' }}>
+            <div className={styles.alertYellow}>
               Sin código de barras asignado. Se generará automáticamente si está habilitado en configuración.
             </div>
           )}

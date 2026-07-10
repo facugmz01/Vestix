@@ -5,6 +5,7 @@ import { branchesApi, type CreateBranchDto } from '@/api/branches.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Branch } from '@/types';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -103,13 +104,9 @@ export function BranchFormDrawer({ open, onClose, branchToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
-        {/* Basic Info */}
+      <form onSubmit={handleSubmit} className={styles.formStack}>
         <div>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
-            Información Principal
-          </h4>
+          <h4 className={styles.sectionPanelTitle}>Información Principal</h4>
           <div className="grid-responsive grid-cols-2">
             <Input
               label="Nombre de Sucursal"
@@ -135,45 +132,41 @@ export function BranchFormDrawer({ open, onClose, branchToEdit }: Props) {
             />
           </div>
           
-          <div style={{ display: 'flex', gap: '24px', marginTop: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className={styles.checkboxGroup}>
+            <div className={styles.checkboxRow}>
               <input
                 type="checkbox"
                 id="isActive"
                 checked={formData.isActive}
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
               />
-              <label htmlFor="isActive" style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+              <label htmlFor="isActive" className={styles.checkboxLabel}>
                 Sucursal Activa
               </label>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.checkboxRow}>
               <input
                 type="checkbox"
                 id="isMain"
                 checked={formData.isMain}
                 onChange={(e) => setFormData({ ...formData, isMain: e.target.checked })}
               />
-              <label htmlFor="isMain" style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+              <label htmlFor="isMain" className={styles.checkboxLabel}>
                 Es Casa Central
               </label>
             </div>
           </div>
         </div>
 
-        <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+        <hr className={styles.formDivider} />
 
-        {/* Settings */}
         <div>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
-            Configuración & POS
-          </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <h4 className={styles.sectionPanelTitle}>Configuración & POS</h4>
+          <div className={styles.formStackSm}>
             <Input
               label="CUIT / Tax ID Local"
               value={formData.settings.taxId || ''}
               onChange={(e) => setFormData({ ...formData, settings: { ...formData.settings, taxId: e.target.value } })}
-             
             />
             <Input
               label="Cabecera Ticket POS"
@@ -184,11 +177,9 @@ export function BranchFormDrawer({ open, onClose, branchToEdit }: Props) {
               label="Pie de Ticket POS"
               value={formData.settings.posReceiptFooter || ''}
               onChange={(e) => setFormData({ ...formData, settings: { ...formData.settings, posReceiptFooter: e.target.value } })}
-             
             />
           </div>
         </div>
-
       </form>
     </Drawer>
   );

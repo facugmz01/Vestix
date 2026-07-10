@@ -16,6 +16,8 @@ import { ReservationFormDrawer } from '@/features/inventory/reservations/compone
 import { ReservationDetailDrawer } from '@/features/inventory/reservations/components/ReservationDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatShortId } from '@/utils/formatId';
+import clsx from 'clsx';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 const RESERVATION_STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Activa',
@@ -72,7 +74,7 @@ export default function ReservationsPage() {
       <FiltersBar actions={<Badge color="gray">{total} registros</Badge>}>
         <SearchInput placeholder="Buscar por ID..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todas</option>
           <option value="ACTIVE">Activas (Reteniendo Stock)</option>
           <option value="CONSUMED">Concretadas (Vendidas)</option>
@@ -100,21 +102,21 @@ export default function ReservationsPage() {
               { 
                 key: 'id', 
                 header: 'Reserva ID',
-                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(r.id)}</span>
+                render: (r) => <span className={adminStyles.cellMonoBold}>{formatShortId(r.id)}</span>
               },
               { 
                 key: 'customer', 
                 header: 'Cliente',
-                render: (r) => <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{r.customerName || 'CF'}</span>
+                render: (r) => <span className={adminStyles.cellMedium}>{r.customerName || 'CF'}</span>
               },
               { 
                 key: 'expires', 
                 header: 'Vencimiento',
                 render: (r) => {
-                  if (r.status !== 'ACTIVE') return <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>-</span>;
+                  if (r.status !== 'ACTIVE') return <span className={adminStyles.expiryMuted}>-</span>;
                   const expiredLocally = isExpired(r.expiresAt);
                   return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: expiredLocally ? 'var(--red)' : 'var(--text-primary)', fontWeight: expiredLocally ? 'bold' : 'normal', fontSize: '13px' }}>
+                    <div className={clsx(adminStyles.expiryRow, expiredLocally ? adminStyles.expiryOverdue : adminStyles.expiryNormal)}>
                       <Clock size={14} />
                       {new Date(r.expiresAt).toLocaleString()}
                     </div>
@@ -135,7 +137,7 @@ export default function ReservationsPage() {
                 key: 'actions',
                 header: '',
                 render: (r) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(r.id)} aria-label="Ver y Gestionar">
                       <Eye size={16} />
                     </Button>

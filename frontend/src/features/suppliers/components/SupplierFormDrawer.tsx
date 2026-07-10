@@ -5,6 +5,7 @@ import { suppliersApi, type CreateSupplierDto } from '@/api/suppliers.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { Supplier } from '@/types';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -32,7 +33,6 @@ export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
         contactName: supplierToEdit.contactName || '',
         taxId: supplierToEdit.taxId || '',
         email: supplierToEdit.email || '',
-        // Editing balance directly is usually disabled, but we keep the field state
         initialBalance: supplierToEdit.account?.balance || 0,
         currency: supplierToEdit.account?.currency || 'ARS',
       });
@@ -51,7 +51,6 @@ export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
   const mutation = useMutation({
     mutationFn: (data: CreateSupplierDto) => {
       if (isEditing && supplierToEdit) {
-        // Exclude financial setup from update payload
         const { initialBalance, currency, ...updateData } = data;
         return suppliersApi.updateSupplier(supplierToEdit.id, updateData);
       }
@@ -93,8 +92,7 @@ export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
         <Input
           label="Razón Social / Empresa *"
           value={formData.companyName}
@@ -122,12 +120,10 @@ export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         />
 
-        <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
+        <hr className={styles.formDivider} />
 
-        <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: 'var(--radius)' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
-            Cuenta Corriente / Financiera
-          </h4>
+        <div className={styles.sectionPanel}>
+          <h4 className={styles.sectionPanelTitle}>Cuenta Corriente / Financiera</h4>
           
           <div className="grid-responsive grid-cols-2-1">
             <Input
@@ -138,13 +134,13 @@ export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
               disabled={isEditing}
               helperText="Saldo a favor del proveedor (lo que le debemos)."
             />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Moneda</label>
+            <div className={styles.selectGroup}>
+              <label className={styles.selectLabel}>Moneda</label>
               <select
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                 disabled={isEditing}
-                style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+                className={styles.select}
               >
                 <option value="ARS">ARS</option>
                 <option value="USD">USD</option>
@@ -153,12 +149,11 @@ export function SupplierFormDrawer({ open, onClose, supplierToEdit }: Props) {
           </div>
 
           {isEditing && (
-            <p style={{ fontSize: '12px', color: 'var(--orange)', marginTop: '8px' }}>
+            <p className={styles.hintOrange}>
               * El saldo y la moneda de la cuenta no se pueden modificar desde aquí. Utilizá los pagos o notas de crédito en la ficha financiera.
             </p>
           )}
         </div>
-
       </form>
     </Drawer>
   );

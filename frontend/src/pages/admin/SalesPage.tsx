@@ -22,6 +22,7 @@ import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
 import { useState } from 'react';
 import type { SaleOrder } from '@/types';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 function isHomeDelivery(sale: SaleOrder) {
   return !!sale.shippingAddress;
@@ -125,7 +126,7 @@ export default function SalesPage() {
       subtitle="Monitor general de ventas confirmadas y presupuestos (Quotations) generados en todas las sucursales."
       action={
         <ActionGuard action="manage" subject="Sales">
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={adminStyles.toolbarActions}>
             <Button 
               variant="secondary" 
               icon={<FileSpreadsheet size={16} />} 
@@ -143,7 +144,7 @@ export default function SalesPage() {
       <FiltersBar actions={<Badge color="gray">{total} documentos</Badge>}>
         <SearchInput placeholder="Buscar por ID de Venta..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Estados</option>
           <option value="QUOTATION">Solo Presupuestos</option>
           <option value="PENDING_PAYMENT">Pago Pendiente</option>
@@ -176,7 +177,7 @@ export default function SalesPage() {
                 key: 'id', 
                 header: 'Doc ID',
                 render: (s) => (
-                  <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>
+                  <span className={adminStyles.cellMonoBold}>
                     {formatSaleId(s.id, s.status)}
                   </span>
                 )
@@ -184,13 +185,13 @@ export default function SalesPage() {
               { 
                 key: 'date', 
                 header: 'Fecha',
-                render: (s) => <span style={{ fontSize: '13px' }}>{new Date(s.createdAt).toLocaleDateString()}</span>
+                render: (s) => <span className={adminStyles.cellDate}>{new Date(s.createdAt).toLocaleDateString()}</span>
               },
               { 
                 key: 'source', 
                 header: 'Canal',
                 render: (s) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div className={adminStyles.cellRowXs}>
                     <Badge color="gray">
                       {s.source}
                     </Badge>
@@ -200,20 +201,20 @@ export default function SalesPage() {
               { 
                 key: 'customer', 
                 header: 'Cliente',
-                render: (s) => <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{s.customerName || 'Consumidor Final'}</span>
+                render: (s) => <span className={adminStyles.cellMedium}>{s.customerName || 'Consumidor Final'}</span>
               },
               { 
                 key: 'payment', 
                 header: 'Condición',
                 render: (s) => {
                   const names: any = { CASH: 'Efectivo', CREDIT_CARD: 'Tarjeta', BANK_TRANSFER: 'Transferencia', CUSTOMER_CREDIT: 'Cta. Corriente' };
-                  return <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{names[s.paymentMethod] || s.paymentMethod}</span>
+                  return <span className={adminStyles.cellSecondaryMuted}>{names[s.paymentMethod] || s.paymentMethod}</span>
                 }
               },
               { 
                 key: 'total', 
                 header: 'Monto Final',
-                render: (s) => <span style={{ fontWeight: 900, fontSize: '15px' }}>{formatCurrency(s.grandTotal)}</span>
+                render: (s) => <span className={adminStyles.cellAmount}>{formatCurrency(s.grandTotal)}</span>
               },
               { 
                 key: 'status', 
@@ -228,7 +229,7 @@ export default function SalesPage() {
                 render: (s) => {
                   const homeDelivery = isHomeDelivery(s);
                   return (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     {s.status === 'PENDING_PAYMENT' && (
                       <ActionGuard action="update" subject="Sales">
                         <Button variant="primary" size="sm" onClick={() => handleConfirmPayment(s.id)} aria-label="Validar Pago" title="Validar Pago y Confirmar">

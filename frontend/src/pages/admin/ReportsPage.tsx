@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import clsx from 'clsx';
 import {
   TrendingUp, ShoppingBag, Package, Wallet,
   BarChart2, RefreshCw, Calendar, AlertCircle,
@@ -13,8 +14,8 @@ import { PurchasesReportPanel } from '@/features/reports/components/PurchasesRep
 import { CashReportPanel }      from '@/features/reports/components/CashReportPanel';
 import { useDashboard }         from '@/features/reports/hooks/useDashboard';
 import { useReportFilters, DATE_PRESETS } from '@/features/reports/hooks/useReportFilters';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import adminStyles from '@/styles/AdminListShared.module.css';
+import styles from './ReportsPage.module.css';
 
 type ReportTab = 'overview' | 'sales' | 'stock' | 'purchases' | 'cash';
 
@@ -26,26 +27,15 @@ const TABS: { id: ReportTab; label: string; icon: React.ReactNode }[] = [
   { id: 'cash',      label: 'Caja',      icon: <Wallet      size={14} /> },
 ];
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function TabNav({ activeTab, onChange }: { activeTab: ReportTab; onChange: (t: ReportTab) => void }) {
   return (
-    <div
-      className="glass-panel"
-      style={{ display: 'flex', gap: '4px', marginBottom: '24px', padding: '6px', borderRadius: 'var(--radius-lg)', width: 'fit-content', overflowX: 'auto' }}
-    >
+    <div className={clsx('glass-panel', styles.tabNav)}>
       {TABS.map(t => (
         <button
           key={t.id}
+          type="button"
           onClick={() => onChange(t.id)}
-          style={{
-            padding: '8px 16px', borderRadius: '6px', border: 'none',
-            background: activeTab === t.id ? 'var(--accent)' : 'transparent',
-            color:      activeTab === t.id ? '#fff' : 'var(--text-secondary)',
-            fontWeight: 700, cursor: 'pointer', fontSize: '13px',
-            display: 'flex', alignItems: 'center', gap: '6px',
-            transition: 'background 0.2s, color 0.2s',
-          }}
+          className={clsx(styles.tabBtn, activeTab === t.id && styles.tabBtnActive)}
         >
           {t.icon}{t.label}
         </button>
@@ -62,32 +52,32 @@ function DateRangePicker({
   from: string; to: string;
   setFrom: (v: string) => void;
   setTo:   (v: string) => void;
-  onPreset: (p: any) => void;
+  onPreset: (p: unknown) => void;
 }) {
   return (
-    <div
-      className="glass-panel"
-      style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px', padding: '14px 16px', borderRadius: 'var(--radius-lg)', flexWrap: 'wrap' }}
-    >
+    <div className={clsx('glass-panel', styles.datePickerBar)}>
       <Calendar size={16} color="var(--text-secondary)" />
-      <label style={{ fontSize: '13px', fontWeight: 600 }}>Período:</label>
+      <label className={styles.dateLabel}>Período:</label>
       <input
-        type="date" value={from}
+        type="date"
+        value={from}
         onChange={e => setFrom(e.target.value)}
-        style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+        className={styles.dateInput}
       />
-      <span style={{ color: 'var(--text-muted)' }}>—</span>
+      <span className={styles.dateSep}>—</span>
       <input
-        type="date" value={to}
+        type="date"
+        value={to}
         onChange={e => setTo(e.target.value)}
-        style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+        className={styles.dateInput}
       />
-      <div style={{ display: 'flex', gap: '6px', marginLeft: '4px' }}>
+      <div className={styles.presetGroup}>
         {DATE_PRESETS.map(p => (
           <button
             key={p.value}
+            type="button"
             onClick={() => onPreset(p.value)}
-            style={{ padding: '4px 12px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-base)', fontSize: '12px', cursor: 'pointer', fontWeight: 600, color: 'var(--text-secondary)' }}
+            className={styles.presetBtn}
           >
             {p.label}
           </button>
@@ -97,16 +87,14 @@ function DateRangePicker({
   );
 }
 
-// ─── Overview Tab ─────────────────────────────────────────────────────────────
-
 function OverviewTab({ branchId }: { branchId?: string }) {
   const { dashboard, isLoading, isError, refetch } = useDashboard(branchId, true);
 
   if (isLoading) {
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <div className={styles.kpiSkeletonGrid}>
         {[1, 2, 3, 4].map(i => (
-          <div key={i} style={{ height: '140px', borderRadius: '12px', background: 'var(--bg-elevated)', animation: 'pulse 1.5s ease infinite' }} />
+          <div key={i} className={styles.kpiSkeleton} />
         ))}
       </div>
     );
@@ -127,7 +115,7 @@ function OverviewTab({ branchId }: { branchId?: string }) {
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className={adminStyles.statCardGrid4}>
         <KpiCard
           label="Ventas Hoy"
           value={formatCurrency(dashboard.today?.revenue ?? 0)}
@@ -156,9 +144,9 @@ function OverviewTab({ branchId }: { branchId?: string }) {
       </div>
 
       {(dashboard.pendingOrders ?? 0) > 0 && (
-        <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-          <h4 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: 700 }}>Pedidos Pendientes</h4>
-          <p style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: '#f59e0b' }}>
+        <div className={styles.pendingCard}>
+          <h4 className={styles.pendingTitle}>Pedidos Pendientes</h4>
+          <p className={styles.pendingValue}>
             {dashboard.pendingOrders}
           </p>
         </div>
@@ -166,8 +154,6 @@ function OverviewTab({ branchId }: { branchId?: string }) {
     </>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<ReportTab>('overview');

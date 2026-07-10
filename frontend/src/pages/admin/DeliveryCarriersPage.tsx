@@ -12,6 +12,7 @@ import {
   type StorefrontSettingsFormData,
 } from '@/features/settings/schemas/storefrontSettings.schema';
 import styles from '@/features/settings/components/SettingsShared.module.css';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function DeliveryCarriersPage() {
   const { data: settings, isLoading } = useGetSettings();
@@ -46,7 +47,7 @@ export default function DeliveryCarriersPage() {
             </header>
             <div className={styles.cardBody}>
               <ToggleSwitch label="Habilitado" {...register('deliverySettings.carriers.andreani.enabled')} />
-              <div className={clsx(styles.grid, styles.grid2)} style={{ marginTop: '12px' }}>
+              <div className={clsx(styles.grid, styles.grid2, adminStyles.mtSm)}>
                 <Input label="API Key" type="password" {...register('deliverySettings.carriers.andreani.apiKey')} />
                 <Input label="Client ID" {...register('deliverySettings.carriers.andreani.clientId')} />
                 <Input label="Número de contrato" {...register('deliverySettings.carriers.andreani.contract')} />
@@ -61,7 +62,7 @@ export default function DeliveryCarriersPage() {
             </header>
             <div className={styles.cardBody}>
               <ToggleSwitch label="Habilitado" {...register('deliverySettings.carriers.mercadoEnvios.enabled')} />
-              <div className={clsx(styles.grid, styles.grid2)} style={{ marginTop: '12px' }}>
+              <div className={clsx(styles.grid, styles.grid2, adminStyles.mtSm)}>
                 <Input label="Access Token" type="password" {...register('deliverySettings.carriers.mercadoEnvios.accessToken')} />
                 <Input label="User ID" {...register('deliverySettings.carriers.mercadoEnvios.userId')} />
               </div>

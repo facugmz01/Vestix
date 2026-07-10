@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Download, AlertTriangle, Package } from 'lucide-react';
+import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 import { Button, Table, Badge } from '@/components/ui';
@@ -7,6 +8,7 @@ import { reportsApi } from '@/api/reports.api';
 import { queryKeys } from '@/api/queryKeys';
 import { KpiCard, EmptyState, ErrorState } from './ChartPrimitives';
 import { formatCurrency } from '@/utils/formatCurrency';
+import rs from '@/styles/ReportsShared.module.css';
 
 interface Props {
   branchId?: string;
@@ -35,7 +37,7 @@ export function StockReportPanel({ branchId }: Props) {
   const retryLowStock  = () => qc.invalidateQueries({ queryKey: queryKeys.reports.lowStock(branchId) });
 
   if (vl) {
-    return <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando datos de stock...</div>;
+    return <div className={rs.loadingState}>Cargando datos de stock...</div>;
   }
 
   if (ve) {
@@ -46,9 +48,11 @@ export function StockReportPanel({ branchId }: Props) {
     ? (((valuation.totalValueAtRetail - valuation.totalValueAtCost) / valuation.totalValueAtRetail) * 100).toFixed(1)
     : '0';
 
+  const hasLowStock = (lowStock?.length ?? 0) > 0;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <div className={rs.panelStack}>
+      <div className={rs.panelActions}>
         <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportMutation.mutate()} loading={exportMutation.isPending}>
           Exportar Excel
         </Button>
@@ -63,14 +67,14 @@ export function StockReportPanel({ branchId }: Props) {
             <KpiCard label="Margen Potencial"     value={`${potentialMarginPct}%`}                 icon={<Package size={20} />} color="#8b5cf6" />
           </div>
 
-          <div className="grid-responsive grid-cols-2">
-            <div style={{ padding: '20px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '12px' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Valor Venta Potencial</p>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 900 }}>{formatCurrency(valuation.totalValueAtRetail)}</h3>
+          <div className={rs.kpiGrid2}>
+            <div className={`${rs.kpiCardBase} ${rs.kpiCardNeutral}`}>
+              <p className={`${rs.kpiLabel} ${rs.kpiLabelMuted}`}>Valor Venta Potencial</p>
+              <h3 className={rs.kpiValue}>{formatCurrency(valuation.totalValueAtRetail)}</h3>
             </div>
-            <div style={{ padding: '20px', background: 'var(--green-bg)', border: '1px solid var(--green)', borderRadius: '12px' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '12px', color: 'var(--green)', textTransform: 'uppercase' }}>Ganancia Potencial</p>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: 'var(--green)' }}>
+            <div className={`${rs.kpiCardBase} ${rs.kpiCardGreen}`}>
+              <p className={`${rs.kpiLabel} ${rs.kpiLabelGreen}`}>Ganancia Potencial</p>
+              <h3 className={`${rs.kpiValue} ${rs.kpiValueGreen}`}>
                 {formatCurrency(valuation.totalValueAtRetail - valuation.totalValueAtCost)}
               </h3>
             </div>
@@ -78,23 +82,18 @@ export function StockReportPanel({ branchId }: Props) {
         </>
       )}
 
-      {/* Low Stock Alerts */}
-      <div style={{
-        background: 'var(--bg-base)',
-        border: `1px solid ${(lowStock?.length ?? 0) > 0 ? 'var(--orange)' : 'var(--border)'}`,
-        borderRadius: '12px', overflow: 'hidden',
-      }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className={clsx(rs.tableCard, hasLowStock && rs.tableCardAlert)}>
+        <div className={rs.tableCardHeader}>
+          <h4 className={rs.sectionTitleRow}>
             <AlertTriangle size={16} color="var(--orange)" /> Alertas de Stock Bajo
           </h4>
           {lowStock && lowStock.length > 0 && <Badge color="yellow">{lowStock.length} artículos</Badge>}
         </div>
 
         {ll ? (
-          <p style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando...</p>
+          <p className={rs.tableCardLoading}>Cargando...</p>
         ) : le ? (
-          <div style={{ padding: '16px' }}>
+          <div className={rs.tableCardBody}>
             <ErrorState message="Error al cargar las alertas de stock." onRetry={retryLowStock} />
           </div>
         ) : !lowStock || lowStock.length === 0 ? (
@@ -104,11 +103,11 @@ export function StockReportPanel({ branchId }: Props) {
             keyField="variantId"
             data={lowStock}
             columns={[
-              { key: 'sku',     header: 'SKU',          render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.sku}</span> },
+              { key: 'sku',     header: 'SKU',          render: (l) => <span className={rs.monoBold}>{l.sku}</span> },
               { key: 'product', header: 'Producto',     render: (l) => <span>{l.name}</span> },
               { key: 'branch',  header: 'Sucursal',     render: (l) => <Badge color="gray">{l.branchId}</Badge> },
-              { key: 'stock',   header: 'Stock Actual', render: (l) => <span style={{ fontWeight: 800, color: l.availableQuantity <= 0 ? 'var(--red)' : 'var(--orange)' }}>{l.availableQuantity}</span> },
-              { key: 'reorder', header: 'Punto Reorden', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{l.reorderPoint}</span> },
+              { key: 'stock',   header: 'Stock Actual', render: (l) => <span className={l.availableQuantity <= 0 ? rs.stockLow : rs.stockWarn}>{l.availableQuantity}</span> },
+              { key: 'reorder', header: 'Punto Reorden', render: (l) => <span className={rs.textMuted}>{l.reorderPoint}</span> },
             ]}
           />
         )}

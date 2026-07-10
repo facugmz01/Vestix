@@ -472,7 +472,7 @@ export function ProductEditor({ initialData }: Props) {
             </div>
 
             <div className={styles.priceActions}>
-              <Button type="button" variant="ghost" size="sm" icon={<span style={{ fontWeight: 600 }}>$</span>} onClick={() => {
+              <Button type="button" variant="ghost" size="sm" icon={<span className={styles.currencyIcon}>$</span>} onClick={() => {
                 const meta = formData.metadata || {};
                 const toggled = !meta.usdCurrency;
                 setFormData({

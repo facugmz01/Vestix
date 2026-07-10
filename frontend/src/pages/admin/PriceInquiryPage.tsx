@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import clsx from 'clsx';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Tag, Package, Info } from 'lucide-react';
@@ -9,14 +10,14 @@ import {
 
 import { posApi } from '@/api/pos.api';
 import { formatCurrency } from '@/utils/formatCurrency';
-
+import adminStyles from '@/styles/AdminListShared.module.css';
+import styles from './PriceInquiryPage.module.css';
 
 export default function PriceInquiryPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
@@ -28,16 +29,14 @@ export default function PriceInquiryPage() {
     enabled: debouncedSearch.length >= 2,
   });
 
-
   return (
     <PageContainer
       tabs={<Tabs items={CATALOG_TABS} />}
-      
       title="Consulta de Precios" 
       subtitle="Buscá rápidamente precios y disponibilidad de cualquier producto sin abrir el POS."
     >
-      <div style={{ marginBottom: '24px', maxWidth: '600px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className={styles.searchSection}>
+        <div className={styles.searchRow}>
           <Search size={20} color="var(--text-muted)" />
           <Input 
             placeholder="Escaneá un código o buscá por SKU / Nombre..." 
@@ -46,7 +45,7 @@ export default function PriceInquiryPage() {
             autoFocus
           />
         </div>
-        <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <p className={styles.searchHint}>
           <Info size={14} /> Escribí al menos 2 caracteres para buscar.
         </p>
       </div>
@@ -74,21 +73,22 @@ export default function PriceInquiryPage() {
               {
                 key: 'image',
                 header: '',
-                render: (v: any) => {
+                render: (v: { imageUrl?: string; sku: string; product?: { images?: string[] } }) => {
                   const imgUrl = v.imageUrl || (v.product?.images && v.product.images.length > 0 ? v.product.images[0] : null);
                   return (
                     <div 
-                      style={{ 
-                        width: '48px', height: '48px', borderRadius: '8px', background: 'var(--bg-elevated)', 
-                        overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', 
-                        alignItems: 'center', justifyContent: 'center', cursor: imgUrl ? 'zoom-in' : 'default' 
-                      }}
+                      className={styles.thumb}
                       onClick={() => imgUrl && setPreviewImage(imgUrl)}
+                      role={imgUrl ? 'button' : undefined}
+                      tabIndex={imgUrl ? 0 : undefined}
+                      onKeyDown={(e) => imgUrl && e.key === 'Enter' && setPreviewImage(imgUrl)}
                     >
                       {imgUrl ? (
-                        <img src={imgUrl} alt={v.sku} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={imgUrl} alt={v.sku} className={styles.thumbImg} />
                       ) : (
-                        <Package size={20} color="var(--text-muted)" />
+                        <div className={styles.thumbPlaceholder}>
+                          <Package size={20} />
+                        </div>
                       )}
                     </div>
                   );
@@ -97,47 +97,47 @@ export default function PriceInquiryPage() {
               { 
                 key: 'product', 
                 header: 'Producto',
-                render: (v: any) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 700, fontSize: '15px' }}>{v.product?.name || 'Producto Desconocido'}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{v.sku}</span>
+                render: (v: { product?: { name?: string }; sku: string }) => (
+                  <div className={adminStyles.cellStack}>
+                    <span className={styles.productName}>{v.product?.name || 'Producto Desconocido'}</span>
+                    <span className={styles.productSku}>{v.sku}</span>
                   </div>
                 )
               },
               { 
                 key: 'attributes', 
                 header: 'Talle / Color',
-                render: (v: any) => (
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                render: (v: { size?: string; color?: string }) => (
+                  <div className={styles.badgeRow}>
                     {v.size && <Badge color="gray">{v.size}</Badge>}
                     {v.color && <Badge color="blue">{v.color}</Badge>}
-                    {!v.size && !v.color && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Única</span>}
+                    {!v.size && !v.color && <span className={adminStyles.expiryMuted}>Única</span>}
                   </div>
                 )
               },
               { 
                 key: 'price', 
                 header: 'Precio al Público',
-                render: (v: any) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '20px', fontWeight: 900, color: 'var(--blue)' }}>
+                render: (v: { basePrice?: number }) => (
+                  <div className={adminStyles.cellStack}>
+                    <span className={styles.priceValue}>
                       {formatCurrency(v.basePrice || 0)}
                     </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Iva Incluido</span>
+                    <span className={adminStyles.cellMutedXs}>Iva Incluido</span>
                   </div>
                 )
               },
               { 
                 key: 'stock', 
                 header: 'Disponibilidad Total',
-                render: (v: any) => {
-                  const totalStock = v.stockLevels?.reduce((acc: number, s: any) => acc + s.availableQuantity, 0) || 0;
+                render: (v: { stockLevels?: { availableQuantity: number }[] }) => {
+                  const totalStock = v.stockLevels?.reduce((acc, s) => acc + s.availableQuantity, 0) || 0;
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 700, color: totalStock > 0 ? 'var(--green)' : 'var(--red)' }}>
+                    <div className={adminStyles.cellStack}>
+                      <span className={clsx(styles.stockValue, totalStock > 0 ? styles.stockOk : styles.stockEmpty)}>
                         {totalStock} unidades
                       </span>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span className={adminStyles.cellMutedXs}>
                         En {v.stockLevels?.length || 0} depósitos
                       </span>
                     </div>
@@ -149,28 +149,22 @@ export default function PriceInquiryPage() {
         )}
       </Section>
 
-      {/* Image Preview Overlay */}
       {previewImage && (
         <div 
-          style={{ 
-            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
-            background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', 
-            justifyContent: 'center', zIndex: 9999, cursor: 'zoom-out' 
-          }}
+          className={styles.lightbox}
           onClick={() => setPreviewImage(null)}
+          role="presentation"
         >
           <img 
             src={previewImage} 
             alt="Preview" 
-            style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} 
+            className={styles.lightboxImg}
           />
           <button 
-            style={{ 
-              position: 'absolute', top: '20px', right: '20px', background: 'white', 
-              border: 'none', borderRadius: '50%', width: '40px', height: '40px', 
-              cursor: 'pointer', fontWeight: 'bold', fontSize: '20px' 
-            }}
+            type="button"
+            className={styles.lightboxClose}
             onClick={() => setPreviewImage(null)}
+            aria-label="Cerrar"
           >
             ×
           </button>

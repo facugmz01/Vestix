@@ -9,6 +9,8 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { BulkPrintLabelsModal } from '@/features/labels/components/BulkPrintLabelsModal';
 import { useAuthStore } from '@/store/auth.store';
 import { formatEntityId, formatShortId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -59,31 +61,31 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Auditoría de Remito" width="lg">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
+      <div className={styles.stack}>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+        <div className={styles.heroCard}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--text-muted)' }}>Remito ID / OC Ref</p>
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, fontFamily: 'monospace' }}>{formatShortId(receipt.id)}</h3>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>OC: <span style={{ fontFamily: 'monospace' }}>{formatEntityId(receipt.purchaseOrderId, 'OC-')}</span></p>
+            <p className={styles.heroLabel}>Remito ID / OC Ref</p>
+            <h3 className={styles.heroTitle}>{formatShortId(receipt.id)}</h3>
+            <p className={styles.heroSubtitle}>OC: <span className={styles.mono}>{formatEntityId(receipt.purchaseOrderId, 'OC-')}</span></p>
           </div>
-          <div style={{ textAlign: 'center' }}>
+          <div className={styles.heroMeta}>
             <Badge color={getStatusColor(receipt.status)}>{receipt.status}</Badge>
-            <p style={{ margin: '8px 0 0', fontSize: '12px' }}>{new Date(receipt.createdAt).toLocaleDateString()}</p>
+            <p className={styles.heroDateSm}>{new Date(receipt.createdAt).toLocaleDateString()}</p>
           </div>
         </div>
 
         {isDisputed && receipt.status !== 'VALIDATED' && (
-          <div style={{ padding: '16px', background: 'var(--orange-bg)', color: 'var(--orange)', borderRadius: 'var(--radius)', border: '1px solid var(--orange)' }}>
-            <h4 style={{ margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className={styles.warningPanelOrange}>
+            <h4 className={styles.warningPanelOrangeTitle}>
               <AlertTriangle size={20} /> Existen Diferencias
             </h4>
-            <p style={{ margin: 0, fontSize: '13px' }}>El conteo físico no coincide con lo esperado según la OC. Requiere autorización gerencial para validar.</p>
+            <p className={styles.warningPanelText}>El conteo físico no coincide con lo esperado según la OC. Requiere autorización gerencial para validar.</p>
           </div>
         )}
 
         <div>
-          <h4 style={{ margin: '0 0 12px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4 className={styles.sectionHeading}>
             Resultados del Conteo
           </h4>
           
@@ -91,9 +93,9 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
             keyField="id"
             data={receipt.lines}
             columns={[
-              { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
-              { key: 'expected', header: 'Esperado (OC)', render: (l) => <span style={{ color: 'var(--text-muted)' }}>{l.expectedQuantity}</span> },
-              { key: 'received', header: 'Ingresado Real', render: (l) => <span style={{ fontWeight: 'bold' }}>{l.receivedQuantity}</span> },
+              { key: 'sku', header: 'SKU', render: (l) => <span className={styles.monoBold}>{l.variantSku || l.variantId}</span> },
+              { key: 'expected', header: 'Esperado (OC)', render: (l) => <span className={styles.textMuted}>{l.expectedQuantity}</span> },
+              { key: 'received', header: 'Ingresado Real', render: (l) => <span className={styles.textBold}>{l.receivedQuantity}</span> },
               { 
                 key: 'diff', 
                 header: 'Diferencia', 
@@ -111,7 +113,7 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
         </div>
 
         {/* Actions */}
-        <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div className={styles.footerBetween}>
           
           {(receipt.status === 'DRAFT' || receipt.status === 'DISPUTED') && (
             <ActionGuard action="manage" subject="Purchasing">
@@ -135,7 +137,7 @@ export function GoodsReceiptDetailDrawer({ open, onClose, receiptId }: Props) {
                   </Button>
                 </ActionGuard>
               )}
-              <div style={{ color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginLeft: 'auto' }}>
+              <div className={styles.successInline}>
                 <CheckCircle size={20} /> Remito impactado en inventario exitosamente.
               </div>
             </>

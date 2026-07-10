@@ -13,6 +13,9 @@ import { salesApi } from '@/api/sales.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useListPage } from '@/hooks/useListPage';
 import { formatSaleId } from '@/utils/formatId';
+import adminStyles from '@/styles/AdminListShared.module.css';
+import detailStyles from '@/styles/DetailDrawerShared.module.css';
+import pageStyles from './SalesFulfillmentPage.module.css';
 
 const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
   PENDING_PAYMENT: 'Pago pendiente',
@@ -171,7 +174,7 @@ export default function SalesFulfillmentPage() {
         <select
           value={statusFilter}
           onChange={e => { setFilter('status', e.target.value); setPage(1); }}
-          style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}
+          className={adminStyles.filterSelect}
         >
           {STATUS_FILTERS.map(f => (
             <option key={f.value} value={f.value}>{f.label}</option>
@@ -200,8 +203,8 @@ export default function SalesFulfillmentPage() {
                 header: 'ID / Fecha',
                 render: (f: FulfillmentListItem) => (
                   <div>
-                    <div style={{ fontWeight: 600 }}>{formatSaleId(f.saleOrderId)}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    <div className={adminStyles.cellPrimary}>{formatSaleId(f.saleOrderId)}</div>
+                    <div className={adminStyles.cellMuted}>
                       {new Date(f.saleOrder.createdAt).toLocaleString()}
                     </div>
                   </div>
@@ -223,7 +226,7 @@ export default function SalesFulfillmentPage() {
                         : (f.saleOrder.shippingMethodName || 'Retiro en tienda')}
                     </Badge>
                     {f.saleOrder.shippingAddress && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      <div className={adminStyles.cellMutedTiny}>
                         {f.saleOrder.shippingAddress.city}
                       </div>
                     )}
@@ -248,10 +251,10 @@ export default function SalesFulfillmentPage() {
                 key: 'tracking',
                 header: 'Tracking',
                 render: (f: FulfillmentListItem) => (
-                  <div style={{ fontSize: '13px' }}>
+                  <div className={adminStyles.cellDate}>
                     {f.trackingNumber || '—'}
                     {f.delivery?.dispatchedAt && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <div className={adminStyles.cellMutedXs}>
                         Despachado: {new Date(f.delivery.dispatchedAt).toLocaleString()}
                       </div>
                     )}
@@ -264,7 +267,7 @@ export default function SalesFulfillmentPage() {
                 render: (f: FulfillmentListItem) => {
                   const home = isHomeDelivery(f);
                   return (
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className={adminStyles.rowActionsWrap}>
                     {home && ['PAID', 'PICKING', 'PACKED'].includes(f.status) && (
                       <Button variant="primary" size="sm" onClick={() => setDispatchModal(f)}>
                         <Truck size={14} /> Despachar
@@ -336,9 +339,9 @@ export default function SalesFulfillmentPage() {
             </>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className={pageStyles.modalStack}>
             {dispatchModal.saleOrder.shippingAddress && (
-              <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: '4px', fontSize: '13px' }}>
+              <div className={pageStyles.infoBox}>
                 <strong>{dispatchModal.saleOrder.shippingAddress.fullName}</strong>
                 <div>{dispatchModal.saleOrder.shippingAddress.address}</div>
                 <div>
@@ -350,15 +353,16 @@ export default function SalesFulfillmentPage() {
             <Input label="Repartidor *" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nombre del repartidor" />
             <Input label="Teléfono repartidor" value={driverPhone} onChange={e => setDriverPhone(e.target.value)} placeholder="54911..." />
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Carrier</label>
+              <label className={pageStyles.formLabel} htmlFor="carrier-type">Carrier</label>
               <select
+                id="carrier-type"
                 value={carrierType}
                 onChange={e => {
                   const value = e.target.value as 'PROPIO' | 'ANDREANI' | 'MERCADO_ENVIOS';
                   setCarrierType(value);
                   setCourierName(value === 'PROPIO' ? 'Propio' : value === 'ANDREANI' ? 'Andreani' : 'Mercado Envíos');
                 }}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                className={pageStyles.formSelectFull}
               >
                 <option value="PROPIO">Propio (repartidor interno)</option>
                 <option value="ANDREANI">Andreani</option>
@@ -367,7 +371,7 @@ export default function SalesFulfillmentPage() {
             </div>
             <Input label="Nombre courier (visible al cliente)" value={courierName} onChange={e => setCourierName(e.target.value)} placeholder="Propio / Andreani / etc." />
             <Input label="Número de tracking" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Opcional" />
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+            <p className={pageStyles.hintMuted}>
               Al despachar se generará un código OTP de 6 dígitos que el cliente recibirá por WhatsApp para validar la entrega.
             </p>
           </div>
@@ -403,7 +407,7 @@ export default function SalesFulfillmentPage() {
             </>
           }
         >
-          <p style={{ marginBottom: '16px', color: 'var(--text-muted)' }}>
+          <p className={pageStyles.modalIntro}>
             Ingresá el código de 6 dígitos que se envió al cliente al despachar el pedido.
           </p>
           <Input
@@ -411,7 +415,7 @@ export default function SalesFulfillmentPage() {
             value={otp}
             onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="000000"
-            style={{ fontFamily: 'monospace', letterSpacing: '4px' }}
+            className={pageStyles.otpInput}
           />
         </Modal>
       )}
@@ -422,21 +426,21 @@ export default function SalesFulfillmentPage() {
           onClose={() => setLinksModal(null)}
           footer={<Button variant="primary" onClick={() => setLinksModal(null)}>Cerrar</Button>}
         >
-          <p style={{ marginBottom: '16px', color: 'var(--text-muted)' }}>
-            Compartí estos links con el cliente y el repartidor. OTP para validación: <strong style={{ fontFamily: 'monospace' }}>{linksModal.otpForAdmin}</strong>
+          <p className={pageStyles.modalIntro}>
+            Compartí estos links con el cliente y el repartidor. OTP para validación: <strong className={detailStyles.mono}>{linksModal.otpForAdmin}</strong>
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className={pageStyles.linkStack}>
             <div>
-              <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Seguimiento público</label>
-              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                <input readOnly value={linksModal.links.trackingUrl} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '13px' }} />
+              <label className={pageStyles.linkLabel}>Seguimiento público</label>
+              <div className={pageStyles.linkRow}>
+                <input readOnly value={linksModal.links.trackingUrl} className={pageStyles.linkInput} />
                 <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard.writeText(linksModal.links.trackingUrl); toast.success('Copiado'); }}>Copiar</Button>
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>App repartidor</label>
-              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                <input readOnly value={linksModal.links.driverUrl} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '13px' }} />
+              <label className={pageStyles.linkLabel}>App repartidor</label>
+              <div className={pageStyles.linkRow}>
+                <input readOnly value={linksModal.links.driverUrl} className={pageStyles.linkInput} />
                 <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard.writeText(linksModal.links.driverUrl); toast.success('Copiado'); }}>Copiar</Button>
               </div>
             </div>

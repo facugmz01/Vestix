@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
+import styles from '@/components/layout/StorefrontLayout.module.css';
 
 interface Props {
   children: React.ReactNode;
@@ -18,7 +19,7 @@ export function StorefrontRequireAuth({ children, requireCompleteProfile = false
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}>
+      <div className={styles.loadingWrap}>
         <Loader2 size={32} className="spin" color="var(--accent)" />
       </div>
     );

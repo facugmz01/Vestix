@@ -5,6 +5,7 @@ import {
   XCircle, FileText, Ban, Clock, User, Monitor
 } from 'lucide-react';
 import { formatShortId } from '@/utils/formatId';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -29,14 +30,10 @@ function renderDiff(before: unknown, after: unknown): React.ReactNode {
   if (before === null || before === undefined) before = '—';
   if (after === null || after === undefined) after = '—';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontSize: '13px' }}>
-      <span style={{ background: 'var(--red-bg)', color: 'var(--red)', padding: '2px 6px', borderRadius: '4px' }}>
-        {String(before)}
-      </span>
-      <span style={{ color: 'var(--text-muted)' }}>→</span>
-      <span style={{ background: 'var(--green-bg)', color: 'var(--green)', padding: '2px 6px', borderRadius: '4px' }}>
-        {String(after)}
-      </span>
+    <div className={styles.diffRow}>
+      <span className={styles.diffBefore}>{String(before)}</span>
+      <span className={styles.traceDiffArrow}>→</span>
+      <span className={styles.diffAfter}>{String(after)}</span>
     </div>
   );
 }
@@ -49,41 +46,39 @@ export function AuditLogDetailDrawer({ open, onClose, log }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle del Evento de Auditoría" width="md">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-        {/* Event header */}
-        <div style={{ padding: '20px', background: 'var(--bg-elevated)', borderRadius: '10px', border: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+      <div className={styles.formStackMd}>
+        <div className={styles.auditHero}>
+          <div className={styles.auditHeroTop}>
             <div>
-              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
-                <Badge color={actionMeta.color as any}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{actionMeta.icon} {actionMeta.label}</span>
+              <div className={styles.badgeRow}>
+                <Badge color={actionMeta.color as 'green' | 'blue' | 'red' | 'gray' | 'orange'}>
+                  <span className={styles.badgeInner}>{actionMeta.icon} {actionMeta.label}</span>
                 </Badge>
               </div>
-              <h3 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 800 }}>{log.description}</h3>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h3 className={styles.auditHeroTitle}>{log.description}</h3>
+              <p className={styles.auditHeroTime}>
                 <Clock size={12} /> {new Date(log.createdAt).toLocaleString()}
               </p>
             </div>
             <Badge color="gray">{log.module}</Badge>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+          <div className={styles.auditMetaGrid}>
             <div>
-              <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Usuario</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '14px' }}>
+              <p className={styles.auditMetaLabel}>Usuario</p>
+              <div className={styles.auditMetaValue}>
                 <User size={14} /> {log.userName}
               </div>
-              <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{log.userEmail}</p>
+              <p className={styles.auditMetaSub}>{log.userEmail}</p>
             </div>
 
             <div>
-              <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>IP / Entidad</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
+              <p className={styles.auditMetaLabel}>IP / Entidad</p>
+              <div className={styles.auditMetaValue}>
                 <Monitor size={14} /> {log.ipAddress || 'Sistema Interno'}
               </div>
               {log.entityType && (
-                <p style={{ margin: '2px 0 0', fontSize: '12px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                <p className={styles.auditMetaSubMono}>
                   {log.entityType}{log.entityId ? ` · ${formatShortId(log.entityId)}` : ''}
                 </p>
               )}
@@ -91,23 +86,22 @@ export function AuditLogDetailDrawer({ open, onClose, log }: Props) {
           </div>
         </div>
 
-        {/* Changes diff */}
         {changesEntries.length > 0 && (
           <div>
-            <h4 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: 700 }}>Cambios Detectados</h4>
-            <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <h4 className={styles.changesTitle}>Cambios Detectados</h4>
+            <div className={styles.historyTableWrap}>
+              <table className={styles.lineItemsTable}>
                 <thead>
-                  <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase' }}>Campo</th>
-                    <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase' }}>Antes → Después</th>
+                  <tr className={styles.changesTableHead}>
+                    <th className={styles.changesTh}>Campo</th>
+                    <th className={styles.changesTh}>Antes → Después</th>
                   </tr>
                 </thead>
                 <tbody>
                   {changesEntries.map(([field, diff]) => (
-                    <tr key={field} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontWeight: 600 }}>{field}</td>
-                      <td style={{ padding: '12px 16px' }}>{renderDiff(diff.before, diff.after)}</td>
+                    <tr key={field} className={styles.changesTr}>
+                      <td className={styles.changesTdField}>{field}</td>
+                      <td className={styles.changesTd}>{renderDiff(diff.before, diff.after)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -117,11 +111,10 @@ export function AuditLogDetailDrawer({ open, onClose, log }: Props) {
         )}
 
         {changesEntries.length === 0 && (
-          <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+          <div className={styles.emptyAuditChanges}>
             No hay detalle de cambios para este evento.
           </div>
         )}
-
       </div>
     </Drawer>
   );

@@ -1,0 +1,214 @@
+/* Chart primitives — dynamic bar heights/colors via CSS vars set in useLayoutEffect */
+
+.chartFull {
+  width: 100%;
+}
+
+.barChartArea {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.barColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.barValue {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.barFill {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.85;
+  height: var(--bar-pct, 0%);
+  background: var(--bar-color, var(--accent));
+}
+
+.barLabels {
+  display: flex;
+  gap: 8px;
+  padding: 8px 4px 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.barLabel {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stackedTrack {
+  display: flex;
+  height: 32px;
+  border-radius: 6px;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.stackedSegment {
+  transition: width 0.4s ease;
+  width: var(--seg-pct, 0%);
+  background: var(--seg-color, var(--accent));
+}
+
+.stackedLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: var(--seg-color, var(--accent));
+}
+
+.legendLabel {
+  color: var(--text-secondary);
+}
+
+.legendValue {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.kpiCard {
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: var(--transition);
+}
+
+.kpiHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.kpiLabel {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.kpiIcon {
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--kpi-icon-bg, var(--accent-subtle));
+  color: var(--kpi-icon-color, var(--accent));
+}
+
+.kpiValue {
+  margin: 0 0 4px;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  animation: kpiCountIn 0.4s ease;
+  color: var(--text-primary);
+}
+
+.kpiSubtext {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kpiTrend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.trendUp {
+  font-weight: 700;
+  color: var(--green);
+}
+
+.trendDown {
+  font-weight: 700;
+  color: var(--red);
+}
+
+.trendLabel {
+  color: var(--text-muted);
+}
+
+.emptyState {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.emptyIcon {
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.emptyText {
+  margin: 0;
+  font-size: 14px;
+}
+
+.errorState {
+  padding: 32px 24px;
+  text-align: center;
+  border: 1px solid var(--red);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--red) 8%, transparent);
+}
+
+.errorMessage {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--red);
+  font-weight: 600;
+}
+
+.retryBtn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--red);
+  background: transparent;
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+@keyframes kpiCountIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

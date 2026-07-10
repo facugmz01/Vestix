@@ -7,6 +7,7 @@ import { queryKeys } from '@/api/queryKeys';
 import type { ProductVariant } from '@/types';
 import toast from 'react-hot-toast';
 import { Wand2 } from 'lucide-react';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -109,13 +110,12 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
         <div className="grid-responsive grid-cols-2">
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>SKU *</label>
-              <button type="button" onClick={() => generateSkuMutation.mutate()} disabled={generateSkuMutation.isPending} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className={styles.fieldLabelRow}>
+              <label className={styles.selectLabel}>SKU *</label>
+              <button type="button" onClick={() => generateSkuMutation.mutate()} disabled={generateSkuMutation.isPending} className={styles.ghostLinkBtn}>
                 <Wand2 size={12} /> Auto-generar
               </button>
             </div>
@@ -123,21 +123,21 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
               value={formData.sku} 
               onChange={(e) => setFormData({ ...formData, sku: e.target.value })} 
               required 
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+              className={styles.nativeInput}
             />
           </div>
 
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Cód. Barras (EAN-13)</label>
-              <button type="button" onClick={() => generateBarcodeMutation.mutate()} disabled={generateBarcodeMutation.isPending} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className={styles.fieldLabelRow}>
+              <label className={styles.selectLabel}>Cód. Barras (EAN-13)</label>
+              <button type="button" onClick={() => generateBarcodeMutation.mutate()} disabled={generateBarcodeMutation.isPending} className={styles.ghostLinkBtn}>
                 <Wand2 size={12} /> Auto-generar
               </button>
             </div>
             <input 
               value={formData.barcode || ''} 
               onChange={(e) => setFormData({ ...formData, barcode: e.target.value })} 
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+              className={styles.nativeInput}
             />
           </div>
         </div>
@@ -157,11 +157,10 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
           required 
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.checkboxRow}>
           <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />
-          <label htmlFor="isActive" style={{ fontSize: '14px' }}>Variante Activa</label>
+          <label htmlFor="isActive" className={styles.checkboxLabel}>Variante Activa</label>
         </div>
-
       </form>
     </Drawer>
   );

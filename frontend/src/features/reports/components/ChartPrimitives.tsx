@@ -1,4 +1,39 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
+import clsx from 'clsx';
+import styles from './ChartPrimitives.module.css';
+
+function useCssVars<T extends HTMLElement>(vars: Record<string, string | number | undefined>) {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    Object.entries(vars).forEach(([key, value]) => {
+      if (value !== undefined) el.style.setProperty(key, String(value));
+    });
+  }, [vars]);
+  return ref;
+}
+
+function DynBar({ pct, color }: { pct: number; color?: string }) {
+  const ref = useCssVars<HTMLDivElement>({
+    '--bar-pct': `${pct}%`,
+    '--bar-color': color ?? 'var(--accent)',
+  });
+  return <div ref={ref} className={styles.barFill} />;
+}
+
+function DynSegment({ pct, color, title }: { pct: number; color: string; title: string }) {
+  const ref = useCssVars<HTMLDivElement>({
+    '--seg-pct': `${pct}%`,
+    '--seg-color': color,
+  });
+  return <div ref={ref} className={styles.stackedSegment} title={title} />;
+}
+
+function DynSwatch({ color }: { color: string }) {
+  const ref = useCssVars<HTMLDivElement>({ '--seg-color': color });
+  return <div ref={ref} className={styles.legendSwatch} />;
+}
 
 // ─── BarChart ─────────────────────────────────────────────────────────────────
 
@@ -16,45 +51,24 @@ export function BarChart({
   ariaLabel = 'Gráfico de barras',
 }: BarChartProps) {
   const maxVal = Math.max(...data.map(d => d.value), 1);
+  const areaRef = useCssVars<HTMLDivElement>({ height: `${height}px` });
 
   return (
-    <div role="img" aria-label={ariaLabel} style={{ width: '100%' }}>
-      {/* Bars */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: `${height}px`, padding: '0 4px 0' }}>
+    <div role="img" aria-label={ariaLabel} className={styles.chartFull}>
+      <div ref={areaRef} className={styles.barChartArea}>
         {data.map((d, i) => {
           const pct = (d.value / maxVal) * 100;
           return (
-            <div
-              key={i}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', gap: '4px' }}
-            >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                {formatValue(d.value)}
-              </span>
-              <div
-                style={{
-                  width: '100%',
-                  borderRadius: '4px 4px 0 0',
-                  background: d.color ?? 'var(--accent)',
-                  height: `${pct}%`,
-                  minHeight: '4px',
-                  transition: 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                  opacity: 0.85,
-                }}
-              />
+            <div key={i} className={styles.barColumn}>
+              <span className={styles.barValue}>{formatValue(d.value)}</span>
+              <DynBar pct={pct} color={d.color} />
             </div>
           );
         })}
       </div>
-      {/* X labels */}
-      <div style={{ display: 'flex', gap: '8px', padding: '0 4px', marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
+      <div className={styles.barLabels}>
         {data.map((d, i) => (
-          <div
-            key={i}
-            style={{ flex: 1, textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-          >
-            {d.label}
-          </div>
+          <div key={i} className={styles.barLabel}>{d.label}</div>
         ))}
       </div>
     </div>
@@ -72,24 +86,25 @@ interface StackedBarProps {
 export function StackedBar({ segments, total, formatValue = (v) => String(v) }: StackedBarProps) {
   return (
     <div>
-      <div style={{ display: 'flex', height: '32px', borderRadius: '6px', overflow: 'hidden', gap: '2px' }}>
+      <div className={styles.stackedTrack}>
         {segments.map((s, i) => {
           const pct = total > 0 ? (s.value / total) * 100 : 0;
           return pct > 0 ? (
-            <div
+            <DynSegment
               key={i}
+              pct={pct}
+              color={s.color}
               title={`${s.label}: ${formatValue(s.value)} (${pct.toFixed(1)}%)`}
-              style={{ background: s.color, width: `${pct}%`, transition: 'width 0.4s ease' }}
             />
           ) : null;
         })}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '10px' }}>
+      <div className={styles.stackedLegend}>
         {segments.map((s, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: s.color, flexShrink: 0 }} />
-            <span style={{ color: 'var(--text-secondary)' }}>{s.label}:</span>
-            <span style={{ fontWeight: 700 }}>{formatValue(s.value)}</span>
+          <div key={i} className={styles.legendItem}>
+            <DynSwatch color={s.color} />
+            <span className={styles.legendLabel}>{s.label}:</span>
+            <span className={styles.legendValue}>{formatValue(s.value)}</span>
           </div>
         ))}
       </div>
@@ -110,54 +125,29 @@ interface KpiCardProps {
 
 export function KpiCard({ label, value, subtext, icon, trend, color = 'var(--accent)' }: KpiCardProps) {
   const trendPositive = (trend?.value ?? 0) >= 0;
+  const iconRef = useCssVars<HTMLDivElement>({
+    '--kpi-icon-bg': `${color}18`,
+    '--kpi-icon-color': color,
+  });
 
   return (
-    <div
-      className="glass-panel"
-      style={{
-        borderRadius: 'var(--radius-lg)',
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        transition: 'var(--transition)',
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-          {label}
-        </p>
-        <div style={{ padding: '8px', background: `${color}18`, borderRadius: '8px', color }}>
-          {icon}
-        </div>
+    <div className={clsx('glass-panel', styles.kpiCard)}>
+      <div className={styles.kpiHeader}>
+        <p className={styles.kpiLabel}>{label}</p>
+        <div ref={iconRef} className={styles.kpiIcon}>{icon}</div>
       </div>
 
-      {/* Value */}
       <div>
-        <h2
-          style={{
-            margin: '0 0 4px',
-            fontSize: '28px',
-            fontWeight: 900,
-            letterSpacing: '-0.5px',
-            animation: 'kpiCountIn 0.4s ease',
-          }}
-        >
-          {value}
-        </h2>
-        {subtext && (
-          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>{subtext}</p>
-        )}
+        <h2 className={styles.kpiValue}>{value}</h2>
+        {subtext && <p className={styles.kpiSubtext}>{subtext}</p>}
       </div>
 
-      {/* Trend */}
       {trend && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-          <span style={{ fontWeight: 700, color: trendPositive ? 'var(--green)' : 'var(--red)' }}>
+        <div className={styles.kpiTrend}>
+          <span className={trendPositive ? styles.trendUp : styles.trendDown}>
             {trendPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
           </span>
-          <span style={{ color: 'var(--text-muted)' }}>{trend.label}</span>
+          <span className={styles.trendLabel}>{trend.label}</span>
         </div>
       )}
     </div>
@@ -171,12 +161,11 @@ interface EmptyStateProps {
   icon?: React.ReactNode;
 }
 
-/** Reusable empty/no-data state for panels */
 export function EmptyState({ message, icon }: EmptyStateProps) {
   return (
-    <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-      {icon && <div style={{ marginBottom: '12px', opacity: 0.4 }}>{icon}</div>}
-      <p style={{ margin: 0, fontSize: '14px' }}>{message}</p>
+    <div className={styles.emptyState}>
+      {icon && <div className={styles.emptyIcon}>{icon}</div>}
+      <p className={styles.emptyText}>{message}</p>
     </div>
   );
 }
@@ -188,35 +177,12 @@ interface ErrorStateProps {
   onRetry?: () => void;
 }
 
-/** Reusable error state for panels */
 export function ErrorState({ message = 'Ocurrió un error al cargar los datos.', onRetry }: ErrorStateProps) {
   return (
-    <div
-      style={{
-        padding: '32px 24px',
-        textAlign: 'center',
-        border: '1px solid var(--red)',
-        borderRadius: '12px',
-        background: 'color-mix(in srgb, var(--red) 8%, transparent)',
-      }}
-    >
-      <p style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--red)', fontWeight: 600 }}>
-        {message}
-      </p>
+    <div className={styles.errorState}>
+      <p className={styles.errorMessage}>{message}</p>
       {onRetry && (
-        <button
-          onClick={onRetry}
-          style={{
-            padding: '6px 16px',
-            borderRadius: '6px',
-            border: '1px solid var(--red)',
-            background: 'transparent',
-            color: 'var(--red)',
-            fontSize: '12px',
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
+        <button type="button" onClick={onRetry} className={styles.retryBtn}>
           Reintentar
         </button>
       )}

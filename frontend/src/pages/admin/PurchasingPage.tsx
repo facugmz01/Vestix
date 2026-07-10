@@ -23,6 +23,7 @@ import { useListPage } from '@/hooks/useListPage';
 import { useDeleteMutation } from '@/hooks/useDeleteMutation';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatEntityId } from '@/utils/formatId';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function PurchasingPage() {
   const navigate = useNavigate();
@@ -107,7 +108,7 @@ export default function PurchasingPage() {
       subtitle="Gestioná las órdenes de compra (PO), su estado de recepción y facturación."
       action={
         <ActionGuard action="manage" subject="Purchasing">
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={adminStyles.toolbarActions}>
             <Button 
               variant="secondary" 
               icon={<FileSpreadsheet size={16} />} 
@@ -128,7 +129,7 @@ export default function PurchasingPage() {
       <FiltersBar actions={<Badge color="gray">{total} órdenes</Badge>}>
         <SearchInput placeholder="Buscar por OC ID..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Estados</option>
           <option value="DRAFT">Borradores (DRAFT)</option>
           <option value="ISSUED">Emitidas (ISSUED)</option>
@@ -136,7 +137,7 @@ export default function PurchasingPage() {
           <option value="COMPLETED">Cumplidas (COMPLETED)</option>
         </select>
 
-        <select value={supplierFilter} onChange={e => { setFilter('supplier', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={supplierFilter} onChange={e => { setFilter('supplier', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Proveedores</option>
           {suppliersData?.data.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
         </select>
@@ -161,22 +162,22 @@ export default function PurchasingPage() {
               { 
                 key: 'id', 
                 header: 'OC ID',
-                render: (o) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatEntityId(o.id, 'OC-')}</span>
+                render: (o) => <span className={adminStyles.cellMonoBold}>{formatEntityId(o.id, 'OC-')}</span>
               },
               { 
                 key: 'supplier', 
                 header: 'Proveedor',
-                render: (o: any) => <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{o.supplier?.companyName || o.supplier?.name || 'Desconocido'}</span>
+                render: (o: { supplier?: { companyName?: string; name?: string } }) => <span className={adminStyles.cellPrimary}>{o.supplier?.companyName || o.supplier?.name || 'Desconocido'}</span>
               },
               { 
                 key: 'date', 
                 header: 'Fecha Emisión',
-                render: (o) => <span style={{ fontSize: '13px' }}>{new Date(o.createdAt).toLocaleDateString()}</span>
+                render: (o) => <span className={adminStyles.cellDate}>{new Date(o.createdAt).toLocaleDateString()}</span>
               },
               { 
                 key: 'amount', 
                 header: 'Monto Total',
-                render: (o) => <span style={{ fontWeight: 800 }}>{formatCurrency(o.totalAmount)}</span>
+                render: (o) => <span className={adminStyles.textBold800}>{formatCurrency(o.totalAmount)}</span>
               },
               { 
                 key: 'status', 
@@ -187,7 +188,7 @@ export default function PurchasingPage() {
                 key: 'actions',
                 header: '',
                 render: (o) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(o)} aria-label="Gestionar" title="Ver detalle o Gestionar recepción">
                       {o.status === 'ISSUED' || o.status === 'PARTIALLY_RECEIVED' ? <Truck size={16} color="var(--blue)" /> : <Eye size={16} />}
                     </Button>

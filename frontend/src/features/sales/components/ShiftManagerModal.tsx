@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { Modal, Button } from '@/components/ui';
 import { treasuryApi } from '@/api/treasury.api';
 import type { CashShift, CashRegister } from '@/types';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -73,27 +75,27 @@ export function ShiftManagerModal({ open, onClose, mode, activeShift, cashRegist
 
   return (
     <Modal open={open} onClose={onClose} title={mode === 'OPEN' ? 'Apertura de Caja' : 'Cierre de Caja (Arqueo Ciego)'}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <form onSubmit={handleSubmit} className={styles.formStackSm}>
         
         {mode === 'OPEN' && (
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <p className={styles.modalText}>
             Para poder facturar en el POS necesitas abrir un turno. Ingresa el <strong>Fondo de Caja</strong> (dinero inicial para cambio).
           </p>
         )}
 
         {mode === 'CLOSE' && (
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <p className={styles.modalText}>
             Cuenta los billetes y monedas en la caja y declara el total. El sistema registrará cualquier diferencia automáticamente.
           </p>
         )}
 
         {mode === 'OPEN' && registers && registers.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Seleccionar Caja</label>
+          <div className={styles.fieldGroupSm}>
+            <label className={styles.selectLabel}>Seleccionar Caja</label>
             <select
               value={selectedRegister}
               onChange={e => setSelectedRegister(e.target.value)}
-              style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '14px', background: 'var(--bg-base)' }}
+              className={styles.selectMd}
             >
               <option value="">-- Cajas Disponibles --</option>
               {registers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -101,8 +103,8 @@ export function ShiftManagerModal({ open, onClose, mode, activeShift, cashRegist
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600 }}>
+        <div className={styles.fieldGroupSm}>
+          <label className={styles.selectLabel}>
             {mode === 'OPEN' ? 'Saldo Inicial (Efectivo)' : 'Dinero Físico Contado'}
           </label>
           <input
@@ -111,25 +113,25 @@ export function ShiftManagerModal({ open, onClose, mode, activeShift, cashRegist
             value={amount}
             onChange={e => setAmount(e.target.value)}
             placeholder="0.00"
-            style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '16px', fontWeight: 600 }}
+            className={styles.selectLg}
             autoFocus
           />
         </div>
 
         {mode === 'CLOSE' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600 }}>Notas / Observaciones (Opcional)</label>
+          <div className={styles.fieldGroupSm}>
+            <label className={styles.selectLabel}>Notas / Observaciones (Opcional)</label>
             <input
               type="text"
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Ej: Faltan $10 por compra de agua"
-              style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)' }}
+              className={styles.selectMd}
             />
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+        <div className={styles.modalFooter}>
           {mode === 'CLOSE' && (
             <Button variant="ghost" onClick={onClose} disabled={isPending}>Cancelar</Button>
           )}

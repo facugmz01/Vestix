@@ -9,6 +9,7 @@ import type { PurchaseOrder } from '@/types';
 import toast from 'react-hot-toast';
 import { X, Search, Package } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -24,7 +25,6 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const [warehouseId, setDestinationWarehouseId] = useState('');
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
   const [lines, setLines] = useState<{ variantId: string; variantSku: string; quantity: number; unitCost: number }[]>([]);
-
   const [search, setSearch] = useState('');
 
   const { data: suppliersData } = useQuery({ 
@@ -48,7 +48,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   useEffect(() => {
     if (open && orderToEdit) {
       setSupplierId(orderToEdit.supplierId);
-      setDestinationWarehouseId((orderToEdit as any).destinationWarehouseId || (orderToEdit as any).warehouseId || '');
+      setDestinationWarehouseId((orderToEdit as PurchaseOrder & { destinationWarehouseId?: string; warehouseId?: string }).destinationWarehouseId || (orderToEdit as PurchaseOrder & { warehouseId?: string }).warehouseId || '');
       setExpectedDeliveryDate(orderToEdit.expectedDeliveryDate ? orderToEdit.expectedDeliveryDate.split('T')[0] : '');
       setLines(orderToEdit.lines.map(l => ({
         variantId: l.variantId,
@@ -65,7 +65,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
     }
   }, [open, orderToEdit]);
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = (product: { id: string; name: string; size?: string; costPrice?: number; sku: string }) => {
     const existing = lines.find(l => l.variantId === product.id);
     if (existing) {
       setLines(lines.map(l => l.variantId === product.id ? { ...l, quantity: l.quantity + 1 } : l));
@@ -92,8 +92,8 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const totals = lines.reduce((acc, line) => acc + (line.quantity * line.unitCost), 0);
 
   const mutation = useMutation({
-    mutationFn: (data: any) => {
-      const payload = { ...data, expectedDeliveryDate: data.expectedDeliveryDate || undefined };
+    mutationFn: (data: Record<string, unknown>) => {
+      const payload = { ...data, expectedDeliveryDate: (data.expectedDeliveryDate as string) || undefined };
       if (isEditing && orderToEdit) return purchasesApi.updateOrder(orderToEdit.id, payload);
       return purchasesApi.createOrder(payload);
     },
@@ -103,7 +103,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
       if (isEditing) queryClient.invalidateQueries({ queryKey: queryKeys.purchases.detail(orderToEdit!.id) });
       onClose();
     },
-    onError: (err: any) => toast.error(err.message || 'Error al guardar'),
+    onError: (err: { message?: string }) => toast.error(err.message || 'Error al guardar'),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -133,36 +133,34 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '20px', height: '100%' }}>
-        
-        {/* LEFT PANEL: CATALOG SEARCH */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border)', paddingRight: '20px' }}>
-          <div style={{ position: 'relative', marginBottom: '20px' }}>
-            <Search size={20} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--text-muted)' }} />
+      <form onSubmit={handleSubmit} className={styles.purchaseForm}>
+        <div className={styles.purchaseMain}>
+          <div className={styles.purchaseSearchWrap}>
+            <Search size={20} className={styles.searchFieldIconLg} />
             <input 
               type="text"
               placeholder="Buscar catálogo por SKU, nombre o categoría..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '14px 14px 14px 48px', borderRadius: '12px', border: '2px solid var(--accent)', fontSize: '15px', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+              className={styles.searchFieldInputLg}
             />
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className={styles.purchaseScroll}>
             {search.length < 3 ? (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                <Package size={48} style={{ opacity: 0.2, marginBottom: '12px' }} />
+              <div className={styles.purchaseEmpty}>
+                <Package size={48} className={styles.purchaseEmptyIcon} />
                 <p>Escribí al menos 3 letras para buscar.</p>
               </div>
             ) : isSearching ? (
               <p>Buscando en catálogo...</p>
             ) : searchResults?.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
-                {searchResults.map((p: any) => (
-                  <div key={p.id} onClick={() => handleAddToCart(p)} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', cursor: 'pointer', transition: 'all 0.2s' }}>
-                    <p style={{ margin: '0 0 4px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{p.sku}</p>
-                    <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, minHeight: '34px' }}>{p.name} {p.size && `(${p.size})`}</p>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(p.basePrice)}</p>
+              <div className={styles.productGrid}>
+                {searchResults.map((p: { id: string; sku: string; name: string; size?: string; basePrice: number }) => (
+                  <div key={p.id} onClick={() => handleAddToCart(p)} className={styles.productCard}>
+                    <p className={styles.productCardSku}>{p.sku}</p>
+                    <p className={styles.productCardName}>{p.name} {p.size && `(${p.size})`}</p>
+                    <p className={styles.productCardPrice}>{formatCurrency(p.basePrice)}</p>
                   </div>
                 ))}
               </div>
@@ -172,24 +170,22 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
           </div>
         </div>
 
-        {/* RIGHT PANEL: CART & SETUP */}
-        <div style={{ width: '450px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
-          <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '16px' }}>Configuración de OC</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600 }}>Proveedor *</label>
-              <select value={supplierId} onChange={e => setSupplierId(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} required>
+        <div className={styles.purchaseSidebar}>
+          <div className={styles.configPanel}>
+            <h3 className={styles.configPanelTitle}>Configuración de OC</h3>
+            <div className={styles.fieldGroupSm}>
+              <label className={styles.selectLabel}>Proveedor *</label>
+              <select value={supplierId} onChange={e => setSupplierId(e.target.value)} className={styles.select} required>
                 <option value="">Seleccionar Proveedor...</option>
-                {(suppliersData?.data || []).map((s: any) => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+                {(suppliersData?.data || []).map((s: { id: string; companyName: string }) => <option key={s.id} value={s.id}>{s.companyName}</option>)}
               </select>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600 }}>Destino (Depósito) *</label>
-              <select value={warehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }} required>
+            <div className={styles.fieldGroupSm}>
+              <label className={styles.selectLabel}>Destino (Depósito) *</label>
+              <select value={warehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} className={styles.select} required>
                 <option value="">Seleccionar Depósito...</option>
-                {(warehouses?.data || warehouses || []).map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                {(warehouses?.data || warehouses || []).map((w: { id: string; name: string }) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>
             
@@ -201,43 +197,41 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
             />
           </div>
 
-          <div style={{ flex: 1, background: 'var(--bg-elevated)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Artículos Agregados</h3>
+          <div className={styles.cartPanel}>
+            <h3 className={styles.cartPanelTitle}>Artículos Agregados</h3>
             
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {lines.length === 0 && <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '20px' }}>No hay artículos en la orden.</p>}
+            <div className={styles.cartScroll}>
+              {lines.length === 0 && <p className={styles.cartEmptyHint}>No hay artículos en la orden.</p>}
               {lines.map((l, i) => (
-                <div key={i} style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{l.variantSku}</span>
-                    <X size={16} color="var(--red)" style={{ cursor: 'pointer' }} onClick={() => removeLine(i)} />
+                <div key={i} className={styles.cartLineCard}>
+                  <div className={styles.cartLineHeader}>
+                    <span className={styles.selectLabel}>{l.variantSku}</span>
+                    <X size={16} color="var(--red)" className={styles.clickable} onClick={() => removeLine(i)} />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className={styles.cartLineGrid}>
                     <div>
-                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Cant.</label>
-                      <input type="number" min="1" value={l.quantity} onChange={(e) => updateLineQty(i, Number(e.target.value))} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)' }} />
+                      <label className={styles.inputLabelSm}>Cant.</label>
+                      <input type="number" min="1" value={l.quantity} onChange={(e) => updateLineQty(i, Number(e.target.value))} className={styles.inputSm} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Costo U.</label>
-                      <input type="number" min="0" step="0.01" value={l.unitCost} onChange={(e) => updateLineCost(i, Number(e.target.value))} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-elevated)' }} />
+                      <label className={styles.inputLabelSm}>Costo U.</label>
+                      <input type="number" min="0" step="0.01" value={l.unitCost} onChange={(e) => updateLineCost(i, Number(e.target.value))} className={styles.inputSm} />
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right', marginTop: '8px', fontSize: '13px', fontWeight: 800 }}>
+                  <div className={styles.cartLineTotal}>
                     {formatCurrency(l.quantity * l.unitCost)}
                   </div>
                 </div>
               ))}
             </div>
             
-            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed var(--border)', textAlign: 'right' }}>
-              <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Monto Total OC: </span>
-              <span style={{ fontSize: '24px', fontWeight: 900, display: 'block', color: 'var(--text-primary)' }}>{formatCurrency(totals)}</span>
+            <div className={styles.cartGrandTotal}>
+              <span className={styles.cartGrandTotalLabel}>Monto Total OC: </span>
+              <span className={styles.cartGrandTotalValue}>{formatCurrency(totals)}</span>
             </div>
           </div>
-
         </div>
       </form>
     </Drawer>
   );
 }
-

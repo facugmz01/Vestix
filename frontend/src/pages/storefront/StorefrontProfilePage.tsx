@@ -155,7 +155,7 @@ function ProfileForm() {
           <div className={sf.phoneRow}>
             <div className={sf.phonePrefix}>🇦🇷 +54</div>
             <input
-              className={clsx('storefront-input', !loginViaEmail && !!customer?.phone && sf.inputReadonly)}
+              className={clsx('storefront-input', !loginViaEmail && !!customer?.phone && sf.inputReadonly, sf.flex1)}
               type="tel"
               inputMode="tel"
               value={phone}
@@ -163,7 +163,6 @@ function ProfileForm() {
               placeholder="11 2345 6789"
               readOnly={!loginViaEmail && !!customer?.phone}
               autoComplete="tel"
-              style={{ flex: 1 }}
             />
           </div>
           {!loginViaEmail && !!customer?.phone && (
@@ -172,9 +171,8 @@ function ProfileForm() {
 
           <button
             type="submit"
-            className={clsx('storefront-btn', sf.wFull)}
+            className={clsx('storefront-btn', sf.wFull, loading ? sf.btnLoading : sf.btnReady)}
             disabled={loading}
-            style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
             {loading ? (
               <>

@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useLayoutEffect, useRef } from 'react';
 import type { SaleOrder } from '@/types';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId, isQuotationStatus } from '@/utils/formatId';
@@ -10,6 +10,7 @@ import {
   resolveReceiptStyle,
   type ReceiptStyleSettings,
 } from '@/features/receipts/types/receiptStyle.types';
+import styles from './ReceiptPrinter.module.css';
 
 interface ReceiptPrinterProps {
   order: SaleOrder | null;
@@ -24,13 +25,52 @@ function lineProductName(line: any) {
   return line.productName || line.historicalName || line.variant?.product?.name || 'Producto';
 }
 
+function useReceiptVars(
+  ref: React.RefObject<HTMLDivElement | null>,
+  vars: Record<string, string | number | undefined>,
+) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    Object.entries(vars).forEach(([key, value]) => {
+      if (value !== undefined) el.style.setProperty(key, String(value));
+    });
+  }, [ref, vars]);
+}
+
 export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
   ({ order, branchSettings, receiptStyle }, ref) => {
+    const rootRef = useRef<HTMLDivElement | null>(null);
+
+    useLayoutEffect(() => {
+      if (typeof ref === 'function') {
+        ref(rootRef.current);
+      } else if (ref) {
+        ref.current = rootRef.current;
+      }
+    }, [ref, order]);
+
     if (!order) return null;
 
     const style = resolveReceiptStyle(receiptStyle || DEFAULT_RECEIPT_STYLE);
     const divider = receiptDividerCss(style.dividerStyle, style.accentColor);
     const paperWidthPx = Math.round(style.paperWidthMm * 3.78);
+    const subFontSize = `${Math.max(style.fontSizePx - 2, 9)}px`;
+    const footerFontSize = `${Math.max(style.fontSizePx - 1, 10)}px`;
+
+    useReceiptVars(rootRef, {
+      '--receipt-width': `${paperWidthPx}px`,
+      '--receipt-bg': style.backgroundColor,
+      '--receipt-color': style.textColor,
+      '--receipt-font': receiptFontStack(style.fontFamily),
+      '--receipt-font-size': `${style.fontSizePx}px`,
+      '--receipt-header-size': `${style.headerFontSizePx}px`,
+      '--receipt-accent': style.accentColor,
+      '--receipt-divider': divider,
+      '--receipt-sub-size': subFontSize,
+      '--receipt-footer-size': footerFontSize,
+      '--receipt-paper-mm': `${style.paperWidthMm}mm`,
+    });
 
     const fmtDate = (dateStr: string | Date) => {
       const d = new Date(dateStr);
@@ -38,42 +78,24 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
     };
 
     return (
-      <div
-        ref={ref}
-        className="ticket-print-area"
-        style={{
-          width: `${paperWidthPx}px`,
-          maxWidth: '100%',
-          padding: '10px',
-          margin: '0 auto',
-          background: style.backgroundColor,
-          color: style.textColor,
-          fontFamily: receiptFontStack(style.fontFamily),
-          fontSize: `${style.fontSizePx}px`,
-          lineHeight: 1.4,
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+      <div ref={rootRef} className={`ticket-print-area ${styles.root}`}>
+        <div className={styles.header}>
           {style.logoUrl && (
-            <img
-              src={style.logoUrl}
-              alt="Logo"
-              style={{ maxWidth: '70%', maxHeight: '64px', objectFit: 'contain', marginBottom: '8px' }}
-            />
+            <img src={style.logoUrl} alt="Logo" className={styles.logo} />
           )}
           {branchSettings?.posReceiptHeader ? (
-            <div style={{ whiteSpace: 'pre-wrap', fontWeight: 'bold', fontSize: `${style.headerFontSizePx}px`, marginBottom: '8px' }}>
+            <div className={`${styles.headerText} receipt-header-size`}>
               {branchSettings.posReceiptHeader}
             </div>
           ) : (
-            <div style={{ fontWeight: 'bold', fontSize: `${style.headerFontSizePx}px` }}>
+            <div className={`${styles.headerTitle} receipt-header-size`}>
               {style.titleFallback}
             </div>
           )}
 
-          {style.dividerStyle !== 'none' && <div style={{ margin: '5px 0', borderTop: divider }} />}
+          {style.dividerStyle !== 'none' && <div className={`${styles.divider} receipt-divider`} />}
 
-          <div style={{ textAlign: 'left' }}>
+          <div className={styles.meta}>
             {style.showDate && <>Fecha: {fmtDate(order.createdAt)}<br /></>}
             {style.showTicketNumber && <>Ticket #: {formatSaleId(order.id, order.status)}<br /></>}
             {isQuotationStatus(order.status) && <strong>PRESUPUESTO / COTIZACIÓN<br /></strong>}
@@ -84,13 +106,13 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
             )}
           </div>
 
-          {style.dividerStyle !== 'none' && <div style={{ margin: '5px 0', borderTop: divider }} />}
+          {style.dividerStyle !== 'none' && <div className={`${styles.divider} receipt-divider`} />}
         </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <div style={{ display: 'flex', fontWeight: 'bold', marginBottom: '5px' }}>
-            <span style={{ flex: 1 }}>Cant x Desc</span>
-            <span style={{ width: '80px', textAlign: 'right' }}>Importe</span>
+        <div className={styles.linesSection}>
+          <div className={styles.linesHeader}>
+            <span className={styles.colDesc}>Cant x Desc</span>
+            <span className={styles.colAmount}>Importe</span>
           </div>
           {order.lines.map((line: any) => {
             const productName = lineProductName(line);
@@ -98,22 +120,22 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
             const size = line.variant?.size || line.size;
 
             return (
-              <div key={line.id} style={{ display: 'flex', flexDirection: 'column', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div key={line.id} className={styles.lineItem}>
+                <div className={styles.lineRow}>
+                  <span className={styles.lineName}>
                     {line.quantity}x {productName} {size ? `(${size})` : ''}
                   </span>
-                  <span style={{ width: '80px', textAlign: 'right' }}>
+                  <span className={styles.colAmount}>
                     {formatCurrency(line.finalPrice)}
                   </span>
                 </div>
                 {style.showSku && variantSku && (
-                  <div style={{ fontSize: `${Math.max(style.fontSizePx - 2, 9)}px`, opacity: 0.75 }}>
+                  <div className={`${styles.lineSub} receipt-sub-size`}>
                     SKU: {variantSku}
                   </div>
                 )}
                 {style.showLineDiscounts && line.discountAmount > 0 && (
-                  <div style={{ fontSize: `${Math.max(style.fontSizePx - 2, 9)}px`, opacity: 0.75 }}>
+                  <div className={`${styles.lineSub} receipt-sub-size`}>
                     Bonif: -{formatCurrency(line.discountAmount)} (Orig: {formatCurrency(line.basePrice * line.quantity)})
                   </div>
                 )}
@@ -122,58 +144,49 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
           })}
         </div>
 
-        {style.dividerStyle !== 'none' && <div style={{ margin: '5px 0', borderTop: divider }} />}
+        {style.dividerStyle !== 'none' && <div className={`${styles.divider} receipt-divider`} />}
 
-        <div style={{ textAlign: 'right', marginBottom: '15px' }}>
+        <div className={styles.totals}>
           {style.showSubtotal && (
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className={styles.totalRow}>
               <span>Subtotal:</span>
               <span>{formatCurrency(order.subtotal)}</span>
             </div>
           )}
           {order.cartDiscountTotal > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className={styles.totalRow}>
               <span>Descuento Global:</span>
               <span>-{formatCurrency(order.cartDiscountTotal)}</span>
             </div>
           )}
           <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontWeight: 'bold',
-              fontSize: `${style.headerFontSizePx}px`,
-              marginTop: '5px',
-              paddingTop: '5px',
-              borderTop: style.dividerStyle === 'none' ? 'none' : `1px solid ${style.accentColor}`,
-              color: style.accentColor,
-            }}
+            className={`${styles.totalFinal} ${style.dividerStyle !== 'none' ? styles.totalFinalBordered : ''} receipt-header-size receipt-accent`}
           >
             <span>TOTAL:</span>
             <span>{formatCurrency(order.grandTotal)}</span>
           </div>
           {style.showPaymentMethod && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: `${Math.max(style.fontSizePx - 1, 10)}px` }}>
+            <div className={`${styles.paymentRow} receipt-footer-size`}>
               <span>Medio de Pago:</span>
               <span>{PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}</span>
             </div>
           )}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          {style.dividerStyle !== 'none' && <div style={{ margin: '5px 0', borderTop: divider }} />}
+        <div className={styles.footer}>
+          {style.dividerStyle !== 'none' && <div className={`${styles.divider} receipt-divider`} />}
           {order.afipInvoiceId && (
-            <div style={{ fontSize: `${Math.max(style.fontSizePx - 1, 10)}px`, marginBottom: '10px' }}>
+            <div className={`${styles.caeBlock} receipt-footer-size`}>
               CAE: {(order as any).afipCae || 'Pendiente'}<br />
               Vto. CAE: {(order as any).afipCaeVto || '-'}
             </div>
           )}
           {branchSettings?.posReceiptFooter ? (
-            <div style={{ whiteSpace: 'pre-wrap', fontSize: `${Math.max(style.fontSizePx - 1, 10)}px` }}>
+            <div className={`${styles.footerText} receipt-footer-size`}>
               {branchSettings.posReceiptFooter}
             </div>
           ) : (
-            <div style={{ fontSize: `${Math.max(style.fontSizePx - 1, 10)}px` }}>
+            <div className="receipt-footer-size">
               ¡Gracias por su compra!
             </div>
           )}
@@ -181,19 +194,27 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
 
         <style>
           {`
+            .ticket-print-area {
+              width: var(--receipt-width);
+              background: var(--receipt-bg);
+              color: var(--receipt-color);
+              font-family: var(--receipt-font);
+              font-size: var(--receipt-font-size);
+            }
+            .receipt-header-size { font-size: var(--receipt-header-size); }
+            .receipt-sub-size { font-size: var(--receipt-sub-size); }
+            .receipt-footer-size { font-size: var(--receipt-footer-size); }
+            .receipt-accent { color: var(--receipt-accent); }
+            .receipt-divider { border-top: var(--receipt-divider); }
             @media print {
-              body * {
-                visibility: hidden;
-              }
-              .ticket-print-area, .ticket-print-area * {
-                visibility: visible;
-              }
+              body * { visibility: hidden; }
+              .ticket-print-area, .ticket-print-area * { visibility: visible; }
               .ticket-print-area {
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
-                width: ${style.paperWidthMm}mm !important;
-                background: ${style.backgroundColor} !important;
+                width: var(--receipt-paper-mm) !important;
+                background: var(--receipt-bg) !important;
               }
               @page { margin: 0; size: auto; }
             }

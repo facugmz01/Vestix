@@ -7,6 +7,8 @@ import { queryKeys } from '@/api/queryKeys';
 import type { PurchaseOrder } from '@/types';
 import toast from 'react-hot-toast';
 import { PackageCheck } from 'lucide-react';
+import styles from '@/styles/DetailDrawerShared.module.css';
+
 
 interface Props {
   open: boolean;
@@ -104,13 +106,13 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
         </>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className={styles.formStackMd}>
         
         {!purchaseOrder ? (
-          <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-            <p style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-secondary)' }}>Para iniciar una recepción, primero identificá la Orden de Compra.</p>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <div style={{ flex: 1 }}>
+          <div className={styles.sectionPanel}>
+            <p className={styles.introText}>Para iniciar una recepción, primero identificá la Orden de Compra.</p>
+            <div className={styles.searchRow}>
+              <div className={styles.flex1}>
                 <Input placeholder="Ej: PO-1234..." value={poSearchId} onChange={e => setPoSearchId(e.target.value)} />
               </div>
               <Button onClick={searchPO}>Buscar OC</Button>
@@ -118,29 +120,29 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
           </div>
         ) : (
           <>
-            <div style={{ padding: '16px', background: 'var(--blue-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--blue)' }}>Recepcionando Orden de Compra</p>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, fontFamily: 'monospace' }}>{purchaseOrder.id}</h3>
-              <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600 }}>{purchaseOrder.supplierName || 'Proveedor Desconocido'}</p>
-              <div style={{ marginTop: '12px', textAlign: 'right' }}>
+            <div className={styles.receiptHeroBlue}>
+              <p className={styles.receiptHeroBlueLabel}>Recepcionando Orden de Compra</p>
+              <h3 className={styles.heroTitleAccent}>{purchaseOrder.id}</h3>
+              <p className={styles.customerName}>{purchaseOrder.supplierName || 'Proveedor Desconocido'}</p>
+              <div className={styles.receiptHeroAction}>
                 <Button variant="secondary" size="sm" onClick={() => setPurchaseOrder(null)}>Cambiar OC</Button>
               </div>
             </div>
 
             <div>
-              <h4 style={{ margin: '0 0 12px', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h4 className={styles.sectionTitleRow}>
                 <PackageCheck size={18} /> Conteo Físico (Bultos Recibidos)
               </h4>
               <Table
                 keyField="id"
                 data={purchaseOrder.lines}
                 columns={[
-                  { key: 'sku', header: 'SKU', render: (l) => <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{l.variantSku || l.variantId}</span> },
+                  { key: 'sku', header: 'SKU', render: (l) => <span className={styles.monoBold}>{l.variantSku || l.variantId}</span> },
                   { 
                     key: 'expected', 
                     header: 'Faltan Ingresar', 
                     render: (l) => (
-                      <span style={{ fontWeight: 'bold' }}>{Math.max(0, l.orderedQuantity - (l.receivedQuantity || 0))}</span>
+                      <span className={styles.textBold}>{Math.max(0, l.orderedQuantity - (l.receivedQuantity || 0))}</span>
                     ) 
                   },
                   { 
@@ -152,7 +154,7 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
                         min="0"
                         value={scannedItems[l.id] ?? 0} 
                         onChange={e => setScannedItems({ ...scannedItems, [l.id]: Number(e.target.value) })}
-                        style={{ width: '80px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px', fontWeight: 'bold', textAlign: 'right' }}
+                        className={styles.qtyInputMd}
                       />
                     )
                   },
@@ -160,19 +162,19 @@ export function GoodsReceiptFormDrawer({ open, onClose }: Props) {
                     key: 'batch',
                     header: 'Lote / Vencimiento (Opcional)',
                     render: (l) => (
-                      <div style={{ display: 'flex', gap: '4px' }}>
+                      <div className={styles.inlineInputRow}>
                         <input
                           type="text"
                           placeholder="Nro Lote"
                           value={batchInfo[l.id]?.lot || ''}
                           onChange={e => setBatchInfo({ ...batchInfo, [l.id]: { ...batchInfo[l.id], lot: e.target.value } })}
-                          style={{ width: '100px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px' }}
+                          className={styles.inputMd}
                         />
                         <input
                           type="date"
                           value={batchInfo[l.id]?.expiration || ''}
                           onChange={e => setBatchInfo({ ...batchInfo, [l.id]: { ...batchInfo[l.id], expiration: e.target.value } })}
-                          style={{ width: '130px', padding: '6px', border: '1px solid var(--border)', borderRadius: '4px' }}
+                          className={styles.inputLg}
                         />
                       </div>
                     )

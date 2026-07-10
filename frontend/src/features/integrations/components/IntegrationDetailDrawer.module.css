@@ -1,0 +1,401 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.headerCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.headerTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.headerProvider {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.headerDesc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.headerSync {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-elevated);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+
+.tab {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.tabActive {
+  background: var(--accent);
+  color: var(--text-inverted);
+}
+
+.configStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.webhookStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.webhookBox {
+  padding: 12px 16px;
+  background: var(--blue-bg);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+}
+
+.webhookLabel {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.webhookCode {
+  font-size: 13px;
+  word-break: break-all;
+  font-family: var(--font-mono, monospace);
+}
+
+.webhookHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.fieldSelect {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.fieldInputWrap {
+  position: relative;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.fieldInputSecret {
+  padding-right: 44px;
+}
+
+.toggleSecret {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.scrollPanel {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.cellDate {
+  font-size: 12px;
+}
+
+.cellMono {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+}
+
+.cellMuted {
+  color: var(--text-muted);
+}
+
+.cellError {
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.mappingsStack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.mappingForm {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mappingTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.mappingGrid {
+  gap: 12px;
+}
+
+.typeaheadWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.typeaheadLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.typeaheadInput {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.typeaheadDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.typeaheadItem {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.typeaheadItem:hover {
+  background: var(--bg-base);
+}
+
+.saveMappingBtn {
+  width: fit-content;
+  align-self: flex-end;
+}
+
+.mappingsTableTitle {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.productCell {
+  font-size: 13px;
+}
+
+.productMeta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cellText {
+  font-size: 13px;
+}
+
+.btnDanger {
+  color: var(--red);
+}
+
+.qrPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 40px;
+  gap: 16px;
+}
+
+.qrSuccessIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 40px;
+  background: rgba(37, 211, 102, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.qrTitle {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.qrTitleSm {
+  margin: 0 0 10px;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.qrText {
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 10px;
+}
+
+.qrTextMb {
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.qrFrame {
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.qrImage {
+  width: 256px;
+  height: 256px;
+  display: block;
+}
+
+.qrRefresh {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qrMuted {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.qrVerifyBtn {
+  margin-top: 20px;
+}
+
+.webhookDelivery {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 480px;
+}
+
+.webhookDeliveryLabel {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.webhookDeliveryCode {
+  font-size: 11px;
+  word-break: break-all;
+  font-family: var(--font-mono, monospace);
+}

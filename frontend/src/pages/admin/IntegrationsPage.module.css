@@ -1,0 +1,160 @@
+.integrationGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.integrationSkeleton {
+  height: 180px;
+  border-radius: 12px;
+  background: var(--surface-1);
+  animation: pulse 1.5s infinite;
+}
+
+.integrationCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s;
+}
+
+.integrationCardError {
+  border: 2px solid var(--red);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.providerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 24px;
+}
+
+.providerMercadopago { background: rgba(0, 177, 234, 0.13); }
+.providerMercadolibre { background: rgba(255, 230, 0, 0.13); }
+.providerAfip { background: rgba(0, 58, 125, 0.13); }
+.providerSendgrid { background: rgba(26, 130, 226, 0.13); }
+.providerWhatsapp { background: rgba(37, 211, 102, 0.13); }
+.providerWoocommerce { background: rgba(127, 84, 179, 0.13); }
+.providerShopify { background: rgba(150, 191, 72, 0.13); }
+.providerGeneric { background: rgba(107, 114, 128, 0.13); }
+
+.integrationName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.integrationProvider {
+  margin: 2px 0 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.integrationDesc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.syncRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hintOrange {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--amber-bg, rgba(249, 115, 22, 0.12));
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--orange, #f97316);
+}
+
+.hintRed {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--red-bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.btnFlex {
+  flex: 1;
+}
+
+.statusActive {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.statusError {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+.statusInactive {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.statusPending {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--orange, #f97316);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

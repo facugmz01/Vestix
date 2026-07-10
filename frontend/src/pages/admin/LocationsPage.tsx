@@ -15,6 +15,7 @@ import { LocationFormDrawer } from '@/features/locations/components/LocationForm
 import { LocationDetailDrawer } from '@/features/locations/components/LocationDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { useDeleteMutation } from '@/hooks/useDeleteMutation';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function LocationsPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '' });
@@ -90,10 +91,7 @@ export default function LocationsPage() {
         <select
           value={typeFilter}
           onChange={(e) => { setFilter('type', e.target.value); }}
-          style={{
-            padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
-          }}
+          className={adminStyles.filterSelect}
         >
           <option value="">Todos los tipos</option>
           <option value="AREA">Área</option>
@@ -122,12 +120,12 @@ export default function LocationsPage() {
               { 
                 key: 'code', 
                 header: 'Código',
-                render: (l) => <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>{l.code}</span>
+                render: (l) => <span className={adminStyles.codeMonoBold}>{l.code}</span>
               },
               { 
                 key: 'name', 
                 header: 'Nombre',
-                render: (l) => <span style={{ color: 'var(--text-secondary)' }}>{l.name || '-'}</span>
+                render: (l) => <span className={adminStyles.textSecondary}>{l.name || '-'}</span>
               },
               { 
                 key: 'type', 
@@ -138,9 +136,9 @@ export default function LocationsPage() {
                 key: 'warehouse', 
                 header: 'Depósito Padre',
                 render: (l) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{l.warehouseName || l.warehouseId}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{l.branchName}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellStrong}>{l.warehouseName || l.warehouseId}</span>
+                    <span className={adminStyles.cellMutedXs}>{l.branchName}</span>
                   </div>
                 )
               },
@@ -153,7 +151,7 @@ export default function LocationsPage() {
                 key: 'actions',
                 header: '',
                 render: (l) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(l)} aria-label="Ver" title="Ver detalle">
                       <Eye size={16} />
                     </Button>

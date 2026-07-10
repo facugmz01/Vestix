@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
@@ -6,6 +7,7 @@ import { queryKeys } from '@/api/queryKeys';
 import type { CustomRole, Permission } from '@/types';
 import { Actions, Subjects } from '@/rbac/permissions';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -41,7 +43,6 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
   }, [open, roleToEdit]);
 
   const hasPermission = (action: string, subject: string) => {
-    // If they have MANAGE or ALL, they implicitly have it, but for UI state we check exact match.
     return permissions.some(p => p.action === action && p.subject === subject);
   };
 
@@ -52,7 +53,6 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
   const togglePermission = (action: string, subject: string, checked: boolean) => {
     if (checked) {
       if (action === Actions.MANAGE) {
-        // If checking manage, we can just add manage.
         setPermissions(prev => [...prev.filter(p => p.subject !== subject), { action: Actions.MANAGE, subject }]);
       } else {
         setPermissions(prev => [...prev, { action, subject }]);
@@ -115,7 +115,7 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <form onSubmit={handleSubmit} className={styles.formStack}>
         <div className="grid-responsive">
           <Input
             label="Nombre del Rol"
@@ -133,64 +133,55 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
         </div>
 
         {roleToEdit?.isSystem && (
-          <div style={{ padding: '12px', background: 'var(--yellow-bg)', color: 'var(--yellow)', borderRadius: 'var(--radius)', fontSize: '13px' }}>
+          <div className={styles.alertYellow}>
             Los roles de sistema no pueden ser modificados. Solo podés ver sus permisos.
           </div>
         )}
 
         <div>
-          <h4 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '12px', color: 'var(--text-primary)' }}>
-            Matriz de Permisos
-          </h4>
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead style={{ background: 'var(--bg-elevated)' }}>
+          <h4 className={styles.sectionHeadingMd}>Matriz de Permisos</h4>
+          <div className={styles.permissionsTableWrap}>
+            <table className={styles.permissionsTable}>
+              <thead className={styles.permissionsThead}>
                 <tr>
-                  <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Módulo</th>
+                  <th className={styles.permissionsTh}>Módulo</th>
                   {MATRIX_ACTIONS.map(action => (
-                    <th key={action} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', textAlign: 'center', textTransform: 'capitalize' }}>
-                      {action}
-                    </th>
+                    <th key={action} className={styles.permissionsThCenter}>{action}</th>
                   ))}
-                  <th style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', textAlign: 'center' }}>Todos</th>
+                  <th className={styles.permissionsThCenter}>Todos</th>
                 </tr>
               </thead>
               <tbody>
                 {AVAILABLE_SUBJECTS.map(subject => {
                   const isManaged = hasManage(subject);
                   return (
-                    <tr key={subject} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                        {subject}
-                      </td>
+                    <tr key={subject} className={styles.permissionsTr}>
+                      <td className={styles.permissionsTdSubject}>{subject}</td>
                       {MATRIX_ACTIONS.map(action => {
                         const supportsAction =
                           AVAILABLE_ACTIONS.includes(action as typeof Actions[keyof typeof Actions]) ||
                           (CUSTOM_ACTIONS_BY_SUBJECT[subject] ?? []).includes(action);
                         const isChecked = isManaged || hasPermission(action, subject);
+                        const isDisabled = !supportsAction || roleToEdit?.isSystem || (isManaged && action !== Actions.MANAGE);
                         return (
-                          <td key={action} style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <td key={action} className={styles.permissionsTdCenter}>
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              disabled={
-                                !supportsAction ||
-                                roleToEdit?.isSystem ||
-                                (isManaged && action !== Actions.MANAGE)
-                              }
+                              disabled={isDisabled}
                               onChange={(e) => togglePermission(action, subject, e.target.checked)}
-                              style={{ cursor: roleToEdit?.isSystem || !supportsAction ? 'not-allowed' : 'pointer' }}
+                              className={isDisabled ? styles.checkboxDisabled : styles.checkboxEnabled}
                             />
                           </td>
                         );
                       })}
-                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      <td className={styles.permissionsTdCenter}>
                         <input
                           type="checkbox"
                           checked={isManaged}
                           disabled={roleToEdit?.isSystem}
                           onChange={(e) => toggleRow(subject, e.target.checked)}
-                          style={{ cursor: roleToEdit?.isSystem ? 'not-allowed' : 'pointer' }}
+                          className={roleToEdit?.isSystem ? styles.checkboxDisabled : styles.checkboxEnabled}
                         />
                       </td>
                     </tr>

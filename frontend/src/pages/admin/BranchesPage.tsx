@@ -16,6 +16,7 @@ import { BranchFormDrawer } from '@/features/branches/components/BranchFormDrawe
 import { BranchDetailDrawer } from '@/features/branches/components/BranchDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { useDeleteMutation } from '@/hooks/useDeleteMutation';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function BranchesPage() {
   const { page, pageSize, search, setPage, setSearch } = useListPage({});
@@ -105,8 +106,8 @@ export default function BranchesPage() {
                 key: 'name', 
                 header: 'Nombre',
                 render: (b) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600 }}>{b.name}</span>
+                  <div className={adminStyles.cellRowMd}>
+                    <span className={adminStyles.cellPrimary}>{b.name}</span>
                     {b.isMain && <Badge color="blue">Central</Badge>}
                   </div>
                 )
@@ -115,7 +116,7 @@ export default function BranchesPage() {
               { 
                 key: 'address', 
                 header: 'Dirección',
-                render: (b) => <span style={{ color: 'var(--text-secondary)' }}>{b.address || '-'}</span>
+                render: (b) => <span className={adminStyles.textSecondary}>{b.address || '-'}</span>
               },
               { 
                 key: 'users', 
@@ -131,7 +132,7 @@ export default function BranchesPage() {
                 key: 'actions',
                 header: '',
                 render: (b) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(b)} aria-label="Ver" title="Ver detalle">
                       <Eye size={16} />
                     </Button>

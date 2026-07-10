@@ -19,6 +19,8 @@ import { FileSpreadsheet } from 'lucide-react';
 import { useListPage } from '@/hooks/useListPage';
 import { useDeleteMutation } from '@/hooks/useDeleteMutation';
 import { formatCurrency } from '@/utils/formatCurrency';
+import clsx from 'clsx';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function CustomersPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '', source: '' });
@@ -88,7 +90,7 @@ export default function CustomersPage() {
       subtitle="Gestioná tu cartera de clientes, cuentas corrientes y condiciones comerciales."
       action={
         <ActionGuard action="manage" subject="Customers">
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={adminStyles.toolbarActions}>
             <Button 
               variant="secondary" 
               icon={<FileSpreadsheet size={16} />} 
@@ -108,10 +110,7 @@ export default function CustomersPage() {
         <select
           value={typeFilter}
           onChange={(e) => { setFilter('type', e.target.value); }}
-          style={{
-            padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
-          }}
+          className={adminStyles.filterSelect}
         >
           <option value="">Todos los Tipos</option>
           <option value="INDIVIDUAL">Individuos (B2C)</option>
@@ -120,10 +119,7 @@ export default function CustomersPage() {
         <select
           value={sourceFilter}
           onChange={(e) => { setFilter('source', e.target.value); }}
-          style={{
-            padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px'
-          }}
+          className={adminStyles.filterSelect}
         >
           <option value="">Todos los orígenes</option>
           <option value="ADMIN">Backoffice</option>
@@ -153,12 +149,12 @@ export default function CustomersPage() {
                 key: 'fullName', 
                 header: 'Cliente',
                 render: (c) => (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 600 }}>{c.fullName}</span>
+                  <div className={adminStyles.cellStackGapXs}>
+                    <div className={adminStyles.cellRowMd}>
+                      <span className={adminStyles.cellPrimary}>{c.fullName}</span>
                       {c.source === 'STOREFRONT' && <Badge color="green">Tienda</Badge>}
                     </div>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{c.taxId || 'Sin ID'}</span>
+                    <span className={adminStyles.cellMuted}>{c.taxId || 'Sin ID'}</span>
                   </div>
                 )
               },
@@ -185,9 +181,9 @@ export default function CustomersPage() {
                 key: 'contact', 
                 header: 'Contacto',
                 render: (c) => (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px' }}>{c.email || '-'}</span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{c.phone || '-'}</span>
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellDate}>{c.email || '-'}</span>
+                    <span className={adminStyles.cellSecondaryMuted}>{c.phone || '-'}</span>
                   </div>
                 )
               },
@@ -195,16 +191,16 @@ export default function CustomersPage() {
                 key: 'credit', 
                 header: 'Cta. Cte.',
                 render: (c) => (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div className={adminStyles.cellRow}>
                     {c.credit.limit > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: '13px', fontWeight: c.credit.used > 0 ? 600 : 400, color: c.credit.used > 0 ? 'var(--red)' : 'var(--text-primary)' }}>
+                      <div className={adminStyles.cellStack}>
+                        <span className={clsx(c.credit.used > 0 ? adminStyles.creditUsed : adminStyles.creditClear)}>
                           Deuda: {formatCurrency(c.credit.used)}
                         </span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Límite: {formatCurrency(c.credit.limit)}</span>
+                        <span className={adminStyles.cellMutedXs}>Límite: {formatCurrency(c.credit.limit)}</span>
                       </div>
                     ) : (
-                      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Contado</span>
+                      <span className={adminStyles.cellSecondaryMuted}>Contado</span>
                     )}
                     {c.credit.onHold && <AlertCircle size={14} color="var(--red)" />}
                   </div>
@@ -214,7 +210,7 @@ export default function CustomersPage() {
                 key: 'actions',
                 header: '',
                 render: (c) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(c)} aria-label="Ver" title="Ver ficha">
                       <Eye size={16} />
                     </Button>

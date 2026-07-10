@@ -17,6 +17,7 @@ import { ReturnDetailDrawer } from '@/features/sales/returns/components/ReturnDe
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId, formatShortId } from '@/utils/formatId';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function ReturnsPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
@@ -85,7 +86,7 @@ export default function ReturnsPage() {
       <FiltersBar actions={<Badge color="gray">{total} registros</Badge>}>
         <SearchInput placeholder="Buscar por ID de Solicitud o Ticket..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Estados</option>
           <option value="PENDING">Pendiente de Aprobación</option>
           <option value="APPROVED">Aprobados / Completados</option>
@@ -112,17 +113,17 @@ export default function ReturnsPage() {
               { 
                 key: 'id', 
                 header: 'RMA ID',
-                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(r.id)}</span>
+                render: (r) => <span className={adminStyles.cellMonoBold}>{formatShortId(r.id)}</span>
               },
               { 
                 key: 'ticket', 
                 header: 'Venta Original',
-                render: (r) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{formatSaleId(r.saleOrderId)}</span>
+                render: (r) => <span className={adminStyles.cellMonoSecondary}>{formatSaleId(r.saleOrderId)}</span>
               },
               { 
                 key: 'date', 
                 header: 'Fecha',
-                render: (r) => <span style={{ fontSize: '13px' }}>{new Date(r.createdAt).toLocaleDateString()}</span>
+                render: (r) => <span className={adminStyles.cellDate}>{new Date(r.createdAt).toLocaleDateString()}</span>
               },
               { 
                 key: 'action', 
@@ -132,7 +133,7 @@ export default function ReturnsPage() {
               { 
                 key: 'total', 
                 header: 'Monto a Favor',
-                render: (r) => <span style={{ fontWeight: 900, fontSize: '15px' }}>{formatCurrency(r.totalRefundAmount)}</span>
+                render: (r) => <span className={adminStyles.cellAmount}>{formatCurrency(r.totalRefundAmount)}</span>
               },
               { 
                 key: 'status', 
@@ -143,7 +144,7 @@ export default function ReturnsPage() {
                 key: 'actions',
                 header: '',
                 render: (r) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(r.id)} aria-label="Ver / Auditar">
                       <Eye size={16} />
                     </Button>

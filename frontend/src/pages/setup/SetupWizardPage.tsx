@@ -139,7 +139,7 @@ export default function SetupWizardPage() {
         const isCompleted = step > i;
         const isActive = step === i;
         return (
-          <div key={label} style={{ display: 'flex', alignItems: 'center' }}>
+          <div key={label} className={s.stepGroup}>
             {i > 0 && (
               <div className={`${s.stepLine} ${step > i ? s.completed : ''}`} />
             )}

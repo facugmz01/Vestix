@@ -7,6 +7,7 @@ import { warehousesApi } from '@/api/warehouses.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { StorageLocation, StorageLocationType } from '@/types';
 import toast from 'react-hot-toast';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -29,14 +30,12 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
     isActive: true,
   });
 
-  // Fetch branches
   const { data: branchesData, isLoading: isLoadingBranches } = useQuery({
     queryKey: queryKeys.branches.all({ pageSize: 100 }),
     queryFn: () => branchesApi.getBranches({ pageSize: 100 }),
     enabled: open,
   });
 
-  // Fetch warehouses based on selected branch
   const { data: warehousesData, isLoading: isLoadingWarehouses } = useQuery({
     queryKey: queryKeys.warehouses.all({ branchId: selectedBranchId, pageSize: 100 }),
     queryFn: () => warehousesApi.getWarehouses({ branchId: selectedBranchId, pageSize: 100 }),
@@ -53,10 +52,6 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
         barcode: locationToEdit.barcode || '',
         isActive: locationToEdit.isActive,
       });
-      // We ideally need the branchId of the warehouse to pre-fill the cascaded dropdown.
-      // If we don't have it on the DTO, we might need to fetch the warehouse detail,
-      // but assuming the backend can handle just the warehouseId if we set it directly.
-      // For simplicity, we just set the warehouseId directly.
     } else if (open && !locationToEdit) {
       setFormData({
         code: '',
@@ -114,15 +109,13 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
-        {/* Only show cascaded selectors if creating new, or let edit it if needed */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--bg-elevated)', padding: '16px', borderRadius: 'var(--radius)' }}>
-          <h4 style={{ fontSize: '13px', margin: 0, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Jerarquía</h4>
+      <form onSubmit={handleSubmit} className={styles.formStackMd}>
+        <div className={styles.hierarchyPanel}>
+          <h4 className={styles.hierarchyTitle}>Jerarquía</h4>
           
           {!isEditing && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>1. Seleccionar Sucursal</label>
+            <div className={styles.selectGroup}>
+              <label className={styles.selectLabel}>1. Seleccionar Sucursal</label>
               <select
                 value={selectedBranchId}
                 onChange={(e) => {
@@ -130,7 +123,7 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
                   setFormData(prev => ({ ...prev, warehouseId: '' }));
                 }}
                 disabled={isLoadingBranches}
-                style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+                className={styles.select}
               >
                 <option value="">(Opcional) Filtrar por sucursal...</option>
                 {branches.map(b => (
@@ -140,14 +133,14 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>2. Depósito *</label>
+          <div className={styles.selectGroup}>
+            <label className={styles.selectLabel}>2. Depósito *</label>
             <select
               value={formData.warehouseId}
               onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
               required
               disabled={isLoadingWarehouses && !!selectedBranchId}
-              style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+              className={styles.select}
             >
               <option value="" disabled>Seleccionar depósito...</option>
               {isEditing && locationToEdit?.warehouseName && (
@@ -166,23 +159,21 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
             value={formData.code}
             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
             required
-           
           />
           <Input
             label="Nombre Descriptivo (opcional)"
             value={formData.name || ''}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-           
           />
         </div>
 
         <div className="grid-responsive grid-cols-2">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Tipo</label>
+          <div className={styles.selectGroup}>
+            <label className={styles.selectLabel}>Tipo</label>
             <select
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value as StorageLocationType })}
-              style={{ padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}
+              className={styles.select}
             >
               <option value="AREA">Área (Zona general)</option>
               <option value="RACK">Rack (Pasillo/Módulo)</option>
@@ -195,18 +186,17 @@ export function LocationFormDrawer({ open, onClose, locationToEdit }: Props) {
             label="Código de Barras (opcional)"
             value={formData.barcode || ''}
             onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-           
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+        <div className={styles.checkboxRow}>
           <input
             type="checkbox"
             id="isActive"
             checked={formData.isActive}
             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
           />
-          <label htmlFor="isActive" style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+          <label htmlFor="isActive" className={styles.checkboxLabel}>
             Ubicación Activa
           </label>
         </div>

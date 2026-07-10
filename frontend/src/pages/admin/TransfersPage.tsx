@@ -16,6 +16,7 @@ import { TransferFormDrawer } from '@/features/inventory/transfers/components/Tr
 import { TransferDetailDrawer } from '@/features/inventory/transfers/components/TransferDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatEntityId, formatShortId } from '@/utils/formatId';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function TransfersPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
@@ -80,7 +81,7 @@ export default function TransfersPage() {
       <FiltersBar actions={<Badge color="gray">{total} transferencias</Badge>}>
         <SearchInput placeholder="Buscar por ID o Tracking..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Estados</option>
           <option value="DRAFT">Preparación (DRAFT)</option>
           <option value="IN_TRANSIT">En Tránsito (IN_TRANSIT)</option>
@@ -107,20 +108,20 @@ export default function TransfersPage() {
               { 
                 key: 'id', 
                 header: 'Remito ID',
-                render: (t) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatEntityId(t.id, 'TRF-')}</span>
+                render: (t) => <span className={adminStyles.cellMonoBold}>{formatEntityId(t.id, 'TRF-')}</span>
               },
               { 
                 key: 'date', 
                 header: 'Fecha Creación',
-                render: (t) => <span style={{ fontSize: '13px' }}>{new Date(t.createdAt).toLocaleDateString()}</span>
+                render: (t) => <span className={adminStyles.cellDate}>{new Date(t.createdAt).toLocaleDateString()}</span>
               },
               { 
                 key: 'route', 
                 header: 'Ruta Logística',
                 render: (t) => (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Desde: <strong style={{ color: 'var(--text-primary)'}}>{t.sourceWarehouseName}</strong></span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Hacia: <strong style={{ color: 'var(--text-primary)'}}>{t.destinationWarehouseName}</strong></span>
+                  <div className={adminStyles.cellStackXs}>
+                    <span className={adminStyles.cellMuted}>Desde: <strong className={adminStyles.cellMutedStrong}>{t.sourceWarehouseName}</strong></span>
+                    <span className={adminStyles.cellMuted}>Hacia: <strong className={adminStyles.cellMutedStrong}>{t.destinationWarehouseName}</strong></span>
                   </div>
                 )
               },
@@ -138,7 +139,7 @@ export default function TransfersPage() {
                 key: 'actions',
                 header: '',
                 render: (t) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(t.id)} aria-label="Gestionar" title="Ver detalle o Gestionar recepción">
                       {t.status === 'IN_TRANSIT' ? <Truck size={16} color="var(--blue)" /> : <Eye size={16} />}
                     </Button>

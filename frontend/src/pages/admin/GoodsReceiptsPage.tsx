@@ -16,6 +16,7 @@ import { GoodsReceiptFormDrawer } from '@/features/purchasing/receipts/component
 import { GoodsReceiptDetailDrawer } from '@/features/purchasing/receipts/components/GoodsReceiptDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatEntityId, formatShortId } from '@/utils/formatId';
+import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function GoodsReceiptsPage() {
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
@@ -63,7 +64,7 @@ export default function GoodsReceiptsPage() {
       <FiltersBar actions={<Badge color="gray">{total} remitos</Badge>}>
         <SearchInput placeholder="Buscar por ID..." onSearch={setSearch} />
         
-        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+        <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Estados</option>
           <option value="DRAFT">Conteo Inicial (DRAFT)</option>
           <option value="DISPUTED">Con Diferencias (DISPUTED)</option>
@@ -90,17 +91,17 @@ export default function GoodsReceiptsPage() {
               { 
                 key: 'id', 
                 header: 'Remito ID',
-                render: (r) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatShortId(r.id)}</span>
+                render: (r) => <span className={adminStyles.cellMonoBold}>{formatShortId(r.id)}</span>
               },
               { 
                 key: 'oc', 
                 header: 'Orden Compra',
-                render: (r) => <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{formatEntityId(r.purchaseOrderId, 'OC-')}</span>
+                render: (r) => <span className={adminStyles.cellMonoSecondary}>{formatEntityId(r.purchaseOrderId, 'OC-')}</span>
               },
               { 
                 key: 'date', 
                 header: 'Fecha Conteo',
-                render: (r) => <span style={{ fontSize: '13px' }}>{new Date(r.createdAt).toLocaleDateString()}</span>
+                render: (r) => <span className={adminStyles.cellDate}>{new Date(r.createdAt).toLocaleDateString()}</span>
               },
               { 
                 key: 'lines', 
@@ -121,7 +122,7 @@ export default function GoodsReceiptsPage() {
                 key: 'actions',
                 header: '',
                 render: (r) => (
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div className={adminStyles.rowActions}>
                     <Button variant="ghost" size="sm" onClick={() => handleView(r.id)} aria-label="Gestionar">
                       <Eye size={16} />
                     </Button>

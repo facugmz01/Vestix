@@ -1,5 +1,6 @@
 import { Drawer, StatusChip, Badge } from '@/components/ui';
 import type { Branch } from '@/types';
+import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
   open: boolean;
@@ -12,24 +13,19 @@ export function BranchDetailDrawer({ open, onClose, branch }: Props) {
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Sucursal" width="sm">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
-        {/* Header */}
+      <div className={styles.stack}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              {branch.name}
-            </h3>
+          <div className={styles.entityTitleRow}>
+            <h3 className={styles.entityTitle}>{branch.name}</h3>
             {branch.isMain && <StatusChip label="Casa Central" color="blue" size="sm" />}
             <StatusChip label={branch.isActive ? 'Activa' : 'Inactiva'} color={branch.isActive ? 'green' : 'gray'} size="sm" />
           </div>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
-            Código: <strong style={{ color: 'var(--text-primary)' }}>{branch.code}</strong>
+          <p className={styles.entitySubtitle}>
+            Código: <strong className={styles.entitySubtitleStrong}>{branch.code}</strong>
           </p>
         </div>
 
-        {/* Info Grid */}
-        <div className="grid-responsive" style={{ gap: "12px" }}>
+        <div className={`grid-responsive ${styles.infoGrid}`}>
           <InfoBox label="Dirección" value={branch.address || 'No especificada'} />
           <InfoBox label="Teléfono" value={branch.phone || 'No especificado'} />
           <InfoBox label="ID Sistema" value={branch.id} />
@@ -39,42 +35,35 @@ export function BranchDetailDrawer({ open, onClose, branch }: Props) {
           />
         </div>
 
-        {/* Config POS */}
         <div>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', paddingBottom: '8px', marginBottom: '12px' }}>
-            Configuración POS
-          </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ fontSize: '13px', margin: 0 }}>
-              <span style={{ color: 'var(--text-muted)' }}>CUIT Local:</span>{' '}
-              <strong style={{ color: 'var(--text-primary)' }}>{branch.settings?.taxId || 'Por defecto'}</strong>
+          <h4 className={styles.detailSectionTitle}>Configuración POS</h4>
+          <div className={styles.configStack}>
+            <p className={styles.configLine}>
+              <span className={styles.textMuted}>CUIT Local:</span>{' '}
+              <strong className={styles.textBoldPrimary}>{branch.settings?.taxId || 'Por defecto'}</strong>
             </p>
-            <p style={{ fontSize: '13px', margin: 0 }}>
-              <span style={{ color: 'var(--text-muted)' }}>Cabecera Ticket:</span>{' '}
-              <strong style={{ color: 'var(--text-primary)' }}>{branch.settings?.posReceiptHeader || '-'}</strong>
+            <p className={styles.configLine}>
+              <span className={styles.textMuted}>Cabecera Ticket:</span>{' '}
+              <strong className={styles.textBoldPrimary}>{branch.settings?.posReceiptHeader || '-'}</strong>
             </p>
-            <p style={{ fontSize: '13px', margin: 0 }}>
-              <span style={{ color: 'var(--text-muted)' }}>Pie Ticket:</span>{' '}
-              <strong style={{ color: 'var(--text-primary)' }}>{branch.settings?.posReceiptFooter || '-'}</strong>
+            <p className={styles.configLine}>
+              <span className={styles.textMuted}>Pie Ticket:</span>{' '}
+              <strong className={styles.textBoldPrimary}>{branch.settings?.posReceiptFooter || '-'}</strong>
             </p>
           </div>
         </div>
 
-        {/* User Summary */}
         <div>
-          <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', paddingBottom: '8px', marginBottom: '12px' }}>
-            Personal Asignado
-          </h4>
+          <h4 className={styles.detailSectionTitle}>Personal Asignado</h4>
           {branch.userCount !== undefined ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.badgeMetaRow}>
               <Badge color="blue">{branch.userCount} empleados</Badge>
-              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>asociados a esta sucursal.</span>
+              <span className={styles.badgeMetaHint}>asociados a esta sucursal.</span>
             </div>
           ) : (
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Información no disponible.</p>
+            <p className={styles.metaLineMuted}>Información no disponible.</p>
           )}
         </div>
-
       </div>
     </Drawer>
   );
@@ -82,13 +71,9 @@ export function BranchDetailDrawer({ open, onClose, branch }: Props) {
 
 function InfoBox({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ background: 'var(--bg-elevated)', padding: '12px', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-        {label}
-      </span>
-      <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', textAlign: 'right' }}>
-        {value}
-      </span>
+    <div className={styles.detailInfoRow}>
+      <span className={styles.infoLabel}>{label}</span>
+      <span className={styles.detailInfoValue}>{value}</span>
     </div>
   );
 }
