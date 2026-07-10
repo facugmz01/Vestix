@@ -13,6 +13,7 @@ type PosVariant = ProductVariant & {
   brand?: string;
   stock?: number;
   imageUrl?: string | null;
+  product?: { name?: string; images?: string[] };
 };
 
 export function POSProductGrid({
@@ -55,7 +56,11 @@ export function POSProductGrid({
     });
   }, [displayedProducts, categoryFilter, brandFilter]);
 
-  const getName = (p: PosVariant) => p.name || p.productName || 'Producto';
+  const getName = (p: PosVariant) =>
+    p.name || p.productName || p.product?.name || 'Producto';
+
+  const getImage = (p: PosVariant) =>
+    p.imageUrl || p.product?.images?.[0] || null;
 
   const handleProductClick = (p: PosVariant) => {
     addVariantWithRecent(p);
@@ -108,16 +113,20 @@ export function POSProductGrid({
                 type="button"
                 className={styles.productCardBtn}
                 onClick={() => handleProductClick(p)}
+                aria-label={`Agregar ${getName(p)}`}
               >
                 <div className={styles.productImg}>
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt={getName(p)} className={styles.productImgFile} />
+                  {getImage(p) ? (
+                    <img src={getImage(p)!} alt="" className={styles.productImgFile} />
                   ) : (
                     <Tags size={36} />
                   )}
                 </div>
                 <div className={styles.productInfo}>
-                  <div className={styles.productName}>{getName(p)} {p.size ? `(${p.size})` : ''}</div>
+                  <div className={styles.productName} title={getName(p)}>
+                    {getName(p)}
+                    {p.size ? ` (${p.size})` : ''}
+                  </div>
                   <div className={styles.productPrice}>{formatCurrency(p.basePrice)}</div>
                   {typeof p.stock === 'number' && (
                     <div className={styles.productStock} data-low={p.stock <= 5}>
