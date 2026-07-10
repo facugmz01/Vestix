@@ -95,7 +95,49 @@ export class InventoryController {
 
   @Get('reservations')
   @RequirePermissions({ action: 'read', subject: 'Inventory' })
-  getReservations(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return { data: [], total: 0 };
+  getReservations(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    return this.inventoryService.findReservations({
+      page: Number(page) || 1,
+      pageSize: Number(pageSize) || 15,
+      search,
+      status,
+      branchId,
+    });
+  }
+
+  @Get('reservations/:id')
+  @RequirePermissions({ action: 'read', subject: 'Inventory' })
+  getReservation(@Param('id') id: string) {
+    return this.inventoryService.findReservationById(id);
+  }
+
+  @Post('reservations')
+  @RequirePermissions({ action: 'manage', subject: 'Inventory' })
+  createReservation(@Body() body: {
+    branchId: string;
+    customerId?: string;
+    expiresAt: string;
+    notes?: string;
+    lines: { variantId: string; quantity: number }[];
+  }) {
+    return this.inventoryService.createManualReservation(body);
+  }
+
+  @Post('reservations/:id/consume')
+  @RequirePermissions({ action: 'manage', subject: 'Inventory' })
+  consumeReservation(@Param('id') id: string, @Body() body: { saleOrderId?: string }) {
+    return this.inventoryService.consumeReservationById(id, body?.saleOrderId);
+  }
+
+  @Post('reservations/:id/release')
+  @RequirePermissions({ action: 'manage', subject: 'Inventory' })
+  releaseReservation(@Param('id') id: string) {
+    return this.inventoryService.releaseReservationById(id);
   }
 }

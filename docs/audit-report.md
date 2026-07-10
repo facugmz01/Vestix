@@ -1,50 +1,48 @@
 # Full Technical Audit Report: Production Readiness
 
+*Last updated: July 2026*
+
 ## 1. Executive Summary
-This audit evaluates the retail ERP system against strict production-readiness criteria. While the architectural documentation (V2) and database schemas (Prisma) have been successfully modernized to support offline resilience and strict invariants, **the active codebase has not yet fully adopted these patterns**. The system is currently **NOT READY** for production. Moving to production now would result in God Class failures, XSS vulnerabilities via `localStorage`, UI freezing during offline catalog syncs, and synchronous blocking on external AFIP APIs. 
+The Vestix ERP codebase has progressed significantly since the initial audit. **CheckoutOrchestrator**, HttpOnly cookie auth, IndexedDB offline queues, structured Pino logging, global exception filters, and ThrottlerModule are now in place. The system is **closer to production** but still has gaps in AFIP resilience, full audit coverage validation, and some incomplete admin UI flows (e.g. ARCA certificate management).
 
-## 2. Critical Blockers
-1. **SalesService God Class**: The `SalesService` is still tightly coupled to Finance and Inventory logic. The `CheckoutOrchestrator` has not been implemented in code.
-2. **Missing Transaction Boundaries**: Without the Orchestrator, cross-module updates (stock decrement + treasury receipt) are not running inside a Prisma `$transaction`, risking partial data commits (e.g., customer charged, but stock not updated).
-3. **XSS JWT Vulnerability**: The frontend `api/client.ts` stores JWTs in `localStorage`. Any malicious 3rd-party script can steal the session.
-4. **Offline Storage Limits**: The frontend `offlineQueue.store.ts` uses `localStorage`. It has a strict ~5MB limit and is synchronously blocking. A large catalog sync or a long offline weekend will crash the POS tab and cause data loss.
+## 2. Resolved Since Initial Audit
+1. **CheckoutOrchestrator**: Implemented in `backend/src/domains/sales/checkout.orchestrator.ts` and wired into POS, storefront, and integrations.
+2. **Transaction Boundaries**: Checkout flows use Prisma `$transaction` via the orchestrator.
+3. **JWT Security**: Auth uses HttpOnly `erp_token` cookies; frontend `api/client.ts` uses `withCredentials` and does not read tokens from `localStorage`.
+4. **Offline Storage**: POS offline queue and catalog sync use IndexedDB (Dexie) via `useDexieSync` and `offlineQueue.store.ts`.
+5. **Structured Logging**: `nestjs-pino` configured in `AppModule` and `main.ts`.
+6. **Rate Limiting**: `ThrottlerModule` with global `ThrottlerGuard`; stricter limits on `/auth/login` and `/setup/*` POST routes.
+7. **Audit Interceptor**: Registered globally in `AppModule`; `userId` sourced from `request.user.userId` (JwtStrategy payload).
 
-## 3. High Priority Issues
-1. **Synchronous AFIP Calls**: `InvoicingService` calls government APIs synchronously during the HTTP request. If AFIP is down or slow, the checkout request hangs and timeouts, frustrating cashiers.
-2. **Price Variance Implementation Missing**: The DB schema has `SaleOrderVariance`, but the backend logic to compare POS totals vs Server totals and insert this variance has not been written.
-3. **Missing Audit Middleware**: `AuditService` exists but is not automatically catching all mutations. It must be integrated (preferably via a Prisma extension/middleware) to guarantee 100% coverage.
+## 3. Remaining Critical / High Priority
+1. **Synchronous AFIP Calls**: `InvoicingService` can still block checkout when AFIP is slow. BullMQ background queue is the recommended fix.
+2. **ARCA Certificate UI**: Frontend ARCA panel honestly shows disabled state; backend CSR/cert upload endpoints are not yet implemented.
+3. **Price Variance**: `SaleOrderVariance` schema exists; full POS-vs-server variance tracking should be verified end-to-end in the orchestrator.
 
 ## 4. Medium Issues
-1. **No Rate Limiting**: The API is vulnerable to brute-force or DDoS attacks.
-2. **No Structured Logging**: Default NestJS console logs are used, making production debugging and metric scraping (e.g., Datadog/ELK) impossible.
-3. **E-commerce Reservation TTL**: No cron job exists to clear expired stock reservations if a MercadoPago webhook fails to arrive.
+1. **E-commerce Reservation TTL**: Cron to clear expired stock reservations if MercadoPago webhooks fail.
+2. **Legacy `core/api/apiClient.ts`**: Removed; all API calls go through `frontend/src/api/client.ts`.
+3. **Test Coverage**: ~19 backend unit tests fail on incomplete Prisma mocks (pre-existing).
 
-## 5. Backend Issues
-- `CheckoutOrchestrator` does not exist in code.
-- AFIP integration lacks a BullMQ background queue.
-- `PermissionsGuard` is secure, but unhandled exceptions could leak stack traces if standard exception filters are not unified.
+## 5. Backend Status
+- `CheckoutOrchestrator` — **done**
+- Global `AuditInterceptor` + `ThrottlerGuard` — **done**
+- `PermissionsGuard` + unified `GlobalHttpExceptionFilter` — **done**
+- AFIP BullMQ queue — **pending**
 
-## 6. Frontend Issues
-- `localStorage` usage for both Auth (`erp_token`) and Offline State.
-- Missing `IndexedDB` integration for catalog caching.
-- No global retry backoff mechanism for the offline sync engine.
+## 6. Frontend Status
+- HttpOnly cookie session via `/auth/me` — **done**
+- IndexedDB offline sync — **done**
+- POS receipt header/footer from branch settings — **done**
+- Price list customer assignment modal — **done**
+- ARCA CSR/cert upload — **blocked on backend**
 
-## 7. DB Issues
-- The Prisma schema is production-ready, but migrations have not been run against a live database.
-- Missing explicit indexes on frequently filtered fields like `SaleOrder.createdAt` and `SaleOrder.status`.
+## 7. DB Status
+- Multi-schema Prisma model is current; use `npx prisma db push` for dev (not stale `migrate deploy`).
+- Review indexes on `SaleOrder.createdAt` and `SaleOrder.status` for production load.
 
-## 8. Backend/Frontend Mismatches
-- Frontend POS cart calculation relies on `POST /pos/cart/calculate`, which was stubbed but lacks full integration with the `RulesEngine`.
-
-## 9. Production Blockers
-- **Security**: JWTs in LocalStorage.
-- **Reliability**: No DB Transactions implemented for Checkout.
-- **Resilience**: AFIP synchronous blocking.
-
-## 10. Exact Correction Order
-1. **Security Fix**: Move JWT to HttpOnly cookies.
-2. **Architecture Refactor**: Create `CheckoutOrchestrator` using Prisma `$transaction`.
-3. **Resilience Fix**: Implement `PriceVariance` tracking inside the Orchestrator.
-4. **Offline Fix**: Migrate frontend offline queue from `localStorage` to `IndexedDB` (`idb-keyval`).
-5. **Performance Fix**: Move AFIP to BullMQ.
-6. **Hardening**: Add ThrottlerModule, Pino Logger, and global exception filters.
+## 8. Recommended Next Steps
+1. Move AFIP invoicing to BullMQ with async status polling.
+2. Implement ARCA CSR generation and certificate upload endpoints.
+3. Fix failing Jest mocks and add integration tests for checkout + audit trails.
+4. Add reservation TTL cron for storefront stock holds.

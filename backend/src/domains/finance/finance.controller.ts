@@ -4,6 +4,7 @@ import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { AccountsService } from './accounts.service';
 import { CashService } from './cash/cash.service';
 import { CurrentAccountsService } from './current-accounts.service';
+import { FinanceDocumentsService } from './finance-documents.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
@@ -14,6 +15,7 @@ export class FinanceController {
     private readonly accountsService: AccountsService,
     private readonly cashService: CashService,
     private readonly currentAccountsService: CurrentAccountsService,
+    private readonly financeDocumentsService: FinanceDocumentsService,
     private readonly notificationTriggers: NotificationTriggersService,
   ) {}
   
@@ -137,13 +139,71 @@ export class FinanceController {
 
   @Get('payments')
   @RequirePermissions({ action: 'read', subject: 'Finance' })
-  getPayments(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return { data: [], total: 0 };
+  getPayments(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.financeDocumentsService.getPayments({
+      page: Number(page) || 1,
+      pageSize: Number(pageSize) || 15,
+      search,
+      status,
+    });
+  }
+
+  @Get('payments/:id')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getPayment(@Param('id') id: string) {
+    return this.financeDocumentsService.getPayment(id);
   }
 
   @Get('invoices')
   @RequirePermissions({ action: 'read', subject: 'Finance' })
-  getInvoices(@Query('page') page: string, @Query('pageSize') pageSize: string) {
-    return { data: [], total: 0 };
+  getInvoices(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+  ) {
+    return this.financeDocumentsService.getInvoices({
+      page: Number(page) || 1,
+      pageSize: Number(pageSize) || 15,
+      search,
+      status,
+      type,
+    });
+  }
+
+  @Get('invoices/by-sale/:saleOrderId')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getInvoicesBySaleOrder(@Param('saleOrderId') saleOrderId: string) {
+    return this.financeDocumentsService.getInvoicesBySaleOrder(saleOrderId);
+  }
+
+  @Get('invoices/:id')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getInvoice(@Param('id') id: string) {
+    return this.financeDocumentsService.getInvoice(id);
+  }
+
+  @Post('invoices/issue')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  issueInvoice(@Body() body: any) {
+    return this.financeDocumentsService.issueInvoice(body);
+  }
+
+  @Post('invoices/:id/retry')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  retryInvoice(@Param('id') id: string) {
+    return this.financeDocumentsService.retryInvoice(id);
+  }
+
+  @Post('invoices/:id/cancel')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  cancelInvoice(@Param('id') id: string) {
+    return this.financeDocumentsService.cancelInvoice(id);
   }
 }

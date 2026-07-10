@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class InventoryService {
@@ -786,6 +787,222 @@ export class InventoryService {
       }
       return { success: true, adjustmentsMade: adjustmentCount };
     });
+  }
+
+  async findReservations(filters: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    status?: string;
+    branchId?: string;
+  }) {
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 15;
+    const skip = (page - 1) * pageSize;
+
+    const where: any = {};
+    if (filters.status) where.status = filters.status;
+    if (filters.search?.trim()) {
+      where.OR = [
+        { id: { contains: filters.search, mode: 'insensitive' } },
+        { orderId: { contains: filters.search, mode: 'insensitive' } },
+        { variantId: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.stockReservation.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.stockReservation.count({ where }),
+    ]);
+
+    const variantIds = [...new Set(data.map(r => r.variantId))];
+    const warehouseIds = [...new Set(data.map(r => r.warehouseId))];
+    const [variants, warehouses] = await Promise.all([
+      this.prisma.productVariant.findMany({
+        where: { id: { in: variantIds } },
+        include: { product: true },
+      }),
+      this.prisma.warehouse.findMany({ where: { id: { in: warehouseIds } } }),
+    ]);
+    const variantMap = new Map(variants.map(v => [v.id, v]));
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+
+    return {
+      data: data.map(r =>
+        this.mapStockReservation(r, variantMap.get(r.variantId), {
+          branchId: warehouseMap.get(r.warehouseId)?.branchId,
+        }),
+      ),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async findReservationById(id: string) {
+    const reservation = await this.prisma.stockReservation.findUnique({ where: { id } });
+    if (!reservation) throw new BadRequestException('Reserva no encontrada');
+
+    const [variant, warehouse] = await Promise.all([
+      this.prisma.productVariant.findUnique({
+        where: { id: reservation.variantId },
+        include: { product: true },
+      }),
+      this.prisma.warehouse.findUnique({ where: { id: reservation.warehouseId } }),
+    ]);
+
+    return this.mapStockReservation(reservation, variant, { branchId: warehouse?.branchId });
+  }
+
+  async createManualReservation(dto: {
+    branchId: string;
+    customerId?: string;
+    expiresAt: string;
+    notes?: string;
+    lines: { variantId: string; quantity: number }[];
+  }) {
+    const warehouse = await this.prisma.warehouse.findFirst({
+      where: { branchId: dto.branchId },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!warehouse) {
+      throw new BadRequestException('No hay depósito configurado para la sucursal indicada');
+    }
+
+    const groupId = crypto.randomUUID();
+    const orderId = `MANUAL-RES-${groupId}`;
+    const expiresAt = new Date(dto.expiresAt);
+
+    const created = await this.prisma.$transaction(async (tx) => {
+      const reservations = [];
+      for (const line of dto.lines) {
+        await this.reserveStock(
+          line.variantId,
+          warehouse.id,
+          dto.branchId,
+          line.quantity,
+          orderId,
+          tx,
+        );
+
+        const reservation = await tx.stockReservation.findFirst({
+          where: { orderId, variantId: line.variantId, status: 'ACTIVE' },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (reservation) {
+          await tx.stockReservation.update({
+            where: { id: reservation.id },
+            data: { expiresAt },
+          });
+          reservations.push(reservation);
+        }
+      }
+      return reservations;
+    });
+
+    if (!created.length) {
+      throw new BadRequestException('No se pudo crear la reserva de stock');
+    }
+
+    return this.mapStockReservation(
+      { ...created[0], expiresAt },
+      await this.prisma.productVariant.findUnique({
+        where: { id: created[0].variantId },
+        include: { product: true },
+      }),
+      { branchId: dto.branchId, customerId: dto.customerId, notes: dto.notes },
+    );
+  }
+
+  async consumeReservationById(id: string, saleOrderId?: string) {
+    const reservation = await this.prisma.stockReservation.findUnique({ where: { id } });
+    if (!reservation) throw new BadRequestException('Reserva no encontrada');
+    if (reservation.status !== 'ACTIVE') {
+      throw new BadRequestException('Solo se pueden consumir reservas activas');
+    }
+
+    const warehouse = await this.prisma.warehouse.findUnique({
+      where: { id: reservation.warehouseId },
+    });
+    const branchId = warehouse?.branchId;
+    if (!branchId) throw new BadRequestException('Depósito de la reserva no encontrado');
+
+    const orderId = saleOrderId || reservation.orderId || reservation.id;
+    await this.consumeReservation(
+      reservation.variantId,
+      reservation.warehouseId,
+      branchId,
+      reservation.quantity,
+      orderId,
+    );
+
+    const updated = await this.prisma.stockReservation.findUnique({ where: { id } });
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: reservation.variantId },
+      include: { product: true },
+    });
+    return this.mapStockReservation(updated!, variant);
+  }
+
+  async releaseReservationById(id: string) {
+    const reservation = await this.prisma.stockReservation.findUnique({ where: { id } });
+    if (!reservation) throw new BadRequestException('Reserva no encontrada');
+    if (reservation.status !== 'ACTIVE') {
+      throw new BadRequestException('Solo se pueden liberar reservas activas');
+    }
+
+    const warehouse = await this.prisma.warehouse.findUnique({
+      where: { id: reservation.warehouseId },
+    });
+    const branchId = warehouse?.branchId;
+    if (!branchId) throw new BadRequestException('Depósito de la reserva no encontrado');
+
+    await this.releaseReservation(
+      reservation.variantId,
+      reservation.warehouseId,
+      branchId,
+      reservation.quantity,
+      reservation.orderId || reservation.id,
+    );
+
+    const updated = await this.prisma.stockReservation.findUnique({ where: { id } });
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: reservation.variantId },
+      include: { product: true },
+    });
+    return this.mapStockReservation(updated!, variant);
+  }
+
+  private mapStockReservation(
+    reservation: any,
+    variant?: any,
+    meta?: { branchId?: string; customerId?: string; notes?: string },
+  ) {
+    const productName = variant?.product?.name;
+    const sku = variant?.sku;
+    return {
+      id: reservation.id,
+      branchId: meta?.branchId ?? '',
+      customerId: meta?.customerId,
+      status: reservation.status,
+      lines: [
+        {
+          variantId: reservation.variantId,
+          quantity: reservation.quantity,
+          sku,
+          productName,
+        },
+      ],
+      expiresAt: reservation.expiresAt.toISOString(),
+      createdAt: reservation.createdAt.toISOString(),
+      notes: meta?.notes,
+    };
   }
 }
 

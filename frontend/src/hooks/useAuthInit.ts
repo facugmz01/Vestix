@@ -6,7 +6,7 @@ import { setupApi } from '@/api/setup.api';
 /**
  * Called ONCE at the very root of the app.
  * 1. Checks if the system has been set up (first-launch wizard).
- * 2. Re-validates the persisted JWT against the server on every fresh page load.
+ * 2. Re-validates the HttpOnly cookie session via GET /auth/me on every fresh page load.
  * Returns `true` while any initial check is in-flight so the router can
  * show a full-page spinner instead of a flash to /login.
  *

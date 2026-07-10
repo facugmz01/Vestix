@@ -21,7 +21,7 @@ export class AuditInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request  = context.switchToHttp().getRequest();
     const method   = request.method;
-    const userId   = request.user?.id ?? 'anonymous';
+    const userId   = request.user?.userId ?? 'anonymous';
     const userEmail = request.user?.email;
     const ipAddress = request.ip;
     const requestId = crypto.randomUUID(); // Correlates all DB ops within this request

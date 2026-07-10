@@ -10,6 +10,7 @@ import {
   ReceiptStyleSettings,
   resolveReceiptStyle,
 } from '../../domains/sales/models/receipt-style.model';
+import { evaluateAfipConfiguration } from '../../domains/invoicing/afip-config.util';
 
 // ─── Sensitive field maps — fields to encrypt/decrypt per section ──────────────
 
@@ -656,11 +657,30 @@ export class SettingsService implements OnModuleInit {
 
   async testAfipConnection() {
     const logs: string[] = [];
-    this.logStep(logs, 'Iniciando prueba de conexión AFIP/ARCA…');
-    this.logStep(logs, 'Módulo AFIP aún no implementado en producción.');
+    this.logStep(logs, 'Iniciando verificación de configuración AFIP/ARCA…', '1/3');
+
+    const arca = await this.getArcaSettings();
+    const status = evaluateAfipConfiguration(arca);
+
+    this.logStep(
+      logs,
+      `ARCA habilitado: ${status.enabled ? 'sí' : 'no'} | CUIT: ${status.hasCuit ? 'configurado' : 'faltante'} | Certificados: ${status.hasCertificates ? 'presentes' : 'faltantes'}`,
+      '2/3',
+    );
+
+    if (!status.configured) {
+      this.logStep(logs, `Faltante: ${status.missing.join(', ')}`, '3/3');
+      return this.buildTestResponse(
+        false,
+        `AFIP no configurado (${status.missing.join(', ')}). Completá la pestaña ARCA y las variables AFIP_CERT_PATH/AFIP_KEY_PATH.`,
+        logs,
+      );
+    }
+
+    this.logStep(logs, 'Configuración mínima presente. La integración WSFE aún no está implementada.', '3/3');
     return this.buildTestResponse(
       false,
-      'Prueba de conexión AFIP no disponible aún. Configurá los certificados en la pestaña ARCA.',
+      'AFIP configurado correctamente, pero la integración WSFE aún no está implementada. Las facturas quedarán en estado pendiente/fallido hasta completar el SDK.',
       logs,
     );
   }

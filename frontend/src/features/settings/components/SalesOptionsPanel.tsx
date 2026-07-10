@@ -9,12 +9,14 @@ import { Input, Button, ConfirmDialog, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { posSettingsSchema, type PosSettingsFormData } from '../schemas/posSettings.schema';
 import { settingsApi } from '@/api/settings.api';
+import { productsApi } from '@/api/products.api';
 import styles from './SettingsShared.module.css';
 
 export function SalesOptionsPanel() {
   const { data: settings, isLoading } = useGetSettings();
   const mutation = useUpdateSettingsSection('pos');
   const [clearCatalogOpen, setClearCatalogOpen] = useState(false);
+  const [clearingCatalog, setClearingCatalog] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<PosSettingsFormData>({
     resolver: zodResolver(posSettingsSchema),
@@ -30,9 +32,17 @@ export function SalesOptionsPanel() {
     mutation.mutate(data, { onSuccess: () => reset(data) });
   };
 
-  const handleClearCatalog = () => {
-    toast.error('Función "Vaciar catálogo" en desarrollo');
-    setClearCatalogOpen(false);
+  const handleClearCatalog = async () => {
+    setClearingCatalog(true);
+    try {
+      await productsApi.clearCatalog();
+      toast.success('Catálogo vaciado correctamente');
+      setClearCatalogOpen(false);
+    } catch (error: any) {
+      toast.error(error.message || 'Error al vaciar el catálogo');
+    } finally {
+      setClearingCatalog(false);
+    }
   };
 
   const handleRecotizar = async (type: 'Oficial' | 'Blue') => {
@@ -236,6 +246,7 @@ export function SalesOptionsPanel() {
         message="Esta acción no se puede deshacer. Se eliminarán permanentemente todos los productos activos de la base de datos."
         confirmLabel="Sí, vaciar catálogo"
         variant="danger"
+        loading={clearingCatalog}
         onConfirm={handleClearCatalog}
         onCancel={() => setClearCatalogOpen(false)}
       />

@@ -4,6 +4,7 @@ import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import { usePosStore } from '../store/usePosStore';
 import toast from 'react-hot-toast';
 import { get } from '@/api/client';
+import { warehousesApi } from '@/api/warehouses.api';
 import { formatCurrency } from '@/utils/formatCurrency';
 import type { SaleOrder, PaymentMethod } from '@/types';
 
@@ -60,25 +61,27 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         resolvedPaymentReference = qrOrderId;
       }
 
-      let warehouseId = 'main';
-      try {
-        const warehouses = await queryClient.fetchQuery({
-          queryKey: ['warehouses', currentBranchId],
-          queryFn: () => get<{ id: string }[]>('/inventory/warehouses', { params: { branchId: currentBranchId } }),
-          staleTime: 600_000,
-        });
-        warehouseId = warehouses?.[0]?.id || 'main';
-      } catch { warehouseId = 'main'; }
+      const warehousesRes = await queryClient.fetchQuery({
+        queryKey: ['warehouses', currentBranchId],
+        queryFn: () => warehousesApi.getWarehouses({ branchId: currentBranchId, pageSize: 50 }),
+        staleTime: 600_000,
+      });
+      const warehouseId = warehousesRes.data?.[0]?.id;
+      if (!warehouseId) {
+        throw new Error('No hay depósito configurado para esta sucursal');
+      }
 
       let paymentAccountId: string | undefined;
       try {
         const accounts = await queryClient.fetchQuery({
-          queryKey: ['accounts', currentBranchId],
-          queryFn: () => get<{ id: string; isActive?: boolean }[]>('/finance/accounts', { params: { branchId: currentBranchId } }),
+          queryKey: ['treasury-accounts', currentBranchId],
+          queryFn: () => get<{ id: string; isActive?: boolean; branchId?: string }[]>('/finance/treasury/accounts'),
           staleTime: 600_000,
         });
-        paymentAccountId = accounts?.find(a => a.isActive)?.id;
-      } catch { paymentAccountId = undefined; }
+        paymentAccountId = accounts?.find(a => a.isActive && (!a.branchId || a.branchId === currentBranchId))?.id;
+      } catch {
+        paymentAccountId = undefined;
+      }
 
       const resolvedMethod = paymentSplits.length > 0 ? 'MULTIPLE' : paymentMethod;
 

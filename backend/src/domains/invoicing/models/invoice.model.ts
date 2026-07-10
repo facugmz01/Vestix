@@ -10,7 +10,9 @@ export enum InvoiceStatus {
   DRAFT = 'DRAFT',
   PENDING_AFIP = 'PENDING_AFIP', // Waiting on government API response
   APPROVED = 'APPROVED',         // Received CAE (Legalized)
-  REJECTED = 'REJECTED'          // AFIP threw an error (e.g., invalid CUIT)
+  FAILED = 'FAILED',             // AFIP unavailable or not configured
+  REJECTED = 'REJECTED',         // AFIP threw an error (e.g., invalid CUIT)
+  CANCELLED = 'CANCELLED',
 }
 
 /**

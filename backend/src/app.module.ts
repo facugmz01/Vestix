@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './core/prisma/prisma.module';
@@ -25,6 +26,7 @@ import { NotificationsModule } from './domains/notifications/notifications.modul
 import { IntegrationsModule } from './domains/integrations/integrations.module';
 
 import { AuditModule } from './modules/audit/audit.module';
+import { AuditInterceptor } from './modules/audit/interceptors/audit.interceptor';
 import { HealthModule } from './modules/health/health.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -93,6 +95,10 @@ import { BackupsModule } from './modules/backups/backups.module';
     // with PermissionsGuard. Legacy modules/* controllers kept for reference only.
     ShippingModule,
     BackupsModule,
+  ],
+  providers: [
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

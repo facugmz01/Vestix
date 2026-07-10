@@ -330,7 +330,7 @@ export class CheckoutOrchestrator {
 
     if (!targetWarehouseId) throw new BadRequestException('No warehouse specified for stock deduction');
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       // 1. DEDUCT STOCK
       await this.deductStock(tx, {
         orderId: quote.id,
@@ -344,7 +344,7 @@ export class CheckoutOrchestrator {
       });
 
       // 2. UPDATE STATUS
-      const updated = await tx.saleOrder.update({
+      const updatedOrder = await tx.saleOrder.update({
         where: { id },
         data: { status: 'CONFIRMED' },
         include: { lines: true }
@@ -354,25 +354,24 @@ export class CheckoutOrchestrator {
       await tx.outboxEvent.create({
         data: {
           aggregate: 'SaleOrder',
-          aggregateId: updated.id,
+          aggregateId: updatedOrder.id,
           type: 'ORDER_CONFIRMED',
-          payload: { orderId: updated.id, branchId: updated.branchId, status: 'CONFIRMED', grandTotal: updated.grandTotal }
+          payload: { orderId: updatedOrder.id, branchId: updatedOrder.branchId, status: 'CONFIRMED', grandTotal: updatedOrder.grandTotal }
         }
       });
 
-      // 4. ENQUEUE AFIP (Post-Confirmation)
-      if (updated.issueInvoice) {
-        await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
-      }
-
-      return updated;
-    }).then(async (updated) => {
-      void this.notificationTriggers.onSaleCompleted(updated.id);
-      for (const line of updated.lines) {
-        void this.notificationTriggers.checkLowStock(line.variantId, targetWarehouseId, quote.branchId);
-      }
-      return updated;
+      return updatedOrder;
     });
+
+    if (updated.issueInvoice) {
+      await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
+    }
+
+    void this.notificationTriggers.onSaleCompleted(updated.id);
+    for (const line of updated.lines) {
+      void this.notificationTriggers.checkLowStock(line.variantId, targetWarehouseId, quote.branchId);
+    }
+    return updated;
   }
 
   private async deductStock(tx: any, data: { orderId: string, branchId: string, warehouseId: string, lines: any[] }) {
@@ -495,12 +494,12 @@ export class CheckoutOrchestrator {
         },
       });
 
-      if (updatedOrder.issueInvoice) {
-        await this.afipProducer.enqueueInvoiceGeneration(updatedOrder.id, updatedOrder.branchId);
-      }
-
       return updatedOrder;
     });
+
+    if (updated.issueInvoice) {
+      await this.afipProducer.enqueueInvoiceGeneration(updated.id, updated.branchId);
+    }
 
     void this.notificationTriggers.onSaleCompleted(updated.id);
     if (targetWarehouseId) {

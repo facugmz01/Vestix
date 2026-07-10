@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, FileText, Download, ExternalLink, ShieldAlert, Key } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
@@ -26,9 +25,7 @@ export function ArcaSettingsPanel() {
     mutation.mutate(data, { onSuccess: () => reset(data) });
   };
 
-  const handleGenerateCsr = () => {
-    toast.error('Generación de CSR en desarrollo');
-  };
+  const csrNotAvailable = 'La generación de CSR y la carga de certificados requieren endpoints de backend que aún no están implementados.';
 
   if (isLoading) return null;
 
@@ -70,12 +67,12 @@ export function ArcaSettingsPanel() {
           <hr className={styles.divider} />
 
           <h4 className={styles.subsectionTitle}>
-            <ShieldAlert size={16} /> Certificados digitales <span className={styles.statusBadge}>Pendiente</span>
+            <ShieldAlert size={16} /> Certificados digitales <span className={styles.statusBadge}>No disponible</span>
           </h4>
 
           <div className={styles.infoBox}>
             <span className={styles.infoBoxIcon}>ⓘ</span>
-            <p className={styles.infoBoxBody}><strong>CUIT:</strong> — Completá la CUIT en Datos del comercio primero.</p>
+            <p className={styles.infoBoxBody}>{csrNotAvailable}</p>
           </div>
 
           <div className={styles.nestedCard}>
@@ -93,8 +90,17 @@ export function ArcaSettingsPanel() {
                 <span className={styles.stepCardHeaderLabel}>1. Generar clave y solicitud</span>
               </div>
               <div className={styles.wizardCardBody}>
-                <Input label="Alias del certificado *" placeholder="facundogomez" {...register('certAlias')} />
-                <Button variant="primary" className={clsx(styles.btnFullWidthMt, styles.btnAccent)} icon={<Key size={16} />} onClick={handleGenerateCsr}>Generar clave y CSR</Button>
+                <Input label="Alias del certificado *" placeholder="facundogomez" {...register('certAlias')} disabled />
+                <Button
+                  variant="primary"
+                  type="button"
+                  disabled
+                  title={csrNotAvailable}
+                  className={clsx(styles.btnFullWidthMt, styles.btnAccent)}
+                  icon={<Key size={16} />}
+                >
+                  Generar clave y CSR
+                </Button>
               </div>
             </div>
 
@@ -103,7 +109,7 @@ export function ArcaSettingsPanel() {
                 <span className={styles.stepCardHeaderLabel}>2. Subir solicitud a AFIP</span>
               </div>
               <div className={styles.stepCardActions}>
-                <Button variant="outline" disabled className={styles.btnCentered} icon={<Download size={14} />}>Descargar .csr</Button>
+                <Button variant="outline" disabled title={csrNotAvailable} className={styles.btnCentered} icon={<Download size={14} />}>Descargar .csr</Button>
                 <Button variant="outline" className={clsx(styles.btnCentered, styles.btnAccentOutline)} icon={<ExternalLink size={14} />}>Ir al portal AFIP</Button>
               </div>
             </div>
@@ -114,8 +120,8 @@ export function ArcaSettingsPanel() {
               </div>
               <div className={styles.wizardCardBody}>
                 <div className={styles.filePickerRow}>
-                  <Button variant="outline" size="sm">Seleccionar archivo</Button>
-                  <span className={styles.filePickerHint}>Sin archivos seleccionados</span>
+                  <Button variant="outline" size="sm" disabled title={csrNotAvailable}>Seleccionar archivo</Button>
+                  <span className={styles.filePickerHint}>Requiere endpoint de backend</span>
                 </div>
               </div>
             </div>

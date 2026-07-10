@@ -1,12 +1,29 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { SettingsService } from '../../modules/settings/settings.service';
+import { evaluateAfipConfiguration } from './afip-config.util';
+
+export interface AfipVoucherResponse {
+  cae: string;
+  caeExpiration: Date | string;
+  receiptNumber: string;
+}
 
 @Injectable()
 export class AfipService {
-  // In production, instantiate an AFIP SDK like 'afip.js' using server certificates
-  // private afipClient: any;
+  constructor(private readonly settingsService: SettingsService) {}
 
-  constructor() {
-    // this.afipClient = new Afip({ CUIT: process.env.AFIP_CUIT, cert: 'cert.pem', key: 'key.pem' });
+  async isConfigured(): Promise<boolean> {
+    const arca = await this.settingsService.getArcaSettings();
+    return evaluateAfipConfiguration(arca).configured;
+  }
+
+  async getConfigurationStatus() {
+    const arca = await this.settingsService.getArcaSettings();
+    return evaluateAfipConfiguration(arca);
   }
 
   /**
@@ -15,32 +32,34 @@ export class AfipService {
    */
   async createElectronicInvoice(payload: {
     pointOfSale: number;
-    invoiceType: number; // AFIP specific code (e.g., 1 for Factura A, 6 for Factura B)
-    documentType: number; // 80 for CUIT, 96 for DNI
+    invoiceType: number;
+    documentType: number;
     documentNumber: number;
     netAmount: number;
     vatAmount: number;
     totalAmount: number;
-  }) {
+  }): Promise<AfipVoucherResponse> {
+    const arca = await this.settingsService.getArcaSettings();
+    const config = evaluateAfipConfiguration(arca);
+
+    if (!config.configured) {
+      throw new ServiceUnavailableException(
+        `AFIP no está configurado: ${config.missing.join(', ')}. ` +
+          'Configure CUIT, certificados y habilite ARCA antes de emitir comprobantes.',
+      );
+    }
+
     try {
-      // MOCK: Production calls `this.afipClient.ElectronicBilling.createVoucher(payload)`
-      
-      const isAfipDown = false; // Mock failure scenario (AFIP servers go down frequently)
-      if (isAfipDown) {
-         throw new Error('AFIP WSFE servers are unresponsive. Timeout.');
-      }
-
-      // AFIP generates a 14-digit CAE
-      const mockCae = Math.floor(10000000000000 + Math.random() * 90000000000000).toString(); 
-      // AFIP dictates the strict sequential receipt number
-      const mockReceiptNumber = `${payload.pointOfSale.toString().padStart(4, '0')}-${Math.floor(Math.random() * 99999999).toString().padStart(8, '0')}`;
-
-      return {
-        cae: mockCae,
-        caeExpiration: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // CAEs expire in 10 days
-        receiptNumber: mockReceiptNumber
-      };
+      // Production path: instantiate AFIP SDK (e.g. afip.js) with server certificates
+      // and call ElectronicBilling.createVoucher(payload).
+      throw new ServiceUnavailableException(
+        'Integración AFIP WSFE no implementada. ' +
+          'Los comprobantes no pueden autorizarse hasta conectar el SDK con certificados reales.',
+      );
     } catch (error: any) {
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
       throw new InternalServerErrorException(`AFIP Integration Error: ${error.message}`);
     }
   }

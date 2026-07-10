@@ -100,12 +100,28 @@ describe('MercadoPagoService', () => {
   });
 
   describe('verifyWebhookSignature', () => {
-    it('skips verification when no secret is configured', async () => {
+    it('skips verification when no secret is configured in non-production', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
       mockSettingsService.getIntegrationSettings.mockResolvedValue({});
 
       const result = await service.verifyWebhookSignature({}, '12345');
       expect(result.valid).toBe(true);
       expect(result.skipped).toBe(true);
+
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('fails when no secret is configured in production', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      mockSettingsService.getIntegrationSettings.mockResolvedValue({});
+
+      const result = await service.verifyWebhookSignature({}, '12345');
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('Webhook secret not configured');
+
+      process.env.NODE_ENV = originalEnv;
     });
 
     it('validates HMAC signature per Mercado Pago manifest', async () => {

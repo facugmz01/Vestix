@@ -202,10 +202,11 @@ describe('SettingsService', () => {
   });
 
   describe('testAfipConnection', () => {
-    it('should return a not-available response', async () => {
+    it('should return configuration status when AFIP is not configured', async () => {
+      mockPrismaService.systemSettings.findUnique.mockResolvedValueOnce(defaultRow);
       const result = await service.testAfipConnection();
       expect(result.success).toBe(false);
-      expect(result.message).toContain('no disponible');
+      expect(result.message).toMatch(/no configurado|WSFE/);
     });
   });
 

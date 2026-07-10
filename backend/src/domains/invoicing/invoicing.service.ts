@@ -92,7 +92,7 @@ export class InvoicingService {
       await this.prisma.invoice.update({
         where: { id: invoice.id },
         data: {
-          status: InvoiceStatus.REJECTED,
+          status: InvoiceStatus.FAILED,
           afipErrorMessage: error.message,
           updatedAt: new Date(),
         }
