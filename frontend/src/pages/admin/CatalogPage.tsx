@@ -162,8 +162,6 @@ export default function CatalogPage() {
 
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [clearDialogOpen, setClearDialogOpen] = useState(false);
-  const [clearConfirmText, setClearConfirmText] = useState('');
   const [importOpen, setImportOpen] = useState(false);
   const [bulkUpdaterOpen, setBulkUpdaterOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -193,18 +191,6 @@ export default function CatalogPage() {
     },
     onError: (err: any) => {
       toast.error(err.message || 'Error al eliminar. Verificá que no tenga stock o facturas vinculadas.');
-    },
-  });
-
-  const clearCatalogMutation = useMutation({
-    mutationFn: () => productsApi.clearCatalog(),
-    onSuccess: () => {
-      toast.success('Catálogo vaciado con éxito');
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all() });
-      setClearDialogOpen(false);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Error al vaciar el catálogo.');
     },
   });
 
@@ -298,12 +284,6 @@ export default function CatalogPage() {
                 <Globe size={15} /> Publicar Todos
               </button>
             </div>
-          </ActionGuard>
-
-          <ActionGuard action="delete" subject="Catalog">
-            <button type="button" onClick={() => setClearDialogOpen(true)} className={clsx(styles.toolBtn, styles.toolBtnDanger)}>
-              <Trash2 size={15} /> Vaciar Catálogo
-            </button>
           </ActionGuard>
 
           <ActionGuard action="create" subject="Catalog">
@@ -408,35 +388,6 @@ export default function CatalogPage() {
         onConfirm={() => selectedProduct && deleteMutation.mutate(selectedProduct.id)}
         onCancel={() => setDeleteOpen(false)}
       />
-
-      <ConfirmDialog
-        open={clearDialogOpen}
-        title="Vaciar Catálogo"
-        message="Esta acción elimina productos, variantes, categorías, marcas y listas de precios del catálogo. No borra ventas ni finanzas, pero requiere que no haya stock ni cotizaciones abiertas. Escribí VACIAR para confirmar."
-        confirmLabel="Vaciar Catálogo"
-        variant="danger"
-        loading={clearCatalogMutation.isPending}
-        onConfirm={() => {
-          if (clearConfirmText !== 'VACIAR') {
-            toast.error('Debés escribir VACIAR para confirmar');
-            return;
-          }
-          clearCatalogMutation.mutate();
-          setClearConfirmText('');
-        }}
-        onCancel={() => { setClearDialogOpen(false); setClearConfirmText(''); }}
-      />
-      {clearDialogOpen && (
-        <div className={styles.clearConfirm}>
-          <input
-            type="text"
-            placeholder="Escribí VACIAR"
-            value={clearConfirmText}
-            onChange={e => setClearConfirmText(e.target.value)}
-            className={styles.clearInput}
-          />
-        </div>
-      )}
 
       <ImportProductsModal
         isOpen={importOpen}

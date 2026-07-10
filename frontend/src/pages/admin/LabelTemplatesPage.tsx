@@ -14,6 +14,14 @@ import { exportTemplateToJson, parseImportedTemplate } from '@/features/labels/u
 import type { LabelTemplate } from '@/features/labels/types/label.types';
 import adminStyles from '@/styles/AdminListShared.module.css';
 
+function normalizeTemplates(data: unknown): LabelTemplate[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown }).data)) {
+    return (data as { data: LabelTemplate[] }).data;
+  }
+  return [];
+}
+
 export default function LabelTemplatesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -21,10 +29,11 @@ export default function LabelTemplatesPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<LabelTemplate | null>(null);
 
-  const { data: templates = [], isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['labelTemplates'],
     queryFn: () => labelsApi.getTemplates(),
   });
+  const templates = normalizeTemplates(data);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => labelsApi.deleteTemplate(id),
@@ -79,7 +88,7 @@ export default function LabelTemplatesPage() {
   return (
     <PageContainer
       title="Plantillas de Etiquetas"
-      actions={
+      action={
         <ActionGuard action="manage" subject="Labels">
           <div className={adminStyles.toolbarActions}>
             <input ref={fileInputRef} type="file" accept=".json" hidden onChange={handleImport} />
@@ -113,57 +122,69 @@ export default function LabelTemplatesPage() {
           }
         />
       ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Tamaño</th>
-              <th>Tipo</th>
-              <th>Estado</th>
-              <th className={adminStyles.thColCenterWide}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {templates.map((tpl) => (
-              <tr key={tpl.id}>
-                <td>
+        <Table
+          keyField="id"
+          data={templates}
+          columns={[
+            {
+              key: 'name',
+              header: 'Nombre',
+              render: (tpl) => (
+                <>
                   <div className={adminStyles.cellMedium}>{tpl.name}</div>
                   {tpl.description && (
                     <div className={adminStyles.cellMuted}>{tpl.description}</div>
                   )}
-                </td>
-                <td>{tpl.labelWidth} × {tpl.labelHeight} mm</td>
-                <td>{tpl.paperType === 'ROLL' ? 'Rollo' : 'Hoja'}</td>
-                <td>
-                  <div className={adminStyles.actionGapXs}>
-                    {tpl.isDefault && <Badge color="green">Default</Badge>}
-                    {tpl.isSystem && <Badge color="gray">Sistema</Badge>}
-                  </div>
-                </td>
-                <td>
-                  <div className={adminStyles.actionGapSm}>
-                    <ActionGuard action="manage" subject="Labels">
-                      <Button variant="ghost" size="sm" icon={<Edit2 size={14} />} onClick={() => navigate(`/admin/label-templates/${tpl.id}/edit`)} title="Editor visual" />
-                      <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportTemplateToJson(tpl)} title="Exportar JSON" />
-                      <Button variant="ghost" size="sm" icon={<Copy size={14} />} onClick={() => duplicateMutation.mutate(tpl.id)} title="Duplicar" />
-                      {!tpl.isDefault && (
-                        <Button variant="ghost" size="sm" icon={<Star size={14} />} onClick={() => defaultMutation.mutate(tpl.id)} title="Marcar default" />
-                      )}
-                      {!tpl.isSystem && (
-                        <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => { setSelected(tpl); setDeleteOpen(true); }} title="Eliminar" />
-                      )}
-                    </ActionGuard>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+                </>
+              ),
+            },
+            {
+              key: 'size',
+              header: 'Tamaño',
+              render: (tpl) => `${tpl.labelWidth} × ${tpl.labelHeight} mm`,
+            },
+            {
+              key: 'paperType',
+              header: 'Tipo',
+              render: (tpl) => (tpl.paperType === 'ROLL' ? 'Rollo' : 'Hoja'),
+            },
+            {
+              key: 'status',
+              header: 'Estado',
+              render: (tpl) => (
+                <div className={adminStyles.actionGapXs}>
+                  {tpl.isDefault && <Badge color="green">Default</Badge>}
+                  {tpl.isSystem && <Badge color="gray">Sistema</Badge>}
+                </div>
+              ),
+            },
+            {
+              key: 'actions',
+              header: 'Acciones',
+              width: '220px',
+              render: (tpl) => (
+                <div className={adminStyles.actionGapSm}>
+                  <ActionGuard action="manage" subject="Labels">
+                    <Button variant="ghost" size="sm" icon={<Edit2 size={14} />} onClick={() => navigate(`/admin/label-templates/${tpl.id}/edit`)} title="Editor visual" />
+                    <Button variant="ghost" size="sm" icon={<Download size={14} />} onClick={() => exportTemplateToJson(tpl)} title="Exportar JSON" />
+                    <Button variant="ghost" size="sm" icon={<Copy size={14} />} onClick={() => duplicateMutation.mutate(tpl.id)} title="Duplicar" />
+                    {!tpl.isDefault && (
+                      <Button variant="ghost" size="sm" icon={<Star size={14} />} onClick={() => defaultMutation.mutate(tpl.id)} title="Marcar default" />
+                    )}
+                    {!tpl.isSystem && (
+                      <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => { setSelected(tpl); setDeleteOpen(true); }} title="Eliminar" />
+                    )}
+                  </ActionGuard>
+                </div>
+              ),
+            },
+          ]}
+        />
       )}
 
       <ConfirmDialog
         open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
+        onCancel={() => setDeleteOpen(false)}
         onConfirm={() => selected && deleteMutation.mutate(selected.id)}
         title="Eliminar plantilla"
         message={`¿Eliminar la plantilla "${selected?.name}"?`}

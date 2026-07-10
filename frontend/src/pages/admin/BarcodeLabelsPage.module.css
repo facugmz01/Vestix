@@ -34,17 +34,28 @@
 
 .templateSelect label {
   font-size: 13px;
-  color: var(--text-secondary);
-  font-weight: 500;
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .templateSelect select {
   padding: 10px 12px;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--bg-base);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
   color: var(--text-primary);
   font-size: 14px;
+  font-weight: 500;
+}
+
+.templateSelect select:disabled {
+  color: var(--text-disabled);
+  background: var(--bg-disabled);
+}
+
+.templateSelect select option {
+  background: var(--bg-surface);
+  color: var(--text-primary);
 }
 
 .previewSection {
@@ -60,15 +71,15 @@
 .searchInputWrapper {
   display: flex;
   align-items: center;
-  background: var(--bg-base);
-  border: 1px solid var(--border);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   padding: 0 16px;
   height: 48px;
 }
 
 .searchIcon {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   margin-right: 12px;
 }
 
@@ -87,7 +98,7 @@
   left: 0;
   right: 0;
   background: var(--bg-surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   margin-top: 8px;
   z-index: 100;
@@ -99,7 +110,7 @@
 .noResults {
   padding: 16px;
   text-align: center;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -111,31 +122,73 @@
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.2s;
+  background: var(--bg-surface);
+}
+
+.searchResultItem:nth-child(even) {
+  background: var(--surface-1);
 }
 
 .searchResultItem:hover {
-  background: var(--bg-base);
+  background: var(--accent-subtle);
+}
+
+.searchResultItem:last-child {
+  border-bottom: none;
 }
 
 .searchResultInfo {
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 
 .searchResultName {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
+}
+
+.searchResultMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .searchResultSku {
   font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.attrChipSize,
+.attrChipColor {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+
+.attrChipSize {
+  background: var(--blue-bg);
+  color: var(--blue);
+  border-color: color-mix(in srgb, var(--blue) 25%, transparent);
+}
+
+.attrChipColor {
+  background: var(--purple-bg);
+  color: var(--purple);
+  border-color: color-mix(in srgb, var(--purple) 25%, transparent);
 }
 
 .addIcon {
-  color: var(--brand-primary);
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .itemsTable {
@@ -151,28 +204,31 @@
 .table th {
   text-align: left;
   padding: 12px;
-  background: var(--bg-base);
-  color: var(--text-secondary);
+  background: var(--surface-1);
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 600;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .table td {
   padding: 12px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  color: var(--text-primary);
 }
 
 .itemName {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
+  color: var(--text-primary);
 }
 
 .itemAttributes {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .quantityControl {
@@ -180,40 +236,44 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: var(--bg-base);
-  border: 1px solid var(--border);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   padding: 4px;
 }
 
 .quantityControl button {
-  background: transparent;
-  border: none;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   width: 24px;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   border-radius: 4px;
+  font-weight: 700;
 }
 
 .quantityControl button:hover {
-  background: var(--bg-surface);
-  color: var(--text-primary);
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .quantityControl span {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
   width: 30px;
   text-align: center;
+  color: var(--text-primary);
 }
 
 .actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 /* Print Layout */

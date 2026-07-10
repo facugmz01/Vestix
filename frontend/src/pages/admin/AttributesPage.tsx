@@ -2,17 +2,17 @@ import { useState } from 'react';
 import clsx from 'clsx';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Tag, List, Pencil, Check, X, Layers, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Tag, List, Pencil, Check, X, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { 
+import {
   PageContainer, Section, Button, Input, EmptyState, TableSkeleton, ConfirmDialog, Tabs
 } from '@/components/ui';
 import { productsApi } from '@/api/products.api';
 import adminStyles from '@/styles/AdminListShared.module.css';
 import styles from './AttributesPage.module.css';
 
-type Tab = 'categories' | 'brands' | 'attributes' | 'price-lists';
+type Tab = 'categories' | 'brands' | 'attributes';
 
 function InlineEditRow({
   label,
@@ -205,10 +205,6 @@ export default function AttributesPage() {
     queryKey: ['attributes'],
     queryFn: () => productsApi.getAttributes(),
   });
-  const { data: priceLists, isLoading: loadingPrices } = useQuery({
-    queryKey: ['price-lists'],
-    queryFn: () => productsApi.getPriceLists(),
-  });
 
   const [newName, setNewName] = useState('');
   const [newExtra, setNewExtra] = useState('');
@@ -253,20 +249,6 @@ export default function AttributesPage() {
     onSuccess: () => { toast.success('Atributo eliminado'); queryClient.invalidateQueries({ queryKey: ['attributes'] }); }
   });
 
-  const createPriceMut = useMutation({
-    mutationFn: (d: { name: string; margin: number }) => productsApi.createPriceList(d),
-    onSuccess: () => { toast.success('Lista creada'); queryClient.invalidateQueries({ queryKey: ['price-lists'] }); resetForm(); }
-  });
-  const updatePriceMut = useMutation({
-    mutationFn: ({ id, name, margin }: { id: string; name: string; margin: number }) =>
-      productsApi.updatePriceList(id, { name, margin }),
-    onSuccess: () => { toast.success('Lista actualizada'); queryClient.invalidateQueries({ queryKey: ['price-lists'] }); }
-  });
-  const deletePriceMut = useMutation({
-    mutationFn: (id: string) => productsApi.deletePriceList(id),
-    onSuccess: () => { toast.success('Lista eliminada'); queryClient.invalidateQueries({ queryKey: ['price-lists'] }); }
-  });
-
   const resetForm = () => { setNewName(''); setNewExtra(''); };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -278,10 +260,6 @@ export default function AttributesPage() {
       const values = newExtra.split(',').map(v => v.trim()).filter(Boolean);
       if (values.length === 0) { toast.error('Ingresá al menos un valor'); return; }
       createAttrMut.mutate({ name: newName, values });
-    } else if (activeTab === 'price-lists') {
-      const margin = parseFloat(newExtra);
-      if (!margin || margin <= 0) { toast.error('Margen inválido'); return; }
-      createPriceMut.mutate({ name: newName, margin: 1 + margin / 100 });
     }
   };
 
@@ -289,20 +267,22 @@ export default function AttributesPage() {
     { key: 'categories', label: 'Categorías', icon: <Layers size={15} /> },
     { key: 'brands', label: 'Marcas', icon: <Tag size={15} /> },
     { key: 'attributes', label: 'Atributos', icon: <List size={15} /> },
-    { key: 'price-lists', label: 'Listas de Precios', icon: <DollarSign size={15} /> },
   ];
 
   const isLoading =
     (activeTab === 'categories' && loadingCats) ||
     (activeTab === 'brands' && loadingBrands) ||
-    (activeTab === 'attributes' && loadingAttrs) ||
-    (activeTab === 'price-lists' && loadingPrices);
+    (activeTab === 'attributes' && loadingAttrs);
+
+  const newItemLabel =
+    activeTab === 'categories' ? 'a Categoría' :
+    activeTab === 'brands' ? 'a Marca' : ' Atributo';
 
   return (
     <PageContainer
       tabs={<Tabs items={CATALOG_TABS} />}
-      title="Taxonomía y Precios"
-      subtitle="Gestioná categorías, marcas, atributos y listas de precios."
+      title="Taxonomía"
+      subtitle="Gestioná categorías, marcas y atributos de productos."
     >
       <div className={styles.tabBar}>
         {tabs.map(t => (
@@ -318,7 +298,7 @@ export default function AttributesPage() {
       </div>
 
       <div className={styles.layout}>
-        <Section title={`Nuevo${activeTab === 'categories' ? 'a Categoría' : activeTab === 'brands' ? 'a Marca' : activeTab === 'attributes' ? ' Atributo' : 'a Lista'}`}>
+        <Section title={`Nuevo${newItemLabel}`}>
           <form onSubmit={handleCreate} className={styles.createForm}>
             <Input
               label="Nombre *"
@@ -326,8 +306,7 @@ export default function AttributesPage() {
               onChange={e => setNewName(e.target.value)}
               placeholder={
                 activeTab === 'categories' ? 'Ej: Remeras' :
-                activeTab === 'brands' ? 'Ej: Nike' :
-                activeTab === 'attributes' ? 'Ej: Talle' : 'Ej: Minorista'
+                activeTab === 'brands' ? 'Ej: Nike' : 'Ej: Talle'
               }
             />
             {activeTab === 'attributes' && (
@@ -337,22 +316,6 @@ export default function AttributesPage() {
                 onChange={e => setNewExtra(e.target.value)}
                 placeholder="S, M, L, XL"
               />
-            )}
-            {activeTab === 'price-lists' && (
-              <>
-                <Input
-                  label="Margen de Ganancia (%) *"
-                  type="number"
-                  value={newExtra}
-                  onChange={e => setNewExtra(e.target.value)}
-                  placeholder="50"
-                />
-                {newExtra && parseFloat(newExtra) > 0 && (
-                  <p className={styles.marginHint}>
-                    💡 Costo $1000 → Precio de venta <strong>${(1000 * (1 + parseFloat(newExtra) / 100)).toFixed(0)}</strong>
-                  </p>
-                )}
-              </>
             )}
             <Button type="submit" variant="primary" icon={<Plus size={15} />}>
               Crear
@@ -369,9 +332,6 @@ export default function AttributesPage() {
                     <th className={styles.th}>Nombre</th>
                     {activeTab === 'attributes' && (
                       <th className={styles.th}>Valores</th>
-                    )}
-                    {activeTab === 'price-lists' && (
-                      <th className={styles.th}>Margen</th>
                     )}
                     {activeTab === 'categories' && (
                       <th className={styles.th}>Categoría Padre</th>
@@ -406,96 +366,16 @@ export default function AttributesPage() {
                       onDelete={(id) => deleteAttrMut.mutate(id)}
                     />
                   ))}
-                  {activeTab === 'price-lists' && priceLists?.map(pl => (
-                    <PriceListRow
-                      key={pl.id}
-                      pl={pl}
-                      onSave={(id, name, margin) => updatePriceMut.mutate({ id, name, margin })}
-                      onDelete={(id) => deletePriceMut.mutate(id)}
-                    />
-                  ))}
                 </tbody>
               </table>
 
               {activeTab === 'categories' && categories?.length === 0 && <EmptyState title="No hay categorías" icon={<Layers size={32} />} />}
               {activeTab === 'brands' && brands?.length === 0 && <EmptyState title="No hay marcas" icon={<Tag size={32} />} />}
               {activeTab === 'attributes' && attributes?.length === 0 && <EmptyState title="No hay atributos" icon={<List size={32} />} />}
-              {activeTab === 'price-lists' && priceLists?.length === 0 && <EmptyState title="No hay listas de precios" icon={<DollarSign size={32} />} />}
             </div>
           )}
         </Section>
       </div>
     </PageContainer>
-  );
-}
-
-function PriceListRow({ pl, onSave, onDelete }: {
-  pl: { id: string; name: string; margin: number };
-  onSave: (id: string, name: string, margin: number) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(pl.name);
-  const [marginPct, setMarginPct] = useState(String(Math.round((pl.margin - 1) * 100)));
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const handleSave = () => {
-    if (!name.trim() || !marginPct) return;
-    onSave(pl.id, name.trim(), 1 + parseFloat(marginPct) / 100);
-    setEditing(false);
-  };
-
-  const handleCancel = () => {
-    setName(pl.name);
-    setMarginPct(String(Math.round((pl.margin - 1) * 100)));
-    setEditing(false);
-  };
-
-  return (
-    <>
-      <tr className={styles.tr}>
-        <td className={styles.td}>
-          {editing ? (
-            <input value={name} onChange={e => setName(e.target.value)} autoFocus className={styles.editInput} />
-          ) : (
-            <span className={adminStyles.cellPrimary}>{pl.name}</span>
-          )}
-        </td>
-        <td className={styles.td}>
-          {editing ? (
-            <div className={styles.marginRow}>
-              <input type="number" value={marginPct} onChange={e => setMarginPct(e.target.value)} className={clsx(styles.editInput, styles.editInputNarrow)} />
-              <span className={styles.percentSign}>%</span>
-            </div>
-          ) : (
-            <span className={styles.marginAccent}>+{Math.round((pl.margin - 1) * 100)}%</span>
-          )}
-        </td>
-        <td className={styles.tdRight}>
-          <div className={adminStyles.rowActions}>
-            {editing ? (
-              <>
-                <Button variant="primary" size="sm" icon={<Check size={14} />} onClick={handleSave} />
-                <Button variant="ghost" size="sm" icon={<X size={14} />} onClick={handleCancel} />
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" icon={<Pencil size={14} />} onClick={() => setEditing(true)} />
-                <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => setConfirmDelete(true)} />
-              </>
-            )}
-          </div>
-        </td>
-      </tr>
-      <ConfirmDialog
-        open={confirmDelete}
-        title="Eliminar Lista"
-        message={`¿Eliminar la lista "${pl.name}"?`}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onConfirm={() => { onDelete(pl.id); setConfirmDelete(false); }}
-        onCancel={() => setConfirmDelete(false)}
-      />
-    </>
   );
 }
