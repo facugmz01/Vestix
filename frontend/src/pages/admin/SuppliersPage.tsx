@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Truck } from 'lucide-react';
@@ -24,7 +25,13 @@ import clsx from 'clsx';
 import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function SuppliersPage() {
+  const [searchParams] = useSearchParams();
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ debt: '' });
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q) setSearch(q);
+  }, [searchParams, setSearch]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
