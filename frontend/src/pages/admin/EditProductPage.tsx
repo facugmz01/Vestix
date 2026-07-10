@@ -21,9 +21,5 @@ export default function EditProductPage() {
     return <PageContainer title="Error">Producto no encontrado</PageContainer>;
   }
 
-  return (
-    <PageContainer title="Editar Producto">
-      <ProductEditor initialData={product} />
-    </PageContainer>
-  );
+  return <ProductEditor initialData={product} />;
 }
