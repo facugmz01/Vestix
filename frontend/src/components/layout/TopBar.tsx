@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, Home, Search, LogOut, Sun, Moon } from 'lucide-react';
 import { useBreadcrumbs } from '@/navigation/useBreadcrumbs';
 import { useAuthStore }  from '@/store/auth.store';
+import { useGlobalSearchStore } from '@/store/globalSearch.store';
 import { authApi }       from '@/api/auth.api';
 import { SyncStatusIndicator } from '@/features/offline/components/SyncStatusIndicator';
 import { useThemeStore } from '@/store/theme.store';
@@ -12,7 +13,8 @@ export function TopBar() {
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const { theme, toggleTheme } = useThemeStore();
-  
+  const openSearch = useGlobalSearchStore((s) => s.open);
+
   const handleLogout = () => { authApi.logout(); clearAuth(); };
 
   return (
@@ -40,14 +42,20 @@ export function TopBar() {
 
       <SyncStatusIndicator />
 
-      <div className={styles.searchBar}>
-        <Search size={16} color="var(--text-muted)" />
-        <input type="text" placeholder="Buscar..." aria-label="Buscar en el ERP" />
-      </div>
-
-      <button 
+      <button
         type="button"
-        onClick={toggleTheme} 
+        className={styles.searchBar}
+        onClick={openSearch}
+        aria-label="Buscar en el ERP (Ctrl+K)"
+      >
+        <Search size={16} color="var(--text-muted)" aria-hidden />
+        <span className={styles.searchPlaceholder}>Buscar...</span>
+        <kbd className={styles.searchKbd}>Ctrl K</kbd>
+      </button>
+
+      <button
+        type="button"
+        onClick={toggleTheme}
         className={styles.themeBtn}
         title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
       >

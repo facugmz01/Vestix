@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Users, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -23,7 +24,13 @@ import clsx from 'clsx';
 import adminStyles from '@/styles/AdminListShared.module.css';
 
 export default function CustomersPage() {
+  const [searchParams] = useSearchParams();
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ type: '', source: '' });
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q) setSearch(q);
+  }, [searchParams, setSearch]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);

@@ -1,7 +1,7 @@
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle, Truck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { 
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SaleOrder } from '@/types';
 import adminStyles from '@/styles/AdminListShared.module.css';
 
@@ -30,12 +30,23 @@ function isHomeDelivery(sale: SaleOrder) {
 
 export default function SalesPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q) setSearch(q);
+    const id = searchParams.get('id');
+    if (id) {
+      setSelectedSaleId(id);
+      setDetailOpen(true);
+    }
+  }, [searchParams, setSearch]);
 
   const statusFilter = filters.status;
 

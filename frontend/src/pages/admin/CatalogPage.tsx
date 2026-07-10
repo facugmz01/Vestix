@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -152,13 +152,22 @@ function SummaryBar({ products, globalTotal }: { products: Product[]; globalTota
 export default function CatalogPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
 
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [categoryId, setCategoryId] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [pageSize] = useState(24);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q != null && q !== search) {
+      setSearch(q);
+      setPage(1);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
