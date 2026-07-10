@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesApi } from '@/api/sales.api';
-import { db } from '@/core/db/db';
+import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import { usePosStore } from '../store/usePosStore';
 import toast from 'react-hot-toast';
 import { get } from '@/api/client';
+import { formatCurrency } from '@/utils/formatCurrency';
 import type { SaleOrder, PaymentMethod } from '@/types';
 
 function buildOfflineReceipt(dto: Record<string, unknown>): SaleOrder {
@@ -106,14 +107,20 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         issueInvoice,
       };
 
-      if (!navigator.onLine) {
-        await db.syncQueue.add({
-          type: 'SALE',
+      const enqueueSale = () => {
+        useOfflineQueueStore.getState().enqueue({
+          module: 'POS',
+          action: 'createSale',
+          description: `Venta POS offline por ${formatCurrency(grandTotal)}`,
+          endpoint: '/sales/checkout',
+          method: 'POST',
+          maxRetries: 5,
           payload: dto,
-          createdAt: new Date().toISOString(),
-          status: 'PENDING',
-          retryCount: 0,
         });
+      };
+
+      if (!navigator.onLine) {
+        enqueueSale();
         return { offline: true, dto };
       }
 
@@ -123,13 +130,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       } catch (err: unknown) {
         const axiosErr = err as { response?: unknown; code?: string };
         if (!axiosErr.response || axiosErr.code === 'ERR_NETWORK') {
-          await db.syncQueue.add({
-            type: 'SALE',
-            payload: dto,
-            createdAt: new Date().toISOString(),
-            status: 'PENDING',
-            retryCount: 0,
-          });
+          enqueueSale();
           return { offline: true, dto };
         }
         throw err;

@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Clock, PauseCircle, Maximize, Calculator, LogOut, Sun, Moon, Search, Copy, Receipt, Keyboard } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
-import { db } from '@/core/db/db';
+import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import { PosSyncPanel, SyncStatusIndicatorClickable } from './PosSyncPanel';
 import { CalculatorModal } from './CalculatorModal';
 import styles from '@/pages/pos/POSPage.module.css';
@@ -62,10 +61,9 @@ export function POSHeader({
   const [calcOpen, setCalcOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
-  const pendingCount = useLiveQuery(
-    () => db.syncQueue.where('status').equals('PENDING').count(),
-    [],
-  ) ?? 0;
+  const pendingCount = useOfflineQueueStore(
+    s => s.operations.filter(o => o.status === 'PENDING' || o.status === 'SYNCING').length,
+  );
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {

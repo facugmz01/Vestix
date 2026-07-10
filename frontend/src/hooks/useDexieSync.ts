@@ -1,15 +1,16 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { db } from '@/core/db/db';
-import { salesApi } from '@/api/sales.api';
 import { CatalogSyncService } from '@/core/sync/CatalogSyncService';
 import { useAuthStore } from '@/store/auth.store';
-import toast from 'react-hot-toast';
 
+/**
+ * POS catalog sync hook — Dexie is used only for offline catalog cache.
+ * Operation queue replay is handled globally by useSyncEngine + offlineQueue.store.
+ */
 export function useDexieSync(branchIdOverride?: string) {
   const authBranchId = useAuthStore(s => s.user?.branchId);
   const branchId = branchIdOverride ?? authBranchId ?? undefined;
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isCatalogSyncing, setIsCatalogSyncing] = useState(false);
   const [lastCatalogSync, setLastCatalogSync] = useState<string | null>(null);
   const [catalogCount, setCatalogCount] = useState(0);
   const syncInProgress = useRef(false);
@@ -28,72 +29,25 @@ export function useDexieSync(branchIdOverride?: string) {
   }, []);
 
   const syncCatalog = useCallback(async (forceFull = false) => {
-    if (!navigator.onLine) return null;
+    if (!navigator.onLine || syncInProgress.current) return null;
+
+    syncInProgress.current = true;
+    setIsCatalogSyncing(true);
     try {
       const result = await CatalogSyncService.syncPosCatalog(branchId, forceFull);
       await refreshMeta();
       return result;
     } catch {
       return null;
+    } finally {
+      syncInProgress.current = false;
+      setIsCatalogSyncing(false);
     }
   }, [branchId, refreshMeta]);
 
-  const syncQueue = useCallback(async () => {
-    if (!navigator.onLine || syncInProgress.current) return;
-
-    syncInProgress.current = true;
-    setIsSyncing(true);
-
-    let synced = 0;
-    try {
-      const items = await db.syncQueue.orderBy('id').toArray();
-      const pendingItems = items.filter(i => i.status === 'PENDING' || (i.status === 'ERROR' && i.retryCount < 5));
-
-      for (const item of pendingItems) {
-        if (!navigator.onLine) break;
-
-        try {
-          if (item.type === 'SALE') {
-            await salesApi.createSale(item.payload as Parameters<typeof salesApi.createSale>[0]);
-          }
-          if (item.id) {
-            await db.syncQueue.delete(item.id);
-          }
-          synced++;
-        } catch (error: unknown) {
-          const axiosErr = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
-          if (axiosErr.response && axiosErr.response.status! >= 400 && axiosErr.response.status! < 500 && axiosErr.response.status !== 429) {
-            if (item.id) {
-              await db.syncQueue.update(item.id, {
-                status: 'ERROR',
-                lastError: axiosErr.response?.data?.message || 'Error de validación',
-                retryCount: 999,
-              });
-            }
-          } else if (item.id) {
-            await db.syncQueue.update(item.id, {
-              retryCount: item.retryCount + 1,
-              lastError: axiosErr.message || 'Error temporal',
-            });
-            break;
-          }
-        }
-      }
-
-      if (synced > 0) {
-        toast.success(`${synced} venta(s) sincronizada(s)`);
-      }
-    } finally {
-      syncInProgress.current = false;
-      setIsSyncing(false);
-      await refreshMeta();
-    }
-  }, [refreshMeta]);
-
   const runOnlineBootstrap = useCallback(async () => {
     await syncCatalog(false);
-    await syncQueue();
-  }, [syncCatalog, syncQueue]);
+  }, [syncCatalog]);
 
   useEffect(() => {
     refreshMeta();
@@ -117,10 +71,9 @@ export function useDexieSync(branchIdOverride?: string) {
 
   return {
     isOnline,
-    isSyncing,
+    isCatalogSyncing,
     lastCatalogSync,
     catalogCount,
-    forceSync: syncQueue,
     forceCatalogSync: syncCatalog,
     refreshMeta,
   };

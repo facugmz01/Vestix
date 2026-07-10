@@ -18,16 +18,6 @@ export interface PosCatalogItem {
   updatedAt: string;
 }
 
-export interface SyncQueueItem {
-  id?: number;
-  type: 'SALE' | 'SALE_RETURN' | 'CREATE_CUSTOMER' | 'UPDATE_CUSTOMER';
-  payload: Record<string, unknown>;
-  createdAt: string;
-  status: 'PENDING' | 'ERROR';
-  retryCount: number;
-  lastError?: string;
-}
-
 export interface SyncMeta {
   key: string;
   value: string;
@@ -35,7 +25,6 @@ export interface SyncMeta {
 
 export class PosDatabase extends Dexie {
   catalog!: Table<PosCatalogItem, string>;
-  syncQueue!: Table<SyncQueueItem, number>;
   syncMeta!: Table<SyncMeta, string>;
 
   constructor() {
@@ -58,6 +47,12 @@ export class PosDatabase extends Dexie {
           updatedAt: new Date(0).toISOString(),
         });
       }
+    });
+
+    // v3: drop legacy operation queue — unified in offlineQueue.store (IndexedDB)
+    this.version(3).stores({
+      catalog: '&id, productId, categoryId, sku, primaryBarcode, *allBarcodes, name, updatedAt',
+      syncMeta: '&key',
     });
   }
 }
