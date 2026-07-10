@@ -210,10 +210,12 @@ export default function BarcodeLabelsPage() {
                     variants.map((v) => (
                       <div key={v.id} className={styles.searchResultItem} onClick={() => handleAdd(v)}>
                         <div className={styles.searchResultInfo}>
-                          <span className={styles.searchResultName}>
-                            {v.product?.name} {v.size ? `- ${v.size}` : ''} {v.color ? `- ${v.color}` : ''}
-                          </span>
-                          <span className={styles.searchResultSku}>SKU: {v.sku}</span>
+                          <span className={styles.searchResultName}>{v.product?.name}</span>
+                          <div className={styles.searchResultMeta}>
+                            {v.size && <span className={styles.attrChipSize}>{v.size}</span>}
+                            {v.color && <span className={styles.attrChipColor}>{v.color}</span>}
+                            <span className={styles.searchResultSku}>SKU: {v.sku}</span>
+                          </div>
                         </div>
                         <Plus size={18} className={styles.addIcon} />
                       </div>
@@ -251,7 +253,8 @@ export default function BarcodeLabelsPage() {
                         <td>
                           <div className={styles.itemName}>{item.productName}</div>
                           <div className={styles.itemAttributes}>
-                            {[item.size, item.color].filter(Boolean).join(' - ')}
+                            {item.size && <span className={styles.attrChipSize}>{item.size}</span>}
+                            {item.color && <span className={styles.attrChipColor}>{item.color}</span>}
                           </div>
                         </td>
                         <td>{item.barcode || item.sku}</td>

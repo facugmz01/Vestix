@@ -112,7 +112,7 @@ export function LabelRenderer({ data, layout, widthMm, heightMm, className }: Pr
       ref={rootRef}
       className={`${styles.label} ${className ?? ''}`}
     >
-      {layout.elements.filter((el) => el.visible).map((element) => {
+      {layout.elements?.filter((el) => el.visible).map((element) => {
         const elementWidth = element.width ?? widthMm - element.x * 2;
         const elementHeight = element.height ?? 8;
         const style = {
