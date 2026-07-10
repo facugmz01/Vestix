@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   ArrowLeft, Wand2, Plus, Image as ImageIcon,
-  Archive, Package
+  Archive, Package, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { productsApi, type CreateProductDto } from '@/api/products.api';
@@ -27,12 +27,11 @@ export function ProductEditor({ initialData }: Props) {
   const queryClient = useQueryClient();
   const isEditing = !!initialData;
 
-  type EditorTab = 'general' | 'precios' | 'variantes' | 'publicacion';
+  type EditorTab = 'general' | 'precios' | 'variantes';
   const EDITOR_TABS: { id: EditorTab; label: string }[] = [
     { id: 'general', label: 'General' },
     { id: 'precios', label: 'Precios' },
     { id: 'variantes', label: 'Variantes' },
-    { id: 'publicacion', label: 'Publicación' },
   ];
   const [activeTab, setActiveTab] = useState<EditorTab>('general');
 
@@ -608,9 +607,8 @@ export function ProductEditor({ initialData }: Props) {
 
         </div>
 
-        {/* RIGHT COLUMN */}
-        {activeTab === 'publicacion' && (
-        <div className={styles.column}>
+        {/* RIGHT COLUMN — publicación, fotos, stock y acciones siempre visibles */}
+        <div className={styles.sidebar}>
           
           {/* Fotos */}
           <div className={styles.card}>
@@ -738,7 +736,7 @@ export function ProductEditor({ initialData }: Props) {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons (desktop sidebar) */}
           <div className={styles.actions}>
             <Button variant="primary" type="submit" form="product-form" loading={mutation.isPending} className={styles.actionBtn}>
               {isEditing ? 'Guardar Cambios' : '+ Crear producto'}
@@ -749,21 +747,18 @@ export function ProductEditor({ initialData }: Props) {
           </div>
 
         </div>
-        )}
 
       </form>
-    </div>
-  );
-}
 
-// Quick Truck icon since it wasn't imported at the top
-function Truck(props: any) {
-  return (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 17h4V5H2v12h3"></path>
-      <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h2"></path>
-      <circle cx="7.5" cy="17.5" r="2.5"></circle>
-      <circle cx="17.5" cy="17.5" r="2.5"></circle>
-    </svg>
+      {/* Sticky save bar on mobile */}
+      <div className={styles.mobileActions}>
+        <Button variant="primary" type="submit" form="product-form" loading={mutation.isPending} fullWidth>
+          {isEditing ? 'Guardar Cambios' : '+ Crear producto'}
+        </Button>
+        <Button variant="secondary" onClick={() => navigate('/admin/catalog')} disabled={mutation.isPending} fullWidth>
+          Cancelar
+        </Button>
+      </div>
+    </div>
   );
 }
