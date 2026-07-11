@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { PrismaModule } from '../../core/prisma/prisma.module';
 import { RedisModule } from '../../core/redis/redis.module';
+import { CatalogModule } from '../catalog/catalog.module';
 import { ShippingService } from './shipping.service';
 import { DeliveryValidationService } from './delivery-validation.service';
 import { GeocodingService } from './geocoding.service';
@@ -16,7 +17,7 @@ import { DriverController } from './driver.controller';
 
 @Global()
 @Module({
-  imports: [PrismaModule, RedisModule],
+  imports: [PrismaModule, RedisModule, CatalogModule],
   controllers: [
     ShippingController,
     ShippingSseController,

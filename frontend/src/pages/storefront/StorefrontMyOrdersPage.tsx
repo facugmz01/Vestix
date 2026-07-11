@@ -1,6 +1,6 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Truck, CheckCircle, Clock, MapPin, Navigation } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, MapPin, Navigation, XCircle, CreditCard } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { storefrontOrdersApi } from '@/api/storefront-orders.api';
@@ -9,7 +9,7 @@ import { StorefrontRequireAuth } from '@/components/storefront/StorefrontRequire
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
 import { useTrackingSse } from '@/hooks/useTrackingSse';
-import type { OrderTracking } from '@/api/shipping.api';
+import type { OrderTracking, OrderLineItem } from '@/api/shipping.api';
 import styles from './StorefrontMyOrdersPage.module.css';
 
 function useCssVar<T extends HTMLElement>(varName: string, value: string) {
@@ -40,9 +40,18 @@ function StatusBadge({ statusInfo }: { statusInfo: ReturnType<typeof getStatusDi
   );
 }
 
-function TimelineProgressBar({ progress }: { progress: number }) {
+function TimelineProgressBar({ progress, variant = 'default' }: { progress: number; variant?: 'default' | 'cancelled' }) {
   const ref = useCssVar<HTMLDivElement>('--progress-pct', `${progress}%`);
-  return <div ref={ref} className={clsx(styles.timelineProgress, styles.timelineProgressDynamic)} />;
+  return (
+    <div
+      ref={ref}
+      className={clsx(
+        styles.timelineProgress,
+        styles.timelineProgressDynamic,
+        variant === 'cancelled' && styles.timelineProgressCancelled,
+      )}
+    />
+  );
 }
 
 const FULFILLMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -69,6 +78,7 @@ function getStatusDisplay(status: string) {
       READY_FOR_PICKUP: Package,
       SHIPPED: Truck,
       DELIVERED: CheckCircle,
+      CANCELLED: XCircle,
       CONFIRMED: Package,
       COMPLETED: Package,
     };
@@ -86,6 +96,12 @@ function MyOrdersContent() {
   });
 
   const orders = data?.data || [];
+
+  useEffect(() => {
+    if (!selectedId && orders.length > 0) {
+      setSelectedId(orders[0].id);
+    }
+  }, [orders, selectedId]);
 
   return (
     <div className={styles.layout}>
@@ -178,7 +194,7 @@ function OrderDetailView({ orderId }: { orderId: string }) {
   if (isLoading || !tracking) return <div className={styles.loading}>Cargando detalle...</div>;
 
   const statusInfo = getStatusDisplay(tracking.status);
-  const progress = getTimelineProgress(tracking);
+  const isCancelled = tracking.status === 'CANCELLED';
 
   const mapLat = liveData?.lastLatitude ?? tracking.delivery?.lastLatitude;
   const mapLng = liveData?.lastLongitude ?? tracking.delivery?.lastLongitude;
@@ -200,7 +216,21 @@ function OrderDetailView({ orderId }: { orderId: string }) {
         <StatusBadge statusInfo={statusInfo} />
       </div>
 
-      <Timeline tracking={tracking} progress={progress} />
+      {isCancelled && (
+        <div className={styles.cancelledBanner}>
+          <XCircle size={20} />
+          <div>
+            <p className={styles.cancelledTitle}>Pedido cancelado</p>
+            <p className={styles.cancelledText}>
+              {tracking.timeline.paidAt
+                ? 'El pago fue registrado. Si corresponde un reembolso, te contactaremos.'
+                : 'Este pedido fue cancelado antes de completar el pago.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <OrderTimeline tracking={tracking} />
 
       {mapLat && mapLng && (
         <DeliveryMap
@@ -214,14 +244,8 @@ function OrderDetailView({ orderId }: { orderId: string }) {
 
       <h3 className={styles.sectionTitle}>Artículos</h3>
       <div className={styles.linesBox}>
-        {tracking.lines.map((l: any, i: number) => (
-          <div key={i} className={styles.lineRow}>
-            <div>
-              <p className={styles.lineName}>{l.productName || l.variantId}</p>
-              <p className={styles.lineQty}>Cant: {l.quantity}</p>
-            </div>
-            <span className={styles.linePrice}>{formatCurrency(l.finalPrice)}</span>
-          </div>
+        {tracking.lines.map((line: OrderLineItem) => (
+          <OrderLineRow key={line.id} line={line} />
         ))}
         <div className={styles.linesTotal}>
           <span className={styles.linesTotalLabel}>Total</span>
@@ -250,7 +274,7 @@ function OrderDetailView({ orderId }: { orderId: string }) {
         </div>
         <div className={styles.infoCard}>
           <h4 className={styles.infoCardTitle}>Fechas</h4>
-          <DeliveryDates timeline={tracking.timeline} />
+          <DeliveryDates tracking={tracking} />
         </div>
       </div>
 
@@ -282,26 +306,118 @@ function OrderDetailView({ orderId }: { orderId: string }) {
   );
 }
 
-function Timeline({ tracking, progress }: { tracking: OrderTracking; progress: number }) {
-  const steps = [
-    { label: 'Pago', active: !!tracking.timeline.paidAt || ['PAID', 'PICKING', 'PACKED', 'READY_FOR_PICKUP', 'SHIPPED', 'DELIVERED'].includes(tracking.status) },
-    { label: 'Preparación', active: !!tracking.timeline.packedAt || ['PACKED', 'READY_FOR_PICKUP', 'SHIPPED', 'DELIVERED'].includes(tracking.status) },
-    { label: 'Despachado', active: !!tracking.timeline.dispatchedAt || tracking.status === 'SHIPPED' || tracking.status === 'DELIVERED' },
-    { label: 'Entregado', active: tracking.status === 'DELIVERED' },
+function OrderLineRow({ line }: { line: OrderLineItem }) {
+  const meta: string[] = [];
+  if (line.variantSku) meta.push(`SKU: ${line.variantSku}`);
+  if (line.size) meta.push(`Talle: ${line.size}`);
+
+  return (
+    <div className={styles.lineRow}>
+      <div className={styles.lineInfo}>
+        <p className={styles.lineName}>{line.productName}</p>
+        {meta.length > 0 && <p className={styles.lineMeta}>{meta.join(' · ')}</p>}
+        <p className={styles.lineQty}>Cantidad: {line.quantity}</p>
+      </div>
+      <span className={styles.linePrice}>{formatCurrency(line.finalPrice)}</span>
+    </div>
+  );
+}
+
+interface TimelineStep {
+  label: string;
+  state: 'completed' | 'active' | 'pending' | 'cancelled';
+  icon: typeof CheckCircle;
+}
+
+function buildTimelineSteps(tracking: OrderTracking): TimelineStep[] {
+  const { timeline, status } = tracking;
+  const isCancelled = status === 'CANCELLED';
+  const isPendingPayment = status === 'PENDING_PAYMENT';
+
+  if (isPendingPayment) {
+    return [
+      { label: 'Pago', state: 'active', icon: CreditCard },
+      { label: 'Preparación', state: 'pending', icon: Package },
+      { label: 'Despachado', state: 'pending', icon: Truck },
+      { label: 'Entregado', state: 'pending', icon: CheckCircle },
+    ];
+  }
+
+  const milestones = [
+    { label: 'Pago', done: !!timeline.paidAt, icon: CreditCard },
+    { label: 'Preparación', done: !!timeline.packedAt || !!timeline.pickedAt, icon: Package },
+    { label: 'Despachado', done: !!timeline.dispatchedAt || !!timeline.shippedAt, icon: Truck },
+    { label: 'Entregado', done: status === 'DELIVERED', icon: CheckCircle },
   ];
+
+  if (!isCancelled) {
+    let foundActive = false;
+    return milestones.map(m => {
+      if (m.done) return { label: m.label, state: 'completed' as const, icon: m.icon };
+      if (!foundActive) {
+        foundActive = true;
+        return { label: m.label, state: 'active' as const, icon: m.icon };
+      }
+      return { label: m.label, state: 'pending' as const, icon: m.icon };
+    });
+  }
+
+  const completed = milestones
+    .filter(m => m.done)
+    .map(m => ({ label: m.label, state: 'completed' as const, icon: m.icon }));
+
+  return [...completed, { label: 'Cancelado', state: 'cancelled' as const, icon: XCircle }];
+}
+
+function getTimelineProgress(steps: TimelineStep[]): number {
+  if (steps.length <= 1) return 0;
+  const lastFilled = steps.reduce(
+    (last, step, i) => (step.state === 'completed' || step.state === 'cancelled' ? i : last),
+    -1,
+  );
+  if (lastFilled < 0) {
+    const activeIdx = steps.findIndex(s => s.state === 'active');
+    return activeIdx >= 0 ? (activeIdx / (steps.length - 1)) * 100 : 0;
+  }
+  return (lastFilled / (steps.length - 1)) * 100;
+}
+
+function OrderTimeline({ tracking }: { tracking: OrderTracking }) {
+  const steps = buildTimelineSteps(tracking);
+  const progress = getTimelineProgress(steps);
+  const isCancelled = tracking.status === 'CANCELLED';
 
   return (
     <div className={styles.timeline}>
       <div className={styles.timelineTrack} />
-      <TimelineProgressBar progress={progress} />
-      {steps.map((step, i) => (
-        <div key={i} className={styles.timelineStep}>
-          <div className={clsx(styles.timelineCircle, step.active && styles.timelineCircleActive)}>
-            {step.active && <CheckCircle size={18} />}
+      <TimelineProgressBar progress={progress} variant={isCancelled ? 'cancelled' : 'default'} />
+      {steps.map((step, i) => {
+        const Icon = step.icon;
+        return (
+          <div key={i} className={styles.timelineStep}>
+            <div
+              className={clsx(
+                styles.timelineCircle,
+                step.state === 'completed' && styles.timelineCircleActive,
+                step.state === 'active' && styles.timelineCircleCurrent,
+                step.state === 'cancelled' && styles.timelineCircleCancelled,
+              )}
+            >
+              {(step.state === 'completed' || step.state === 'cancelled') && <Icon size={18} />}
+              {step.state === 'active' && <Icon size={18} />}
+            </div>
+            <span
+              className={clsx(
+                styles.timelineLabel,
+                (step.state === 'completed' || step.state === 'active') && styles.timelineLabelActive,
+                step.state === 'cancelled' && styles.timelineLabelCancelled,
+              )}
+            >
+              {step.label}
+            </span>
           </div>
-          <span className={clsx(styles.timelineLabel, step.active && styles.timelineLabelActive)}>{step.label}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -338,12 +454,15 @@ function DeliveryMap({ lat, lng, updatedAt, driverName, live }: { lat: number; l
   );
 }
 
-function DeliveryDates({ timeline }: { timeline: OrderTracking['timeline'] }) {
+function DeliveryDates({ tracking }: { tracking: OrderTracking }) {
+  const { timeline, status } = tracking;
+
   const entries = [
     { label: 'Pagado', date: timeline.paidAt },
     { label: 'Empaquetado', date: timeline.packedAt },
     { label: 'Despachado', date: timeline.dispatchedAt || timeline.shippedAt },
     { label: 'Entregado', date: timeline.deliveredAt },
+    { label: 'Cancelado', date: status === 'CANCELLED' ? timeline.cancelledAt : undefined },
   ].filter(e => e.date);
 
   if (entries.length === 0) {
@@ -353,20 +472,13 @@ function DeliveryDates({ timeline }: { timeline: OrderTracking['timeline'] }) {
   return (
     <div className={styles.dateList}>
       {entries.map((e, i) => (
-        <div key={i} className={styles.dateRow}>
+        <div key={i} className={clsx(styles.dateRow, e.label === 'Cancelado' && styles.dateRowCancelled)}>
           <span className={styles.dateLabel}>{e.label}</span>
           <span className={styles.dateValue}>{new Date(e.date!).toLocaleString()}</span>
         </div>
       ))}
     </div>
   );
-}
-
-function getTimelineProgress(tracking: OrderTracking): number {
-  if (tracking.status === 'DELIVERED') return 100;
-  if (tracking.status === 'SHIPPED') return 66;
-  if (['PACKED', 'READY_FOR_PICKUP', 'PICKING', 'PAID'].includes(tracking.status)) return 33;
-  return 0;
 }
 
 export default function StorefrontMyOrdersPage() {

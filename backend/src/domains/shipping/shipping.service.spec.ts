@@ -32,6 +32,9 @@ describe('ShippingService.applyCommercialStatus', () => {
     onOrderDelivered: jest.fn(),
   };
   const mockCourierService: any = {};
+  const mockCatalogFacade: any = {
+    getVariantsDetails: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
+  };
 
   let service: ShippingService;
 
@@ -46,6 +49,7 @@ describe('ShippingService.applyCommercialStatus', () => {
       mockGeocodingService,
       mockNotificationTriggers,
       mockCourierService,
+      mockCatalogFacade,
     );
   });
 
@@ -195,6 +199,7 @@ describe('ShippingService.resolveStorefrontStatus', () => {
 
   beforeEach(() => {
     service = new ShippingService(
+      {} as any,
       {} as any,
       {} as any,
       {} as any,
