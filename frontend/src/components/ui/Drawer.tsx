@@ -19,18 +19,24 @@ interface Props {
  */
 export function Drawer({ open, title, onClose, children, footer, width = 'md', side = 'right' }: Props) {
   const firstFocusRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
     firstFocusRef.current?.focus();
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCloseRef.current(); };
     document.addEventListener('keydown', handleKey);
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', handleKey);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
