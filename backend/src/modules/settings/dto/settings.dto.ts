@@ -429,6 +429,38 @@ export class QrSettingsDto {
   @IsOptional() @IsBoolean() qrGenerated?: boolean;
 }
 
+export class GiftCardTemplateSettingsDto {
+  @IsOptional() @IsString() brandLabel?: string;
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() subtitle?: string;
+  @IsOptional() @IsString() backgroundColor?: string;
+  @IsOptional() @IsString() backgroundGradientEnd?: string;
+  @IsOptional() @IsBoolean() useGradient?: boolean;
+  @IsOptional() @IsString() textColor?: string;
+  @IsOptional() @IsString() accentColor?: string;
+  @IsOptional() @IsNumber() cardWidthMm?: number;
+  @IsOptional() @IsNumber() cardHeightMm?: number;
+  @IsOptional() @IsNumber() borderRadiusPx?: number;
+  @IsOptional() @IsIn(['sans-serif', 'serif', 'monospace']) fontFamily?: 'sans-serif' | 'serif' | 'monospace';
+  @IsOptional() @IsNumber() amountFontSizePx?: number;
+  @IsOptional() @IsBoolean() showLogo?: boolean;
+  @IsOptional() @IsString() logoUrl?: string;
+  @IsOptional() @IsBoolean() showQr?: boolean;
+  @IsOptional() @IsNumber() qrSizePx?: number;
+  @IsOptional() @IsBoolean() showRecipient?: boolean;
+  @IsOptional() @IsBoolean() showExpiry?: boolean;
+  @IsOptional() @IsBoolean() showCode?: boolean;
+  @IsOptional() @IsString() footerText?: string;
+  @IsOptional() @IsNumber() paperMarginMm?: number;
+}
+
+export class GiftCardsSettingsDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GiftCardTemplateSettingsDto)
+  template?: GiftCardTemplateSettingsDto;
+}
+
 export class LabelPrintingSettingsDto {
   @IsOptional() @IsString() defaultTemplateId?: string;
   @IsOptional() @IsBoolean() autoGenerateBarcodeOnPrint?: boolean;
@@ -503,6 +535,11 @@ export class UpdateSettingsDto {
   @ValidateNested()
   @Type(() => LabelPrintingSettingsDto)
   labelPrinting?: LabelPrintingSettingsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GiftCardsSettingsDto)
+  giftCards?: GiftCardsSettingsDto;
 }
 
 /**

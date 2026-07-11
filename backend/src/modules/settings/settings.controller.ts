@@ -24,7 +24,7 @@ import {
 // Valid section keys — prevents arbitrary key injection
 const VALID_SECTIONS = new Set([
   'general', 'pricing', 'skuBarcode', 'invoicing', 'notifications',
-  'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr', 'labelPrinting',
+  'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr', 'labelPrinting', 'giftCards',
 ]);
 
 @Controller('settings')

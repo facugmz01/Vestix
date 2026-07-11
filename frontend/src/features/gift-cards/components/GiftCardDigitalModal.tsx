@@ -1,9 +1,18 @@
-import { QRCodeSVG } from 'qrcode.react';
-import { Gift } from 'lucide-react';
+import { useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Modal, Button } from '@/components/ui';
 import { buildGiftCardVerifyUrl, type GiftCard } from '@/api/gift-cards.api';
+import { settingsApi } from '@/api/settings.api';
+import { queryKeys } from '@/api/queryKeys';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/config/app.config';
+import { resolveGiftCardTemplate } from '@/features/gift-cards/types/giftCardTemplate.types';
+import { GiftCardRenderer } from './GiftCardRenderer';
+import {
+  buildGiftCardPrintDocument,
+  printGiftCardHtml,
+  svgElementToDataUrl,
+} from '../utils/giftCardPrint';
 import styles from './GiftCardDigitalModal.module.css';
 
 interface Props {
@@ -13,62 +22,50 @@ interface Props {
 }
 
 export function GiftCardDigitalModal({ open, card, onClose }: Props) {
+  const qrContainerRef = useRef<HTMLDivElement>(null);
+
+  const { data: settings } = useQuery({
+    queryKey: queryKeys.settings.get(),
+    queryFn: settingsApi.getSettings,
+    enabled: open,
+  });
+
   if (!card) return null;
 
+  const template = resolveGiftCardTemplate(settings?.giftCards?.template);
   const verifyUrl = buildGiftCardVerifyUrl(card.verificationToken);
   const recipient = card.customer?.fullName || card.issuedTo || 'Sin destinatario';
 
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank', 'width=420,height=640');
-    if (!printWindow) return;
+  const renderData = {
+    amount: formatCurrency(card.initialBalance),
+    code: card.code,
+    recipient,
+    expiresAt: card.expiresAt ? formatDate(card.expiresAt) : null,
+    verifyUrl,
+  };
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Gift Card ${card.code}</title>
-          <style>
-            body { font-family: sans-serif; text-align: center; padding: 24px; }
-            .code { font-family: monospace; font-size: 18px; margin: 12px 0; }
-            .amount { font-size: 28px; font-weight: bold; margin: 16px 0; }
-          </style>
-        </head>
-        <body>
-          <h2>Gift Card</h2>
-          <div class="amount">${formatCurrency(card.initialBalance)}</div>
-          <div class="code">${card.code}</div>
-          <p>Para: ${recipient}</p>
-          ${card.expiresAt ? `<p>Vence: ${formatDate(card.expiresAt)}</p>` : ''}
-          <p style="font-size:12px;color:#666;">Escaneá el QR para validar legitimidad</p>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
+  const handlePrint = () => {
+    const svg = qrContainerRef.current?.querySelector('svg');
+    const qrDataUrl = svg ? svgElementToDataUrl(svg) : undefined;
+
+    const html = buildGiftCardPrintDocument(
+      template,
+      { ...renderData, qrDataUrl },
+      `Gift Card ${card.code}`,
+    );
+    printGiftCardHtml(html);
   };
 
   return (
     <Modal open={open} title="Tarjeta digital" onClose={onClose} size="sm">
-      <div className={styles.card}>
-        <div className={styles.brand}>
-          <Gift size={16} />
-          Gift Card
+      <div className={styles.previewWrap}>
+        <div ref={qrContainerRef}>
+          <GiftCardRenderer template={template} data={renderData} />
         </div>
-        <div className={styles.amount}>{formatCurrency(card.initialBalance)}</div>
-        <div className={styles.code}>{card.code}</div>
-        <div className={styles.recipient}>Para: {recipient}</div>
-        {card.expiresAt && (
-          <div className={styles.recipient}>Vence: {formatDate(card.expiresAt)}</div>
-        )}
-        <div className={styles.qrWrap}>
-          <QRCodeSVG value={verifyUrl} size={180} level="H" includeMargin />
-        </div>
-        <p className={styles.hint}>
-          El QR permite verificar que la tarjeta fue emitida por el sistema y consultar su estado.
-        </p>
-        <div className={styles.actions}>
-          <Button variant="secondary" onClick={handlePrint}>Imprimir</Button>
-          <Button variant="primary" onClick={onClose}>Listo</Button>
-        </div>
+      </div>
+      <div className={styles.actions}>
+        <Button variant="secondary" onClick={handlePrint}>Imprimir</Button>
+        <Button variant="primary" onClick={onClose}>Listo</Button>
       </div>
     </Modal>
   );

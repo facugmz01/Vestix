@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Building2, FileText, Bell, Plug, ChevronRight,
-  Settings as SettingsIcon, ShoppingCart, QrCode, Smartphone, Tag, Receipt,
+  Settings as SettingsIcon, ShoppingCart, QrCode, Smartphone, Tag, Receipt, Gift,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -19,6 +20,7 @@ import { StorefrontSettingsPanel } from '@/features/settings/components/Storefro
 import { QrSettingsPanel } from '@/features/settings/components/QrSettingsPanel';
 import { ArcaSettingsPanel } from '@/features/settings/components/ArcaSettingsPanel';
 import { NotificationSettingsPanel, IntegrationSettingsPanel } from '@/features/settings/components/CommsSettingsPanels';
+import { GiftCardTemplatePanel } from '@/features/settings/components/GiftCardTemplatePanel';
 import { PwaSettingsPanel } from '@/features/settings/components/PwaSettingsPanel';
 
 import styles from './SettingsPage.module.css';
@@ -29,6 +31,7 @@ type SettingsTab =
   | 'receipt'
   | 'fiscal'
   | 'labels'
+  | 'giftcards'
   | 'storefront'
   | 'qr'
   | 'arca'
@@ -42,6 +45,7 @@ const TAB_META: Record<SettingsTab, { label: string; icon: React.ReactNode; desc
   receipt:       { label: 'Comprobante de venta', icon: <Receipt size={16} />,        description: 'Formato y estilo del ticket' },
   fiscal:        { label: 'Configuración fiscal', icon: <FileText size={16} />,       description: 'Impuestos y facturación' },
   labels:        { label: 'Etiquetas',            icon: <Tag size={16} />,            description: 'Impresión de etiquetas de producto' },
+  giftcards:     { label: 'Gift Cards',           icon: <Gift size={16} />,           description: 'Plantilla visual e impresión de tarjetas' },
   storefront:    { label: 'Tienda Web',           icon: <ShoppingCart size={16} />,   description: 'Apariencia y opciones de la tienda' },
   qr:            { label: 'QR de cobro',          icon: <QrCode size={16} />,         description: 'Pagos con código QR' },
   arca:          { label: 'ARCA / Facturación',   icon: <FileText size={16} />,       description: 'Integración con ARCA/AFIP' },
@@ -52,13 +56,23 @@ const TAB_META: Record<SettingsTab, { label: string; icon: React.ReactNode; desc
 
 const TAB_GROUPS: { label: string; tabs: SettingsTab[] }[] = [
   { label: 'Comercio', tabs: ['general', 'pos', 'receipt'] },
-  { label: 'Operación', tabs: ['fiscal', 'labels', 'arca'] },
+  { label: 'Operación', tabs: ['fiscal', 'labels', 'giftcards', 'arca'] },
   { label: 'Canales', tabs: ['storefront', 'qr', 'mobile'] },
   { label: 'Sistema', tabs: ['notifications', 'integrations'] },
 ];
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as SettingsTab | null;
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    tabParam && tabParam in TAB_META ? tabParam : 'general',
+  );
+
+  useEffect(() => {
+    if (tabParam && tabParam in TAB_META) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   const { isLoading } = useQuery({
     queryKey: queryKeys.settings.get(),
@@ -114,6 +128,7 @@ export default function SettingsPage() {
             {activeTab === 'receipt' && <ReceiptStylePanel />}
             {activeTab === 'fiscal' && <InvoicingSettingsPanel />}
             {activeTab === 'labels' && <LabelPrintingSettingsPanel />}
+            {activeTab === 'giftcards' && <GiftCardTemplatePanel />}
             {activeTab === 'storefront' && <StorefrontSettingsPanel />}
             {activeTab === 'qr' && <QrSettingsPanel />}
             {activeTab === 'arca' && <ArcaSettingsPanel />}

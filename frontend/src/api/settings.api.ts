@@ -185,6 +185,35 @@ export interface LabelPrintingSettings {
   zplPrinterPort?: number;
 }
 
+export interface GiftCardTemplateSettings {
+  brandLabel: string;
+  title: string;
+  subtitle?: string;
+  backgroundColor: string;
+  backgroundGradientEnd: string;
+  useGradient: boolean;
+  textColor: string;
+  accentColor: string;
+  cardWidthMm: number;
+  cardHeightMm: number;
+  borderRadiusPx: number;
+  fontFamily: 'sans-serif' | 'serif' | 'monospace';
+  amountFontSizePx: number;
+  showLogo: boolean;
+  logoUrl?: string;
+  showQr: boolean;
+  qrSizePx: number;
+  showRecipient: boolean;
+  showExpiry: boolean;
+  showCode: boolean;
+  footerText: string;
+  paperMarginMm: number;
+}
+
+export interface GiftCardsSettings {
+  template: GiftCardTemplateSettings;
+}
+
 export interface SystemSettings {
   general:      GeneralSettings;
   pricing:      PricingSettings;
@@ -199,6 +228,7 @@ export interface SystemSettings {
   pwa:          PwaSettings;
   qr:           QrSettings;
   labelPrinting: LabelPrintingSettings;
+  giftCards:    GiftCardsSettings;
 }
 
 export interface ConnectionTestResult {
