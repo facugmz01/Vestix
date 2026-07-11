@@ -172,26 +172,27 @@ model Brand {
 }
 
 model Product {
-  id            String             @id @default(uuid())
+  id            String                  @id @default(uuid())
   name          String
-  baseSku       String?            @unique
+  baseSku       String?                 @unique
   description   String?
   categoryId    String
-  category      Category           @relation(fields: [categoryId], references: [id])
+  category      Category                @relation(fields: [categoryId], references: [id])
   brandId       String?
-  brand         Brand?             @relation(fields: [brandId], references: [id])
-  type          ProductType        @default(SINGLE)
-  isVariable    Boolean            @default(false) // Deprecated: migrar a type
-  manageBatches Boolean            @default(false)
-  costPrice     Float              @default(0)
-  isActive      Boolean            @default(true)
-  isPublished   Boolean            @default(false)
-  images        Json               @default("[]")
-  metadata      Json               @default("{}")
+  brand         Brand?                  @relation(fields: [brandId], references: [id])
+  type          ProductType             @default(SINGLE)
+  isVariable    Boolean                 @default(false) // Deprecated: migrar a type
+  manageBatches Boolean                 @default(false)
+  costPrice     Float                   @default(0)
+  isActive      Boolean                 @default(true)
+  isPublished   Boolean                 @default(false)
+  images        Json                    @default("[]")
+  metadata      Json                    @default("{}")
   variants      ProductVariant[]
   comboLines    ProductComboLine[]
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  collections   ProductCollectionItem[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
 
   @@schema("catalog")
 }
@@ -298,6 +299,31 @@ model ProductComboLine {
   @@schema("catalog")
 }
 
+model ProductCollection {
+  id        String                  @id @default(uuid())
+  name      String
+  season    String?
+  year      Int?
+  isActive  Boolean                 @default(true)
+  products  ProductCollectionItem[]
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  @@schema("catalog")
+}
+
+model ProductCollectionItem {
+  id           String            @id @default(uuid())
+  collectionId String
+  collection   ProductCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+
+  @@unique([collectionId, productId])
+  @@schema("catalog")
+}
+
 model ProductBatch {
   id                String              @id @default(uuid())
   variantId         String
@@ -373,25 +399,55 @@ model PriceHistory {
 // ==========================================
 
 model Customer {
-  id          String      @id @default(uuid())
-  type        String      @default("INDIVIDUAL") // INDIVIDUAL | BUSINESS
+  id             String          @id @default(uuid())
+  type           String          @default("INDIVIDUAL") // INDIVIDUAL | BUSINESS
   /// Origin of the customer record: ADMIN | STOREFRONT | POS | IMPORT
-  source      String      @default("ADMIN")
-  fullName    String
-  taxId       String?     @unique
-  email       String?
-  phone       String?
-  creditLimit Float       @default(0)
-  usedCredit  Float       @default(0)
-  isActive    Boolean     @default(true)
-  priceListId String?
-  priceList   PriceList?  @relation(fields: [priceListId], references: [id])
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  SaleOrder   SaleOrder[]
+  source         String          @default("ADMIN")
+  fullName       String
+  taxId          String?         @unique
+  /// AFIP tax condition: RESPONSABLE_INSCRIPTO | MONOTRIBUTO | EXENTO | CONSUMIDOR_FINAL
+  taxCondition   String?
+  email          String?
+  phone          String?
+  creditLimit    Float           @default(0)
+  usedCredit     Float           @default(0)
+  isActive       Boolean         @default(true)
+  priceListId    String?
+  priceList      PriceList?      @relation(fields: [priceListId], references: [id])
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  SaleOrder      SaleOrder[]
+  loyaltyAccount LoyaltyAccount?
 
   @@index([source])
   @@index([phone])
+  @@schema("sales")
+}
+
+model LoyaltyAccount {
+  id         String   @id @default(uuid())
+  customerId String   @unique
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  points     Int      @default(0)
+  tier       String   @default("STANDARD")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@schema("sales")
+}
+
+model GiftCard {
+  id             String    @id @default(uuid())
+  code           String    @unique
+  balance        Float
+  initialBalance Float
+  expiresAt      DateTime?
+  isActive       Boolean   @default(true)
+  issuedTo       String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([isActive])
   @@schema("sales")
 }
 
@@ -1042,6 +1098,7 @@ model SystemSettings {
   pwa           Json     @default("{}")
   qr            Json     @default("{}")
   labelPrinting Json     @default("{}")
+  loyalty       Json     @default("{}")
   updatedAt     DateTime @updatedAt
 
   @@schema("settings")

@@ -6,6 +6,8 @@ import { StockReportService } from './stock-report.service';
 import { DashboardService } from './dashboard.service';
 import { CashReportService } from './cash-report.service';
 import { PurchasesReportService } from './purchases-report.service';
+import { ReportExportService } from './report-export.service';
+import { LibroIvaService } from './libro-iva.service';
 import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
@@ -32,6 +34,15 @@ const mockPurchasesReport: any = {
   getPurchasesSummary: jest.fn(),
 };
 
+const mockReportExport: any = {
+  export: jest.fn(),
+};
+
+const mockLibroIvaService: any = {
+  getVentas: jest.fn(),
+  getCompras: jest.fn(),
+};
+
 describe('ReportsController', () => {
   let controller: ReportsController;
 
@@ -44,6 +55,8 @@ describe('ReportsController', () => {
         { provide: DashboardService, useValue: mockDashboard },
         { provide: CashReportService, useValue: mockCashReport },
         { provide: PurchasesReportService, useValue: mockPurchasesReport },
+        { provide: ReportExportService, useValue: mockReportExport },
+        { provide: LibroIvaService, useValue: mockLibroIvaService },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -140,9 +153,23 @@ describe('ReportsController', () => {
   });
 
   describe('exportReport', () => {
-    it('should return a downloadUrl', () => {
-      const result = controller.exportReport({});
+    it('should delegate to reportExport.export with type and params', async () => {
+      const expected = {
+        downloadUrl: 'data:text/csv;charset=utf-8,Metric%2CValue',
+        base64: 'TWV0cmljLFZhbHVl',
+        filename: 'sales-report-2026-01-01.csv',
+        contentType: 'text/csv; charset=utf-8',
+      };
+      mockReportExport.export.mockResolvedValue(expected);
+
+      const params = { from: '2026-01-01', to: '2026-01-31', branchId: 'b1' };
+      const result = await controller.exportReport('sales', params);
+
+      expect(mockReportExport.export).toHaveBeenCalledWith('sales', params);
       expect(result.downloadUrl).toContain('data:text/csv');
+      expect(result.base64).toBeTruthy();
+      expect(result.filename).toMatch(/\.csv$/);
+      expect(result.contentType).toContain('text/csv');
     });
   });
 });

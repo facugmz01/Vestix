@@ -1,23 +1,20 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Invoice, InvoiceType, InvoiceStatus } from './models/invoice.model';
-import { AfipService } from './afip.service';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { InvoiceType, InvoiceStatus } from './models/invoice.model';
 import * as crypto from 'crypto';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { SettingsService } from '../../modules/settings/settings.service';
+import { AfipProducer } from './afip.producer';
 
 @Injectable()
 export class InvoicingService {
   constructor(
-    private readonly afipService: AfipService,
     private readonly prisma: PrismaService,
-    private readonly settingsService: SettingsService,
+    private readonly afipProducer: AfipProducer,
   ) {}
 
   /**
    * Internal Gateway to generate legal electronic invoices.
-   * Not all POS sales require an immediate invoice (some are batched or handled as "Z-reads" at end of day).
-   * This handles explicit B2B or B2C requests.
+   * Creates a draft invoice and enqueues AFIP authorization asynchronously.
    */
   async generateInvoice(payload: {
     orderId: string;
@@ -27,15 +24,30 @@ export class InvoicingService {
     netAmount: number;
     vatAmount: number;
   }) {
-    // 1. Validation: Prevent Double-Billing
-    const existing = await this.getInvoiceByOrder(payload.orderId);
+    const existing = await this.prisma.invoice.findFirst({
+      where: {
+        orderId: payload.orderId,
+        status: { in: [InvoiceStatus.APPROVED, InvoiceStatus.PENDING_AFIP] },
+      },
+    });
     if (existing) {
-      throw new BadRequestException(`Order ${payload.orderId} has already been invoiced under receipt ${existing.receiptNumber}.`);
+      throw new BadRequestException(
+        existing.status === InvoiceStatus.APPROVED
+          ? `Order ${payload.orderId} has already been invoiced under receipt ${existing.receiptNumber}.`
+          : `Order ${payload.orderId} already has a pending AFIP invoice.`,
+      );
+    }
+
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: payload.orderId },
+      select: { branchId: true },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order ${payload.orderId} not found`);
     }
 
     const totalAmount = payload.netAmount + payload.vatAmount;
 
-    // 2. Draft the internal document
     const invoice = await this.prisma.invoice.create({
       data: {
         id: crypto.randomUUID(),
@@ -47,63 +59,17 @@ export class InvoicingService {
         vatAmount: payload.vatAmount,
         totalAmount,
         status: InvoiceStatus.PENDING_AFIP,
-      }
+      },
     });
 
-    // 3. AFIP Internal Code Mapping
-    let afipInvoiceType = 6; // Factura B (Final Consumer) default
-    if (payload.type === InvoiceType.FACTURA_A) afipInvoiceType = 1;
-    if (payload.type === InvoiceType.NOTA_CREDITO_B) afipInvoiceType = 8;
-    
-    let afipDocType = 96; // DNI default
-    if (payload.customerDocumentType === 'CUIT') afipDocType = 80;
+    await this.afipProducer.enqueueInvoiceGeneration(payload.orderId, order.branchId);
 
-    // Read Point of Sale from Settings
-    const arcaSettings = await this.settingsService.getArcaSettings();
-    const pointOfSale = parseInt(arcaSettings.pointOfSale as string) || 1;
-
-    // 4. Request Legal Authorization from the Government
-    try {
-      const afipResponse = await this.afipService.createElectronicInvoice({
-        pointOfSale: pointOfSale, // Determines the branch issuing the invoice
-        invoiceType: afipInvoiceType,
-        documentType: afipDocType,
-        documentNumber: parseInt(payload.customerDocumentNumber, 10),
-        netAmount: payload.netAmount,
-        vatAmount: payload.vatAmount,
-        totalAmount
-      });
-
-      // 5. Success: Attach the CAE to our internal document
-      return await this.prisma.invoice.update({
-        where: { id: invoice.id },
-        data: {
-          status: InvoiceStatus.APPROVED,
-          cae: afipResponse.cae,
-          caeExpiration: new Date(afipResponse.caeExpiration),
-          receiptNumber: afipResponse.receiptNumber,
-          updatedAt: new Date(),
-        }
-      });
-
-    } catch (error: any) {
-      // 6. Failure: AFIP is down or rejected the payload (e.g. invalid CUIT)
-      // The invoice is saved as REJECTED so we can retry it via cronjob later without losing the context
-      await this.prisma.invoice.update({
-        where: { id: invoice.id },
-        data: {
-          status: InvoiceStatus.FAILED,
-          afipErrorMessage: error.message,
-          updatedAt: new Date(),
-        }
-      });
-      throw new BadRequestException(`Invoicing failed: ${error.message}`);
-    }
+    return invoice;
   }
 
   async getInvoiceByOrder(orderId: string) {
     return this.prisma.invoice.findFirst({
-      where: { orderId, status: InvoiceStatus.APPROVED }
+      where: { orderId, status: InvoiceStatus.APPROVED },
     });
   }
 }

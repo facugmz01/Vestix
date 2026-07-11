@@ -28,6 +28,10 @@ import { CashRegistersController } from './cash-registers.controller';
 
 import { SyncEngineService } from './sync-engine.service';
 import { ConflictResolutionService } from './conflict-resolution.service';
+import { LoyaltyService } from './loyalty/loyalty.service';
+import { LoyaltyController } from './loyalty/loyalty.controller';
+import { GiftCardsService } from './gift-cards/gift-cards.service';
+import { GiftCardsController } from './gift-cards/gift-cards.controller';
 import { OfflineController } from './offline.controller';
 
 
@@ -52,6 +56,8 @@ import { OfflineController } from './offline.controller';
     PosWebhooksController,
     CashRegistersController,
     OfflineController,
+    LoyaltyController,
+    GiftCardsController,
   ],
   providers: [
     SalesService,
@@ -66,6 +72,8 @@ import { OfflineController } from './offline.controller';
     SyncEngineService,
     ConflictResolutionService,
     SaleOrderRepository,
+    LoyaltyService,
+    GiftCardsService,
   ],
   exports: [
     SalesService,
@@ -77,6 +85,8 @@ import { OfflineController } from './offline.controller';
     SyncEngineService,
     SaleOrderRepository,
     MercadoPagoService,
+    LoyaltyService,
+    GiftCardsService,
   ],
 })
 export class SalesModule {}

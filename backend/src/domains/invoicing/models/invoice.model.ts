@@ -3,7 +3,11 @@ export enum InvoiceType {
   FACTURA_B = 'FACTURA_B', // B2C: Final Consumer (VAT included in price)
   FACTURA_C = 'FACTURA_C', // Monotributo
   NOTA_CREDITO_A = 'NOTA_CREDITO_A', // B2B Return/Refund
-  NOTA_CREDITO_B = 'NOTA_CREDITO_B'  // B2C Return/Refund
+  NOTA_CREDITO_B = 'NOTA_CREDITO_B', // B2C Return/Refund
+  NOTA_CREDITO_C = 'NOTA_CREDITO_C',
+  NOTA_DEBITO_A = 'NOTA_DEBITO_A',
+  NOTA_DEBITO_B = 'NOTA_DEBITO_B',
+  NOTA_DEBITO_C = 'NOTA_DEBITO_C',
 }
 
 export enum InvoiceStatus {

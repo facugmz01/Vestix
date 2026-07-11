@@ -5,10 +5,30 @@ import { DashboardService } from './dashboard.service';
 import { ReportsController } from './reports.controller';
 import { CashReportService } from './cash-report.service';
 import { PurchasesReportService } from './purchases-report.service';
+import { ReportExportService } from './report-export.service';
+import { LibroIvaService } from './libro-iva.service';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
+  imports: [SettingsModule],
   controllers: [ReportsController],
-  providers: [SalesReportService, StockReportService, DashboardService, CashReportService, PurchasesReportService],
-  exports: [SalesReportService, StockReportService, DashboardService, CashReportService, PurchasesReportService],
+  providers: [
+    SalesReportService,
+    StockReportService,
+    DashboardService,
+    CashReportService,
+    PurchasesReportService,
+    ReportExportService,
+    LibroIvaService,
+  ],
+  exports: [
+    SalesReportService,
+    StockReportService,
+    DashboardService,
+    CashReportService,
+    PurchasesReportService,
+    ReportExportService,
+    LibroIvaService,
+  ],
 })
 export class ReportsModule {}

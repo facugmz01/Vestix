@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, Truck, Trash2, Plus, Minus, ArrowLeft, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { purchasingApi } from '@/api/purchasing.api';
+import { purchasesApi } from '@/api/purchases.api';
 import { queryKeys } from '@/api/queryKeys';
 import { apiClient } from '@/api/client';
 import type { ProductVariant } from '@/types';
@@ -20,7 +20,7 @@ export default function NewPurchasePage() {
 
   const { data: suppliers } = useQuery({
     queryKey: queryKeys.suppliers.all(),
-    queryFn: () => purchasingApi.getSuppliers(),
+    queryFn: () => purchasesApi.getSuppliers(),
   });
 
   const { data: accounts } = useQuery({
@@ -45,7 +45,7 @@ export default function NewPurchasePage() {
 
   const { data: searchResults, isFetching: isSearching } = useQuery({
     queryKey: ['catalog', 'search', search],
-    queryFn: () => purchasingApi.searchCatalog(search),
+    queryFn: () => purchasesApi.searchCatalog(search),
     enabled: search.length >= 3,
   });
 
@@ -75,7 +75,7 @@ export default function NewPurchasePage() {
   const total = subtotal - totalDiscount;
 
   const purchaseMutation = useMutation({
-    mutationFn: (data: unknown) => purchasingApi.processDirect(data),
+    mutationFn: (data: unknown) => purchasesApi.processDirect(data),
     onSuccess: () => {
       toast.success('Compra registrada correctamente');
       queryClient.invalidateQueries({ queryKey: queryKeys.stock.all() });

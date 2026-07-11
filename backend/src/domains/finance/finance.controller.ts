@@ -233,4 +233,12 @@ export class FinanceController {
   cancelInvoice(@Param('id') id: string) {
     return this.financeDocumentsService.cancelInvoice(id);
   }
+
+  @Post('invoices/debit-note')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  issueSalesDebitNote(
+    @Body() body: { saleOrderId: string; amount: number; reason?: string },
+  ) {
+    return this.financeDocumentsService.issueDebitNote(body);
+  }
 }

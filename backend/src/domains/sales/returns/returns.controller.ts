@@ -31,7 +31,7 @@ export class ReturnsController {
   @Post(':id/approve')
   @RequirePermissions({ action: 'update', subject: 'Sales' })
   async approveReturn(@Param('id') id: string) {
-    return { status: 'ALREADY_APPROVED' };
+    return this.returnsService.approveReturn(id);
   }
 
   @Post(':id/reject')

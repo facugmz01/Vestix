@@ -12,7 +12,7 @@ export type { PaginationParams, PagedResponse, DateRangeParams, SortParams } fro
 // ─── Typed API services ───────────────────────────────────────────────────────
 export { authApi }          from './auth.api';
 export { inventoryApi }     from './inventory.api';
-export { purchasingApi }    from './purchasing.api';
+export { purchasesApi }     from './purchases.api';
 export { salesApi }         from './sales.api';
 export { customersApi }     from './customers.api';
 export { reportsApi }       from './reports.api';
@@ -32,7 +32,6 @@ export { labelsApi }        from './labels.api';
 export { priceListsApi }    from './priceLists.api';
 export { promotionsApi }    from './promotions.api';
 export { transfersApi }     from './transfers.api';
-export { purchasesApi }     from './purchases.api';
 export { receiptsApi }      from './receipts.api';
 export { treasuryApi }      from './treasury.api';
 export { paymentsApi }      from './payments.api';
