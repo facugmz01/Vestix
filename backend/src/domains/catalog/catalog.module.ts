@@ -12,7 +12,6 @@ import {
   VariantsController,
   AttributesController,
   PriceListController,
-  PricingLegacyController,
 } from './controllers/catalog.controller';
 import { PricingService } from './pricing.service';
 import { PromotionsController } from './promotions.controller';
@@ -26,7 +25,8 @@ import { LabelTemplatesService } from './labels/label-templates.service';
 import { LabelsRenderService } from './labels/labels-render.service';
 import { LabelTemplatesController } from './labels/label-templates.controller';
 import { LabelsController } from './labels/labels.controller';
-import { LabelsZplService } from './labels/labels-zpl.service';
+import { CollectionsController } from './controllers/collections.controller';
+import { CollectionsService } from './services/collections.service';
 
 @Module({
   imports: [PrismaModule],
@@ -40,9 +40,9 @@ import { LabelsZplService } from './labels/labels-zpl.service';
     PromotionsController,
     CatalogController,
     IdentifiersController,
-    PricingLegacyController,
     LabelTemplatesController,
     LabelsController,
+    CollectionsController,
   ],
   providers: [
     ProductsService,
@@ -61,6 +61,7 @@ import { LabelsZplService } from './labels/labels-zpl.service';
     LabelTemplatesService,
     LabelsRenderService,
     LabelsZplService,
+    CollectionsService,
   ],
   exports: [
     ProductsService,

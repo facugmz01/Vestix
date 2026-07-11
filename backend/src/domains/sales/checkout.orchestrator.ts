@@ -8,6 +8,8 @@ import { InventoryService } from '../logistics/inventory.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { AccountsService } from '../finance/accounts.service';
+import { expandComboToStockMovements } from '../catalog/utils/combo-stock.util';
+import { LoyaltyService } from './loyalty/loyalty.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import * as crypto from 'crypto';
 
@@ -23,6 +25,7 @@ export class CheckoutOrchestrator {
     private readonly settingsService: SettingsService,
     private readonly notificationTriggers: NotificationTriggersService,
     private readonly accountsService: AccountsService,
+    private readonly loyaltyService: LoyaltyService,
   ) {}
 
   /**
@@ -299,6 +302,9 @@ export class CheckoutOrchestrator {
       const completedStatuses = ['COMPLETED', 'CONFIRMED'];
       if (completedStatuses.includes(result.order.status)) {
         void this.notificationTriggers.onSaleCompleted(result.order.id);
+        if (dto.customerId) {
+          void this.loyaltyService.earnPointsForOrder(dto.customerId, result.order.grandTotal, result.order.id);
+        }
       }
       if (dto.warehouseId && result.order.status !== 'PENDING_PAYMENT') {
         for (const line of result.order.lines) {
@@ -368,6 +374,9 @@ export class CheckoutOrchestrator {
     }
 
     void this.notificationTriggers.onSaleCompleted(updated.id);
+    if (quote.customerId) {
+      void this.loyaltyService.earnPointsForOrder(quote.customerId, updated.grandTotal, updated.id);
+    }
     for (const line of updated.lines) {
       void this.notificationTriggers.checkLowStock(line.variantId, targetWarehouseId, quote.branchId);
     }
@@ -421,14 +430,7 @@ export class CheckoutOrchestrator {
   ): Promise<Array<{ variantId: string; quantity: number }>> {
     const variantWithProduct = await this.catalogFacade.getVariantWithCombos(variantId, tx);
 
-    if (variantWithProduct?.product?.type === 'COMBO') {
-      return variantWithProduct.product.comboLines.map(cl => ({
-        variantId: cl.childVariantId,
-        quantity: quantity * cl.quantity,
-      }));
-    }
-
-    return [{ variantId, quantity }];
+    return expandComboToStockMovements(variantWithProduct, variantId, quantity);
   }
 
   async confirmPayment(id: string, paymentReference?: string) {
@@ -502,6 +504,9 @@ export class CheckoutOrchestrator {
     }
 
     void this.notificationTriggers.onSaleCompleted(updated.id);
+    if (order.customerId) {
+      void this.loyaltyService.earnPointsForOrder(order.customerId, updated.grandTotal, updated.id);
+    }
     if (targetWarehouseId) {
       for (const line of updated.lines) {
         void this.notificationTriggers.checkLowStock(line.variantId, targetWarehouseId, order.branchId);

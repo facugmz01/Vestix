@@ -78,6 +78,13 @@ export interface PosSettings {
   receiptStyle?: ReceiptStyleSettings;
 }
 
+export interface LoyaltySettings {
+  enabled: boolean;
+  pointsPerAmount: number;
+  amountUnit: number;
+  redeemValuePerPoint: number;
+}
+
 export interface LabelPrintingSettings {
   defaultTemplateId?: string;
   autoGenerateBarcodeOnPrint: boolean;
@@ -414,6 +421,18 @@ export class SettingsService implements OnModuleInit {
     return {
       ...pos,
       receiptStyle: resolveReceiptStyle(pos.receiptStyle),
+    };
+  }
+
+  async getLoyaltySettings(): Promise<LoyaltySettings> {
+    const row = await this.getCachedRaw();
+    const stored = (row?.loyalty as LoyaltySettings) ?? {} as LoyaltySettings;
+    return {
+      enabled: true,
+      pointsPerAmount: 1,
+      amountUnit: 100,
+      redeemValuePerPoint: 1,
+      ...stored,
     };
   }
 
@@ -1266,6 +1285,12 @@ export class SettingsService implements OnModuleInit {
             zplDpi: 203,
             zplPrinterHost: '',
             zplPrinterPort: 9100,
+          },
+          loyalty: {
+            enabled: true,
+            pointsPerAmount: 1,
+            amountUnit: 100,
+            redeemValuePerPoint: 1,
           },
         },
       });
