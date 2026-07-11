@@ -360,6 +360,20 @@ export class ArcaSettingsDto {
   @IsOptional() @IsString() certAlias?: string;
 }
 
+export class GenerateArcaCsrDto {
+  @IsNotEmpty({ message: 'El alias del certificado es obligatorio' })
+  @IsString()
+  certAlias!: string;
+
+  @IsNotEmpty({ message: 'El CUIT es obligatorio' })
+  @IsString()
+  cuit!: string;
+
+  @IsOptional()
+  @IsString()
+  organizationName?: string;
+}
+
 export class StorefrontSettingsDto {
   @IsOptional() @IsBoolean() enabled?: boolean;
   @IsOptional() @IsString() primaryColor?: string;

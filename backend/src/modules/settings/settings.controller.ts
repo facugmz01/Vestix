@@ -1,16 +1,25 @@
 import {
   Controller, Get, Body, Req, Post, Put, Patch,
   Param, UseInterceptors, UploadedFile,
-  BadRequestException, UseGuards,
+  BadRequestException, UseGuards, Res,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
 import { extname } from 'path';
+import { createReadStream } from 'fs';
+import { Response } from 'express';
 import { SettingsService } from './settings.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
-import { UpdateSettingsDto, TestSmtpDto, TestSmsDto, TestWhatsappDto, TestPushDto } from './dto/settings.dto';
+import {
+  UpdateSettingsDto,
+  TestSmtpDto,
+  TestSmsDto,
+  TestWhatsappDto,
+  TestPushDto,
+  GenerateArcaCsrDto,
+} from './dto/settings.dto';
 
 // Valid section keys — prevents arbitrary key injection
 const VALID_SECTIONS = new Set([
@@ -88,6 +97,40 @@ export class SettingsController {
   @RequirePermissions({ action: 'manage', subject: 'Settings' })
   async testPushConnection(@Body() dto: TestPushDto) {
     return this.settingsService.testPushConnection(dto);
+  }
+
+  // ── ARCA Certificates ──────────────────────────────────────────────────────
+
+  @Post('arca/generate-csr')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async generateArcaCsr(@Body() dto: GenerateArcaCsrDto, @Req() req: any) {
+    return this.settingsService.generateArcaCsr(dto, req.user?.userId ?? 'unknown');
+  }
+
+  @Post('arca/upload-cert')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: 1 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (!file.originalname.toLowerCase().endsWith('.crt')) {
+        return cb(new BadRequestException('Solo se permiten archivos .crt'), false);
+      }
+      cb(null, true);
+    },
+  }))
+  async uploadArcaCert(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    return this.settingsService.uploadArcaCertificate(file, req.user?.userId ?? 'unknown');
+  }
+
+  @Get('arca/download-csr')
+  @RequirePermissions({ action: 'read', subject: 'Settings' })
+  async downloadArcaCsr(@Res() res: Response) {
+    const { filePath, filename } = await this.settingsService.getArcaCsrDownloadPath();
+    res.setHeader('Content-Type', 'application/pkcs10');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    createReadStream(filePath).pipe(res);
   }
 
   // ── Logo Upload ────────────────────────────────────────────────────────────

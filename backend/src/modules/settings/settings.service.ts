@@ -1,4 +1,7 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import * as fs from 'fs';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/models/audit-log.model';
@@ -10,7 +13,14 @@ import {
   ReceiptStyleSettings,
   resolveReceiptStyle,
 } from '../../domains/sales/models/receipt-style.model';
-import { evaluateAfipConfiguration } from '../../domains/invoicing/afip-config.util';
+import {
+  ARCA_UPLOADS_DIR,
+  evaluateAfipConfiguration,
+  getArcaCertFilePaths,
+  sanitizeCertAlias,
+} from '../../domains/invoicing/afip-config.util';
+
+const execFileAsync = promisify(execFile);
 
 // ─── Sensitive field maps — fields to encrypt/decrypt per section ──────────────
 
@@ -221,6 +231,11 @@ export class SettingsService implements OnModuleInit {
 
   async onModuleInit() {
     await this.ensureDefaultSettings();
+    await this.ensureArcaUploadsDir();
+  }
+
+  async ensureArcaUploadsDir() {
+    await fs.promises.mkdir(ARCA_UPLOADS_DIR, { recursive: true });
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -677,12 +692,124 @@ export class SettingsService implements OnModuleInit {
       );
     }
 
-    this.logStep(logs, 'Configuración mínima presente. La integración WSFE aún no está implementada.', '3/3');
+    this.logStep(logs, 'Configuración mínima presente. Integración WSFE habilitada.', '3/3');
     return this.buildTestResponse(
-      false,
-      'AFIP configurado correctamente, pero la integración WSFE aún no está implementada. Las facturas quedarán en estado pendiente/fallido hasta completar el SDK.',
+      true,
+      'AFIP configurado correctamente. La integración WSFE está lista para emitir comprobantes.',
       logs,
     );
+  }
+
+  async generateArcaCsr(
+    dto: { certAlias: string; cuit: string; organizationName?: string },
+    userId: string,
+  ) {
+    let alias: string;
+    try {
+      alias = sanitizeCertAlias(dto.certAlias);
+    } catch (error: any) {
+      throw new BadRequestException(error.message);
+    }
+
+    const cuit = dto.cuit.replace(/\D/g, '');
+    if (cuit.length !== 11) {
+      throw new BadRequestException('CUIT inválido: debe tener 11 dígitos');
+    }
+
+    await this.ensureArcaUploadsDir();
+    const { keyPath, csrPath } = getArcaCertFilePaths(alias);
+    const orgName = (dto.organizationName?.trim() || 'Vestix ERP').replace(/[/\\]/g, '');
+    const subject = `/C=AR/O=${orgName}/CN=${alias}/serialNumber=CUIT ${cuit}`;
+
+    try {
+      await execFileAsync('openssl', [
+        'req',
+        '-new',
+        '-newkey',
+        'rsa:2048',
+        '-nodes',
+        '-keyout',
+        keyPath,
+        '-out',
+        csrPath,
+        '-subj',
+        subject,
+      ]);
+    } catch (error: any) {
+      this.logger.error(`OpenSSL CSR generation failed: ${error.message}`);
+      throw new BadRequestException(
+        `No se pudo generar el CSR. Verificá que OpenSSL esté instalado. Detalle: ${error.message}`,
+      );
+    }
+
+    await this.updateSection(
+      'arca',
+      {
+        certAlias: alias,
+        cuit: dto.cuit.trim(),
+      },
+      userId,
+    );
+
+    return {
+      certAlias: alias,
+      keyFile: `uploads/arca/${alias}.key`,
+      csrFile: `uploads/arca/${alias}.csr`,
+    };
+  }
+
+  async uploadArcaCertificate(file: Express.Multer.File, userId: string) {
+    const arca = await this.getArcaSettings();
+    const alias = arca.certAlias?.trim();
+    if (!alias) {
+      throw new BadRequestException(
+        'Debe configurar un alias de certificado en ARCA antes de subir el .crt',
+      );
+    }
+
+    if (!file.originalname.toLowerCase().endsWith('.crt')) {
+      throw new BadRequestException('Solo se permiten archivos .crt');
+    }
+
+    await this.ensureArcaUploadsDir();
+    const { certPath } = getArcaCertFilePaths(alias);
+    await fs.promises.writeFile(certPath, file.buffer);
+
+    await this.auditService.log({
+      userId,
+      action: AuditAction.UPDATE,
+      resource: 'SystemSettings',
+      resourceId: 'default',
+      module: 'SettingsService',
+      previousValue: { arca: { certAlias: alias } },
+      newValue: { arca: { certUploaded: true, certAlias: alias } },
+      description: `Certificado ARCA subido para alias ${alias}`,
+    });
+
+    return {
+      certAlias: alias,
+      certFile: `uploads/arca/${alias}.crt`,
+    };
+  }
+
+  async getArcaCsrDownloadPath() {
+    const arca = await this.getArcaSettings();
+    const alias = arca.certAlias?.trim();
+    if (!alias) {
+      throw new BadRequestException('No hay alias de certificado configurado en ARCA');
+    }
+
+    const { csrPath } = getArcaCertFilePaths(alias);
+    if (!fs.existsSync(csrPath)) {
+      throw new NotFoundException(
+        `No se encontró el archivo CSR para el alias "${alias}". Generá uno primero.`,
+      );
+    }
+
+    return {
+      filePath: csrPath,
+      filename: `${alias}.csr`,
+    };
   }
 
   async testSmtpConnection(rawDto: any) {

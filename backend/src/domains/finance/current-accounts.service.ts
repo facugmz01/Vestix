@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { formatEntityId, formatSaleId } from '../../common/utils/format-id.util';
 
@@ -150,6 +150,135 @@ export class CurrentAccountsService {
       phone: c.phone,
       email: c.email,
     };
+  }
+
+  async registerPaymentReceipt(
+    accountId: string,
+    payload: { amount: number; referenceId: string; description: string },
+  ) {
+    if (payload.amount <= 0) {
+      throw new BadRequestException('El monto debe ser mayor a cero');
+    }
+
+    const customer = await this.prisma.customer.findUnique({ where: { id: accountId } });
+    if (customer) {
+      const updated = await this.prisma.customer.update({
+        where: { id: accountId },
+        data: { usedCredit: { decrement: payload.amount } },
+      });
+      return {
+        id: payload.referenceId,
+        type: 'CREDIT' as const,
+        concept: payload.description || 'Recibo de cobro',
+        amount: payload.amount,
+        createdAt: new Date().toISOString(),
+        balanceAfter: Math.max(0, updated.usedCredit),
+      };
+    }
+
+    const supplier = await this.prisma.supplier.findUnique({ where: { id: accountId } });
+    if (supplier) {
+      const updated = await this.prisma.supplier.update({
+        where: { id: accountId },
+        data: { balance: { decrement: payload.amount } },
+      });
+      return {
+        id: payload.referenceId,
+        type: 'DEBIT' as const,
+        concept: payload.description || 'Pago a proveedor',
+        amount: payload.amount,
+        createdAt: new Date().toISOString(),
+        balanceAfter: Math.max(0, updated.balance),
+      };
+    }
+
+    throw new NotFoundException('Cuenta corriente no encontrada');
+  }
+
+  async issueCreditNote(
+    accountId: string,
+    payload: { amount: number; referenceId: string; description: string },
+  ) {
+    if (payload.amount <= 0) {
+      throw new BadRequestException('El monto debe ser mayor a cero');
+    }
+
+    const customer = await this.prisma.customer.findUnique({ where: { id: accountId } });
+    if (customer) {
+      const updated = await this.prisma.customer.update({
+        where: { id: accountId },
+        data: { usedCredit: { decrement: payload.amount } },
+      });
+      return {
+        id: payload.referenceId,
+        type: 'CREDIT' as const,
+        concept: payload.description || 'Nota de crédito',
+        amount: payload.amount,
+        createdAt: new Date().toISOString(),
+        balanceAfter: Math.max(0, updated.usedCredit),
+      };
+    }
+
+    const supplier = await this.prisma.supplier.findUnique({ where: { id: accountId } });
+    if (supplier) {
+      const updated = await this.prisma.supplier.update({
+        where: { id: accountId },
+        data: { balance: { decrement: payload.amount } },
+      });
+      return {
+        id: payload.referenceId,
+        type: 'DEBIT' as const,
+        concept: payload.description || 'Nota de crédito proveedor',
+        amount: payload.amount,
+        createdAt: new Date().toISOString(),
+        balanceAfter: Math.max(0, updated.balance),
+      };
+    }
+
+    throw new NotFoundException('Cuenta corriente no encontrada');
+  }
+
+  async issueDebitNote(
+    accountId: string,
+    payload: { amount: number; referenceId: string; description: string; dueDate?: string },
+  ) {
+    if (payload.amount <= 0) {
+      throw new BadRequestException('El monto debe ser mayor a cero');
+    }
+
+    const customer = await this.prisma.customer.findUnique({ where: { id: accountId } });
+    if (customer) {
+      const updated = await this.prisma.customer.update({
+        where: { id: accountId },
+        data: { usedCredit: { increment: payload.amount } },
+      });
+      return {
+        id: payload.referenceId,
+        type: 'DEBIT' as const,
+        concept: payload.description || 'Nota de débito',
+        amount: payload.amount,
+        createdAt: new Date().toISOString(),
+        balanceAfter: updated.usedCredit,
+      };
+    }
+
+    const supplier = await this.prisma.supplier.findUnique({ where: { id: accountId } });
+    if (supplier) {
+      const updated = await this.prisma.supplier.update({
+        where: { id: accountId },
+        data: { balance: { increment: payload.amount } },
+      });
+      return {
+        id: payload.referenceId,
+        type: 'CREDIT' as const,
+        concept: payload.description || 'Nota de débito proveedor',
+        amount: payload.amount,
+        createdAt: new Date().toISOString(),
+        balanceAfter: updated.balance,
+      };
+    }
+
+    throw new NotFoundException('Cuenta corriente no encontrada');
   }
 
   private mapSupplier(s: {
