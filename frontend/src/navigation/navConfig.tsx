@@ -12,6 +12,7 @@ import {
   PURCHASING_TABS,
   SALES_TABS,
   FINANCE_TABS,
+  CRM_TABS,
 } from './moduleTabs';
 
 export interface NavItem {
@@ -111,4 +112,5 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   ...PURCHASING_TABS.map(t => ({ ...t, action: 'read', subject: 'Purchasing' } as NavItem)),
   ...SALES_TABS.map(t => ({ ...t, action: 'read', subject: 'Sales' } as NavItem)),
   ...FINANCE_TABS.map(t => ({ ...t, action: 'read', subject: 'Finance' } as NavItem)),
+  ...CRM_TABS.map(t => ({ ...t, action: 'read', subject: 'Sales' } as NavItem)),
 ];

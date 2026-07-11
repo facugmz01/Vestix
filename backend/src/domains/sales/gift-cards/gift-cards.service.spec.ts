@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { GiftCardsService } from './gift-cards.service';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AccountsService } from '../../finance/accounts.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
 
 describe('GiftCardsService', () => {
   let service: GiftCardsService;
@@ -41,6 +42,11 @@ describe('GiftCardsService', () => {
     postTransactionInTx: jest.fn(),
   };
 
+  const settingsService = {
+    getGiftCardsSettings: jest.fn(),
+    updateSection: jest.fn(),
+  };
+
   const issueDto = {
     amount: 5000,
     fundingType: 'INCOME' as const,
@@ -54,6 +60,7 @@ describe('GiftCardsService', () => {
         GiftCardsService,
         { provide: PrismaService, useValue: prisma },
         { provide: AccountsService, useValue: accountsService },
+        { provide: SettingsService, useValue: settingsService },
       ],
     }).compile();
 

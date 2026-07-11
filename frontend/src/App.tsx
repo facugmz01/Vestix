@@ -67,6 +67,7 @@ const PriceListsPage = lazy(() => import('@/pages/admin/PriceListsPage'));
 const QRScannerPage = lazy(() => import('@/pages/admin/QRScannerPage'));
 const LoyaltyPage  = lazy(() => import('@/pages/admin/LoyaltyPage'));
 const GiftCardsPage = lazy(() => import('@/pages/admin/GiftCardsPage'));
+const GiftCardTemplatePage = lazy(() => import('@/pages/admin/GiftCardTemplatePage'));
 const CollectionsPage = lazy(() => import('@/pages/admin/CollectionsPage'));
 
 // ─── Standalone pages ─────────────────────────────────────────────────────────
@@ -213,6 +214,7 @@ export default function App() {
                 <Route path="/admin/returns"    element={<ReturnsPage />} />
                 <Route path="/admin/loyalty"    element={<LoyaltyPage />} />
                 <Route path="/admin/gift-cards" element={<GiftCardsPage />} />
+                <Route path="/admin/gift-cards/template" element={<GiftCardTemplatePage />} />
               </Route>
 
               <Route element={<RequirePermission action="read"   subject="Delivery" />}>

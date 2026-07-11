@@ -185,6 +185,7 @@ export const queryKeys = {
   },
   giftCards: {
     all: (filters?: object) => withFilters(['giftCards', 'list'], filters),
+    template: () => ['giftCards', 'template'] as const,
   },
 
   // ── Finance ───────────────────────────────────────────────────────────────

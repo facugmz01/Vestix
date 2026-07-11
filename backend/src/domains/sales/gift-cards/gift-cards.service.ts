@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../core/prisma/prisma.service';
 import { AccountsService } from '../../finance/accounts.service';
+import { SettingsService } from '../../../modules/settings/settings.service';
+import { GiftCardTemplateSettings } from '../models/gift-card-template.model';
 import { IssueGiftCardDto, RedeemGiftCardDto } from './dto/gift-card.dto';
 import * as crypto from 'crypto';
 
@@ -9,6 +11,7 @@ export class GiftCardsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly accountsService: AccountsService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   private generateCode(): string {
@@ -147,6 +150,14 @@ export class GiftCardsService {
       expiresAt: card.expiresAt,
       isActive: card.isActive,
     };
+  }
+
+  async getTemplate() {
+    return this.settingsService.getGiftCardsSettings();
+  }
+
+  async updateTemplate(template: GiftCardTemplateSettings, userId: string) {
+    return this.settingsService.updateSection('giftCards', { template }, userId);
   }
 
   async verifyByToken(token: string) {

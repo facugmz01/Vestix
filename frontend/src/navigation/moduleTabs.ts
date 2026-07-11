@@ -2,7 +2,7 @@ import {
   Package, Layers, Tag,
   Warehouse, History, Truck,
   ShoppingCart, Users, FileText,
-  Wallet, CreditCard, Banknote
+  Wallet, CreditCard, Banknote, Gift, Palette,
 } from 'lucide-react';
 import type { TabItem } from '@/components/ui/Tabs';
 
@@ -45,4 +45,9 @@ export const FINANCE_TABS: TabItem[] = [
   { id: 'payments', label: 'Pagos y Cobros', to: '/admin/finance/payments', icon: CreditCard },
   { id: 'current-accounts', label: 'Cuentas Corrientes', to: '/admin/finance/current-accounts', icon: Banknote },
   { id: 'invoices', label: 'Facturación AFIP', to: '/admin/finance/invoices', icon: FileText },
+];
+
+export const CRM_TABS: TabItem[] = [
+  { id: 'gift-cards', label: 'Tarjetas', to: '/admin/gift-cards', icon: Gift, end: true },
+  { id: 'gift-card-template', label: 'Plantilla', to: '/admin/gift-cards/template', icon: Palette },
 ];
