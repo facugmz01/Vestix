@@ -26,6 +26,6 @@ import { PrismaModule } from '../../core/prisma/prisma.module';
   ],
   controllers: [AfipController],
   providers: [InvoicingService, AfipService, AfipProducer, AfipProcessor],
-  exports: [InvoicingService, AfipProducer],
+  exports: [InvoicingService, AfipProducer, AfipService],
 })
 export class InvoicingModule {}

@@ -74,7 +74,12 @@ sudo apt-get install -y redis-server
    DATABASE_URL="postgresql://erp_user:TU_PASSWORD_SEGURO@localhost:5432/erp_prod"
    REDIS_URL="redis://localhost:6379"
    JWT_SECRET="UNA_CADENA_MUY_LARGA_Y_ALEATORIA"
+   SETTINGS_ENCRYPTION_KEY="GENERAR_CON_openssl_o_node_abajo"
    CORS_ORIGIN="https://tu-dominio-frontend.com"
+   ```
+   Generar `SETTINGS_ENCRYPTION_KEY` (32 bytes en base64, obligatorio en producción):
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
    ```
 4. **Ejecutar Migraciones de Prisma:**
    ```bash
@@ -164,3 +169,52 @@ El frontend debe compilarse localmente o en el servidor antes de ser servido por
 | **Backend** | Node 20, PM2 | `.env`, Migraciones Prisma, Build |
 | **Frontend** | Node 20 | `VITE_API_BASE`, Build (`dist`) |
 | **Infraestructura** | Nginx, Certbot | Proxy Inverso, Certificados SSL |
+
+---
+
+## 6. Solución de problemas: 502 en `/api/*`
+
+Si el login carga pero todas las llamadas a `/api/...` devuelven **502 Bad Gateway**, Nginx está activo pero **el backend no responde** en `localhost:3000`.
+
+### Diagnóstico rápido (en el servidor)
+
+```bash
+pm2 status
+pm2 logs vestix-backend --lines 50
+curl -sS http://127.0.0.1:3000/api/setup/status
+```
+
+### Causa más común (post-actualización)
+
+El backend exige `SETTINGS_ENCRYPTION_KEY` en producción. Si falta en `backend/.env`, PM2 reinicia en loop y Nginx devuelve 502.
+
+**Arreglo:**
+
+```bash
+cd /var/www/vestix/backend   # o la ruta donde está el backend
+
+# Generar clave (guardarla — si se pierde, no se pueden leer secretos ya cifrados en DB)
+KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
+
+# Agregar al .env si no existe
+grep -q '^SETTINGS_ENCRYPTION_KEY=' .env \
+  || echo "SETTINGS_ENCRYPTION_KEY=\"$KEY\"" >> .env
+
+# Aplicar schema y reiniciar
+npx prisma generate
+npx prisma db push
+npm run build
+pm2 restart vestix-backend
+pm2 logs vestix-backend --lines 20
+```
+
+Verificar: `curl -sS https://app.tu-dominio.com/api/setup/status` debe devolver JSON (`{"isInitialized":...}`), no 502.
+
+### Otras causas
+
+| Síntoma en logs | Acción |
+| :--- | :--- |
+| `JWT_SECRET ... missing` | Definir `JWT_SECRET` en `.env` |
+| `Can't reach database` / Prisma error | Revisar PostgreSQL y `DATABASE_URL` |
+| `ECONNREFUSED 6379` | `sudo systemctl start redis-server` |
+| PM2 `errored` tras deploy | `npm run build` y `pm2 restart vestix-backend` |
