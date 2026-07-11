@@ -1,12 +1,10 @@
 import { useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Modal, Button } from '@/components/ui';
 import { buildGiftCardVerifyUrl, type GiftCard } from '@/api/gift-cards.api';
-import { settingsApi } from '@/api/settings.api';
-import { queryKeys } from '@/api/queryKeys';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/config/app.config';
 import { resolveGiftCardTemplate } from '@/features/gift-cards/types/giftCardTemplate.types';
+import { useGiftCardTemplate } from '@/features/gift-cards/hooks/useGiftCardTemplate';
 import { GiftCardRenderer } from './GiftCardRenderer';
 import {
   buildGiftCardPrintDocument,
@@ -23,16 +21,11 @@ interface Props {
 
 export function GiftCardDigitalModal({ open, card, onClose }: Props) {
   const qrContainerRef = useRef<HTMLDivElement>(null);
-
-  const { data: settings } = useQuery({
-    queryKey: queryKeys.settings.get(),
-    queryFn: settingsApi.getSettings,
-    enabled: open,
-  });
+  const { data: templateData } = useGiftCardTemplate();
 
   if (!card) return null;
 
-  const template = resolveGiftCardTemplate(settings?.giftCards?.template);
+  const template = resolveGiftCardTemplate(templateData);
   const verifyUrl = buildGiftCardVerifyUrl(card.verificationToken);
   const recipient = card.customer?.fullName || card.issuedTo || 'Sin destinatario';
 

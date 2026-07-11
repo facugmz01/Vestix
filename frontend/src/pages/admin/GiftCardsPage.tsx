@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Gift, Ban, Search, QrCode, Palette } from 'lucide-react';
+import { Plus, Gift, Ban, Search, QrCode } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar,
-  EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, ActiveChip, Input,
+  EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, ActiveChip, Input, Tabs,
 } from '@/components/ui';
 import { giftCardsApi, type GiftCard } from '@/api/gift-cards.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -16,6 +15,7 @@ import { formatDate } from '@/config/app.config';
 import adminStyles from '@/styles/AdminListShared.module.css';
 import { IssueGiftCardDrawer } from '@/features/gift-cards/components/IssueGiftCardDrawer';
 import { GiftCardDigitalModal } from '@/features/gift-cards/components/GiftCardDigitalModal';
+import { CRM_TABS } from '@/navigation/moduleTabs';
 
 const FUNDING_LABELS: Record<string, string> = {
   INCOME: 'Ingreso',
@@ -58,19 +58,13 @@ export default function GiftCardsPage() {
     <PageContainer
       title="Gift Cards"
       subtitle="Emití tarjetas de regalo, consultá saldos y desactivá códigos."
+      tabs={<Tabs items={CRM_TABS} />}
       action={
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link to="/admin/settings?tab=giftcards">
-            <Button variant="secondary" icon={<Palette size={16} />}>
-              Plantilla
-            </Button>
-          </Link>
-          <ActionGuard action="create" subject="Sales">
-            <Button variant="primary" icon={<Plus size={16} />} onClick={() => setIssueOpen(true)}>
-              Emitir Gift Card
-            </Button>
-          </ActionGuard>
-        </div>
+        <ActionGuard action="create" subject="Sales">
+          <Button variant="primary" icon={<Plus size={16} />} onClick={() => setIssueOpen(true)}>
+            Emitir Gift Card
+          </Button>
+        </ActionGuard>
       }
     >
       <FiltersBar actions={<Badge color="gray">{cards.length} tarjetas</Badge>}>

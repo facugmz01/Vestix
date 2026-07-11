@@ -5,7 +5,7 @@ import { Save, Gift, Palette } from 'lucide-react';
 import clsx from 'clsx';
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
-import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
+import { useGiftCardTemplate, useUpdateGiftCardTemplate } from '@/features/gift-cards/hooks/useGiftCardTemplate';
 import { giftCardTemplateSchema, type GiftCardTemplateFormData } from '../schemas/giftCardTemplate.schema';
 import {
   DEFAULT_GIFT_CARD_TEMPLATE,
@@ -23,8 +23,8 @@ const PREVIEW_DATA = {
 };
 
 export function GiftCardTemplatePanel() {
-  const { data: settings, isLoading } = useGetSettings();
-  const mutation = useUpdateSettingsSection('giftCards');
+  const { data: templateData, isLoading } = useGiftCardTemplate();
+  const mutation = useUpdateGiftCardTemplate();
 
   const { register, handleSubmit, reset, watch, formState: { isDirty } } = useForm<GiftCardTemplateFormData>({
     resolver: zodResolver(giftCardTemplateSchema),
@@ -32,10 +32,10 @@ export function GiftCardTemplatePanel() {
   });
 
   useEffect(() => {
-    if (settings?.giftCards?.template) {
-      reset(resolveGiftCardTemplate(settings.giftCards.template));
+    if (templateData) {
+      reset(resolveGiftCardTemplate(templateData));
     }
-  }, [settings, reset]);
+  }, [templateData, reset]);
 
   const previewTemplate = watch();
 

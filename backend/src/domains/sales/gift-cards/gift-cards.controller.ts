@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RequirePermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../../../core/rbac/guards/permissions.guard';
 import { GiftCardsService } from './gift-cards.service';
-import { IssueGiftCardDto, RedeemGiftCardDto } from './dto/gift-card.dto';
+import { IssueGiftCardDto, RedeemGiftCardDto, UpdateGiftCardTemplateDto } from './dto/gift-card.dto';
+import { resolveGiftCardTemplate } from '../models/gift-card-template.model';
 
 @Controller('gift-cards')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -14,6 +15,21 @@ export class GiftCardsController {
   @RequirePermissions({ action: 'read', subject: 'Sales' })
   findAll(@Query('search') search?: string) {
     return this.giftCardsService.findAll(search);
+  }
+
+  @Get('template')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  getTemplate() {
+    return this.giftCardsService.getTemplate();
+  }
+
+  @Patch('template')
+  @RequirePermissions({ action: 'manage', subject: 'Sales' })
+  updateTemplate(@Body() dto: UpdateGiftCardTemplateDto, @Req() req: any) {
+    return this.giftCardsService.updateTemplate(
+      resolveGiftCardTemplate(dto.template),
+      req.user?.userId ?? 'unknown',
+    );
   }
 
   @Post('issue')

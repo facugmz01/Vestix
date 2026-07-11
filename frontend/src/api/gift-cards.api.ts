@@ -1,6 +1,6 @@
-import { get, post } from './client';
+import { get, post, patch } from './client';
 import { cleanParams } from './requestUtils';
-import type { Customer } from '@/types';
+import type { GiftCardTemplateSettings } from '@/features/gift-cards/types/giftCardTemplate.types';
 
 export interface GiftCardCustomerSummary {
   id: string;
@@ -71,6 +71,12 @@ export const giftCardsApi = {
 
   verify: (token: string) =>
     get<GiftCardVerification>(`/gift-cards/verify/${encodeURIComponent(token)}`),
+
+  getTemplate: () =>
+    get<{ template: GiftCardTemplateSettings }>('/gift-cards/template'),
+
+  updateTemplate: (template: GiftCardTemplateSettings) =>
+    patch<{ template: GiftCardTemplateSettings }>('/gift-cards/template', { template }),
 
   issue: (dto: IssueGiftCardDto) =>
     post<GiftCard>('/gift-cards/issue', dto),
