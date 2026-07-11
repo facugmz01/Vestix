@@ -32,6 +32,7 @@ import { LoyaltyService } from './loyalty/loyalty.service';
 import { LoyaltyController } from './loyalty/loyalty.controller';
 import { GiftCardsService } from './gift-cards/gift-cards.service';
 import { GiftCardsController } from './gift-cards/gift-cards.controller';
+import { PublicGiftCardController } from './gift-cards/public-gift-card.controller';
 import { OfflineController } from './offline.controller';
 
 
@@ -58,6 +59,7 @@ import { OfflineController } from './offline.controller';
     OfflineController,
     LoyaltyController,
     GiftCardsController,
+    PublicGiftCardController,
   ],
   providers: [
     SalesService,

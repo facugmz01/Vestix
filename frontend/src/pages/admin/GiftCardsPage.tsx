@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Gift, Ban, Search } from 'lucide-react';
+import { Plus, Gift, Ban, Search, QrCode } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
@@ -13,18 +13,21 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/config/app.config';
 import adminStyles from '@/styles/AdminListShared.module.css';
-import { Drawer } from '@/components/ui';
-import styles from '@/styles/DetailDrawerShared.module.css';
+import { IssueGiftCardDrawer } from '@/features/gift-cards/components/IssueGiftCardDrawer';
+import { GiftCardDigitalModal } from '@/features/gift-cards/components/GiftCardDigitalModal';
+
+const FUNDING_LABELS: Record<string, string> = {
+  INCOME: 'Ingreso',
+  EXPENSE: 'Gasto promocional',
+};
 
 export default function GiftCardsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [issueOpen, setIssueOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [digitalCard, setDigitalCard] = useState<GiftCard | null>(null);
   const [selected, setSelected] = useState<GiftCard | null>(null);
-  const [issueAmount, setIssueAmount] = useState('');
-  const [issueCode, setIssueCode] = useState('');
-  const [issueTo, setIssueTo] = useState('');
   const [lookupCode, setLookupCode] = useState('');
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -35,23 +38,6 @@ export default function GiftCardsPage() {
   const lookupMutation = useMutation({
     mutationFn: () => giftCardsApi.getBalance(lookupCode),
     onSuccess: (res) => toast.success(`Saldo ${res.code}: ${formatCurrency(res.balance)}`),
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const issueMutation = useMutation({
-    mutationFn: () => giftCardsApi.issue({
-      amount: parseFloat(issueAmount),
-      code: issueCode || undefined,
-      issuedTo: issueTo || undefined,
-    }),
-    onSuccess: (card) => {
-      toast.success(`Gift card emitida: ${card.code}`);
-      queryClient.invalidateQueries({ queryKey: queryKeys.giftCards.all() });
-      setIssueOpen(false);
-      setIssueAmount('');
-      setIssueCode('');
-      setIssueTo('');
-    },
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -112,21 +98,43 @@ export default function GiftCardsPage() {
               { key: 'code', label: 'Código', render: (c: GiftCard) => <code>{c.code}</code> },
               { key: 'balance', label: 'Saldo', render: (c: GiftCard) => formatCurrency(c.balance) },
               { key: 'initial', label: 'Monto inicial', render: (c: GiftCard) => formatCurrency(c.initialBalance) },
-              { key: 'issuedTo', label: 'Destinatario', render: (c: GiftCard) => c.issuedTo || '—' },
+              {
+                key: 'issuedTo',
+                label: 'Destinatario',
+                render: (c: GiftCard) => c.customer?.fullName || c.issuedTo || '—',
+              },
+              {
+                key: 'funding',
+                label: 'Registro',
+                render: (c: GiftCard) => c.fundingType ? FUNDING_LABELS[c.fundingType] ?? c.fundingType : '—',
+              },
               { key: 'expires', label: 'Vence', render: (c: GiftCard) => c.expiresAt ? formatDate(c.expiresAt) : '—' },
               { key: 'status', label: 'Estado', render: (c: GiftCard) => (
                 <ActiveChip active={c.isActive} />
               )},
-              { key: 'actions', label: '', render: (c: GiftCard) => c.isActive ? (
-                <ActionGuard action="manage" subject="Sales">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={<Ban size={14} />}
-                    onClick={() => { setSelected(c); setDeactivateOpen(true); }}
-                  />
-                </ActionGuard>
-              ) : null },
+              { key: 'actions', label: '', render: (c: GiftCard) => (
+                <>
+                  {c.verificationToken && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<QrCode size={14} />}
+                      onClick={() => setDigitalCard(c)}
+                      aria-label="Ver tarjeta digital"
+                    />
+                  )}
+                  {c.isActive ? (
+                    <ActionGuard action="manage" subject="Sales">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<Ban size={14} />}
+                        onClick={() => { setSelected(c); setDeactivateOpen(true); }}
+                      />
+                    </ActionGuard>
+                  ) : null}
+                </>
+              ) },
             ]}
             data={cards}
             keyExtractor={(c: GiftCard) => c.id}
@@ -134,30 +142,17 @@ export default function GiftCardsPage() {
         )}
       </Section>
 
-      <Drawer
+      <IssueGiftCardDrawer
         open={issueOpen}
-        title="Emitir Gift Card"
         onClose={() => setIssueOpen(false)}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setIssueOpen(false)}>Cancelar</Button>
-            <Button
-              variant="primary"
-              loading={issueMutation.isPending}
-              disabled={!issueAmount || parseFloat(issueAmount) <= 0}
-              onClick={() => issueMutation.mutate()}
-            >
-              Emitir
-            </Button>
-          </>
-        }
-      >
-        <div className={styles.formStackMd}>
-          <Input label="Monto *" type="number" value={issueAmount} onChange={e => setIssueAmount(e.target.value)} />
-          <Input label="Código (opcional)" value={issueCode} onChange={e => setIssueCode(e.target.value)} helperText="Si se deja vacío se genera automáticamente" />
-          <Input label="Destinatario" value={issueTo} onChange={e => setIssueTo(e.target.value)} />
-        </div>
-      </Drawer>
+        onIssued={(card) => setDigitalCard(card)}
+      />
+
+      <GiftCardDigitalModal
+        open={!!digitalCard}
+        card={digitalCard}
+        onClose={() => setDigitalCard(null)}
+      />
 
       <ConfirmDialog
         open={deactivateOpen}

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { GiftCardsService } from './gift-cards.service';
 import { PrismaService } from '../../../core/prisma/prisma.service';
+import { AccountsService } from '../../finance/accounts.service';
 
 describe('GiftCardsService', () => {
   let service: GiftCardsService;
@@ -15,11 +16,35 @@ describe('GiftCardsService', () => {
     updateMany: jest.fn(),
   };
 
-  const prisma = {
+  const customer = {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+  };
+
+  const financialAccount = {
+    findUnique: jest.fn(),
+  };
+
+  const prisma: {
+    giftCard: typeof giftCard;
+    customer: typeof customer;
+    financialAccount: typeof financialAccount;
+    $transaction: jest.Mock;
+  } = {
     giftCard,
-    $transaction: jest.fn((fn: (tx: { giftCard: typeof giftCard }) => Promise<unknown>) =>
-      fn({ giftCard }),
-    ),
+    customer,
+    financialAccount,
+    $transaction: jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
+  };
+
+  const accountsService = {
+    postTransactionInTx: jest.fn(),
+  };
+
+  const issueDto = {
+    amount: 5000,
+    fundingType: 'INCOME' as const,
+    accountId: 'acc-1',
   };
 
   beforeEach(async () => {
@@ -28,23 +53,76 @@ describe('GiftCardsService', () => {
       providers: [
         GiftCardsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: AccountsService, useValue: accountsService },
       ],
     }).compile();
 
     service = module.get(GiftCardsService);
+    prisma.financialAccount.findUnique.mockResolvedValue({ id: 'acc-1', isActive: true });
   });
 
-  it('issues a gift card with generated code', async () => {
+  it('issues a gift card with generated code and income movement', async () => {
     prisma.giftCard.findUnique.mockResolvedValue(null);
-    prisma.giftCard.create.mockImplementation(({ data }) =>
-      Promise.resolve({ id: 'gc-1', ...data }),
+    prisma.giftCard.create.mockImplementation(({ data, include }) =>
+      Promise.resolve({
+        id: 'gc-1',
+        ...data,
+        customer: null,
+        include,
+      }),
     );
 
-    const result = await service.issue({ amount: 5000 });
+    const result = await service.issue(issueDto);
 
     expect(result.balance).toBe(5000);
     expect(result.code).toMatch(/^[A-F0-9]+$/);
-    expect(prisma.giftCard.create).toHaveBeenCalled();
+    expect(accountsService.postTransactionInTx).toHaveBeenCalledWith(
+      prisma,
+      'acc-1',
+      'DEBIT',
+      5000,
+      'GC-gc-1',
+      expect.stringContaining('Ingreso — Venta gift card'),
+    );
+  });
+
+  it('records expense movement when funding type is EXPENSE', async () => {
+    prisma.giftCard.findUnique.mockResolvedValue(null);
+    prisma.giftCard.create.mockImplementation(({ data }) =>
+      Promise.resolve({ id: 'gc-2', ...data, customer: null }),
+    );
+
+    await service.issue({
+      ...issueDto,
+      fundingType: 'EXPENSE',
+      fundingNotes: 'Campaña verano',
+    });
+
+    expect(accountsService.postTransactionInTx).toHaveBeenCalledWith(
+      prisma,
+      'acc-1',
+      'CREDIT',
+      5000,
+      'GC-gc-2',
+      expect.stringContaining('Sin ingreso de efectivo'),
+    );
+  });
+
+  it('creates a new customer when newCustomer is provided', async () => {
+    prisma.giftCard.findUnique.mockResolvedValue(null);
+    prisma.customer.findUnique.mockResolvedValue(null);
+    prisma.customer.create.mockResolvedValue({ id: 'cust-1', fullName: 'Ana López' });
+    prisma.giftCard.create.mockImplementation(({ data }) =>
+      Promise.resolve({ id: 'gc-3', ...data, customer: { id: 'cust-1', fullName: 'Ana López' } }),
+    );
+
+    const result = await service.issue({
+      ...issueDto,
+      newCustomer: { fullName: 'Ana López', email: 'ana@example.com' },
+    });
+
+    expect(prisma.customer.create).toHaveBeenCalled();
+    expect(result.customerId).toBe('cust-1');
   });
 
   it('returns balance for active card', async () => {
@@ -58,6 +136,25 @@ describe('GiftCardsService', () => {
 
     const result = await service.getBalance('abc123');
     expect(result.balance).toBe(3000);
+  });
+
+  it('verifies card by token', async () => {
+    prisma.giftCard.findUnique.mockResolvedValue({
+      id: 'gc-1',
+      code: 'ABC123',
+      balance: 3000,
+      initialBalance: 5000,
+      expiresAt: null,
+      isActive: true,
+      issuedTo: 'Juan',
+      createdAt: new Date('2026-01-01'),
+      fundingType: 'INCOME',
+      customer: null,
+    });
+
+    const result = await service.verifyByToken('token-1');
+    expect(result.valid).toBe(true);
+    expect(result.code).toBe('ABC123');
   });
 
   it('redeems amount from balance', async () => {
