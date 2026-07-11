@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
   Users, Wallet, Settings, Monitor, Globe, BarChart2, Scan, Bell, Shield, UserCog, Database,
-  Truck, Plug,
+  Truck, Plug, Gift, Star,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';
@@ -59,6 +59,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'CRM',
     items: [
       { id:'customers', label:'Clientes',     to:'/admin/customers',  icon:Users,        action:'read', subject:'Customers' },
+      { id:'loyalty',   label:'Fidelización', to:'/admin/loyalty',    icon:Star,         action:'read', subject:'Sales' },
+      { id:'giftcards', label:'Gift Cards',   to:'/admin/gift-cards', icon:Gift,         action:'read', subject:'Sales' },
     ],
   },
   {

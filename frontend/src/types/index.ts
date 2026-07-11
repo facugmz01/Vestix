@@ -384,11 +384,13 @@ export interface Promotion {
 
 // ─── CUSTOMERS ───────────────────────────────────────────────────────────
 export type CustomerType = 'INDIVIDUAL'|'BUSINESS';
+export type CustomerTaxCondition = 'RESPONSABLE_INSCRIPTO' | 'MONOTRIBUTO' | 'EXENTO' | 'CONSUMIDOR_FINAL';
 export type CustomerSource = 'ADMIN' | 'STOREFRONT' | 'POS' | 'IMPORT';
 export interface Customer {
   id: string; type: CustomerType; fullName: string;
   source?: CustomerSource;
-  taxId?: string; email?: string; phone?: string;
+  taxId?: string; taxCondition?: CustomerTaxCondition | string;
+  email?: string; phone?: string;
   credit: { limit: number; used: number; available: number; onHold: boolean; };
   priceListId?: string;
   createdAt: string;

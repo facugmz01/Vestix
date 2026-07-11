@@ -10,6 +10,7 @@ import { NotificationTriggersService } from '../notifications/notification-trigg
 import { AccountsService } from '../finance/accounts.service';
 import { expandComboToStockMovements } from '../catalog/utils/combo-stock.util';
 import { LoyaltyService } from './loyalty/loyalty.service';
+import { GiftCardsService } from './gift-cards/gift-cards.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import * as crypto from 'crypto';
 
@@ -26,6 +27,7 @@ export class CheckoutOrchestrator {
     private readonly notificationTriggers: NotificationTriggersService,
     private readonly accountsService: AccountsService,
     private readonly loyaltyService: LoyaltyService,
+    private readonly giftCardsService: GiftCardsService,
   ) {}
 
   /**
@@ -131,46 +133,104 @@ export class CheckoutOrchestrator {
       };
     });
 
-    // 3. VARIANCE DETECTION
-    // Trust: Accept the grand total if provided by POS or BACKOFFICE
+    const merchandiseTotal = serverCalculatedTotal;
+
+    // Pre-validate redemptions (read-only) before the atomic transaction
+    let expectedGiftCardAmount = 0;
+    let expectedLoyaltyAmount = 0;
+
+    if (dto.giftCardRedemption) {
+      const balance = await this.giftCardsService.getBalance(dto.giftCardRedemption.code);
+      if (balance.balance < dto.giftCardRedemption.amount) {
+        throw new BadRequestException('Saldo insuficiente en la gift card');
+      }
+      expectedGiftCardAmount = dto.giftCardRedemption.amount;
+    }
+
+    if (dto.loyaltyRedemption) {
+      if (!dto.customerId) {
+        throw new BadRequestException('Customer ID required for loyalty redemption');
+      }
+      const settings = await this.loyaltyService.getSettings();
+      if (!settings.enabled) {
+        throw new BadRequestException('Programa de fidelización deshabilitado');
+      }
+      const account = await this.loyaltyService.getOrCreateAccount(dto.customerId);
+      if (account.points < dto.loyaltyRedemption.points) {
+        throw new BadRequestException('Puntos insuficientes');
+      }
+      expectedLoyaltyAmount = this.loyaltyService.previewRedeemValue(
+        dto.loyaltyRedemption.points,
+        settings,
+      );
+    }
+
+    const expectedAmountDue = Math.round(
+      (merchandiseTotal - expectedGiftCardAmount - expectedLoyaltyAmount) * 100,
+    ) / 100;
+
+    if (expectedAmountDue < -0.01) {
+      throw new BadRequestException('El canje supera el total de la venta');
+    }
+
     const isManualEntry = dto.source === 'POS' || dto.source === 'BACKOFFICE' || (dto.source as string) === 'OFFLINE_POS';
-    
-    let posTotal = serverCalculatedTotal;
-    if (isManualEntry && (dto as any).posGrandTotal !== undefined) {
-      posTotal = (dto as any).posGrandTotal;
-    } else if ((dto as any).posGrandTotal !== undefined && Math.abs((dto as any).posGrandTotal - serverCalculatedTotal) > 0.01) {
-      // IF it's a quote, we are more relaxed
-      if (isQuote) {
-        posTotal = (dto as any).posGrandTotal;
-      } else {
-        throw new BadRequestException(`Price mismatch. Expected ${serverCalculatedTotal}, got ${(dto as any).posGrandTotal}`);
+
+    if (isManualEntry && dto.posGrandTotal !== undefined) {
+      if (Math.abs(dto.posGrandTotal - expectedAmountDue) > 0.01) {
+        throw new BadRequestException(
+          `Payment mismatch. Expected ${expectedAmountDue} after redemptions, got ${dto.posGrandTotal}`,
+        );
+      }
+    } else if (!isManualEntry && dto.posGrandTotal !== undefined && Math.abs(dto.posGrandTotal - merchandiseTotal) > 0.01) {
+      if (!isQuote) {
+        throw new BadRequestException(`Price mismatch. Expected ${merchandiseTotal}, got ${dto.posGrandTotal}`);
       }
     }
 
-    const posDifference = posTotal - serverCalculatedTotal;
+    const posDifference = (dto.posGrandTotal ?? expectedAmountDue) + expectedGiftCardAmount + expectedLoyaltyAmount - merchandiseTotal;
 
     // 4. ATOMIC TRANSACTION EXECUTION
     const result = await this.prisma.$transaction(async (tx) => {
       
       const isBackoffice = dto.source === 'BACKOFFICE';
 
+      let giftCardAmount = 0;
+      let loyaltyAmount = 0;
+
+      if (!isQuote && dto.giftCardRedemption) {
+        const redeemed = await this.giftCardsService.redeemInTx(tx, dto.giftCardRedemption);
+        giftCardAmount = redeemed.redeemedAmount;
+      }
+
+      if (!isQuote && dto.loyaltyRedemption && dto.customerId) {
+        const redeemed = await this.loyaltyService.redeemPointsInTx(
+          tx,
+          dto.customerId,
+          dto.loyaltyRedemption.points,
+          `Checkout ${dto.id}`,
+        );
+        loyaltyAmount = redeemed.redeemValue;
+      }
+
+      const amountDue = Math.round((merchandiseTotal - giftCardAmount - loyaltyAmount) * 100) / 100;
+
       // --- A. FINANCE BOUNDARY ---
       const hasSplitPayments = !isQuote && dto.payments && dto.payments.length > 0;
       const deferFinance = dto.status === 'PENDING_PAYMENT';
 
-      if (!isQuote && !hasSplitPayments && !deferFinance) {
+      if (!isQuote && !hasSplitPayments && !deferFinance && amountDue > 0.01) {
         if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
           if (!dto.customerId) throw new BadRequestException('Customer ID required for credit');
           const customer = await tx.customer.findUnique({ where: { id: dto.customerId }});
           if (!customer) throw new BadRequestException('Customer not found');
           
-          if (customer.usedCredit + posTotal > customer.creditLimit) {
+          if (customer.usedCredit + amountDue > customer.creditLimit) {
             throw new BadRequestException('Credit limit exceeded');
           }
           
           await tx.customer.update({
             where: { id: dto.customerId },
-            data: { usedCredit: { increment: posTotal } }
+            data: { usedCredit: { increment: amountDue } }
           });
         } else if (!isBackoffice) {
           const treasuryMethod = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'QR_MERCADOPAGO' : dto.paymentMethod;
@@ -181,7 +241,7 @@ export class CheckoutOrchestrator {
             await this.postSaleLedgerEntry(
               tx,
               accountId,
-              posTotal,
+              amountDue,
               dto.id,
               description,
               dto.customerId || 'Walk-in',
@@ -223,7 +283,7 @@ export class CheckoutOrchestrator {
           customerId: dto.customerId,
           subtotal: cartEvaluation.originalTotal,
           cartDiscountTotal: cartEvaluation.discountTotal,
-          grandTotal: posTotal,
+          grandTotal: merchandiseTotal,
           appliedPromotions: cartEvaluation.appliedPromotions,
           paymentMethod: dto.paymentMethod,
           paymentAccountId: dto.paymentAccountId,
@@ -249,19 +309,33 @@ export class CheckoutOrchestrator {
       });
 
       if (hasSplitPayments && !deferFinance) {
-        await this.processPaymentSplits(tx, dto, order.id, posTotal);
-      } else if (!isQuote && dto.paymentMethod !== 'CUSTOMER_CREDIT') {
-        const pmType = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'CREDIT_CARD' : dto.paymentMethod;
-        const pm = await tx.paymentMethod.findFirst({ where: { type: pmType, isActive: true } });
-        if (pm) {
-          await tx.saleOrderPayment.create({
-            data: {
-              orderId: order.id,
-              paymentMethodId: pm.id,
-              amount: posTotal,
-              referenceId: dto.paymentReference || null,
-            },
-          });
+        await this.processPaymentSplits(tx, dto, order.id, amountDue);
+      } else if (!isQuote) {
+        if (giftCardAmount > 0) {
+          await this.recordRedemptionPayment(tx, order.id, 'GIFT_CARD', giftCardAmount, dto.giftCardRedemption?.code);
+        }
+        if (loyaltyAmount > 0) {
+          await this.recordRedemptionPayment(
+            tx,
+            order.id,
+            'LOYALTY',
+            loyaltyAmount,
+            dto.loyaltyRedemption ? String(dto.loyaltyRedemption.points) : undefined,
+          );
+        }
+        if (amountDue > 0.01 && dto.paymentMethod !== 'CUSTOMER_CREDIT') {
+          const pmType = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'CREDIT_CARD' : dto.paymentMethod;
+          const pm = await tx.paymentMethod.findFirst({ where: { type: pmType, isActive: true } });
+          if (pm) {
+            await tx.saleOrderPayment.create({
+              data: {
+                orderId: order.id,
+                paymentMethodId: pm.id,
+                amount: amountDue,
+                referenceId: dto.paymentReference || null,
+              },
+            });
+          }
         }
       }
 
@@ -270,8 +344,8 @@ export class CheckoutOrchestrator {
         await tx.saleOrderVariance.create({
           data: {
             orderId: order.id,
-            posTotal: posTotal,
-            serverTotal: serverCalculatedTotal,
+            posTotal: dto.posGrandTotal ?? expectedAmountDue,
+            serverTotal: merchandiseTotal,
             difference: posDifference
           }
         });
@@ -289,7 +363,7 @@ export class CheckoutOrchestrator {
         });
       }
 
-      return { status: 'SUCCESS', order };
+      return { status: 'SUCCESS', order, giftCardAmount, loyaltyAmount };
     });
 
     // 5. ASYNC EXTERNAL BOUNDARY — Fire and Forget
@@ -303,7 +377,8 @@ export class CheckoutOrchestrator {
       if (completedStatuses.includes(result.order.status)) {
         void this.notificationTriggers.onSaleCompleted(result.order.id);
         if (dto.customerId) {
-          void this.loyaltyService.earnPointsForOrder(dto.customerId, result.order.grandTotal, result.order.id);
+          const earnBase = merchandiseTotal - (result.loyaltyAmount ?? 0);
+          void this.loyaltyService.earnPointsForOrder(dto.customerId, earnBase, result.order.id);
         }
       }
       if (dto.warehouseId && result.order.status !== 'PENDING_PAYMENT') {
@@ -797,6 +872,8 @@ export class CheckoutOrchestrator {
           where: { id: dto.customerId },
           data: { usedCredit: { increment: split.amount } },
         });
+      } else if (methodType === 'GIFT_CARD' || methodType === 'LOYALTY') {
+        // Redemptions are processed before splits; skip duplicate ledger entries
       } else {
         const pm = await tx.paymentMethod.findFirst({
           where: { type: methodType, isActive: true },
@@ -825,5 +902,24 @@ export class CheckoutOrchestrator {
         }
       }
     }
+  }
+
+  private async recordRedemptionPayment(
+    tx: any,
+    orderId: string,
+    type: string,
+    amount: number,
+    reference?: string,
+  ) {
+    const pm = await tx.paymentMethod.findFirst({ where: { type, isActive: true } });
+    if (!pm) return;
+    await tx.saleOrderPayment.create({
+      data: {
+        orderId,
+        paymentMethodId: pm.id,
+        amount,
+        referenceId: reference || null,
+      },
+    });
   }
 }

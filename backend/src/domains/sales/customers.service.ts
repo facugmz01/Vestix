@@ -43,6 +43,7 @@ export class CustomersService {
         creditLimit: dto.initialCreditLimit || 0,
         isActive: dto.isActive ?? true,
         priceListId: dto.priceListId || null,
+        taxCondition: dto.taxCondition || null,
       }
     });
 
@@ -107,6 +108,7 @@ export class CustomersService {
     if (dto.taxId === '') dto.taxId = null;
     if (dto.email === '') dto.email = null;
     if (dto.priceListId === '') dto.priceListId = null;
+    if (dto.taxCondition === '') dto.taxCondition = null;
 
     if (dto.taxId) {
       const exists = await this.prisma.customer.findFirst({ 

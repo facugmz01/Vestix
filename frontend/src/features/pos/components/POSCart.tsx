@@ -7,6 +7,7 @@ import { formatCurrency } from '@/utils/formatCurrency';
 import { computeIvaBreakdown } from '../utils/posTax';
 import { POS_PAYMENT_METHODS, type PosPaymentMethodId } from '../constants/posPaymentMethods';
 import { PosCustomerSearch } from './PosCustomerSearch';
+import { PosRedemptionPanel } from './PosRedemptionPanel';
 import styles from '@/pages/pos/POSPage.module.css';
 
 type CartVariant = {
@@ -22,6 +23,9 @@ type CartVariant = {
 export function POSCart({
   subtotal,
   grandTotal,
+  amountDue,
+  giftCardAmount,
+  loyaltyDiscount,
   lineDiscounts,
   globalDiscount,
   totalItems,
@@ -33,6 +37,9 @@ export function POSCart({
 }: {
   subtotal: number;
   grandTotal: number;
+  amountDue: number;
+  giftCardAmount: number;
+  loyaltyDiscount: number;
   lineDiscounts: number;
   globalDiscount: number;
   totalItems: number;
@@ -71,7 +78,7 @@ export function POSCart({
       toast.error('Seleccioná un cliente para usar Cuenta Corriente');
       return;
     }
-    if (method.requiresCustomer && selectedCustomer?.credit && selectedCustomer.credit.available < grandTotal) {
+    if (method.requiresCustomer && selectedCustomer?.credit && selectedCustomer.credit.available < amountDue) {
       toast.error('Crédito insuficiente para esta venta');
       return;
     }
@@ -95,7 +102,8 @@ export function POSCart({
         </div>
       )}
       <div className={styles.cartTop}>
-        <PosCustomerSearch grandTotal={grandTotal} />
+        <PosCustomerSearch amountDue={amountDue} />
+        <PosRedemptionPanel merchandiseTotal={grandTotal} />
       </div>
 
       <div className={styles.tableContainer}>
@@ -210,10 +218,33 @@ export function POSCart({
           <span>{formatCurrency(iva.iva)}</span>
         </div>
 
+        {(giftCardAmount > 0 || loyaltyDiscount > 0) && (
+          <>
+            {giftCardAmount > 0 && (
+              <div className={styles.summaryRow}>
+                <span>Gift card</span>
+                <span className={styles.discountTotal}>(-) {formatCurrency(giftCardAmount)}</span>
+              </div>
+            )}
+            {loyaltyDiscount > 0 && (
+              <div className={styles.summaryRow}>
+                <span>Puntos fidelización</span>
+                <span className={styles.discountTotal}>(-) {formatCurrency(loyaltyDiscount)}</span>
+              </div>
+            )}
+          </>
+        )}
+
         <div className={styles.totalRow}>
-          <span>Total</span>
-          <span>{formatCurrency(grandTotal)}</span>
+          <span>{amountDue < grandTotal ? 'A cobrar' : 'Total'}</span>
+          <span>{formatCurrency(amountDue)}</span>
         </div>
+        {amountDue < grandTotal && (
+          <div className={styles.summaryRow}>
+            <span className={styles.cellMuted}>Total venta</span>
+            <span className={styles.cellMuted}>{formatCurrency(grandTotal)}</span>
+          </div>
+        )}
       </div>
 
       <div className={styles.actionButtons}>

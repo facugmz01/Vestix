@@ -44,16 +44,26 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
   const clearCart = usePosStore(state => state.clearCart);
 
   return useMutation({
-    mutationFn: async ({ status, grandTotal, subtotal, paymentMethod, issueInvoice }: {
+    mutationFn: async ({ status, grandTotal, amountDue, subtotal, paymentMethod, issueInvoice }: {
       status: 'CONFIRMED' | 'QUOTATION';
       grandTotal: number;
+      amountDue: number;
       subtotal: number;
       paymentMethod: string;
       issueInvoice: boolean;
     }) => {
       if (!activeShift) throw new Error('No hay sesión de caja activa');
 
-      const { cart, selectedCustomerId, paymentReference, paymentSplits, qrOrderId } = usePosStore.getState();
+      const {
+        cart,
+        selectedCustomerId,
+        paymentReference,
+        paymentSplits,
+        qrOrderId,
+        giftCardCode,
+        giftCardAmount,
+        loyaltyPointsToRedeem,
+      } = usePosStore.getState();
       const orderId = crypto.randomUUID();
 
       let resolvedPaymentReference = paymentReference || undefined;
@@ -83,7 +93,11 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         paymentAccountId = undefined;
       }
 
-      const resolvedMethod = paymentSplits.length > 0 ? 'MULTIPLE' : paymentMethod;
+      const resolvedMethod = paymentSplits.length > 0
+        ? 'MULTIPLE'
+        : amountDue <= 0.01
+          ? 'GIFT_CARD'
+          : paymentMethod;
 
       const dto: Record<string, unknown> = {
         id: orderId,
@@ -97,7 +111,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         payments: paymentSplits.length > 0 ? paymentSplits : undefined,
         cashShiftId: activeShift.id,
         status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
-        posGrandTotal: grandTotal,
+        posGrandTotal: amountDue,
         cartDiscountTotal: grandTotal < subtotal ? subtotal - grandTotal : 0,
         createdAtIso: new Date().toISOString(),
         lines: cart.map(i => ({
@@ -110,11 +124,18 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         issueInvoice,
       };
 
+      if (status !== 'QUOTATION' && giftCardAmount > 0 && giftCardCode) {
+        dto.giftCardRedemption = { code: giftCardCode, amount: giftCardAmount };
+      }
+      if (status !== 'QUOTATION' && loyaltyPointsToRedeem > 0 && selectedCustomerId) {
+        dto.loyaltyRedemption = { points: loyaltyPointsToRedeem };
+      }
+
       const enqueueSale = () => {
         useOfflineQueueStore.getState().enqueue({
           module: 'POS',
           action: 'createSale',
-          description: `Venta POS offline por ${formatCurrency(grandTotal)}`,
+          description: `Venta POS offline por ${formatCurrency(amountDue)}`,
           endpoint: '/sales/checkout',
           method: 'POST',
           maxRetries: 5,

@@ -25,7 +25,9 @@ import { PosVariantPickerModal } from '@/features/pos/components/PosVariantPicke
 import { PosShiftSalesDrawer } from '@/features/pos/components/PosShiftSalesDrawer';
 
 import type { PosPaymentMethodId } from '@/features/pos/constants/posPaymentMethods';
-import type { ProductVariant } from '@/types';
+import { computePosAmountDue } from '@/features/pos/utils/posRedemption';
+import { loyaltyApi } from '@/api/loyalty.api';
+import { queryKeys } from '@/api/queryKeys';
 
 export default function POSPage() {
   const { user } = useAuthStore();
@@ -35,6 +37,13 @@ export default function POSPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const cart = usePosStore(state => state.cart);
+  const giftCardAmount = usePosStore(state => state.giftCardAmount);
+  const loyaltyPointsToRedeem = usePosStore(state => state.loyaltyPointsToRedeem);
+
+  const { data: loyaltySettings } = useQuery({
+    queryKey: queryKeys.loyalty.settings(),
+    queryFn: () => loyaltyApi.getSettings(),
+  });
   const cartDiscountPct = usePosStore(state => state.cartDiscountPct);
   const selectedCustomerId = usePosStore(state => state.selectedCustomerId);
   const suspendedSales = usePosStore(state => state.suspendedSales);
@@ -138,6 +147,13 @@ export default function POSPage() {
     ? Math.max(0, (cartCalculation.cartDiscountTotal || 0) - lineDiscounts)
     : clientGlobalDiscount;
   const grandTotal = cartCalculation?.grandTotal ?? (clientTotalAfterLines - clientGlobalDiscount);
+  const loyaltyDiscount = loyaltyPointsToRedeem * (loyaltySettings?.redeemValuePerPoint ?? 1);
+  const amountDue = computePosAmountDue(
+    grandTotal,
+    giftCardAmount,
+    loyaltyPointsToRedeem,
+    loyaltySettings?.redeemValuePerPoint ?? 1,
+  );
   const appliedPromotions = cartCalculation?.appliedPromotions;
 
   const checkoutMutation = usePosCheckout(activeShift, currentBranchId);
@@ -156,7 +172,7 @@ export default function POSPage() {
       setQrModalOpen(true);
       setIsGeneratingQr(true);
       try {
-        const res = await posApi.generateQrOrder(grandTotal, 'Cobro Vestix POS');
+        const res = await posApi.generateQrOrder(amountDue, 'Cobro Vestix POS');
         usePosStore.getState().setQrModalOpen(true, res.qrData, res.orderId);
       } catch {
         toast.error('Error al generar QR de cobro');
@@ -169,7 +185,7 @@ export default function POSPage() {
     } else {
       setPaymentModalOpen(true);
     }
-  }, [cart.length, grandTotal, isOnline, setPaymentModalOpen, setQrModalOpen]);
+  }, [cart.length, amountDue, isOnline, setPaymentModalOpen, setQrModalOpen]);
 
   const handleSearchEnter = useCallback(() => {
     if (!searchResults || searchResults.length === 0) return;
@@ -215,6 +231,7 @@ export default function POSPage() {
     checkoutMutation.mutate({
       status,
       grandTotal,
+      amountDue,
       subtotal,
       paymentMethod,
       issueInvoice,
@@ -253,6 +270,9 @@ export default function POSPage() {
         <POSCart
           subtotal={subtotal}
           grandTotal={grandTotal}
+          amountDue={amountDue}
+          giftCardAmount={giftCardAmount}
+          loyaltyDiscount={loyaltyDiscount}
           lineDiscounts={lineDiscounts}
           globalDiscount={globalDiscount}
           totalItems={totalItems}
@@ -266,6 +286,7 @@ export default function POSPage() {
 
       <POSModals
         grandTotal={grandTotal}
+        amountDue={amountDue}
         paymentMethod={paymentMethod}
         isGeneratingQr={isGeneratingQr}
         onConfirmCheckout={handleConfirmCheckout}

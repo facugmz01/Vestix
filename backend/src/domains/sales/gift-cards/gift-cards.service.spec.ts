@@ -9,6 +9,7 @@ describe('GiftCardsService', () => {
   const giftCard = {
     findUnique: jest.fn(),
     findUniqueOrThrow: jest.fn(),
+    findMany: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     updateMany: jest.fn(),
@@ -102,6 +103,15 @@ describe('GiftCardsService', () => {
     });
 
     await expect(service.getBalance('ABC123')).rejects.toThrow(BadRequestException);
+  });
+
+  it('lists gift cards with optional search', async () => {
+    prisma.giftCard.findMany.mockResolvedValue([{ id: 'gc-1', code: 'ABC123' }]);
+
+    const result = await service.findAll('abc');
+
+    expect(prisma.giftCard.findMany).toHaveBeenCalled();
+    expect(result).toHaveLength(1);
   });
 
   it('throws when card not found', async () => {

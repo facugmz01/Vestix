@@ -175,6 +175,17 @@ export const queryKeys = {
     detail:  (id: string)       => ['customers', 'detail', id]   as const,
     history: (id: string)       => ['customers', 'history', id]  as const,
   },
+  collections: {
+    all:    (filters?: object) => withFilters(['collections', 'list'], filters),
+    detail: (id: string)       => ['collections', 'detail', id] as const,
+  },
+  loyalty: {
+    settings: () => ['loyalty', 'settings'] as const,
+    account:  (customerId: string) => ['loyalty', 'account', customerId] as const,
+  },
+  giftCards: {
+    all: (filters?: object) => withFilters(['giftCards', 'list'], filters),
+  },
 
   // ── Finance ───────────────────────────────────────────────────────────────
   accounts: {

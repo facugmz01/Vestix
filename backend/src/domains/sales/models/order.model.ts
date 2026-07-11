@@ -11,6 +11,8 @@ export enum PaymentMethod {
   CUSTOMER_CREDIT = 'CUSTOMER_CREDIT',
   MULTIPLE = 'MULTIPLE',
   QR_MERCADOPAGO = 'QR_MERCADOPAGO',
+  GIFT_CARD = 'GIFT_CARD',
+  LOYALTY = 'LOYALTY',
 }
 
 export interface OrderLineItem {
