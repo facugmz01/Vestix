@@ -115,6 +115,34 @@ export class IntegrationsController {
     return this.integrationsService.deleteMlMapping(variantId);
   }
 
+  @Get('shopify/mappings')
+  @RequirePermissions({ action: 'read', subject: 'System' })
+  async getShopifyMappings() {
+    return this.integrationsService.getShopifyMappings();
+  }
+
+  @Post('shopify/mappings')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async saveShopifyMapping(
+    @Body('variantId') variantId: string,
+    @Body('shopifyProductId') shopifyProductId: string,
+    @Body('shopifyVariantId') shopifyVariantId: string,
+    @Body('inventoryItemId') inventoryItemId?: string,
+  ) {
+    return this.integrationsService.saveShopifyMapping(
+      variantId,
+      shopifyProductId,
+      shopifyVariantId,
+      inventoryItemId,
+    );
+  }
+
+  @Post('shopify/mappings/delete')
+  @RequirePermissions({ action: 'manage', subject: 'Settings' })
+  async deleteShopifyMapping(@Body('variantId') variantId: string) {
+    return this.integrationsService.deleteShopifyMapping(variantId);
+  }
+
   @Post('mercadolibre/webhook')
   async receiveMlWebhook(
     @Headers('x-ml-topic') topic: string,

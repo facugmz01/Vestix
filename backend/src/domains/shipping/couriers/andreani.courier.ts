@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { SettingsService } from '../../../modules/settings/settings.service';
 import { CarrierAdapter, CarrierType, ShipmentRequest, ShipmentResult } from './courier.interface';
 
@@ -16,61 +16,64 @@ export class AndreaniCourierAdapter implements CarrierAdapter {
   }
 
   async createShipment(request: ShipmentRequest): Promise<ShipmentResult> {
+    if (request.manualTrackingNumber) {
+      return {
+        carrierType: 'ANDREANI',
+        trackingNumber: request.manualTrackingNumber,
+      };
+    }
+
     const settings = await this.settingsService.getStorefrontSettings();
     const cfg = settings.deliverySettings?.carriers?.andreani;
 
     if (!(await this.isConfigured())) {
-      return {
-        carrierType: 'ANDREANI',
-        trackingNumber: request.manualTrackingNumber || `AND-${request.orderRef}`,
-      };
+      throw new BadRequestException(
+        'Andreani no está configurado. Ingresá un número de seguimiento manual o configurá las credenciales.',
+      );
     }
 
-    try {
-      const response = await fetch('https://apis.andreani.com/v2/ordenes-de-envio', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${cfg!.apiKey}`,
-          'x-client-id': cfg!.clientId!,
-        },
-        body: JSON.stringify({
-          contrato: cfg!.contract,
-          destino: {
-            postal: {
-              codigoPostal: request.zipCode,
-              calle: request.address,
-              localidad: request.city,
-              provincia: request.state,
-            },
+    const response = await fetch('https://apis.andreani.com/v2/ordenes-de-envio', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cfg!.apiKey}`,
+        'x-client-id': cfg!.clientId!,
+      },
+      body: JSON.stringify({
+        contrato: cfg!.contract,
+        destino: {
+          postal: {
+            codigoPostal: request.zipCode,
+            calle: request.address,
+            localidad: request.city,
+            provincia: request.state,
           },
-          destinatario: [{ nombreCompleto: request.recipientName, telefono: request.recipientPhone }],
-          referencias: [request.orderId],
-        }),
-        signal: AbortSignal.timeout(10000),
-      });
+        },
+        destinatario: [{ nombreCompleto: request.recipientName, telefono: request.recipientPhone }],
+        referencias: [request.orderId],
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
 
-      if (!response.ok) {
-        throw new Error(`Andreani API ${response.status}`);
-      }
-
-      const data = await response.json();
-      const trackingNumber = data?.numeroDeEnvio || data?.trackingNumber || request.manualTrackingNumber;
-
-      return {
-        carrierType: 'ANDREANI',
-        trackingNumber: trackingNumber || `AND-${request.orderRef}`,
-        carrierShipmentId: data?.id?.toString(),
-        labelUrl: data?.etiquetaUrl,
-        externalUrl: trackingNumber ? `https://www.andreani.com/#!/informacionEnvio/${trackingNumber}` : undefined,
-      };
-    } catch (err: any) {
-      this.logger.warn(`Andreani shipment fallback for ${request.orderId}: ${err.message}`);
-      return {
-        carrierType: 'ANDREANI',
-        trackingNumber: request.manualTrackingNumber || `AND-${request.orderRef}`,
-      };
+    if (!response.ok) {
+      const text = await response.text();
+      this.logger.error(`Andreani API ${response.status}: ${text}`);
+      throw new BadRequestException(`Andreani API error (${response.status}). Use manual tracking or retry later.`);
     }
+
+    const data = await response.json();
+    const trackingNumber = data?.numeroDeEnvio || data?.trackingNumber;
+    if (!trackingNumber) {
+      throw new BadRequestException('Andreani API did not return a tracking number');
+    }
+
+    return {
+      carrierType: 'ANDREANI',
+      trackingNumber,
+      carrierShipmentId: data?.id?.toString(),
+      labelUrl: data?.etiquetaUrl,
+      externalUrl: `https://www.andreani.com/#!/informacionEnvio/${trackingNumber}`,
+    };
   }
 
   getTrackingUrl(trackingNumber: string): string {

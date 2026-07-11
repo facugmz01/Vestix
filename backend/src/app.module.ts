@@ -30,8 +30,6 @@ import { AuditInterceptor } from './modules/audit/interceptors/audit.interceptor
 import { HealthModule } from './modules/health/health.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ReportsModule } from './modules/reports/reports.module';
-import { LocationsModule } from './modules/locations/locations.module';
-import { InventoryModule } from './modules/inventory/inventory.module';
 import { ShippingModule } from './domains/shipping/shipping.module';
 import { BackupsModule } from './modules/backups/backups.module';
 
@@ -88,11 +86,6 @@ import { BackupsModule } from './modules/backups/backups.module';
     HealthModule,
     SettingsModule,
     ReportsModule,
-    LocationsModule,
-    InventoryModule,
-    // TransfersModule / TreasuryModule removed: duplicate routes handled by
-    // domains/logistics (inventory/transfers) and domains/finance (treasury/shifts)
-    // with PermissionsGuard. Legacy modules/* controllers kept for reference only.
     ShippingModule,
     BackupsModule,
   ],

@@ -12,6 +12,10 @@ async function bootstrap() {
     throw new Error('FATAL ERROR: JWT_SECRET environment variable is missing or insecure!');
   }
 
+  if (process.env.NODE_ENV === 'production' && !process.env.SETTINGS_ENCRYPTION_KEY?.trim()) {
+    throw new Error('FATAL ERROR: SETTINGS_ENCRYPTION_KEY is required in production!');
+  }
+
   // ─── APP CREATION ───────────────────────────────────────────────────────────
   const app = await NestFactory.create(AppModule, {
     // nestjs-pino replaces NestJS default logger with structured JSON output

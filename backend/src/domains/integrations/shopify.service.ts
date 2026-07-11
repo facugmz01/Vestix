@@ -34,8 +34,7 @@ export class ShopifyService {
   }
 
   /**
-   * Sync inventory from ERP to Shopify.
-   * Verifies API connectivity; full sync requires variant-to-Shopify inventory mapping (not yet implemented).
+   * Sync inventory from ERP to Shopify for all mapped variants.
    */
   async syncInventory() {
     this.logger.log('Iniciando sincronización de inventario hacia Shopify...');
@@ -44,26 +43,124 @@ export class ShopifyService {
 
     try {
       const { data: locationsData } = await client.get('/locations.json');
-      const locationCount = locationsData?.locations?.length ?? 0;
-      this.logger.log(`Shopify API reachable — ${locationCount} location(s) found`);
-
-      const activeVariants = await this.prisma.productVariant.count({
-        where: { isActive: true, product: { isActive: true } },
-      });
-
-      if (activeVariants === 0) {
-        return { success: true, updated: 0, message: 'No active variants to sync' };
+      const shopifyLocationId = locationsData?.locations?.[0]?.id;
+      if (!shopifyLocationId) {
+        return { success: false, error: 'Shopify store has no inventory locations configured' };
       }
 
-      const error =
-        'Shopify inventory sync not implemented: variant-to-Shopify inventory item mapping required';
-      this.logger.warn(`[Shopify] ${error}`);
-      return { success: false, error };
+      const mappings = await this.prisma.shopifyVariantMapping.findMany({
+        include: { variant: true },
+      });
+
+      if (mappings.length === 0) {
+        return {
+          success: false,
+          error: 'No hay variantes mapeadas a Shopify. Configure ShopifyVariantMapping primero.',
+          updated: 0,
+        };
+      }
+
+      let updated = 0;
+      const errors: string[] = [];
+
+      for (const mapping of mappings) {
+        try {
+          const stockLevels = await this.prisma.stockLevel.findMany({
+            where: { variantId: mapping.variantId },
+          });
+          const available = stockLevels.reduce((sum, sl) => sum + sl.availableQuantity, 0);
+
+          let inventoryItemId = mapping.inventoryItemId;
+          if (!inventoryItemId) {
+            const { data: variantData } = await client.get(
+              `/variants/${mapping.shopifyVariantId}.json`,
+            );
+            inventoryItemId = variantData?.variant?.inventory_item_id?.toString();
+            if (inventoryItemId) {
+              await this.prisma.shopifyVariantMapping.update({
+                where: { id: mapping.id },
+                data: { inventoryItemId, lastSyncAt: new Date() },
+              });
+            }
+          }
+
+          if (!inventoryItemId) {
+            errors.push(`Variant ${mapping.variant.sku}: missing Shopify inventory_item_id`);
+            continue;
+          }
+
+          await client.post('/inventory_levels/set.json', {
+            location_id: shopifyLocationId,
+            inventory_item_id: Number(inventoryItemId),
+            available: Math.max(0, available),
+          });
+
+          await this.prisma.shopifyVariantMapping.update({
+            where: { id: mapping.id },
+            data: { lastSyncAt: new Date() },
+          });
+          updated++;
+        } catch (err: any) {
+          errors.push(`Variant ${mapping.variant.sku}: ${err.message}`);
+        }
+      }
+
+      return {
+        success: errors.length === 0,
+        updated,
+        total: mappings.length,
+        errors: errors.length ? errors : undefined,
+        message: `Sincronizados ${updated}/${mappings.length} variantes`,
+      };
     } catch (err: any) {
       const message = err.response?.data?.errors || err.message || 'Unknown error';
       this.logger.error(`[Shopify] Inventory sync failed: ${message}`);
       return { success: false, error: `Shopify inventory sync failed: ${message}` };
     }
+  }
+
+  async syncStockForVariant(variantId: string, available: number) {
+    const mapping = await this.prisma.shopifyVariantMapping.findUnique({
+      where: { variantId },
+      include: { variant: true },
+    });
+    if (!mapping) return { skipped: true };
+
+    const config = await this.getSettings();
+    const client = this.getClient(config);
+    const { data: locationsData } = await client.get('/locations.json');
+    const shopifyLocationId = locationsData?.locations?.[0]?.id;
+    if (!shopifyLocationId) {
+      throw new Error('Shopify store has no inventory locations');
+    }
+
+    let inventoryItemId = mapping.inventoryItemId;
+    if (!inventoryItemId) {
+      const { data: variantData } = await client.get(`/variants/${mapping.shopifyVariantId}.json`);
+      inventoryItemId = variantData?.variant?.inventory_item_id?.toString();
+      if (inventoryItemId) {
+        await this.prisma.shopifyVariantMapping.update({
+          where: { id: mapping.id },
+          data: { inventoryItemId },
+        });
+      }
+    }
+    if (!inventoryItemId) {
+      throw new Error(`Missing inventory_item_id for variant ${mapping.variant.sku}`);
+    }
+
+    await client.post('/inventory_levels/set.json', {
+      location_id: shopifyLocationId,
+      inventory_item_id: Number(inventoryItemId),
+      available: Math.max(0, available),
+    });
+
+    await this.prisma.shopifyVariantMapping.update({
+      where: { id: mapping.id },
+      data: { lastSyncAt: new Date() },
+    });
+
+    return { success: true, variantId, available };
   }
 
   /**

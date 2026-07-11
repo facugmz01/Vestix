@@ -111,7 +111,7 @@ export class EcommerceOrderImportService {
   ): Promise<string | null> {
     switch (source) {
       case 'SHOPIFY':
-        return this.resolveBySku(line.sku);
+        return this.resolveShopifyLine(line);
       case 'MERCADOLIBRE':
         return this.resolveMlLine(line);
       case 'WOOCOMMERCE':
@@ -127,6 +127,17 @@ export class EcommerceOrderImportService {
       where: { sku: sku.trim() },
     });
     return variant?.id ?? null;
+  }
+
+  private async resolveShopifyLine(line: EcommerceImportLine): Promise<string | null> {
+    if (line.externalVariantId) {
+      const mapping = await this.prisma.shopifyVariantMapping.findFirst({
+        where: { shopifyVariantId: String(line.externalVariantId) },
+      });
+      if (mapping) return mapping.variantId;
+    }
+
+    return this.resolveBySku(line.sku);
   }
 
   private async resolveMlLine(line: EcommerceImportLine): Promise<string | null> {

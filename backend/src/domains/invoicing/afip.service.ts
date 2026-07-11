@@ -72,6 +72,8 @@ export class AfipService {
     netAmount: number;
     vatAmount: number;
     totalAmount: number;
+    ivaId?: number;
+    condicionIvaReceptorId?: number;
   }): Promise<AfipVoucherResponse> {
     const arca = await this.settingsService.getArcaSettings();
     const config = evaluateAfipConfiguration(arca);
@@ -119,10 +121,10 @@ export class AfipService {
         ImpTrib: 0,
         MonId: 'PES',
         MonCotiz: 1,
-        CondicionIVAReceptorId: 5,
+        CondicionIVAReceptorId: payload.condicionIvaReceptorId ?? 5,
         Iva: [
           {
-            Id: 5,
+            Id: payload.ivaId ?? 5,
             BaseImp: netAmount,
             Importe: vatAmount,
           },

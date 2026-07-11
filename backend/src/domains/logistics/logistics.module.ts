@@ -14,6 +14,7 @@ import { BranchesController } from './branches.controller';
 import { LocationsController } from './locations.controller';
 
 import { WarehousesService } from './warehouses.service';
+import { LocationsService } from './locations.service';
 import { WarehousesController } from './warehouses.controller';
 
 @Global()
@@ -33,6 +34,7 @@ import { WarehousesController } from './warehouses.controller';
     ReservationExpiryJob,
     BranchesService,
     WarehousesService,
+    LocationsService,
   ],
   exports: [
     InventoryService,
@@ -41,6 +43,7 @@ import { WarehousesController } from './warehouses.controller';
     ReservationsService,
     BranchesService,
     WarehousesService,
+    LocationsService,
   ],
 })
 export class LogisticsModule {}
