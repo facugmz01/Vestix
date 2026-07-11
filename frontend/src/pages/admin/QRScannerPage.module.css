@@ -47,7 +47,8 @@
   background: var(--surface-0);
 }
 
-.reader {
+.readerShell {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,8 +69,19 @@
   border: 2px solid var(--accent);
 }
 
+.reader {
+  width: 100%;
+}
+
 .readerPlaceholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
+  pointer-events: none;
   color: var(--text-muted);
 }
 
