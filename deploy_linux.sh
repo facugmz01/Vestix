@@ -85,6 +85,7 @@ cd $APP_DIR
 # ─────────────────────────────────────────────────────────────
 echo ">>> [4/9] Generando variables de entorno (.env)..."
 JWT_SECRET=$(openssl rand -base64 32)
+SETTINGS_ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
 
 mkdir -p $APP_DIR/backend
 mkdir -p $APP_DIR/frontend
@@ -103,6 +104,7 @@ DATABASE_URL="postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME?schema=publ
 REDIS_HOST="127.0.0.1"
 REDIS_PORT=6379
 JWT_SECRET="$JWT_SECRET"
+SETTINGS_ENCRYPTION_KEY="$SETTINGS_ENCRYPTION_KEY"
 NODE_ENV="production"
 APP_URL="$APP_PUBLIC_URL"
 FRONTEND_URL="$APP_PUBLIC_URL"
