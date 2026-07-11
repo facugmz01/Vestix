@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { EcommerceOrderImportService } from './ecommerce-order-import.service';
+import { PaymentMethod } from '../sales/models/order.model';
 
 @Injectable()
 export class ShopifyService {
@@ -10,6 +12,7 @@ export class ShopifyService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly ecommerceOrderImport: EcommerceOrderImportService,
   ) {}
 
   private async getSettings() {
@@ -69,28 +72,65 @@ export class ShopifyService {
   async handleWebhook(topic: string, payload: any) {
     this.logger.log(`[Shopify Webhook] Recibido evento: ${topic}`);
 
-    if (topic === 'orders/create' || topic === 'orders/paid' || topic === 'orders/updated') {
-      const shopifyOrderId = payload?.id ?? payload?.order_id;
-      const lineItemCount = payload?.line_items?.length ?? 0;
+    if (topic === 'orders/create' || topic === 'orders/paid') {
+      const shopifyOrderId = String(payload?.id ?? payload?.order_id ?? '');
+      const lineItems = payload?.line_items ?? [];
+      const lineItemCount = lineItems.length;
 
       this.logger.log(
         `[Shopify Webhook] Order event "${topic}" — Shopify order ID: ${shopifyOrderId}, ` +
         `${lineItemCount} line item(s)`,
       );
 
-      // TODO: Map Shopify line_items (variant_id / sku) to ERP ProductVariant
-      // TODO: Wire mapped lines to CheckoutOrchestrator.processCheckout
-      this.logger.warn(
-        `[Shopify Webhook] Order mapping not implemented — order ${shopifyOrderId} logged only`,
+      if (!shopifyOrderId) {
+        return {
+          success: false,
+          received: true,
+          message: 'Missing Shopify order ID in webhook payload',
+        };
+      }
+
+      const lines = lineItems.map((item: any) => ({
+        sku: item.sku || undefined,
+        externalVariantId: item.variant_id != null ? String(item.variant_id) : undefined,
+        quantity: Number(item.quantity) || 1,
+        unitPrice: item.price != null ? Number(item.price) : undefined,
+      }));
+
+      const importResult = await this.ecommerceOrderImport.importOrderLines(
+        'SHOPIFY',
+        shopifyOrderId,
+        lines,
+        {
+          paymentMethod: PaymentMethod.CREDIT_CARD,
+          grandTotal: payload?.total_price != null ? Number(payload.total_price) : undefined,
+        },
       );
 
       return {
-        success: false,
+        success: true,
         received: true,
-        orderMapping: 'not_implemented',
-        message: 'Order webhook logged; ERP import not yet implemented',
         shopifyOrderId,
         lineItemCount,
+        importStatus: importResult.status,
+        message:
+          importResult.status === 'ALREADY_IMPORTED'
+            ? `Shopify order ${shopifyOrderId} already imported`
+            : `Shopify order ${shopifyOrderId} imported into ERP`,
+      };
+    }
+
+    if (topic === 'orders/updated') {
+      const shopifyOrderId = payload?.id ?? payload?.order_id;
+      this.logger.debug(
+        `[Shopify Webhook] Order updated event acknowledged — order ${shopifyOrderId}`,
+      );
+      return {
+        success: true,
+        received: true,
+        handled: false,
+        shopifyOrderId,
+        message: 'Order update acknowledged; import runs on create/paid only',
       };
     }
 

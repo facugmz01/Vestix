@@ -1,4 +1,4 @@
-import { get, post, put, patch } from './client';
+import { get, post, put, patch, apiClient } from './client';
 
 // ─── Typed settings sections ─────────────────────────────────────────────────
 
@@ -207,6 +207,17 @@ export interface ConnectionTestResult {
   logs?: string[];
 }
 
+export interface GenerateArcaCsrResult {
+  certAlias: string;
+  keyFile: string;
+  csrFile: string;
+}
+
+export interface UploadArcaCertResult {
+  certAlias: string;
+  certFile: string;
+}
+
 export const settingsApi = {
   getSettings: () =>
     get<SystemSettings>('/settings'),
@@ -236,6 +247,29 @@ export const settingsApi = {
     const fd = new FormData();
     fd.append('file', file);
     return post<{ logoUrl: string }>('/settings/general/logo', fd as any);
+  },
+
+  generateArcaCsr: (data: { certAlias: string; cuit: string; organizationName?: string }) =>
+    post<GenerateArcaCsrResult>('/settings/arca/generate-csr', data),
+
+  uploadArcaCert: (file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return post<UploadArcaCertResult>('/settings/arca/upload-cert', fd as any);
+  },
+
+  downloadArcaCsr: async (filename: string) => {
+    const { data } = await apiClient.get<Blob>('/settings/arca/download-csr', {
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   },
 
   repriceUsd: (type: 'Oficial' | 'Blue') =>

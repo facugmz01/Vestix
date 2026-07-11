@@ -2,6 +2,8 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { EcommerceOrderImportService } from './ecommerce-order-import.service';
+import { PaymentMethod } from '../sales/models/order.model';
 
 const ML_API = 'https://api.mercadolibre.com';
 
@@ -12,6 +14,7 @@ export class MercadoLibreService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly ecommerceOrderImport: EcommerceOrderImportService,
   ) {}
 
   private async getSettings() {
@@ -250,11 +253,31 @@ export class MercadoLibreService {
 
       this.logger.log(`[ML Order Webhook] Processing order ${mlOrderId} (job ${jobId})`);
 
-      // TODO: Fetch order details from ML API using getAccessToken()
-      // TODO: Map line items via mlVariantMapping or SKU
-      // TODO: Wire to CheckoutOrchestrator.processCheckout
-      this.logger.warn(
-        `[ML Order Webhook] Order import not implemented — order ${mlOrderId} logged only (job ${jobId})`,
+      const token = await this.getAccessToken();
+      if (!token) {
+        throw new Error('Token ML no disponible para importar pedido');
+      }
+
+      const orderUrl = this.resolveMlOrderUrl(resource, mlOrderId);
+      const { data: mlOrder } = await axios.get(orderUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const lines = (mlOrder.order_items ?? []).map((item: any) => ({
+        sku: item.item?.seller_sku || item.item?.seller_custom_field || undefined,
+        externalVariantId: item.item?.id != null ? String(item.item.id) : undefined,
+        quantity: Number(item.quantity) || 1,
+        unitPrice: item.unit_price != null ? Number(item.unit_price) : undefined,
+      }));
+
+      const importResult = await this.ecommerceOrderImport.importOrderLines(
+        'MERCADOLIBRE',
+        String(mlOrder.id ?? mlOrderId),
+        lines,
+        {
+          paymentMethod: PaymentMethod.CREDIT_CARD,
+          grandTotal: mlOrder.total_amount != null ? Number(mlOrder.total_amount) : undefined,
+        },
       );
 
       await this.prisma.integrationLog.update({
@@ -262,9 +285,12 @@ export class MercadoLibreService {
         data: {
           status: 'SUCCESS',
           response: {
-            mlOrderId,
-            orderMapping: 'not_implemented',
-            message: 'Order webhook processed; ERP import pending implementation',
+            mlOrderId: String(mlOrder.id ?? mlOrderId),
+            importStatus: importResult.status,
+            message:
+              importResult.status === 'ALREADY_IMPORTED'
+                ? 'Order already imported'
+                : 'Order imported into ERP',
           } as any,
         },
       });
@@ -276,6 +302,12 @@ export class MercadoLibreService {
         data: { status: 'FAILED', error: errorMessage },
       });
     }
+  }
+
+  private resolveMlOrderUrl(resource: string, mlOrderId: string): string {
+    if (resource?.startsWith('http')) return resource;
+    if (resource?.startsWith('/')) return `${ML_API}${resource}`;
+    return `${ML_API}/orders/${mlOrderId}`;
   }
 
   async getMappings() {

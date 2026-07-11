@@ -4,6 +4,7 @@ import { IntegrationsController } from './integrations.controller';
 import { WooCommerceApiService } from './woocommerce-api.service';
 import { MercadoLibreService } from './mercadolibre.service';
 import { ShopifyService } from './shopify.service';
+import { EcommerceOrderImportService } from './ecommerce-order-import.service';
 
 @Global()
 @Module({
@@ -13,7 +14,8 @@ import { ShopifyService } from './shopify.service';
     WooCommerceApiService,
     MercadoLibreService,
     ShopifyService,
+    EcommerceOrderImportService,
   ],
-  exports: [IntegrationsService],
+  exports: [IntegrationsService, EcommerceOrderImportService],
 })
 export class IntegrationsModule {}

@@ -1,21 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, FileText, Download, ExternalLink, ShieldAlert, Key } from 'lucide-react';
+import { Save, FileText, Download, ExternalLink, ShieldAlert, Key, Upload } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import { Input, Button, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { arcaSettingsSchema, type ArcaSettingsFormData } from '../schemas/arcaSettings.schema';
+import { settingsApi } from '@/api/settings.api';
 import clsx from 'clsx';
 import styles from './SettingsShared.module.css';
 
-export function ArcaSettingsPanel() {
-  const { data: settings, isLoading } = useGetSettings();
-  const mutation = useUpdateSettingsSection('arca');
+const AFIP_CERT_PORTAL_URL = 'https://auth.afip.gob.ar/contribuyente_/login.xhtml';
 
-  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<ArcaSettingsFormData>({
+export function ArcaSettingsPanel() {
+  const { data: settings, isLoading, refetch } = useGetSettings();
+  const mutation = useUpdateSettingsSection('arca');
+  const certInputRef = useRef<HTMLInputElement>(null);
+
+  const [generatingCsr, setGeneratingCsr] = useState(false);
+  const [downloadingCsr, setDownloadingCsr] = useState(false);
+  const [uploadingCert, setUploadingCert] = useState(false);
+
+  const { register, handleSubmit, reset, watch, formState: { errors, isDirty } } = useForm<ArcaSettingsFormData>({
     resolver: zodResolver(arcaSettingsSchema),
   });
+
+  const certAlias = watch('certAlias');
+  const cuit = watch('cuit');
 
   useEffect(() => {
     if (settings?.arca) reset(settings.arca);
@@ -25,7 +37,71 @@ export function ArcaSettingsPanel() {
     mutation.mutate(data, { onSuccess: () => reset(data) });
   };
 
-  const csrNotAvailable = 'La generación de CSR y la carga de certificados requieren endpoints de backend que aún no están implementados.';
+  const handleGenerateCsr = async () => {
+    if (!certAlias?.trim()) {
+      toast.error('Ingresá un alias de certificado');
+      return;
+    }
+    if (!cuit?.trim()) {
+      toast.error('Ingresá el CUIT antes de generar el CSR');
+      return;
+    }
+
+    setGeneratingCsr(true);
+    try {
+      const result = await settingsApi.generateArcaCsr({
+        certAlias: certAlias.trim(),
+        cuit: cuit.trim(),
+        organizationName: settings?.general?.companyName,
+      });
+      toast.success(`Clave y CSR generados para "${result.certAlias}"`);
+      await refetch();
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo generar el CSR');
+    } finally {
+      setGeneratingCsr(false);
+    }
+  };
+
+  const handleDownloadCsr = async () => {
+    if (!certAlias?.trim()) {
+      toast.error('No hay alias de certificado configurado');
+      return;
+    }
+
+    setDownloadingCsr(true);
+    try {
+      await settingsApi.downloadArcaCsr(`${certAlias.trim()}.csr`);
+      toast.success('CSR descargado');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo descargar el CSR');
+    } finally {
+      setDownloadingCsr(false);
+    }
+  };
+
+  const handleCertFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!certAlias?.trim()) {
+      toast.error('Configurá y guardá un alias de certificado antes de subir el .crt');
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingCert(true);
+    try {
+      const result = await settingsApi.uploadArcaCert(file);
+      toast.success(`Certificado subido para "${result.certAlias}"`);
+      await refetch();
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo subir el certificado');
+    } finally {
+      setUploadingCert(false);
+      event.target.value = '';
+    }
+  };
 
   if (isLoading) return null;
 
@@ -60,20 +136,18 @@ export function ArcaSettingsPanel() {
             <Input type="date" label="Inicio actividades" {...register('startDate')} />
           </div>
 
-          <div className={styles.constrainedFieldSm}>
-            <Input label="Ingresos Brutos (IIBB)" placeholder="Ej: 30-12345678-9" {...register('iibb')} />
+          <div className={clsx(styles.grid, styles.gridAutoFit)}>
+            <Input label="CUIT" placeholder="Ej: 20-12345678-9" {...register('cuit')} error={errors.cuit?.message} />
+            <div className={styles.constrainedFieldSm}>
+              <Input label="Ingresos Brutos (IIBB)" placeholder="Ej: 30-12345678-9" {...register('iibb')} />
+            </div>
           </div>
 
           <hr className={styles.divider} />
 
           <h4 className={styles.subsectionTitle}>
-            <ShieldAlert size={16} /> Certificados digitales <span className={styles.statusBadge}>No disponible</span>
+            <ShieldAlert size={16} /> Certificados digitales
           </h4>
-
-          <div className={styles.infoBox}>
-            <span className={styles.infoBoxIcon}>ⓘ</span>
-            <p className={styles.infoBoxBody}>{csrNotAvailable}</p>
-          </div>
 
           <div className={styles.nestedCard}>
             <div className={styles.nestedCardHeader}>
@@ -90,12 +164,18 @@ export function ArcaSettingsPanel() {
                 <span className={styles.stepCardHeaderLabel}>1. Generar clave y solicitud</span>
               </div>
               <div className={styles.wizardCardBody}>
-                <Input label="Alias del certificado *" placeholder="facundogomez" {...register('certAlias')} disabled />
+                <Input
+                  label="Alias del certificado *"
+                  placeholder="facundogomez"
+                  helperText="Solo letras, números, guiones y guiones bajos"
+                  {...register('certAlias')}
+                />
                 <Button
                   variant="primary"
                   type="button"
-                  disabled
-                  title={csrNotAvailable}
+                  loading={generatingCsr}
+                  disabled={generatingCsr}
+                  onClick={handleGenerateCsr}
                   className={clsx(styles.btnFullWidthMt, styles.btnAccent)}
                   icon={<Key size={16} />}
                 >
@@ -109,8 +189,26 @@ export function ArcaSettingsPanel() {
                 <span className={styles.stepCardHeaderLabel}>2. Subir solicitud a AFIP</span>
               </div>
               <div className={styles.stepCardActions}>
-                <Button variant="outline" disabled title={csrNotAvailable} className={styles.btnCentered} icon={<Download size={14} />}>Descargar .csr</Button>
-                <Button variant="outline" className={clsx(styles.btnCentered, styles.btnAccentOutline)} icon={<ExternalLink size={14} />}>Ir al portal AFIP</Button>
+                <Button
+                  variant="outline"
+                  type="button"
+                  loading={downloadingCsr}
+                  disabled={downloadingCsr || !certAlias?.trim()}
+                  onClick={handleDownloadCsr}
+                  className={styles.btnCentered}
+                  icon={<Download size={14} />}
+                >
+                  Descargar .csr
+                </Button>
+                <Button
+                  variant="outline"
+                  type="button"
+                  className={clsx(styles.btnCentered, styles.btnAccentOutline)}
+                  icon={<ExternalLink size={14} />}
+                  onClick={() => window.open(AFIP_CERT_PORTAL_URL, '_blank', 'noopener,noreferrer')}
+                >
+                  Ir al portal AFIP
+                </Button>
               </div>
             </div>
 
@@ -119,9 +217,30 @@ export function ArcaSettingsPanel() {
                 <span className={styles.stepCardHeaderLabel}>3. Subir certificado .crt</span>
               </div>
               <div className={styles.wizardCardBody}>
+                <input
+                  ref={certInputRef}
+                  type="file"
+                  accept=".crt"
+                  style={{ display: 'none' }}
+                  onChange={handleCertFileChange}
+                />
                 <div className={styles.filePickerRow}>
-                  <Button variant="outline" size="sm" disabled title={csrNotAvailable}>Seleccionar archivo</Button>
-                  <span className={styles.filePickerHint}>Requiere endpoint de backend</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    loading={uploadingCert}
+                    disabled={uploadingCert || !certAlias?.trim()}
+                    icon={<Upload size={14} />}
+                    onClick={() => certInputRef.current?.click()}
+                  >
+                    Seleccionar archivo
+                  </Button>
+                  <span className={styles.filePickerHint}>
+                    {certAlias?.trim()
+                      ? `Se guardará como uploads/arca/${certAlias.trim()}.crt`
+                      : 'Configurá un alias antes de subir'}
+                  </span>
                 </div>
               </div>
             </div>

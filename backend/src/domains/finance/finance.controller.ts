@@ -69,6 +69,33 @@ export class FinanceController {
     return this.notificationTriggers.sendManualAccountStatement(id, body.channel, body.recipient);
   }
 
+  @Post('current-accounts/:id/receipts')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  registerPaymentReceipt(
+    @Param('id') id: string,
+    @Body() body: { amount: number; referenceId: string; description: string },
+  ) {
+    return this.currentAccountsService.registerPaymentReceipt(id, body);
+  }
+
+  @Post('current-accounts/:id/credit-notes')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  issueCreditNote(
+    @Param('id') id: string,
+    @Body() body: { amount: number; referenceId: string; description: string },
+  ) {
+    return this.currentAccountsService.issueCreditNote(id, body);
+  }
+
+  @Post('current-accounts/:id/debit-notes')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  issueDebitNote(
+    @Param('id') id: string,
+    @Body() body: { amount: number; referenceId: string; description: string; dueDate?: string },
+  ) {
+    return this.currentAccountsService.issueDebitNote(id, body);
+  }
+
   @Get('treasury/accounts')
   @RequirePermissions({ action: 'read', subject: 'Finance' })
   getAccounts() {
