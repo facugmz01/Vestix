@@ -59,17 +59,36 @@ export class LoyaltyService {
   }
 
   async redeemPoints(customerId: string, points: number, reason?: string) {
+    return this.prisma.$transaction((tx) =>
+      this.redeemPointsInTx(tx, customerId, points, reason),
+    );
+  }
+
+  async redeemPointsInTx(
+    tx: Pick<PrismaService, 'customer' | 'loyaltyAccount'>,
+    customerId: string,
+    points: number,
+    reason?: string,
+  ) {
     if (points <= 0) throw new BadRequestException('Los puntos a canjear deben ser mayores a cero');
 
     const settings = await this.getSettings();
     if (!settings.enabled) throw new BadRequestException('Programa de fidelización deshabilitado');
 
-    const account = await this.getOrCreateAccount(customerId);
+    const customer = await tx.customer.findUnique({ where: { id: customerId } });
+    if (!customer) throw new NotFoundException('Cliente no encontrado');
+
+    const account = await tx.loyaltyAccount.upsert({
+      where: { customerId },
+      create: { customerId, points: 0, tier: 'STANDARD' },
+      update: {},
+    });
+
     if (account.points < points) {
       throw new BadRequestException('Puntos insuficientes');
     }
 
-    const updated = await this.prisma.loyaltyAccount.update({
+    const updated = await tx.loyaltyAccount.update({
       where: { id: account.id },
       data: { points: { decrement: points } },
     });
@@ -81,6 +100,11 @@ export class LoyaltyService {
       redeemValue,
       reason: reason ?? null,
     };
+  }
+
+  previewRedeemValue(points: number, settings?: LoyaltySettings): number {
+    const cfg = settings ?? DEFAULT_LOYALTY_SETTINGS;
+    return points * cfg.redeemValuePerPoint;
   }
 
   async adjustAccount(customerId: string, points: number, tier?: string) {

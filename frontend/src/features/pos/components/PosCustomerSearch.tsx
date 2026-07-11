@@ -6,7 +6,7 @@ import { usePosStore } from '../store/usePosStore';
 import type { Customer } from '@/types';
 import styles from '@/pages/pos/POSPage.module.css';
 
-export function PosCustomerSearch({ grandTotal }: { grandTotal: number }) {
+export function PosCustomerSearch({ amountDue }: { amountDue: number }) {
   const selectedCustomerId = usePosStore(s => s.selectedCustomerId);
   const setCustomerId = usePosStore(s => s.setCustomerId);
   const setCustomerFormOpen = usePosStore(s => s.setCustomerFormOpen);
@@ -49,7 +49,7 @@ export function PosCustomerSearch({ grandTotal }: { grandTotal: number }) {
   };
 
   const displayLabel = selectedCustomerId && selectedCustomer ? selectedCustomer.fullName : '';
-  const creditLow = selectedCustomer?.credit && selectedCustomer.credit.available < grandTotal;
+  const creditLow = selectedCustomer?.credit && selectedCustomer.credit.available < amountDue;
 
   return (
     <div className={styles.customerRow}>

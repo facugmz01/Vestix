@@ -46,6 +46,9 @@ interface PosState {
   mixedPaymentModalOpen: boolean;
   paymentReference: string;
   paymentSplits: { method: string; amount: number; reference?: string }[];
+  giftCardCode: string;
+  giftCardAmount: number;
+  loyaltyPointsToRedeem: number;
   completedOrder: any;
 
   addToCart: (variant: ProductVariant) => void;
@@ -77,6 +80,11 @@ interface PosState {
   setMixedPaymentModalOpen: (open: boolean) => void;
   setPaymentReference: (ref: string) => void;
   setPaymentSplits: (splits: { method: string; amount: number; reference?: string }[]) => void;
+  setGiftCardCode: (code: string) => void;
+  setGiftCardAmount: (amount: number) => void;
+  setLoyaltyPointsToRedeem: (points: number) => void;
+  clearGiftCardRedemption: () => void;
+  clearLoyaltyRedemption: () => void;
   setCompletedOrder: (order: any) => void;
 }
 
@@ -107,6 +115,9 @@ export const usePosStore = create<PosState>()(
       mixedPaymentModalOpen: false,
       paymentReference: '',
       paymentSplits: [],
+      giftCardCode: '',
+      giftCardAmount: 0,
+      loyaltyPointsToRedeem: 0,
       completedOrder: null,
 
       addToCart: (variant) => set((state) => {
@@ -143,9 +154,15 @@ export const usePosStore = create<PosState>()(
         cartDiscountPct: 0,
         paymentReference: '',
         paymentSplits: [],
+        giftCardCode: '',
+        giftCardAmount: 0,
+        loyaltyPointsToRedeem: 0,
       }),
 
-      setCustomerId: (id) => set({ selectedCustomerId: id }),
+      setCustomerId: (id) => set({
+        selectedCustomerId: id,
+        loyaltyPointsToRedeem: 0,
+      }),
       setCartDiscountPct: (pct) => set({ cartDiscountPct: pct }),
 
       toggleFavorite: (variantId) => set((state) => {
@@ -199,6 +216,11 @@ export const usePosStore = create<PosState>()(
       setMixedPaymentModalOpen: (open) => set({ mixedPaymentModalOpen: open }),
       setPaymentReference: (ref) => set({ paymentReference: ref }),
       setPaymentSplits: (splits) => set({ paymentSplits: splits }),
+      setGiftCardCode: (code) => set({ giftCardCode: code }),
+      setGiftCardAmount: (amount) => set({ giftCardAmount: amount }),
+      setLoyaltyPointsToRedeem: (points) => set({ loyaltyPointsToRedeem: points }),
+      clearGiftCardRedemption: () => set({ giftCardCode: '', giftCardAmount: 0 }),
+      clearLoyaltyRedemption: () => set({ loyaltyPointsToRedeem: 0 }),
       setCompletedOrder: (order) => set({ completedOrder: order }),
 
       suspendSale: (total) => set((state) => {

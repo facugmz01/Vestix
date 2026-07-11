@@ -21,6 +21,7 @@ import styles from '@/pages/pos/POSPage.module.css';
 
 export function POSModals({
   grandTotal,
+  amountDue,
   paymentMethod,
   isGeneratingQr,
   onConfirmCheckout,
@@ -32,6 +33,7 @@ export function POSModals({
   setIssueInvoice,
 }: {
   grandTotal: number;
+  amountDue: number;
   paymentMethod: string;
   isGeneratingQr: boolean;
   onConfirmCheckout: (status: 'CONFIRMED' | 'QUOTATION') => void;
@@ -91,16 +93,16 @@ export function POSModals({
 
   useEffect(() => {
     if (paymentModalOpen) {
-      setAmountTendered(grandTotal);
+      setAmountTendered(amountDue);
     }
-  }, [paymentModalOpen, grandTotal]);
+  }, [paymentModalOpen, amountDue]);
 
   const paymentLabel = PAYMENT_METHOD_LABELS[paymentMethod] || paymentMethod;
-  const isCashInsufficient = paymentMethod === 'CASH' && amountTendered < grandTotal;
-  const canConfirmSale = !isCashInsufficient && !isCheckoutLoading;
+  const isCashInsufficient = paymentMethod === 'CASH' && amountDue > 0.01 && amountTendered < amountDue;
+  const canConfirmSale = (amountDue <= 0.01 || !isCashInsufficient) && !isCheckoutLoading;
 
   const handleConfirmSale = () => {
-    if (paymentMethod === 'CASH' && amountTendered < grandTotal) return;
+    if (paymentMethod === 'CASH' && amountDue > 0.01 && amountTendered < amountDue) return;
     onConfirmCheckout('CONFIRMED');
   };
 
@@ -125,7 +127,7 @@ export function POSModals({
 
       <QrPaymentModal
         open={qrModalOpen}
-        amount={grandTotal}
+        amount={amountDue}
         orderId={qrOrderId}
         qrData={qrData}
         isLoading={isGeneratingQr}
@@ -138,7 +140,7 @@ export function POSModals({
 
       <PosMixedPaymentModal
         open={mixedPaymentModalOpen}
-        grandTotal={grandTotal}
+        grandTotal={amountDue}
         onClose={() => setMixedPaymentModalOpen(false)}
         isLoading={isCheckoutLoading}
         onConfirm={(splits) => {
@@ -159,29 +161,38 @@ export function POSModals({
         <div className={styles.modalStack}>
           <div className={styles.payHero}>
             <div className={styles.payHeroLabel}>Monto a Cobrar</div>
-            <div className={styles.payHeroAmount}>{formatCurrency(grandTotal)}</div>
+            <div className={styles.payHeroAmount}>{formatCurrency(amountDue)}</div>
+            {amountDue < grandTotal && (
+              <div className={styles.payHeroSub}>Total venta: {formatCurrency(grandTotal)}</div>
+            )}
           </div>
 
-          {paymentMethod === 'CASH' && (
+          {paymentMethod === 'CASH' && amountDue > 0.01 && (
             <div className={styles.payFieldBox}>
               <label className={styles.payFieldLabel}>Monto Recibido</label>
               <Input
                 type="number"
-                min={grandTotal}
+                min={amountDue}
                 value={amountTendered}
                 onChange={e => setAmountTendered(Number(e.target.value))}
                 className={styles.payFieldInput}
               />
-              {amountTendered > grandTotal && (
+              {amountTendered > amountDue && (
                 <div className={styles.payChange}>
-                  Vuelto a entregar: {formatCurrency(amountTendered - grandTotal)}
+                  Vuelto a entregar: {formatCurrency(amountTendered - amountDue)}
                 </div>
               )}
-              {amountTendered < grandTotal && (
+              {amountTendered < amountDue && (
                 <div className={styles.payInsufficient}>
-                  El monto recibido debe ser al menos {formatCurrency(grandTotal)}
+                  El monto recibido debe ser al menos {formatCurrency(amountDue)}
                 </div>
               )}
+            </div>
+          )}
+
+          {amountDue <= 0.01 && (
+            <div className={styles.alertQr}>
+              La venta queda cubierta por gift card y/o puntos de fidelización.
             </div>
           )}
 

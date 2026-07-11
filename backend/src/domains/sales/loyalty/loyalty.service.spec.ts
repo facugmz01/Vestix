@@ -14,6 +14,7 @@ describe('LoyaltyService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
   };
 
   const settingsService = {

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsArray, ValidateNested, IsNumber, IsOptional, IsUUID, Min, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsArray, ValidateNested, IsNumber, IsOptional, IsUUID, Min, IsBoolean, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderSource, PaymentMethod } from '../models/order.model';
 // Removed @shared/types to prevent TS5011 rootDir compilation issues
@@ -39,6 +39,22 @@ export class PaymentSplitDto {
   @IsString()
   @IsOptional()
   reference?: string;
+}
+
+export class GiftCardRedemptionDto {
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+
+  @IsNumber()
+  @Min(0.01)
+  amount: number;
+}
+
+export class LoyaltyRedemptionDto {
+  @IsInt()
+  @Min(1)
+  points: number;
 }
 
 export class CreateOrderDto implements SharedCreateSaleDto {
@@ -110,4 +126,14 @@ export class CreateOrderDto implements SharedCreateSaleDto {
   @ValidateNested({ each: true })
   @Type(() => PaymentSplitDto)
   payments?: PaymentSplitDto[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GiftCardRedemptionDto)
+  giftCardRedemption?: GiftCardRedemptionDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LoyaltyRedemptionDto)
+  loyaltyRedemption?: LoyaltyRedemptionDto;
 }

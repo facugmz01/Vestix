@@ -31,13 +31,15 @@ export const POS_PAYMENT_METHODS: PosPaymentMethodConfig[] = [
   { id: 'MULTIPLE', label: 'Pago Mixto', shortLabel: 'Mixto', icon: Layers, cssClass: 'bgMultiple', opensMixedModal: true },
 ];
 
-export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+export const   PAYMENT_METHOD_LABELS: Record<string, string> = {
   CASH: 'Efectivo',
   CREDIT_CARD: 'Tarjeta de Crédito',
   QR_MERCADOPAGO: 'QR MercadoPago',
   BANK_TRANSFER: 'Transferencia Bancaria',
   CUSTOMER_CREDIT: 'Cuenta Corriente',
   MULTIPLE: 'Pago Mixto',
+  GIFT_CARD: 'Gift Card / Puntos',
+  LOYALTY: 'Puntos Fidelización',
   DEBIT_CARD: 'Tarjeta de Débito',
   STORE_CREDIT: 'Crédito a Favor',
 };
