@@ -10,6 +10,24 @@ import { extractGiftCardVerifyToken } from '@/features/gift-cards/utils/giftCard
 import { GiftCardVerifyResult } from '@/features/gift-cards/components/GiftCardVerifyResult';
 import styles from './QRScannerPage.module.css';
 
+const READER_ID = 'qr-reader';
+
+async function teardownScanner(scanner: Html5Qrcode | null) {
+  if (!scanner) return;
+  try {
+    if (scanner.isScanning) {
+      await scanner.stop();
+    }
+  } catch {
+    // Camera may already be stopped during unmount / remount races.
+  }
+  try {
+    scanner.clear();
+  } catch {
+    // Element may already be gone from the DOM.
+  }
+}
+
 export default function QRScannerPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<string | null>(null);
@@ -22,27 +40,36 @@ export default function QRScannerPage() {
   });
 
   useEffect(() => {
-    scannerRef.current = new Html5Qrcode('qr-reader');
     return () => {
-      if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop().catch(console.error);
-      }
+      const scanner = scannerRef.current;
+      scannerRef.current = null;
+      void teardownScanner(scanner);
     };
   }, []);
+
+  const stopScanning = async () => {
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+    await teardownScanner(scanner);
+    setIsScanning(false);
+  };
 
   const startScanning = async () => {
     setError(null);
     setScanResult(null);
     verifyMutation.reset();
-    if (!scannerRef.current) return;
 
     try {
+      await stopScanning();
+
+      // `#qr-reader` must stay free of React-managed children; html5-qrcode owns its DOM.
+      scannerRef.current = new Html5Qrcode(READER_ID);
       await scannerRef.current.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
           setScanResult(decodedText);
-          stopScanning();
+          void stopScanning();
           const token = extractGiftCardVerifyToken(decodedText);
           if (token) verifyMutation.mutate(token);
         },
@@ -50,15 +77,11 @@ export default function QRScannerPage() {
       );
       setIsScanning(true);
     } catch (err: unknown) {
+      await teardownScanner(scannerRef.current);
+      scannerRef.current = null;
+      setIsScanning(false);
       setError('No se pudo acceder a la cámara. Asegúrate de dar los permisos.');
       console.error(err);
-    }
-  };
-
-  const stopScanning = async () => {
-    if (scannerRef.current?.isScanning) {
-      await scannerRef.current.stop().catch(console.error);
-      setIsScanning(false);
     }
   };
 
@@ -95,12 +118,16 @@ export default function QRScannerPage() {
 
       <div className={styles.panel}>
         <div
-          id="qr-reader"
-          className={clsx(styles.reader, isScanning ? styles.readerActive : styles.readerIdle)}
+          className={clsx(
+            styles.readerShell,
+            isScanning ? styles.readerActive : styles.readerIdle,
+          )}
         >
           {!isScanning && !scanResult && (
             <p className={styles.readerPlaceholder}>Cámara inactiva</p>
           )}
+          {/* Keep empty: html5-qrcode mutates this node directly. */}
+          <div id={READER_ID} className={styles.reader} />
         </div>
 
         {error && <p className={styles.errorText}>{error}</p>}
