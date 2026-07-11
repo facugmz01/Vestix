@@ -32,6 +32,7 @@ import { LoyaltyService } from './loyalty/loyalty.service';
 import { LoyaltyController } from './loyalty/loyalty.controller';
 import { GiftCardsService } from './gift-cards/gift-cards.service';
 import { GiftCardsController } from './gift-cards/gift-cards.controller';
+import { OfflineController } from './offline.controller';
 
 
 @Global()

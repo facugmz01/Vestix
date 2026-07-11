@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Settings2, RefreshCw, CheckCircle, AlertTriangle, Play } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { purchasingApi } from '@/api/purchasing.api';
+import { purchasesApi } from '@/api/purchases.api';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import styles from './InventoryModals.module.css';
@@ -20,7 +20,7 @@ export function ReplenishmentModal({ open, onClose, onSuccess }: Props) {
   const handleRun = async () => {
     setIsProcessing(true);
     try {
-      const res = await purchasingApi.autoReplenish();
+      const res = await purchasesApi.autoReplenish();
       setResult({ message: res.message, ordersCreated: res.ordersCreated });
       if (res.ordersCreated > 0) {
         toast.success(res.message);

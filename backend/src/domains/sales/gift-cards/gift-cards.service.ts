@@ -40,22 +40,26 @@ export class GiftCardsService {
   }
 
   async redeem(dto: RedeemGiftCardDto) {
-    const card = await this.findActiveCard(dto.code);
+    return this.prisma.$transaction(async (tx) => {
+      const card = await this.findActiveCardInTx(tx, dto.code);
 
-    if (card.balance < dto.amount) {
-      throw new BadRequestException('Saldo insuficiente en la gift card');
-    }
+      const updated = await tx.giftCard.updateMany({
+        where: { id: card.id, balance: { gte: dto.amount } },
+        data: { balance: { decrement: dto.amount } },
+      });
 
-    const updated = await this.prisma.giftCard.update({
-      where: { id: card.id },
-      data: { balance: { decrement: dto.amount } },
+      if (updated.count === 0) {
+        throw new BadRequestException('Saldo insuficiente en la gift card');
+      }
+
+      const result = await tx.giftCard.findUniqueOrThrow({ where: { id: card.id } });
+
+      return {
+        code: result.code,
+        redeemedAmount: dto.amount,
+        remainingBalance: result.balance,
+      };
     });
-
-    return {
-      code: updated.code,
-      redeemedAmount: dto.amount,
-      remainingBalance: updated.balance,
-    };
   }
 
   async deactivate(code: string) {
@@ -69,6 +73,13 @@ export class GiftCardsService {
   }
 
   private async findActiveCard(code: string) {
+    return this.findActiveCardInTx(this.prisma, code);
+  }
+
+  private async findActiveCardInTx(
+    tx: Pick<PrismaService, 'giftCard'>,
+    code: string,
+  ) {
     const card = await this.prisma.giftCard.findUnique({
       where: { code: code.toUpperCase() },
     });

@@ -91,14 +91,13 @@ export class ReturnsService {
     const result = await this.prisma.$transaction(async (tx) => {
       let totalRefund = 0;
 
-      // 1. CREATE RETURN RECORD
       const saleReturn = await tx.saleReturn.create({
         data: {
           saleOrderId: dto.saleOrderId,
           branchId: dto.branchId,
           action: dto.action,
-          status: 'APPROVED', // Auto-approved for now as per user request "dedolver el dinero y el stock"
-          totalRefundAmount: 0, // Will update after calculating lines
+          status: 'PENDING',
+          totalRefundAmount: 0,
         }
       });
 
@@ -110,7 +109,6 @@ export class ReturnsService {
         const lineRefundAmount = orderLine.finalPrice * item.quantity;
         totalRefund += lineRefundAmount;
 
-        // 2. CREATE RETURN LINE
         await tx.saleReturnLine.create({
           data: {
             returnId: saleReturn.id,
@@ -122,29 +120,59 @@ export class ReturnsService {
             reason: item.reason
           }
         });
+      }
 
-        // 3. RESTORE STOCK (Inbound Movement)
-        // Only restore if the condition is SELLABLE
-        if (item.condition === 'SELLABLE') {
+      return tx.saleReturn.update({
+        where: { id: saleReturn.id },
+        data: { totalRefundAmount: totalRefund },
+        include: { lines: true }
+      });
+    });
+
+    return result;
+  }
+
+  async approveReturn(id: string) {
+    const saleReturn = await this.prisma.saleReturn.findUnique({
+      where: { id },
+      include: {
+        lines: true,
+        saleOrder: { include: { lines: true, customer: true } },
+      },
+    });
+
+    if (!saleReturn) throw new NotFoundException('Return record not found');
+    if (saleReturn.status === 'APPROVED') {
+      throw new BadRequestException('La devolución ya fue aprobada');
+    }
+    if (saleReturn.status === 'REJECTED') {
+      throw new BadRequestException('No se puede aprobar una devolución rechazada');
+    }
+
+    const sale = saleReturn.saleOrder;
+    const totalRefund = saleReturn.totalRefundAmount;
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      for (const line of saleReturn.lines) {
+        if (line.condition === 'SELLABLE') {
           const targetWarehouseId = (sale as any).warehouseId;
-          
+
           if (targetWarehouseId) {
             await this.inventoryService.recordMovement({
-              variantId: item.variantId,
+              variantId: line.variantId,
               sourceWarehouseId: null,
               destinationWarehouseId: targetWarehouseId,
               branchId: sale.branchId,
               type: 'SALE_RETURN',
-              quantity: item.quantity,
-              unitCost: orderLine.basePrice,
+              quantity: line.quantity,
+              unitCost: line.unitPrice,
               referenceId: saleReturn.id,
             }, tx);
           }
         }
       }
 
-      // 4. FINANCIAL REFUND
-      if (dto.action === ReturnAction.STORE_CREDIT && sale.customerId) {
+      if (saleReturn.action === ReturnAction.STORE_CREDIT && sale.customerId) {
         await tx.customer.update({
           where: { id: sale.customerId },
           data: { usedCredit: { decrement: totalRefund } }
@@ -183,18 +211,13 @@ export class ReturnsService {
         });
       }
 
-      // 5. UPDATE TOTAL
-      const updatedReturn = await tx.saleReturn.update({
-        where: { id: saleReturn.id },
-        data: { totalRefundAmount: totalRefund },
-        include: { lines: true }
+      return tx.saleReturn.update({
+        where: { id },
+        data: { status: 'APPROVED' },
+        include: { lines: true, saleOrder: { include: { customer: true } } },
       });
-
-      return updatedReturn;
     });
 
-    // 6. AFIP INTEGRATION (Post-Transaction)
-    // If the original sale was invoiced to AFIP, we must issue a Credit Note
     if ((sale as any).issueInvoice) {
       await this.afipProducer.enqueueCreditNote(result.id, sale.branchId);
     }

@@ -18,6 +18,7 @@ import { InvoiceStatus } from './models/invoice.model';
 
 interface OrderLineWithVariant {
   finalPrice: number;
+  quantity: number;
   variantId: string;
 }
 
@@ -68,7 +69,7 @@ export class AfipProcessor extends WorkerHost {
     const variantMap = new Map(variants.map(v => [v.id, v.attributes]));
 
     const afipLines: AfipLineAmount[] = lines.map(line => ({
-      lineTotal: line.finalPrice,
+      lineTotal: line.finalPrice * line.quantity,
       vatRate: extractVatRateFromAttributes(variantMap.get(line.variantId), defaultVatRate),
     }));
 
@@ -254,7 +255,7 @@ export class AfipProcessor extends WorkerHost {
 
     const defaultVatRate = await this.getDefaultVatRate();
     const returnLines: AfipLineAmount[] = saleReturn.lines.map(line => ({
-      lineTotal: line.unitPrice * line.quantity,
+      lineTotal: (line.orderLine?.finalPrice ?? line.unitPrice) * line.quantity,
       vatRate: defaultVatRate,
     }));
     const split = splitAmountsForMultiVat(

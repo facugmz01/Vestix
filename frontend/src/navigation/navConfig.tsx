@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart,
-  Users, Wallet, Settings, Monitor, Globe, BarChart2, Scan, Bell, Shield, UserCog, Database
+  Users, Wallet, Settings, Monitor, Globe, BarChart2, Scan, Bell, Shield, UserCog, Database,
+  Truck, Plug,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';
@@ -49,6 +50,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { id:'inventory', label:'Inventario',   to:'/admin/inventory',  icon:Warehouse,    action:'read', subject:'Inventory' },
       { id:'purchasing',label:'Compras',      to:'/admin/purchasing', icon:ShoppingCart, action:'read', subject:'Purchasing' },
       { id:'sales',     label:'Ventas',       to:'/admin/sales',      icon:ShoppingCart, action:'read', subject:'Sales' },
+      { id:'delivery',  label:'Envíos',       to:'/admin/delivery',   icon:Truck,        action:'read', subject:'Delivery' },
       { id:'scanner',   label:'Escáner QR',   to:'/admin/scanner',    icon:Scan,         action:'read', subject:'Catalog' },
     ],
   },
@@ -88,6 +90,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { id:'users',         label:'Usuarios',       to:'/admin/users',         icon:UserCog,      action:'manage', subject:'Users' },
       { id:'roles',         label:'Roles y Permisos', to:'/admin/roles',       icon:Shield,       action:'manage', subject:'Settings' },
       { id:'notifications', label:'Notificaciones',to:'/admin/notifications', icon:Bell,       action:'manage', subject:'Settings' },
+      { id:'integrations',  label:'Integraciones', to:'/admin/integrations',  icon:Plug,       action:'read',   subject:'Integrations' },
       { id:'backups',       label:'Backups',        to:'/admin/backups',       icon:Database,   action:'read',   subject:'Backups' },
       { id:'settings',  label:'Configuración',to:'/admin/settings',   icon:Settings,     action:'manage', subject:'Settings' },
     ],

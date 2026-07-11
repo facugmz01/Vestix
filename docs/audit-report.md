@@ -29,16 +29,16 @@ Vestix ERP has reached **production-viable** status for core retail operations (
 
 ## 3. Remaining Before Go-Live
 
-1. **AFIP homologación** — Generate CSR, upload cert to AFIP, test in homologation environment with real CUIT.
+1. **AFIP homologación** — Generate CSR, upload cert to AFIP, test in homologation environment with real CUIT. See `docs/afip-homologation-checklist.md`.
 2. **ShopifyVariantMapping** — Admin must map ERP variants to Shopify variant IDs before inventory sync works.
-3. **Integration / e2e tests** — Checkout, webhooks, AFIP queue (not yet automated).
-4. **Prisma migrations** — Use `db push` for dev; define production migration strategy (stale `0001_init`).
+3. **Integration / e2e tests** — Framework added (`npm run test:e2e`); run with PostgreSQL for full coverage.
+4. **Prisma migrations** — See `docs/prisma-migrations-strategy.md` for production baseline approach.
 
 ## 4. Medium / Low
 
-- Factura C, export, and multi-IVA alícuotas not implemented.
+- Factura C, multi-IVA, debit notes, and Libro IVA implemented (Jul 2026).
 - Outbox handles STOCK_MOVEMENT + ORDER events; extend as new integrations are added.
-- Legacy `modules/*` code kept on disk but removed from `AppModule` imports.
+- Legacy `modules/*` code removed from active imports; orphaned inventory stubs may remain.
 
 ## 5. Recommended Next Steps
 

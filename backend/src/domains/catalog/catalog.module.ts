@@ -23,6 +23,7 @@ import { IdentifiersController } from './identifiers.controller';
 import { CatalogFacade } from './catalog.facade';
 import { LabelTemplatesService } from './labels/label-templates.service';
 import { LabelsRenderService } from './labels/labels-render.service';
+import { LabelsZplService } from './labels/labels-zpl.service';
 import { LabelTemplatesController } from './labels/label-templates.controller';
 import { LabelsController } from './labels/labels.controller';
 import { CollectionsController } from './controllers/collections.controller';

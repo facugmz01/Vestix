@@ -300,6 +300,14 @@ const AFIP_CBTE_TYPE: Record<string, number> = {
   NC_A: 3,
   NOTA_CREDITO_B: 8,
   NC_B: 8,
+  NOTA_CREDITO_C: 13,
+  NC_C: 13,
+  NOTA_DEBITO_A: 2,
+  ND_A: 2,
+  NOTA_DEBITO_B: 7,
+  ND_B: 7,
+  NOTA_DEBITO_C: 12,
+  ND_C: 12,
 };
 
 function mapCustomerDocType(docType: string): number {

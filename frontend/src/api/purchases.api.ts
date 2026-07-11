@@ -1,6 +1,6 @@
 import { get, post, patch, del } from './client';
 import { cleanParams } from './requestUtils';
-import type { PurchaseOrder, PagedResponse } from '@/types';
+import type { PurchaseOrder, PagedResponse, Supplier, ProductVariant } from '@/types';
 
 export interface PurchaseFilters {
   page?: number;
@@ -54,4 +54,16 @@ export const purchasesApi = {
 
   removeOrder: (id: string) =>
     del<void>(`/purchasing/orders/${id}`),
+
+  getSuppliers: () =>
+    get<PagedResponse<Supplier>>('/suppliers'),
+
+  searchCatalog: (query: string) =>
+    get<ProductVariant[]>('/pos/catalog/search', { params: { q: query } }),
+
+  processDirect: (data: unknown) =>
+    post<unknown>('/purchasing/direct', data),
+
+  autoReplenish: () =>
+    post<{ message: string; ordersCreated: number }>('/purchasing/auto-replenish'),
 };

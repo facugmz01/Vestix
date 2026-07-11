@@ -6,12 +6,19 @@ import { PrismaService } from '../../../core/prisma/prisma.service';
 describe('GiftCardsService', () => {
   let service: GiftCardsService;
 
+  const giftCard = {
+    findUnique: jest.fn(),
+    findUniqueOrThrow: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    updateMany: jest.fn(),
+  };
+
   const prisma = {
-    giftCard: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
+    giftCard,
+    $transaction: jest.fn((fn: (tx: { giftCard: typeof giftCard }) => Promise<unknown>) =>
+      fn({ giftCard }),
+    ),
   };
 
   beforeEach(async () => {
@@ -60,7 +67,8 @@ describe('GiftCardsService', () => {
       expiresAt: null,
       isActive: true,
     });
-    prisma.giftCard.update.mockResolvedValue({
+    prisma.giftCard.updateMany.mockResolvedValue({ count: 1 });
+    prisma.giftCard.findUniqueOrThrow.mockResolvedValue({
       id: 'gc-1',
       code: 'ABC123',
       balance: 700,
@@ -79,6 +87,7 @@ describe('GiftCardsService', () => {
       expiresAt: null,
       isActive: true,
     });
+    prisma.giftCard.updateMany.mockResolvedValue({ count: 0 });
 
     await expect(service.redeem({ code: 'ABC123', amount: 300 })).rejects.toThrow(BadRequestException);
   });

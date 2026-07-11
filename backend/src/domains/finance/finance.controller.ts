@@ -236,7 +236,7 @@ export class FinanceController {
 
   @Post('invoices/debit-note')
   @RequirePermissions({ action: 'manage', subject: 'Finance' })
-  issueDebitNote(
+  issueSalesDebitNote(
     @Body() body: { saleOrderId: string; amount: number; reason?: string },
   ) {
     return this.financeDocumentsService.issueDebitNote(body);

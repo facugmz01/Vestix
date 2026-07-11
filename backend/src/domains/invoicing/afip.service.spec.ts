@@ -207,7 +207,11 @@ describe('AfipService', () => {
         noIvaDiscrimination: true,
       });
 
-      const payload = mockCreateVoucher.mock.calls[0][0] as Record<string, unknown>;
+      const payload = mockCreateVoucher.mock.calls[0][0] as {
+        ImpNeto: number;
+        ImpIVA: number;
+        Iva?: unknown;
+      };
       expect(payload.ImpNeto).toBe(500);
       expect(payload.ImpIVA).toBe(0);
       expect(payload.Iva).toBeUndefined();
