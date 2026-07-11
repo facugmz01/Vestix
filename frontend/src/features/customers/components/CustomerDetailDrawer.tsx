@@ -45,6 +45,7 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
             </div>
             <p className={styles.profileMeta}>
               {customer.email} • {customer.phone} • {customer.taxId ? `DNI/CUIT: ${customer.taxId}` : ''}
+              {customer.taxCondition ? ` • ${customer.taxCondition}` : ''}
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RequirePermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../../../core/rbac/guards/permissions.guard';
@@ -9,6 +9,12 @@ import { IssueGiftCardDto, RedeemGiftCardDto } from './dto/gift-card.dto';
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class GiftCardsController {
   constructor(private readonly giftCardsService: GiftCardsService) {}
+
+  @Get()
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  findAll(@Query('search') search?: string) {
+    return this.giftCardsService.findAll(search);
+  }
 
   @Post('issue')
   @RequirePermissions({ action: 'create', subject: 'Sales' })

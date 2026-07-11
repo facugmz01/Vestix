@@ -29,6 +29,22 @@ export class GiftCardsService {
     });
   }
 
+  async findAll(search?: string) {
+    const term = search?.trim();
+    return this.prisma.giftCard.findMany({
+      where: term
+        ? {
+            OR: [
+              { code: { contains: term, mode: 'insensitive' } },
+              { issuedTo: { contains: term, mode: 'insensitive' } },
+            ],
+          }
+        : undefined,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+  }
+
   async getBalance(code: string) {
     const card = await this.findActiveCard(code);
     return {

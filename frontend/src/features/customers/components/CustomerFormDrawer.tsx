@@ -22,6 +22,7 @@ const customerSchema = z.object({
   phone: z.string().optional(),
   initialCreditLimit: z.number().min(0, 'No puede ser negativo'),
   priceListId: z.string().optional(),
+  taxCondition: z.string().optional(),
 }).refine(data => data.type === 'INDIVIDUAL' || (data.type === 'BUSINESS' && !!data.taxId), {
   message: 'El CUIT/RUT es obligatorio para Empresas',
   path: ['taxId'],
@@ -55,7 +56,7 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
 
   const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
-    defaultValues: { type: 'INDIVIDUAL', initialCreditLimit: 0, email: '', phone: '', taxId: '', priceListId: '' }
+    defaultValues: { type: 'INDIVIDUAL', initialCreditLimit: 0, email: '', phone: '', taxId: '', priceListId: '', taxCondition: '' }
   });
 
   const selectedType = watch('type');
@@ -76,9 +77,10 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
           phone: customerToEdit.phone || '',
           initialCreditLimit: customerToEdit.credit?.limit || 0,
           priceListId: customerToEdit.priceListId || '',
+          taxCondition: customerToEdit.taxCondition || '',
         });
       } else {
-        reset({ type: 'INDIVIDUAL', fullName: '', taxId: '', email: '', phone: '', initialCreditLimit: 0, priceListId: '' });
+        reset({ type: 'INDIVIDUAL', fullName: '', taxId: '', email: '', phone: '', initialCreditLimit: 0, priceListId: '', taxCondition: '' });
       }
     }
   }, [open, customerToEdit, reset]);
@@ -205,6 +207,17 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
           {...register('email')}
           error={errors.email?.message}
         />
+
+        <div className={styles.selectGroup}>
+          <label className={styles.selectLabel}>Condición fiscal AFIP</label>
+          <select {...register('taxCondition')} className={styles.select}>
+            <option value="">(Automático según CUIT/DNI)</option>
+            <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto</option>
+            <option value="MONOTRIBUTO">Monotributo</option>
+            <option value="EXENTO">Exento</option>
+            <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
+          </select>
+        </div>
 
         <hr className={styles.formDivider} />
 

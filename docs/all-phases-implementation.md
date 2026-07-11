@@ -58,7 +58,7 @@ Implementación coordinada por agentes con **doble validación**:
 1. Homologación AFIP con certificados reales del negocio
 2. Mapeo variantes Shopify en admin
 3. `prisma migrate deploy` en primer deploy de producción
-4. UI frontend para loyalty, gift cards, colecciones (APIs listas)
+4. ~~UI frontend para loyalty, gift cards, colecciones (APIs listas)~~ → Admin UI implementada (Jul 2026)
 
 ## Protocolo doble validación
 

@@ -594,3 +594,61 @@
   color: var(--text-primary);
 }
 
+.statsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.searchResults {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.searchResultItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-0);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.searchResultItem:hover {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+.inlineLookup {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.filterCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.mtSm {
+  margin-top: 8px;
+}
+
