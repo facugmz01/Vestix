@@ -100,6 +100,42 @@
   box-shadow: 0 0 0 3px var(--accent-glow, rgba(59, 130, 246, 0.15));
 }
 
+.textareaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.textareaLabel {
+  font-size: var(--text-sm, 13px);
+  font-weight: 500;
+  color: var(--text-secondary, #374151);
+}
+
+.textarea {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border, #d1d5db);
+  background-color: var(--bg-surface, var(--surface-0));
+  color: var(--text-primary, #111827);
+  font-size: var(--text-base, 14px);
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent, #3b82f6);
+  box-shadow: 0 0 0 3px var(--accent-glow, rgba(59, 130, 246, 0.15));
+}
+
+.textarea::placeholder {
+  color: var(--text-muted, #9ca3af);
+}
+
 /* Sticky Save Bar */
 .stickySaveBar {
   position: fixed;

@@ -3,7 +3,11 @@ import clsx from 'clsx';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Scan, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui';
+import { giftCardsApi } from '@/api/gift-cards.api';
+import { extractGiftCardVerifyToken } from '@/features/gift-cards/utils/giftCardVerify';
+import { GiftCardVerifyResult } from '@/features/gift-cards/components/GiftCardVerifyResult';
 import styles from './QRScannerPage.module.css';
 
 export default function QRScannerPage() {
@@ -12,6 +16,10 @@ export default function QRScannerPage() {
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const navigate = useNavigate();
+
+  const verifyMutation = useMutation({
+    mutationFn: (token: string) => giftCardsApi.verify(token),
+  });
 
   useEffect(() => {
     scannerRef.current = new Html5Qrcode('qr-reader');
@@ -25,6 +33,7 @@ export default function QRScannerPage() {
   const startScanning = async () => {
     setError(null);
     setScanResult(null);
+    verifyMutation.reset();
     if (!scannerRef.current) return;
 
     try {
@@ -34,10 +43,10 @@ export default function QRScannerPage() {
         (decodedText) => {
           setScanResult(decodedText);
           stopScanning();
+          const token = extractGiftCardVerifyToken(decodedText);
+          if (token) verifyMutation.mutate(token);
         },
-        () => {
-          // Ignore frequent "not found" errors
-        }
+        () => {},
       );
       setIsScanning(true);
     } catch (err: unknown) {
@@ -53,9 +62,16 @@ export default function QRScannerPage() {
     }
   };
 
+  const giftCardToken = scanResult ? extractGiftCardVerifyToken(scanResult) : null;
+
   const handleAction = () => {
     if (!scanResult) return;
-    
+
+    if (giftCardToken) {
+      verifyMutation.mutate(giftCardToken);
+      return;
+    }
+
     if (scanResult.startsWith('ORD-') || scanResult.startsWith('CART-')) {
       navigate('/pos', { state: { loadCartId: scanResult } });
     } else {
@@ -72,7 +88,7 @@ export default function QRScannerPage() {
         <div>
           <h1 className={styles.title}>Escáner Inteligente</h1>
           <p className={styles.subtitle}>
-            Escanea códigos de barras o QR de productos y comprobantes.
+            Escaneá QR de gift cards para validar legitimidad, o códigos de productos y comprobantes.
           </p>
         </div>
       </header>
@@ -98,19 +114,35 @@ export default function QRScannerPage() {
             <div className={styles.resultCode}>
               {scanResult}
             </div>
-            
+
+            {verifyMutation.isPending && (
+              <p className={styles.verifyLoading}>Verificando gift card...</p>
+            )}
+
+            {verifyMutation.data && (
+              <GiftCardVerifyResult result={verifyMutation.data} compact />
+            )}
+
+            {verifyMutation.isError && giftCardToken && (
+              <p className={styles.errorText}>
+                No se pudo verificar la gift card. El QR puede ser inválido o estar vencido.
+              </p>
+            )}
+
             <div className={styles.actionRow}>
               <Button onClick={startScanning} variant="outline" className={styles.btnFlex1}>
                 <RefreshCw size={16} /> Re-escanear
               </Button>
-              <Button onClick={handleAction} className={styles.btnFlex2}>
-                Procesar
-              </Button>
+              {!giftCardToken && (
+                <Button onClick={handleAction} className={styles.btnFlex2}>
+                  Procesar
+                </Button>
+              )}
             </div>
           </div>
         ) : (
-          <Button 
-            onClick={isScanning ? stopScanning : startScanning} 
+          <Button
+            onClick={isScanning ? stopScanning : startScanning}
             variant={isScanning ? 'outline' : 'primary'}
             className={styles.scanBtn}
           >

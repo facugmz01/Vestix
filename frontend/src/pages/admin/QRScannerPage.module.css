@@ -127,3 +127,9 @@
   width: 100%;
   max-width: 320px;
 }
+
+.verifyLoading {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+}

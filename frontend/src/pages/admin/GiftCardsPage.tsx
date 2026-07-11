@@ -1,13 +1,14 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Gift, Ban, Search, QrCode } from 'lucide-react';
+import { Plus, Gift, Ban, Search, QrCode, Scan } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar,
   EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, ActiveChip, Input, Tabs,
 } from '@/components/ui';
-import { giftCardsApi, type GiftCard } from '@/api/gift-cards.api';
+import { giftCardsApi, type GiftCard, type GiftCardVerification } from '@/api/gift-cards.api';
 import { queryKeys } from '@/api/queryKeys';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -15,6 +16,8 @@ import { formatDate } from '@/config/app.config';
 import adminStyles from '@/styles/AdminListShared.module.css';
 import { IssueGiftCardDrawer } from '@/features/gift-cards/components/IssueGiftCardDrawer';
 import { GiftCardDigitalModal } from '@/features/gift-cards/components/GiftCardDigitalModal';
+import { GiftCardVerifyResult } from '@/features/gift-cards/components/GiftCardVerifyResult';
+import { extractGiftCardVerifyToken } from '@/features/gift-cards/utils/giftCardVerify';
 import { CRM_TABS } from '@/navigation/moduleTabs';
 
 const FUNDING_LABELS: Record<string, string> = {
@@ -30,6 +33,7 @@ export default function GiftCardsPage() {
   const [digitalCard, setDigitalCard] = useState<GiftCard | null>(null);
   const [selected, setSelected] = useState<GiftCard | null>(null);
   const [lookupCode, setLookupCode] = useState('');
+  const [verifyResult, setVerifyResult] = useState<GiftCardVerification | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.giftCards.all({ search }),
@@ -37,8 +41,23 @@ export default function GiftCardsPage() {
   });
 
   const lookupMutation = useMutation({
-    mutationFn: () => giftCardsApi.getBalance(lookupCode),
-    onSuccess: (res) => toast.success(`Saldo ${res.code}: ${formatCurrency(res.balance)}`),
+    mutationFn: async () => {
+      const token = extractGiftCardVerifyToken(lookupCode);
+      if (token) {
+        setVerifyResult(null);
+        return giftCardsApi.verify(token);
+      }
+      setVerifyResult(null);
+      return giftCardsApi.getBalance(lookupCode);
+    },
+    onSuccess: (res) => {
+      if ('valid' in res) {
+        setVerifyResult(res);
+        toast.success(res.valid ? 'Gift card legítima' : 'Gift card no válida');
+      } else {
+        toast.success(`Saldo ${res.code}: ${formatCurrency(res.balance)}`);
+      }
+    },
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -71,7 +90,7 @@ export default function GiftCardsPage() {
         <SearchInput placeholder="Buscar por código o destinatario..." onSearch={setSearch} />
         <div className={adminStyles.inlineLookup}>
           <Input
-            placeholder="Consultar código..."
+            placeholder="Código, URL o token del QR..."
             value={lookupCode}
             onChange={e => setLookupCode(e.target.value)}
           />
@@ -82,10 +101,21 @@ export default function GiftCardsPage() {
             loading={lookupMutation.isPending}
             disabled={!lookupCode.trim()}
           >
-            Saldo
+            Consultar
           </Button>
+          <Link to="/admin/scanner">
+            <Button variant="ghost" icon={<Scan size={14} />} aria-label="Escanear QR">
+              QR
+            </Button>
+          </Link>
         </div>
       </FiltersBar>
+
+      {verifyResult && (
+        <Section>
+          <GiftCardVerifyResult result={verifyResult} />
+        </Section>
+      )}
 
       <Section>
         {isLoading ? (
