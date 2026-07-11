@@ -64,6 +64,7 @@ const LocationsPage  = lazy(() => import('@/pages/admin/LocationsPage'));
 const CashRegistersPage = lazy(() => import('@/pages/admin/CashRegistersPage'));
 const PriceInquiryPage = lazy(() => import('@/pages/admin/PriceInquiryPage'));
 const PriceListsPage = lazy(() => import('@/pages/admin/PriceListsPage'));
+const QRScannerPage = lazy(() => import('@/pages/admin/QRScannerPage'));
 const LoyaltyPage  = lazy(() => import('@/pages/admin/LoyaltyPage'));
 const GiftCardsPage = lazy(() => import('@/pages/admin/GiftCardsPage'));
 const CollectionsPage = lazy(() => import('@/pages/admin/CollectionsPage'));
