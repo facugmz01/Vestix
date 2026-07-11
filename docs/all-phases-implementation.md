@@ -48,7 +48,7 @@ Implementación coordinada por agentes con **doble validación**:
 
 ## Métricas finales
 
-- **288 tests unitarios** pasando (46 suites)
+- **290 tests unitarios** pasando (46 suites)
 - **Backend build** OK
 - **Frontend build** OK
 - **E2E**: requiere PostgreSQL + Redis (`sudo pg_ctlcluster 16 main start`)

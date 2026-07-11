@@ -96,7 +96,7 @@ export class GiftCardsService {
     tx: Pick<PrismaService, 'giftCard'>,
     code: string,
   ) {
-    const card = await this.prisma.giftCard.findUnique({
+    const card = await tx.giftCard.findUnique({
       where: { code: code.toUpperCase() },
     });
     if (!card) throw new NotFoundException('Gift card no encontrada');
