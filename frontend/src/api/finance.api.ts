@@ -1,6 +1,6 @@
 import { get, post } from './client';
 import { cleanParams } from './requestUtils';
-import type { CurrentAccount, CurrentAccountMovement, PagedResponse, PaymentMethodEntity } from '@/types';
+import type { CurrentAccount, CurrentAccountMovement, FinancialAccount, PagedResponse, PaymentMethodEntity } from '@/types';
 
 export interface CurrentAccountFilters {
   page?: number;
@@ -17,6 +17,8 @@ export interface MovementFilters {
 }
 
 export const financeApi = {
+  getTreasuryAccounts: () => get<FinancialAccount[]>('/finance/treasury/accounts'),
+
   getPaymentMethods: () => get<PaymentMethodEntity[]>('/finance/payment-methods'),
 
   getCurrentAccounts: (filters?: CurrentAccountFilters) =>

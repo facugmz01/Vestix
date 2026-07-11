@@ -418,6 +418,7 @@ model Customer {
   updatedAt      DateTime        @updatedAt
   SaleOrder      SaleOrder[]
   loyaltyAccount LoyaltyAccount?
+  giftCards      GiftCard[]
 
   @@index([source])
   @@index([phone])
@@ -437,17 +438,24 @@ model LoyaltyAccount {
 }
 
 model GiftCard {
-  id             String    @id @default(uuid())
-  code           String    @unique
-  balance        Float
-  initialBalance Float
-  expiresAt      DateTime?
-  isActive       Boolean   @default(true)
-  issuedTo       String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                String    @id @default(uuid())
+  code              String    @unique
+  balance           Float
+  initialBalance    Float
+  expiresAt         DateTime?
+  isActive          Boolean   @default(true)
+  issuedTo          String?
+  customerId        String?
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  fundingType       String?   // INCOME | EXPENSE
+  fundingNotes      String?
+  accountId         String?
+  verificationToken String    @unique @default(uuid())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([isActive])
+  @@index([customerId])
   @@schema("sales")
 }
 

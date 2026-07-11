@@ -1,4 +1,38 @@
-import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { CustomerType } from '../../dto/create-customer.dto';
+
+export class IssueGiftCardCustomerDto {
+  @IsEnum(CustomerType)
+  @IsOptional()
+  type?: CustomerType;
+
+  @IsString()
+  @IsNotEmpty()
+  fullName: string;
+
+  @IsOptional()
+  @IsString()
+  taxId?: string;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+}
 
 export class IssueGiftCardDto {
   @IsNumber()
@@ -16,6 +50,26 @@ export class IssueGiftCardDto {
   @IsOptional()
   @IsString()
   issuedTo?: string;
+
+  @IsOptional()
+  @IsString()
+  customerId?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => IssueGiftCardCustomerDto)
+  newCustomer?: IssueGiftCardCustomerDto;
+
+  @IsIn(['INCOME', 'EXPENSE'])
+  fundingType: 'INCOME' | 'EXPENSE';
+
+  @IsString()
+  @IsNotEmpty()
+  accountId: string;
+
+  @IsOptional()
+  @IsString()
+  fundingNotes?: string;
 }
 
 export class RedeemGiftCardDto {
