@@ -3,9 +3,10 @@ import * as crypto from 'crypto';
 import axios from 'axios';
 import { WooCommerceApiService } from './woocommerce-api.service';
 import { MercadoLibreService } from './mercadolibre.service';
+import { ShopifyService } from './shopify.service';
+import { EcommerceOrderImportService } from './ecommerce-order-import.service';
 import { MercadoPagoService } from '../sales/mercadopago.service';
-import { CheckoutOrchestrator } from '../sales/checkout.orchestrator';
-import { OrderSource, PaymentMethod } from '../sales/models/order.model';
+import { PaymentMethod } from '../sales/models/order.model';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { AfipService } from '../invoicing/afip.service';
@@ -27,8 +28,9 @@ export class IntegrationsService {
   constructor(
     private readonly wcApi: WooCommerceApiService,
     private readonly mlService: MercadoLibreService,
+    private readonly shopifyService: ShopifyService,
+    private readonly ecommerceOrderImport: EcommerceOrderImportService,
     private readonly mercadoPagoService: MercadoPagoService,
-    private readonly checkoutOrchestrator: CheckoutOrchestrator,
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
     private readonly afipService: AfipService,
@@ -243,6 +245,9 @@ export class IntegrationsService {
       await this.mlService.syncStockAndPrices().catch(() => undefined);
       return { message: `ML sync: ${result.created} creados, ${result.updated} actualizados`, ...result };
     }
+    if (id.toLowerCase() === 'shopify') {
+      return this.shopifyService.syncInventory();
+    }
     return { message: 'Sincronización no soportada' };
   }
 
@@ -390,6 +395,19 @@ export class IntegrationsService {
     setImmediate(() => this.processJob(job.id));
   }
 
+  async syncStockToShopify(variantId: string, newQuantity: number) {
+    const mapping = await this.prisma.shopifyVariantMapping.findUnique({
+      where: { variantId },
+    });
+    if (!mapping) return;
+
+    try {
+      await this.shopifyService.syncStockForVariant(variantId, newQuantity);
+    } catch (err: any) {
+      this.logger.warn(`[Shopify] Stock sync failed for variant ${variantId}: ${err.message}`);
+    }
+  }
+
   async syncPriceToWooCommerce(variantId: string, newPrice: number) {
     const mapping = await this.prisma.wcVariantMapping.findUnique({
       where: { variantId },
@@ -476,52 +494,30 @@ export class IntegrationsService {
       const payload = job.payload as Record<string, any>;
       const wcOrder = await this.wcApi.getOrder(payload.id);
 
-      const branch = await this.prisma.branch.findFirst({ where: { isMain: true } }) || await this.prisma.branch.findFirst();
-      if (!branch) {
-        throw new Error('No se encontró una sucursal en el ERP para asociar el pedido de WooCommerce.');
-      }
-      const warehouse = await this.prisma.warehouse.findFirst({ where: { branchId: branch.id } });
+      const lines = wcOrder.line_items.map((item: any) => ({
+        sku: item.sku || undefined,
+        externalVariantId: `${item.product_id}:${item.variation_id ?? 0}`,
+        quantity: Number(item.quantity) || 1,
+        unitPrice: item.price != null ? Number(item.price) : undefined,
+      }));
 
-      const lines: { variantId: string; categoryId: string; quantity: number }[] = [];
-
-      for (const item of wcOrder.line_items) {
-        const variantId = await this.resolveWcLineItemToVariant(item);
-        if (!variantId) {
-          this.logger.error(
-            `[Inbound] Skipping unmapped WC line item — order ${payload.id}, ` +
-            `product ${item.product_id}, variation ${item.variation_id ?? 0}, sku ${item.sku ?? 'n/a'}`,
-          );
-          continue;
-        }
-        lines.push({
-          variantId,
-          categoryId: 'ECOMMERCE',
-          quantity: item.quantity,
-        });
-      }
-
-      if (lines.length === 0) {
-        throw new Error(`WooCommerce order ${payload.id} has no mappable line items`);
-      }
-
-      const erpOrderDto = {
-        id: crypto.randomUUID(),
-        branchId: branch.id,
-        warehouseId: warehouse?.id || null,
-        source: OrderSource.ECOMMERCE,
-        customerId: undefined,
+      const importResult = await this.ecommerceOrderImport.importOrderLines(
+        'WOOCOMMERCE',
+        String(payload.id),
         lines,
-        paymentMethod: PaymentMethod.CREDIT_CARD,
-        paymentAccountId: undefined,
-        createdAtIso: new Date().toISOString(),
-      };
+        {
+          paymentMethod: PaymentMethod.CREDIT_CARD,
+          grandTotal: wcOrder.total != null ? Number(wcOrder.total) : undefined,
+        },
+      );
 
-      await this.checkoutOrchestrator.processCheckout(erpOrderDto as any);
-      this.logger.log(`[Inbound] ✓ WooCommerce Order ${payload.id} imported into ERP`);
+      this.logger.log(
+        `[Inbound] ✓ WooCommerce Order ${payload.id} — ${importResult.status}`,
+      );
     }
   }
 
-  // ─── WC LINE ITEM RESOLUTION ───────────────────────────────────────────────
+  // ─── WC LINE ITEM RESOLUTION (legacy helper, used by outbound jobs) ─────────
 
   private async resolveWcLineItemToVariant(item: {
     product_id: number;
@@ -610,5 +606,33 @@ export class IntegrationsService {
 
   async deleteMlMapping(variantId: string) {
     return this.mlService.deleteMapping(variantId);
+  }
+
+  async getShopifyMappings() {
+    return this.prisma.shopifyVariantMapping.findMany({
+      include: {
+        variant: {
+          include: { product: { select: { name: true, baseSku: true } } },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  async saveShopifyMapping(
+    variantId: string,
+    shopifyProductId: string,
+    shopifyVariantId: string,
+    inventoryItemId?: string,
+  ) {
+    return this.prisma.shopifyVariantMapping.upsert({
+      where: { variantId },
+      create: { variantId, shopifyProductId, shopifyVariantId, inventoryItemId },
+      update: { shopifyProductId, shopifyVariantId, inventoryItemId },
+    });
+  }
+
+  async deleteShopifyMapping(variantId: string) {
+    return this.prisma.shopifyVariantMapping.delete({ where: { variantId } });
   }
 }

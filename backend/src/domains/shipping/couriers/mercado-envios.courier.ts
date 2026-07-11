@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { SettingsService } from '../../../modules/settings/settings.service';
 import { CarrierAdapter, CarrierType, ShipmentRequest, ShipmentResult } from './courier.interface';
 
@@ -16,58 +16,61 @@ export class MercadoEnviosCourierAdapter implements CarrierAdapter {
   }
 
   async createShipment(request: ShipmentRequest): Promise<ShipmentResult> {
+    if (request.manualTrackingNumber) {
+      return {
+        carrierType: 'MERCADO_ENVIOS',
+        trackingNumber: request.manualTrackingNumber,
+      };
+    }
+
     const settings = await this.settingsService.getStorefrontSettings();
     const cfg = settings.deliverySettings?.carriers?.mercadoEnvios;
 
     if (!(await this.isConfigured())) {
-      return {
-        carrierType: 'MERCADO_ENVIOS',
-        trackingNumber: request.manualTrackingNumber || `ME-${request.orderRef}`,
-      };
+      throw new BadRequestException(
+        'Mercado Envíos no está configurado. Ingresá un número de seguimiento manual o configurá el access token.',
+      );
     }
 
-    try {
-      const response = await fetch('https://api.mercadolibre.com/shipments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${cfg!.accessToken}`,
+    const response = await fetch('https://api.mercadolibre.com/shipments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cfg!.accessToken}`,
+      },
+      body: JSON.stringify({
+        external_reference: request.orderId,
+        receiver_address: {
+          zip_code: request.zipCode,
+          street_name: request.address,
+          city_name: request.city,
+          state_name: request.state,
         },
-        body: JSON.stringify({
-          external_reference: request.orderId,
-          receiver_address: {
-            zip_code: request.zipCode,
-            street_name: request.address,
-            city_name: request.city,
-            state_name: request.state,
-          },
-          receiver_name: request.recipientName,
-          receiver_phone: request.recipientPhone,
-        }),
-        signal: AbortSignal.timeout(10000),
-      });
+        receiver_name: request.recipientName,
+        receiver_phone: request.recipientPhone,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
 
-      if (!response.ok) {
-        throw new Error(`MercadoEnvíos API ${response.status}`);
-      }
-
-      const data = await response.json();
-      const trackingNumber = data?.tracking_number || data?.id?.toString() || request.manualTrackingNumber;
-
-      return {
-        carrierType: 'MERCADO_ENVIOS',
-        trackingNumber: trackingNumber || `ME-${request.orderRef}`,
-        carrierShipmentId: data?.id?.toString(),
-        labelUrl: data?.label_url,
-        externalUrl: data?.id ? `https://www.mercadolibre.com.ar/ventas/${data.id}/detalle` : undefined,
-      };
-    } catch (err: any) {
-      this.logger.warn(`MercadoEnvíos shipment fallback for ${request.orderId}: ${err.message}`);
-      return {
-        carrierType: 'MERCADO_ENVIOS',
-        trackingNumber: request.manualTrackingNumber || `ME-${request.orderRef}`,
-      };
+    if (!response.ok) {
+      const text = await response.text();
+      this.logger.error(`MercadoEnvíos API ${response.status}: ${text}`);
+      throw new BadRequestException(`MercadoEnvíos API error (${response.status})`);
     }
+
+    const data = await response.json();
+    const trackingNumber = data?.tracking_number || data?.id?.toString();
+    if (!trackingNumber) {
+      throw new BadRequestException('MercadoEnvíos API did not return a tracking number');
+    }
+
+    return {
+      carrierType: 'MERCADO_ENVIOS',
+      trackingNumber,
+      carrierShipmentId: data?.id?.toString(),
+      labelUrl: data?.label_url,
+      externalUrl: data?.id ? `https://www.mercadolibre.com.ar/ventas/${data.id}/detalle` : undefined,
+    };
   }
 
   getTrackingUrl(trackingNumber: string): string {

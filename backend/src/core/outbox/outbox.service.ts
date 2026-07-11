@@ -96,6 +96,7 @@ export class OutboxProcessorService {
         const available = stockLevels.reduce((sum, sl) => sum + sl.availableQuantity, 0);
 
         await this.integrationsService.syncStockToWooCommerce(variantId, available);
+        await this.integrationsService.syncStockToShopify(variantId, available);
         this.logger.debug(
           `STOCK_MOVEMENT_RECORDED: queued WC stock sync for variant ${variantId} (${available} units)`,
         );

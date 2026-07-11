@@ -4,6 +4,7 @@ import { CashService } from './cash/cash.service';
 import { PaymentsService } from './payments.service';
 import { CurrentAccountsService } from './current-accounts.service';
 import { FinanceDocumentsService } from './finance-documents.service';
+import { CostingService } from './costing.service';
 import { FinanceController } from './finance.controller';
 import { PrismaModule } from '../../core/prisma/prisma.module';
 
@@ -17,6 +18,7 @@ import { PrismaModule } from '../../core/prisma/prisma.module';
     PaymentsService,
     CurrentAccountsService,
     FinanceDocumentsService,
+    CostingService,
   ],
   exports: [
     AccountsService,
@@ -24,6 +26,7 @@ import { PrismaModule } from '../../core/prisma/prisma.module';
     PaymentsService,
     CurrentAccountsService,
     FinanceDocumentsService,
+    CostingService,
   ],
 })
 export class FinanceModule {}

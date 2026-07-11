@@ -4,6 +4,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { Logger } from '@nestjs/common';
 import { AfipService } from './afip.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { resolveAfipVoucherParams, splitAmountsForAfip } from './afip-voucher.util';
 import { InvoiceStatus } from './models/invoice.model';
 
 @Processor('afip_invoices')
@@ -42,8 +43,11 @@ export class AfipProcessor extends WorkerHost {
       return { status: 'ALREADY_INVOICED' };
     }
 
-    const netAmount = order.grandTotal / 1.21;
-    const vatAmount = order.grandTotal - netAmount;
+    const voucherParams = resolveAfipVoucherParams(
+      order.customer?.taxId,
+      order.customer?.type,
+    );
+    const amounts = splitAmountsForAfip(order.grandTotal, voucherParams.ivaRate);
 
     let invoice = order.invoices.find(
       inv => inv.status === InvoiceStatus.PENDING_AFIP || inv.status === InvoiceStatus.FAILED,
@@ -53,12 +57,12 @@ export class AfipProcessor extends WorkerHost {
       invoice = await this.prisma.invoice.create({
         data: {
           orderId: order.id,
-          type: 'FA_B',
-          customerDocumentType: 'DNI',
-          customerDocumentNumber: order.customer?.taxId || '99999999',
-          netAmount,
-          vatAmount,
-          totalAmount: order.grandTotal,
+          type: voucherParams.invoiceLabel,
+          customerDocumentType: String(voucherParams.documentType),
+          customerDocumentNumber: String(voucherParams.documentNumber || order.customer?.taxId || '0'),
+          netAmount: amounts.netAmount,
+          vatAmount: amounts.vatAmount,
+          totalAmount: amounts.totalAmount,
           status: InvoiceStatus.PENDING_AFIP,
         },
       });
@@ -94,12 +98,14 @@ export class AfipProcessor extends WorkerHost {
     try {
       const afipResponse = await this.afipService.createElectronicInvoice({
         pointOfSale,
-        invoiceType: 6,
-        documentType: 96,
-        documentNumber: parseInt(order.customer?.taxId || '99999999', 10),
-        netAmount,
-        vatAmount,
-        totalAmount: order.grandTotal,
+        invoiceType: voucherParams.invoiceType,
+        documentType: voucherParams.documentType,
+        documentNumber: voucherParams.documentNumber,
+        netAmount: amounts.netAmount,
+        vatAmount: amounts.vatAmount,
+        totalAmount: amounts.totalAmount,
+        ivaId: voucherParams.ivaId,
+        condicionIvaReceptorId: voucherParams.condicionIvaReceptorId,
       });
 
       await this.prisma.invoice.update({
@@ -141,13 +147,18 @@ export class AfipProcessor extends WorkerHost {
 
     if (!saleReturn) throw new UnrecoverableError(`Return ${data.returnId} not found`);
 
-    const netAmount = saleReturn.totalRefundAmount / 1.21;
-    const vatAmount = saleReturn.totalRefundAmount - netAmount;
+    const voucherParams = resolveAfipVoucherParams(
+      saleReturn.saleOrder.customer?.taxId,
+      saleReturn.saleOrder.customer?.type,
+    );
+    const amounts = splitAmountsForAfip(saleReturn.totalRefundAmount, voucherParams.ivaRate);
+    const creditNoteType = voucherParams.invoiceType === 1 ? 'NC_A' : 'NC_B';
+    const creditNoteCbteType = voucherParams.invoiceType === 1 ? 3 : 8;
 
     let invoice = await this.prisma.invoice.findFirst({
       where: {
         orderId: saleReturn.saleOrderId,
-        type: 'NC_B',
+        type: creditNoteType,
         status: { in: [InvoiceStatus.PENDING_AFIP, InvoiceStatus.FAILED] },
       },
     });
@@ -156,12 +167,12 @@ export class AfipProcessor extends WorkerHost {
       invoice = await this.prisma.invoice.create({
         data: {
           orderId: saleReturn.saleOrderId,
-          type: 'NC_B',
-          customerDocumentType: 'DNI',
-          customerDocumentNumber: saleReturn.saleOrder.customer?.taxId || '99999999',
-          netAmount,
-          vatAmount,
-          totalAmount: saleReturn.totalRefundAmount,
+          type: creditNoteType,
+          customerDocumentType: String(voucherParams.documentType),
+          customerDocumentNumber: String(voucherParams.documentNumber || saleReturn.saleOrder.customer?.taxId || '0'),
+          netAmount: amounts.netAmount,
+          vatAmount: amounts.vatAmount,
+          totalAmount: amounts.totalAmount,
           status: InvoiceStatus.PENDING_AFIP,
         },
       });
@@ -197,12 +208,14 @@ export class AfipProcessor extends WorkerHost {
     try {
       const afipResponse = await this.afipService.createElectronicInvoice({
         pointOfSale,
-        invoiceType: 8,
-        documentType: 96,
-        documentNumber: parseInt(saleReturn.saleOrder.customer?.taxId || '99999999', 10),
-        netAmount,
-        vatAmount,
-        totalAmount: saleReturn.totalRefundAmount,
+        invoiceType: creditNoteCbteType,
+        documentType: voucherParams.documentType,
+        documentNumber: voucherParams.documentNumber,
+        netAmount: amounts.netAmount,
+        vatAmount: amounts.vatAmount,
+        totalAmount: amounts.totalAmount,
+        ivaId: voucherParams.ivaId,
+        condicionIvaReceptorId: voucherParams.condicionIvaReceptorId,
       });
 
       await this.prisma.invoice.update({

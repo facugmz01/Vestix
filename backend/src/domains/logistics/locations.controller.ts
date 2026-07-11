@@ -7,56 +7,46 @@ import {
   Param,
   Body,
   Query,
-  HttpException,
-  HttpStatus,
+  ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
-import { AuthGuard } from '@nestjs/passport';
+import { LocationsService } from './locations.service';
 
 @Controller('locations')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class LocationsController {
-  private notImplemented() {
-    throw new HttpException(
-      'Ubicaciones de depósito no disponibles: el modelo Location aún no está en el esquema de base de datos.',
-      HttpStatus.NOT_IMPLEMENTED,
-    );
-  }
+  constructor(private readonly locationsService: LocationsService) {}
 
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Inventory' })
-  getLocations(
-    @Query('page') _page: string,
-    @Query('pageSize') _pageSize: string,
-    @Query('search') _search?: string,
-    @Query('warehouseId') _warehouseId?: string,
-  ) {
-    this.notImplemented();
+  getLocations(@Query() query: Record<string, string>) {
+    return this.locationsService.findAll(query);
   }
 
   @Get(':id')
   @RequirePermissions({ action: 'read', subject: 'Inventory' })
-  getLocation(@Param('id') _id: string) {
-    this.notImplemented();
+  getLocation(@Param('id', ParseUUIDPipe) id: string) {
+    return this.locationsService.findOne(id);
   }
 
   @Post()
   @RequirePermissions({ action: 'manage', subject: 'Inventory' })
-  createLocation(@Body() _body: any) {
-    this.notImplemented();
+  createLocation(@Body() body: any) {
+    return this.locationsService.create(body);
   }
 
   @Patch(':id')
   @RequirePermissions({ action: 'manage', subject: 'Inventory' })
-  updateLocation(@Param('id') _id: string, @Body() _body: any) {
-    this.notImplemented();
+  updateLocation(@Param('id', ParseUUIDPipe) id: string, @Body() body: any) {
+    return this.locationsService.update(id, body);
   }
 
   @Delete(':id')
   @RequirePermissions({ action: 'manage', subject: 'Inventory' })
-  deleteLocation(@Param('id') _id: string) {
-    this.notImplemented();
+  deleteLocation(@Param('id', ParseUUIDPipe) id: string) {
+    return this.locationsService.remove(id);
   }
 }
