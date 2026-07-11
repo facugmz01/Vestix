@@ -1107,6 +1107,7 @@ model SystemSettings {
   qr            Json     @default("{}")
   labelPrinting Json     @default("{}")
   loyalty       Json     @default("{}")
+  giftCards     Json     @default("{}")
   updatedAt     DateTime @updatedAt
 
   @@schema("settings")

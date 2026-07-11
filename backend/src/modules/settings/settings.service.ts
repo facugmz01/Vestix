@@ -14,6 +14,11 @@ import {
   resolveReceiptStyle,
 } from '../../domains/sales/models/receipt-style.model';
 import {
+  DEFAULT_GIFT_CARD_TEMPLATE,
+  GiftCardTemplateSettings,
+  resolveGiftCardTemplate,
+} from '../../domains/sales/models/gift-card-template.model';
+import {
   ARCA_UPLOADS_DIR,
   evaluateAfipConfiguration,
   getArcaCertFilePaths,
@@ -92,6 +97,10 @@ export interface LabelPrintingSettings {
   zplDpi: 203 | 300;
   zplPrinterHost?: string;
   zplPrinterPort?: number;
+}
+
+export interface GiftCardsSettings {
+  template: GiftCardTemplateSettings;
 }
 
 export type NotificationChannelPreference = 'EMAIL' | 'WHATSAPP' | 'SMS';
@@ -446,6 +455,14 @@ export class SettingsService implements OnModuleInit {
     };
   }
 
+  async getGiftCardsSettings(): Promise<GiftCardsSettings> {
+    const row = await this.getCachedRaw();
+    const stored = (row?.giftCards as Partial<GiftCardsSettings>) ?? {};
+    return {
+      template: resolveGiftCardTemplate(stored.template),
+    };
+  }
+
   async getNotificationSettings(): Promise<NotificationSettings> {
     const row = await this.getCachedRaw();
     const stored = (row?.notifications as NotificationSettings) ?? {} as NotificationSettings;
@@ -574,7 +591,7 @@ export class SettingsService implements OnModuleInit {
       if (!current) throw new Error('SystemSettings default row not found');
 
       const sections = ['general', 'pricing', 'skuBarcode', 'invoicing', 'notifications',
-                        'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr', 'labelPrinting'] as const;
+                        'integrations', 'offline', 'pos', 'arca', 'storefront', 'pwa', 'qr', 'labelPrinting', 'giftCards'] as const;
 
       const dataToUpdate: any = {};
       for (const s of sections) {
@@ -1291,6 +1308,9 @@ export class SettingsService implements OnModuleInit {
             pointsPerAmount: 1,
             amountUnit: 100,
             redeemValuePerPoint: 1,
+          },
+          giftCards: {
+            template: { ...DEFAULT_GIFT_CARD_TEMPLATE },
           },
         },
       });

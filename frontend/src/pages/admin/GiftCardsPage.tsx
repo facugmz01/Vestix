@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Gift, Ban, Search, QrCode } from 'lucide-react';
+import { Plus, Gift, Ban, Search, QrCode, Palette } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
@@ -58,11 +59,18 @@ export default function GiftCardsPage() {
       title="Gift Cards"
       subtitle="Emití tarjetas de regalo, consultá saldos y desactivá códigos."
       action={
-        <ActionGuard action="create" subject="Sales">
-          <Button variant="primary" icon={<Plus size={16} />} onClick={() => setIssueOpen(true)}>
-            Emitir Gift Card
-          </Button>
-        </ActionGuard>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Link to="/admin/settings?tab=giftcards">
+            <Button variant="secondary" icon={<Palette size={16} />}>
+              Plantilla
+            </Button>
+          </Link>
+          <ActionGuard action="create" subject="Sales">
+            <Button variant="primary" icon={<Plus size={16} />} onClick={() => setIssueOpen(true)}>
+              Emitir Gift Card
+            </Button>
+          </ActionGuard>
+        </div>
       }
     >
       <FiltersBar actions={<Badge color="gray">{cards.length} tarjetas</Badge>}>
