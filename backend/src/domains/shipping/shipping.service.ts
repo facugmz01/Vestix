@@ -19,6 +19,8 @@ import { UpdateLocationDto } from './dto/update-location.dto';
 import { CompleteDeliveryDto } from './dto/complete-delivery.dto';
 import { DeliveryStatus, ValidationMethod } from './models/delivery.model';
 import { CourierService } from './courier.service';
+import { CatalogFacade } from '../catalog/catalog.facade';
+import { enrichOrderLines } from '../sales/utils/enrich-order-lines.util';
 import * as crypto from 'crypto';
 
 const OTP_EXPIRY_MS = 30 * 60 * 1000;
@@ -45,6 +47,7 @@ export class ShippingService {
     private readonly geocodingService: GeocodingService,
     private readonly notificationTriggers: NotificationTriggersService,
     private readonly courierService: CourierService,
+    private readonly catalogFacade: CatalogFacade,
   ) {}
 
   subscribeTracking(orderId: string): Observable<{ data: TrackingEventPayload }> {
@@ -367,6 +370,12 @@ export class ShippingService {
       throw new BadRequestException('No tenés permiso para ver este pedido.');
     }
     return this.mapTrackingResponse(order);
+  }
+
+  private async enrichLines(lines: { variantId: string }[]) {
+    const variantIds = lines.map(l => l.variantId);
+    const variants = await this.catalogFacade.getVariantsDetails(variantIds);
+    return enrichOrderLines(lines as any, variants);
   }
 
   async getPublicTracking(trackingToken: string) {
@@ -817,9 +826,12 @@ export class ShippingService {
     return this.getShippingByOrderId(saleOrderId);
   }
 
-  private mapTrackingResponse(order: any) {
+  private async mapTrackingResponse(order: any) {
     const fulfillment = order.fulfillment;
     const delivery = fulfillment?.delivery;
+    const isCancelled =
+      order.status === 'CANCELLED' || fulfillment?.status === 'CANCELLED';
+    const enrichedLines = await this.enrichLines(order.lines || []);
 
     return {
       orderId: order.id,
@@ -838,6 +850,7 @@ export class ShippingService {
         shippedAt: fulfillment?.shippedAt,
         deliveredAt: fulfillment?.deliveredAt,
         dispatchedAt: delivery?.dispatchedAt,
+        cancelledAt: isCancelled ? fulfillment?.updatedAt : undefined,
       },
       delivery: delivery
         ? {
@@ -850,7 +863,7 @@ export class ShippingService {
             proofPhotoUrl: delivery.proofPhotoUrl,
           }
         : null,
-      lines: order.lines,
+      lines: enrichedLines,
       grandTotal: order.grandTotal,
       customerName: order.customer?.fullName,
     };

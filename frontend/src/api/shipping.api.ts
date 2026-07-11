@@ -29,6 +29,18 @@ export interface DeliveryTracking {
   hasDeliveryCode?: boolean;
 }
 
+export interface OrderLineItem {
+  id: string;
+  variantId: string;
+  quantity: number;
+  basePrice: number;
+  discountAmount: number;
+  finalPrice: number;
+  productName: string;
+  variantSku?: string | null;
+  size?: string | null;
+}
+
 export interface OrderTracking {
   orderId: string;
   status: string;
@@ -45,9 +57,10 @@ export interface OrderTracking {
     shippedAt?: string;
     deliveredAt?: string;
     dispatchedAt?: string;
+    cancelledAt?: string;
   };
   delivery?: DeliveryTracking | null;
-  lines: any[];
+  lines: OrderLineItem[];
   grandTotal: number;
   customerName?: string;
 }
