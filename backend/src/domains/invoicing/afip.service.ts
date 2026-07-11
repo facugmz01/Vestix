@@ -9,11 +9,18 @@ import {
   evaluateAfipConfiguration,
   resolveAfipCertificates,
 } from './afip-config.util';
+import { AfipVatBreakdown } from './afip-voucher.util';
 
 export interface AfipVoucherResponse {
   cae: string;
   caeExpiration: Date | string;
   receiptNumber: string;
+}
+
+export interface AfipIvaLine {
+  Id: number;
+  BaseImp: number;
+  Importe: number;
 }
 
 @Injectable()
@@ -60,6 +67,31 @@ export class AfipService {
     return new Afip(options as ConstructorParameters<typeof Afip>[0]);
   }
 
+  buildIvaArray(
+    vatBreakdown: AfipVatBreakdown[],
+    fallback?: { ivaId: number; netAmount: number; vatAmount: number },
+  ): AfipIvaLine[] {
+    if (vatBreakdown.length > 0) {
+      return vatBreakdown
+        .filter(row => row.vatAmount > 0 || row.netAmount > 0)
+        .map(row => ({
+          Id: row.ivaId,
+          BaseImp: this.roundAmount(row.netAmount),
+          Importe: this.roundAmount(row.vatAmount),
+        }));
+    }
+
+    if (fallback && fallback.vatAmount > 0) {
+      return [{
+        Id: fallback.ivaId,
+        BaseImp: this.roundAmount(fallback.netAmount),
+        Importe: this.roundAmount(fallback.vatAmount),
+      }];
+    }
+
+    return [];
+  }
+
   /**
    * AFIP WSFE (Web Service Factura Electrónica) Integration
    * Requests a legal CAE to validate a sale with the Argentine government.
@@ -74,6 +106,8 @@ export class AfipService {
     totalAmount: number;
     ivaId?: number;
     condicionIvaReceptorId?: number;
+    vatBreakdown?: AfipVatBreakdown[];
+    noIvaDiscrimination?: boolean;
   }): Promise<AfipVoucherResponse> {
     const arca = await this.settingsService.getArcaSettings();
     const config = evaluateAfipConfiguration(arca);
@@ -93,8 +127,9 @@ export class AfipService {
       );
       const nextVoucher = Number(lastVoucher) + 1;
 
-      const netAmount = this.roundAmount(payload.netAmount);
-      const vatAmount = this.roundAmount(payload.vatAmount);
+      const noIva = payload.noIvaDiscrimination === true;
+      const netAmount = this.roundAmount(noIva ? payload.totalAmount : payload.netAmount);
+      const vatAmount = this.roundAmount(noIva ? 0 : payload.vatAmount);
       const totalAmount = this.roundAmount(payload.totalAmount);
 
       const today = new Date();
@@ -103,7 +138,15 @@ export class AfipService {
         10,
       );
 
-      const voucherData = {
+      const ivaLines = noIva
+        ? []
+        : this.buildIvaArray(payload.vatBreakdown ?? [], {
+            ivaId: payload.ivaId ?? 5,
+            netAmount,
+            vatAmount,
+          });
+
+      const voucherData: Record<string, unknown> = {
         CantReg: 1,
         PtoVta: payload.pointOfSale,
         CbteTipo: payload.invoiceType,
@@ -122,14 +165,11 @@ export class AfipService {
         MonId: 'PES',
         MonCotiz: 1,
         CondicionIVAReceptorId: payload.condicionIvaReceptorId ?? 5,
-        Iva: [
-          {
-            Id: payload.ivaId ?? 5,
-            BaseImp: netAmount,
-            Importe: vatAmount,
-          },
-        ],
       };
+
+      if (ivaLines.length > 0) {
+        voucherData.Iva = ivaLines;
+      }
 
       const result = await afip.ElectronicBilling.createVoucher(voucherData);
 

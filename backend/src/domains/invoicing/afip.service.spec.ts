@@ -134,5 +134,96 @@ describe('AfipService', () => {
         receiptNumber: '00001-00000006',
       });
     });
+
+    it('should send multiple IVA alícuotas when vatBreakdown is provided', async () => {
+      mockSettingsService.getArcaSettings.mockResolvedValue({
+        ...configuredArca,
+      });
+
+      jest.spyOn(require('./afip-config.util'), 'evaluateAfipConfiguration').mockReturnValue({
+        configured: true,
+        enabled: true,
+        hasCuit: true,
+        hasCertificates: true,
+        missing: [],
+      });
+      jest.spyOn(require('./afip-config.util'), 'resolveAfipCertificates').mockReturnValue({
+        cert: '-----BEGIN CERTIFICATE-----\nTEST\n-----END CERTIFICATE-----',
+        key: '-----BEGIN PRIVATE KEY-----\nTEST\n-----END PRIVATE KEY-----',
+      });
+
+      await service.createElectronicInvoice({
+        pointOfSale: 1,
+        invoiceType: 1,
+        documentType: 80,
+        documentNumber: 30123456789,
+        netAmount: 200,
+        vatAmount: 31.5,
+        totalAmount: 231.5,
+        vatBreakdown: [
+          { ivaId: 5, vatRate: 0.21, netAmount: 100, vatAmount: 21 },
+          { ivaId: 4, vatRate: 0.105, netAmount: 100, vatAmount: 10.5 },
+        ],
+      });
+
+      expect(mockCreateVoucher).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ImpNeto: 200,
+          ImpIVA: 31.5,
+          ImpTotal: 231.5,
+          Iva: [
+            { Id: 5, BaseImp: 100, Importe: 21 },
+            { Id: 4, BaseImp: 100, Importe: 10.5 },
+          ],
+        }),
+      );
+    });
+
+    it('should omit IVA array for Factura C (no discrimination)', async () => {
+      mockSettingsService.getArcaSettings.mockResolvedValue({
+        ...configuredArca,
+      });
+
+      jest.spyOn(require('./afip-config.util'), 'evaluateAfipConfiguration').mockReturnValue({
+        configured: true,
+        enabled: true,
+        hasCuit: true,
+        hasCertificates: true,
+        missing: [],
+      });
+      jest.spyOn(require('./afip-config.util'), 'resolveAfipCertificates').mockReturnValue({
+        cert: '-----BEGIN CERTIFICATE-----\nTEST\n-----END CERTIFICATE-----',
+        key: '-----BEGIN PRIVATE KEY-----\nTEST\n-----END PRIVATE KEY-----',
+      });
+
+      await service.createElectronicInvoice({
+        pointOfSale: 1,
+        invoiceType: 11,
+        documentType: 80,
+        documentNumber: 30123456789,
+        netAmount: 500,
+        vatAmount: 0,
+        totalAmount: 500,
+        noIvaDiscrimination: true,
+      });
+
+      const payload = mockCreateVoucher.mock.calls[0][0] as Record<string, unknown>;
+      expect(payload.ImpNeto).toBe(500);
+      expect(payload.ImpIVA).toBe(0);
+      expect(payload.Iva).toBeUndefined();
+    });
+  });
+
+  describe('buildIvaArray', () => {
+    it('builds AFIP IVA lines from breakdown', () => {
+      const lines = service.buildIvaArray([
+        { ivaId: 5, vatRate: 0.21, netAmount: 100, vatAmount: 21 },
+        { ivaId: 4, vatRate: 0.105, netAmount: 100, vatAmount: 10.5 },
+      ]);
+      expect(lines).toEqual([
+        { Id: 5, BaseImp: 100, Importe: 21 },
+        { Id: 4, BaseImp: 100, Importe: 10.5 },
+      ]);
+    });
   });
 });

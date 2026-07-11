@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, UseGuards } from '@nestjs/common';
 import { SalesReportService } from './sales-report.service';
 import { StockReportService } from './stock-report.service';
 import { DashboardService } from './dashboard.service';
 import { CashReportService } from './cash-report.service';
 import { PurchasesReportService } from './purchases-report.service';
+import { ReportExportService } from './report-export.service';
+import { LibroIvaService } from './libro-iva.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
@@ -17,6 +19,8 @@ export class ReportsController {
     private readonly dashboardService: DashboardService,
     private readonly cashReport: CashReportService,
     private readonly purchasesReport: PurchasesReportService,
+    private readonly reportExport: ReportExportService,
+    private readonly libroIvaService: LibroIvaService,
   ) {}
 
   private parseDate(val: string, fallback: Date): Date {
@@ -109,9 +113,33 @@ export class ReportsController {
     });
   }
 
+  @Get('libro-iva/ventas')
+  @RequirePermissions({ action: 'read', subject: 'Reports' })
+  getLibroIvaVentas(
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.libroIvaService.getVentas({
+      from: this.parseDate(from, this.getDefaultFrom()),
+      to: this.parseDate(to, new Date()),
+    });
+  }
+
+  @Get('libro-iva/compras')
+  @RequirePermissions({ action: 'read', subject: 'Reports' })
+  getLibroIvaCompras(
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.libroIvaService.getCompras({
+      from: this.parseDate(from, this.getDefaultFrom()),
+      to: this.parseDate(to, new Date()),
+    });
+  }
+
   @Post('export/:type')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
-  exportReport(@Body() body: any) {
-    return { downloadUrl: `data:text/csv;charset=utf-8,Col1,Col2\nVal1,Val2` };
+  exportReport(@Param('type') type: string, @Body() body: Record<string, string>) {
+    return this.reportExport.export(type, body);
   }
 }

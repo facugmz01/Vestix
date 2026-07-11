@@ -23,4 +23,14 @@ export class AfipProducer {
       jobId: `credit_note_${returnId}`, // Idempotency key
     });
   }
+
+  async enqueueDebitNote(orderId: string, branchId: string, amount: number, reason?: string) {
+    await this.invoiceQueue.add(
+      'generate_debit_note',
+      { orderId, branchId, amount, reason },
+      {
+        jobId: `debit_note_${orderId}_${amount}`,
+      },
+    );
+  }
 }

@@ -10,11 +10,19 @@ const INVOICE_TYPE_MAP: Record<string, string> = {
   FA_C: 'FACTURA_C',
   NC_A: 'NOTA_CREDITO_A',
   NC_B: 'NOTA_CREDITO_B',
+  NC_C: 'NOTA_CREDITO_C',
+  ND_A: 'NOTA_DEBITO_A',
+  ND_B: 'NOTA_DEBITO_B',
+  ND_C: 'NOTA_DEBITO_C',
   FACTURA_A: 'FACTURA_A',
   FACTURA_B: 'FACTURA_B',
   FACTURA_C: 'FACTURA_C',
   NOTA_CREDITO_A: 'NOTA_CREDITO_A',
   NOTA_CREDITO_B: 'NOTA_CREDITO_B',
+  NOTA_CREDITO_C: 'NOTA_CREDITO_C',
+  NOTA_DEBITO_A: 'NOTA_DEBITO_A',
+  NOTA_DEBITO_B: 'NOTA_DEBITO_B',
+  NOTA_DEBITO_C: 'NOTA_DEBITO_C',
 };
 
 const INVOICE_TYPE_REVERSE: Record<string, InvoiceType> = {
@@ -23,6 +31,10 @@ const INVOICE_TYPE_REVERSE: Record<string, InvoiceType> = {
   FACTURA_C: InvoiceType.FACTURA_C,
   NOTA_CREDITO_A: InvoiceType.NOTA_CREDITO_A,
   NOTA_CREDITO_B: InvoiceType.NOTA_CREDITO_B,
+  NOTA_CREDITO_C: InvoiceType.NOTA_CREDITO_C,
+  NOTA_DEBITO_A: InvoiceType.NOTA_DEBITO_A,
+  NOTA_DEBITO_B: InvoiceType.NOTA_DEBITO_B,
+  NOTA_DEBITO_C: InvoiceType.NOTA_DEBITO_C,
 };
 
 @Injectable()
@@ -275,6 +287,36 @@ export class FinanceDocumentsService {
     });
 
     return this.mapElectronicInvoice(updated);
+  }
+
+  async issueDebitNote(dto: {
+    saleOrderId: string;
+    amount: number;
+    reason?: string;
+  }) {
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: dto.saleOrderId },
+      select: { id: true, branchId: true, grandTotal: true },
+    });
+    if (!order) throw new NotFoundException('Venta no encontrada');
+
+    if (dto.amount <= 0) {
+      throw new BadRequestException('El monto de la nota de débito debe ser mayor a cero');
+    }
+
+    await this.afipProducer.enqueueDebitNote(
+      order.id,
+      order.branchId,
+      dto.amount,
+      dto.reason,
+    );
+
+    return {
+      success: true,
+      message: 'Nota de débito encolada para emisión AFIP',
+      saleOrderId: order.id,
+      amount: dto.amount,
+    };
   }
 
   private mapPaymentRecord(order: any) {
