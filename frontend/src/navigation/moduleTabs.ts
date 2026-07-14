@@ -1,20 +1,48 @@
 import {
-  Package, Layers, Tag,
+  Package, Layers, FolderKanban, Percent,
   Warehouse, History, Truck,
   ShoppingCart, Users, FileText,
-  Wallet, CreditCard, Banknote, Gift, Palette,
+  Wallet, CreditCard, Banknote, Gift, Palette, Printer, LayoutTemplate, Search,
 } from 'lucide-react';
 import type { TabItem } from '@/components/ui/Tabs';
 
+/**
+ * Catalog module nav — 4 top-level groups instead of 8 flat tabs.
+ * Children appear in a dropdown and as a secondary pill row when active.
+ */
 export const CATALOG_TABS: TabItem[] = [
   { id: 'products', label: 'Productos', to: '/admin/catalog', icon: Package, end: true },
-  { id: 'attributes', label: 'Categorías y Atributos', to: '/admin/attributes', icon: Layers },
-  { id: 'promotions', label: 'Promociones', to: '/admin/promotions', icon: Tag },
-  { id: 'collections', label: 'Colecciones', to: '/admin/collections', icon: Layers },
-  { id: 'prices', label: 'Listas de Precios', to: '/admin/price-lists', icon: Banknote },
-  { id: 'price-inquiry', label: 'Consulta de Precios', to: '/admin/price-inquiry', icon: Tag },
-  { id: 'barcodes', label: 'Etiquetas', to: '/admin/barcodes', icon: Tag },
-  { id: 'label-templates', label: 'Plantillas', to: '/admin/label-templates', icon: Tag },
+  {
+    id: 'organization',
+    label: 'Organización',
+    to: '/admin/attributes',
+    icon: FolderKanban,
+    children: [
+      { id: 'attributes', label: 'Categorías y Atributos', to: '/admin/attributes', icon: Layers },
+      { id: 'collections', label: 'Colecciones', to: '/admin/collections', icon: Layers },
+    ],
+  },
+  {
+    id: 'pricing',
+    label: 'Precios',
+    to: '/admin/price-lists',
+    icon: Banknote,
+    children: [
+      { id: 'prices', label: 'Listas de Precios', to: '/admin/price-lists', icon: Banknote },
+      { id: 'price-inquiry', label: 'Consulta de Precios', to: '/admin/price-inquiry', icon: Search },
+      { id: 'promotions', label: 'Promociones', to: '/admin/promotions', icon: Percent },
+    ],
+  },
+  {
+    id: 'labels',
+    label: 'Etiquetas',
+    to: '/admin/barcodes',
+    icon: Printer,
+    children: [
+      { id: 'barcodes', label: 'Impresión', to: '/admin/barcodes', icon: Printer },
+      { id: 'label-templates', label: 'Plantillas', to: '/admin/label-templates', icon: LayoutTemplate },
+    ],
+  },
 ];
 
 export const INVENTORY_TABS: TabItem[] = [

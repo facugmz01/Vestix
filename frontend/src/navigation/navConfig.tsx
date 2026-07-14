@@ -14,6 +14,7 @@ import {
   FINANCE_TABS,
   CRM_TABS,
 } from './moduleTabs';
+import { flattenTabItems } from '@/components/ui/Tabs';
 
 export interface NavItem {
   id:      string;
@@ -106,11 +107,11 @@ export const NAV_GROUPS: NavGroup[] = [
  */
 export const ALL_NAV_ITEMS: NavItem[] = [
   ...NAV_GROUPS.flatMap((g) => g.items),
-  // Add sub-routes for breadcrumbs:
-  ...CATALOG_TABS.map(t => ({ ...t, action: 'read', subject: 'Catalog' } as NavItem)),
-  ...INVENTORY_TABS.map(t => ({ ...t, action: 'read', subject: 'Inventory' } as NavItem)),
-  ...PURCHASING_TABS.map(t => ({ ...t, action: 'read', subject: 'Purchasing' } as NavItem)),
-  ...SALES_TABS.map(t => ({ ...t, action: 'read', subject: 'Sales' } as NavItem)),
-  ...FINANCE_TABS.map(t => ({ ...t, action: 'read', subject: 'Finance' } as NavItem)),
-  ...CRM_TABS.map(t => ({ ...t, action: 'read', subject: 'Sales' } as NavItem)),
+  // Add sub-routes for breadcrumbs (flatten grouped module tabs):
+  ...flattenTabItems(CATALOG_TABS).map(t => ({ ...t, action: 'read', subject: 'Catalog' } as NavItem)),
+  ...flattenTabItems(INVENTORY_TABS).map(t => ({ ...t, action: 'read', subject: 'Inventory' } as NavItem)),
+  ...flattenTabItems(PURCHASING_TABS).map(t => ({ ...t, action: 'read', subject: 'Purchasing' } as NavItem)),
+  ...flattenTabItems(SALES_TABS).map(t => ({ ...t, action: 'read', subject: 'Sales' } as NavItem)),
+  ...flattenTabItems(FINANCE_TABS).map(t => ({ ...t, action: 'read', subject: 'Finance' } as NavItem)),
+  ...flattenTabItems(CRM_TABS).map(t => ({ ...t, action: 'read', subject: 'Sales' } as NavItem)),
 ];
