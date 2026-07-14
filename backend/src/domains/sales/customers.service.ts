@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { paginate } from '../../core/prisma/paginate';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
 
 @Injectable()
@@ -102,24 +103,34 @@ export class CustomersService {
     }));
   }
 
-  async update(id: string, dto: any) {
+  async update(id: string, dto: UpdateCustomerDto) {
     await this.findOne(id);
-    
-    if (dto.taxId === '') dto.taxId = null;
-    if (dto.email === '') dto.email = null;
-    if (dto.priceListId === '') dto.priceListId = null;
-    if (dto.taxCondition === '') dto.taxCondition = null;
 
-    if (dto.taxId) {
-      const exists = await this.prisma.customer.findFirst({ 
-        where: { taxId: dto.taxId, id: { not: id } } 
+    const taxId = dto.taxId === '' ? null : dto.taxId;
+    const email = dto.email === '' ? null : dto.email;
+    const priceListId = dto.priceListId === '' ? null : dto.priceListId;
+    const taxCondition = dto.taxCondition === '' ? null : dto.taxCondition;
+
+    if (taxId) {
+      const exists = await this.prisma.customer.findFirst({
+        where: { taxId, id: { not: id } },
       });
-      if (exists) throw new ConflictException(`El identificador fiscal ${dto.taxId} ya está en uso`);
+      if (exists) throw new ConflictException(`El identificador fiscal ${taxId} ya está en uso`);
     }
+
+    const data: Record<string, unknown> = {};
+    if (dto.type !== undefined) data.type = dto.type;
+    if (dto.fullName !== undefined) data.fullName = dto.fullName;
+    if (dto.taxId !== undefined) data.taxId = taxId;
+    if (dto.email !== undefined) data.email = email;
+    if (dto.phone !== undefined) data.phone = dto.phone || null;
+    if (dto.priceListId !== undefined) data.priceListId = priceListId;
+    if (dto.taxCondition !== undefined) data.taxCondition = taxCondition;
+    if (dto.isActive !== undefined) data.isActive = dto.isActive;
 
     const updated = await this.prisma.customer.update({
       where: { id },
-      data: dto,
+      data,
     });
     return this.mapCustomer(updated);
   }

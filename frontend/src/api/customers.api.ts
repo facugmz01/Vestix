@@ -14,7 +14,7 @@ export interface CustomerFilters {
 export type CreateCustomerDto = Omit<Customer, 'id' | 'createdAt' | 'credit'> & {
   initialCreditLimit?: number;
 };
-export type UpdateCustomerDto = Partial<CreateCustomerDto>;
+export type UpdateCustomerDto = Partial<Omit<CreateCustomerDto, 'initialCreditLimit'>>;
 
 export const customersApi = {
   getCustomers: (filters?: CustomerFilters) =>

@@ -2,6 +2,8 @@ import { Drawer, StatusChip, Badge, Button, Table } from '@/components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/api/queryKeys';
 import { customersApi } from '@/api/customers.api';
+import { loyaltyApi } from '@/api/loyalty.api';
+import { priceListsApi } from '@/api/priceLists.api';
 import type { Customer } from '@/types';
 import { ShoppingCart, Star, CreditCard, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -14,14 +16,43 @@ interface Props {
   customer: Customer | null;
 }
 
+function formatTierLabel(tier?: string) {
+  if (!tier) return '—';
+  if (tier === 'STANDARD') return 'Estándar';
+  return tier.charAt(0) + tier.slice(1).toLowerCase();
+}
+
 export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
-  if (!customer) return null;
+  const customerId = customer?.id ?? '';
 
   const { data: history, isLoading } = useQuery({
-    queryKey: queryKeys.customers.history(customer.id),
-    queryFn: () => customersApi.getHistory(customer.id),
-    enabled: open,
+    queryKey: queryKeys.customers.history(customerId),
+    queryFn: () => customersApi.getHistory(customerId),
+    enabled: open && !!customerId,
   });
+
+  const { data: loyaltyAccount, isLoading: loyaltyLoading, isError: loyaltyError } = useQuery({
+    queryKey: queryKeys.loyalty.account(customerId),
+    queryFn: () => loyaltyApi.getAccount(customerId),
+    enabled: open && !!customerId,
+    retry: false,
+  });
+
+  const { data: priceListsData } = useQuery({
+    queryKey: queryKeys.priceLists.all(),
+    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100 }),
+    enabled: open && !!customer?.priceListId,
+  });
+
+  if (!customer) return null;
+
+  const priceList = customer.priceListId
+    ? priceListsData?.data.find((list) => list.id === customer.priceListId)
+    : null;
+
+  const priceListLabel = customer.priceListId
+    ? (priceList ? `${priceList.name}${priceList.type ? ` (${priceList.type})` : ''}` : 'Cargando…')
+    : 'Lista por defecto';
 
   return (
     <Drawer open={open} onClose={onClose} title="Ficha del Cliente" width="lg">
@@ -82,15 +113,27 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
             <div className={styles.infoCardBody}>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Nivel:</span>
-                <Badge color="purple">Mayorista VIP</Badge>
+                {loyaltyLoading ? (
+                  <span className={styles.infoValue}>—</span>
+                ) : loyaltyError || !loyaltyAccount ? (
+                  <Badge color="gray">Sin cuenta</Badge>
+                ) : (
+                  <Badge color="blue">{formatTierLabel(loyaltyAccount.tier)}</Badge>
+                )}
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Lista de Precios:</span>
-                <span className={styles.infoValue}>LP_MAYORISTA (-15%)</span>
+                <span className={styles.infoValue}>{priceListLabel}</span>
               </div>
               <div className={styles.infoRowTotal}>
                 <span className={styles.infoLabel}>Puntos Acumulados:</span>
-                <span className={styles.infoValueBold}>4,250 pts</span>
+                <span className={styles.infoValueBold}>
+                  {loyaltyLoading
+                    ? '—'
+                    : loyaltyError || !loyaltyAccount
+                      ? '0 pts'
+                      : `${loyaltyAccount.points.toLocaleString('es-AR')} pts`}
+                </span>
               </div>
             </div>
           </div>
