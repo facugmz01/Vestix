@@ -143,14 +143,8 @@
   color: var(--text-muted);
   pointer-events: none;
   font-size: 13px;
-}
-
-.inputWithPrefix {
-  padding-left: 28px;
-}
-
-.inputWithPrefixUsd {
-  padding-left: 44px;
+  z-index: 1;
+  line-height: 1;
 }
 
 .usdPanel {
@@ -405,6 +399,15 @@
   font-family: inherit;
   font-size: 14px;
   box-sizing: border-box;
+}
+
+/* Must come after .input so padding-left wins over the shorthand padding above */
+.inputWithPrefix {
+  padding-left: 28px;
+}
+
+.inputWithPrefixUsd {
+  padding-left: 46px;
 }
 
 .input:disabled,
