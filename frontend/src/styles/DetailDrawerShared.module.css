@@ -2860,8 +2860,33 @@
 
 .purchaseSearchWrap {
   position: relative;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.purchaseFilterRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   margin-bottom: 16px;
   flex-shrink: 0;
+}
+
+.purchaseFilterSelect {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.purchaseFilterSelect:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .searchFieldIconLg {
@@ -3047,6 +3072,12 @@
 .cartLineGrid {
   display: grid;
   grid-template-columns: 72px 1fr;
+  gap: 8px;
+}
+
+.cartLineGrid3 {
+  display: grid;
+  grid-template-columns: 64px 1fr 1fr;
   gap: 8px;
 }
 

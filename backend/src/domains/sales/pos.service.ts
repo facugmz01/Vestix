@@ -191,22 +191,45 @@ export class PosService {
     };
   }
 
-  async searchCatalog(query: string, customerId?: string) {
+  async searchCatalog(
+    query: string,
+    customerId?: string,
+    filters?: { categoryId?: string; brandId?: string },
+  ) {
+    const q = (query || '').trim();
+    const categoryId = filters?.categoryId?.trim() || undefined;
+    const brandId = filters?.brandId?.trim() || undefined;
+
+    if (!q && !categoryId && !brandId) {
+      return [];
+    }
+
+    const productFilter = {
+      ...(categoryId ? { categoryId } : {}),
+      ...(brandId ? { brandId } : {}),
+    };
+
     const variants = await this.prisma.productVariant.findMany({
       where: {
         isActive: true,
-        OR: [
-          { sku: { contains: query, mode: 'insensitive' } },
-          { barcode: { contains: query, mode: 'insensitive' } },
-          { barcodes: { some: { barcode: { contains: query, mode: 'insensitive' } } } },
-          { product: { name: { contains: query, mode: 'insensitive' } } },
-        ],
+        ...(q
+          ? {
+              OR: [
+                { sku: { contains: q, mode: 'insensitive' } },
+                { barcode: { contains: q, mode: 'insensitive' } },
+                { barcodes: { some: { barcode: { contains: q, mode: 'insensitive' } } } },
+                { product: { name: { contains: q, mode: 'insensitive' } } },
+              ],
+            }
+          : {}),
+        ...(Object.keys(productFilter).length > 0 ? { product: productFilter } : {}),
       },
       include: {
         product: { include: { category: true, brand: true } },
         barcodes: true,
       },
-      take: 20,
+      take: 50,
+      orderBy: { sku: 'asc' },
     });
 
     const variantIds = variants.map(v => v.id);

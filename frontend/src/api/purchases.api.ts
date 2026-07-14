@@ -58,8 +58,10 @@ export const purchasesApi = {
   getSuppliers: () =>
     get<PagedResponse<Supplier>>('/suppliers'),
 
-  searchCatalog: (query: string) =>
-    get<ProductVariant[]>('/pos/catalog/search', { params: { q: query } }),
+  searchCatalog: (query: string, filters?: { categoryId?: string; brandId?: string }) =>
+    get<ProductVariant[]>('/pos/catalog/search', {
+      params: cleanParams({ q: query, ...filters }),
+    }),
 
   processDirect: (data: unknown) =>
     post<unknown>('/purchasing/direct', data),
