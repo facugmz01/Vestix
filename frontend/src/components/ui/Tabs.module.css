@@ -1,24 +1,18 @@
+.tabsRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
 .tabsContainer {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 0;
-  padding: 0 0 0 0;
-  padding-inline-end: 1.5rem;
-  overflow-x: auto;
-  scroll-padding-inline: 1rem;
-  scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tabsContainer::-webkit-scrollbar {
-  height: 4px;
-}
-
-.tabsContainer::-webkit-scrollbar-thumb {
-  background: var(--border-strong, var(--border));
-  border-radius: 4px;
+  padding: 0;
+  min-width: 0;
 }
 
 .tabLink {
@@ -26,20 +20,25 @@
   flex-shrink: 0;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.75rem 0.4rem;
+  padding: 0.75rem 0.35rem;
   color: var(--text-secondary);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
+  font-family: inherit;
+  line-height: 1.2;
   text-decoration: none;
+  border: none;
   border-bottom: 2px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
   margin-bottom: -1px;
 }
 
 .tabLink:hover {
   color: var(--text-primary);
-  border-bottom-color: var(--border-strong);
+  border-bottom-color: var(--border-strong, var(--border));
 }
 
 .tabLink.active {
@@ -53,18 +52,103 @@
   opacity: 0.8;
 }
 
-.tabLink.active .icon {
+.tabLink.active .icon,
+.menuItemActive .icon,
+.subTabActive .icon {
   opacity: 1;
 }
 
-@media (min-width: 1024px) {
-  .tabsContainer {
-    gap: 1.25rem;
-  }
+.dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
 
-  .tabLink {
-    font-size: 0.875rem;
-    padding: 0.75rem 0.5rem;
-    gap: 0.5rem;
-  }
+.dropdownTrigger {
+  gap: 0.3rem;
+}
+
+.chevron {
+  opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 8px);
+  background: var(--surface-0);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.25));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.menuItem:hover {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+.menuItemActive {
+  background: var(--accent-subtle, var(--surface-1));
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.subTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 12px;
+  padding: 4px;
+  border-radius: var(--radius, 8px);
+  background: var(--surface-1);
+}
+
+.subTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.subTab:hover {
+  color: var(--text-primary);
+}
+
+.subTabActive {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
