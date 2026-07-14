@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { UseGuards } from '@nestjs/common';
@@ -44,7 +45,7 @@ export class CustomersController {
 
   @Patch(':id')
   @RequirePermissions({ action: 'update', subject: 'Customers' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateCustomerDto) {
     return this.customersService.update(id, dto);
   }
 

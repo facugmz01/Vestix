@@ -7,7 +7,7 @@ import { CloudOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { Drawer, Button, Input } from '@/components/ui';
-import { customersApi, type CreateCustomerDto } from '@/api/customers.api';
+import { customersApi, type CreateCustomerDto, type UpdateCustomerDto } from '@/api/customers.api';
 import { priceListsApi } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
@@ -20,7 +20,7 @@ const customerSchema = z.object({
   taxId: z.string().optional(),
   email: z.string().email('Formato de correo inválido').or(z.literal('')).optional(),
   phone: z.string().optional(),
-  initialCreditLimit: z.number().min(0, 'No puede ser negativo'),
+  initialCreditLimit: z.number().min(0, 'No puede ser negativo').optional().default(0),
   priceListId: z.string().optional(),
   taxCondition: z.string().optional(),
 }).refine(data => data.type === 'INDIVIDUAL' || (data.type === 'BUSINESS' && !!data.taxId), {
@@ -29,6 +29,31 @@ const customerSchema = z.object({
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
+
+function toCreateDto(data: CustomerFormData): CreateCustomerDto {
+  return {
+    type: data.type,
+    fullName: data.fullName,
+    taxId: data.taxId || undefined,
+    email: data.email || undefined,
+    phone: data.phone || undefined,
+    initialCreditLimit: data.initialCreditLimit ?? 0,
+    priceListId: data.priceListId || undefined,
+    taxCondition: data.taxCondition || undefined,
+  };
+}
+
+function toUpdateDto(data: CustomerFormData): UpdateCustomerDto {
+  return {
+    type: data.type,
+    fullName: data.fullName,
+    taxId: data.taxId || undefined,
+    email: data.email || undefined,
+    phone: data.phone || undefined,
+    priceListId: data.priceListId || undefined,
+    taxCondition: data.taxCondition || undefined,
+  };
+}
 
 interface Props {
   open: boolean;
@@ -87,7 +112,7 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
-      const dto = data as CreateCustomerDto;
+      const dto = isEditing ? toUpdateDto(data) : toCreateDto(data);
 
       const enqueueOffline = () => {
         if (isEditing && customerToEdit) {
@@ -120,9 +145,9 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
 
       try {
         if (isEditing && customerToEdit) {
-          return { offline: false, res: await customersApi.updateCustomer(customerToEdit.id, dto) };
+          return { offline: false, res: await customersApi.updateCustomer(customerToEdit.id, dto as UpdateCustomerDto) };
         }
-        return { offline: false, res: await customersApi.createCustomer(dto) };
+        return { offline: false, res: await customersApi.createCustomer(dto as CreateCustomerDto) };
       } catch (err: unknown) {
         const axiosErr = err as { response?: unknown; code?: string; message?: string };
         const isNetworkError = !axiosErr.response || axiosErr.code === 'ERR_NETWORK' || axiosErr.message?.includes('Network Error');
@@ -143,7 +168,10 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Error crítico al procesar la solicitud');
+      const apiMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.errors && Object.values(error.response.data.errors).join('; ');
+      toast.error(apiMessage || error.message || 'Error crítico al procesar la solicitud');
     },
   });
 

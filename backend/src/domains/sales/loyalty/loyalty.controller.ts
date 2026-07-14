@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { RequirePermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
+import { RequirePermissions, RequireAnyPermissions } from '../../../core/rbac/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../../../core/rbac/guards/permissions.guard';
 import { LoyaltyService } from './loyalty.service';
 import { RedeemLoyaltyPointsDto, AdjustLoyaltyPointsDto } from './dto/loyalty.dto';
@@ -17,7 +17,10 @@ export class LoyaltyController {
   }
 
   @Get('accounts/:customerId')
-  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  @RequireAnyPermissions(
+    [{ action: 'read', subject: 'Sales' }],
+    [{ action: 'read', subject: 'Customers' }],
+  )
   getAccount(@Param('customerId', ParseUUIDPipe) customerId: string) {
     return this.loyaltyService.getAccount(customerId);
   }
