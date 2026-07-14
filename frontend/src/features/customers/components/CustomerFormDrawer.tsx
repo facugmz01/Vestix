@@ -20,7 +20,7 @@ const customerSchema = z.object({
   taxId: z.string().optional(),
   email: z.string().email('Formato de correo inválido').or(z.literal('')).optional(),
   phone: z.string().optional(),
-  initialCreditLimit: z.number().min(0, 'No puede ser negativo').optional().default(0),
+  initialCreditLimit: z.number().min(0, 'No puede ser negativo'),
   priceListId: z.string().optional(),
   taxCondition: z.string().optional(),
 }).refine(data => data.type === 'INDIVIDUAL' || (data.type === 'BUSINESS' && !!data.taxId), {
@@ -37,7 +37,7 @@ function toCreateDto(data: CustomerFormData): CreateCustomerDto {
     taxId: data.taxId || undefined,
     email: data.email || undefined,
     phone: data.phone || undefined,
-    initialCreditLimit: data.initialCreditLimit ?? 0,
+    initialCreditLimit: data.initialCreditLimit,
     priceListId: data.priceListId || undefined,
     taxCondition: data.taxCondition || undefined,
   };
@@ -256,7 +256,8 @@ export function CustomerFormDrawer({ open, onClose, customerToEdit }: Props) {
             type="number"
             {...register('initialCreditLimit', { valueAsNumber: true })}
             error={errors.initialCreditLimit?.message}
-            disabled={isEditing} 
+            // readOnly (not disabled) so RHF still includes the value; update payload strips it
+            readOnly={isEditing}
             helperText={isEditing ? "* Se edita desde el módulo de Riesgo/Finanzas" : undefined}
           />
           

@@ -61,11 +61,15 @@
   background: var(--surface-0);
 }
 
-/* Disabled State */
-.input:disabled {
+/* Disabled / read-only State */
+.input:disabled,
+.input:read-only {
   opacity: 0.6;
   background: var(--bg-disabled);
   cursor: not-allowed;
+}
+
+.input:disabled {
   pointer-events: none;
 }
 
