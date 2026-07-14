@@ -1,6 +1,6 @@
 import { get, post, patch, del } from './client';
 import { cleanParams } from './requestUtils';
-import type { Product, Category, Brand, PagedResponse } from '@/types';
+import type { Product, Category, Brand, Attribute, PagedResponse } from '@/types';
 
 export interface ProductFilters {
   search?: string;
@@ -74,9 +74,9 @@ export const productsApi = {
   updateBrand: (id: string, dto: { name?: string }) => patch<Brand>(`/brands/${id}`, dto),
   deleteBrand: (id: string) => del(`/brands/${id}`),
 
-  getAttributes: () => get<any[]>('/attributes'),
-  createAttribute: (dto: { name: string; values: string[] }) => post<any>('/attributes', dto),
-  updateAttribute: (id: string, dto: { name?: string; values?: string[] }) => patch<any>(`/attributes/${id}`, dto),
+  getAttributes: () => get<Attribute[]>('/attributes'),
+  createAttribute: (dto: { name: string; values: string[] }) => post<Attribute>('/attributes', dto),
+  updateAttribute: (id: string, dto: { name?: string; values?: string[] }) => patch<Attribute>(`/attributes/${id}`, dto),
   deleteAttribute: (id: string) => del(`/attributes/${id}`),
 
   getPriceLists: () => get<{ data: any[] } | any[]>(`/price-lists?pageSize=100`).then(res =>

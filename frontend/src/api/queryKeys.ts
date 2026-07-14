@@ -50,6 +50,9 @@ export const queryKeys = {
   brands: {
     all: () => ['brands', 'list'] as const,
   },
+  attributes: {
+    all: () => ['attributes', 'list'] as const,
+  },
   catalog: {
     public:   (filters?: object)  => withFilters(['catalog', 'public'], filters),
     posSync:  (branchId?: string) => branchId ? ['catalog', 'pos-sync', branchId] : ['catalog', 'pos-sync'],

@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Tag, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip, Modal
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, StatusChip, Modal, Tabs
 } from '@/components/ui';
 
 import { priceListsApi } from '@/api/priceLists.api';
@@ -110,6 +111,7 @@ export default function PriceListsPage() {
 
   return (
     <PageContainer 
+      tabs={<Tabs items={CATALOG_TABS} />}
       title="Listas de Precios" 
       subtitle="Gestioná matrices de precios y reglas comerciales (descuentos, recargos)."
       action={

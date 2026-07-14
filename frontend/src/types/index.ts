@@ -88,7 +88,13 @@ export interface SystemUser {
 }
 
 // ─── CATALOG ─────────────────────────────────────────────────────────────
-export interface Category { id: string; name: string; parentId?: string | null; code?: string; }
+export interface Category {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  code?: string;
+  parent?: { id: string; name: string } | null;
+}
 export interface Brand    { id: string; name: string; }
 export interface Attribute {
   id: string;
