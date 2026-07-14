@@ -29,8 +29,13 @@ export class PosController {
 
   @Get('catalog/search')
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
-  async searchCatalog(@Query('q') q: string, @Query('customerId') customerId?: string) {
-    return this.posService.searchCatalog(q, customerId);
+  async searchCatalog(
+    @Query('q') q?: string,
+    @Query('customerId') customerId?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('brandId') brandId?: string,
+  ) {
+    return this.posService.searchCatalog(q ?? '', customerId, { categoryId, brandId });
   }
 
   @Post('scan')
