@@ -30,8 +30,35 @@ export class AccountsService {
 
   async getAccounts() {
     return this.prisma.financialAccount.findMany({
-      where: { isActive: true }
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
     });
+  }
+
+  async getAccountTransactions(accountId: string, filters: { page?: number; pageSize?: number } = {}) {
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 30;
+    const account = await this.prisma.financialAccount.findUnique({ where: { id: accountId } });
+    if (!account) throw new NotFoundException('Cuenta no encontrada');
+
+    const where = { accountId };
+    const [data, total] = await Promise.all([
+      this.prisma.financialTransaction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.financialTransaction.count({ where }),
+    ]);
+
+    return {
+      account,
+      data,
+      total,
+      page,
+      pageSize,
+    };
   }
 
   // --- Payment Methods Config ---

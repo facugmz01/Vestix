@@ -82,61 +82,103 @@ export class CurrentAccountsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const manualRows = manualMovements.map(m => ({
-      id: m.referenceId,
-      type: m.credit > 0 ? 'CREDIT' : 'DEBIT',
-      concept: m.description,
-      amount: m.amount,
-      createdAt: m.createdAt.toISOString(),
-      balanceAfter: m.balanceAfter,
-    }));
+    /** Shape esperado por CurrentAccountDetailDrawer / frontend types */
+    const mappedManual = manualMovements.map(m => this.mapMovementRow(m, accountId));
+
+    const rows: ReturnType<CurrentAccountsService['mapMovementRow']>[] = [...mappedManual];
 
     if (account.entityType === 'CUSTOMER') {
-      const orders = await this.prisma.saleOrder.findMany({
+      const creditSales = await this.prisma.saleOrder.findMany({
         where: { customerId: accountId, paymentMethod: 'CUSTOMER_CREDIT' },
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
       });
-      const total = await this.prisma.saleOrder.count({
-        where: { customerId: accountId, paymentMethod: 'CUSTOMER_CREDIT' },
-      });
-
-      return {
-        data: [...manualRows, ...orders.map(o => ({
-          id: o.id,
-          type: 'DEBIT',
-          concept: formatSaleId(o.id, o.status),
-          amount: o.grandTotal,
-          createdAt: o.createdAt.toISOString(),
+      const coveredRefs = new Set(manualMovements.map(m => m.referenceId));
+      for (const o of creditSales) {
+        if (coveredRefs.has(o.id)) continue;
+        rows.push({
+          id: `sale-${o.id}`,
+          accountId,
+          date: o.createdAt.toISOString(),
+          documentType: 'INVOICE',
+          referenceId: o.id,
+          description: formatSaleId(o.id, o.status),
+          debit: o.grandTotal,
+          credit: 0,
           balanceAfter: 0,
-        }))].slice((page - 1) * pageSize, page * pageSize),
-        total: total + manualRows.length,
-        page,
-        pageSize,
-      };
+        });
+      }
+    } else {
+      // Legacy: OCs con saldo pendiente sin CurrentAccountMovement (compras viejas)
+      const coveredRefs = new Set(manualMovements.map(m => m.referenceId));
+      const openPos = await this.prisma.purchaseOrder.findMany({
+        where: {
+          supplierId: accountId,
+          status: { notIn: ['DRAFT', 'CANCELLED'] },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      for (const po of openPos) {
+        const outstanding = Math.max(0, po.totalAmount - (po.paidAmount || 0));
+        if (outstanding <= 0) continue;
+        if (coveredRefs.has(po.id)) continue;
+        rows.push({
+          id: `legacy-po-${po.id}`,
+          accountId,
+          date: (po.issuedAt || po.createdAt).toISOString(),
+          documentType: 'DEBIT_NOTE',
+          referenceId: po.id,
+          description: `Deuda pendiente ${formatEntityId(po.id, 'OC-')}`,
+          debit: 0,
+          credit: outstanding,
+          balanceAfter: 0,
+        });
+      }
     }
 
-    const pos = await this.prisma.purchaseOrder.findMany({
-      where: { supplierId: accountId },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
-    const total = await this.prisma.purchaseOrder.count({ where: { supplierId: accountId } });
+    rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const total = rows.length;
+    const data = rows.slice((page - 1) * pageSize, page * pageSize);
 
+    return { data, total, page, pageSize };
+  }
+
+  private mapMovementRow(
+    m: {
+      id: string;
+      accountId: string;
+      documentType: string;
+      referenceId: string;
+      description: string;
+      debit: number;
+      credit: number;
+      balanceAfter: number;
+      dueDate?: Date | null;
+      createdAt: Date;
+    },
+    accountId: string,
+  ): {
+    id: string;
+    accountId: string;
+    date: string;
+    documentType: 'RECEIPT' | 'CREDIT_NOTE' | 'DEBIT_NOTE' | 'INVOICE';
+    referenceId: string;
+    description: string;
+    debit: number;
+    credit: number;
+    balanceAfter: number;
+    dueDate?: string;
+  } {
     return {
-      data: [...manualRows, ...pos.map(po => ({
-        id: po.id,
-        type: 'CREDIT',
-        concept: formatEntityId(po.id, 'OC-'),
-        amount: po.totalAmount,
-        createdAt: po.createdAt.toISOString(),
-        balanceAfter: 0,
-      }))].slice((page - 1) * pageSize, page * pageSize),
-      total: total + manualRows.length,
-      page,
-      pageSize,
+      id: m.id,
+      accountId: m.accountId || accountId,
+      date: m.createdAt.toISOString(),
+      documentType: m.documentType as 'RECEIPT' | 'CREDIT_NOTE' | 'DEBIT_NOTE' | 'INVOICE',
+      referenceId: m.referenceId,
+      description: m.description,
+      debit: m.debit,
+      credit: m.credit,
+      balanceAfter: m.balanceAfter,
+      ...(m.dueDate ? { dueDate: m.dueDate.toISOString() } : {}),
     };
   }
 
@@ -295,25 +337,31 @@ export class CurrentAccountsService {
   private mapMovementResponse(
     movement: {
       id: string;
+      accountId?: string;
+      documentType?: string;
       referenceId: string;
       description: string;
       amount: number;
       credit: number;
       debit: number;
       balanceAfter: number;
+      dueDate?: Date | null;
       createdAt: Date;
     },
-    entityType: 'CUSTOMER' | 'SUPPLIER',
+    _entityType: 'CUSTOMER' | 'SUPPLIER',
   ) {
-    const isCustomerCredit = entityType === 'CUSTOMER' && movement.credit > 0;
-    const isSupplierDebit = entityType === 'SUPPLIER' && movement.debit > 0;
     return {
-      id: movement.referenceId,
-      type: isCustomerCredit || isSupplierDebit ? ('CREDIT' as const) : ('DEBIT' as const),
-      concept: movement.description,
-      amount: movement.amount,
-      createdAt: movement.createdAt.toISOString(),
+      id: movement.id,
+      accountId: movement.accountId,
+      date: movement.createdAt.toISOString(),
+      documentType: (movement.documentType || 'RECEIPT') as 'RECEIPT' | 'CREDIT_NOTE' | 'DEBIT_NOTE' | 'INVOICE',
+      referenceId: movement.referenceId,
+      description: movement.description,
+      debit: movement.debit,
+      credit: movement.credit,
       balanceAfter: movement.balanceAfter,
+      dueDate: movement.dueDate ? movement.dueDate.toISOString() : undefined,
+      amount: movement.amount,
     };
   }
 

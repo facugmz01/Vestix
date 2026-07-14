@@ -50,7 +50,7 @@ export default function CurrentAccountsPage() {
       tabs={<Tabs items={FINANCE_TABS} />}
       
       title="Cuentas Corrientes" 
-      subtitle="Saldos, vencimientos y estado de deuda de Clientes y Proveedores."
+      subtitle="Saldos y movimientos de clientes y proveedores. Las deudas de compras aparecen acá filtrando Solo Proveedores."
       action={
         <Button variant="outline" icon={<AlertTriangle size={16} />} onClick={() => mutationOverdue.mutate()} loading={mutationOverdue.isPending}>
           Reclamar Deudas

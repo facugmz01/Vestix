@@ -7,9 +7,11 @@ import {
 } from '@/components/ui';
 
 import { treasuryApi } from '@/api/treasury.api';
+import { financeApi } from '@/api/finance.api';
 import { queryKeys } from '@/api/queryKeys';
 
 import { CashSessionDetailDrawer } from '@/features/finance/components/CashSessionDetailDrawer';
+import { TreasuryAccountDetailDrawer } from '@/features/finance/components/TreasuryAccountDetailDrawer';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatShortId } from '@/utils/formatId';
@@ -21,6 +23,8 @@ export default function CashSessionsPage() {
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
+  const [accountDrawerOpen, setAccountDrawerOpen] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   const statusFilter = filters.status;
 
@@ -29,23 +33,75 @@ export default function CashSessionsPage() {
     queryFn: () => treasuryApi.getShifts({ page, pageSize, status: statusFilter }),
   });
 
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['treasury', 'accounts'],
+    queryFn: () => financeApi.getTreasuryAccounts(),
+  });
+
   const handleView = (id: string) => {
     setSelectedShiftId(id);
     setDetailOpen(true);
   };
 
+  const handleViewAccount = (id: string) => {
+    setSelectedAccountId(id);
+    setAccountDrawerOpen(true);
+  };
+
   const shifts = data?.data ?? [];
   const total = data?.total ?? 0;
-
-
+  const accountList = Array.isArray(accounts) ? accounts : [];
 
   return (
     <PageContainer
       tabs={<Tabs items={FINANCE_TABS} />}
       
       title="Tesorería y Arqueos (Cash Shifts)" 
-      subtitle="Monitor de sesiones de caja de todas las sucursales, retiros manuales y control de diferencias."
+      subtitle="Saldos de cuentas (caja/banco) y sesiones de caja. Los pagos a proveedores impactan estos saldos."
     >
+      <Section title="Cuentas de tesorería">
+        {accountList.length === 0 ? (
+          <EmptyState
+            icon={<Wallet size={40} />}
+            title="Sin cuentas"
+            message="No hay cuentas financieras activas. Creá una caja o banco para registrar pagos de compras."
+          />
+        ) : (
+          <Table
+            keyField="id"
+            data={accountList}
+            columns={[
+              {
+                key: 'name',
+                header: 'Cuenta',
+                render: (a) => (
+                  <div className={adminStyles.cellStack}>
+                    <span className={adminStyles.cellPrimary}>{a.name}</span>
+                    <span className={adminStyles.cellMuted}>{a.type}</span>
+                  </div>
+                ),
+              },
+              {
+                key: 'balance',
+                header: 'Saldo actual',
+                render: (a) => <span className={adminStyles.textBold800}>{formatCurrency(a.balance)}</span>,
+              },
+              {
+                key: 'actions',
+                header: '',
+                render: (a) => (
+                  <div className={adminStyles.rowActions}>
+                    <Button variant="ghost" size="sm" onClick={() => handleViewAccount(a.id)} aria-label="Ver movimientos">
+                      <Eye size={16} />
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+          />
+        )}
+      </Section>
+
       <FiltersBar actions={<Badge color="gray">{total} sesiones</Badge>}>
         <select value={statusFilter} onChange={e => { setFilter('status', e.target.value); }} className={adminStyles.filterSelect}>
           <option value="">Todos los Turnos</option>
@@ -54,7 +110,7 @@ export default function CashSessionsPage() {
         </select>
       </FiltersBar>
 
-      <Section>
+      <Section title="Sesiones de caja">
         {isLoading ? (
           <TableSkeleton rows={8} />
         ) : error ? (
@@ -129,6 +185,11 @@ export default function CashSessionsPage() {
         shiftId={selectedShiftId} 
       />
 
+      <TreasuryAccountDetailDrawer
+        open={accountDrawerOpen}
+        onClose={() => setAccountDrawerOpen(false)}
+        accountId={selectedAccountId}
+      />
     </PageContainer>
   );
 }
