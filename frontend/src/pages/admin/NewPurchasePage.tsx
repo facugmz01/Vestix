@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Truck, Trash2, Plus, Minus, ArrowLeft, Save } from 'lucide-react';
+import { Search, ShoppingCart, Truck, Trash2, Plus, Minus, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { purchasesApi } from '@/api/purchases.api';
@@ -9,8 +9,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { apiClient } from '@/api/client';
 import type { ProductVariant } from '@/types';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { Button, Input, Drawer } from '@/components/ui';
-import adminStyles from '@/styles/AdminListShared.module.css';
+import { Button, Input, Drawer, PageContainer } from '@/components/ui';
 import styles from './NewPurchasePage.module.css';
 
 export default function NewPurchasePage() {
@@ -37,7 +36,7 @@ export default function NewPurchasePage() {
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [cart, setCart] = useState<{ variant: ProductVariant, qty: number, cost: number, discount: number }[]>([]);
-  
+
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentAccountId, setPaymentAccountId] = useState('');
   const [paymentAmount, setPaymentAmount] = useState(0);
@@ -92,185 +91,204 @@ export default function NewPurchasePage() {
     setPaymentAmount(total);
   };
 
+  const variantLabel = (v: ProductVariant & { name?: string; size?: string; color?: string }) => {
+    const parts = [v.name, v.size, v.color].filter(Boolean);
+    return parts.join(' · ') || v.sku;
+  };
+
   return (
-    <div className={styles.shell}>
-      <div className={styles.headerBar}>
-        <div className={styles.headerLeft}>
-          <button type="button" onClick={() => navigate(-1)} className={styles.backBtn} aria-label="Volver">
-            <ArrowLeft />
-          </button>
-          <h2 className={styles.pageTitle}>Nueva Compra de Mercadería</h2>
-        </div>
+    <PageContainer
+      title="Nueva compra de mercadería"
+      subtitle="Ingreso directo al stock: buscá artículos, cargá costos y registrá la recepción."
+      action={
         <div className={styles.headerActions}>
           <Button variant="secondary" onClick={() => navigate(-1)}>Cancelar</Button>
-          <Button variant="primary" icon={<Save size={18} />} onClick={handleSave}>Procesar Compra</Button>
+          <Button variant="primary" icon={<Save size={18} />} onClick={handleSave}>Procesar compra</Button>
         </div>
-      </div>
-
-      <div className={styles.body}>
-        <div className={styles.searchPane}>
-          <div className={styles.searchHeader}>
-            <div className={styles.searchWrap}>
-              <Search size={20} className={styles.searchIcon} />
-              <input 
-                ref={searchInputRef}
-                type="text"
-                placeholder="Buscar productos en el catálogo por nombre, SKU o código..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className={styles.searchInput}
-              />
+      }
+    >
+      <div className={styles.workspace}>
+        <div className={styles.panels}>
+          <div className={styles.searchPane}>
+            <div className={styles.searchHeader}>
+              <div className={styles.searchWrap}>
+                <Search size={18} className={styles.searchIcon} />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Buscar por nombre, SKU o código..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className={styles.searchInput}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className={styles.resultsArea}>
-            {search.length < 3 ? (
-              <div className={styles.emptySearch}>
-                <div>
-                  <Truck size={64} className={styles.emptyIcon} />
-                  <p>Buscá los artículos que recibiste para agregarlos a la compra.</p>
+            <div className={styles.resultsArea}>
+              {search.length < 3 ? (
+                <div className={styles.emptySearch}>
+                  <div className={styles.emptySearchInner}>
+                    <Truck size={48} className={styles.emptyIcon} />
+                    <p>Buscá los artículos que recibiste para agregarlos a la compra.</p>
+                  </div>
                 </div>
-              </div>
-            ) : isSearching ? (
-              <div>Cargando catálogo...</div>
-            ) : searchResults?.length > 0 ? (
-              <div className={styles.productGrid}>
-                {searchResults.map((p: ProductVariant & { name?: string; size?: string }) => (
-                  <div key={p.id} onClick={() => handleAddToCart(p)} className={styles.productCard} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handleAddToCart(p)}>
-                    <p className={styles.productSku}>{p.sku}</p>
-                    <p className={styles.productName}>{p.name} {p.size && `(${p.size})`}</p>
-                    <p className={styles.productPrice}>{formatCurrency(p.costPrice)}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p>No se encontraron productos.</p>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.sidebar}>
-          <div className={styles.sidebarForm}>
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel} htmlFor="supplier-select">Proveedor</label>
-              <select 
-                id="supplier-select"
-                value={selectedSupplierId} 
-                onChange={e => setSelectedSupplierId(e.target.value)}
-                className={styles.fieldSelect}
-              >
-                <option value="">-- Seleccionar Proveedor --</option>
-                {(suppliers?.data || []).map((s: { id: string; companyName: string }) => (
-                  <option key={s.id} value={s.id}>{s.companyName}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel} htmlFor="warehouse-select">Destino (Depósito)</label>
-              <select 
-                id="warehouse-select"
-                value={selectedWarehouseId} 
-                onChange={e => setSelectedWarehouseId(e.target.value)}
-                className={styles.fieldSelect}
-              >
-                <option value="">-- Seleccionar Depósito --</option>
-                {(warehouses?.data || warehouses || []).map((w: { id: string; name: string }) => (
-                  <option key={w.id} value={w.id}>{w.name}</option>
-                ))}
-              </select>
+              ) : isSearching ? (
+                <p className={styles.statusMessage}>Cargando catálogo...</p>
+              ) : searchResults?.length > 0 ? (
+                <div className={styles.productGrid}>
+                  {searchResults.map((p: ProductVariant & { name?: string; size?: string; color?: string }) => (
+                    <div
+                      key={p.id}
+                      onClick={() => handleAddToCart(p)}
+                      className={styles.productCard}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddToCart(p)}
+                    >
+                      <p className={styles.productSku}>{p.sku}</p>
+                      <p className={styles.productName}>{variantLabel(p)}</p>
+                      <p className={styles.productPrice}>{formatCurrency(p.costPrice ?? 0)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.statusMessage}>No se encontraron productos.</p>
+              )}
             </div>
           </div>
 
-          <div className={styles.cartArea}>
-            {cart.length === 0 ? (
-              <div className={styles.emptyCart}>
-                <ShoppingCart size={32} className={styles.emptyCartIcon} />
-                <p>Carrito de compra vacío</p>
+          <aside className={styles.sidebar}>
+            <div className={styles.sidebarForm}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel} htmlFor="supplier-select">Proveedor</label>
+                <select
+                  id="supplier-select"
+                  value={selectedSupplierId}
+                  onChange={e => setSelectedSupplierId(e.target.value)}
+                  className={styles.fieldSelect}
+                >
+                  <option value="">Seleccionar proveedor...</option>
+                  {(suppliers?.data || []).map((s: { id: string; companyName: string }) => (
+                    <option key={s.id} value={s.id}>{s.companyName}</option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              cart.map(item => (
-                <div key={item.variant.id} className={styles.cartItem}>
-                  <div className={styles.cartItemHeader}>
-                    <span className={styles.cartSku}>{item.variant.sku}</span>
-                    <Trash2
-                      size={16}
-                      color="var(--red)"
-                      className={styles.deleteIcon}
-                      onClick={() => setCart(c => c.filter(i => i.variant.id !== item.variant.id))}
-                    />
-                  </div>
-                  
-                  <div className={styles.cartGrid}>
-                    <div>
-                      <label className={styles.miniLabel}>Cantidad</label>
-                      <div className={styles.qtyRow}>
-                        <Button variant="secondary" size="sm" onClick={() => updateLine(item.variant.id, 'qty', Math.max(1, item.qty - 1))}><Minus size={12}/></Button>
-                        <span className={styles.qtyValue}>{item.qty}</span>
-                        <Button variant="secondary" size="sm" onClick={() => updateLine(item.variant.id, 'qty', item.qty + 1)}><Plus size={12}/></Button>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel} htmlFor="warehouse-select">Destino (depósito)</label>
+                <select
+                  id="warehouse-select"
+                  value={selectedWarehouseId}
+                  onChange={e => setSelectedWarehouseId(e.target.value)}
+                  className={styles.fieldSelect}
+                >
+                  <option value="">Seleccionar depósito...</option>
+                  {(warehouses?.data || warehouses || []).map((w: { id: string; name: string }) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.cartArea}>
+              {cart.length === 0 ? (
+                <div className={styles.emptyCart}>
+                  <ShoppingCart size={28} className={styles.emptyCartIcon} />
+                  <p>Carrito de compra vacío</p>
+                </div>
+              ) : (
+                cart.map(item => {
+                  const v = item.variant as ProductVariant & { name?: string; size?: string; color?: string };
+                  return (
+                    <div key={item.variant.id} className={styles.cartItem}>
+                      <div className={styles.cartItemHeader}>
+                        <span className={styles.cartSku}>{variantLabel(v)}</span>
+                        <Trash2
+                          size={16}
+                          className={styles.deleteIcon}
+                          onClick={() => setCart(c => c.filter(i => i.variant.id !== item.variant.id))}
+                          aria-label="Quitar del carrito"
+                        />
+                      </div>
+
+                      <div className={styles.cartGrid}>
+                        <div>
+                          <label className={styles.miniLabel}>Cantidad</label>
+                          <div className={styles.qtyRow}>
+                            <Button variant="secondary" size="sm" onClick={() => updateLine(item.variant.id, 'qty', Math.max(1, item.qty - 1))}><Minus size={12}/></Button>
+                            <span className={styles.qtyValue}>{item.qty}</span>
+                            <Button variant="secondary" size="sm" onClick={() => updateLine(item.variant.id, 'qty', item.qty + 1)}><Plus size={12}/></Button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className={styles.miniLabel}>Costo unitario</label>
+                          <div className={styles.priceInputWrap}>
+                            <span className={styles.pricePrefix}>$</span>
+                            <input
+                              type="number"
+                              value={item.cost}
+                              onChange={e => updateLine(item.variant.id, 'cost', Number(e.target.value))}
+                              className={styles.costInput}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={styles.cartFooter}>
+                        <div className={styles.discountRow}>
+                          <label className={styles.miniLabel}>Desc.</label>
+                          <div className={styles.priceInputWrap}>
+                            <span className={styles.pricePrefix}>$</span>
+                            <input
+                              type="number"
+                              value={item.discount}
+                              onChange={e => updateLine(item.variant.id, 'discount', Number(e.target.value))}
+                              className={styles.discountInput}
+                            />
+                          </div>
+                        </div>
+                        <span className={styles.lineTotal}>{formatCurrency((item.cost * item.qty) - item.discount)}</span>
                       </div>
                     </div>
-                    <div>
-                      <label className={styles.miniLabel}>Costo Unitario ($)</label>
-                      <input 
-                        type="number" 
-                        value={item.cost} 
-                        onChange={e => updateLine(item.variant.id, 'cost', Number(e.target.value))}
-                        className={styles.costInput}
-                      />
-                    </div>
-                  </div>
+                  );
+                })
+              )}
+            </div>
 
-                  <div className={styles.cartFooter}>
-                    <div className={styles.discountRow}>
-                      <label className={styles.miniLabel}>Desc. ($)</label>
-                      <input 
-                        type="number" 
-                        value={item.discount} 
-                        onChange={e => updateLine(item.variant.id, 'discount', Number(e.target.value))}
-                        className={styles.discountInput}
-                      />
-                    </div>
-                    <span className={styles.lineTotal}>{formatCurrency((item.cost * item.qty) - item.discount)}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className={styles.totalsPanel}>
-            <div className={styles.totalRow}>
-              <span className={styles.totalLabelMuted}>Subtotal</span>
-              <span className={styles.totalValue}>{formatCurrency(subtotal)}</span>
+            <div className={styles.totalsPanel}>
+              <div className={styles.totalRow}>
+                <span className={styles.totalLabelMuted}>Subtotal</span>
+                <span className={styles.totalValue}>{formatCurrency(subtotal)}</span>
+              </div>
+              <div className={styles.totalRowDiscount}>
+                <span>Descuentos</span>
+                <span>- {formatCurrency(totalDiscount)}</span>
+              </div>
+              <div className={styles.totalRowFinal}>
+                <span className={styles.totalLabel}>Total compra</span>
+                <span className={styles.totalValueLg}>{formatCurrency(total)}</span>
+              </div>
             </div>
-            <div className={styles.totalRowDiscount}>
-              <span>Descuentos</span>
-              <span>- {formatCurrency(totalDiscount)}</span>
-            </div>
-            <div className={styles.totalRowFinal}>
-              <span className={styles.totalLabel}>Total Compra</span>
-              <span className={styles.totalValueLg}>{formatCurrency(total)}</span>
-            </div>
-          </div>
+          </aside>
         </div>
       </div>
 
-      <Drawer open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar Compra y Pago" width="sm">
+      <Drawer open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar compra y pago" width="sm">
         <div className={styles.drawerStack}>
           <div className={styles.paymentHero}>
-            <p className={styles.paymentHeroLabel}>Total Facturado</p>
+            <p className={styles.paymentHeroLabel}>Total facturado</p>
             <h1 className={styles.paymentHeroValue}>{formatCurrency(total)}</h1>
           </div>
 
           <div className={styles.drawerField}>
-            <label className={styles.drawerLabel} htmlFor="payment-account">Cuenta de Origen (Pago)</label>
-            <select 
+            <label className={styles.drawerLabel} htmlFor="payment-account">Cuenta de origen (pago)</label>
+            <select
               id="payment-account"
-              value={paymentAccountId} 
+              value={paymentAccountId}
               onChange={e => setPaymentAccountId(e.target.value)}
               className={styles.drawerSelect}
             >
-              <option value="">-- No pagar ahora (Deuda) --</option>
+              <option value="">No pagar ahora (deuda)</option>
               {(accounts?.data || accounts || []).map((a: { id: string; name: string; balance: number }) => (
                 <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>
               ))}
@@ -279,13 +297,13 @@ export default function NewPurchasePage() {
 
           {paymentAccountId && (
             <div className={styles.drawerField}>
-              <label className={styles.drawerLabel} htmlFor="payment-amount">Monto a Pagar ($)</label>
-              <Input 
+              <label className={styles.drawerLabel} htmlFor="payment-amount">Monto a pagar ($)</label>
+              <Input
                 id="payment-amount"
-                type="number" 
+                type="number"
                 max={total}
-                value={paymentAmount} 
-                onChange={e => setPaymentAmount(Number(e.target.value))} 
+                value={paymentAmount}
+                onChange={e => setPaymentAmount(Number(e.target.value))}
                 className={styles.paymentInputLg}
               />
               <p className={styles.hintText}>
@@ -302,9 +320,9 @@ export default function NewPurchasePage() {
 
           <div className={styles.drawerField}>
             <label className={styles.drawerLabel} htmlFor="payment-notes">Observaciones</label>
-            <textarea 
+            <textarea
               id="payment-notes"
-              value={notes} 
+              value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Ej: Factura A nro 0001-..."
               className={styles.drawerTextarea}
@@ -312,8 +330,8 @@ export default function NewPurchasePage() {
           </div>
 
           <div className={styles.drawerFooter}>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               className={styles.submitBtnFull}
               loading={purchaseMutation.isPending}
               onClick={() => purchaseMutation.mutate({
@@ -331,11 +349,11 @@ export default function NewPurchasePage() {
                 }))
               })}
             >
-              Generar Orden y Pago
+              Generar orden y pago
             </Button>
           </div>
         </div>
       </Drawer>
-    </div>
+    </PageContainer>
   );
 }

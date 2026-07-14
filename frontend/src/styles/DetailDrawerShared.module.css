@@ -2844,27 +2844,31 @@
 /* Purchase / cart form layout */
 .purchaseForm {
   display: flex;
-  gap: 20px;
+  gap: 0;
   height: 100%;
+  min-height: 0;
 }
 
 .purchaseMain {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
-  padding-right: 20px;
+  padding: 20px 24px;
 }
 
 .purchaseSearchWrap {
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .searchFieldIconLg {
   position: absolute;
   left: 16px;
-  top: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--text-muted);
   pointer-events: none;
 }
@@ -2873,25 +2877,36 @@
   width: 100%;
   padding: 14px 14px 14px 48px;
   border-radius: 12px;
-  border: 2px solid var(--accent);
+  border: 1px solid var(--border);
   font-size: 15px;
   background: var(--surface-1);
   color: var(--text-primary);
   font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchFieldInputLg:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .purchaseScroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
 .purchaseEmpty {
   height: 100%;
+  min-height: 240px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
+  text-align: center;
+  padding: 24px;
 }
 
 .purchaseEmptyIcon {
@@ -2899,19 +2914,32 @@
   margin-bottom: 12px;
 }
 
+.purchaseStatusMsg {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
 .productGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 12px;
 }
 
 .productCard {
-  background: var(--surface-0);
+  background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 10px;
+  padding: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.productCard:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .productCardSku {
@@ -2919,14 +2947,18 @@
   font-size: 11px;
   color: var(--text-muted);
   font-weight: 600;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .productCardName {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 13px;
   font-weight: 700;
   min-height: 34px;
   color: var(--text-primary);
+  line-height: 1.35;
 }
 
 .productCardPrice {
@@ -2934,51 +2966,56 @@
   font-size: 14px;
   font-weight: 800;
   color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .purchaseSidebar {
-  width: 450px;
+  width: 380px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
+  background: var(--surface-1);
+  min-height: 0;
 }
 
 .configPanel {
-  background: var(--surface-1);
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
+  background: var(--surface-0);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .configPanelTitle {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 650;
   color: var(--text-primary);
 }
 
 .cartPanel {
   flex: 1;
+  min-height: 0;
   background: var(--surface-1);
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
 }
 
 .cartPanelTitle {
-  margin: 0 0 16px;
-  font-size: 16px;
-  font-weight: 600;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 650;
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 .cartScroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -3002,28 +3039,55 @@
 .cartLineHeader {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
 .cartLineGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 72px 1fr;
   gap: 8px;
 }
 
 .inputLabelSm {
+  display: block;
   font-size: 11px;
+  font-weight: 650;
   color: var(--text-muted);
+  margin-bottom: 4px;
 }
 
 .inputSm {
   width: 100%;
-  padding: 6px;
-  border-radius: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface-1);
   font-family: inherit;
   color: var(--text-primary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.costInputWrap {
+  position: relative;
+}
+
+.costPrefix {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  font-size: 12px;
+  z-index: 1;
+  line-height: 1;
+}
+
+.inputSmWithPrefix {
+  padding-left: 22px;
 }
 
 .cartLineTotal {
@@ -3032,25 +3096,47 @@
   font-size: 13px;
   font-weight: 800;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .cartGrandTotal {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 14px;
   border-top: 1px dashed var(--border);
   text-align: right;
+  flex-shrink: 0;
 }
 
 .cartGrandTotalLabel {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
 }
 
 .cartGrandTotalValue {
-  font-size: 24px;
-  font-weight: 900;
+  font-size: 22px;
+  font-weight: 800;
   display: block;
-  color: var(--text-primary);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 900px) {
+  .purchaseForm {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .purchaseMain {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    min-height: 320px;
+  }
+
+  .purchaseSidebar {
+    width: 100%;
+  }
 }
 
 /* Mixed payment */

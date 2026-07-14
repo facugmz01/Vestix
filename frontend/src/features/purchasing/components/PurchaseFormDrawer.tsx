@@ -125,7 +125,8 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
       open={open}
       title={isEditing ? 'Editar Orden de Compra' : 'Nueva Orden de Compra (Borrador)'}
       onClose={onClose}
-      width="lg"
+      width="xl"
+      fill
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancelar</Button>
@@ -136,13 +137,14 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
       <form onSubmit={handleSubmit} className={styles.purchaseForm}>
         <div className={styles.purchaseMain}>
           <div className={styles.purchaseSearchWrap}>
-            <Search size={20} className={styles.searchFieldIconLg} />
-            <input 
+            <Search size={18} className={styles.searchFieldIconLg} />
+            <input
               type="text"
               placeholder="Buscar catálogo por SKU, nombre o categoría..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className={styles.searchFieldInputLg}
+              autoFocus
             />
           </div>
 
@@ -150,22 +152,33 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
             {search.length < 3 ? (
               <div className={styles.purchaseEmpty}>
                 <Package size={48} className={styles.purchaseEmptyIcon} />
-                <p>Escribí al menos 3 letras para buscar.</p>
+                <p>Escribí al menos 3 letras para buscar productos.</p>
               </div>
             ) : isSearching ? (
-              <p>Buscando en catálogo...</p>
+              <p className={styles.purchaseStatusMsg}>Buscando en catálogo...</p>
             ) : searchResults?.length > 0 ? (
               <div className={styles.productGrid}>
-                {searchResults.map((p: { id: string; sku: string; name: string; size?: string; basePrice: number }) => (
-                  <div key={p.id} onClick={() => handleAddToCart(p)} className={styles.productCard}>
+                {searchResults.map((p: { id: string; sku: string; name: string; size?: string; color?: string; basePrice?: number; costPrice?: number }) => (
+                  <div
+                    key={p.id}
+                    onClick={() => handleAddToCart(p)}
+                    className={styles.productCard}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddToCart(p)}
+                  >
                     <p className={styles.productCardSku}>{p.sku}</p>
-                    <p className={styles.productCardName}>{p.name} {p.size && `(${p.size})`}</p>
-                    <p className={styles.productCardPrice}>{formatCurrency(p.basePrice)}</p>
+                    <p className={styles.productCardName}>
+                      {p.name}
+                      {p.size ? ` (${p.size})` : ''}
+                      {p.color ? ` · ${p.color}` : ''}
+                    </p>
+                    <p className={styles.productCardPrice}>{formatCurrency(p.costPrice ?? p.basePrice ?? 0)}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p>No se encontraron resultados.</p>
+              <p className={styles.purchaseStatusMsg}>No se encontraron resultados.</p>
             )}
           </div>
         </div>
@@ -180,7 +193,7 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
                 {(suppliersData?.data || []).map((s: { id: string; companyName: string }) => <option key={s.id} value={s.id}>{s.companyName}</option>)}
               </select>
             </div>
-            
+
             <div className={styles.fieldGroupSm}>
               <label className={styles.selectLabel}>Destino (Depósito) *</label>
               <select value={warehouseId} onChange={e => setDestinationWarehouseId(e.target.value)} className={styles.select} required>
@@ -188,18 +201,18 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
                 {(warehouses?.data || warehouses || []).map((w: { id: string; name: string }) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>
-            
-            <Input 
-              label="Fecha de Entrega Esperada" 
-              type="date" 
-              value={expectedDeliveryDate} 
-              onChange={e => setExpectedDeliveryDate(e.target.value)} 
+
+            <Input
+              label="Fecha de Entrega Esperada"
+              type="date"
+              value={expectedDeliveryDate}
+              onChange={e => setExpectedDeliveryDate(e.target.value)}
             />
           </div>
 
           <div className={styles.cartPanel}>
-            <h3 className={styles.cartPanelTitle}>Artículos Agregados</h3>
-            
+            <h3 className={styles.cartPanelTitle}>Artículos Agregados ({lines.length})</h3>
+
             <div className={styles.cartScroll}>
               {lines.length === 0 && <p className={styles.cartEmptyHint}>No hay artículos en la orden.</p>}
               {lines.map((l, i) => (
@@ -215,7 +228,17 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
                     </div>
                     <div>
                       <label className={styles.inputLabelSm}>Costo U.</label>
-                      <input type="number" min="0" step="0.01" value={l.unitCost} onChange={(e) => updateLineCost(i, Number(e.target.value))} className={styles.inputSm} />
+                      <div className={styles.costInputWrap}>
+                        <span className={styles.costPrefix}>$</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={l.unitCost}
+                          onChange={(e) => updateLineCost(i, Number(e.target.value))}
+                          className={`${styles.inputSm} ${styles.inputSmWithPrefix}`}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className={styles.cartLineTotal}>
@@ -224,9 +247,9 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
                 </div>
               ))}
             </div>
-            
+
             <div className={styles.cartGrandTotal}>
-              <span className={styles.cartGrandTotalLabel}>Monto Total OC: </span>
+              <span className={styles.cartGrandTotalLabel}>Monto Total OC</span>
               <span className={styles.cartGrandTotalValue}>{formatCurrency(totals)}</span>
             </div>
           </div>
