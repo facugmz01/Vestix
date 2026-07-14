@@ -3,6 +3,13 @@ import { PurchasingService } from './purchasing.service';
 import { GoodsReceiptService } from './receipts/goods-receipt.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { BulkImportPurchasesDto } from './dto/bulk-purchases.dto';
+import {
+  CreatePurchaseOrderDto,
+  UpdatePurchaseOrderDto,
+  ProcessDirectPurchaseDto,
+  IssuePurchaseOrderDto,
+  RegisterPurchasePaymentDto,
+} from './dto/purchasing.dto';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../../core/rbac/decorators/current-user.decorator';
@@ -29,7 +36,7 @@ export class PurchasingController {
 
   @Post('direct')
   @RequirePermissions({ action: 'create', subject: 'Purchasing' })
-  processDirectPurchase(@Body() dto: any) {
+  processDirectPurchase(@Body() dto: ProcessDirectPurchaseDto) {
     return this.purchasingService.processDirectPurchase(dto);
   }
 
@@ -41,7 +48,7 @@ export class PurchasingController {
 
   @Post('orders')
   @RequirePermissions({ action: 'create', subject: 'Purchasing' })
-  createPO(@Body() dto: any) {
+  createPO(@Body() dto: CreatePurchaseOrderDto) {
     return this.purchasingService.createPO(dto);
   }
 
@@ -53,7 +60,7 @@ export class PurchasingController {
 
   @Patch('orders/:id')
   @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
-  update(@Param('id') id: string, @Body() dto: any) {
+  update(@Param('id') id: string, @Body() dto: UpdatePurchaseOrderDto) {
     return this.purchasingService.updatePO(id, dto);
   }
 
@@ -65,8 +72,17 @@ export class PurchasingController {
 
   @Post('orders/:id/issue')
   @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
-  issue(@Param('id') id: string) {
-    return this.purchasingService.issueOrder(id);
+  issue(@Param('id') id: string, @Body() dto: IssuePurchaseOrderDto) {
+    return this.purchasingService.issueOrder(id, dto || {});
+  }
+
+  @Post('orders/:id/payments')
+  @RequirePermissions({ action: 'manage', subject: 'Purchasing' })
+  registerPayment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RegisterPurchasePaymentDto,
+  ) {
+    return this.purchasingService.registerPayment(id, dto);
   }
 
   @Post('orders/:id/receive')
@@ -79,4 +95,3 @@ export class PurchasingController {
     return this.goodsReceiptService.quickReceiveFromPO(id, dto.lines, userId);
   }
 }
-

@@ -204,12 +204,31 @@ export interface StockTransfer {
 // ─── PURCHASING ──────────────────────────────────────────────────────────
 export type POStatus = 'DRAFT'|'ISSUED'|'PARTIALLY_RECEIVED'|'COMPLETED'|'CANCELLED';
 export interface PurchaseOrder {
-  id: string; supplierId: string; supplierName?: string; status: POStatus;
-  lines: POLine[]; totalAmount: number; expectedDeliveryDate?: string; createdAt: string;
+  id: string;
+  supplierId: string;
+  supplierName?: string;
+  supplier?: { companyName?: string; name?: string };
+  status: POStatus;
+  lines: POLine[];
+  totalAmount: number;
+  paidAmount?: number;
+  discountAmount?: number;
+  shippingCost?: number;
+  notes?: string;
+  destinationWarehouseId?: string;
+  expectedDeliveryDate?: string;
+  createdAt: string;
 }
 export interface POLine {
-  id: string; variantId: string; variantSku?: string; productName?: string;
-  orderedQuantity: number; receivedQuantity: number; unitCost: number;
+  id: string;
+  variantId: string;
+  variantSku?: string;
+  productName?: string;
+  orderedQuantity: number;
+  receivedQuantity: number;
+  unitCost: number;
+  discountAmount?: number;
+  totalAmount?: number;
 }
 
 export type ReceiptStatus = 'DRAFT' | 'DISPUTED' | 'VALIDATED';

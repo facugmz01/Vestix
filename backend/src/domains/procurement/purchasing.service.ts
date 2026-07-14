@@ -2,8 +2,24 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { StockMovementService } from '../logistics/stock-movement.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
+import { AccountsService } from '../finance/accounts.service';
 import { BulkImportPurchasesDto } from './dto/bulk-purchases.dto';
+import {
+  CreatePurchaseOrderDto,
+  UpdatePurchaseOrderDto,
+  ProcessDirectPurchaseDto,
+  IssuePurchaseOrderDto,
+  RegisterPurchasePaymentDto,
+} from './dto/purchasing.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { formatEntityId } from '../../common/utils/format-id.util';
+
+type PurchaseLineInput = {
+  variantId: string;
+  orderedQuantity: number;
+  unitCost: number;
+  discountAmount?: number;
+};
 
 @Injectable()
 export class PurchasingService {
@@ -13,6 +29,7 @@ export class PurchasingService {
     private readonly prisma: PrismaService,
     private readonly stockMovementService: StockMovementService,
     private readonly notificationTriggers: NotificationTriggersService,
+    private readonly accountsService: AccountsService,
   ) {}
 
   private resolveWarehouseId(dto: { destinationWarehouseId?: string; warehouseId?: string }) {
@@ -23,104 +40,214 @@ export class PurchasingService {
     return warehouseId;
   }
 
-  async createPO(dto: any) {
+  /** Subtotal de líneas − descuento de orden + flete */
+  private computeOrderTotals(
+    lines: PurchaseLineInput[],
+    headerDiscount = 0,
+    shippingCost = 0,
+  ) {
+    const linesSubtotal = lines.reduce((sum, l) => {
+      const lineDiscount = Math.max(0, l.discountAmount || 0);
+      return sum + Math.max(0, l.orderedQuantity * l.unitCost - lineDiscount);
+    }, 0);
+    const discountAmount = Math.max(0, headerDiscount || 0);
+    const shipping = Math.max(0, shippingCost || 0);
+    if (discountAmount > linesSubtotal) {
+      throw new BadRequestException('El descuento de la orden no puede superar el subtotal de artículos.');
+    }
+    const totalAmount = Math.max(0, linesSubtotal - discountAmount + shipping);
+    return { linesSubtotal, discountAmount, shippingCost: shipping, totalAmount };
+  }
+
+  private mapLineCreates(lines: PurchaseLineInput[]) {
+    return lines.map(l => {
+      const discountAmount = Math.max(0, l.discountAmount || 0);
+      return {
+        variantId: l.variantId,
+        orderedQuantity: l.orderedQuantity,
+        unitCost: l.unitCost,
+        discountAmount,
+        totalAmount: Math.max(0, l.orderedQuantity * l.unitCost - discountAmount),
+      };
+    });
+  }
+
+  /**
+   * Impacto financiero de una compra:
+   * - Deuda pendiente → incrementa Supplier.balance + movimiento CC
+   * - Pago parcial/total → CREDIT en tesorería + recibo CC (si había deuda registrada previa no aplica en alta)
+   */
+  private async applyPurchaseFinanceInTx(
+    tx: any,
+    params: {
+      supplierId: string;
+      supplierName: string;
+      poId: string;
+      totalAmount: number;
+      paidAmount: number;
+      paymentAccountId?: string;
+      paymentReference?: string;
+      notes?: string;
+    },
+  ) {
+    const paidAmount = Math.max(0, Math.min(params.paidAmount || 0, params.totalAmount));
+    const remainingDebt = Math.max(0, params.totalAmount - paidAmount);
+    const poLabel = formatEntityId(params.poId, 'OC-');
+
+    if (paidAmount > 0) {
+      if (!params.paymentAccountId) {
+        throw new BadRequestException('Seleccioná la cuenta de origen del pago.');
+      }
+      const account = await tx.financialAccount.findUnique({ where: { id: params.paymentAccountId } });
+      if (!account) throw new NotFoundException('Cuenta financiera no encontrada');
+      if (account.type === 'CASH' && account.balance < paidAmount) {
+        throw new BadRequestException(`Fondos insuficientes en la caja. Saldo: $${account.balance}`);
+      }
+
+      const payDesc = params.paymentReference
+        ? `Pago a ${params.supplierName} por ${poLabel} (ref: ${params.paymentReference})`
+        : `Pago a ${params.supplierName} por ${poLabel}`;
+
+      await this.accountsService.postTransactionInTx(
+        tx,
+        params.paymentAccountId,
+        'CREDIT',
+        paidAmount,
+        params.poId,
+        payDesc,
+      );
+    }
+
+    if (remainingDebt > 0) {
+      const updated = await tx.supplier.update({
+        where: { id: params.supplierId },
+        data: { balance: { increment: remainingDebt } },
+      });
+      await tx.currentAccountMovement.create({
+        data: {
+          accountId: params.supplierId,
+          entityType: 'SUPPLIER',
+          documentType: 'DEBIT_NOTE',
+          referenceId: params.poId,
+          description: params.notes
+            ? `Compra ${poLabel}: ${params.notes}`
+            : `Deuda por compra ${poLabel}`,
+          amount: remainingDebt,
+          debit: 0,
+          credit: remainingDebt,
+          balanceAfter: updated.balance,
+        },
+      });
+    }
+
+    return { paidAmount, remainingDebt };
+  }
+
+  async createPO(dto: CreatePurchaseOrderDto | any) {
     try {
       const destinationWarehouseId = this.resolveWarehouseId(dto);
-      const totalAmount = (dto.lines || []).reduce((sum, l) => sum + (l.orderedQuantity * l.unitCost), 0);
+      const lines: PurchaseLineInput[] = (dto.lines || []).map((l: any) => ({
+        variantId: l.variantId,
+        orderedQuantity: l.orderedQuantity ?? l.quantity,
+        unitCost: l.unitCost,
+        discountAmount: l.discountAmount || 0,
+      }));
+      if (lines.length === 0) {
+        throw new BadRequestException('La orden debe tener al menos un artículo.');
+      }
+
+      const { discountAmount, shippingCost, totalAmount } = this.computeOrderTotals(
+        lines,
+        dto.discountAmount,
+        dto.shippingCost,
+      );
 
       return await this.prisma.purchaseOrder.create({
         data: {
           supplierId: dto.supplierId,
           destinationWarehouseId,
           status: 'DRAFT',
-          totalAmount: totalAmount,
+          totalAmount,
           paidAmount: 0,
+          discountAmount,
+          shippingCost,
           currency: dto.currency || 'ARS',
           notes: dto.notes,
-          lines: {
-            create: (dto.lines || []).map(l => ({
-              variantId: l.variantId,
-              orderedQuantity: l.orderedQuantity,
-              unitCost: l.unitCost,
-              totalAmount: l.orderedQuantity * l.unitCost
-            }))
-          }
+          lines: { create: this.mapLineCreates(lines) },
         },
-        include: { lines: true }
+        include: { lines: true, supplier: true },
       });
     } catch (error: any) {
+      if (error instanceof BadRequestException) throw error;
       this.logger.error(`Error creating PO: ${error.message}`, error.stack);
       throw new BadRequestException('Error al crear la orden de compra. Verificá los datos o sincronizá la base de datos.');
     }
   }
 
-  async processDirectPurchase(dto: {
-    supplierId: string;
-    warehouseId: string;
-    branchId: string;
-    paymentAccountId?: string;
-    paymentAmount?: number;
-    lines: {
-      variantId: string;
-      quantity: number;
-      unitCost: number;
-      discountAmount?: number;
-    }[];
-    notes?: string;
-  }) {
-    const totalAmount = dto.lines.reduce((sum, l) => sum + (l.quantity * l.unitCost) - (l.discountAmount || 0), 0);
-    const paidAmount = dto.paymentAmount || 0;
+  async processDirectPurchase(dto: ProcessDirectPurchaseDto | any) {
+    const lines: PurchaseLineInput[] = (dto.lines || []).map((l: any) => ({
+      variantId: l.variantId,
+      orderedQuantity: l.quantity ?? l.orderedQuantity,
+      unitCost: l.unitCost,
+      discountAmount: l.discountAmount || 0,
+    }));
+    if (lines.length === 0) {
+      throw new BadRequestException('La compra debe tener al menos un artículo.');
+    }
+
+    const { discountAmount, shippingCost, totalAmount } = this.computeOrderTotals(
+      lines,
+      dto.discountAmount,
+      dto.shippingCost,
+    );
+
+    const requestedPaid = dto.paymentAmount != null ? Number(dto.paymentAmount) : 0;
+    if (requestedPaid > totalAmount) {
+      throw new BadRequestException('El monto a pagar no puede superar el total de la compra.');
+    }
+    if (requestedPaid > 0 && !dto.paymentAccountId) {
+      throw new BadRequestException('Seleccioná la cuenta de origen del pago.');
+    }
+
+    const warehouseId = this.resolveWarehouseId({ warehouseId: dto.warehouseId, destinationWarehouseId: dto.warehouseId });
+
+    const supplier = await this.prisma.supplier.findUnique({ where: { id: dto.supplierId } });
+    if (!supplier) throw new NotFoundException('Proveedor no encontrado');
 
     return this.prisma.$transaction(async (tx) => {
       const po = await tx.purchaseOrder.create({
         data: {
           supplierId: dto.supplierId,
-          destinationWarehouseId: dto.warehouseId,
-          status: 'ISSUED', // Changed from COMPLETED to ISSUED/PENDING RECEIPT
+          destinationWarehouseId: warehouseId,
+          status: 'ISSUED',
           totalAmount,
-          paidAmount,
-          completedAt: null, // Not completed until received
+          paidAmount: 0,
+          discountAmount,
+          shippingCost,
+          completedAt: null,
           notes: dto.notes,
-          lines: {
-            create: dto.lines.map(l => ({
-              variantId: l.variantId,
-              orderedQuantity: l.quantity,
-              receivedQuantity: 0, // Stock not loaded yet
-              unitCost: l.unitCost,
-              discountAmount: l.discountAmount || 0,
-              totalAmount: (l.quantity * l.unitCost) - (l.discountAmount || 0)
-            }))
-          }
+          issuedAt: new Date(),
+          lines: { create: this.mapLineCreates(lines) },
         },
-        include: { lines: true }
+        include: { lines: true, supplier: true },
       });
 
-      // REMOVED: Stock loading logic. Stock must now be received via Goods Receipts.
-
-      const remainingDebt = totalAmount - paidAmount;
-      await tx.supplier.update({
-        where: { id: dto.supplierId },
-        data: { balance: { increment: remainingDebt } }
+      const { paidAmount } = await this.applyPurchaseFinanceInTx(tx, {
+        supplierId: dto.supplierId,
+        supplierName: supplier.companyName,
+        poId: po.id,
+        totalAmount,
+        paidAmount: requestedPaid,
+        paymentAccountId: dto.paymentAccountId,
+        paymentReference: dto.paymentReference,
+        notes: dto.notes,
       });
 
-      if (paidAmount > 0 && dto.paymentAccountId) {
-        await tx.financialTransaction.create({
-          data: {
-            accountId: dto.paymentAccountId,
-            type: 'CREDIT',
-            amount: paidAmount,
-            referenceId: po.id,
-            description: `Pago a proveedor por compra ${po.id}`
-          }
-        });
-
-        await tx.financialAccount.update({
-          where: { id: dto.paymentAccountId },
-          data: { balance: { decrement: paidAmount } }
-        });
-      }
-
-      return po;
+      return tx.purchaseOrder.update({
+        where: { id: po.id },
+        data: { paidAmount },
+        include: { lines: true, supplier: true },
+      });
     }).then((po) => {
       void this.notificationTriggers.onPurchaseOrderIssued(po.id);
       return po;
@@ -129,7 +256,6 @@ export class PurchasingService {
 
   async bulkImportPurchases(dto: BulkImportPurchasesDto) {
     return this.prisma.$transaction(async (tx) => {
-      // Group rows by orderId
       const groupedOrders: Record<string, typeof dto.rows> = {};
       for (const row of dto.rows) {
         if (!groupedOrders[row.orderId]) {
@@ -147,7 +273,6 @@ export class PurchasingService {
           const firstLine = lines[0];
           let supplierId = null;
 
-          // Resolve Supplier
           if (firstLine.supplierIdentifier) {
             const ident = firstLine.supplierIdentifier.trim();
             const supplier = await tx.supplier.findFirst({
@@ -177,7 +302,6 @@ export class PurchasingService {
              throw new Error("Se requiere un proveedor.");
           }
 
-          // Resolve SKUs
           const poLinesData = [];
           let totalAmount = 0;
 
@@ -197,13 +321,12 @@ export class PurchasingService {
               id: uuidv4(),
               variantId: variant.id,
               orderedQuantity: line.quantity,
-              receivedQuantity: dto.updateStock ? line.quantity : 0, // Si impacta stock se asume recibido
+              receivedQuantity: dto.updateStock ? line.quantity : 0,
               unitCost: line.unitCost,
               discountAmount: 0,
               totalAmount: lineTotal
             });
 
-            // Handle Stock Update via Goods Receipt Simulation
             if (dto.updateStock) {
               await tx.inventoryMovement.create({
                 data: {
@@ -216,7 +339,6 @@ export class PurchasingService {
                 }
               });
 
-              // Update Stock Level
               const stockLevel = await tx.stockLevel.findFirst({
                 where: { variantId: variant.id, warehouseId: dto.warehouseId }
               });
@@ -241,7 +363,6 @@ export class PurchasingService {
             }
           }
 
-          // Create the Purchase Order
           const poId = uuidv4();
           await tx.purchaseOrder.create({
             data: {
@@ -250,7 +371,7 @@ export class PurchasingService {
               destinationWarehouseId: dto.warehouseId,
               status: dto.updateStock ? 'COMPLETED' : 'ISSUED',
               totalAmount,
-              paidAmount: 0, // Se ajusta despues
+              paidAmount: 0,
               currency: 'ARS',
               issuedAt: firstLine.date ? new Date(firstLine.date) : new Date(),
               completedAt: dto.updateStock ? (firstLine.date ? new Date(firstLine.date) : new Date()) : null,
@@ -260,7 +381,6 @@ export class PurchasingService {
             }
           });
 
-          // Create Goods Receipt implicitly if stock updated
           if (dto.updateStock) {
              const grId = uuidv4();
              await tx.goodsReceipt.create({
@@ -282,7 +402,6 @@ export class PurchasingService {
              });
           }
 
-          // Handle Debt
           let finalPaymentStatus = dto.paymentResolution;
           if (finalPaymentStatus === 'FROM_CSV' && firstLine.paymentStatus) {
             const ps = firstLine.paymentStatus.toUpperCase();
@@ -298,8 +417,20 @@ export class PurchasingService {
               where: { id: supplierId },
               data: { balance: { increment: totalAmount } }
             });
+            await tx.currentAccountMovement.create({
+              data: {
+                accountId: supplierId,
+                entityType: 'SUPPLIER',
+                documentType: 'DEBIT_NOTE',
+                referenceId: poId,
+                description: `Deuda por compra importada ${formatEntityId(poId, 'OC-')}`,
+                amount: totalAmount,
+                debit: 0,
+                credit: totalAmount,
+                balanceAfter: (await tx.supplier.findUnique({ where: { id: supplierId } }))!.balance,
+              },
+            });
           } else if (finalPaymentStatus === 'PAID_CASH') {
-             // Let's just mark PO paid amount. Since no cash register is required for supplier payment from import, we just update PO
              await tx.purchaseOrder.update({
                where: { id: poId },
                data: { paidAmount: totalAmount }
@@ -322,45 +453,56 @@ export class PurchasingService {
     }, { timeout: 30000 });
   }
 
+  private mapPOResponse(po: any) {
+    if (!po) return po;
+    return {
+      ...po,
+      supplierName: po.supplier?.companyName,
+      lines: (po.lines || []).map((l: any) => ({
+        ...l,
+        variantSku: l.variant?.sku || l.variantSku,
+        productName: l.variant?.product?.name
+          ? `${l.variant.product.name}${l.variant.size ? ` (${l.variant.size})` : ''}${l.variant.color ? ` · ${l.variant.color}` : ''}`
+          : l.productName,
+      })),
+    };
+  }
+
   async findAll(query: any = {}) {
     const page = parseInt(query.page) || 1;
     const pageSize = parseInt(query.pageSize) || 50;
     const skip = (page - 1) * pageSize;
 
+    const where: any = {};
+    if (query.status) where.status = query.status;
+    if (query.supplierId) where.supplierId = query.supplierId;
+
     const [data, total] = await Promise.all([
       this.prisma.purchaseOrder.findMany({
+        where,
         include: { supplier: true, lines: true },
         orderBy: { createdAt: 'desc' },
         skip,
         take: pageSize,
       }),
-      this.prisma.purchaseOrder.count(),
+      this.prisma.purchaseOrder.count({ where }),
     ]);
 
-    return { data, total, page, pageSize };
+    return { data: data.map((po) => this.mapPOResponse(po)), total, page, pageSize };
   }
 
   async getPO(id: string) {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    
-    if (uuidRegex.test(id)) {
-      return this.prisma.purchaseOrder.findUnique({
-        where: { id },
-        include: { 
-          supplier: true,
-          lines: { include: { variant: { include: { product: true } } } } 
-        }
-      });
-    }
+    const include = {
+      supplier: true,
+      lines: { include: { variant: { include: { product: true } } } },
+    };
 
-    // Short ID / Prefix search
-    return this.prisma.purchaseOrder.findFirst({
-      where: { id: { startsWith: id } },
-      include: { 
-        supplier: true,
-        lines: { include: { variant: { include: { product: true } } } } 
-      }
-    });
+    const po = uuidRegex.test(id)
+      ? await this.prisma.purchaseOrder.findUnique({ where: { id }, include })
+      : await this.prisma.purchaseOrder.findFirst({ where: { id: { startsWith: id } }, include });
+
+    return this.mapPOResponse(po);
   }
 
   async applyReceiptToPO(poId: string, receiptLines: { poLineItemId: string, receivedQuantity: number }[]) {
@@ -394,15 +536,29 @@ export class PurchasingService {
     });
   }
 
-  async updatePO(id: string, dto: any) {
+  async updatePO(id: string, dto: UpdatePurchaseOrderDto | any) {
     const po = await this.getPO(id);
     if (!po) throw new NotFoundException('Orden de compra no encontrada');
     if (po.status !== 'DRAFT') throw new BadRequestException('Solo se pueden editar órdenes en borrador');
 
+    const lines: PurchaseLineInput[] = (dto.lines || []).map((l: any) => ({
+      variantId: l.variantId,
+      orderedQuantity: l.orderedQuantity ?? l.quantity,
+      unitCost: l.unitCost,
+      discountAmount: l.discountAmount || 0,
+    }));
+    if (lines.length === 0) {
+      throw new BadRequestException('La orden debe tener al menos un artículo.');
+    }
+
+    const { discountAmount, shippingCost, totalAmount } = this.computeOrderTotals(
+      lines,
+      dto.discountAmount ?? po.discountAmount,
+      dto.shippingCost ?? po.shippingCost,
+    );
+
     return this.prisma.$transaction(async (tx) => {
       await tx.pOLineItem.deleteMany({ where: { purchaseOrderId: id } });
-      
-      const totalAmount = (dto.lines || []).reduce((sum: number, l: any) => sum + (l.orderedQuantity * l.unitCost), 0);
 
       const destinationWarehouseId = dto.destinationWarehouseId || dto.warehouseId || po.destinationWarehouseId;
 
@@ -410,36 +566,139 @@ export class PurchasingService {
         where: { id },
         data: {
           destinationWarehouseId,
-          notes: dto.notes,
+          notes: dto.notes !== undefined ? dto.notes : po.notes,
           totalAmount,
-          lines: {
-            create: (dto.lines || []).map((l: any) => ({
-              variantId: l.variantId,
-              orderedQuantity: l.orderedQuantity,
-              unitCost: l.unitCost,
-              totalAmount: l.orderedQuantity * l.unitCost
-            }))
-          }
+          discountAmount,
+          shippingCost,
+          lines: { create: this.mapLineCreates(lines) },
         },
-        include: { lines: true }
+        include: { lines: true, supplier: true },
       });
     });
   }
 
-  async issueOrder(id: string) {
+  async issueOrder(id: string, dto: IssuePurchaseOrderDto | any = {}) {
     const po = await this.getPO(id);
     if (!po) throw new NotFoundException('Orden de compra no encontrada');
     if (po.status !== 'DRAFT') {
       throw new BadRequestException('Solo se pueden emitir órdenes en estado borrador');
     }
 
-    return this.prisma.purchaseOrder.update({
-      where: { id },
-      data: { status: 'ISSUED', issuedAt: new Date() },
-      include: { supplier: true, lines: { include: { variant: { include: { product: true } } } } },
+    const requestedPaid = dto.paymentAmount != null ? Number(dto.paymentAmount) : 0;
+    if (requestedPaid > po.totalAmount) {
+      throw new BadRequestException('El monto a pagar no puede superar el total de la orden.');
+    }
+    if (requestedPaid > 0 && !dto.paymentAccountId) {
+      throw new BadRequestException('Seleccioná la cuenta de origen del pago.');
+    }
+
+    const supplierName = (po as any).supplier?.companyName || 'Proveedor';
+
+    return this.prisma.$transaction(async (tx) => {
+      const notes = dto.notes !== undefined && dto.notes !== ''
+        ? [po.notes, dto.notes].filter(Boolean).join(' | ')
+        : po.notes;
+
+      const { paidAmount } = await this.applyPurchaseFinanceInTx(tx, {
+        supplierId: po.supplierId,
+        supplierName,
+        poId: po.id,
+        totalAmount: po.totalAmount,
+        paidAmount: requestedPaid,
+        paymentAccountId: dto.paymentAccountId,
+        paymentReference: dto.paymentReference,
+        notes: dto.notes || po.notes,
+      });
+
+      return tx.purchaseOrder.update({
+        where: { id },
+        data: {
+          status: 'ISSUED',
+          issuedAt: new Date(),
+          paidAmount,
+          notes,
+        },
+        include: { supplier: true, lines: { include: { variant: { include: { product: true } } } } },
+      });
     }).then((issued) => {
       void this.notificationTriggers.onPurchaseOrderIssued(issued.id);
       return issued;
+    });
+  }
+
+  /**
+   * Registra un pago adicional contra una OC ya emitida (reduce deuda del proveedor).
+   */
+  async registerPayment(id: string, dto: RegisterPurchasePaymentDto) {
+    const po = await this.getPO(id);
+    if (!po) throw new NotFoundException('Orden de compra no encontrada');
+    if (po.status === 'DRAFT' || po.status === 'CANCELLED') {
+      throw new BadRequestException('No se puede registrar un pago sobre una orden en borrador o cancelada.');
+    }
+
+    const outstanding = Math.max(0, po.totalAmount - po.paidAmount);
+    if (outstanding <= 0) {
+      throw new BadRequestException('La orden ya está totalmente pagada.');
+    }
+
+    const amount = Number(dto.amount);
+    if (amount <= 0) throw new BadRequestException('El monto debe ser mayor a cero.');
+    if (amount > outstanding) {
+      throw new BadRequestException(`El pago no puede superar el saldo pendiente ($${outstanding}).`);
+    }
+
+    const supplierName = (po as any).supplier?.companyName || 'Proveedor';
+    const poLabel = formatEntityId(po.id, 'OC-');
+
+    return this.prisma.$transaction(async (tx) => {
+      const account = await tx.financialAccount.findUnique({ where: { id: dto.paymentAccountId } });
+      if (!account) throw new NotFoundException('Cuenta financiera no encontrada');
+      if (account.type === 'CASH' && account.balance < amount) {
+        throw new BadRequestException(`Fondos insuficientes en la caja. Saldo: $${account.balance}`);
+      }
+
+      const payDesc = dto.paymentReference
+        ? `Pago a ${supplierName} por ${poLabel} (ref: ${dto.paymentReference})`
+        : `Pago a ${supplierName} por ${poLabel}`;
+
+      await this.accountsService.postTransactionInTx(
+        tx,
+        dto.paymentAccountId,
+        'CREDIT',
+        amount,
+        po.id,
+        payDesc,
+      );
+
+      const updatedSupplier = await tx.supplier.update({
+        where: { id: po.supplierId },
+        data: { balance: { decrement: amount } },
+      });
+
+      await tx.currentAccountMovement.create({
+        data: {
+          accountId: po.supplierId,
+          entityType: 'SUPPLIER',
+          documentType: 'RECEIPT',
+          referenceId: `${po.id}-pay-${Date.now()}`,
+          description: dto.notes || `Recibo de pago ${poLabel}`,
+          amount,
+          debit: amount,
+          credit: 0,
+          balanceAfter: Math.max(0, updatedSupplier.balance),
+        },
+      });
+
+      return tx.purchaseOrder.update({
+        where: { id: po.id },
+        data: {
+          paidAmount: { increment: amount },
+          notes: dto.notes
+            ? [po.notes, dto.notes].filter(Boolean).join(' | ')
+            : po.notes,
+        },
+        include: { supplier: true, lines: { include: { variant: { include: { product: true } } } } },
+      });
     });
   }
 
@@ -455,13 +714,11 @@ export class PurchasingService {
   }
 
   async generateReplenishmentOrders() {
-    // Retrieve system settings for default replenishment thresholds
     const settings = await this.prisma.systemSettings.findUnique({ where: { id: 'default' } });
     const inventoryConfig = ((settings as any)?.inventory) || {};
     const reorderPoint = parseInt(inventoryConfig.defaultReorderPoint) || 10;
     const reorderQuantity = parseInt(inventoryConfig.defaultReorderQuantity) || 50;
 
-    // 1. Find all stock levels where available <= reorderPoint
     const stockToReplenish = await this.prisma.stockLevel.findMany({
       where: {
         availableQuantity: { lte: reorderPoint }
@@ -478,8 +735,6 @@ export class PurchasingService {
       return { success: true, message: 'No hay productos por debajo del punto de reposición.', ordersCreated: 0 };
     }
 
-    // 2. Group by preferredSupplierId and destinationWarehouseId
-    // Map of SupplierId -> WarehouseId -> PO Lines
     const draftOrders: Record<string, Record<string, any[]>> = {};
 
     for (const stock of stockToReplenish) {
@@ -487,7 +742,6 @@ export class PurchasingService {
       const neededQty = reorderQuantity - stock.availableQuantity;
       if (neededQty <= 0) continue;
 
-      // Fallback: If no preferred supplier, use a 'UNKNOWN_SUPPLIER' key so the user can assign it later
       const supplierId = 'UNKNOWN_SUPPLIER';
       const warehouseId = stock.warehouseId;
 
@@ -497,7 +751,7 @@ export class PurchasingService {
       draftOrders[supplierId][warehouseId].push({
         variantId: stock.variantId,
         orderedQuantity: neededQty,
-        unitCost: variant?.costPrice || 0, // Fallback to 0 if not set
+        unitCost: variant?.costPrice || 0,
         totalAmount: neededQty * (variant?.costPrice || 0)
       });
     }
@@ -505,8 +759,6 @@ export class PurchasingService {
     let ordersCreated = 0;
 
     await this.prisma.$transaction(async (tx) => {
-      // If UNKNOWN_SUPPLIER exists, we either create a dummy supplier or we throw an error.
-      // We will create a dummy "Proveedores Varios" supplier if it doesn't exist.
       let defaultSupplierId: string | null = null;
       if (draftOrders['UNKNOWN_SUPPLIER']) {
         let dummy = await tx.supplier.findFirst({ where: { companyName: 'Proveedores Varios' } });
@@ -551,4 +803,3 @@ export class PurchasingService {
     };
   }
 }
-

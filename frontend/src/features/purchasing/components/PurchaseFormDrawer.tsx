@@ -7,18 +7,16 @@ import { apiClient } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import type { PurchaseOrder } from '@/types';
 import toast from 'react-hot-toast';
-import { X } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
 import styles from '@/styles/DetailDrawerShared.module.css';
 import { PurchaseCatalogSearch, type PurchaseCatalogHit } from './PurchaseCatalogSearch';
+import { PurchaseSelectedLines, type PurchaseLineDraft } from './PurchaseSelectedLines';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   orderToEdit?: PurchaseOrder | null;
 }
-
-type Line = { variantId: string; variantSku: string; quantity: number; unitCost: number };
 
 export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const queryClient = useQueryClient();
@@ -27,7 +25,10 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
   const [supplierId, setSupplierId] = useState('');
   const [warehouseId, setDestinationWarehouseId] = useState('');
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
-  const [lines, setLines] = useState<Line[]>([]);
+  const [lines, setLines] = useState<PurchaseLineDraft[]>([]);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [shippingCost, setShippingCost] = useState(0);
+  const [notes, setNotes] = useState('');
 
   const { data: suppliersData } = useQuery({
     queryKey: queryKeys.suppliers.all(),
@@ -51,54 +52,53 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
         || '',
       );
       setExpectedDeliveryDate(orderToEdit.expectedDeliveryDate ? orderToEdit.expectedDeliveryDate.split('T')[0] : '');
+      setDiscountAmount(orderToEdit.discountAmount || 0);
+      setShippingCost(orderToEdit.shippingCost || 0);
+      setNotes(orderToEdit.notes || '');
       setLines(orderToEdit.lines.map(l => ({
         variantId: l.variantId,
-        variantSku: l.variantSku || l.variantId,
+        variantSku: l.variantSku || l.productName || l.variantId,
         quantity: l.orderedQuantity,
         unitCost: l.unitCost,
+        discount: l.discountAmount || 0,
       })));
     } else {
       setSupplierId('');
       setDestinationWarehouseId('');
       setExpectedDeliveryDate('');
+      setDiscountAmount(0);
+      setShippingCost(0);
+      setNotes('');
       setLines([]);
     }
   }, [open, orderToEdit]);
 
   const handleAddToCart = (product: PurchaseCatalogHit) => {
     const label = `${product.name}${product.size ? ` (${product.size})` : ''}${product.color ? ` · ${product.color}` : ''}`;
-    const existing = lines.find(l => l.variantId === product.id);
-    if (existing) {
-      setLines(lines.map(l => l.variantId === product.id ? { ...l, quantity: l.quantity + 1 } : l));
-    } else {
-      setLines([...lines, {
+    setLines(prev => {
+      const existing = prev.find(l => l.variantId === product.id);
+      if (existing) {
+        return prev.map(l => l.variantId === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+      }
+      return [...prev, {
         variantId: product.id,
         variantSku: label,
         quantity: 1,
         unitCost: product.costPrice || 0,
-      }]);
-    }
+        discount: 0,
+      }];
+    });
   };
 
-  const removeLine = (idx: number) => setLines(lines.filter((_, i) => i !== idx));
-
-  const updateLineQty = (idx: number, qty: number) => {
-    if (qty < 1) return;
-    setLines(lines.map((l, i) => i === idx ? { ...l, quantity: qty } : l));
-  };
-
-  const updateLineCost = (idx: number, cost: number) => {
-    if (cost < 0) return;
-    setLines(lines.map((l, i) => i === idx ? { ...l, unitCost: cost } : l));
-  };
-
-  const totals = lines.reduce((acc, line) => acc + (line.quantity * line.unitCost), 0);
+  const linesSubtotal = lines.reduce((acc, line) => acc + (line.quantity * line.unitCost), 0);
+  const lineDiscounts = lines.reduce((acc, line) => acc + (line.discount || 0), 0);
+  const afterLineDiscounts = linesSubtotal - lineDiscounts;
+  const total = Math.max(0, afterLineDiscounts - (discountAmount || 0) + (shippingCost || 0));
 
   const mutation = useMutation({
-    mutationFn: (data: Record<string, unknown>) => {
-      const payload = { ...data, expectedDeliveryDate: (data.expectedDeliveryDate as string) || undefined };
-      if (isEditing && orderToEdit) return purchasesApi.updateOrder(orderToEdit.id, payload);
-      return purchasesApi.createOrder(payload);
+    mutationFn: (data: Parameters<typeof purchasesApi.createOrder>[0]) => {
+      if (isEditing && orderToEdit) return purchasesApi.updateOrder(orderToEdit.id, data);
+      return purchasesApi.createOrder(data);
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Orden actualizada (Borrador)' : 'Orden de compra creada');
@@ -114,12 +114,21 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
     if (!supplierId) return toast.error('Seleccioná un proveedor');
     if (!warehouseId) return toast.error('Seleccioná un depósito de destino');
     if (lines.length === 0) return toast.error('Agregá al menos un artículo a la orden');
+    if (discountAmount > afterLineDiscounts) return toast.error('El descuento no puede superar el subtotal');
 
     mutation.mutate({
       supplierId,
       destinationWarehouseId: warehouseId,
-      expectedDeliveryDate,
-      lines: lines.map(l => ({ variantId: l.variantId, orderedQuantity: l.quantity, unitCost: l.unitCost })),
+      expectedDeliveryDate: expectedDeliveryDate || undefined,
+      discountAmount,
+      shippingCost,
+      notes: notes || undefined,
+      lines: lines.map(l => ({
+        variantId: l.variantId,
+        orderedQuantity: l.quantity,
+        unitCost: l.unitCost,
+        discountAmount: l.discount || 0,
+      })),
     });
   };
 
@@ -138,7 +147,19 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
       }
     >
       <form onSubmit={handleSubmit} className={styles.purchaseForm}>
-        <PurchaseCatalogSearch enabled={open} autoFocus onSelect={handleAddToCart} />
+        <PurchaseCatalogSearch
+          enabled={open}
+          autoFocus
+          selectedVariantIds={lines.map(l => l.variantId)}
+          onSelect={handleAddToCart}
+          priorityContent={
+            <PurchaseSelectedLines
+              lines={lines}
+              showLineDiscount
+              onChange={setLines}
+            />
+          }
+        />
 
         <div className={styles.purchaseSidebar}>
           <div className={styles.configPanel}>
@@ -169,49 +190,75 @@ export function PurchaseFormDrawer({ open, onClose, orderToEdit }: Props) {
               value={expectedDeliveryDate}
               onChange={e => setExpectedDeliveryDate(e.target.value)}
             />
+
+            <div className={styles.extrasGrid}>
+              <div>
+                <label className={styles.inputLabelSm}>Desc. orden ($)</label>
+                <div className={styles.costInputWrap}>
+                  <span className={styles.costPrefix}>$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={discountAmount}
+                    onChange={e => setDiscountAmount(Number(e.target.value))}
+                    className={`${styles.inputSm} ${styles.inputSmWithPrefix}`}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={styles.inputLabelSm}>Envío / flete ($)</label>
+                <div className={styles.costInputWrap}>
+                  <span className={styles.costPrefix}>$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={shippingCost}
+                    onChange={e => setShippingCost(Number(e.target.value))}
+                    className={`${styles.inputSm} ${styles.inputSmWithPrefix}`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.fieldGroupSm}>
+              <label className={styles.selectLabel}>Notas</label>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                className={styles.notesTextarea}
+                placeholder="Observaciones internas..."
+                rows={2}
+              />
+            </div>
           </div>
 
           <div className={styles.cartPanel}>
-            <h3 className={styles.cartPanelTitle}>Artículos Agregados ({lines.length})</h3>
-
-            <div className={styles.cartScroll}>
-              {lines.length === 0 && <p className={styles.cartEmptyHint}>No hay artículos en la orden.</p>}
-              {lines.map((l, i) => (
-                <div key={`${l.variantId}-${i}`} className={styles.cartLineCard}>
-                  <div className={styles.cartLineHeader}>
-                    <span className={styles.selectLabel}>{l.variantSku}</span>
-                    <X size={16} color="var(--red)" className={styles.clickable} onClick={() => removeLine(i)} />
-                  </div>
-                  <div className={styles.cartLineGrid}>
-                    <div>
-                      <label className={styles.inputLabelSm}>Cant.</label>
-                      <input type="number" min="1" value={l.quantity} onChange={(e) => updateLineQty(i, Number(e.target.value))} className={styles.inputSm} />
-                    </div>
-                    <div>
-                      <label className={styles.inputLabelSm}>Costo U.</label>
-                      <div className={styles.costInputWrap}>
-                        <span className={styles.costPrefix}>$</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={l.unitCost}
-                          onChange={(e) => updateLineCost(i, Number(e.target.value))}
-                          className={`${styles.inputSm} ${styles.inputSmWithPrefix}`}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className={styles.cartLineTotal}>
-                    {formatCurrency(l.quantity * l.unitCost)}
-                  </div>
-                </div>
-              ))}
-            </div>
-
             <div className={styles.cartGrandTotal}>
+              <div className={styles.totalsBreakdown}>
+                <div className={styles.totalsRow}>
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(linesSubtotal)}</span>
+                </div>
+                {(lineDiscounts > 0 || discountAmount > 0) && (
+                  <div className={`${styles.totalsRow} ${styles.totalsDiscount}`}>
+                    <span>Descuentos</span>
+                    <span>- {formatCurrency(lineDiscounts + discountAmount)}</span>
+                  </div>
+                )}
+                {shippingCost > 0 && (
+                  <div className={styles.totalsRow}>
+                    <span>Envío</span>
+                    <span>{formatCurrency(shippingCost)}</span>
+                  </div>
+                )}
+              </div>
               <span className={styles.cartGrandTotalLabel}>Monto Total OC</span>
-              <span className={styles.cartGrandTotalValue}>{formatCurrency(totals)}</span>
+              <span className={styles.cartGrandTotalValue}>{formatCurrency(total)}</span>
+              <p className={styles.paymentNoteHint}>
+                Al emitir la orden vas a poder registrar el pago o dejarla en deuda.
+              </p>
             </div>
           </div>
         </div>

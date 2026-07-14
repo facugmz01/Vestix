@@ -732,6 +732,8 @@ model PurchaseOrder {
   status                 String // DRAFT, ISSUED, PARTIALLY_RECEIVED, COMPLETED, CANCELLED
   totalAmount            Float          @default(0)
   paidAmount             Float          @default(0)
+  discountAmount         Float          @default(0) // Descuento a nivel de orden (header)
+  shippingCost           Float          @default(0) // Gastos de envío / flete
   currency               String         @default("ARS")
   notes                  String?
   issuedAt               DateTime?

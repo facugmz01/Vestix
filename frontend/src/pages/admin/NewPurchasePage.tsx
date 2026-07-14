@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { X, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { purchasesApi } from '@/api/purchases.api';
 import { queryKeys } from '@/api/queryKeys';
 import { apiClient } from '@/api/client';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { Button, Input, Drawer, PageContainer } from '@/components/ui';
+import { Button, PageContainer } from '@/components/ui';
 import { PurchaseCatalogSearch, type PurchaseCatalogHit } from '@/features/purchasing/components/PurchaseCatalogSearch';
+import { PurchaseSelectedLines, type PurchaseLineDraft } from '@/features/purchasing/components/PurchaseSelectedLines';
+import { PurchasePaymentDrawer, type PurchasePaymentPayload } from '@/features/purchasing/components/PurchasePaymentDrawer';
 import drawerStyles from '@/styles/DetailDrawerShared.module.css';
 import styles from './NewPurchasePage.module.css';
-
-type Line = { variantId: string; variantSku: string; quantity: number; unitCost: number; discount: number };
 
 export default function NewPurchasePage() {
   const navigate = useNavigate();
@@ -24,11 +24,6 @@ export default function NewPurchasePage() {
     queryFn: () => purchasesApi.getSuppliers(),
   });
 
-  const { data: accounts } = useQuery({
-    queryKey: ['treasury', 'accounts'],
-    queryFn: () => apiClient.get('/finance/treasury/accounts').then(res => res.data),
-  });
-
   const { data: warehouses } = useQuery({
     queryKey: ['warehouses'],
     queryFn: () => apiClient.get('/warehouses').then(res => res.data),
@@ -36,12 +31,10 @@ export default function NewPurchasePage() {
 
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
-  const [lines, setLines] = useState<Line[]>([]);
-
+  const [lines, setLines] = useState<PurchaseLineDraft[]>([]);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [shippingCost, setShippingCost] = useState(0);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentAccountId, setPaymentAccountId] = useState('');
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [notes, setNotes] = useState('');
 
   const handleAddToCart = (product: PurchaseCatalogHit) => {
     const label = `${product.name}${product.size ? ` (${product.size})` : ''}${product.color ? ` · ${product.color}` : ''}`;
@@ -60,24 +53,17 @@ export default function NewPurchasePage() {
     });
   };
 
-  const updateLine = (idx: number, field: 'quantity' | 'unitCost' | 'discount', value: number) => {
-    setLines(prev => prev.map((line, i) => {
-      if (i !== idx) return line;
-      if (field === 'quantity' && value < 1) return line;
-      if ((field === 'unitCost' || field === 'discount') && value < 0) return line;
-      return { ...line, [field]: value };
-    }));
-  };
-
-  const subtotal = lines.reduce((acc, item) => acc + (item.unitCost * item.quantity), 0);
-  const totalDiscount = lines.reduce((acc, item) => acc + (item.discount || 0), 0);
-  const total = subtotal - totalDiscount;
+  const linesSubtotal = lines.reduce((acc, item) => acc + (item.unitCost * item.quantity), 0);
+  const lineDiscounts = lines.reduce((acc, item) => acc + (item.discount || 0), 0);
+  const afterLineDiscounts = linesSubtotal - lineDiscounts;
+  const total = Math.max(0, afterLineDiscounts - (discountAmount || 0) + (shippingCost || 0));
 
   const purchaseMutation = useMutation({
     mutationFn: (data: unknown) => purchasesApi.processDirect(data),
     onSuccess: () => {
       toast.success('Compra registrada correctamente');
       queryClient.invalidateQueries({ queryKey: queryKeys.stock.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all() });
       navigate('/admin/purchasing');
     },
     onError: (err: { message?: string }) => toast.error(err.message || 'Error al procesar compra'),
@@ -87,14 +73,33 @@ export default function NewPurchasePage() {
     if (!selectedSupplierId) return toast.error('Seleccioná un proveedor');
     if (!selectedWarehouseId) return toast.error('Seleccioná un depósito');
     if (lines.length === 0) return toast.error('El carrito está vacío');
+    if (discountAmount > afterLineDiscounts) return toast.error('El descuento no puede superar el subtotal');
     setPaymentModalOpen(true);
-    setPaymentAmount(total);
+  };
+
+  const handleConfirmPayment = (payload: PurchasePaymentPayload) => {
+    purchaseMutation.mutate({
+      supplierId: selectedSupplierId,
+      warehouseId: selectedWarehouseId,
+      paymentAccountId: payload.paymentAccountId,
+      paymentAmount: payload.paymentAmount,
+      paymentReference: payload.paymentReference,
+      notes: payload.notes,
+      discountAmount,
+      shippingCost,
+      lines: lines.map(i => ({
+        variantId: i.variantId,
+        quantity: i.quantity,
+        unitCost: i.unitCost,
+        discountAmount: i.discount,
+      })),
+    });
   };
 
   return (
     <PageContainer
       title="Nueva compra de mercadería"
-      subtitle="Ingreso directo al stock: buscá artículos, cargá costos y registrá la recepción."
+      subtitle="Ingreso directo: buscá artículos, cargá cantidades y registrá pago o deuda."
       action={
         <div className={styles.headerActions}>
           <Button variant="secondary" onClick={() => navigate(-1)}>Cancelar</Button>
@@ -104,7 +109,18 @@ export default function NewPurchasePage() {
     >
       <div className={styles.pageShell}>
         <div className={drawerStyles.purchaseForm}>
-          <PurchaseCatalogSearch autoFocus onSelect={handleAddToCart} />
+          <PurchaseCatalogSearch
+            autoFocus
+            selectedVariantIds={lines.map(l => l.variantId)}
+            onSelect={handleAddToCart}
+            priorityContent={
+              <PurchaseSelectedLines
+                lines={lines}
+                showLineDiscount
+                onChange={setLines}
+              />
+            }
+          />
 
           <div className={drawerStyles.purchaseSidebar}>
             <div className={drawerStyles.configPanel}>
@@ -136,78 +152,56 @@ export default function NewPurchasePage() {
                   ))}
                 </select>
               </div>
+
+              <div className={drawerStyles.extrasGrid}>
+                <div>
+                  <label className={drawerStyles.inputLabelSm}>Desc. orden ($)</label>
+                  <div className={drawerStyles.costInputWrap}>
+                    <span className={drawerStyles.costPrefix}>$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={discountAmount}
+                      onChange={e => setDiscountAmount(Number(e.target.value))}
+                      className={`${drawerStyles.inputSm} ${drawerStyles.inputSmWithPrefix}`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={drawerStyles.inputLabelSm}>Envío / flete ($)</label>
+                  <div className={drawerStyles.costInputWrap}>
+                    <span className={drawerStyles.costPrefix}>$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={shippingCost}
+                      onChange={e => setShippingCost(Number(e.target.value))}
+                      className={`${drawerStyles.inputSm} ${drawerStyles.inputSmWithPrefix}`}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className={drawerStyles.cartPanel}>
-              <h3 className={drawerStyles.cartPanelTitle}>Artículos Agregados ({lines.length})</h3>
-
-              <div className={drawerStyles.cartScroll}>
-                {lines.length === 0 && (
-                  <p className={drawerStyles.cartEmptyHint}>No hay artículos en la compra.</p>
-                )}
-                {lines.map((l, i) => (
-                  <div key={`${l.variantId}-${i}`} className={drawerStyles.cartLineCard}>
-                    <div className={drawerStyles.cartLineHeader}>
-                      <span className={drawerStyles.selectLabel}>{l.variantSku}</span>
-                      <X
-                        size={16}
-                        color="var(--red)"
-                        className={drawerStyles.clickable}
-                        onClick={() => setLines(prev => prev.filter((_, idx) => idx !== i))}
-                      />
-                    </div>
-                    <div className={drawerStyles.cartLineGrid3}>
-                      <div>
-                        <label className={drawerStyles.inputLabelSm}>Cant.</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={l.quantity}
-                          onChange={e => updateLine(i, 'quantity', Number(e.target.value))}
-                          className={drawerStyles.inputSm}
-                        />
-                      </div>
-                      <div>
-                        <label className={drawerStyles.inputLabelSm}>Costo U.</label>
-                        <div className={drawerStyles.costInputWrap}>
-                          <span className={drawerStyles.costPrefix}>$</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={l.unitCost}
-                            onChange={e => updateLine(i, 'unitCost', Number(e.target.value))}
-                            className={`${drawerStyles.inputSm} ${drawerStyles.inputSmWithPrefix}`}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className={drawerStyles.inputLabelSm}>Desc.</label>
-                        <div className={drawerStyles.costInputWrap}>
-                          <span className={drawerStyles.costPrefix}>$</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={l.discount}
-                            onChange={e => updateLine(i, 'discount', Number(e.target.value))}
-                            className={`${drawerStyles.inputSm} ${drawerStyles.inputSmWithPrefix}`}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className={drawerStyles.cartLineTotal}>
-                      {formatCurrency((l.unitCost * l.quantity) - l.discount)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               <div className={drawerStyles.cartGrandTotal}>
                 <div className={styles.totalMeta}>
-                  <span>Subtotal {formatCurrency(subtotal)}</span>
-                  {totalDiscount > 0 && <span className={styles.discountMeta}>- {formatCurrency(totalDiscount)}</span>}
+                  <span>Subtotal {formatCurrency(linesSubtotal)}</span>
                 </div>
+                {(lineDiscounts > 0 || discountAmount > 0) && (
+                  <div className={styles.totalMeta}>
+                    <span className={styles.discountMeta}>
+                      Descuentos - {formatCurrency(lineDiscounts + discountAmount)}
+                    </span>
+                  </div>
+                )}
+                {shippingCost > 0 && (
+                  <div className={styles.totalMeta}>
+                    <span>Envío {formatCurrency(shippingCost)}</span>
+                  </div>
+                )}
                 <span className={drawerStyles.cartGrandTotalLabel}>Total compra</span>
                 <span className={drawerStyles.cartGrandTotalValue}>{formatCurrency(total)}</span>
               </div>
@@ -216,87 +210,14 @@ export default function NewPurchasePage() {
         </div>
       </div>
 
-      <Drawer open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} title="Confirmar compra y pago" width="sm">
-        <div className={styles.drawerStack}>
-          <div className={styles.paymentHero}>
-            <p className={styles.paymentHeroLabel}>Total facturado</p>
-            <h1 className={styles.paymentHeroValue}>{formatCurrency(total)}</h1>
-          </div>
-
-          <div className={styles.drawerField}>
-            <label className={styles.drawerLabel} htmlFor="payment-account">Cuenta de origen (pago)</label>
-            <select
-              id="payment-account"
-              value={paymentAccountId}
-              onChange={e => setPaymentAccountId(e.target.value)}
-              className={styles.drawerSelect}
-            >
-              <option value="">No pagar ahora (deuda)</option>
-              {(accounts?.data || accounts || []).map((a: { id: string; name: string; balance: number }) => (
-                <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>
-              ))}
-            </select>
-          </div>
-
-          {paymentAccountId && (
-            <div className={styles.drawerField}>
-              <label className={styles.drawerLabel} htmlFor="payment-amount">Monto a pagar ($)</label>
-              <Input
-                id="payment-amount"
-                type="number"
-                max={total}
-                value={paymentAmount}
-                onChange={e => setPaymentAmount(Number(e.target.value))}
-                className={styles.paymentInputLg}
-              />
-              <p className={styles.hintText}>
-                Si pagás menos del total, la diferencia se cargará como deuda al proveedor.
-              </p>
-            </div>
-          )}
-
-          {!paymentAccountId && (
-            <div className={styles.debtAlert}>
-              <strong>Atención:</strong> Se generará una deuda de <strong>{formatCurrency(total)}</strong> con el proveedor.
-            </div>
-          )}
-
-          <div className={styles.drawerField}>
-            <label className={styles.drawerLabel} htmlFor="payment-notes">Observaciones</label>
-            <textarea
-              id="payment-notes"
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Ej: Factura A nro 0001-..."
-              className={styles.drawerTextarea}
-            />
-          </div>
-
-          <div className={styles.drawerFooter}>
-            <Button
-              variant="primary"
-              className={styles.submitBtnFull}
-              loading={purchaseMutation.isPending}
-              onClick={() => purchaseMutation.mutate({
-                supplierId: selectedSupplierId,
-                warehouseId: selectedWarehouseId,
-                branchId: 'main',
-                paymentAccountId,
-                paymentAmount,
-                notes,
-                lines: lines.map(i => ({
-                  variantId: i.variantId,
-                  quantity: i.quantity,
-                  unitCost: i.unitCost,
-                  discountAmount: i.discount,
-                })),
-              })}
-            >
-              Generar orden y pago
-            </Button>
-          </div>
-        </div>
-      </Drawer>
+      <PurchasePaymentDrawer
+        open={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        totalAmount={total}
+        loading={purchaseMutation.isPending}
+        confirmLabel="Generar orden y pago"
+        onConfirm={handleConfirmPayment}
+      />
     </PageContainer>
   );
 }
