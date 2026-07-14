@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
 import { productsApi } from '@/api/products.api';
+import { queryKeys } from '@/api/queryKeys';
 import { Button } from '@/components/ui';
 import clsx from 'clsx';
 import styles from './ProductFormWidgets.module.css';
@@ -26,7 +27,7 @@ export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string[]>>({});
   
   const { data: attributes } = useQuery({
-    queryKey: ['attributes'],
+    queryKey: queryKeys.attributes.all(),
     queryFn: () => productsApi.getAttributes(),
   });
 

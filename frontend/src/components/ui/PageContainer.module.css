@@ -41,10 +41,9 @@
 }
 
 .tabsWrapper { 
-  margin: 0 -16px 16px -16px; /* Break out of padding on mobile if needed, or just align */
-  padding: 0 16px; 
-  overflow-x: auto; /* allow horizontal scroll for tabs */
-  -webkit-overflow-scrolling: touch;
+  margin: 0 -16px 0 -16px;
+  padding: 0 16px;
+  min-width: 0;
 }
 
 .body { 
@@ -77,7 +76,7 @@
     width: auto; /* Auto width on larger screens */
   }
   .tabsWrapper {
-    margin: 0 -24px 24px -24px;
+    margin: 0 -24px 0 -24px;
     padding: 0 24px;
   }
   .body { gap: 20px; }
