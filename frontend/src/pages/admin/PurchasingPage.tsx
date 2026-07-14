@@ -167,7 +167,7 @@ export default function PurchasingPage() {
               { 
                 key: 'supplier', 
                 header: 'Proveedor',
-                render: (o: { supplier?: { companyName?: string; name?: string } }) => <span className={adminStyles.cellPrimary}>{o.supplier?.companyName || o.supplier?.name || 'Desconocido'}</span>
+                render: (o) => <span className={adminStyles.cellPrimary}>{o.supplierName || o.supplier?.companyName || o.supplier?.name || 'Desconocido'}</span>
               },
               { 
                 key: 'date', 
@@ -178,6 +178,11 @@ export default function PurchasingPage() {
                 key: 'amount', 
                 header: 'Monto Total',
                 render: (o) => <span className={adminStyles.textBold800}>{formatCurrency(o.totalAmount)}</span>
+              },
+              {
+                key: 'paid',
+                header: 'Pagado',
+                render: (o) => <span className={adminStyles.cellDate}>{formatCurrency(o.paidAmount || 0)}</span>
               },
               { 
                 key: 'status', 

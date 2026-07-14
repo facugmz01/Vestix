@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Package } from 'lucide-react';
 
@@ -21,10 +21,20 @@ export type PurchaseCatalogHit = {
 type Props = {
   enabled?: boolean;
   autoFocus?: boolean;
+  /** IDs de variantes ya en el carrito: se muestran primero y resaltadas */
+  selectedVariantIds?: string[];
   onSelect: (product: PurchaseCatalogHit) => void;
+  /** Contenido prioritario debajo de la búsqueda (p.ej. líneas seleccionadas) */
+  priorityContent?: ReactNode;
 };
 
-export function PurchaseCatalogSearch({ enabled = true, autoFocus = false, onSelect }: Props) {
+export function PurchaseCatalogSearch({
+  enabled = true,
+  autoFocus = false,
+  selectedVariantIds = [],
+  onSelect,
+  priorityContent,
+}: Props) {
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [brandId, setBrandId] = useState('');
@@ -47,17 +57,33 @@ export function PurchaseCatalogSearch({ enabled = true, autoFocus = false, onSel
 
   const { data: searchResults = [], isFetching: isSearching } = useQuery({
     queryKey: ['purchase-catalog-search', search, categoryId, brandId],
-    queryFn: () =>
-      purchasesApi.searchCatalog(search.trim(), {
+    queryFn: async (): Promise<PurchaseCatalogHit[]> => {
+      const rows = await purchasesApi.searchCatalog(search.trim(), {
         categoryId: categoryId || undefined,
         brandId: brandId || undefined,
-      }),
+      });
+      return (rows || []).map((p: any) => ({
+        id: p.id,
+        sku: p.sku,
+        name: p.name || p.productName || p.product?.name || p.sku,
+        size: p.size,
+        color: p.color,
+        costPrice: p.costPrice,
+        basePrice: p.basePrice,
+      }));
+    },
     enabled: enabled && canSearch,
+  });
+
+  const selectedSet = new Set(selectedVariantIds);
+  const sortedResults = [...searchResults].sort((a, b) => {
+    const aSel = selectedSet.has(a.id) ? 0 : 1;
+    const bSel = selectedSet.has(b.id) ? 0 : 1;
+    return aSel - bSel;
   });
 
   const handleSelect = (product: PurchaseCatalogHit) => {
     onSelect(product);
-    setSearch('');
   };
 
   return (
@@ -99,39 +125,53 @@ export function PurchaseCatalogSearch({ enabled = true, autoFocus = false, onSel
         </select>
       </div>
 
-      <div className={styles.purchaseScroll}>
-        {!canSearch ? (
-          <div className={styles.purchaseEmpty}>
-            <Package size={48} className={styles.purchaseEmptyIcon} />
-            <p>Escribí al menos 3 letras o filtrá por categoría / marca.</p>
-          </div>
-        ) : isSearching ? (
-          <p className={styles.purchaseStatusMsg}>Buscando en catálogo...</p>
-        ) : searchResults.length > 0 ? (
-          <div className={styles.productGrid}>
-            {searchResults.map((p: PurchaseCatalogHit) => (
-              <div
-                key={p.id}
-                onClick={() => handleSelect(p)}
-                className={styles.productCard}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && handleSelect(p)}
-              >
-                <p className={styles.productCardSku}>{p.sku}</p>
-                <p className={styles.productCardName}>
-                  {p.name}
-                  {p.size ? ` (${p.size})` : ''}
-                  {p.color ? ` · ${p.color}` : ''}
-                </p>
-                <p className={styles.productCardPrice}>{formatCurrency(p.costPrice ?? p.basePrice ?? 0)}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className={styles.purchaseStatusMsg}>No se encontraron resultados.</p>
-        )}
-      </div>
+      {canSearch && (
+        <div className={styles.catalogResultsStrip}>
+          {isSearching ? (
+            <p className={styles.purchaseStatusMsg}>Buscando en catálogo...</p>
+          ) : sortedResults.length > 0 ? (
+            <div className={styles.productGrid}>
+              {sortedResults.map((p) => {
+                const isSelected = selectedSet.has(p.id);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => handleSelect(p)}
+                    className={`${styles.productCard} ${isSelected ? styles.productCardSelected : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSelect(p)}
+                  >
+                    {isSelected && <span className={styles.productCardBadge}>En lista</span>}
+                    <p className={styles.productCardSku}>{p.sku}</p>
+                    <p className={styles.productCardName}>
+                      {p.name}
+                      {p.size ? ` (${p.size})` : ''}
+                      {p.color ? ` · ${p.color}` : ''}
+                    </p>
+                    <p className={styles.productCardPrice}>{formatCurrency(p.costPrice ?? p.basePrice ?? 0)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className={styles.purchaseStatusMsg}>No se encontraron resultados.</p>
+          )}
+        </div>
+      )}
+
+      {!canSearch && !priorityContent && (
+        <div className={styles.purchaseEmpty}>
+          <Package size={48} className={styles.purchaseEmptyIcon} />
+          <p>Escribí al menos 3 letras o filtrá por categoría / marca.</p>
+        </div>
+      )}
+
+      {priorityContent && (
+        <div className={styles.purchasePrioritySlot}>
+          {priorityContent}
+        </div>
+      )}
     </div>
   );
 }

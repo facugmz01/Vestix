@@ -14,17 +14,47 @@ export interface CreatePurchaseOrderDto {
   supplierId: string;
   destinationWarehouseId: string;
   expectedDeliveryDate?: string;
-  lines: { variantId: string; orderedQuantity: number; unitCost: number }[];
+  discountAmount?: number;
+  shippingCost?: number;
+  notes?: string;
+  lines: {
+    variantId: string;
+    orderedQuantity: number;
+    unitCost: number;
+    discountAmount?: number;
+  }[];
 }
 
 export interface UpdatePurchaseOrderDto {
   destinationWarehouseId?: string;
   expectedDeliveryDate?: string;
-  lines?: { variantId: string; orderedQuantity: number; unitCost: number }[];
+  discountAmount?: number;
+  shippingCost?: number;
+  notes?: string;
+  lines?: {
+    variantId: string;
+    orderedQuantity: number;
+    unitCost: number;
+    discountAmount?: number;
+  }[];
 }
 
 export interface ReceivePurchaseDto {
   lines: { variantId: string; receivedQuantity: number }[];
+}
+
+export interface IssuePurchaseDto {
+  paymentAccountId?: string;
+  paymentAmount?: number;
+  paymentReference?: string;
+  notes?: string;
+}
+
+export interface RegisterPurchasePaymentDto {
+  paymentAccountId: string;
+  amount: number;
+  paymentReference?: string;
+  notes?: string;
 }
 
 export const purchasesApi = {
@@ -40,8 +70,11 @@ export const purchasesApi = {
   updateOrder: (id: string, dto: UpdatePurchaseOrderDto) =>
     patch<PurchaseOrder>(`/purchasing/orders/${id}`, dto),
 
-  issueOrder: (id: string) =>
-    post<PurchaseOrder>(`/purchasing/orders/${id}/issue`, {}),
+  issueOrder: (id: string, dto: IssuePurchaseDto = {}) =>
+    post<PurchaseOrder>(`/purchasing/orders/${id}/issue`, dto),
+
+  registerPayment: (id: string, dto: RegisterPurchasePaymentDto) =>
+    post<PurchaseOrder>(`/purchasing/orders/${id}/payments`, dto),
 
   receiveOrder: (id: string, dto: ReceivePurchaseDto) =>
     post<{ status: string; discrepancy: boolean }>(`/purchasing/orders/${id}/receive`, dto),
