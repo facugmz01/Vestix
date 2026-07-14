@@ -9,15 +9,17 @@ interface Props {
   onClose:    () => void;
   children:   React.ReactNode;
   footer?:    React.ReactNode;
-  width?:     'sm' | 'md' | 'lg';
+  width?:     'sm' | 'md' | 'lg' | 'xl';
   side?:      'right' | 'left';
+  /** Stretch content to fill the panel (no body padding/scroll). Useful for split layouts. */
+  fill?:      boolean;
 }
 
 /**
  * Slide-in drawer panel. Used for detail views and multi-step forms
  * where a modal would feel too intrusive.
  */
-export function Drawer({ open, title, onClose, children, footer, width = 'md', side = 'right' }: Props) {
+export function Drawer({ open, title, onClose, children, footer, width = 'md', side = 'right', fill = false }: Props) {
   const firstFocusRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -52,7 +54,7 @@ export function Drawer({ open, title, onClose, children, footer, width = 'md', s
             <X size={18} />
           </button>
         </div>
-        <div className={styles.body}>{children}</div>
+        <div className={clsx(styles.body, fill && styles.bodyFill)}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
       </aside>
     </div>
