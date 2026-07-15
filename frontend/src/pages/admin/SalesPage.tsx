@@ -37,6 +37,7 @@ export default function SalesPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [editSaleId, setEditSaleId] = useState<string | null>(null);
 
   useEffect(() => {
     const q = searchParams.get('search');
@@ -65,8 +66,16 @@ export default function SalesPage() {
     }
   };
 
-  const handleCreate = () => setFormOpen(true);
+  const handleCreate = () => {
+    setEditSaleId(null);
+    setFormOpen(true);
+  };
   const handleView = (id: string) => { setSelectedSaleId(id); setDetailOpen(true); };
+  const handleEditQuotation = (id: string) => {
+    setDetailOpen(false);
+    setEditSaleId(id);
+    setFormOpen(true);
+  };
 
   const sales = data?.data ?? [];
   const total = data?.total ?? 0;
@@ -290,8 +299,22 @@ export default function SalesPage() {
 
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
 
-      <SaleFormDrawer open={formOpen} onClose={() => setFormOpen(false)} />
-      {selectedSaleId && <SaleDetailDrawer open={detailOpen} onClose={() => setDetailOpen(false)} saleId={selectedSaleId} />}
+      <SaleFormDrawer
+        open={formOpen}
+        saleIdToEdit={editSaleId}
+        onClose={() => {
+          setFormOpen(false);
+          setEditSaleId(null);
+        }}
+      />
+      {selectedSaleId && (
+        <SaleDetailDrawer
+          open={detailOpen}
+          onClose={() => setDetailOpen(false)}
+          saleId={selectedSaleId}
+          onEditQuotation={handleEditQuotation}
+        />
+      )}
       
       <ImportSalesModal
         open={importOpen}

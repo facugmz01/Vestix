@@ -74,11 +74,13 @@ export default function PublicReceiptPage() {
     })),
   };
 
+  const isQuote = data.status === 'QUOTATION' || data.status === 'QUOTE';
+
   return (
     <div className={styles.page}>
       <div className={`no-print ${styles.toolbar}`}>
         <div>
-          <h1 className={styles.title}>Comprobante de venta</h1>
+          <h1 className={styles.title}>{isQuote ? 'Presupuesto' : 'Comprobante de venta'}</h1>
           <p className={styles.subtitle}>Podés imprimirlo o guardarlo como PDF desde el navegador.</p>
         </div>
         <button type="button" onClick={handlePrint} className={styles.printButton}>

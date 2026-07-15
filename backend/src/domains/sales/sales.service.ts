@@ -112,7 +112,13 @@ export class SalesService {
     const { search, status } = params;
 
     const where: any = {};
-    if (status) where.status = status;
+    if (status) {
+      if (status === 'QUOTATION') {
+        where.status = { in: ['QUOTATION', 'QUOTE'] };
+      } else {
+        where.status = status;
+      }
+    }
     if (search && search.trim() !== '') {
       where.OR = [
         { id: { contains: search, mode: 'insensitive' } },

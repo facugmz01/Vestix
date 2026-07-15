@@ -35,10 +35,18 @@ export class NotificationTriggersService {
       include: { customer: true },
     });
     if (!order) throw new NotFoundException('Venta no encontrada');
+    if (order.status === 'CANCELLED') {
+      throw new BadRequestException('No se puede enviar un documento cancelado');
+    }
+
+    const isQuotation = order.status === 'QUOTATION' || order.status === 'QUOTE';
+    const templateKey = isQuotation
+      ? TemplateKey.MANUAL_QUOTATION_RECEIPT
+      : TemplateKey.MANUAL_SALE_RECEIPT;
 
     const job = await this.notifications.enqueue({
       channel: channel as NotificationChannel,
-      templateKey: TemplateKey.MANUAL_SALE_RECEIPT,
+      templateKey,
       recipient,
       variables: {
         customerName: order.customer?.fullName || 'Cliente',
@@ -57,7 +65,9 @@ export class NotificationTriggersService {
 
     return {
       success: true,
-      message: 'Comprobante de venta enviado a la cola de notificaciones',
+      message: isQuotation
+        ? 'Presupuesto enviado a la cola de notificaciones'
+        : 'Comprobante de venta enviado a la cola de notificaciones',
       job,
     };
   }
