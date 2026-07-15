@@ -4,7 +4,7 @@ import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
 import { salesApi } from '@/api/sales.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { CheckCircle, XCircle, FileText, ShoppingCart, CreditCard, Send, Pencil, Download, MessageCircle, Mail } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, ShoppingCart, CreditCard, Send, Pencil, Download } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
@@ -205,38 +205,6 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
     });
   };
 
-  const openShareLink = async (channel: 'EMAIL' | 'WHATSAPP') => {
-    try {
-      const res = await salesApi.getReceiptLink(saleId!);
-      if (!res.url) {
-        toast.error('No se pudo generar el enlace');
-        return;
-      }
-      const docLabel = isQuotationStatus(sale.status) ? 'presupuesto' : 'comprobante';
-      const docId = formatSaleId(sale.id, sale.status);
-      const total = formatCurrency(sale.grandTotal);
-      const text = `Hola, te enviamos el ${docLabel} ${docId} por ${total}. Podés verlo e imprimirlo aquí: ${res.url}`;
-
-      if (channel === 'WHATSAPP') {
-        const phone = normalizePhone(sale.customer?.phone);
-        const waUrl = phone
-          ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
-          : `https://wa.me/?text=${encodeURIComponent(text)}`;
-        window.open(waUrl, '_blank', 'noopener,noreferrer');
-        return;
-      }
-
-      const email = resolveEmailRecipient(sale.customer?.email);
-      const subject = `${isQuotationStatus(sale.status) ? 'Presupuesto' : 'Comprobante'} ${docId}`;
-      const mailto = email
-        ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
-        : `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-      window.open(mailto, '_blank', 'noopener,noreferrer');
-    } catch (err: any) {
-      toast.error(err.message || 'Error al preparar el envío');
-    }
-  };
-
   const handleCancel = () => {
     const messages: Record<string, string> = {
       QUOTATION: '¿Rechazar este presupuesto?',
@@ -283,22 +251,6 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
           >
             Exportar PDF
           </Button>
-          <Button
-            variant="outline"
-            icon={<MessageCircle size={16} />}
-            onClick={() => openShareLink('WHATSAPP')}
-            disabled={anyPending}
-          >
-            WhatsApp
-          </Button>
-          <Button
-            variant="outline"
-            icon={<Mail size={16} />}
-            onClick={() => openShareLink('EMAIL')}
-            disabled={anyPending}
-          >
-            Email
-          </Button>
         </div>
 
         {receiptChannels.length > 1 && (
@@ -310,7 +262,7 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
                 variant={selectedChannel === channel.channel ? 'primary' : 'outline'}
                 onClick={() => setReceiptChannel(channel.channel)}
               >
-                {channel.channel === 'EMAIL' ? 'Email (sistema)' : 'WhatsApp (sistema)'}
+                {channel.channel === 'EMAIL' ? 'Email' : 'WhatsApp'}
               </Button>
             ))}
           </div>
@@ -328,11 +280,11 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
           </Button>
           {selectedRecipient ? (
             <span className={styles.hintText}>
-              Envío por el canal configurado a {selectedRecipient.label}
+              Se enviará por el canal del sistema a {selectedRecipient.label}
             </span>
           ) : (
             <span className={styles.hintText}>
-              Para envío automático, cargá teléfono o email en el cliente. Mientras tanto podés usar WhatsApp/Email de arriba.
+              El cliente no tiene teléfono ni email cargado.
             </span>
           )}
         </div>
