@@ -570,7 +570,7 @@ export class CheckoutOrchestrator {
   async confirmQuotation(id: string) {
     const quote = await this.prisma.saleOrder.findUnique({
       where: { id },
-      include: { lines: true }
+      include: { lines: true, payments: { include: { paymentMethod: true } } },
     });
 
     if (!quote) throw new NotFoundException('Quotation not found');
@@ -600,14 +600,17 @@ export class CheckoutOrchestrator {
         }))
       });
 
-      // 2. UPDATE STATUS
+      // 2. POST FINANCE (cuenta corriente / tesorería) — quotes skip this at creation
+      await this.postOrderFinanceIfNeeded(tx, quote);
+
+      // 3. UPDATE STATUS
       const updatedOrder = await tx.saleOrder.update({
         where: { id },
         data: { status: 'CONFIRMED' },
         include: { lines: true }
       });
 
-      // 3. EVENT BOUNDARY (Outbox Pattern)
+      // 4. EVENT BOUNDARY (Outbox Pattern)
       await tx.outboxEvent.create({
         data: {
           aggregate: 'SaleOrder',
