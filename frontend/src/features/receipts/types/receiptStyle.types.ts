@@ -1,8 +1,9 @@
 export type ReceiptFontFamily = 'monospace' | 'sans-serif' | 'serif';
 export type ReceiptDividerStyle = 'dashed' | 'solid' | 'dotted' | 'none';
+export type ReceiptPaperWidthMm = 58 | 70 | 80 | 148 | 210;
 
 export interface ReceiptStyleSettings {
-  paperWidthMm: 58 | 70 | 80;
+  paperWidthMm: ReceiptPaperWidthMm;
   fontFamily: ReceiptFontFamily;
   fontSizePx: number;
   headerFontSizePx: number;
@@ -20,6 +21,14 @@ export interface ReceiptStyleSettings {
   logoUrl?: string;
   titleFallback: string;
 }
+
+export const RECEIPT_PAPER_OPTIONS: Array<{ value: ReceiptPaperWidthMm; label: string }> = [
+  { value: 58, label: '58 mm (mini térmica)' },
+  { value: 70, label: '70 mm (fiscal)' },
+  { value: 80, label: '80 mm (ticket estándar)' },
+  { value: 148, label: 'A5 (148 mm) — presupuesto corto' },
+  { value: 210, label: 'A4 (210 mm) — presupuesto / documento' },
+];
 
 export const DEFAULT_RECEIPT_STYLE: ReceiptStyleSettings = {
   paperWidthMm: 80,
@@ -49,6 +58,12 @@ export function resolveReceiptStyle(
     ...partial,
     logoUrl: partial?.logoUrl?.trim() || '',
   };
+}
+
+export function receiptPrintPageSize(paperWidthMm: ReceiptPaperWidthMm): string {
+  if (paperWidthMm >= 210) return 'A4';
+  if (paperWidthMm >= 148) return 'A5';
+  return 'auto';
 }
 
 export function receiptFontStack(fontFamily: ReceiptFontFamily): string {

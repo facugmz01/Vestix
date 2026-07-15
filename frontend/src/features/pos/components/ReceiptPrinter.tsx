@@ -7,6 +7,7 @@ import {
   DEFAULT_RECEIPT_STYLE,
   receiptDividerCss,
   receiptFontStack,
+  receiptPrintPageSize,
   resolveReceiptStyle,
   type ReceiptStyleSettings,
 } from '@/features/receipts/types/receiptStyle.types';
@@ -57,6 +58,12 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
     const paperWidthPx = Math.round(style.paperWidthMm * 3.78);
     const subFontSize = `${Math.max(style.fontSizePx - 2, 9)}px`;
     const footerFontSize = `${Math.max(style.fontSizePx - 1, 10)}px`;
+    const printPageSize = receiptPrintPageSize(style.paperWidthMm);
+    const isDocumentSize = style.paperWidthMm >= 148;
+    const printMargin = isDocumentSize ? '12mm' : '0';
+    const printWidth = isDocumentSize
+      ? `calc(${style.paperWidthMm}mm - 24mm)`
+      : `${style.paperWidthMm}mm`;
 
     useReceiptVars(rootRef, {
       '--receipt-width': `${paperWidthPx}px`,
@@ -70,6 +77,9 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
       '--receipt-sub-size': subFontSize,
       '--receipt-footer-size': footerFontSize,
       '--receipt-paper-mm': `${style.paperWidthMm}mm`,
+      '--receipt-print-width': printWidth,
+      '--receipt-print-margin': printMargin,
+      '--receipt-print-page': printPageSize,
     });
 
     const fmtDate = (dateStr: string | Date) => {
@@ -196,6 +206,7 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
           {`
             .ticket-print-area {
               width: var(--receipt-width);
+              max-width: 100%;
               background: var(--receipt-bg);
               color: var(--receipt-color);
               font-family: var(--receipt-font);
@@ -213,10 +224,14 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
-                width: var(--receipt-paper-mm) !important;
+                width: ${printWidth} !important;
+                max-width: 100% !important;
                 background: var(--receipt-bg) !important;
               }
-              @page { margin: 0; size: auto; }
+              @page {
+                margin: ${printMargin};
+                size: ${printPageSize};
+              }
             }
           `}
         </style>

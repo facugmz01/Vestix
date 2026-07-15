@@ -10,6 +10,7 @@ import { receiptStyleSchema, type ReceiptStyleFormData } from '../schemas/receip
 import { ReceiptPrinter } from '@/features/pos/components/ReceiptPrinter';
 import {
   DEFAULT_RECEIPT_STYLE,
+  RECEIPT_PAPER_OPTIONS,
   resolveReceiptStyle,
 } from '@/features/receipts/types/receiptStyle.types';
 import {
@@ -57,21 +58,21 @@ export function ReceiptStylePanel() {
             <header className={styles.cardHeader}>
               <h3 className={styles.cardTitle}>
                 <Palette size={18} aria-hidden="true" />
-                Estilo del comprobante
+                Estilo del comprobante / presupuesto
               </h3>
               <p className={styles.cardDescription}>
-                Personalizá el ticket de venta para POS, impresión y el link público del comprobante.
-                El encabezado y pie por sucursal se configuran en Sucursales.
+                Define formato, tamaño y estilo del ticket POS y de la exportación PDF del presupuesto
+                (link público e impresión). Encabezado y pie por sucursal se configuran en Sucursales.
               </p>
             </header>
 
             <div className={styles.cardBody}>
               <div className={styles.selectGroup}>
-                <label className={styles.selectLabel}>Ancho de papel</label>
+                <label className={styles.selectLabel}>Tamaño / ancho de papel</label>
                 <select {...register('paperWidthMm', { valueAsNumber: true })} className={styles.select}>
-                  <option value={58}>58 mm (mini térmica)</option>
-                  <option value={70}>70 mm (fiscal)</option>
-                  <option value={80}>80 mm (estándar)</option>
+                  {RECEIPT_PAPER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               </div>
 
@@ -126,7 +127,7 @@ export function ReceiptStylePanel() {
                 <Receipt size={18} aria-hidden="true" />
                 Vista previa
               </h3>
-              <p className={styles.cardDescription}>Así verá el cliente el comprobante al abrir el link o al imprimir.</p>
+              <p className={styles.cardDescription}>Así se ve al exportar PDF o enviar el presupuesto / comprobante.</p>
             </header>
             <div className={clsx(styles.cardBody, styles.previewBody)}>
               <div className={styles.previewFrame}>
