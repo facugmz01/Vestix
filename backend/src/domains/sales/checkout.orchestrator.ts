@@ -12,6 +12,7 @@ import { expandComboToStockMovements } from '../catalog/utils/combo-stock.util';
 import { LoyaltyService } from './loyalty/loyalty.service';
 import { GiftCardsService } from './gift-cards/gift-cards.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { applyManualCartDiscount } from './utils/manual-cart-discount';
 import * as crypto from 'crypto';
 
@@ -419,6 +420,151 @@ export class CheckoutOrchestrator {
     }
 
     return result;
+  }
+
+  /**
+   * Update an existing quotation / draft. Reprices lines and replaces them atomically.
+   * No stock or finance side-effects (quotes never reserve inventory).
+   */
+  async updateQuotation(id: string, dto: UpdateQuotationDto) {
+    const existing = await this.prisma.saleOrder.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Presupuesto no encontrado');
+    if (existing.status !== 'QUOTATION' && existing.status !== 'QUOTE') {
+      throw new BadRequestException('Solo se pueden editar presupuestos o borradores');
+    }
+    if (!dto.lines?.length) {
+      throw new BadRequestException('El presupuesto debe tener al menos un artículo');
+    }
+
+    const pricingSettings = await this.settingsService.getPricingSettings();
+    const customerId =
+      dto.customerId === undefined ? existing.customerId : (dto.customerId || null);
+
+    const evaluatedLines = [];
+    for (const lineDto of dto.lines) {
+      const variant = await this.prisma.productVariant.findUnique({
+        where: { id: lineDto.variantId },
+        include: { product: true },
+      });
+      if (!variant) throw new BadRequestException(`Variant ${lineDto.variantId} not found`);
+
+      let resolvedBasePrice: number;
+      if (lineDto.unitPriceOverride !== undefined) {
+        resolvedBasePrice = lineDto.unitPriceOverride;
+      } else {
+        resolvedBasePrice = await this.pricingService.resolvePrice(
+          lineDto.variantId,
+          variant.basePrice,
+          customerId || undefined,
+        );
+      }
+
+      const manualDiscountPct = lineDto.discountPct || 0;
+      if (manualDiscountPct > 0) {
+        if (pricingSettings.allowManualDiscount === false) {
+          throw new BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
+        }
+        if (pricingSettings.maxDiscountPct && manualDiscountPct > pricingSettings.maxDiscountPct) {
+          throw new BadRequestException(`El descuento manual excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`);
+        }
+      }
+
+      const manualDiscountAmount = resolvedBasePrice * (manualDiscountPct / 100);
+      evaluatedLines.push({
+        variantId: lineDto.variantId,
+        categoryId: lineDto.categoryId || variant.product?.categoryId || 'default_category',
+        quantity: lineDto.quantity,
+        basePrice: resolvedBasePrice,
+        manualDiscountAmount,
+        historicalSku: variant.sku,
+        historicalName: variant.product?.name || null,
+        historicalCost: variant.costPrice ?? null,
+      });
+    }
+
+    const cartEvaluation = await this.rulesEngine.evaluateCartPromotions(evaluatedLines.map(l => ({
+      id: crypto.randomUUID(),
+      variantId: l.variantId,
+      categoryId: l.categoryId,
+      quantity: l.quantity,
+      unitPrice: l.basePrice - (l.manualDiscountAmount),
+    })));
+
+    const finalLinesForDB = evaluatedLines.map((line, index) => {
+      const promotionalDiscount = cartEvaluation.lines[index].promotionalDiscount;
+      const totalDiscountAmount = line.manualDiscountAmount + promotionalDiscount;
+      return {
+        ...line,
+        totalDiscountAmount,
+        finalPrice: line.basePrice - (totalDiscountAmount / line.quantity),
+      };
+    });
+
+    const merchandiseTotal = cartEvaluation.finalTotal;
+    let manualCartDiscount = 0;
+    let pricedTotal = merchandiseTotal;
+    try {
+      const discounted = applyManualCartDiscount({
+        merchandiseTotal,
+        cartDiscountTotal: dto.cartDiscountTotal ?? 0,
+        allowManualDiscount: pricingSettings.allowManualDiscount,
+        maxDiscountPct: pricingSettings.maxDiscountPct,
+      });
+      manualCartDiscount = discounted.manualCartDiscount;
+      pricedTotal = discounted.pricedTotal;
+    } catch (err: any) {
+      const code = err?.message;
+      if (code === 'MANUAL_DISCOUNT_DISABLED') {
+        throw new BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
+      }
+      if (code === 'CART_DISCOUNT_EXCEEDS_TOTAL') {
+        throw new BadRequestException('El descuento global supera el total de la venta');
+      }
+      if (code === 'CART_DISCOUNT_EXCEEDS_MAX_PCT') {
+        throw new BadRequestException(
+          `El descuento global excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`,
+        );
+      }
+      throw err;
+    }
+
+    if (dto.posGrandTotal !== undefined && Math.abs(dto.posGrandTotal - pricedTotal) > 0.01) {
+      throw new BadRequestException(
+        `Payment mismatch. Expected ${pricedTotal} after redemptions, got ${dto.posGrandTotal}`,
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.orderLineItem.deleteMany({ where: { orderId: id } });
+
+      return tx.saleOrder.update({
+        where: { id },
+        data: {
+          status: 'QUOTATION',
+          warehouseId: dto.warehouseId !== undefined ? dto.warehouseId : existing.warehouseId,
+          customerId,
+          paymentMethod: dto.paymentMethod ?? existing.paymentMethod,
+          subtotal: cartEvaluation.originalTotal,
+          cartDiscountTotal: Math.round((cartEvaluation.discountTotal + manualCartDiscount) * 100) / 100,
+          grandTotal: pricedTotal,
+          appliedPromotions: cartEvaluation.appliedPromotions,
+          lines: {
+            create: finalLinesForDB.map(l => ({
+              variantId: l.variantId,
+              categoryId: l.categoryId,
+              quantity: l.quantity,
+              basePrice: l.basePrice,
+              discountAmount: l.totalDiscountAmount,
+              finalPrice: l.finalPrice,
+              historicalSku: l.historicalSku,
+              historicalName: l.historicalName,
+              historicalCost: l.historicalCost,
+            })),
+          },
+        },
+        include: { lines: true, customer: true },
+      });
+    });
   }
 
   async confirmQuotation(id: string) {

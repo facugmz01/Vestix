@@ -1,15 +1,17 @@
-import { Controller, Post, Body, Get, Query, Param, Req, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, Req, Patch, NotFoundException } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { buildPublicReceiptUrl } from './utils/receipt-access.util';
 
 @Controller('sales')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -61,6 +63,26 @@ export class SalesController {
   @RequirePermissions({ action: 'read', subject: 'Sales' })
   async getOrder(@Param('id') id: string) {
     return this.salesService.getOrderById(id);
+  }
+
+  @Get('orders/:id/receipt-link')
+  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  async getReceiptLink(@Param('id') id: string) {
+    const order = await this.salesService.getOrderById(id);
+    if (!order) {
+      throw new NotFoundException('Documento no encontrado');
+    }
+    return {
+      url: buildPublicReceiptUrl(order.id),
+      status: order.status,
+      saleId: order.id,
+    };
+  }
+
+  @Patch('orders/:id')
+  @RequirePermissions({ action: 'update', subject: 'Sales' })
+  async updateQuotation(@Param('id') id: string, @Body() dto: UpdateQuotationDto) {
+    return this.checkoutOrchestrator.updateQuotation(id, dto);
   }
 
   @Post('orders/:id/confirm')

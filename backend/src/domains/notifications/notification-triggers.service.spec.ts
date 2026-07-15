@@ -69,6 +69,7 @@ describe('NotificationTriggersService', () => {
   it('should enqueue manual sale receipt with order data', async () => {
     mockPrisma.saleOrder.findUnique.mockResolvedValueOnce({
       id: 'order-uuid-1234',
+      status: 'COMPLETED',
       grandTotal: 15000,
       customer: { fullName: 'Ana García' },
     });
@@ -91,6 +92,39 @@ describe('NotificationTriggersService', () => {
     );
   });
 
+  it('should enqueue quotation template for presupuestos', async () => {
+    mockPrisma.saleOrder.findUnique.mockResolvedValueOnce({
+      id: 'quote-uuid-1234',
+      status: 'QUOTATION',
+      grandTotal: 3500,
+      customer: { fullName: 'Luis Pérez' },
+    });
+
+    const result = await service.sendManualSaleReceipt('quote-uuid-1234', 'EMAIL', 'luis@test.com');
+
+    expect(result.success).toBe(true);
+    expect(result.message).toMatch(/Presupuesto/);
+    expect(mockNotifications.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        templateKey: TemplateKey.MANUAL_QUOTATION_RECEIPT,
+        recipient: 'luis@test.com',
+      }),
+    );
+  });
+
+  it('should reject sending cancelled documents', async () => {
+    mockPrisma.saleOrder.findUnique.mockResolvedValueOnce({
+      id: 'cancelled-1',
+      status: 'CANCELLED',
+      grandTotal: 100,
+      customer: null,
+    });
+
+    await expect(
+      service.sendManualSaleReceipt('cancelled-1', 'EMAIL', 'a@test.com'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('should throw when sale order is not found', async () => {
     mockPrisma.saleOrder.findUnique.mockResolvedValueOnce(null);
     await expect(
@@ -101,6 +135,7 @@ describe('NotificationTriggersService', () => {
   it('should throw when enqueue returns null for manual receipt', async () => {
     mockPrisma.saleOrder.findUnique.mockResolvedValueOnce({
       id: 'order-1',
+      status: 'COMPLETED',
       grandTotal: 100,
       customer: null,
     });

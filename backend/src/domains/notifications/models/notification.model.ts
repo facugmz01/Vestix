@@ -48,6 +48,7 @@ export enum TemplateKey {
   OVERDUE_CURRENT_ACCOUNT        = 'OVERDUE_CURRENT_ACCOUNT',
   MANUAL_CURRENT_ACCOUNT_STATEMENT = 'MANUAL_CURRENT_ACCOUNT_STATEMENT',
   MANUAL_SALE_RECEIPT            = 'MANUAL_SALE_RECEIPT',
+  MANUAL_QUOTATION_RECEIPT       = 'MANUAL_QUOTATION_RECEIPT',
 
   // ─── Misc ──────────────────────────────────────────────────────────────
   WELCOME_CUSTOMER               = 'WELCOME_CUSTOMER',

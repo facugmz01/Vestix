@@ -233,6 +233,19 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     body: `🧾 *Comprobante de Venta*\nHola {{customerName}}, gracias por tu compra.\nTe enviamos el comprobante de la operación *#{{saleId}}* por un total de *$ {{total}}*.\n\nPodés verlo e imprimirlo aquí: {{receiptUrl}}`,
   },
 
+  // ─── MANUAL QUOTATION RECEIPT ──────────────────────────────────────────────
+  {
+    key: TemplateKey.MANUAL_QUOTATION_RECEIPT,
+    channel: NotificationChannel.EMAIL,
+    subject: 'Presupuesto #{{saleId}}',
+    body: `Hola {{customerName}},\n\nTe enviamos el presupuesto #{{saleId}} por un total de $ {{total}}.\n\nPodés verlo, imprimirlo o guardarlo como PDF desde este enlace:\n{{receiptUrl}}\n\nSaludos.`,
+  },
+  {
+    key: TemplateKey.MANUAL_QUOTATION_RECEIPT,
+    channel: NotificationChannel.WHATSAPP,
+    body: `📋 *Presupuesto*\nHola {{customerName}}, te enviamos el presupuesto *#{{saleId}}* por un total de *$ {{total}}*.\n\nPodés verlo e imprimirlo aquí: {{receiptUrl}}`,
+  },
+
   // ─── WELCOME CUSTOMER ──────────────────────────────────────────────────────
   {
     key: TemplateKey.WELCOME_CUSTOMER,

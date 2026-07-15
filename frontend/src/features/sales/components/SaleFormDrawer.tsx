@@ -16,15 +16,19 @@ import styles from './SaleFormDrawer.module.css';
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** When set, opens in edit mode for an existing quotation/draft. */
+  saleIdToEdit?: string | null;
 }
 
-export function SaleFormDrawer({ open, onClose }: Props) {
+export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
   const queryClient = useQueryClient();
+  const isEditing = !!saleIdToEdit;
 
   const [branchId, setBranchId] = useState('');
   const [warehouseId, setWarehouseId] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<CreateSaleDto['paymentMethod']>('CASH');
+  const [hydratedEditId, setHydratedEditId] = useState<string | null>(null);
   
   const [lines, setLines] = useState<{ variantId: string; variantSku: string; variantName: string; quantity: number; basePrice: number; discountPct: number }[]>([]);
   const [globalDiscount, setGlobalDiscount] = useState<number>(0);
@@ -38,6 +42,11 @@ export function SaleFormDrawer({ open, onClose }: Props) {
   const { data: branchesData } = useQuery({ queryKey: queryKeys.branches.all(), queryFn: () => branchesApi.getBranches({}), enabled: open });
   const { data: customersData } = useQuery({ queryKey: queryKeys.customers.all(), queryFn: () => customersApi.getCustomers({}), enabled: open });
   const { data: pricingSettings } = useQuery({ queryKey: [...queryKeys.settings.get(), 'pricing'], queryFn: () => settingsApi.getSettings().then(d => d.pricing), enabled: open });
+  const { data: saleToEdit, isLoading: isLoadingEdit } = useQuery({
+    queryKey: queryKeys.sales.detail(saleIdToEdit || ''),
+    queryFn: () => salesApi.getSale(saleIdToEdit!),
+    enabled: open && !!saleIdToEdit,
+  });
 
   const allowManualDiscount = pricingSettings?.allowManualDiscount !== false;
 
@@ -48,26 +57,66 @@ export function SaleFormDrawer({ open, onClose }: Props) {
   });
 
   useEffect(() => {
-    if (open) {
-      setBranchId('');
-      setWarehouseId('');
-      setCustomerId('');
-      setLines([]);
-      setGlobalDiscount(0);
-      setPaymentMethod('CASH');
-      setSearchQuery('');
+    if (!open) {
+      setHydratedEditId(null);
+      return;
     }
-  }, [open]);
+    if (saleIdToEdit) return;
+    setBranchId('');
+    setWarehouseId('');
+    setCustomerId('');
+    setLines([]);
+    setGlobalDiscount(0);
+    setPaymentMethod('CASH');
+    setSearchQuery('');
+  }, [open, saleIdToEdit]);
+
+  useEffect(() => {
+    if (!open || !saleToEdit || !saleIdToEdit) return;
+    if (hydratedEditId === saleIdToEdit) return;
+
+    setBranchId(saleToEdit.branchId || '');
+    setWarehouseId(saleToEdit.warehouseId || '');
+    setCustomerId(saleToEdit.customerId || '');
+    setPaymentMethod((saleToEdit.paymentMethod as CreateSaleDto['paymentMethod']) || 'CASH');
+
+    const mappedLines = saleToEdit.lines.map((l) => {
+      const lineBase = l.basePrice * l.quantity;
+      const discountPct = lineBase > 0
+        ? Math.round(((l.discountAmount || 0) / lineBase) * 10000) / 100
+        : 0;
+      return {
+        variantId: l.variantId,
+        variantSku: l.variantSku || l.historicalSku || l.variant?.sku || '',
+        variantName: l.productName || l.historicalName || l.variant?.product?.name || l.variantSku || 'Producto',
+        quantity: l.quantity,
+        basePrice: l.basePrice,
+        discountPct,
+      };
+    });
+    setLines(mappedLines);
+
+    const afterLines = mappedLines.reduce(
+      (acc, l) => acc + l.basePrice * l.quantity * (1 - l.discountPct / 100),
+      0,
+    );
+    const globalPct = afterLines > 0
+      ? Math.round(((saleToEdit.cartDiscountTotal || 0) / afterLines) * 10000) / 100
+      : 0;
+    setGlobalDiscount(Math.min(100, Math.max(0, globalPct)));
+    setHydratedEditId(saleIdToEdit);
+  }, [open, saleToEdit, saleIdToEdit, hydratedEditId]);
 
   const selectedBranch = branchesData?.data.find(b => b.id === branchId);
 
   useEffect(() => {
+    if (isEditing && hydratedEditId) return;
     if (selectedBranch && (selectedBranch as any).warehouses?.length > 0) {
       setWarehouseId((selectedBranch as any).warehouses[0].id);
-    } else {
+    } else if (!isEditing) {
       setWarehouseId('');
     }
-  }, [branchId, selectedBranch]);
+  }, [branchId, selectedBranch, isEditing, hydratedEditId]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -114,7 +163,26 @@ export function SaleFormDrawer({ open, onClose }: Props) {
   const grandTotal = totalAfterLines - cartDiscountAmt;
 
   const mutation = useMutation({
-    mutationFn: (data: { status: 'QUOTATION' | 'CONFIRMED' | 'PENDING_PAYMENT' }) => {
+    mutationFn: async (data: { status: 'QUOTATION' | 'CONFIRMED' | 'PENDING_PAYMENT' }) => {
+      const linesPayload = lines.map(l => ({
+        variantId: l.variantId,
+        categoryId: 'default',
+        quantity: l.quantity,
+        unitPriceOverride: l.basePrice,
+        discountPct: l.discountPct,
+      }));
+
+      if (isEditing && saleIdToEdit) {
+        return salesApi.updateQuotation(saleIdToEdit, {
+          warehouseId: warehouseId || undefined,
+          customerId: customerId || null,
+          paymentMethod,
+          posGrandTotal: grandTotal,
+          cartDiscountTotal: cartDiscountAmt,
+          lines: linesPayload,
+        });
+      }
+
       const payload = {
         id: crypto.randomUUID(),
         branchId,
@@ -126,23 +194,24 @@ export function SaleFormDrawer({ open, onClose }: Props) {
         posGrandTotal: grandTotal,
         createdAtIso: new Date().toISOString(),
         cartDiscountTotal: cartDiscountAmt,
-        lines: lines.map(l => ({
-          variantId: l.variantId,
-          categoryId: 'default',
-          quantity: l.quantity,
-          unitPriceOverride: l.basePrice,
-          discountPct: l.discountPct,
-        })),
+        lines: linesPayload,
       };
       return salesApi.createSale(payload as any);
     },
     onSuccess: (_, variables) => {
-      const messages = {
-        QUOTATION: 'Presupuesto creado con éxito',
-        CONFIRMED: 'Venta Confirmada',
-        PENDING_PAYMENT: 'Venta registrada con pago pendiente',
-      };
-      toast.success(messages[variables.status]);
+      if (isEditing) {
+        toast.success('Presupuesto actualizado');
+        if (saleIdToEdit) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.sales.detail(saleIdToEdit) });
+        }
+      } else {
+        const messages = {
+          QUOTATION: 'Presupuesto creado con éxito',
+          CONFIRMED: 'Venta Confirmada',
+          PENDING_PAYMENT: 'Venta registrada con pago pendiente',
+        };
+        toast.success(messages[variables.status]);
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.sales.all() });
       onClose();
     },
@@ -155,22 +224,30 @@ export function SaleFormDrawer({ open, onClose }: Props) {
     mutation.mutate({ status });
   };
 
-
   const results = searchResults as any[];
+  const isBusy = mutation.isPending || (isEditing && isLoadingEdit);
 
   return (
     <Drawer
       open={open}
-      title="Nueva Venta / Presupuesto"
+      title={isEditing ? 'Editar Presupuesto' : 'Nueva Venta / Presupuesto'}
       onClose={onClose}
       width="xl"
       footer={
         <div className={styles.footerBetween}>
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancelar</Button>
           <div className={styles.footerActions}>
-            <Button variant="secondary" onClick={() => handleSave('QUOTATION')} loading={mutation.isPending}>Guardar como Presupuesto</Button>
-            <Button variant="outline" onClick={() => handleSave('PENDING_PAYMENT')} loading={mutation.isPending}>Guardar con Pago Pendiente</Button>
-            <Button variant="primary" onClick={() => handleSave('CONFIRMED')} loading={mutation.isPending}>Confirmar Venta</Button>
+            {isEditing ? (
+              <Button variant="primary" onClick={() => handleSave('QUOTATION')} loading={mutation.isPending} disabled={isBusy}>
+                Guardar cambios
+              </Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => handleSave('QUOTATION')} loading={mutation.isPending}>Guardar como Presupuesto</Button>
+                <Button variant="outline" onClick={() => handleSave('PENDING_PAYMENT')} loading={mutation.isPending}>Guardar con Pago Pendiente</Button>
+                <Button variant="primary" onClick={() => handleSave('CONFIRMED')} loading={mutation.isPending}>Confirmar Venta</Button>
+              </>
+            )}
           </div>
         </div>
       }
@@ -181,7 +258,12 @@ export function SaleFormDrawer({ open, onClose }: Props) {
         <div className={styles.headerFields}>
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Sucursal Emisora *</label>
-            <select value={branchId} onChange={e => setBranchId(e.target.value)} className={styles.fieldSelect}>
+            <select
+              value={branchId}
+              onChange={e => setBranchId(e.target.value)}
+              className={styles.fieldSelect}
+              disabled={isEditing}
+            >
               <option value="">Seleccionar Sucursal...</option>
               {branchesData?.data.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>

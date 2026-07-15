@@ -60,6 +60,24 @@ export const salesApi = {
   createSale: (dto: CreateSaleDto) =>
     post<CheckoutResponse>('/sales/checkout', dto),
 
+  updateQuotation: (id: string, dto: {
+    warehouseId?: string;
+    customerId?: string | null;
+    paymentMethod?: string;
+    posGrandTotal?: number;
+    cartDiscountTotal?: number;
+    lines: Array<{
+      variantId: string;
+      categoryId?: string;
+      quantity: number;
+      unitPriceOverride?: number;
+      discountPct?: number;
+    }>;
+  }) => patch<SaleOrder>(`/sales/orders/${id}`, dto),
+
+  getReceiptLink: (id: string) =>
+    get<{ url: string; status: string; saleId: string }>(`/sales/orders/${id}/receipt-link`),
+
   confirmQuotation: (id: string) =>
     post<SaleOrder>(`/sales/orders/${id}/confirm`, {}),
 

@@ -266,7 +266,7 @@ export type OrderSource   = 'POS'|'ECOMMERCE'|'BACKOFFICE';
 export type SaleOrderStatus = 'QUOTATION' | 'QUOTE' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'COMPLETED' | 'READY_FOR_PICKUP' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 
 export interface SaleOrder {
-  id: string; branchId: string; source: OrderSource; status: SaleOrderStatus;
+  id: string; branchId: string; warehouseId?: string | null; source: OrderSource; status: SaleOrderStatus;
   customerId?: string; customerName?: string;
   customer?: { fullName?: string; phone?: string | null; email?: string | null };
   lines: OrderLineItem[];

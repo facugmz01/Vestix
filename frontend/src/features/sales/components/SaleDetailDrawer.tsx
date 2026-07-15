@@ -4,7 +4,7 @@ import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
 import { salesApi } from '@/api/sales.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
-import { CheckCircle, XCircle, FileText, ShoppingCart, CreditCard, Send } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, ShoppingCart, CreditCard, Send, Pencil, Download, MessageCircle, Mail } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
@@ -23,6 +23,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   saleId: string | null;
+  onEditQuotation?: (saleId: string) => void;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -63,7 +64,11 @@ function isActiveSale(status: string) {
 }
 
 function canSendReceipt(status: string) {
-  return !['CANCELLED', 'QUOTATION', 'QUOTE'].includes(status);
+  return status !== 'CANCELLED';
+}
+
+function isQuotationStatus(status: string) {
+  return status === 'QUOTATION' || status === 'QUOTE';
 }
 
 function lineProductName(l: OrderLineItem) {
@@ -95,7 +100,7 @@ function availableReceiptChannels(contact: {
   return channels;
 }
 
-export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
+export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Props) {
   const queryClient = useQueryClient();
   const [paymentReference, setPaymentReference] = useState('');
   const [receiptChannel, setReceiptChannel] = useState<NotificationChannel | null>(null);
@@ -158,6 +163,18 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
     onError: (err: any) => toast.error(err.message || 'Error al enviar comprobante'),
   });
 
+  const exportPdfMutation = useMutation({
+    mutationFn: () => salesApi.getReceiptLink(saleId!),
+    onSuccess: (res) => {
+      if (!res.url) {
+        toast.error('No se pudo generar el enlace del PDF');
+        return;
+      }
+      window.open(res.url, '_blank', 'noopener,noreferrer');
+    },
+    onError: (err: any) => toast.error(err.message || 'Error al exportar PDF'),
+  });
+
   if (!saleId || isLoading || !sale) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="lg"><div /></Drawer>;
   }
@@ -188,6 +205,38 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
     });
   };
 
+  const openShareLink = async (channel: 'EMAIL' | 'WHATSAPP') => {
+    try {
+      const res = await salesApi.getReceiptLink(saleId!);
+      if (!res.url) {
+        toast.error('No se pudo generar el enlace');
+        return;
+      }
+      const docLabel = isQuotationStatus(sale.status) ? 'presupuesto' : 'comprobante';
+      const docId = formatSaleId(sale.id, sale.status);
+      const total = formatCurrency(sale.grandTotal);
+      const text = `Hola, te enviamos el ${docLabel} ${docId} por ${total}. Podés verlo e imprimirlo aquí: ${res.url}`;
+
+      if (channel === 'WHATSAPP') {
+        const phone = normalizePhone(sale.customer?.phone);
+        const waUrl = phone
+          ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+          : `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      const email = resolveEmailRecipient(sale.customer?.email);
+      const subject = `${isQuotationStatus(sale.status) ? 'Presupuesto' : 'Comprobante'} ${docId}`;
+      const mailto = email
+        ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
+        : `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+      window.open(mailto, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al preparar el envío');
+    }
+  };
+
   const handleCancel = () => {
     const messages: Record<string, string> = {
       QUOTATION: '¿Rechazar este presupuesto?',
@@ -202,23 +251,54 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
     cancelMutation.mutate();
   };
 
-  const isQuotation = sale.status === 'QUOTATION' || sale.status === 'QUOTE';
+  const isQuotation = isQuotationStatus(sale.status);
   const statusLabel = STATUS_LABELS[sale.status] || sale.status;
   const statusColor = STATUS_COLORS[sale.status] || 'gray';
   const anyPending =
     confirmMutation.isPending ||
     confirmPaymentMutation.isPending ||
     cancelMutation.isPending ||
-    sendReceiptMutation.isPending;
+    sendReceiptMutation.isPending ||
+    exportPdfMutation.isPending;
   const savedPaymentReference = sale.payments?.find(p => p.referenceId)?.referenceId;
   const showSendReceipt = canSendReceipt(sale.status);
+  const sendTitle = isQuotation ? 'Enviar presupuesto' : 'Enviar comprobante';
+  const sendButtonLabel = isQuotation ? 'Enviar Presupuesto' : 'Enviar Comprobante';
 
   const sendReceiptBlock = showSendReceipt ? (
     <ActionGuard action="read" subject="Sales">
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <Send size={16} />
-          <span className={styles.sectionTitle}>Enviar comprobante</span>
+          <span className={styles.sectionTitle}>{sendTitle}</span>
+        </div>
+
+        <div className={styles.actionRow}>
+          <Button
+            variant="secondary"
+            icon={<Download size={16} />}
+            onClick={() => exportPdfMutation.mutate()}
+            loading={exportPdfMutation.isPending}
+            disabled={anyPending}
+          >
+            Exportar PDF
+          </Button>
+          <Button
+            variant="outline"
+            icon={<MessageCircle size={16} />}
+            onClick={() => openShareLink('WHATSAPP')}
+            disabled={anyPending}
+          >
+            WhatsApp
+          </Button>
+          <Button
+            variant="outline"
+            icon={<Mail size={16} />}
+            onClick={() => openShareLink('EMAIL')}
+            disabled={anyPending}
+          >
+            Email
+          </Button>
         </div>
 
         {receiptChannels.length > 1 && (
@@ -230,7 +310,7 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                 variant={selectedChannel === channel.channel ? 'primary' : 'outline'}
                 onClick={() => setReceiptChannel(channel.channel)}
               >
-                {channel.channel === 'EMAIL' ? 'Email' : 'WhatsApp'}
+                {channel.channel === 'EMAIL' ? 'Email (sistema)' : 'WhatsApp (sistema)'}
               </Button>
             ))}
           </div>
@@ -244,15 +324,15 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
             loading={sendReceiptMutation.isPending}
             disabled={!selectedRecipient || anyPending}
           >
-            Enviar Comprobante
+            {sendButtonLabel}
           </Button>
           {selectedRecipient ? (
             <span className={styles.hintText}>
-              Se enviará a {selectedRecipient.label}
+              Envío por el canal configurado a {selectedRecipient.label}
             </span>
           ) : (
             <span className={styles.hintText}>
-              El cliente no tiene teléfono ni email cargado.
+              Para envío automático, cargá teléfono o email en el cliente. Mientras tanto podés usar WhatsApp/Email de arriba.
             </span>
           )}
         </div>
@@ -393,6 +473,16 @@ export function SaleDetailDrawer({ open, onClose, saleId }: Props) {
                 <Button variant="ghost" onClick={handleCancel} loading={cancelMutation.isPending} disabled={anyPending} icon={<XCircle size={16} />}>
                   Rechazar / Cancelar Presupuesto
                 </Button>
+                {onEditQuotation && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => onEditQuotation(sale.id)}
+                    disabled={anyPending}
+                    icon={<Pencil size={16} />}
+                  >
+                    Editar Presupuesto
+                  </Button>
+                )}
                 <Button variant="primary" onClick={() => confirmMutation.mutate()} loading={confirmMutation.isPending} disabled={anyPending} icon={<CheckCircle size={16} />}>
                   Convertir en Venta Real (Confirmar)
                 </Button>

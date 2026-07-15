@@ -85,6 +85,12 @@ export const TEMPLATE_VARIABLES: Record<string, { name: string; description: str
     { name: 'total', description: 'Monto total' },
     { name: 'receiptUrl', description: 'URL del comprobante' },
   ],
+  [TemplateKey.MANUAL_QUOTATION_RECEIPT]: [
+    { name: 'customerName', description: 'Nombre del cliente' },
+    { name: 'saleId', description: 'ID de presupuesto' },
+    { name: 'total', description: 'Monto total' },
+    { name: 'receiptUrl', description: 'URL del presupuesto' },
+  ],
   [TemplateKey.WELCOME_CUSTOMER]: [
     { name: 'customerName', description: 'Nombre del cliente' },
     { name: 'storeName', description: 'Nombre de la tienda' },
