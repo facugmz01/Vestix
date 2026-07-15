@@ -315,7 +315,7 @@ export class OfflineSettingsDto {
 }
 
 export class ReceiptStyleDto {
-  @IsOptional() @IsIn([58, 70, 80]) paperWidthMm?: 58 | 70 | 80;
+  @IsOptional() @IsIn([58, 70, 80, 148, 210]) paperWidthMm?: 58 | 70 | 80 | 148 | 210;
   @IsOptional() @IsIn(['monospace', 'sans-serif', 'serif']) fontFamily?: 'monospace' | 'sans-serif' | 'serif';
   @IsOptional() @IsNumber() fontSizePx?: number;
   @IsOptional() @IsNumber() headerFontSizePx?: number;
