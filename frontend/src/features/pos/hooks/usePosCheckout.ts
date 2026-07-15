@@ -44,11 +44,13 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
   const clearCart = usePosStore(state => state.clearCart);
 
   return useMutation({
-    mutationFn: async ({ status, grandTotal, amountDue, subtotal, paymentMethod, issueInvoice }: {
+    mutationFn: async ({ status, grandTotal, amountDue, subtotal, cartDiscountTotal, paymentMethod, issueInvoice }: {
       status: 'CONFIRMED' | 'QUOTATION';
       grandTotal: number;
       amountDue: number;
       subtotal: number;
+      /** Manual cart-level discount only (excludes line discounts and promotions). */
+      cartDiscountTotal?: number;
       paymentMethod: string;
       issueInvoice: boolean;
     }) => {
@@ -112,7 +114,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         cashShiftId: activeShift.id,
         status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
         posGrandTotal: amountDue,
-        cartDiscountTotal: grandTotal < subtotal ? subtotal - grandTotal : 0,
+        cartDiscountTotal: Math.max(0, cartDiscountTotal ?? 0),
         createdAtIso: new Date().toISOString(),
         lines: cart.map(i => ({
           variantId: i.variant.id,
