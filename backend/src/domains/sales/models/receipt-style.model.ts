@@ -1,8 +1,9 @@
 export type ReceiptFontFamily = 'monospace' | 'sans-serif' | 'serif';
 export type ReceiptDividerStyle = 'dashed' | 'solid' | 'dotted' | 'none';
+export type ReceiptPaperWidthMm = 58 | 70 | 80 | 148 | 210;
 
 export interface ReceiptStyleSettings {
-  paperWidthMm: 58 | 70 | 80;
+  paperWidthMm: ReceiptPaperWidthMm;
   fontFamily: ReceiptFontFamily;
   fontSizePx: number;
   headerFontSizePx: number;
