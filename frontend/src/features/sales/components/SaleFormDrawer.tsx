@@ -163,7 +163,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
       open={open}
       title="Nueva Venta / Presupuesto"
       onClose={onClose}
-      width="lg"
+      width="xl"
       footer={
         <div className={styles.footerBetween}>
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancelar</Button>
@@ -178,7 +178,7 @@ export function SaleFormDrawer({ open, onClose }: Props) {
       <div className={styles.stack}>
         
         {/* Cabecera */}
-        <div className="grid-responsive grid-cols-4">
+        <div className={styles.headerFields}>
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>Sucursal Emisora *</label>
             <select value={branchId} onChange={e => setBranchId(e.target.value)} className={styles.fieldSelect}>
@@ -292,72 +292,74 @@ export function SaleFormDrawer({ open, onClose }: Props) {
             </div>
           </div>
 
-          <table className={styles.linesTable}>
-            <thead>
-              <tr>
-                <th className={styles.linesTh}>Producto</th>
-                <th className={styles.linesTh}>Precio U. ($)</th>
-                <th className={styles.linesTh}>Cant.</th>
-                <th className={styles.linesTh}>Desc. %</th>
-                <th className={styles.linesTh}>Total L.</th>
-                <th className={styles.linesTh}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {lines.length === 0 && (
+          <div className={styles.tableWrap}>
+            <table className={styles.linesTable}>
+              <thead>
                 <tr>
-                  <td colSpan={6} className={styles.linesEmpty}>
-                    Buscá un producto arriba para agregarlo al carrito
-                  </td>
+                  <th className={styles.linesTh}>Producto</th>
+                  <th className={styles.linesTh}>Precio U. ($)</th>
+                  <th className={styles.linesTh}>Cant.</th>
+                  <th className={styles.linesTh}>Desc. %</th>
+                  <th className={styles.linesTh}>Total L.</th>
+                  <th className={styles.linesTh}></th>
                 </tr>
-              )}
-              {lines.map((l, i) => (
-                <tr key={i}>
-                  <td className={styles.linesTd}>
-                    <div className={styles.lineName}>{l.variantName}</div>
-                    <div className={styles.lineSku}>{l.variantSku}</div>
-                  </td>
-                  <td className={styles.linesTd}>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={l.basePrice}
-                      onChange={e => updateLine(i, 'basePrice', Number(e.target.value))}
-                      className={styles.inputPrice}
-                    />
-                  </td>
-                  <td className={styles.linesTd}>
-                    <input
-                      type="number"
-                      min="1"
-                      value={l.quantity}
-                      onChange={e => updateLine(i, 'quantity', Number(e.target.value))}
-                      className={styles.inputQty}
-                    />
-                  </td>
-                  <td className={styles.linesTd}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={l.discountPct}
-                      onChange={e => updateLine(i, 'discountPct', Number(e.target.value))}
-                      disabled={!allowManualDiscount}
-                      title={!allowManualDiscount ? 'Descuentos manuales deshabilitados' : ''}
-                      className={clsx(styles.inputDiscount, !allowManualDiscount && styles.inputDiscountDisabled)}
-                    />
-                  </td>
-                  <td className={clsx(styles.linesTd, styles.lineTotal)}>
-                    {formatCurrency((l.basePrice * l.quantity) * (1 - (l.discountPct / 100)))}
-                  </td>
-                  <td className={clsx(styles.linesTd, styles.removeCell)}>
-                    <X size={16} color="var(--red)" className={styles.removeBtn} onClick={() => removeLine(i)} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {lines.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className={styles.linesEmpty}>
+                      Buscá un producto arriba para agregarlo al carrito
+                    </td>
+                  </tr>
+                )}
+                {lines.map((l, i) => (
+                  <tr key={i}>
+                    <td className={styles.linesTd}>
+                      <div className={styles.lineName}>{l.variantName}</div>
+                      <div className={styles.lineSku}>{l.variantSku}</div>
+                    </td>
+                    <td className={styles.linesTd}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={l.basePrice}
+                        onChange={e => updateLine(i, 'basePrice', Number(e.target.value))}
+                        className={styles.inputPrice}
+                      />
+                    </td>
+                    <td className={styles.linesTd}>
+                      <input
+                        type="number"
+                        min="1"
+                        value={l.quantity}
+                        onChange={e => updateLine(i, 'quantity', Number(e.target.value))}
+                        className={styles.inputQty}
+                      />
+                    </td>
+                    <td className={styles.linesTd}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={l.discountPct}
+                        onChange={e => updateLine(i, 'discountPct', Number(e.target.value))}
+                        disabled={!allowManualDiscount}
+                        title={!allowManualDiscount ? 'Descuentos manuales deshabilitados' : ''}
+                        className={clsx(styles.inputDiscount, !allowManualDiscount && styles.inputDiscountDisabled)}
+                      />
+                    </td>
+                    <td className={clsx(styles.linesTd, styles.lineTotal)}>
+                      {formatCurrency((l.basePrice * l.quantity) * (1 - (l.discountPct / 100)))}
+                    </td>
+                    <td className={clsx(styles.linesTd, styles.removeCell)}>
+                      <X size={16} color="var(--red)" className={styles.removeBtn} onClick={() => removeLine(i)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Resumen de Totales */}
