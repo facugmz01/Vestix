@@ -2,23 +2,38 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.headerFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  min-width: 0;
 }
 
 .footerBetween {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   width: 100%;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .footerActions {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .fieldGroup {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .fieldLabel {
@@ -34,6 +49,8 @@
   background: var(--bg-elevated);
   color: var(--text-primary);
   font-family: inherit;
+  width: 100%;
+  max-width: 100%;
 }
 
 .fieldSelectDisabled {
@@ -45,6 +62,8 @@
   background: var(--bg-elevated);
   border-radius: var(--radius);
   border: 1px solid var(--border);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .cartTitle {
@@ -61,10 +80,12 @@
   gap: 8px;
   margin-bottom: 16px;
   align-items: flex-end;
+  min-width: 0;
 }
 
 .searchWrap {
-  flex: 3;
+  flex: 1 1 auto;
+  min-width: 0;
   position: relative;
 }
 
@@ -183,11 +204,18 @@
 }
 
 .qtyCol {
-  flex: 0.6;
+  flex: 0 0 88px;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .linesTable {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
   font-size: 13px;
 }
@@ -277,7 +305,8 @@
 
 .totalsPanel {
   margin-left: auto;
-  width: 350px;
+  width: min(350px, 100%);
+  max-width: 100%;
   padding: 20px;
   background: var(--bg-base);
   border: 1px solid var(--border);
@@ -285,6 +314,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
 }
 
 .totalsRow {
