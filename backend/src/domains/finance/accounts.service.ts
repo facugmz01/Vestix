@@ -7,15 +7,49 @@ export class AccountsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createAccount(dto: CreateAccountDto) {
-    return this.prisma.financialAccount.create({
-      data: {
-        name: dto.name,
-        type: dto.type,
-        currency: dto.currency,
-        branchId: dto.branchId,
-        balance: 0,
-        isActive: true,
+    const initialBalance = Math.max(0, Number(dto.initialBalance) || 0);
+
+    return this.prisma.$transaction(async (tx) => {
+      const account = await tx.financialAccount.create({
+        data: {
+          name: dto.name.trim(),
+          type: dto.type,
+          currency: dto.currency || 'ARS',
+          branchId: dto.branchId || null,
+          balance: initialBalance,
+          isActive: true,
+        },
+      });
+
+      if (initialBalance > 0) {
+        await tx.financialTransaction.create({
+          data: {
+            accountId: account.id,
+            type: 'DEBIT',
+            amount: initialBalance,
+            referenceId: account.id,
+            description: `Saldo inicial — ${account.name}`,
+          },
+        });
       }
+
+      return account;
+    });
+  }
+
+  async updateAccount(id: string, dto: import('./dto/create-account.dto').UpdateAccountDto) {
+    const existing = await this.prisma.financialAccount.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Cuenta financiera no encontrada');
+
+    return this.prisma.financialAccount.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+        ...(dto.type !== undefined ? { type: dto.type } : {}),
+        ...(dto.currency !== undefined ? { currency: dto.currency } : {}),
+        ...(dto.branchId !== undefined ? { branchId: dto.branchId } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
     });
   }
 

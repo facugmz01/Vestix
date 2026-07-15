@@ -102,6 +102,21 @@ export class FinanceController {
     return this.accountsService.getAccounts();
   }
 
+  @Post('treasury/accounts')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  createAccount(@Body() dto: import('./dto/create-account.dto').CreateAccountDto) {
+    return this.accountsService.createAccount(dto);
+  }
+
+  @Patch('treasury/accounts/:id')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  updateAccount(
+    @Param('id') id: string,
+    @Body() dto: import('./dto/create-account.dto').UpdateAccountDto,
+  ) {
+    return this.accountsService.updateAccount(id, dto);
+  }
+
   @Get('treasury/accounts/:id/transactions')
   @RequirePermissions({ action: 'read', subject: 'Finance' })
   getAccountTransactions(
