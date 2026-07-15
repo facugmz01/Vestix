@@ -1,4 +1,4 @@
-import { get, post } from './client';
+import { get, post, patch } from './client';
 import { cleanParams } from './requestUtils';
 import type { CurrentAccount, CurrentAccountMovement, FinancialAccount, PagedResponse, PaymentMethodEntity } from '@/types';
 
@@ -18,6 +18,25 @@ export interface MovementFilters {
 
 export const financeApi = {
   getTreasuryAccounts: () => get<FinancialAccount[]>('/finance/treasury/accounts'),
+
+  createTreasuryAccount: (dto: {
+    name: string;
+    type: string;
+    currency?: string;
+    branchId?: string;
+    initialBalance?: number;
+  }) => post<FinancialAccount>('/finance/treasury/accounts', dto),
+
+  updateTreasuryAccount: (
+    id: string,
+    dto: {
+      name?: string;
+      type?: string;
+      currency?: string;
+      branchId?: string | null;
+      isActive?: boolean;
+    },
+  ) => patch<FinancialAccount>(`/finance/treasury/accounts/${id}`, dto),
 
   getTreasuryAccountTransactions: (accountId: string, filters?: { page?: number; pageSize?: number }) =>
     get<{

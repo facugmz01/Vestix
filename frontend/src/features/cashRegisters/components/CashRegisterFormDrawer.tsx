@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Input } from '@/components/ui';
 import { cashRegistersApi, type CreateCashRegisterDto } from '@/api/cashRegisters.api';
 import { branchesApi } from '@/api/branches.api';
+import { financeApi } from '@/api/finance.api';
 import { queryKeys } from '@/api/queryKeys';
 import type { CashRegister } from '@/types';
 import toast from 'react-hot-toast';
@@ -18,10 +19,11 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
   const queryClient = useQueryClient();
   const isEditing = !!registerToEdit;
 
-  const [formData, setFormData] = useState<CreateCashRegisterDto>({
+  const [formData, setFormData] = useState<CreateCashRegisterDto & { treasuryAccountId?: string }>({
     name: '',
     branchId: '',
     isActive: true,
+    treasuryAccountId: '',
   });
 
   const { data: branchesData, isLoading: isLoadingBranches } = useQuery({
@@ -30,33 +32,47 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
     enabled: open,
   });
 
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['treasury', 'accounts'],
+    queryFn: () => financeApi.getTreasuryAccounts(),
+    enabled: open,
+  });
+
+  const cashAccounts = (Array.isArray(accounts) ? accounts : []).filter(a => a.type === 'CASH' && a.isActive !== false);
+
   useEffect(() => {
     if (open && registerToEdit) {
       setFormData({
         name: registerToEdit.name,
         branchId: registerToEdit.branchId,
         isActive: registerToEdit.isActive,
+        treasuryAccountId: registerToEdit.treasuryAccountId || '',
       });
     } else if (open && !registerToEdit) {
       setFormData({
         name: '',
         branchId: '',
         isActive: true,
+        treasuryAccountId: '',
       });
     }
   }, [open, registerToEdit]);
 
   const mutation = useMutation({
-    mutationFn: (data: CreateCashRegisterDto) => {
-      if (isEditing && registerToEdit) return cashRegistersApi.updateCashRegister(registerToEdit.id, data);
-      return cashRegistersApi.createCashRegister(data);
+    mutationFn: (data: CreateCashRegisterDto & { treasuryAccountId?: string }) => {
+      const payload = {
+        ...data,
+        treasuryAccountId: data.treasuryAccountId || undefined,
+      };
+      if (isEditing && registerToEdit) return cashRegistersApi.updateCashRegister(registerToEdit.id, payload);
+      return cashRegistersApi.createCashRegister(payload);
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Caja actualizada' : 'Caja creada exitosamente');
       queryClient.invalidateQueries({ queryKey: queryKeys.cashRegisters.all() });
       onClose();
     },
-    onError: (error: any) => {
+    onError: (error: { message?: string }) => {
       toast.error(error.message || 'Error al guardar la caja');
     },
   });
@@ -75,7 +91,7 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
   return (
     <Drawer
       open={open}
-      title={isEditing ? 'Editar Caja' : 'Nueva Caja'}
+      title={isEditing ? 'Editar Caja POS' : 'Nueva Caja POS'}
       onClose={onClose}
       width="sm"
       footer={
@@ -95,6 +111,10 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
             Atención: Esta caja se encuentra actualmente abierta y en uso. Los cambios de sucursal o nombre podrían afectar la sesión actual del cajero.
           </div>
         )}
+
+        <p className={styles.hintText}>
+          La caja POS es el turno físico del cajero. Vinculala a una cuenta de tesorería CASH para que los cobros en efectivo impacten en el saldo correcto.
+        </p>
 
         <Input
           label="Nombre de la Caja *"
@@ -117,6 +137,25 @@ export function CashRegisterFormDrawer({ open, onClose, registerToEdit }: Props)
               <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
             ))}
           </select>
+        </div>
+
+        <div className={styles.selectGroup}>
+          <label className={styles.selectLabel}>Cuenta de tesorería (efectivo)</label>
+          <select
+            value={formData.treasuryAccountId || ''}
+            onChange={(e) => setFormData({ ...formData, treasuryAccountId: e.target.value })}
+            className={styles.select}
+          >
+            <option value="">Sin vincular</option>
+            {cashAccounts.map(a => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+          {cashAccounts.length === 0 && (
+            <p className={styles.hintText}>
+              Primero creá una cuenta tipo CASH en Finanzas → Tesorería.
+            </p>
+          )}
         </div>
 
         <div className={styles.checkboxRow}>

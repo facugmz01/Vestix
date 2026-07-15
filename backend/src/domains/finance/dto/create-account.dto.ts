@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber, Min, IsBoolean, IsUUID } from 'class-validator';
 import { AccountType } from '../models/account.model';
 
 export class CreateAccountDto {
@@ -9,11 +9,40 @@ export class CreateAccountDto {
   @IsEnum(AccountType)
   type: AccountType;
 
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsOptional()
+  @IsUUID('4')
+  branchId?: string;
+
+  /** Saldo inicial (se registra como DEBIT de apertura si > 0) */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  initialBalance?: number;
+}
+
+export class UpdateAccountDto {
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  currency: string;
+  name?: string;
 
-  @IsString()
   @IsOptional()
-  branchId?: string; // Required if creating a CASH register
+  @IsEnum(AccountType)
+  type?: AccountType;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsOptional()
+  @IsUUID('4')
+  branchId?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

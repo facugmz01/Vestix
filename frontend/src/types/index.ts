@@ -67,6 +67,7 @@ export type CashRegisterStatus = 'OPEN' | 'CLOSED';
 export interface CashRegister {
   id: string;
   name: string;
+  code?: string;
   branchId: string;
   isActive: boolean;
   status: CashRegisterStatus;
@@ -74,6 +75,8 @@ export interface CashRegister {
   createdAt: string;
   branchName?: string;
   operatorName?: string;
+  treasuryAccountId?: string | null;
+  treasuryAccountName?: string | null;
 }
 
 export interface SystemUser {
