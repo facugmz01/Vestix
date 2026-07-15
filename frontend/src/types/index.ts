@@ -693,8 +693,26 @@ export interface ElectronicInvoice {
 // ─── REPORTS ─────────────────────────────────────────────────────────────
 export interface DashboardSummary {
   generatedAt: string;
-  today:     { revenue: number; orders: number; avgOrderValue: number; cashInDrawers: number; };
-  thisMonth: { revenue: number; orders: number; grossMarginPct: number; };
+  today: {
+    revenue: number;
+    orders: number;
+    avgOrderValue: number;
+    cashInDrawers: number;
+    purchasesTotal?: number;
+    supplierPayments?: number;
+  };
+  thisMonth: {
+    revenue: number;
+    orders: number;
+    grossMarginPct: number;
+    purchasesTotal?: number;
+    purchasesPaid?: number;
+    purchasesDebt?: number;
+    cashIncome?: number;
+    cashExpenses?: number;
+    netCash?: number;
+  };
+  supplierPayableBalance?: number;
   topSellers: TopSellingVariant[];
   lowStockAlerts: LowStockAlert[];
   pendingOrders: number;

@@ -105,7 +105,7 @@ export default function PurchasingPage() {
       tabs={<Tabs items={PURCHASING_TABS} />}
       
       title="Compras y Abastecimiento (PO)" 
-      subtitle="Gestioná las órdenes de compra (PO), su estado de recepción y facturación."
+      subtitle="Órdenes de compra, recepción y pagos. Al emitir o ingresar mercadería, el pago/deuda impacta en Finanzas → Cuentas Corrientes y Tesorería."
       action={
         <ActionGuard action="manage" subject="Purchasing">
           <div className={adminStyles.toolbarActions}>

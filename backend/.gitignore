@@ -1,7 +1,8 @@
-node_modules/
 dist/
+.DS_Store
+dump.rdb
 .env
 *.log
-.DS_Store
-*.tsbuildinfo
+node_modules/
 test/e2e/.e2e-db-ready
+*.tsbuildinfo

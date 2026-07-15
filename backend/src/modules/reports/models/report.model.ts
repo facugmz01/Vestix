@@ -74,13 +74,26 @@ export interface DashboardSummary {
     revenue: number;
     orders: number;
     avgOrderValue: number;
+    /** Saldo real de cuentas CASH activas (tesorería) */
     cashInDrawers: number;
+    /** Compras creadas hoy (total facturado) */
+    purchasesTotal: number;
+    /** Pagos a proveedores hoy (CREDIT en ledger) */
+    supplierPayments: number;
   };
   thisMonth: {
     revenue: number;
     orders: number;
     grossMarginPct: number;
+    purchasesTotal: number;
+    purchasesPaid: number;
+    purchasesDebt: number;
+    cashIncome: number;
+    cashExpenses: number;
+    netCash: number;
   };
+  /** Deuda abierta actual a proveedores (Supplier.balance) */
+  supplierPayableBalance: number;
   topSellers: TopSellingVariant[];
   lowStockAlerts: LowStockAlert[];
   pendingOrders: number;   // E-commerce orders not yet shipped

@@ -124,22 +124,54 @@ function OverviewTab({ branchId }: { branchId?: string }) {
           trend={{ value: 0, label: `${dashboard.today?.orders ?? 0} pedidos` }}
         />
         <KpiCard
+          label="Compras Hoy"
+          value={formatCurrency(dashboard.today?.purchasesTotal ?? 0)}
+          icon={<ShoppingBag size={20} />}
+          color="#0ea5e9"
+          trend={{ value: 0, label: `Pagos ${formatCurrency(dashboard.today?.supplierPayments ?? 0)}` }}
+        />
+        <KpiCard
+          label="Deuda Proveedores"
+          value={formatCurrency(dashboard.supplierPayableBalance ?? 0)}
+          icon={<ShoppingBag size={20} />}
+          color={(dashboard.supplierPayableBalance ?? 0) > 0 ? '#ef4444' : '#22c55e'}
+          trend={{ value: 0, label: `Mes ${formatCurrency(dashboard.thisMonth?.purchasesDebt ?? 0)}` }}
+        />
+        <KpiCard
+          label="Saldo Cajas"
+          value={formatCurrency(dashboard.today?.cashInDrawers ?? 0)}
+          icon={<Wallet size={20} />}
+          color="#8b5cf6"
+        />
+      </div>
+
+      <div className={adminStyles.statCardGrid4} style={{ marginTop: 16 }}>
+        <KpiCard
           label="Pedidos del Mes"
           value={String(dashboard.thisMonth?.orders ?? 0)}
-          icon={<ShoppingBag size={20} />}
+          icon={<TrendingUp size={20} />}
           color="#3b82f6"
+          trend={{ value: 0, label: formatCurrency(dashboard.thisMonth?.revenue ?? 0) }}
+        />
+        <KpiCard
+          label="Compras del Mes"
+          value={formatCurrency(dashboard.thisMonth?.purchasesTotal ?? 0)}
+          icon={<ShoppingBag size={20} />}
+          color="#0284c7"
+          trend={{ value: 0, label: `Pagado ${formatCurrency(dashboard.thisMonth?.purchasesPaid ?? 0)}` }}
+        />
+        <KpiCard
+          label="Egresos Tesorería (Mes)"
+          value={formatCurrency(dashboard.thisMonth?.cashExpenses ?? 0)}
+          icon={<Wallet size={20} />}
+          color="#f59e0b"
+          trend={{ value: 0, label: `Neto ${formatCurrency(dashboard.thisMonth?.netCash ?? 0)}` }}
         />
         <KpiCard
           label="Artículos Stock Bajo"
           value={String(dashboard.lowStockAlerts?.length ?? 0)}
           icon={<Package size={20} />}
           color={(dashboard.lowStockAlerts?.length ?? 0) > 5 ? '#ef4444' : '#f59e0b'}
-        />
-        <KpiCard
-          label="Saldo Cajas Abiertas"
-          value={formatCurrency(dashboard.today?.cashInDrawers ?? 0)}
-          icon={<Wallet size={20} />}
-          color="#8b5cf6"
         />
       </div>
 

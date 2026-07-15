@@ -19,6 +19,23 @@ export interface MovementFilters {
 export const financeApi = {
   getTreasuryAccounts: () => get<FinancialAccount[]>('/finance/treasury/accounts'),
 
+  getTreasuryAccountTransactions: (accountId: string, filters?: { page?: number; pageSize?: number }) =>
+    get<{
+      account: FinancialAccount;
+      data: {
+        id: string;
+        accountId: string;
+        type: 'DEBIT' | 'CREDIT';
+        amount: number;
+        referenceId?: string;
+        description?: string;
+        createdAt: string;
+      }[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>(`/finance/treasury/accounts/${accountId}/transactions`, { params: cleanParams(filters ?? {}) }),
+
   getPaymentMethods: () => get<PaymentMethodEntity[]>('/finance/payment-methods'),
 
   getCurrentAccounts: (filters?: CurrentAccountFilters) =>

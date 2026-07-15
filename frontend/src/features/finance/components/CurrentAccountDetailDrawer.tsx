@@ -194,18 +194,21 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                             </Badge>
                           </div>
                           <span className={styles.docRef}>{formatPaymentReferenceId(m.referenceId)}</span>
+                          {m.description && (
+                            <span className={styles.hintText}>{m.description}</span>
+                          )}
                         </div>
                       );
                     }
                   },
                   {
                     key: 'debit',
-                    header: 'Débito (+)',
+                    header: isCustomer ? 'Débito (+)' : 'Pago / Descuento',
                     render: (m) => m.debit > 0 ? <span className={clsx(styles.textBold, styles.textRed)}>{formatCurrency(m.debit)}</span> : '-'
                   },
                   {
                     key: 'credit',
-                    header: 'Crédito (-)',
+                    header: isCustomer ? 'Crédito (-)' : 'Deuda (+)',
                     render: (m) => m.credit > 0 ? <span className={clsx(styles.textBold, styles.textGreen)}>{formatCurrency(m.credit)}</span> : '-'
                   },
                   {

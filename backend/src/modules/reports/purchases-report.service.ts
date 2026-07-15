@@ -20,7 +20,7 @@ export class PurchasesReportService {
     const orders = await this.prisma.purchaseOrder.findMany({
       where: {
         createdAt: { gte: from, lte: to },
-        status: { not: 'CANCELLED' }
+        status: { notIn: ['CANCELLED', 'DRAFT'] },
       },
       include: {
         supplier: true,

@@ -102,6 +102,19 @@ export class FinanceController {
     return this.accountsService.getAccounts();
   }
 
+  @Get('treasury/accounts/:id/transactions')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getAccountTransactions(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.accountsService.getAccountTransactions(id, {
+      page: Number(page) || 1,
+      pageSize: Number(pageSize) || 30,
+    });
+  }
+
   // --- Payment Methods ---
   @Get('payment-methods')
   @RequirePermissions({ action: 'read', subject: 'Settings' }) // or Finance depending on user setup
