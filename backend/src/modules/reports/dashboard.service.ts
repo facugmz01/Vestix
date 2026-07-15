@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DashboardSummary } from './models/report.model';
 import { SalesReportService } from './sales-report.service';
 import { StockReportService } from './stock-report.service';
+import { PurchasesReportService } from './purchases-report.service';
+import { CashReportService } from './cash-report.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 
 @Injectable()
@@ -11,10 +13,10 @@ export class DashboardService {
   constructor(
     private readonly salesReport: SalesReportService,
     private readonly stockReport: StockReportService,
+    private readonly purchasesReport: PurchasesReportService,
+    private readonly cashReport: CashReportService,
     private readonly prisma: PrismaService,
   ) {}
-
-  // ─── Date Helpers ─────────────────────────────────────────────────────────
 
   private buildTodayRange() {
     const from = new Date();
@@ -28,62 +30,83 @@ export class DashboardService {
     return { from, to };
   }
 
-  // ─── Main Method ──────────────────────────────────────────────────────────
-
   /**
    * MANAGEMENT DASHBOARD
-   * Aggregates all KPIs into a single endpoint response, minimizing round-trips
-   * from the frontend. Designed for the admin panel's "Overview" screen.
-   *
-   * Queries are grouped into two parallel batches:
-   *   Batch A: Sales data (today + month + topSellers) — all hit the same tables
-   *   Batch B: Stock alerts + pending orders count — independent reads
-   *
-   * This avoids the connection pool exhaustion of full Promise.all(6),
-   * while keeping latency lower than fully sequential execution.
+   * Incluye ventas, compras, deuda proveedores y egresos/ingresos de tesorería.
    */
   async getDashboard(branchId?: string): Promise<DashboardSummary> {
     const t0 = Date.now();
     const today = this.buildTodayRange();
     const month = this.buildMonthRange();
 
-    // ── Batch A: Sales-related queries (same table set) ──────────────────────
-    const [todaySales, monthSales, topSellers] = await Promise.all([
+    const [
+      todaySales,
+      monthSales,
+      topSellers,
+      lowStockAlerts,
+      pendingOrders,
+      todayPurchases,
+      monthPurchases,
+      todayCash,
+      monthCash,
+      cashAccounts,
+      supplierDebtAgg,
+    ] = await Promise.all([
       this.salesReport.getSalesSummary({ from: today.from, to: today.to, branchId }),
       this.salesReport.getSalesSummary({ from: month.from, to: month.to, branchId }),
       this.salesReport.getTopSellers({ from: month.from, to: month.to, branchId }, 5),
-    ]);
-
-    // ── Batch B: Stock + orders (independent of sales tables) ────────────────
-    // Pass monthSales.netRevenue to COGS to avoid an internal double-query.
-    const [lowStockAlerts, monthCogs, pendingOrders] = await Promise.all([
       this.stockReport.getLowStockAlerts(branchId),
-      this.salesReport.getCogsReport(
-        { from: month.from, to: month.to, branchId },
-        monthSales.netRevenue,
-      ),
-      // Real schema statuses: QUOTE | COMPLETED | CANCELLED
-      // "Pending" = orders that are not yet finalized
       this.prisma.saleOrder.count({
         where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
       }),
+      this.purchasesReport.getPurchasesSummary({ from: today.from, to: today.to }),
+      this.purchasesReport.getPurchasesSummary({ from: month.from, to: month.to }),
+      this.cashReport.getCashSummary({ from: today.from, to: today.to, branchId }),
+      this.cashReport.getCashSummary({ from: month.from, to: month.to, branchId }),
+      this.prisma.financialAccount.findMany({
+        where: {
+          isActive: true,
+          type: 'CASH',
+          ...(branchId ? { branchId } : {}),
+        },
+        select: { balance: true },
+      }),
+      this.prisma.supplier.aggregate({
+        _sum: { balance: true },
+      }),
     ]);
+
+    const monthCogsResolved = await this.salesReport.getCogsReport(
+      { from: month.from, to: month.to, branchId },
+      monthSales.netRevenue,
+    );
+
+    const cashInDrawers = cashAccounts.reduce((sum, a) => sum + (a.balance || 0), 0);
 
     this.logger.log(`[Dashboard] Resolved in ${Date.now() - t0}ms${branchId ? ` (branch: ${branchId})` : ''}`);
 
     return {
       generatedAt: today.to,
       today: {
-        revenue:        todaySales.netRevenue,
-        orders:         todaySales.totalOrders,
-        avgOrderValue:  todaySales.averageOrderValue,
-        cashInDrawers:  todaySales.byPaymentMethod.find(m => m.method === 'CASH')?.amount ?? 0,
+        revenue: todaySales.netRevenue,
+        orders: todaySales.totalOrders,
+        avgOrderValue: todaySales.averageOrderValue,
+        cashInDrawers,
+        purchasesTotal: todayPurchases.totalAmount,
+        supplierPayments: todayCash.totalExpenses,
       },
       thisMonth: {
-        revenue:        monthSales.netRevenue,
-        orders:         monthSales.totalOrders,
-        grossMarginPct: monthCogs.grossMarginPct,
+        revenue: monthSales.netRevenue,
+        orders: monthSales.totalOrders,
+        grossMarginPct: monthCogsResolved.grossMarginPct,
+        purchasesTotal: monthPurchases.totalAmount,
+        purchasesPaid: monthPurchases.totalReceived,
+        purchasesDebt: monthPurchases.pendingAmount,
+        cashIncome: monthCash.totalIncome,
+        cashExpenses: monthCash.totalExpenses,
+        netCash: monthCash.netCash,
       },
+      supplierPayableBalance: supplierDebtAgg._sum.balance || 0,
       topSellers,
       lowStockAlerts,
       pendingOrders,
