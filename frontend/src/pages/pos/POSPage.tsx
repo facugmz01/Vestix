@@ -143,9 +143,12 @@ export default function POSPage() {
 
   const subtotal = cartCalculation?.subtotal ?? clientSubtotal;
   const lineDiscounts = cartCalculation?.lineDiscountsTotal ?? clientLineDiscounts;
-  const globalDiscount = cartCalculation
-    ? Math.max(0, (cartCalculation.cartDiscountTotal || 0) - lineDiscounts)
-    : clientGlobalDiscount;
+  // Manual cart % only — never mix in line discounts or promotions.
+  const globalDiscount = cartDiscountPct > 0 && cartDiscountPct < 100
+    ? (cartCalculation?.grandTotal != null
+        ? Number(((cartCalculation.grandTotal / (1 - cartDiscountPct / 100)) - cartCalculation.grandTotal).toFixed(2))
+        : clientGlobalDiscount)
+    : (cartDiscountPct >= 100 ? clientTotalAfterLines : 0);
   const grandTotal = cartCalculation?.grandTotal ?? (clientTotalAfterLines - clientGlobalDiscount);
   const loyaltyDiscount = loyaltyPointsToRedeem * (loyaltySettings?.redeemValuePerPoint ?? 1);
   const amountDue = computePosAmountDue(
@@ -233,6 +236,7 @@ export default function POSPage() {
       grandTotal,
       amountDue,
       subtotal,
+      cartDiscountTotal: Math.max(0, globalDiscount),
       paymentMethod,
       issueInvoice,
     });

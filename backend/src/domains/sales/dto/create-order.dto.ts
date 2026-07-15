@@ -103,7 +103,7 @@ export class CreateOrderDto implements SharedCreateSaleDto {
 
   @IsNumber()
   @IsOptional()
-  cartDiscountTotal?: number; // Total discount amount applied to the cart
+  cartDiscountTotal?: number; // Manual cart-level discount amount (excludes line discounts & promotions)
 
   @IsBoolean()
   @IsOptional()

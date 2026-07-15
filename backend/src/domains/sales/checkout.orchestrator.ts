@@ -12,6 +12,7 @@ import { expandComboToStockMovements } from '../catalog/utils/combo-stock.util';
 import { LoyaltyService } from './loyalty/loyalty.service';
 import { GiftCardsService } from './gift-cards/gift-cards.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { applyManualCartDiscount } from './utils/manual-cart-discount';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -135,6 +136,35 @@ export class CheckoutOrchestrator {
 
     const merchandiseTotal = serverCalculatedTotal;
 
+    // Manual cart-level discount (Backoffice global %, POS cart discount).
+    // This is additive to promotional discounts already reflected in merchandiseTotal.
+    let manualCartDiscount = 0;
+    let pricedTotal = merchandiseTotal;
+    try {
+      const discounted = applyManualCartDiscount({
+        merchandiseTotal,
+        cartDiscountTotal: dto.cartDiscountTotal,
+        allowManualDiscount: pricingSettings.allowManualDiscount,
+        maxDiscountPct: pricingSettings.maxDiscountPct,
+      });
+      manualCartDiscount = discounted.manualCartDiscount;
+      pricedTotal = discounted.pricedTotal;
+    } catch (err: any) {
+      const code = err?.message;
+      if (code === 'MANUAL_DISCOUNT_DISABLED') {
+        throw new BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
+      }
+      if (code === 'CART_DISCOUNT_EXCEEDS_TOTAL') {
+        throw new BadRequestException('El descuento global supera el total de la venta');
+      }
+      if (code === 'CART_DISCOUNT_EXCEEDS_MAX_PCT') {
+        throw new BadRequestException(
+          `El descuento global excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`,
+        );
+      }
+      throw err;
+    }
+
     // Pre-validate redemptions (read-only) before the atomic transaction
     let expectedGiftCardAmount = 0;
     let expectedLoyaltyAmount = 0;
@@ -166,7 +196,7 @@ export class CheckoutOrchestrator {
     }
 
     const expectedAmountDue = Math.round(
-      (merchandiseTotal - expectedGiftCardAmount - expectedLoyaltyAmount) * 100,
+      (pricedTotal - expectedGiftCardAmount - expectedLoyaltyAmount) * 100,
     ) / 100;
 
     if (expectedAmountDue < -0.01) {
@@ -181,13 +211,13 @@ export class CheckoutOrchestrator {
           `Payment mismatch. Expected ${expectedAmountDue} after redemptions, got ${dto.posGrandTotal}`,
         );
       }
-    } else if (!isManualEntry && dto.posGrandTotal !== undefined && Math.abs(dto.posGrandTotal - merchandiseTotal) > 0.01) {
+    } else if (!isManualEntry && dto.posGrandTotal !== undefined && Math.abs(dto.posGrandTotal - pricedTotal) > 0.01) {
       if (!isQuote) {
-        throw new BadRequestException(`Price mismatch. Expected ${merchandiseTotal}, got ${dto.posGrandTotal}`);
+        throw new BadRequestException(`Price mismatch. Expected ${pricedTotal}, got ${dto.posGrandTotal}`);
       }
     }
 
-    const posDifference = (dto.posGrandTotal ?? expectedAmountDue) + expectedGiftCardAmount + expectedLoyaltyAmount - merchandiseTotal;
+    const posDifference = (dto.posGrandTotal ?? expectedAmountDue) + expectedGiftCardAmount + expectedLoyaltyAmount - pricedTotal;
 
     // 4. ATOMIC TRANSACTION EXECUTION
     const result = await this.prisma.$transaction(async (tx) => {
@@ -212,7 +242,7 @@ export class CheckoutOrchestrator {
         loyaltyAmount = redeemed.redeemValue;
       }
 
-      const amountDue = Math.round((merchandiseTotal - giftCardAmount - loyaltyAmount) * 100) / 100;
+      const amountDue = Math.round((pricedTotal - giftCardAmount - loyaltyAmount) * 100) / 100;
 
       // --- A. FINANCE BOUNDARY ---
       const hasSplitPayments = !isQuote && dto.payments && dto.payments.length > 0;
@@ -282,8 +312,8 @@ export class CheckoutOrchestrator {
           source: dto.source,
           customerId: dto.customerId,
           subtotal: cartEvaluation.originalTotal,
-          cartDiscountTotal: cartEvaluation.discountTotal,
-          grandTotal: merchandiseTotal,
+          cartDiscountTotal: Math.round((cartEvaluation.discountTotal + manualCartDiscount) * 100) / 100,
+          grandTotal: pricedTotal,
           appliedPromotions: cartEvaluation.appliedPromotions,
           paymentMethod: dto.paymentMethod,
           paymentAccountId: dto.paymentAccountId,
@@ -345,7 +375,7 @@ export class CheckoutOrchestrator {
           data: {
             orderId: order.id,
             posTotal: dto.posGrandTotal ?? expectedAmountDue,
-            serverTotal: merchandiseTotal,
+            serverTotal: pricedTotal,
             difference: posDifference
           }
         });
@@ -377,7 +407,7 @@ export class CheckoutOrchestrator {
       if (completedStatuses.includes(result.order.status)) {
         void this.notificationTriggers.onSaleCompleted(result.order.id);
         if (dto.customerId) {
-          const earnBase = merchandiseTotal - (result.loyaltyAmount ?? 0);
+          const earnBase = pricedTotal - (result.loyaltyAmount ?? 0);
           void this.loyaltyService.earnPointsForOrder(dto.customerId, earnBase, result.order.id);
         }
       }
