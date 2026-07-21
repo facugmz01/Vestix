@@ -27,7 +27,7 @@ import { PosShiftSalesDrawer } from '@/features/pos/components/PosShiftSalesDraw
 import type { PosPaymentMethodId } from '@/features/pos/constants/posPaymentMethods';
 import { computePosAmountDue } from '@/features/pos/utils/posRedemption';
 import { loyaltyApi } from '@/api/loyalty.api';
-import { queryKeys } from '@/api/queryKeys';
+import type { ProductVariant } from '@/types';
 
 export default function POSPage() {
   const { user } = useAuthStore();
@@ -80,7 +80,22 @@ export default function POSPage() {
     gridProducts,
     searchResults,
     lookupBarcode,
+    invalidateCatalogQueries,
   } = usePosOffline(currentBranchId, selectedCustomerId, search);
+
+  const handleForceCatalogSync = useCallback(async (full?: boolean) => {
+    const result = await forceCatalogSync(full);
+    await invalidateCatalogQueries();
+    return result;
+  }, [forceCatalogSync, invalidateCatalogQueries]);
+
+  // After background Dexie sync finishes, refresh the grid so an empty API
+  // browse can fall back to the local catalog cache.
+  useEffect(() => {
+    if (catalogCount > 0 && !isCatalogSyncing) {
+      void invalidateCatalogQueries();
+    }
+  }, [catalogCount, isCatalogSyncing, invalidateCatalogQueries]);
 
   const { data: activeShift, isLoading: isShiftLoading } = useQuery({
     queryKey: ['shifts', 'active'],
@@ -255,7 +270,7 @@ export default function POSPage() {
         lastCatalogSync={lastCatalogSync}
         catalogCount={catalogCount}
         onForceSync={forceSync}
-        onForceCatalogSync={forceCatalogSync}
+        onForceCatalogSync={handleForceCatalogSync}
         search={search}
         setSearch={setSearch}
         searchInputRef={searchInputRef}

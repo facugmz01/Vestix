@@ -36,7 +36,12 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
     queryKey: ['pos', 'gridProducts', selectedCustomerId, isOnline],
     queryFn: async () => {
       if (isOnline) {
-        return posApi.searchProduct('', selectedCustomerId || undefined);
+        try {
+          const online = await posApi.searchProduct('', selectedCustomerId || undefined);
+          if (online?.length) return online;
+        } catch {
+          // fall through to local catalog cache
+        }
       }
       const offline = await CatalogSyncService.getAllForGrid();
       return toVariants(offline);
@@ -71,12 +76,16 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
     return toVariants(partial);
   }, [isOnline, selectedCustomerId]);
 
+  const invalidateCatalogQueries = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['pos'] });
+  }, [queryClient]);
+
   const refreshCatalog = useCallback(async (forceFull = false) => {
     if (!navigator.onLine) return null;
     const result = await CatalogSyncService.syncPosCatalog(branchId || undefined, forceFull);
-    await queryClient.invalidateQueries({ queryKey: ['pos'] });
+    await invalidateCatalogQueries();
     return result;
-  }, [branchId, queryClient]);
+  }, [branchId, invalidateCatalogQueries]);
 
   return {
     isOnline,
@@ -86,5 +95,6 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
     searchLoading,
     lookupBarcode,
     refreshCatalog,
+    invalidateCatalogQueries,
   };
 }

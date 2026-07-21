@@ -221,6 +221,63 @@ describe('PosService', () => {
     });
   });
 
+  describe('searchCatalog', () => {
+    const searchVariant = {
+      ...mockVariant,
+      productId: 'prod-1',
+      size: 'M',
+      color: 'Rojo',
+      imageUrl: null,
+      costPrice: 500,
+      product: {
+        name: 'Remera Básica',
+        categoryId: 'cat-1',
+        category: { name: 'Remeras' },
+        brand: { name: 'Vestix' },
+        images: [],
+      },
+      barcodes: [],
+    };
+
+    it('returns active variants for empty query (POS product grid)', async () => {
+      mockPrisma.productVariant.findMany.mockResolvedValueOnce([searchVariant]);
+      mockPrisma.stockLevel.findMany.mockResolvedValueOnce([
+        { variantId: 'variant-1', availableQuantity: 3 },
+      ]);
+
+      const result = await service.searchCatalog('');
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: 'variant-1',
+        sku: 'SKU-001',
+        stock: 3,
+      });
+      expect(mockPrisma.productVariant.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { isActive: true },
+          take: 50,
+        }),
+      );
+    });
+
+    it('filters by text query when provided', async () => {
+      mockPrisma.productVariant.findMany.mockResolvedValueOnce([]);
+      mockPrisma.stockLevel.findMany.mockResolvedValueOnce([]);
+
+      await service.searchCatalog('remera');
+
+      expect(mockPrisma.productVariant.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isActive: true,
+            OR: expect.any(Array),
+          }),
+        }),
+      );
+    });
+  });
+
   describe('getCatalogSyncData', () => {
     const mockCatalogVariant = {
       id: 'variant-1',

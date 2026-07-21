@@ -200,10 +200,9 @@ export class PosService {
     const categoryId = filters?.categoryId?.trim() || undefined;
     const brandId = filters?.brandId?.trim() || undefined;
 
-    if (!q && !categoryId && !brandId) {
-      return [];
-    }
-
+    // Empty query with no filters is intentional for the POS product grid
+    // (frontend calls search with q=''). Purchase UIs gate requests until the
+    // user types or picks a filter, so they never hit this browse path.
     const productFilter = {
       ...(categoryId ? { categoryId } : {}),
       ...(brandId ? { brandId } : {}),
