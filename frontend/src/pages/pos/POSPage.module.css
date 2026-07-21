@@ -350,8 +350,8 @@ html.dark .layout {
 }
 
 .cartArea {
-  flex: 0 0 min(420px, 38%);
-  width: min(420px, 38%);
+  flex: 0 0 min(440px, 40%);
+  width: min(440px, 40%);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -377,17 +377,51 @@ html.dark .layout {
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Cart Header & Search */
+/* Cart Header & Search — compact; redemption collapsed by default */
 .cartTop {
-  padding: 10px 12px;
+  flex: 0 1 auto;
+  padding: 8px 10px;
   background: var(--pos-panel);
   border-bottom: 1px solid var(--pos-line);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
-  max-height: 34%;
+  gap: 6px;
+  min-height: 0;
+  max-height: 26%;
   overflow-y: auto;
+}
+
+.extrasToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--pos-line);
+  background: var(--pos-panel-2);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: left;
+}
+
+.extrasToggle span {
+  flex: 1;
+}
+
+.extrasToggle:hover {
+  border-color: var(--pos-accent-border);
+  color: var(--pos-ink);
+}
+
+.extrasChevronOpen {
+  transform: rotate(180deg);
+}
+
+.extrasPanel {
+  padding-top: 2px;
 }
 
 .searchInputWrapper {
@@ -420,13 +454,19 @@ html.dark .layout {
   background: var(--surface-0);
 }
 
-/* Cart lines — only this region scrolls; checkout dock stays pinned */
+/* Cart lines — PRIORITY: never collapse; dock/top shrink/scroll first */
 .tableContainer {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 1 1 240px;
+  min-height: 240px;
   overflow-y: auto;
-  background: transparent;
+  overflow-x: hidden;
+  background: color-mix(in srgb, var(--pos-panel) 55%, transparent);
   padding: 0 10px;
+  border-bottom: 1px solid var(--pos-line);
+}
+
+.tableContainer[data-has-items='true'] {
+  background: var(--pos-panel);
 }
 
 .tableContainer::-webkit-scrollbar {
@@ -444,19 +484,45 @@ html.dark .layout {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 0;
+  padding: 10px 0 12px;
+  min-height: 100%;
 }
 
 .cartListHeader {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 4px 2px;
+  padding: 6px 4px;
+  margin: 0 -2px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--pos-accent);
+  background: color-mix(in srgb, var(--pos-panel) 92%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.cartEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 140px;
+  padding: 24px 12px;
+  color: var(--pos-muted);
+  text-align: center;
+}
+
+.cartEmpty p {
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 220px;
 }
 
 .cartItem {
@@ -464,11 +530,11 @@ html.dark .layout {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: var(--surface-0);
-  border: 1px solid var(--border);
+  background: var(--pos-panel-2);
+  border: 1px solid var(--pos-line);
   border-radius: 12px;
-  animation: fadeIn 0.3s ease;
-  transition: background 0.2s;
+  animation: fadeIn 0.25s ease;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .cartItemThumb {
@@ -492,7 +558,24 @@ html.dark .layout {
 }
 
 .cartItem:hover {
-  background: var(--surface-2);
+  background: var(--pos-accent-soft);
+  border-color: var(--pos-accent-border);
+}
+
+.cartItemRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.cartItemLineTotal {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--pos-mono);
+  color: var(--pos-ok);
+  font-variant-numeric: tabular-nums;
 }
 
 @keyframes fadeIn {
@@ -592,24 +675,27 @@ html.dark .layout {
   background: rgba(239, 68, 68, 0.1);
 }
 
-/* Sticky checkout dock — totals + payment methods always visible */
+/* Checkout dock — may shrink/scroll so selected items keep their band */
 .checkoutDock {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 42%;
+  overflow-y: auto;
   background: var(--pos-panel);
   border-top: 1px solid var(--pos-line);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.14);
   z-index: 5;
 }
 
 .summary {
-  padding: 10px 12px 8px;
+  padding: 8px 10px 6px;
 }
 
 .summaryCompact {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
+  gap: 2px;
+  margin-bottom: 6px;
 }
 
 .summaryRow {
@@ -633,24 +719,24 @@ html.dark .layout {
   align-items: center;
   background: var(--pos-accent-soft);
   border: 1px solid var(--pos-accent-border);
-  padding: 12px 14px;
-  font-size: 22px;
+  padding: 10px 12px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--pos-ink);
-  border-radius: 12px;
+  border-radius: 10px;
   font-variant-numeric: tabular-nums;
 }
 
 .paySection {
-  padding: 0 12px 12px;
+  padding: 0 10px 10px;
 }
 
 .secondaryActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .secondaryBtn {
@@ -658,12 +744,12 @@ html.dark .layout {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 6px 10px;
-  border-radius: 10px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border-radius: 9px;
   border: 1px solid var(--pos-line);
   background: var(--pos-panel-2);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -679,38 +765,38 @@ html.dark .layout {
 }
 
 .paySectionLabel {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--pos-muted);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .actionButtons {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .posBtn {
-  min-height: 52px;
-  padding: 10px 8px;
+  min-height: 42px;
+  padding: 7px 6px;
   color: var(--pos-ink);
   background: var(--pos-panel-2);
   border: 1px solid var(--pos-line);
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   line-height: 1.15;
   cursor: pointer;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
+  justify-content: center;
+  gap: 3px;
   transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-  text-align: left;
+  text-align: center;
 }
 
 .posBtn span {
@@ -750,14 +836,13 @@ html.dark .layout {
 .bgCard { color: #0369a1; border-color: rgba(3, 105, 161, 0.35); background: rgba(3, 105, 161, 0.1); }
 .bgMultiple { color: var(--text-secondary); border-color: var(--pos-line); background: var(--surface-2); }
 .bgCash {
-  grid-column: 1 / -1;
-  justify-content: center;
+  grid-column: span 1;
   background: linear-gradient(135deg, #0f766e, #0d9488);
   border: none;
   color: #fff;
-  font-size: 15px;
-  min-height: 56px;
-  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.28);
+  font-size: 12px;
+  min-height: 42px;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
 }
 .bgCash:hover {
   background: linear-gradient(135deg, #0d9488, #14b8a6);
@@ -1199,8 +1284,8 @@ html.dark .layout {
 
 .redemptionPanel {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: 1fr;
+  gap: 6px;
   margin-top: 0;
 }
 
@@ -1975,10 +2060,14 @@ html.dark .layout {
   .cartArea {
     flex: none;
     width: 100%;
-    min-height: 48vh;
+    min-height: 52vh;
   }
-  .cartTop {
-    max-height: none;
+  .tableContainer {
+    min-height: 200px;
+    flex-basis: 200px;
+  }
+  .checkoutDock {
+    max-height: 48%;
   }
   .redemptionPanel {
     grid-template-columns: 1fr;
