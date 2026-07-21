@@ -1,6 +1,8 @@
 # Guía de Despliegue en Producción - Retail ERP
 
-Esta guía detalla los pasos exactos para instalar, configurar y desplegar el sistema en un servidor Linux (Ubuntu/Debian) o VPS.
+> **Recomendado:** para instalar o actualizar Vestix en cualquier servidor, usá el stack Docker documentado en [`docs/docker-deployment.md`](./docker-deployment.md) (`./scripts/docker-install.sh` / `./scripts/docker-update.sh`). Incluye backup previo, healthchecks y rollback automático.
+
+Esta guía detalla los pasos exactos para instalar, configurar y desplegar el sistema **sin Docker** en un servidor Linux (Ubuntu/Debian) o VPS (PM2 + Nginx).
 
 ---
 

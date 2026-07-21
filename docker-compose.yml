@@ -1,0 +1,124 @@
+# Vestix ERP + POS — production Docker Compose stack
+#
+# Quick start:
+#   cp .env.docker.example .env
+#   # edit secrets / APP_URL
+#   ./scripts/docker-install.sh
+#
+# Update (backup + healthcheck + rollback):
+#   ./scripts/docker-update.sh
+
+name: vestix
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-erp_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-erp_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - vestix_pg_data:/var/lib/postgresql/data
+    networks:
+      - vestix
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - vestix_redis_data:/data
+    networks:
+      - vestix
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: vestix-backend:${VESTIX_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-erp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-erp_prod}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:?Set SETTINGS_ENCRYPTION_KEY in .env}
+      FRONTEND_URL: ${APP_URL:-http://localhost}
+      APP_URL: ${APP_URL:-http://localhost}
+      CORS_ORIGIN: ${APP_URL:-http://localhost}
+      STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN:-}
+      BACKEND_URL: ${APP_URL:-http://localhost}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      SKIP_DB_SYNC: ${SKIP_DB_SYNC:-false}
+      AFIP_ACCESS_TOKEN: ${AFIP_ACCESS_TOKEN:-}
+      AFIP_CUIT: ${AFIP_CUIT:-}
+      EVOLUTION_API_URL: ${EVOLUTION_API_URL:-}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
+      EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE:-}
+      EVOLUTION_WEBHOOK_SECRET: ${EVOLUTION_WEBHOOK_SECRET:-}
+    volumes:
+      - vestix_uploads:/app/uploads
+    networks:
+      - vestix
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 90s
+
+  web:
+    image: vestix-web:${VESTIX_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      args:
+        VITE_API_BASE: /api
+        VITE_APP_URL: ${APP_URL:-http://localhost}
+        VITE_STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN:-}
+        VITE_APP_NAME: ${VITE_APP_NAME:-Vestix}
+        VITE_APP_VERSION: ${VESTIX_VERSION:-latest}
+        VITE_ENV: production
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    networks:
+      - vestix
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+networks:
+  vestix:
+    driver: bridge
+
+volumes:
+  vestix_pg_data:
+  vestix_redis_data:
+  vestix_uploads:

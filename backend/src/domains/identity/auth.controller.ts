@@ -3,6 +3,7 @@ import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
+import { isCookieSecure } from '../../core/http/cookie-options';
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +19,7 @@ export class AuthController {
 
     res.cookie('erp_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isCookieSecure(),
       sameSite: 'strict',
       maxAge: 1000 * 60 * 60 * 24 // 1 day
     });
@@ -49,7 +50,7 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('erp_token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isCookieSecure(),
       sameSite: 'strict',
     });
     return { message: 'Logged out' };
