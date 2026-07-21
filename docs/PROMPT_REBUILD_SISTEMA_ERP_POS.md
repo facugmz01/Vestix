@@ -388,7 +388,150 @@ ni estructura de ningún sistema existente. Entregá por fases A→D manteniendo
 
 1. **Rebuild completo:** pegá secciones 0–11 a un agente con contexto largo.
 2. **Kickoff rápido:** usá solo la sección 13 y adjuntá este archivo como referencia.
-3. **Por sprint:** asigná una fase de la sección 12 + los módulos correspondientes de la sección 4.
+3. **Por sprint:** usá los prompts de la sección 15 (uno por fase, en orden A→D).
 4. **QA:** usá la sección 11 como checklist de aceptación.
+
+---
+
+## 15. Prompts listos para pegar (por fase)
+
+Usá un **Agent / chat nuevo** por fase en el **repo nuevo**. Adjuntá siempre `SPEC.md` (este archivo). No abras el repo Vestix como contexto.
+
+### Prefijo común (opcional, si el agente “olvida”)
+
+```text
+Fuente de verdad: SPEC.md.
+Paridad funcional del SPEC; stack/código/UI 100% nuevos (nada de Nest/Vite/Prisma ni estructura Vestix).
+No implementes alcance de fases posteriores. Si algo es ambiguo, elegí lo más simple que cumpla la regla de negocio.
+Al final: README de cómo correr, tests de reglas críticas, y checklist de aceptación de ESTA fase.
+```
+
+---
+
+### Prompt — Fase A (Fundación)
+
+```text
+Leé SPEC.md. Implementá SOLO la Fase A — Fundación.
+
+Alcance OBLIGATORIO:
+1. Wizard de setup: detectar si está inicializado; crear Super Admin; datos de empresa → sucursal central, depósito, caja, métodos de pago default (al menos efectivo), cuenta de tesorería caja, settings básicos.
+2. Auth staff: login email/password, sesión segura, logout, /me.
+3. RBAC: acciones create/read/update/delete/manage (+ print preparado); sujetos mínimos Catalog, Inventory, Sales, Customers, Finance, Reports, Settings, Users, Branch, Sync; roles semilla Super Admin, Store Manager, Cashier, Warehouse Operator, Viewer.
+4. Organización: sucursales, warehouses, cajas registradoras (CRUD básico).
+5. Catálogo: categorías, marcas, atributos/valores; productos SIMPLE y VARIABLE; variantes con SKU único, barcodes, precio base, costo, activo; CRUD admin usable.
+6. Inventario: ledger append-only (movimientos con cantidad positiva tipada); stock disponible por warehouse/variante; ajuste/entrada manual de stock; WAC al ingresar mercadería.
+7. Clientes CRUD básico (sin crédito aún, o creditLimit=0).
+8. POS online (sin offline): abrir turno (float), vender solo variantes, barcode/búsqueda, carrito, cobro SOLO efectivo (vuelto), UUID de orden idempotente, snapshot nombre/SKU/precio en líneas, descontar stock vía movimiento SALE, imprimir ticket simple (browser print OK).
+9. Cierre de turno con conteo ciego: esperado = apertura + neto efectivo del turno; registrar diferencia.
+10. Health check + README run local (DB + API + admin/POS).
+
+Reglas duras a respetar ya:
+- No vender producto base, solo variantes.
+- Servidor autoridad de precio (cliente manda variantId + qty).
+- Stock solo por movimientos; no UPDATE ciego de cantidad.
+- Idempotencia por UUID de orden.
+- Tesorería: cobro efectivo ruteado a cuenta caja.
+
+FUERA DE ALCANCE (no implementar): AFIP, MercadoPago, storefront, offline, devoluciones, compras/OC, transferencias, promociones, gift cards, loyalty, delivery, marketplaces, WhatsApp, backups, Libro IVA, multi-pago, crédito cliente.
+
+Antes de codear: proponé stack + estructura de carpetas en un mensaje y esperá OK.
+Después implementá con tests unitarios de: WAC, idempotencia de checkout, RBAC cajero no administra Settings/Users, cierre de turno con diferencia.
+
+Criterio de aceptación Fase A:
+Setup → crear producto con variantes → cargar stock → abrir turno → vender en efectivo → ticket → cerrar turno → stock y caja coherentes.
+```
+
+---
+
+### Prompt — Fase B (Retail + fiscal)
+
+```text
+Leé SPEC.md y el código actual de Fase A. Implementá SOLO la Fase B — Retail + fiscal.
+No rompas lo que ya funciona. No empieces Fase C/D.
+
+Alcance OBLIGATORIO:
+1. Multi-pago en POS: efectivo, tarjeta, transferencia, mixto; cada cobro ruteado a cuenta de tesorería; métodos de pago configurables.
+2. Crédito de cliente / cuenta corriente: creditLimit; rechazo si usedCredit + total > limit; movimientos de CC; recibos básicos.
+3. Cotizaciones/presupuestos: sin descontar stock ni cobrar ni facturar hasta confirmar.
+4. Devoluciones: PENDING → approve/reject; al aprobar reingreso sellable; reembolso efectivo (tesorería) o crédito en CC.
+5. AFIP/ARCA: settings CSR/cert/test; facturación desacoplada (venta OK sin CAE); cola async FA A/B/C; multi-IVA 21/10.5/27/0; reintento de fallidos; NC al devolver (encolable); ticket proforma si no hay CAE.
+6. Etiquetas: plantilla default + impresión por variante (PDF y/o ZPL); desde admin y opcional post-recepción si ya hay entrada de stock.
+7. Reportes base: dashboard KPIs (ventas hoy, stock bajo, saldo caja); resumen ventas; export CSV de ventas.
+8. Settings: datos fiscales/comercio, opciones POS, estilo de ticket.
+
+FUERA DE ALCANCE: storefront, MercadoPago, offline POS, delivery, WhatsApp, WC/ML/Shopify, gift cards, loyalty, promociones avanzadas, combos, OC/proveedores completos, transferencias, Libro IVA, backups.
+
+Tests mínimos: límite de crédito; devolución approve restaura stock; job AFIP no bloquea checkout; multi-pago suma = total.
+
+Criterio de aceptación Fase B:
+Venta multi-pago → factura AFIP en cola (o mock homologación) → devolución con NC/crédito → reporte de ventas exportable → etiqueta imprimible.
+```
+
+---
+
+### Prompt — Fase C (Omnicanal)
+
+```text
+Leé SPEC.md y el código de Fases A+B. Implementá SOLO la Fase C — Omnicanal.
+No implementes offline robusto, marketplaces, loyalty/gift cards, ni Libro IVA (eso es Fase D).
+
+Alcance OBLIGATORIO:
+1. Storefront público: catálogo, filtros categoría/marca, detalle con variantes/stock, carrito, checkout en pasos (datos → envío domicilio/retiro → pago).
+2. Auth clientes storefront por OTP (email y/o WhatsApp/SMS según settings), perfil, mis pedidos.
+3. MercadoPago: preferencia/checkout redirect; webhooks firmados; páginas success/failure/pending; marcar orden pagada idempotente.
+4. Reservas de stock en checkout ecommerce + TTL (~15 min) + job que libera expiradas; físico se descuenta al despachar/entregar según diseño elegido (documentalo).
+5. Fulfillment: pipeline pagado → pick → pack → despacho → tránsito → arribo → completado.
+6. Carriers: flota propia + hooks/config para Andreani y Mercado Envíos (aunque Andreani/ME puedan quedar stub configurables).
+7. Tracking público por token + mapa/timeline (SSE o polling).
+8. App conductor por token: GPS, marcar llegada, foto opcional, completar con OTP 6 dígitos; cola offline de GPS aceptable.
+9. Notificaciones: plantillas Email + WhatsApp (Evolution u otro); eventos venta/ticket, envío, OTP delivery; logs + retry; fallo de canal no bloquea checkout.
+10. Branding storefront básico (nombre, colores, ocultar sin stock).
+
+FUERA DE ALCANCE: Dexie/offline POS completo, promociones motor, gift cards, loyalty, combos, compras/OC/remitos, transferencias inter-depósito, sync WC/ML/Shopify, backups, auditoría full, Libro IVA.
+
+Tests mínimos: reserva expira y libera; webhook MP idempotente; OTP delivery completa pedido; checkout no falla si WhatsApp cae.
+
+Criterio de aceptación Fase C:
+Cliente compra en storefront con MP → pedido aparece en admin → despacho → tracking público → conductor completa con OTP → notificación enviada o encolada.
+```
+
+---
+
+### Prompt — Fase D (Avanzado / paridad)
+
+```text
+Leé SPEC.md y el código de Fases A+B+C. Implementá la Fase D — Avanzado hasta paridad del SPEC.
+Cerrá gaps; no reescribas módulos estables sin necesidad.
+
+Alcance OBLIGATORIO:
+1. Offline POS: réplica acotada de catálogo (stock sucursal + top sellers); cola append-only (checkout, return, cash movement, stock count); clientGeneratedId idempotente; indicador de sync; conflictos de stock con corrección auditable (no negativos silenciosos); conteos CONFLICT a revisión.
+2. Listas de precios (absolutas/% ) + asignación a clientes; historial de precios.
+3. Promociones: BOGO/2x1, descuento categoría, descuento total carrito, % global; servidor aplica en calculate/checkout.
+4. Loyalty: config puntos, earn/redeem, ajustes, tiers básicos.
+5. Gift cards: emitir, saldo, canje en POS, desactivar, verificación pública/QR, plantilla simple.
+6. Combos: receta; venta descuenta componentes.
+7. Compras: proveedores, OC draft→issue→receive, compra directa, goods receipts + WAC, auto-replenish por reorder point.
+8. Transferencias warehouses: DRAFT→IN_TRANSIT→RECEIVED/CANCELLED; recepción parcial/discrepancias.
+9. Colecciones/temporadas; import CSV catálogo/precios; consulta precios admin; escáner QR admin.
+10. Marketplaces: WooCommerce, Mercado Libre, Shopify — config/toggle, mapeo variantes, sync stock outbound (outbox), webhooks de órdenes inbound.
+11. Libro IVA ventas/compras; ND AFIP; reportes stock valuación/COGS/caja/compras + export.
+12. Auditoría inmutable de mutaciones críticas; panel sync offline; backups create/download/restore (cola).
+13. Settings restantes del SPEC (PWA branding, offline TTL, carriers, integraciones, labels editor si falta).
+14. Roles restantes: Ecommerce Manager, Delivery Driver + matriz de permisos completa.
+
+Verificá reglas duras del SPEC (sección 2) y Definition of Done (sección 11).
+
+Criterio de aceptación Fase D = sección 11 del SPEC completa.
+Al terminar: checklist marcado, README de producción/homologación AFIP, y lista de stubs restantes (si algún carrier/marketplace queda mock, documentalo).
+```
+
+---
+
+### Prompt puente (entre fases, para QA)
+
+```text
+No agregues features nuevas. Revisá la fase que acabamos de cerrar contra su criterio de aceptación en SPEC.md sección 15.
+Corregí bugs, agregá tests faltantes, asegurate que el README permite correr todo en local, y listá explícitamente qué queda para la siguiente fase.
+```
 
 Fin del prompt.
