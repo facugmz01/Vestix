@@ -379,6 +379,7 @@ html.dark .layout {
 
 /* Cart Header & Search — compact; redemption collapsed by default */
 .cartTop {
+  flex: 0 1 auto;
   padding: 8px 10px;
   background: var(--pos-panel);
   border-bottom: 1px solid var(--pos-line);
@@ -386,8 +387,8 @@ html.dark .layout {
   flex-direction: column;
   gap: 6px;
   min-height: 0;
-  max-height: none;
-  overflow: visible;
+  max-height: 26%;
+  overflow-y: auto;
 }
 
 .extrasToggle {
