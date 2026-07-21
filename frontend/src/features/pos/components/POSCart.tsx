@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FileText, PauseCircle, CloudOff, Tags, ChevronDown, Gift } from 'lucide-react';
+import {
+  FileText, PauseCircle, CloudOff, Tags, Trash2, Gift, ChevronDown,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePosStore } from '../store/usePosStore';
 import { customersApi } from '@/api/customers.api';
@@ -16,6 +18,7 @@ type CartVariant = {
   name?: string;
   productName?: string;
   size?: string;
+  sku?: string;
   basePrice: number;
   imageUrl?: string | null;
   product?: { name?: string; images?: string[] };
@@ -57,10 +60,12 @@ export function POSCart({
   const updateQty = usePosStore(s => s.updateQty);
   const updateDiscount = usePosStore(s => s.updateDiscount);
   const removeLine = usePosStore(s => s.removeLine);
+  const clearCart = usePosStore(s => s.clearCart);
   const setCartDiscountPct = usePosStore(s => s.setCartDiscountPct);
   const suspendSale = usePosStore(s => s.suspendSale);
 
   const [extrasOpen, setExtrasOpen] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<PosPaymentMethodId>('CASH');
 
   const { data: selectedCustomer } = useQuery({
     queryKey: ['customer', selectedCustomerId],
@@ -70,6 +75,7 @@ export function POSCart({
 
   const iva = computeIvaBreakdown(grandTotal);
   const hasRedemptionApplied = giftCardAmount > 0 || loyaltyDiscount > 0;
+  const selectedConfig = POS_PAYMENT_METHODS.find(m => m.id === selectedMethod);
 
   const getVariantName = (variant: CartVariant) =>
     variant.name || variant.productName || variant.product?.name || 'Producto';
@@ -77,34 +83,52 @@ export function POSCart({
   const getVariantImage = (variant: CartVariant) =>
     variant.imageUrl || variant.product?.images?.[0] || null;
 
-  const handlePaymentClick = (method: typeof POS_PAYMENT_METHODS[number]) => {
-    if (method.requiresCustomer && !selectedCustomerId) {
+  const handleClearCart = () => {
+    if (cart.length === 0) return;
+    clearCart();
+    toast.success('Pedido vaciado');
+  };
+
+  const handlePay = () => {
+    if (!selectedConfig) return;
+    if (selectedConfig.requiresCustomer && !selectedCustomerId) {
       toast.error('Seleccioná un cliente para usar Cuenta Corriente');
       return;
     }
-    if (method.requiresCustomer && selectedCustomer?.credit && selectedCustomer.credit.available < amountDue) {
+    if (selectedConfig.requiresCustomer && selectedCustomer?.credit && selectedCustomer.credit.available < amountDue) {
       toast.error('Crédito insuficiente para esta venta');
       return;
     }
-    if (method.opensMixedModal) {
-      onCheckoutPayment('MULTIPLE');
-      return;
-    }
-    onCheckoutPayment(method.id);
+    onCheckoutPayment(selectedConfig.id);
   };
 
   return (
-    <aside className={styles.cartArea} aria-label="Ticket de venta">
+    <aside className={styles.cartArea} aria-label="Pedido actual">
       {isOffline && (
         <div className={styles.offlineBanner}>
           <CloudOff size={16} />
           <span>
-            Modo offline
-            {catalogCount ? ` · ${catalogCount} productos en catálogo local` : ' · descargá el catálogo cuando tengas red'}
-            {' · las ventas se encolan para sincronizar'}
+            Offline{catalogCount ? ` · ${catalogCount} en catálogo` : ''}
           </span>
         </div>
       )}
+
+      <div className={styles.orderHeader}>
+        <div>
+          <div className={styles.orderTitle}>Pedido</div>
+          <div className={styles.orderMeta}>{totalItems} ítem{totalItems === 1 ? '' : 's'}</div>
+        </div>
+        <button
+          type="button"
+          className={styles.clearOrderBtn}
+          onClick={handleClearCart}
+          disabled={cart.length === 0}
+          aria-label="Vaciar pedido"
+          title="Vaciar pedido"
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
 
       <div className={styles.cartTop}>
         <PosCustomerSearch amountDue={amountDue} />
@@ -125,18 +149,12 @@ export function POSCart({
         )}
       </div>
 
-      {/* Priority region: selected cart lines must always remain visible */}
       <div className={styles.tableContainer} data-has-items={cart.length > 0}>
         <div className={styles.cartList}>
-          <div className={styles.cartListHeader}>
-            <span>Productos seleccionados</span>
-            <span>{totalItems} ítem{totalItems === 1 ? '' : 's'}</span>
-          </div>
-
           {cart.length === 0 ? (
             <div className={styles.cartEmpty}>
               <Tags size={28} />
-              <p>Escaneá o tocá un producto para agregarlo</p>
+              <p>Elegí productos del catálogo</p>
             </div>
           ) : (
             cart.map((item, index) => {
@@ -156,43 +174,42 @@ export function POSCart({
                   <div className={styles.cartItemDetails}>
                     <span className={styles.cartItemName}>
                       {getVariantName(variant)}
-                      {variant.size ? ` (${variant.size})` : ''}
                     </span>
                     <span className={styles.cartItemSku}>
-                      {formatCurrency(variant.basePrice)} c/u
+                      {variant.sku || '—'}
+                      {variant.size ? ` · ${variant.size}` : ''}
                       {item.discountPct > 0 ? ` · −${item.discountPct}%` : ''}
                     </span>
-                  </div>
-
-                  <div className={styles.qtyControl}>
-                    <button type="button" className={styles.qtyBtn} aria-label="Reducir cantidad" onClick={() => updateQty(variant.id, item.qty - 1)}>
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      className={styles.qtyInput}
-                      value={item.qty}
-                      min={1}
-                      aria-label="Cantidad"
-                      onChange={e => updateQty(variant.id, Number(e.target.value))}
-                    />
-                    <button type="button" className={styles.qtyBtn} aria-label="Aumentar cantidad" onClick={() => updateQty(variant.id, item.qty + 1)}>
-                      +
-                    </button>
+                    <div className={styles.qtyControl}>
+                      <button type="button" className={styles.qtyBtn} aria-label="Reducir cantidad" onClick={() => updateQty(variant.id, item.qty - 1)}>
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        className={styles.qtyInput}
+                        value={item.qty}
+                        min={1}
+                        aria-label="Cantidad"
+                        onChange={e => updateQty(variant.id, Number(e.target.value))}
+                      />
+                      <button type="button" className={styles.qtyBtn} aria-label="Aumentar cantidad" onClick={() => updateQty(variant.id, item.qty + 1)}>
+                        +
+                      </button>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        aria-label="Descuento porcentaje"
+                        value={item.discountPct}
+                        onChange={e => updateDiscount(variant.id, Math.min(100, Math.max(0, Number(e.target.value))))}
+                        className={styles.discountInput}
+                        title="Desc. %"
+                      />
+                    </div>
                   </div>
 
                   <div className={styles.cartItemRight}>
                     <span className={styles.cartItemLineTotal}>{formatCurrency(lineTotal)}</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      aria-label="Descuento porcentaje"
-                      value={item.discountPct}
-                      onChange={e => updateDiscount(variant.id, Math.min(100, Math.max(0, Number(e.target.value))))}
-                      className={styles.discountInput}
-                      title="Desc. %"
-                    />
                     <button type="button" className={styles.removeBtn} aria-label="Eliminar línea" onClick={() => removeLine(variant.id)}>
                       ×
                     </button>
@@ -213,49 +230,47 @@ export function POSCart({
       )}
 
       <div className={styles.checkoutDock}>
-        <div className={styles.summary}>
-          <div className={styles.summaryCompact}>
-            <div className={styles.summaryRow}>
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            <div className={`${styles.summaryRow} ${styles.summaryRowCenter}`}>
-              <span className={styles.discountLabelRow}>
-                Desc. %
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  aria-label="Descuento global porcentaje"
-                  className={styles.discountInputLg}
-                  value={cartDiscountPct}
-                  onChange={e => setCartDiscountPct(Math.min(100, Math.max(0, Number(e.target.value))))}
-                />
-              </span>
-              <span className={styles.discountTotal}>(−) {formatCurrency(lineDiscounts + globalDiscount)}</span>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>IVA 21%</span>
-              <span>{formatCurrency(iva.iva)}</span>
-            </div>
-            {(giftCardAmount > 0 || loyaltyDiscount > 0) && (
-              <>
-                {giftCardAmount > 0 && (
-                  <div className={styles.summaryRow}>
-                    <span>Gift card</span>
-                    <span className={styles.discountTotal}>(−) {formatCurrency(giftCardAmount)}</span>
-                  </div>
-                )}
-                {loyaltyDiscount > 0 && (
-                  <div className={styles.summaryRow}>
-                    <span>Puntos</span>
-                    <span className={styles.discountTotal}>(−) {formatCurrency(loyaltyDiscount)}</span>
-                  </div>
-                )}
-              </>
-            )}
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryRow}>
+            <span>Subtotal</span>
+            <span>{formatCurrency(subtotal)}</span>
           </div>
-
+          <div className={`${styles.summaryRow} ${styles.summaryRowCenter}`}>
+            <span className={styles.discountLabelRow}>
+              Descuento
+              <input
+                type="number"
+                min={0}
+                max={100}
+                aria-label="Descuento global porcentaje"
+                className={styles.discountInputLg}
+                value={cartDiscountPct}
+                onChange={e => setCartDiscountPct(Math.min(100, Math.max(0, Number(e.target.value))))}
+              />
+              %
+            </span>
+            <span className={styles.discountTotal}>(−) {formatCurrency(lineDiscounts + globalDiscount)}</span>
+          </div>
+          <div className={styles.summaryRow}>
+            <span>IVA 21%</span>
+            <span>{formatCurrency(iva.iva)}</span>
+          </div>
+          {(giftCardAmount > 0 || loyaltyDiscount > 0) && (
+            <>
+              {giftCardAmount > 0 && (
+                <div className={styles.summaryRow}>
+                  <span>Gift card</span>
+                  <span className={styles.discountTotal}>(−) {formatCurrency(giftCardAmount)}</span>
+                </div>
+              )}
+              {loyaltyDiscount > 0 && (
+                <div className={styles.summaryRow}>
+                  <span>Puntos</span>
+                  <span className={styles.discountTotal}>(−) {formatCurrency(loyaltyDiscount)}</span>
+                </div>
+              )}
+            </>
+          )}
           <div className={styles.totalRow}>
             <span>{amountDue < grandTotal ? 'A cobrar' : 'Total'}</span>
             <span>{formatCurrency(amountDue)}</span>
@@ -263,14 +278,46 @@ export function POSCart({
         </div>
 
         <div className={styles.paySection}>
+          <div className={styles.paySectionLabel}>Forma de pago</div>
+          <div className={styles.methodChips} role="radiogroup" aria-label="Forma de pago">
+            {POS_PAYMENT_METHODS.map(method => {
+              const Icon = method.icon;
+              const active = selectedMethod === method.id;
+              return (
+                <button
+                  key={method.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  className={`${styles.methodChip} ${active ? styles.methodChipActive : ''}`}
+                  disabled={cart.length === 0}
+                  onClick={() => setSelectedMethod(method.id)}
+                  title={method.label}
+                >
+                  <Icon size={15} />
+                  <span>{method.shortLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className={styles.payPrimaryBtn}
+            disabled={cart.length === 0}
+            onClick={handlePay}
+          >
+            Cobrar · {selectedConfig?.shortLabel || 'Pago'}
+          </button>
+
           <div className={styles.secondaryActions}>
-            <button type="button" className={`${styles.secondaryBtn} ${styles.bgQuotation}`} disabled={cart.length === 0} onClick={onCheckoutQuotation}>
+            <button type="button" className={styles.secondaryBtn} disabled={cart.length === 0} onClick={onCheckoutQuotation}>
               <FileText size={15} />
               Cotización
             </button>
             <button
               type="button"
-              className={`${styles.secondaryBtn} ${styles.bgSuspend}`}
+              className={styles.secondaryBtn}
               disabled={cart.length === 0}
               onClick={() => {
                 const pendingBefore = usePosStore.getState().suspendedSales.length;
@@ -284,26 +331,6 @@ export function POSCart({
               <PauseCircle size={15} />
               Suspender
             </button>
-          </div>
-
-          <div className={styles.paySectionLabel}>Formas de pago</div>
-          <div className={styles.actionButtons}>
-            {POS_PAYMENT_METHODS.map(method => {
-              const Icon = method.icon;
-              return (
-                <button
-                  key={method.id}
-                  type="button"
-                  className={`${styles.posBtn} ${styles[method.cssClass as keyof typeof styles] || ''}`}
-                  disabled={cart.length === 0}
-                  onClick={() => handlePaymentClick(method)}
-                  title={method.label}
-                >
-                  <Icon size={16} />
-                  <span>{method.shortLabel}</span>
-                </button>
-              );
-            })}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Tags, Star, Package } from 'lucide-react';
+import { Tags, Star } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PosFavoritesBar } from './PosFavoritesBar';
@@ -31,40 +31,31 @@ export function POSProductGrid({
   const recentVariantIds = usePosStore(s => s.recentVariantIds);
 
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [brandFilter, setBrandFilter] = useState('');
 
   const displayedProducts = search.length >= 2 ? searchResults : products;
 
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    products?.forEach(p => { if (p.category) cats.add(p.category); });
-    return Array.from(cats).sort();
-  }, [products]);
-
-  const brands = useMemo(() => {
-    const b = new Set<string>();
-    products?.forEach(p => { if (p.brand) b.add(p.brand); });
-    return Array.from(b).sort();
+  const categoryCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    products?.forEach(p => {
+      if (!p.category) return;
+      map.set(p.category, (map.get(p.category) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [products]);
 
   const filteredProducts = useMemo(() => {
     if (!displayedProducts) return [];
-    return displayedProducts.filter(p => {
-      if (categoryFilter && p.category !== categoryFilter) return false;
-      if (brandFilter && p.brand !== brandFilter) return false;
-      return true;
-    });
-  }, [displayedProducts, categoryFilter, brandFilter]);
+    if (!categoryFilter) return displayedProducts;
+    return displayedProducts.filter(p => p.category === categoryFilter);
+  }, [displayedProducts, categoryFilter]);
 
   const getName = (p: PosVariant) =>
     p.name || p.productName || p.product?.name || 'Producto';
 
   const getImage = (p: PosVariant) =>
     p.imageUrl || p.product?.images?.[0] || null;
-
-  const handleProductClick = (p: PosVariant) => {
-    addVariantWithRecent(p);
-  };
 
   return (
     <section className={styles.productsArea} aria-label="Catálogo de productos">
@@ -75,32 +66,35 @@ export function POSProductGrid({
         onSelect={addVariantWithRecent}
       />
 
+      <div className={styles.categoryRibbon} role="tablist" aria-label="Categorías">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={!categoryFilter}
+          className={`${styles.categoryChip} ${!categoryFilter ? styles.categoryChipActive : ''}`}
+          onClick={() => setCategoryFilter('')}
+        >
+          <span className={styles.categoryChipName}>Todos</span>
+          <span className={styles.categoryChipCount}>{products?.length ?? 0}</span>
+        </button>
+        {categoryCounts.map(cat => (
+          <button
+            key={cat.name}
+            type="button"
+            role="tab"
+            aria-selected={categoryFilter === cat.name}
+            className={`${styles.categoryChip} ${categoryFilter === cat.name ? styles.categoryChipActive : ''}`}
+            onClick={() => setCategoryFilter(cat.name)}
+          >
+            <span className={styles.categoryChipName}>{cat.name}</span>
+            <span className={styles.categoryChipCount}>{cat.count}</span>
+          </button>
+        ))}
+      </div>
+
       <div className={styles.productsHeader}>
-        <div className={styles.productsHeaderTitle}>
-          <Package size={16} />
-          <span>Productos</span>
-          <span className={styles.productsCount}>{filteredProducts.length}</span>
-        </div>
-        <div className={styles.productsFilters}>
-          <select
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-            aria-label="Filtrar por categoría"
-            className={styles.filterSelect}
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select
-            value={brandFilter}
-            onChange={e => setBrandFilter(e.target.value)}
-            aria-label="Filtrar por marca"
-            className={styles.filterSelect}
-          >
-            <option value="">Todas las marcas</option>
-            {brands.map(b => <option key={b} value={b}>{b}</option>)}
-          </select>
-        </div>
+        <h2 className={styles.chooseProductsTitle}>Elegir productos</h2>
+        <span className={styles.productsCount}>{filteredProducts.length}</span>
       </div>
 
       <div className={styles.productsGrid}>
@@ -120,30 +114,32 @@ export function POSProductGrid({
               <button
                 type="button"
                 className={styles.productCardBtn}
-                onClick={() => handleProductClick(p)}
+                onClick={() => addVariantWithRecent(p)}
                 aria-label={`Agregar ${name}`}
               >
                 <div className={styles.productImg}>
                   {getImage(p) ? (
                     <img src={getImage(p)!} alt="" className={styles.productImgFile} />
                   ) : (
-                    <Tags size={28} />
+                    <Tags size={32} />
                   )}
                 </div>
                 <div className={styles.productInfo}>
                   <div className={styles.productName} title={name}>{name}</div>
                   <div className={styles.productMeta}>
+                    {p.sku ? <span className={styles.productSku}>{p.sku}</span> : null}
                     {p.size ? <span className={styles.productBadge}>{p.size}</span> : null}
                     {p.color ? <span className={styles.productBadge}>{p.color}</span> : null}
-                    {p.sku ? <span className={styles.productSku}>{p.sku}</span> : null}
                   </div>
                   <div className={styles.productFooter}>
-                    <span className={styles.productPrice}>{formatCurrency(p.basePrice)}</span>
-                    {typeof p.stock === 'number' && (
+                    {typeof p.stock === 'number' ? (
                       <span className={styles.productStock} data-low={p.stock <= 5}>
-                        Stock {p.stock}
+                        Disp. {p.stock}
                       </span>
+                    ) : (
+                      <span className={styles.productStock}>—</span>
                     )}
+                    <span className={styles.productPrice}>{formatCurrency(p.basePrice)}</span>
                   </div>
                 </div>
               </button>
