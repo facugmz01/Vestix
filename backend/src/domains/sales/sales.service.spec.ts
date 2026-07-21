@@ -23,7 +23,10 @@ describe('SalesService.getOrderById', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new SalesService(mockPrisma, mockRepository, mockCatalogFacade, mockSettingsService);
+    service = new SalesService(mockPrisma, mockRepository, mockCatalogFacade, mockSettingsService, {
+      chargeCustomerSaleInTx: jest.fn(),
+      reverseCustomerSaleInTx: jest.fn(),
+    } as any);
   });
 
   it('maps productName and variantSku from historical fields and live catalog', async () => {

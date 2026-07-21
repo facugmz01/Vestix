@@ -88,13 +88,33 @@ export class CurrentAccountsService {
     const rows: ReturnType<CurrentAccountsService['mapMovementRow']>[] = [...mappedManual];
 
     if (account.entityType === 'CUSTOMER') {
+      // Legacy fallback: synthesize INVOICE rows for old CC sales that never wrote CurrentAccountMovement.
+      // Prefer durable movements when present (coveredRefs). Only completed/confirmed sales count.
       const creditSales = await this.prisma.saleOrder.findMany({
-        where: { customerId: accountId, paymentMethod: 'CUSTOMER_CREDIT' },
+        where: {
+          customerId: accountId,
+          paymentMethod: { in: ['CUSTOMER_CREDIT', 'MULTIPLE'] },
+          status: { in: ['COMPLETED', 'CONFIRMED', 'DELIVERED', 'READY_FOR_PICKUP', 'SHIPPED'] },
+        },
+        include: {
+          payments: { include: { paymentMethod: true } },
+        },
         orderBy: { createdAt: 'desc' },
       });
       const coveredRefs = new Set(manualMovements.map(m => m.referenceId));
       for (const o of creditSales) {
         if (coveredRefs.has(o.id)) continue;
+
+        let debit = 0;
+        if (o.paymentMethod === 'CUSTOMER_CREDIT') {
+          debit = o.grandTotal;
+        } else {
+          debit = (o.payments || [])
+            .filter((p: { paymentMethod?: { type?: string } }) => p.paymentMethod?.type === 'CUSTOMER_CREDIT')
+            .reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
+        }
+        if (debit <= 0.01) continue;
+
         rows.push({
           id: `sale-${o.id}`,
           accountId,
@@ -102,7 +122,7 @@ export class CurrentAccountsService {
           documentType: 'INVOICE',
           referenceId: o.id,
           description: formatSaleId(o.id, o.status),
-          debit: o.grandTotal,
+          debit,
           credit: 0,
           balanceAfter: 0,
         });
@@ -206,6 +226,111 @@ export class CurrentAccountsService {
       phone: c.phone,
       email: c.email,
     };
+  }
+
+  /**
+   * Charges a house-credit (cuenta corriente) sale onto the customer balance
+   * and writes a durable CurrentAccountMovement (same pattern as supplier PO debt).
+   * Idempotent per orderId: skips if an INVOICE movement already exists for the sale.
+   */
+  async chargeCustomerSaleInTx(
+    tx: any,
+    params: {
+      customerId: string;
+      amount: number;
+      orderId: string;
+      description?: string;
+    },
+  ) {
+    if (params.amount <= 0.01) return null;
+
+    const existing = await tx.currentAccountMovement.findFirst({
+      where: {
+        accountId: params.customerId,
+        referenceId: params.orderId,
+        documentType: 'INVOICE',
+      },
+    });
+    if (existing) return existing;
+
+    const customer = await tx.customer.findUnique({ where: { id: params.customerId } });
+    if (!customer) throw new BadRequestException('Customer not found');
+
+    if (customer.usedCredit + params.amount > customer.creditLimit) {
+      throw new BadRequestException('Credit limit exceeded');
+    }
+
+    const updated = await tx.customer.update({
+      where: { id: params.customerId },
+      data: { usedCredit: { increment: params.amount } },
+    });
+
+    return tx.currentAccountMovement.create({
+      data: {
+        accountId: params.customerId,
+        entityType: 'CUSTOMER',
+        documentType: 'INVOICE',
+        referenceId: params.orderId,
+        description: params.description || `Venta a cuenta corriente ${formatSaleId(params.orderId)}`,
+        amount: params.amount,
+        debit: params.amount,
+        credit: 0,
+        balanceAfter: Math.max(0, updated.usedCredit),
+      },
+    });
+  }
+
+  /**
+   * Reverses a prior house-credit charge (cancel / void). Idempotent per orderId.
+   */
+  async reverseCustomerSaleInTx(
+    tx: any,
+    params: {
+      customerId: string;
+      amount: number;
+      orderId: string;
+      description?: string;
+    },
+  ) {
+    if (params.amount <= 0.01) return null;
+
+    const existingReversal = await tx.currentAccountMovement.findFirst({
+      where: {
+        accountId: params.customerId,
+        referenceId: params.orderId,
+        documentType: 'CREDIT_NOTE',
+      },
+    });
+    if (existingReversal) return existingReversal;
+
+    const invoice = await tx.currentAccountMovement.findFirst({
+      where: {
+        accountId: params.customerId,
+        referenceId: params.orderId,
+        documentType: 'INVOICE',
+      },
+    });
+    const reverseAmount = invoice?.amount ?? params.amount;
+    if (reverseAmount <= 0.01) return null;
+
+    const updated = await tx.customer.update({
+      where: { id: params.customerId },
+      data: { usedCredit: { decrement: reverseAmount } },
+    });
+
+    return tx.currentAccountMovement.create({
+      data: {
+        accountId: params.customerId,
+        entityType: 'CUSTOMER',
+        documentType: 'CREDIT_NOTE',
+        referenceId: params.orderId,
+        description: params.description || `Anulación venta ${formatSaleId(params.orderId)}`,
+        amount: reverseAmount,
+        debit: 0,
+        credit: reverseAmount,
+        balanceAfter: Math.max(0, updated.usedCredit),
+      },
+    });
   }
 
   async registerPaymentReceipt(

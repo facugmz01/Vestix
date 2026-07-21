@@ -173,9 +173,22 @@ export class ReturnsService {
       }
 
       if (saleReturn.action === ReturnAction.STORE_CREDIT && sale.customerId) {
-        await tx.customer.update({
+        const updated = await tx.customer.update({
           where: { id: sale.customerId },
-          data: { usedCredit: { decrement: totalRefund } }
+          data: { usedCredit: { decrement: totalRefund } },
+        });
+        await tx.currentAccountMovement.create({
+          data: {
+            accountId: sale.customerId,
+            entityType: 'CUSTOMER',
+            documentType: 'CREDIT_NOTE',
+            referenceId: saleReturn.id,
+            description: `Crédito a favor por devolución ${formatSaleId(sale.id, sale.status)}`,
+            amount: totalRefund,
+            debit: 0,
+            credit: totalRefund,
+            balanceAfter: Math.max(0, updated.usedCredit),
+          },
         });
       } else {
         let accountId = sale.paymentAccountId;

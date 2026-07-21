@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesApi } from '@/api/sales.api';
+import { queryKeys } from '@/api/queryKeys';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
 import { usePosStore } from '../store/usePosStore';
 import toast from 'react-hot-toast';
@@ -174,6 +175,12 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       } else {
         toast.success('Venta registrada con éxito');
       }
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.currentAccounts() });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.sales.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.all() });
 
       const order = data.offline
         ? buildOfflineReceipt(data.dto)

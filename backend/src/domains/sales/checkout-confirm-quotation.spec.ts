@@ -11,6 +11,7 @@ import { InventoryService } from '../logistics/inventory.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { AccountsService } from '../finance/accounts.service';
+import { CurrentAccountsService } from '../finance/current-accounts.service';
 import { LoyaltyService } from './loyalty/loyalty.service';
 import { GiftCardsService } from './gift-cards/gift-cards.service';
 
@@ -24,6 +25,10 @@ describe('CheckoutOrchestrator.confirmQuotation', () => {
     },
     financialTransaction: {
       count: jest.fn(),
+    },
+    currentAccountMovement: {
+      count: jest.fn(),
+      findFirst: jest.fn(),
     },
     paymentMethod: {
       findFirst: jest.fn(),
@@ -67,6 +72,11 @@ describe('CheckoutOrchestrator.confirmQuotation', () => {
     postTransactionInTx: jest.fn(),
   };
 
+  const currentAccountsServiceMock: any = {
+    chargeCustomerSaleInTx: jest.fn(),
+    reverseCustomerSaleInTx: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -80,6 +90,7 @@ describe('CheckoutOrchestrator.confirmQuotation', () => {
         { provide: SettingsService, useValue: {} },
         { provide: NotificationTriggersService, useValue: notificationTriggersMock },
         { provide: AccountsService, useValue: accountsServiceMock },
+        { provide: CurrentAccountsService, useValue: currentAccountsServiceMock },
         { provide: LoyaltyService, useValue: loyaltyServiceMock },
         { provide: GiftCardsService, useValue: {} },
       ],
@@ -94,6 +105,7 @@ describe('CheckoutOrchestrator.confirmQuotation', () => {
     });
     txMock.financialTransaction.count.mockResolvedValue(0);
     txMock.outboxEvent.create.mockResolvedValue({});
+    currentAccountsServiceMock.chargeCustomerSaleInTx.mockResolvedValue({});
   });
 
   function stubQuote(overrides: Record<string, unknown> = {}) {
@@ -112,15 +124,9 @@ describe('CheckoutOrchestrator.confirmQuotation', () => {
     };
   }
 
-  it('increments customer usedCredit when confirming a CC quotation', async () => {
+  it('charges customer credit (balance + CC movement) when confirming a CC quotation', async () => {
     const quote = stubQuote();
     prismaMock.saleOrder.findUnique.mockResolvedValue(quote);
-    txMock.customer.findUnique.mockResolvedValue({
-      id: 'cust-1',
-      usedCredit: 200,
-      creditLimit: 10000,
-    });
-    txMock.customer.update.mockResolvedValue({});
     txMock.saleOrder.update.mockResolvedValue({
       ...quote,
       status: 'CONFIRMED',
@@ -128,43 +134,44 @@ describe('CheckoutOrchestrator.confirmQuotation', () => {
 
     await orchestrator.confirmQuotation('quote-1');
 
-    expect(txMock.customer.update).toHaveBeenCalledWith({
-      where: { id: 'cust-1' },
-      data: { usedCredit: { increment: 1500 } },
-    });
+    expect(currentAccountsServiceMock.chargeCustomerSaleInTx).toHaveBeenCalledWith(
+      txMock,
+      {
+        customerId: 'cust-1',
+        amount: 1500,
+        orderId: 'quote-1',
+      },
+    );
     expect(inventoryServiceMock.recordMovement).toHaveBeenCalled();
     expect(txMock.saleOrder.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: 'CONFIRMED' } }),
     );
   });
 
-  it('rejects confirm when CC would exceed credit limit', async () => {
+  it('rejects confirm when CC charge fails (e.g. credit limit)', async () => {
     const quote = stubQuote({ grandTotal: 9000 });
     prismaMock.saleOrder.findUnique.mockResolvedValue(quote);
-    txMock.customer.findUnique.mockResolvedValue({
-      id: 'cust-1',
-      usedCredit: 2000,
-      creditLimit: 10000,
-    });
+    currentAccountsServiceMock.chargeCustomerSaleInTx.mockRejectedValue(
+      new BadRequestException('Credit limit exceeded'),
+    );
 
     await expect(orchestrator.confirmQuotation('quote-1')).rejects.toBeInstanceOf(
       BadRequestException,
     );
-    expect(txMock.customer.update).not.toHaveBeenCalled();
   });
 
-  it('does not charge usedCredit twice if finance already posted', async () => {
+  it('relies on chargeCustomerSaleInTx idempotency when finance already posted', async () => {
     const quote = stubQuote();
     prismaMock.saleOrder.findUnique.mockResolvedValue(quote);
-    txMock.financialTransaction.count.mockResolvedValue(1);
     txMock.saleOrder.update.mockResolvedValue({
       ...quote,
       status: 'CONFIRMED',
     });
+    // chargeCustomerSaleInTx itself is idempotent; still invoked, but no double-post inside
+    currentAccountsServiceMock.chargeCustomerSaleInTx.mockResolvedValue({ id: 'existing-mov' });
 
     await orchestrator.confirmQuotation('quote-1');
 
-    expect(txMock.customer.findUnique).not.toHaveBeenCalled();
-    expect(txMock.customer.update).not.toHaveBeenCalled();
+    expect(currentAccountsServiceMock.chargeCustomerSaleInTx).toHaveBeenCalledTimes(1);
   });
 });
