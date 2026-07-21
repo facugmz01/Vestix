@@ -13,8 +13,8 @@ deadline=$((SECONDS + TIMEOUT_SEC))
 echo "Waiting up to ${TIMEOUT_SEC}s for services to become healthy..."
 
 while (( SECONDS < deadline )); do
-  backend_id="$("${COMPOSE[@]}" ps -q backend 2>/dev/null || true)"
-  web_id="$("${COMPOSE[@]}" ps -q web 2>/dev/null || true)"
+  backend_id="$("${COMPOSE[@]}" ps -aq backend 2>/dev/null || true)"
+  web_id="$("${COMPOSE[@]}" ps -aq web 2>/dev/null || true)"
 
   if [ -z "$backend_id" ] || [ -z "$web_id" ]; then
     echo "  … containers not created yet"

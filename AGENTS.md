@@ -15,6 +15,19 @@ Standard scripts live in `backend/package.json` and `frontend/package.json`. The
 - **Backend:** `cd backend && PORT=3001 npm run start:dev`. It MUST run on **port 3001** because `frontend/vite.config.ts` proxies `/api` to `http://localhost:3001` (do not run it on the `.env` default 3000, which collides with the frontend).
 - **Frontend:** `cd frontend && npm run dev` (serves on port 3000, proxies `/api` to the backend).
 
+### Production / any-host deploy (Docker)
+
+Preferred install path: `docs/docker-deployment.md`.
+
+```bash
+./scripts/docker-install.sh   # first time
+./scripts/docker-update.sh    # backup → rebuild → healthcheck → auto-rollback
+./scripts/docker-backup.sh
+./scripts/docker-rollback.sh
+```
+
+Compose stack: Postgres 16 + Redis 7 + backend + Nginx frontend (`docker-compose.yml`).
+
 ### Non-obvious gotchas
 
 - **Do NOT set `NODE_ENV=development` for the backend.** `backend/.env` intentionally sets `NODE_ENV=production`. In non-production mode `nestjs-pino` requires `pino-pretty`, which is not a dependency, so `start:dev` crashes with `unable to determine transport target for "pino-pretty"`. Keep `NODE_ENV=production` (watch/hot-reload from `start:dev` still works). The auth cookie is flagged `Secure`, but Chrome treats `http://localhost` as a secure context, so login still works locally.
