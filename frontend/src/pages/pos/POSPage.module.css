@@ -660,10 +660,12 @@ html.dark .layout {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: var(--surface-1);
+  margin-top: 6px;
+  width: fit-content;
+  background: var(--pos-panel);
   border-radius: 8px;
-  padding: 4px;
-  border: 1px solid var(--border);
+  padding: 3px;
+  border: 1px solid var(--pos-line);
 }
 
 .qtyInput {
