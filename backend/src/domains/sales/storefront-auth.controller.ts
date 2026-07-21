@@ -29,6 +29,7 @@ import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { RedisService } from '../../core/redis/redis.service';
 import { UpdateStorefrontProfileDto } from './dto/update-storefront-profile.dto';
 import { toStorefrontCustomerResponse } from './storefront-customer.util';
+import { isCookieSecure } from '../../core/http/cookie-options';
 
 interface OtpEntry {
   code: string;
@@ -283,7 +284,7 @@ export class StorefrontAuthController {
 
     res.cookie('storefront_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isCookieSecure(),
       sameSite: 'strict',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
@@ -397,7 +398,7 @@ export class StorefrontAuthController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('storefront_token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isCookieSecure(),
       sameSite: 'strict',
     });
     return { success: true, message: 'Sesión cerrada.' };
