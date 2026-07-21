@@ -25,10 +25,10 @@ export interface PosPaymentMethodConfig {
 export const POS_PAYMENT_METHODS: PosPaymentMethodConfig[] = [
   { id: 'CASH', label: 'Efectivo', shortLabel: 'Efectivo', icon: Banknote, cssClass: 'bgCash' },
   { id: 'CREDIT_CARD', label: 'Tarjeta', shortLabel: 'Tarjeta', icon: CreditCard, cssClass: 'bgCredit' },
-  { id: 'QR_MERCADOPAGO', label: 'QR MercadoPago', shortLabel: 'QR MercadoPago', icon: QrCode, cssClass: 'bgQr', opensQrModal: true },
-  { id: 'BANK_TRANSFER', label: 'Transferencia', shortLabel: 'Transferencia', icon: ArrowLeftRight, cssClass: 'bgTransfer' },
-  { id: 'CUSTOMER_CREDIT', label: 'Cuenta Corriente', shortLabel: 'Cuenta corriente', icon: Wallet, cssClass: 'bgAccount', requiresCustomer: true },
-  { id: 'MULTIPLE', label: 'Pago Mixto', shortLabel: 'Pago mixto', icon: Layers, cssClass: 'bgMultiple', opensMixedModal: true },
+  { id: 'QR_MERCADOPAGO', label: 'QR MercadoPago', shortLabel: 'QR MP', icon: QrCode, cssClass: 'bgQr', opensQrModal: true },
+  { id: 'BANK_TRANSFER', label: 'Transferencia', shortLabel: 'Transfer.', icon: ArrowLeftRight, cssClass: 'bgTransfer' },
+  { id: 'CUSTOMER_CREDIT', label: 'Cuenta Corriente', shortLabel: 'Cta. cte.', icon: Wallet, cssClass: 'bgAccount', requiresCustomer: true },
+  { id: 'MULTIPLE', label: 'Pago Mixto', shortLabel: 'Mixto', icon: Layers, cssClass: 'bgMultiple', opensMixedModal: true },
 ];
 
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {

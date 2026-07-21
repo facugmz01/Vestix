@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FileText, PauseCircle, CloudOff, Tags } from 'lucide-react';
+import { FileText, PauseCircle, CloudOff, Tags, ChevronDown, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePosStore } from '../store/usePosStore';
 import { customersApi } from '@/api/customers.api';
@@ -59,6 +60,8 @@ export function POSCart({
   const setCartDiscountPct = usePosStore(s => s.setCartDiscountPct);
   const suspendSale = usePosStore(s => s.suspendSale);
 
+  const [extrasOpen, setExtrasOpen] = useState(false);
+
   const { data: selectedCustomer } = useQuery({
     queryKey: ['customer', selectedCustomerId],
     queryFn: () => customersApi.getCustomer(selectedCustomerId),
@@ -66,6 +69,7 @@ export function POSCart({
   });
 
   const iva = computeIvaBreakdown(grandTotal);
+  const hasRedemptionApplied = giftCardAmount > 0 || loyaltyDiscount > 0;
 
   const getVariantName = (variant: CartVariant) =>
     variant.name || variant.productName || variant.product?.name || 'Producto';
@@ -104,64 +108,81 @@ export function POSCart({
 
       <div className={styles.cartTop}>
         <PosCustomerSearch amountDue={amountDue} />
-        <PosRedemptionPanel merchandiseTotal={grandTotal} />
+        <button
+          type="button"
+          className={styles.extrasToggle}
+          onClick={() => setExtrasOpen(v => !v)}
+          aria-expanded={extrasOpen}
+        >
+          <Gift size={14} />
+          <span>Gift card / Puntos{hasRedemptionApplied ? ' · aplicado' : ''}</span>
+          <ChevronDown size={16} className={extrasOpen ? styles.extrasChevronOpen : undefined} />
+        </button>
+        {extrasOpen && (
+          <div className={styles.extrasPanel}>
+            <PosRedemptionPanel merchandiseTotal={grandTotal} />
+          </div>
+        )}
       </div>
 
-      <div className={styles.tableContainer}>
+      {/* Priority region: selected cart lines must always remain visible */}
+      <div className={styles.tableContainer} data-has-items={cart.length > 0}>
         <div className={styles.cartList}>
+          <div className={styles.cartListHeader}>
+            <span>Productos seleccionados</span>
+            <span>{totalItems} ítem{totalItems === 1 ? '' : 's'}</span>
+          </div>
+
           {cart.length === 0 ? (
-            <div className={`${styles.emptyState} ${styles.emptyStateTop}`}>
-              <Tags size={36} />
-              <p>Escaneá o buscá productos</p>
+            <div className={styles.cartEmpty}>
+              <Tags size={28} />
+              <p>Escaneá o tocá un producto para agregarlo</p>
             </div>
           ) : (
-            <>
-              <div className={styles.cartListHeader}>
-                <span>Seleccionados</span>
-                <span>{totalItems} ítem{totalItems === 1 ? '' : 's'}</span>
-              </div>
-              {cart.map((item, index) => {
-                const variant = item.variant as CartVariant;
-                const imageUrl = getVariantImage(variant);
-                const lineTotal = (variant.basePrice * item.qty) * (1 - item.discountPct / 100);
-                return (
-                  <div key={`${variant.id}-${index}`} className={styles.cartItem}>
-                    <div className={styles.cartItemThumb} aria-hidden={!imageUrl}>
-                      {imageUrl ? (
-                        <img src={imageUrl} alt="" className={styles.cartItemThumbImg} />
-                      ) : (
-                        <Tags size={18} />
-                      )}
-                    </div>
+            cart.map((item, index) => {
+              const variant = item.variant as CartVariant;
+              const imageUrl = getVariantImage(variant);
+              const lineTotal = (variant.basePrice * item.qty) * (1 - item.discountPct / 100);
+              return (
+                <div key={`${variant.id}-${index}`} className={styles.cartItem}>
+                  <div className={styles.cartItemThumb} aria-hidden={!imageUrl}>
+                    {imageUrl ? (
+                      <img src={imageUrl} alt="" className={styles.cartItemThumbImg} />
+                    ) : (
+                      <Tags size={18} />
+                    )}
+                  </div>
 
-                    <div className={styles.cartItemDetails}>
-                      <span className={styles.cartItemName}>
-                        {getVariantName(variant)}
-                        {variant.size ? ` (${variant.size})` : ''}
-                      </span>
-                      <span className={styles.cartItemSku}>
-                        {formatCurrency(lineTotal)}
-                        {item.discountPct > 0 ? ` · −${item.discountPct}%` : ''}
-                      </span>
-                    </div>
+                  <div className={styles.cartItemDetails}>
+                    <span className={styles.cartItemName}>
+                      {getVariantName(variant)}
+                      {variant.size ? ` (${variant.size})` : ''}
+                    </span>
+                    <span className={styles.cartItemSku}>
+                      {formatCurrency(variant.basePrice)} c/u
+                      {item.discountPct > 0 ? ` · −${item.discountPct}%` : ''}
+                    </span>
+                  </div>
 
-                    <div className={styles.qtyControl}>
-                      <button type="button" className={styles.qtyBtn} aria-label="Reducir cantidad" onClick={() => updateQty(variant.id, item.qty - 1)}>
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        className={styles.qtyInput}
-                        value={item.qty}
-                        min={1}
-                        aria-label="Cantidad"
-                        onChange={e => updateQty(variant.id, Number(e.target.value))}
-                      />
-                      <button type="button" className={styles.qtyBtn} aria-label="Aumentar cantidad" onClick={() => updateQty(variant.id, item.qty + 1)}>
-                        +
-                      </button>
-                    </div>
+                  <div className={styles.qtyControl}>
+                    <button type="button" className={styles.qtyBtn} aria-label="Reducir cantidad" onClick={() => updateQty(variant.id, item.qty - 1)}>
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      className={styles.qtyInput}
+                      value={item.qty}
+                      min={1}
+                      aria-label="Cantidad"
+                      onChange={e => updateQty(variant.id, Number(e.target.value))}
+                    />
+                    <button type="button" className={styles.qtyBtn} aria-label="Aumentar cantidad" onClick={() => updateQty(variant.id, item.qty + 1)}>
+                      +
+                    </button>
+                  </div>
 
+                  <div className={styles.cartItemRight}>
+                    <span className={styles.cartItemLineTotal}>{formatCurrency(lineTotal)}</span>
                     <input
                       type="number"
                       min={0}
@@ -172,14 +193,13 @@ export function POSCart({
                       className={styles.discountInput}
                       title="Desc. %"
                     />
-
                     <button type="button" className={styles.removeBtn} aria-label="Eliminar línea" onClick={() => removeLine(variant.id)}>
                       ×
                     </button>
                   </div>
-                );
-              })}
-            </>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
@@ -196,7 +216,7 @@ export function POSCart({
         <div className={styles.summary}>
           <div className={styles.summaryCompact}>
             <div className={styles.summaryRow}>
-              <span>Subtotal · {totalItems} ítems</span>
+              <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             <div className={`${styles.summaryRow} ${styles.summaryRowCenter}`}>
@@ -215,8 +235,8 @@ export function POSCart({
               <span className={styles.discountTotal}>(−) {formatCurrency(lineDiscounts + globalDiscount)}</span>
             </div>
             <div className={styles.summaryRow}>
-              <span>Neto + IVA 21%</span>
-              <span>{formatCurrency(iva.net)} + {formatCurrency(iva.iva)}</span>
+              <span>IVA 21%</span>
+              <span>{formatCurrency(iva.iva)}</span>
             </div>
             {(giftCardAmount > 0 || loyaltyDiscount > 0) && (
               <>
@@ -240,18 +260,12 @@ export function POSCart({
             <span>{amountDue < grandTotal ? 'A cobrar' : 'Total'}</span>
             <span>{formatCurrency(amountDue)}</span>
           </div>
-          {amountDue < grandTotal && (
-            <div className={styles.summaryRow}>
-              <span className={styles.cellMuted}>Total venta</span>
-              <span className={styles.cellMuted}>{formatCurrency(grandTotal)}</span>
-            </div>
-          )}
         </div>
 
         <div className={styles.paySection}>
           <div className={styles.secondaryActions}>
             <button type="button" className={`${styles.secondaryBtn} ${styles.bgQuotation}`} disabled={cart.length === 0} onClick={onCheckoutQuotation}>
-              <FileText size={16} />
+              <FileText size={15} />
               Cotización
             </button>
             <button
@@ -267,7 +281,7 @@ export function POSCart({
                 }
               }}
             >
-              <PauseCircle size={16} />
+              <PauseCircle size={15} />
               Suspender
             </button>
           </div>
@@ -285,7 +299,7 @@ export function POSCart({
                   onClick={() => handlePaymentClick(method)}
                   title={method.label}
                 >
-                  <Icon size={18} />
+                  <Icon size={16} />
                   <span>{method.shortLabel}</span>
                 </button>
               );
