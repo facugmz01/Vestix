@@ -121,6 +121,9 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.sales.detail(saleId!) });
     queryClient.invalidateQueries({ queryKey: queryKeys.sales.all() });
+    queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
+    queryClient.invalidateQueries({ queryKey: queryKeys.finance.currentAccounts() });
+    queryClient.invalidateQueries({ queryKey: queryKeys.payments.all() });
   };
 
   const confirmMutation = useMutation({

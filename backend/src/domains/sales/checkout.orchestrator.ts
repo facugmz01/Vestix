@@ -8,6 +8,7 @@ import { InventoryService } from '../logistics/inventory.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { AccountsService } from '../finance/accounts.service';
+import { CurrentAccountsService } from '../finance/current-accounts.service';
 import { expandComboToStockMovements } from '../catalog/utils/combo-stock.util';
 import { LoyaltyService } from './loyalty/loyalty.service';
 import { GiftCardsService } from './gift-cards/gift-cards.service';
@@ -28,6 +29,7 @@ export class CheckoutOrchestrator {
     private readonly settingsService: SettingsService,
     private readonly notificationTriggers: NotificationTriggersService,
     private readonly accountsService: AccountsService,
+    private readonly currentAccountsService: CurrentAccountsService,
     private readonly loyaltyService: LoyaltyService,
     private readonly giftCardsService: GiftCardsService,
   ) {}
@@ -252,16 +254,10 @@ export class CheckoutOrchestrator {
       if (!isQuote && !hasSplitPayments && !deferFinance && amountDue > 0.01) {
         if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
           if (!dto.customerId) throw new BadRequestException('Customer ID required for credit');
-          const customer = await tx.customer.findUnique({ where: { id: dto.customerId }});
-          if (!customer) throw new BadRequestException('Customer not found');
-          
-          if (customer.usedCredit + amountDue > customer.creditLimit) {
-            throw new BadRequestException('Credit limit exceeded');
-          }
-          
-          await tx.customer.update({
-            where: { id: dto.customerId },
-            data: { usedCredit: { increment: amountDue } }
+          await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
+            customerId: dto.customerId,
+            amount: amountDue,
+            orderId: dto.id,
           });
         } else if (!isBackoffice) {
           const treasuryMethod = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'QR_MERCADOPAGO' : dto.paymentMethod;
@@ -354,9 +350,14 @@ export class CheckoutOrchestrator {
             dto.loyaltyRedemption ? String(dto.loyaltyRedemption.points) : undefined,
           );
         }
-        if (amountDue > 0.01 && dto.paymentMethod !== 'CUSTOMER_CREDIT') {
-          const pmType = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'CREDIT_CARD' : dto.paymentMethod;
-          const pm = await tx.paymentMethod.findFirst({ where: { type: pmType, isActive: true } });
+        if (amountDue > 0.01) {
+          const pmType =
+            dto.paymentMethod === 'QR_MERCADOPAGO'
+              ? 'CREDIT_CARD'
+              : dto.paymentMethod === 'CUSTOMER_CREDIT'
+                ? 'CUSTOMER_CREDIT'
+                : dto.paymentMethod;
+          const pm = await this.ensurePaymentMethod(tx, pmType);
           if (pm) {
             await tx.saleOrderPayment.create({
               data: {
@@ -872,11 +873,6 @@ export class CheckoutOrchestrator {
   }
 
   private async postOrderFinanceIfNeeded(tx: any, order: any, paymentReference?: string) {
-    const existing = await tx.financialTransaction.count({
-      where: { referenceId: order.id, type: 'DEBIT' },
-    });
-    if (existing > 0) return;
-
     const refNote = paymentReference ? ` Ref: ${paymentReference}` : '';
 
     if (order.payments?.length > 0) {
@@ -884,16 +880,20 @@ export class CheckoutOrchestrator {
         const methodType = payment.paymentMethod.type;
         if (methodType === 'CUSTOMER_CREDIT') {
           if (!order.customerId) throw new BadRequestException('Customer ID required for credit');
-          const customer = await tx.customer.findUnique({ where: { id: order.customerId } });
-          if (!customer) throw new BadRequestException('Customer not found');
-          if (customer.usedCredit + payment.amount > customer.creditLimit) {
-            throw new BadRequestException('Credit limit exceeded');
-          }
-          await tx.customer.update({
-            where: { id: order.customerId },
-            data: { usedCredit: { increment: payment.amount } },
+          await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
+            customerId: order.customerId,
+            amount: payment.amount,
+            orderId: order.id,
           });
         } else if (payment.paymentMethod.accountId) {
+          const alreadyPosted = await tx.financialTransaction.count({
+            where: {
+              referenceId: order.id,
+              type: 'DEBIT',
+              accountId: payment.paymentMethod.accountId,
+            },
+          });
+          if (alreadyPosted > 0) continue;
           await this.postSaleLedgerEntry(
             tx,
             payment.paymentMethod.accountId,
@@ -909,17 +909,18 @@ export class CheckoutOrchestrator {
 
     if (order.paymentMethod === 'CUSTOMER_CREDIT') {
       if (!order.customerId) throw new BadRequestException('Customer ID required for credit');
-      const customer = await tx.customer.findUnique({ where: { id: order.customerId } });
-      if (!customer) throw new BadRequestException('Customer not found');
-      if (customer.usedCredit + order.grandTotal > customer.creditLimit) {
-        throw new BadRequestException('Credit limit exceeded');
-      }
-      await tx.customer.update({
-        where: { id: order.customerId },
-        data: { usedCredit: { increment: order.grandTotal } },
+      await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
+        customerId: order.customerId,
+        amount: order.grandTotal,
+        orderId: order.id,
       });
       return;
     }
+
+    const existingTreasury = await tx.financialTransaction.count({
+      where: { referenceId: order.id, type: 'DEBIT' },
+    });
+    if (existingTreasury > 0) return;
 
     const treasuryMethod =
       order.paymentMethod === 'QR_MERCADOPAGO' ? 'QR_MERCADOPAGO' : order.paymentMethod;
@@ -953,18 +954,30 @@ export class CheckoutOrchestrator {
       );
     }
 
+    let creditReversed = false;
     if (order.paymentMethod === 'CUSTOMER_CREDIT' && order.customerId) {
-      await tx.customer.update({
-        where: { id: order.customerId },
-        data: { usedCredit: { decrement: order.grandTotal } },
+      await this.currentAccountsService.reverseCustomerSaleInTx(tx, {
+        customerId: order.customerId,
+        amount: order.grandTotal,
+        orderId: order.id,
       });
+      creditReversed = true;
     }
 
-    for (const payment of order.payments || []) {
-      if (payment.paymentMethod.type === 'CUSTOMER_CREDIT' && order.customerId) {
-        await tx.customer.update({
-          where: { id: order.customerId },
-          data: { usedCredit: { decrement: payment.amount } },
+    if (!creditReversed && order.customerId) {
+      const creditPayments = (order.payments || []).filter(
+        (p: { paymentMethod?: { type?: string }; amount: number }) =>
+          p.paymentMethod?.type === 'CUSTOMER_CREDIT',
+      );
+      const creditTotal = creditPayments.reduce(
+        (sum: number, p: { amount: number }) => sum + p.amount,
+        0,
+      );
+      if (creditTotal > 0.01) {
+        await this.currentAccountsService.reverseCustomerSaleInTx(tx, {
+          customerId: order.customerId,
+          amount: creditTotal,
+          orderId: order.id,
         });
       }
     }
@@ -1042,15 +1055,22 @@ export class CheckoutOrchestrator {
 
       if (methodType === 'CUSTOMER_CREDIT') {
         if (!dto.customerId) throw new BadRequestException('Customer ID required for credit payment');
-        const customer = await tx.customer.findUnique({ where: { id: dto.customerId } });
-        if (!customer) throw new BadRequestException('Customer not found');
-        if (customer.usedCredit + split.amount > customer.creditLimit) {
-          throw new BadRequestException('Credit limit exceeded');
-        }
-        await tx.customer.update({
-          where: { id: dto.customerId },
-          data: { usedCredit: { increment: split.amount } },
+        await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
+          customerId: dto.customerId,
+          amount: split.amount,
+          orderId,
         });
+        const pm = await this.ensurePaymentMethod(tx, 'CUSTOMER_CREDIT');
+        if (pm) {
+          await tx.saleOrderPayment.create({
+            data: {
+              orderId,
+              paymentMethodId: pm.id,
+              amount: split.amount,
+              referenceId: split.reference || null,
+            },
+          });
+        }
       } else if (methodType === 'GIFT_CARD' || methodType === 'LOYALTY') {
         // Redemptions are processed before splits; skip duplicate ledger entries
       } else {
@@ -1081,6 +1101,21 @@ export class CheckoutOrchestrator {
         }
       }
     }
+  }
+
+  /** Ensures a PaymentMethod row exists (e.g. CUSTOMER_CREDIT is not always seeded). */
+  private async ensurePaymentMethod(tx: any, type: string) {
+    let pm = await tx.paymentMethod.findFirst({ where: { type, isActive: true } });
+    if (pm) return pm;
+    if (type !== 'CUSTOMER_CREDIT') return null;
+    pm = await tx.paymentMethod.create({
+      data: {
+        name: 'Cuenta Corriente',
+        type: 'CUSTOMER_CREDIT',
+        isActive: true,
+      },
+    });
+    return pm;
   }
 
   private async recordRedemptionPayment(

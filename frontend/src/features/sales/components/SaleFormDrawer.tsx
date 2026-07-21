@@ -213,6 +213,10 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
         toast.success(messages[variables.status]);
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.sales.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.currentAccounts() });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.all() });
       onClose();
     },
     onError: (err: any) => toast.error(err.response?.data?.message || err.message || 'Error al procesar la operación'),

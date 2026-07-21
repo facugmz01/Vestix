@@ -8,6 +8,7 @@ import { SaleOrderRepository } from './repositories/sale-order.repository';
 import { verifyReceiptAccessToken } from './utils/receipt-access.util';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { resolveReceiptStyle } from './models/receipt-style.model';
+import { CurrentAccountsService } from '../finance/current-accounts.service';
 
 @Injectable()
 export class SalesService {
@@ -16,6 +17,7 @@ export class SalesService {
     private readonly repository: SaleOrderRepository,
     private readonly catalogFacade: CatalogFacade,
     private readonly settingsService: SettingsService,
+    private readonly currentAccountsService: CurrentAccountsService,
   ) { }
 
   /**
@@ -292,9 +294,10 @@ export class SalesService {
           }
 
           if (finalPaymentStatus === 'CURRENT_ACCOUNT' && customerId) {
-            await tx.customer.update({
-              where: { id: customerId },
-              data: { usedCredit: { increment: subtotal } }
+            await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
+              customerId,
+              amount: subtotal,
+              orderId,
             });
           } else if (finalPaymentStatus === 'PAID_CASH') {
              // Let's find cash payment method

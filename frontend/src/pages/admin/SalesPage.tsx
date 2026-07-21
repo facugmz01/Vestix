@@ -1,5 +1,5 @@
 import { SALES_TABS } from '@/navigation/moduleTabs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle, Truck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -30,6 +30,7 @@ function isHomeDelivery(sale: SaleOrder) {
 
 export default function SalesPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const { page, pageSize, search, filters, setPage, setSearch, setFilter } = useListPage({ status: '' });
 
@@ -112,6 +113,9 @@ export default function SalesPage() {
       await salesApi.confirmPayment(id, { paymentReference: ref?.trim() || undefined });
       toast.success('Pago validado correctamente');
       refetch();
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.currentAccounts() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.all() });
     } catch (err: any) {
       toast.error(err.message || 'Error al validar el pago');
     }
@@ -131,6 +135,9 @@ export default function SalesPage() {
       await salesApi.cancelSale(id);
       toast.success('Documento cancelado');
       refetch();
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.currentAccounts() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.all() });
     } catch (err: any) {
       toast.error(err.message || 'Error al cancelar');
     }

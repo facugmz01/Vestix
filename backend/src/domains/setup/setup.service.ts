@@ -171,6 +171,7 @@ export class SetupService {
       { name: 'Tarjeta de Crédito', type: 'CREDIT_CARD' },
       { name: 'Transferencia Bancaria', type: 'BANK_TRANSFER' },
       { name: 'MercadoPago', type: 'DIGITAL_WALLET' },
+      { name: 'Cuenta Corriente', type: 'CUSTOMER_CREDIT' },
     ];
 
     for (const pm of paymentMethods) {
