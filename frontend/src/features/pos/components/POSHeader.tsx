@@ -77,8 +77,9 @@ export function POSHeader({
     <>
       <div className={styles.navbar}>
         <div className={styles.navLeft}>
-          <div className={styles.navLogo}>
-            <span>Vestix</span> POS
+          <div className={styles.navLogo} aria-label="Vestix POS">
+            <span>Vestix</span>
+            <strong>POS</strong>
           </div>
           {user?.fullName && (
             <span className={styles.cashierBadge}>{user.fullName}</span>
