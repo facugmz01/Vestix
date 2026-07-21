@@ -188,9 +188,21 @@ curl -sS http://127.0.0.1:3000/api/setup/status
 
 ### Causa más común (post-actualización)
 
-El backend exige `SETTINGS_ENCRYPTION_KEY` en producción. Si falta en `backend/.env`, PM2 reinicia en loop y Nginx devuelve 502.
+1. **`nest build` dejó `dist/` vacío** (bug de Nest CLI `deleteOutDir` + TypeScript `incremental`): PM2 arranca sin `dist/main.js` y Nginx responde 502.
+2. Falta `SETTINGS_ENCRYPTION_KEY` en `backend/.env` → el proceso reinicia en loop.
 
-**Arreglo:**
+**Arreglo rápido (build vacío):**
+
+```bash
+cd /var/www/vestix/backend   # o la ruta donde está el backend
+rm -rf dist tsconfig.tsbuildinfo
+npm run build
+test -f dist/main.js && echo "build OK" || echo "build FAILED"
+pm2 restart vestix-backend
+pm2 logs vestix-backend --lines 30
+```
+
+**Arreglo si falta la clave de cifrado:**
 
 ```bash
 cd /var/www/vestix/backend   # o la ruta donde está el backend

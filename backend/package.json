@@ -2,7 +2,7 @@
   "name": "retail-erp-backend",
   "version": "1.0.0",
   "scripts": {
-    "build": "nest build",
+    "build": "node -e \"const fs=require('fs'); fs.rmSync('dist',{recursive:true,force:true}); try{fs.unlinkSync('tsconfig.tsbuildinfo')}catch(e){}\" && nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",

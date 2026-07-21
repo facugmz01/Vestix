@@ -36,7 +36,13 @@ rm -rf node_modules
 npm install --unsafe-perm
 npx prisma generate
 npx prisma db push
+# Clear stale TS incremental cache — nest deleteOutDir + incremental can emit an empty dist
+rm -rf dist tsconfig.tsbuildinfo
 npm run build
+if [ ! -f dist/main.js ]; then
+  echo "ERROR: backend build did not produce dist/main.js" >&2
+  exit 1
+fi
 
 # 5. Actualizar y compilar Frontend
 echo ">>> [5/6] Actualizando Frontend..."

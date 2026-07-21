@@ -23,7 +23,9 @@ COPY backend/prisma ./prisma
 COPY backend/src ./src
 
 RUN npx prisma generate \
+  && rm -rf dist tsconfig.tsbuildinfo \
   && npm run build \
+  && test -f dist/main.js \
   && npm prune --omit=dev \
   && npm cache clean --force
 
