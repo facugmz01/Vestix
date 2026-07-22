@@ -82,7 +82,7 @@ export function POSHeader({
             <strong>POS</strong>
           </div>
           {user?.fullName && (
-            <span className={styles.cashierBadge}>{user.fullName}</span>
+            <span className={styles.cashierBadge}>Hola, {user.fullName.split(' ')[0]}</span>
           )}
         </div>
 
@@ -92,7 +92,7 @@ export function POSHeader({
             ref={searchInputRef}
             type="text"
             className={styles.navSearchInput}
-            placeholder="Buscar producto, SKU o código (F2)"
+            placeholder="Buscar o escanear (F2)"
             value={search}
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => {

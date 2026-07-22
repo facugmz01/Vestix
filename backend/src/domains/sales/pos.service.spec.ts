@@ -167,6 +167,33 @@ describe('PosService', () => {
       expect(result.grandTotal).toBe(900);
       expect(result.cartDiscountTotal).toBe(100);
     });
+
+    it('evaluates promotions on the post line-discount unit price', async () => {
+      mockPrisma.productVariant.findUnique.mockResolvedValue({
+        id: 'variant-1',
+        basePrice: 1000,
+        product: { categoryId: 'cat-1' },
+      });
+      mockRulesEngine.evaluateCartPromotions.mockClear();
+      mockRulesEngine.evaluateCartPromotions.mockResolvedValueOnce({
+        originalTotal: 800,
+        discountTotal: 0,
+        finalTotal: 800,
+        appliedPromotions: [],
+        lines: [{ promotionalDiscount: 0 }],
+      });
+
+      const result = await service.calculateCart({
+        lines: [{ variantId: 'variant-1', quantity: 1, discountPct: 20 }],
+      });
+
+      expect(mockRulesEngine.evaluateCartPromotions).toHaveBeenCalledWith([
+        expect.objectContaining({ unitPrice: 800, categoryId: 'cat-1' }),
+      ]);
+      expect(result.subtotal).toBe(1000);
+      expect(result.lineDiscountsTotal).toBe(200);
+      expect(result.grandTotal).toBe(800);
+    });
   });
 
   describe('processQuickSale', () => {

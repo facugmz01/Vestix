@@ -51,7 +51,8 @@ export class PosController {
   }
 
   @Post('cart/calculate')
-  @RequirePermissions({ action: 'read', subject: 'Sales' })
+  // Cashiers only have create Sales (not read). Totals must match checkout.
+  @RequirePermissions({ action: 'create', subject: 'Sales' })
   async calculateCart(@Body() dto: CalculateCartDto) {
     return this.posService.calculateCart(dto);
   }
