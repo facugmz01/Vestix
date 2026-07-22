@@ -15,6 +15,7 @@ import { StorefrontController } from './storefront.controller';
 import { StorefrontAuthController } from './storefront-auth.controller';
 import { PublicReceiptController } from './public-receipt.controller';
 import { StorefrontJwtStrategy } from './storefront-jwt.strategy';
+import { StorefrontCustomerIdentityService } from './storefront-customer-identity.service';
 import { MercadoPagoService } from './mercadopago.service';
 
 import { CustomersService } from './customers.service';
@@ -67,6 +68,7 @@ import { OfflineController } from './offline.controller';
     OrdersFulfillmentService,
     CheckoutOrchestrator,
     StorefrontJwtStrategy,
+    StorefrontCustomerIdentityService,
     MercadoPagoService,
     CustomersService,
     PosService,
@@ -89,6 +91,7 @@ import { OfflineController } from './offline.controller';
     MercadoPagoService,
     LoyaltyService,
     GiftCardsService,
+    StorefrontCustomerIdentityService,
   ],
 })
 export class SalesModule {}
