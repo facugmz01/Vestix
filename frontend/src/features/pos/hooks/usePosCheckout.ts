@@ -173,12 +173,12 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         return { offline: false, res: res.order || res, dto };
       } catch (err: unknown) {
         // apiClient normalizes HTTP errors to { status, message } (no .response).
-        // Only queue offline when there was no HTTP response at all.
-        const apiErr = err as { status?: number | null; code?: string; response?: unknown };
-        const isNetworkFailure =
-          apiErr.code === 'ERR_NETWORK'
-          || (apiErr.status == null && apiErr.response == null && !navigator.onLine);
-        if (isNetworkFailure) {
+        // status:number → real HTTP error (do not fake offline)
+        // status:null   → transport failure / no response
+        const apiErr = err as { status?: number | null; code?: string };
+        const isHttpError = typeof apiErr.status === 'number';
+        const isTransportFailure = apiErr.status === null || apiErr.code === 'ERR_NETWORK';
+        if (!isHttpError && isTransportFailure) {
           enqueueSale();
           return { offline: true, dto };
         }
