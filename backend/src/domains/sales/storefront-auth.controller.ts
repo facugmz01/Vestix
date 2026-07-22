@@ -29,6 +29,7 @@ import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { RedisService } from '../../core/redis/redis.service';
 import { UpdateStorefrontProfileDto } from './dto/update-storefront-profile.dto';
 import { toStorefrontCustomerResponse } from './storefront-customer.util';
+import { StorefrontCustomerIdentityService } from './storefront-customer-identity.service';
 import { isCookieSecure } from '../../core/http/cookie-options';
 
 interface OtpEntry {
@@ -66,6 +67,7 @@ export class StorefrontAuthController {
     private readonly redisService: RedisService,
     private readonly rateLimitService: NotificationRateLimitService,
     private readonly settingsService: SettingsService,
+    private readonly customerIdentity: StorefrontCustomerIdentityService,
   ) {}
 
   private otpRedisKey(identifier: OtpIdentifier): string {
@@ -250,9 +252,7 @@ export class StorefrontAuthController {
 
     await this.deleteOtp(identifier);
 
-    let customer = identifier.type === 'email'
-      ? await this.prisma.customer.findFirst({ where: { email: identifier.value } })
-      : await this.prisma.customer.findFirst({ where: { phone: identifier.value } });
+    let customer = await this.customerIdentity.findByIdentifier(identifier);
 
     if (!customer) {
       customer = await this.prisma.customer.create({
@@ -273,6 +273,9 @@ export class StorefrontAuthController {
         data: { source: 'STOREFRONT' },
       });
     }
+
+    // Link guest checkouts that share the same email/phone onto this session.
+    customer = await this.customerIdentity.claimRelatedCustomers(customer);
 
     const payload = {
       sub: customer.id,
@@ -347,9 +350,17 @@ export class StorefrontAuthController {
       ? (dto.taxId.trim() || null)
       : undefined;
 
+    // If email/phone/taxId belong to a guest (or related) customer from a prior
+    // checkout, absorb that record and its orders instead of blocking the profile.
+    await this.customerIdentity.resolveProfileConflict(customerId, {
+      email,
+      phone,
+      taxId,
+    });
+
     if (email) {
       const emailTaken = await this.prisma.customer.findFirst({
-        where: { email, id: { not: customerId } },
+        where: { email: { equals: email, mode: 'insensitive' }, id: { not: customerId } },
       });
       if (emailTaken) {
         throw new ConflictException('Este correo electrónico ya está registrado.');
@@ -379,15 +390,25 @@ export class StorefrontAuthController {
     if (phone !== undefined) data.phone = phone;
     if (taxId !== undefined) data.taxId = taxId;
 
-    const customer = await this.prisma.customer.update({
+    await this.prisma.customer.update({
       where: { id: customerId },
       data,
-      select: { id: true, fullName: true, phone: true, email: true, taxId: true },
     });
+
+    // After saving contact fields, claim any remaining related guest rows.
+    const claimed = await this.customerIdentity.claimRelatedCustomers(
+      await this.prisma.customer.findUniqueOrThrow({ where: { id: customerId } }),
+    );
 
     this.logger.log(`[Profile] Customer ${customerId} updated profile`);
 
-    return toStorefrontCustomerResponse(customer);
+    return toStorefrontCustomerResponse({
+      id: claimed.id,
+      fullName: claimed.fullName,
+      phone: claimed.phone,
+      email: claimed.email,
+      taxId: claimed.taxId,
+    });
   }
 
   /**

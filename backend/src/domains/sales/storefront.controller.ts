@@ -138,50 +138,93 @@ export class StorefrontController {
 
     // If no authenticated customer, look up or create by phone/email/taxId (guest checkout)
     if (!customerId && dto.customerInfo) {
-      const conditions: any[] = [];
-      if (dto.customerInfo.phone) {
-        const normalizedPhone = this.normalizePhone(dto.customerInfo.phone);
-        if (normalizedPhone) {
-          conditions.push({ phone: normalizedPhone });
-          const digits = String(dto.customerInfo.phone).replace(/\D/g, '');
-          if (digits && digits !== normalizedPhone) {
-            conditions.push({ phone: digits });
-          }
-        }
-      }
-      if (dto.customerInfo.email) {
-        const normalizedEmail = this.normalizeEmail(dto.customerInfo.email);
-        if (normalizedEmail) conditions.push({ email: normalizedEmail });
-      }
-      if (dto.customerInfo.documentNumber) conditions.push({ taxId: dto.customerInfo.documentNumber });
+      const checkoutEmail = this.normalizeEmail(dto.customerInfo.email || '');
+      const checkoutPhone = this.normalizePhone(dto.customerInfo.phone || '');
+      const checkoutTaxId = dto.customerInfo.documentNumber?.trim() || null;
 
-      let customer = conditions.length > 0
-        ? await this.prisma.customer.findFirst({ where: { OR: conditions } })
+      // Prefer email match so a later storefront login with the same email
+      // reuses this customer (and "Mis pedidos" finds the order).
+      let customer = checkoutEmail
+        ? await this.prisma.customer.findFirst({
+            where: { email: { equals: checkoutEmail, mode: 'insensitive' } },
+            orderBy: { createdAt: 'asc' },
+          })
         : null;
 
+      if (!customer && checkoutPhone) {
+        const phoneConditions: any[] = [{ phone: checkoutPhone }];
+        const digits = String(dto.customerInfo.phone).replace(/\D/g, '');
+        if (digits && digits !== checkoutPhone) {
+          phoneConditions.push({ phone: digits });
+        }
+        const byPhone = await this.prisma.customer.findFirst({
+          where: { OR: phoneConditions },
+          orderBy: { createdAt: 'asc' },
+        });
+        // Only reuse a phone match when it doesn't belong to a different email.
+        // Otherwise a later login with the checkout email would miss these orders.
+        const byPhoneEmail = this.normalizeEmail(byPhone?.email || '');
+        if (byPhone && (!checkoutEmail || !byPhoneEmail || byPhoneEmail === checkoutEmail)) {
+          customer = byPhone;
+        }
+      }
+
+      if (!customer && checkoutTaxId) {
+        const byTaxId = await this.prisma.customer.findFirst({
+          where: { taxId: checkoutTaxId },
+          orderBy: { createdAt: 'asc' },
+        });
+        const byTaxEmail = this.normalizeEmail(byTaxId?.email || '');
+        if (byTaxId && (!checkoutEmail || !byTaxEmail || byTaxEmail === checkoutEmail)) {
+          customer = byTaxId;
+        }
+      }
+
       if (!customer) {
+        // If we skipped a phone/taxId match because it belongs to another email,
+        // do not reuse those unique/shared identifiers on the new guest row.
+        let phoneForCreate = checkoutPhone;
+        if (phoneForCreate) {
+          const phoneOwner = await this.prisma.customer.findFirst({
+            where: { phone: phoneForCreate },
+            select: { id: true },
+          });
+          if (phoneOwner) phoneForCreate = null;
+        }
+        let taxIdForCreate = checkoutTaxId;
+        if (taxIdForCreate) {
+          const taxOwner = await this.prisma.customer.findFirst({
+            where: { taxId: taxIdForCreate },
+            select: { id: true },
+          });
+          if (taxOwner) taxIdForCreate = null;
+        }
+
         customer = await this.prisma.customer.create({
           data: {
             fullName: `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim() || 'Cliente Web',
-            email: this.normalizeEmail(dto.customerInfo.email || '') || null,
-            phone: this.normalizePhone(dto.customerInfo.phone || '') || null,
-            taxId: dto.customerInfo.documentNumber || null,
+            email: checkoutEmail,
+            phone: phoneForCreate,
+            taxId: taxIdForCreate,
             type: 'INDIVIDUAL',
             source: 'STOREFRONT',
           },
         });
       } else {
-        // Enrich profile with checkout data when fields are still empty
+        // Enrich profile with checkout data when fields are still empty.
+        // Always keep the checkout email when the matched row has none, so
+        // OTP login by email can reclaim these guest orders later.
         const patch: Record<string, string | null> = {};
         const checkoutName = `${dto.customerInfo.firstName || ''} ${dto.customerInfo.lastName || ''}`.trim();
         if (checkoutName && (!customer.fullName || customer.fullName.startsWith('Cliente +'))) {
           patch.fullName = checkoutName;
         }
-        const checkoutEmail = this.normalizeEmail(dto.customerInfo.email || '');
         if (checkoutEmail && !customer.email) patch.email = checkoutEmail;
-        const checkoutPhone = this.normalizePhone(dto.customerInfo.phone || '');
+        else if (checkoutEmail && customer.email && this.normalizeEmail(customer.email) !== customer.email) {
+          patch.email = this.normalizeEmail(customer.email);
+        }
         if (checkoutPhone && !customer.phone) patch.phone = checkoutPhone;
-        if (dto.customerInfo.documentNumber && !customer.taxId) patch.taxId = dto.customerInfo.documentNumber;
+        if (checkoutTaxId && !customer.taxId) patch.taxId = checkoutTaxId;
         if (customer.source === 'ADMIN' || !customer.source) {
           // leave ADMIN as-is if they already existed in backoffice
         } else if (customer.source !== 'STOREFRONT') {
