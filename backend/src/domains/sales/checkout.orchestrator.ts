@@ -102,9 +102,11 @@ export class CheckoutOrchestrator {
       const manualDiscountAmount = resolvedBasePrice * (manualDiscountPct / 100);
       const finalPriceAfterManualDiscount = resolvedBasePrice - manualDiscountAmount;
       
+      const resolvedCategoryId = this.resolveLineCategoryId(lineDto.categoryId, variant.product?.categoryId);
+
       evaluatedLines.push({
         variantId: lineDto.variantId,
-        categoryId: lineDto.categoryId || variant.product?.categoryId || 'default_category',
+        categoryId: resolvedCategoryId,
         quantity: lineDto.quantity,
         basePrice: resolvedBasePrice,
         manualDiscountAmount: manualDiscountAmount,
@@ -473,7 +475,7 @@ export class CheckoutOrchestrator {
       const manualDiscountAmount = resolvedBasePrice * (manualDiscountPct / 100);
       evaluatedLines.push({
         variantId: lineDto.variantId,
-        categoryId: lineDto.categoryId || variant.product?.categoryId || 'default_category',
+        categoryId: this.resolveLineCategoryId(lineDto.categoryId, variant.product?.categoryId),
         quantity: lineDto.quantity,
         basePrice: resolvedBasePrice,
         manualDiscountAmount,
@@ -1101,6 +1103,19 @@ export class CheckoutOrchestrator {
         }
       }
     }
+  }
+
+  /**
+   * Ignore legacy POS placeholders ("default" / "default_category") so category
+   * promotions resolve from the variant's real product category.
+   */
+  private resolveLineCategoryId(dtoCategoryId?: string, productCategoryId?: string | null): string {
+    const fake = !dtoCategoryId
+      || dtoCategoryId === 'default'
+      || dtoCategoryId === 'default_category';
+    return (!fake ? dtoCategoryId : undefined)
+      || productCategoryId
+      || 'default_category';
   }
 
   /** Ensures a PaymentMethod row exists (e.g. CUSTOMER_CREDIT is not always seeded). */

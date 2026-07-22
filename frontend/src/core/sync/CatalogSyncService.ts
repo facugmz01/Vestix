@@ -74,6 +74,7 @@ export class CatalogSyncService {
   static toProductVariant(item: PosCatalogItem): ProductVariant & {
     name: string;
     category?: string;
+    categoryId?: string;
     brand?: string;
     stock?: number;
     imageUrl?: string | null;
@@ -89,15 +90,19 @@ export class CatalogSyncService {
       color: item.color || undefined,
       name: item.name,
       category: item.categoryName,
+      categoryId: item.categoryId,
       brand: item.brandName,
       stock: item.stock,
       imageUrl: item.imageUrl,
+      product: item.categoryId ? { categoryId: item.categoryId } : undefined,
     } as ProductVariant & {
       name: string;
       category?: string;
+      categoryId?: string;
       brand?: string;
       stock?: number;
       imageUrl?: string | null;
+      product?: { categoryId?: string };
     };
   }
 

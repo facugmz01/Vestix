@@ -154,13 +154,14 @@ export class PosService {
       });
     }
 
+    // Match checkout.orchestrator: evaluate promos on the post line-discount price.
     const cartEvaluation = await this.rulesEngine.evaluateCartPromotions(
       evaluatedLines.map(l => ({
         id: crypto.randomUUID(),
         variantId: l.variantId,
         categoryId: l.categoryId,
         quantity: l.quantity,
-        unitPrice: l.basePrice,
+        unitPrice: l.finalPrice,
       })),
     );
 
@@ -169,6 +170,11 @@ export class PosService {
       0,
     );
     const promotionDiscount = cartEvaluation.discountTotal;
+    // List-price subtotal (before line discounts), for POS display.
+    const listSubtotal = evaluatedLines.reduce(
+      (acc, l) => acc + l.basePrice * l.quantity,
+      0,
+    );
     let grandTotal = cartEvaluation.finalTotal;
     let globalPctDiscount = 0;
     if (dto.cartDiscountPct && dto.cartDiscountPct > 0) {
@@ -177,7 +183,7 @@ export class PosService {
     }
 
     return {
-      subtotal: Number(cartEvaluation.originalTotal.toFixed(2)),
+      subtotal: Number(listSubtotal.toFixed(2)),
       lineDiscountsTotal: Number(lineDiscountsTotal.toFixed(2)),
       cartDiscountTotal: Number((promotionDiscount + globalPctDiscount).toFixed(2)),
       grandTotal: Number(grandTotal.toFixed(2)),
@@ -256,10 +262,12 @@ export class PosService {
 
         return {
           id: v.id,
+          productId: v.productId,
           sku: v.sku,
           barcode: v.barcode,
           barcodes: v.barcodes.map(b => b.barcode),
           name: v.product?.name || 'Producto Desconocido',
+          categoryId: v.product?.categoryId,
           category: v.product?.category?.name,
           brand: v.product?.brand?.name,
           size: v.size,

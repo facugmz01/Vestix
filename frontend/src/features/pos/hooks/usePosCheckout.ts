@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { get } from '@/api/client';
 import { warehousesApi } from '@/api/warehouses.api';
 import { formatCurrency } from '@/utils/formatCurrency';
-import type { SaleOrder, PaymentMethod } from '@/types';
+import type { SaleOrder, PaymentMethod, ProductVariant } from '@/types';
 
 function buildOfflineReceipt(dto: Record<string, unknown>): SaleOrder {
   const lines = ((dto.lines as unknown[]) || []).map((line: unknown, idx: number) => {
@@ -56,6 +56,9 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       issueInvoice: boolean;
     }) => {
       if (!activeShift) throw new Error('No hay sesión de caja activa');
+      if (!currentBranchId) {
+        throw new Error('Tu usuario no tiene sucursal asignada. Asigná una sucursal antes de vender.');
+      }
 
       const {
         cart,
@@ -67,6 +70,11 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         giftCardAmount,
         loyaltyPointsToRedeem,
       } = usePosStore.getState();
+
+      if (!cart.length) {
+        throw new Error('El carrito está vacío');
+      }
+
       const orderId = crypto.randomUUID();
 
       let resolvedPaymentReference = paymentReference || undefined;
@@ -117,13 +125,22 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         posGrandTotal: amountDue,
         cartDiscountTotal: Math.max(0, cartDiscountTotal ?? 0),
         createdAtIso: new Date().toISOString(),
-        lines: cart.map(i => ({
-          variantId: i.variant.id,
-          categoryId: (i.variant as { product?: { categoryId?: string } }).product?.categoryId || 'default',
-          quantity: i.qty,
-          unitPriceOverride: i.variant.basePrice,
-          discountPct: i.discountPct,
-        })),
+        lines: cart.map(i => {
+          const variant = i.variant as ProductVariant & {
+            categoryId?: string;
+            product?: { categoryId?: string };
+          };
+          // Prefer real category IDs; never send a fake "default" — that blocks
+          // category promotions on the server and causes Payment mismatch.
+          const categoryId = variant.categoryId || variant.product?.categoryId;
+          return {
+            variantId: variant.id,
+            ...(categoryId ? { categoryId } : {}),
+            quantity: i.qty,
+            unitPriceOverride: variant.basePrice,
+            discountPct: i.discountPct,
+          };
+        }),
         issueInvoice,
       };
 
@@ -191,11 +208,15 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       usePosStore.getState().setMixedPaymentModalOpen(false);
       usePosStore.getState().setQrModalOpen(false);
     },
-    onError: (_err, _variables, context) => {
+    onError: (err, _variables, context) => {
       if (context?.prevCart) {
         usePosStore.setState({ cart: context.prevCart });
       }
-      toast.error('Error al registrar la venta.');
+      const apiErr = err as { message?: string; status?: number | null };
+      // Axios interceptor already toasts HTTP 400/403/5xx; only cover gaps here.
+      if (!apiErr?.status || apiErr.status === 404) {
+        toast.error(apiErr?.message || 'Error al registrar la venta.');
+      }
     }
   });
 }
