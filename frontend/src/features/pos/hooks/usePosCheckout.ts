@@ -172,21 +172,27 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         const res = await salesApi.createSale(dto as Parameters<typeof salesApi.createSale>[0]);
         return { offline: false, res: res.order || res, dto };
       } catch (err: unknown) {
-        const axiosErr = err as { response?: unknown; code?: string };
-        if (!axiosErr.response || axiosErr.code === 'ERR_NETWORK') {
+        // apiClient normalizes HTTP errors to { status, message } (no .response).
+        // Only queue offline when there was no HTTP response at all.
+        const apiErr = err as { status?: number | null; code?: string; response?: unknown };
+        const isNetworkFailure =
+          apiErr.code === 'ERR_NETWORK'
+          || (apiErr.status == null && apiErr.response == null && !navigator.onLine);
+        if (isNetworkFailure) {
           enqueueSale();
           return { offline: true, dto };
         }
         throw err;
       }
     },
+    // Do NOT clear the cart here — TanStack calls onMutate before mutationFn, so
+    // clearing would send lines:[] and cause "Payment mismatch. Expected 0 …".
     onMutate: () => {
-      const prevCart = usePosStore.getState().cart;
       usePosStore.getState().saveLastSaleSnapshot();
-      clearCart();
-      return { prevCart };
     },
     onSuccess: (data) => {
+      clearCart();
+
       if (data.offline) {
         toast('Venta guardada offline. Se sincronizará pronto.', { icon: '🔄' });
       } else {
@@ -208,13 +214,10 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       usePosStore.getState().setMixedPaymentModalOpen(false);
       usePosStore.getState().setQrModalOpen(false);
     },
-    onError: (err, _variables, context) => {
-      if (context?.prevCart) {
-        usePosStore.setState({ cart: context.prevCart });
-      }
+    onError: (err) => {
       const apiErr = err as { message?: string; status?: number | null };
       // Axios interceptor already toasts HTTP 400/403/5xx; only cover gaps here.
-      if (!apiErr?.status || apiErr.status === 404) {
+      if (apiErr?.status == null || apiErr.status === 404) {
         toast.error(apiErr?.message || 'Error al registrar la venta.');
       }
     }
