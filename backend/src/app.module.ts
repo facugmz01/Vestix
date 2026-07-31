@@ -32,6 +32,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ShippingModule } from './domains/shipping/shipping.module';
 import { BackupsModule } from './modules/backups/backups.module';
+import { RestoreMaintenanceGuard } from './modules/backups/restore-maintenance.guard';
 
 @Module({
   imports: [
@@ -92,6 +93,8 @@ import { BackupsModule } from './modules/backups/backups.module';
   providers: [
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Returns 503 while a backup restore is rewriting DB schemas (avoids Prisma 500s).
+    { provide: APP_GUARD, useClass: RestoreMaintenanceGuard },
   ],
 })
 export class AppModule {}
