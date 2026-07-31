@@ -74,8 +74,23 @@ if [ "$RESTORE_DB" = true ]; then
 
   echo ">>> Restoring database from $BACKUP_FILE ..."
   echo "    WARNING: this overwrites the current database."
+
+  # Plain dumps (especially without --clean) fail with
+  # `schema "catalog" already exists` unless app schemas are dropped first.
+  "${COMPOSE[@]}" exec -T postgres \
+    psql -U "${POSTGRES_USER:-erp_admin}" -d "${POSTGRES_DB:-erp_prod}" \
+    -v ON_ERROR_STOP=1 \
+    -c "DROP SCHEMA IF EXISTS core CASCADE;
+DROP SCHEMA IF EXISTS catalog CASCADE;
+DROP SCHEMA IF EXISTS inventory CASCADE;
+DROP SCHEMA IF EXISTS sales CASCADE;
+DROP SCHEMA IF EXISTS purchasing CASCADE;
+DROP SCHEMA IF EXISTS finance CASCADE;
+DROP SCHEMA IF EXISTS settings CASCADE;" >/dev/null
+
   gunzip -c "$BACKUP_FILE" | "${COMPOSE[@]}" exec -T postgres \
-    psql -U "${POSTGRES_USER:-erp_admin}" -d "${POSTGRES_DB:-erp_prod}" >/dev/null
+    psql -U "${POSTGRES_USER:-erp_admin}" -d "${POSTGRES_DB:-erp_prod}" \
+    -v ON_ERROR_STOP=1 >/dev/null
 
   "${COMPOSE[@]}" restart backend
 fi

@@ -5,7 +5,8 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { statSync } from 'fs';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { BackupsService, BackupJobPayload, BACKUPS_QUEUE } from './backups.service';
+import { buildPrepareRestoreSql } from './backup-restore.util';
+import { BackupsService, BackupJobPayload, BACKUPS_QUEUE, DbConnectionConfig } from './backups.service';
 
 const execFileAsync = promisify(execFile);
 
@@ -74,6 +75,9 @@ export class BackupsProcessor extends WorkerHost {
       '-F', 'p',
       '--no-owner',
       '--no-acl',
+      // So restores into a live DB can DROP conflicting objects first.
+      '--clean',
+      '--if-exists',
       '-f', filePath,
     ];
 
@@ -85,6 +89,10 @@ export class BackupsProcessor extends WorkerHost {
 
   private async runPsqlRestore(filePath: string) {
     const db = this.backupsService.parseDatabaseUrl();
+    // Existing backups (without --clean) emit bare CREATE SCHEMA and fail when
+    // schemas like "catalog" already exist. Clear app schemas first.
+    await this.prepareDatabaseForRestore(db);
+
     const args = [
       '-h', db.host,
       '-p', String(db.port),
@@ -98,5 +106,26 @@ export class BackupsProcessor extends WorkerHost {
       env: { ...process.env, PGPASSWORD: db.password },
       maxBuffer: 1024 * 1024 * 256,
     });
+  }
+
+  private async prepareDatabaseForRestore(db: DbConnectionConfig) {
+    const sql = buildPrepareRestoreSql();
+    this.logger.warn('[Backups] Dropping existing app schemas before restore');
+
+    await execFileAsync(
+      'psql',
+      [
+        '-h', db.host,
+        '-p', String(db.port),
+        '-U', db.user,
+        '-d', db.database,
+        '-v', 'ON_ERROR_STOP=1',
+        '-c', sql,
+      ],
+      {
+        env: { ...process.env, PGPASSWORD: db.password },
+        maxBuffer: 1024 * 1024 * 16,
+      },
+    );
   }
 }
