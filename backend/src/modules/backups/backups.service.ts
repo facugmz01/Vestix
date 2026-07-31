@@ -161,7 +161,12 @@ export class BackupsService {
       },
     });
 
-    await this.backupsQueue.add('restore', { backupId: restoreJob.id, type: 'RESTORE' });
+    // Small delay so the HTTP 201 can flush before the worker drops schemas.
+    await this.backupsQueue.add(
+      'restore',
+      { backupId: restoreJob.id, type: 'RESTORE' },
+      { delay: 1500 },
+    );
 
     this.auditService.log({
       userId: userId ?? 'system',

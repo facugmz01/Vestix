@@ -57,6 +57,10 @@ apiClient.interceptors.response.use(
       case 409: toast.error(message || 'Conflicto: el recurso ya existe.'); break;
       case 422: toast.error(message || 'Datos inválidos.'); break;
       case 429: toast.error('Demasiadas solicitudes. Esperá unos segundos.'); break;
+      case 503:
+        // Backup restore puts the API in maintenance; avoid alarming "Error 500" toasts.
+        toast.error(message || 'Servicio no disponible temporalmente. Reintentá en unos segundos.');
+        break;
       default:
         if (status >= 500) toast.error(`Error del servidor (${status}).`);
     }

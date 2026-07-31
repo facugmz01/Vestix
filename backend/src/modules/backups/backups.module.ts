@@ -5,6 +5,8 @@ import { AuditModule } from '../audit/audit.module';
 import { BackupsController } from './backups.controller';
 import { BackupsService, BACKUPS_QUEUE } from './backups.service';
 import { BackupsProcessor } from './backups.processor';
+import { RestoreMaintenanceService } from './restore-maintenance.service';
+import { RestoreMaintenanceGuard } from './restore-maintenance.guard';
 
 @Module({
   imports: [
@@ -20,7 +22,12 @@ import { BackupsProcessor } from './backups.processor';
     }),
   ],
   controllers: [BackupsController],
-  providers: [BackupsService, BackupsProcessor],
-  exports: [BackupsService],
+  providers: [
+    BackupsService,
+    BackupsProcessor,
+    RestoreMaintenanceService,
+    RestoreMaintenanceGuard,
+  ],
+  exports: [BackupsService, RestoreMaintenanceService],
 })
 export class BackupsModule {}
