@@ -4,5 +4,7 @@ tsconfig.tsbuildinfo
 .env
 *.log
 .DS_Store
-backups/
+# Docker logical dumps at repo root (not backend/src/modules/backups)
+/backups/
+backend/uploads/backups/
 docker-data/
