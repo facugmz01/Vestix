@@ -233,6 +233,14 @@ export class FinanceDocumentsService {
       vatAmount,
     });
 
+    // Keep customer tax ID in sync so the sale reflects the invoiced party.
+    if (order.customerId && dto.receiverDocNumber) {
+      await this.prisma.customer.update({
+        where: { id: order.customerId },
+        data: { taxId: dto.receiverDocNumber },
+      });
+    }
+
     return this.mapElectronicInvoice({
       ...invoice,
       order: {

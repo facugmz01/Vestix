@@ -62,6 +62,12 @@ export class InvoicingService {
       },
     });
 
+    // Mark the sale as fiscally invoiced so returns/credit notes and UI follow that state.
+    await this.prisma.saleOrder.update({
+      where: { id: payload.orderId },
+      data: { issueInvoice: true },
+    });
+
     await this.afipProducer.enqueueInvoiceGeneration(payload.orderId, order.branchId);
 
     return invoice;

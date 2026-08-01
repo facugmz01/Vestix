@@ -196,8 +196,19 @@ function OrderDetailView({ orderId }: { orderId: string }) {
   const statusInfo = getStatusDisplay(tracking.status);
   const isCancelled = tracking.status === 'CANCELLED';
 
-  const mapLat = liveData?.lastLatitude ?? tracking.delivery?.lastLatitude;
-  const mapLng = liveData?.lastLongitude ?? tracking.delivery?.lastLongitude;
+  const driverLat = liveData?.lastLatitude ?? tracking.delivery?.lastLatitude;
+  const driverLng = liveData?.lastLongitude ?? tracking.delivery?.lastLongitude;
+  const destLat = tracking.shippingAddress?.latitude;
+  const destLng = tracking.shippingAddress?.longitude;
+  const hasDriverLocation = driverLat != null && driverLng != null;
+  const hasDestination = destLat != null && destLng != null;
+  const showMap =
+    tracking.showMapToCustomer !== false &&
+    tracking.status === 'SHIPPED' &&
+    (hasDriverLocation || hasDestination);
+  const mapLat = hasDriverLocation ? driverLat! : destLat!;
+  const mapLng = hasDriverLocation ? driverLng! : destLng!;
+  const mapMode = hasDriverLocation ? 'driver' : 'destination';
 
   return (
     <div>
@@ -232,13 +243,14 @@ function OrderDetailView({ orderId }: { orderId: string }) {
 
       <OrderTimeline tracking={tracking} />
 
-      {mapLat && mapLng && (
+      {showMap && (
         <DeliveryMap
           lat={mapLat}
           lng={mapLng}
+          mode={mapMode}
           updatedAt={liveData?.lastLocationAt || tracking.delivery?.lastLocationAt}
           driverName={tracking.delivery?.driverName}
-          live={connected}
+          live={connected && mapMode === 'driver'}
         />
       )}
 
@@ -422,18 +434,36 @@ function OrderTimeline({ tracking }: { tracking: OrderTracking }) {
   );
 }
 
-function DeliveryMap({ lat, lng, updatedAt, driverName, live }: { lat: number; lng: number; updatedAt?: string; driverName?: string; live?: boolean }) {
+function DeliveryMap({
+  lat,
+  lng,
+  updatedAt,
+  driverName,
+  live,
+  mode = 'driver',
+}: {
+  lat: number;
+  lng: number;
+  updatedAt?: string;
+  driverName?: string;
+  live?: boolean;
+  mode?: 'driver' | 'destination';
+}) {
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01}%2C${lat - 0.01}%2C${lng + 0.01}%2C${lat + 0.01}&layer=mapnik&marker=${lat}%2C${lng}`;
+  const title =
+    mode === 'destination'
+      ? 'Destino de entrega'
+      : `Ubicación del repartidor${driverName ? `: ${driverName}` : ''}`;
 
   return (
     <div className={styles.mapWrap}>
       <div className={styles.mapHeader}>
         <Navigation size={16} color="var(--purple, #8b5cf6)" />
         <span className={styles.mapTitle}>
-          Ubicación del repartidor{driverName ? `: ${driverName}` : ''}
+          {title}
           {live && <span className={styles.mapLive}>● En vivo</span>}
         </span>
-        {updatedAt && (
+        {updatedAt && mode === 'driver' && (
           <span className={styles.mapUpdated}>
             Actualizado: {new Date(updatedAt).toLocaleTimeString()}
           </span>

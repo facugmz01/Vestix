@@ -33,7 +33,6 @@ export default function StorefrontCheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState<string>('');
   const [shippingAddress, setShippingAddress] = useState({ street: '', city: '', state: '', zip: '' });
   const [paymentMethod, setPaymentMethod] = useState<string>('');
-  const [issueInvoice, setIssueInvoice] = useState(false);
 
   const selectedShipping = settings?.shippingMethods?.find(m => m.id === shippingMethod);
   const SHIPPING_COST = selectedShipping ? selectedShipping.price : 0;
@@ -162,7 +161,6 @@ export default function StorefrontCheckoutPage() {
         quantity: i.qty,
         price: i.price,
       })),
-      issueInvoice,
     });
   };
 
@@ -199,18 +197,6 @@ export default function StorefrontCheckoutPage() {
                     <option>DNI</option><option>CUIT</option>
                   </select>
                   <input className={clsx('storefront-input', styles.docInput)} placeholder="Número" value={info.docNum} onChange={e => setInfo({...info, docNum: e.target.value})} />
-                </div>
-                <div className={styles.checkboxField}>
-                  <label className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={issueInvoice}
-                      onChange={e => setIssueInvoice(e.target.checked)}
-                      className={styles.checkbox}
-                    />
-                    Solicitar Factura Electrónica (AFIP)
-                  </label>
-                  <p className={styles.checkboxHint}>Si no lo marcas, se emitirá un recibo de uso interno.</p>
                 </div>
               </div>
               <div className={styles.stepActions}>

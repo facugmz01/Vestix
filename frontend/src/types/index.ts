@@ -273,6 +273,7 @@ export interface SaleOrder {
   payments?: SaleOrderPayment[];
   subtotal: number; cartDiscountTotal: number; grandTotal: number;
   afipInvoiceId?: string;
+  issueInvoice?: boolean;
   paymentMethod: PaymentMethod; createdAt: string; syncedAt?: string;
   shippingMethodId?: string | null;
   shippingMethodName?: string | null;
