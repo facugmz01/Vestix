@@ -18,6 +18,33 @@ export class MediaService {
     return `/uploads/products/${filename}`;
   }
 
+  /**
+   * Persist a data-URL image to disk and return the public `/uploads/...` path.
+   * Non-data-URL strings are returned unchanged.
+   */
+  persistDataUrl(img: string): string {
+    if (typeof img !== 'string' || !img.startsWith('data:image/')) return img;
+    const match = img.match(/^data:image\/([\w+.-]+);base64,(.+)$/);
+    if (!match) return img;
+
+    const rawExt = match[1].toLowerCase().replace('jpeg', 'jpg').split('+')[0];
+    const ext = ['jpg', 'png', 'webp', 'gif'].includes(rawExt) ? rawExt : 'jpg';
+    const buffer = Buffer.from(match[2], 'base64');
+    if (!buffer.length) return img;
+
+    const filename = `product-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+    writeFileSync(join(this.uploadDir, filename), buffer);
+    return this.buildProductImageUrl(filename);
+  }
+
+  /** Convert any mix of data-URLs and remote paths into filesystem-backed URLs. */
+  persistImageRefs(images: unknown): string[] {
+    if (!Array.isArray(images)) return [];
+    return images
+      .filter((img): img is string => typeof img === 'string' && img.length > 0)
+      .map((img) => this.persistDataUrl(img));
+  }
+
   async addProductImage(productId: string, file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
     const product = await this.prisma.product.findUnique({ where: { id: productId } });
@@ -60,14 +87,8 @@ export class MediaService {
 
       const nextImages = images.map(img => {
         if (typeof img !== 'string' || !img.startsWith('data:image/')) return img;
-        const match = img.match(/^data:image\/(\w+);base64,(.+)$/);
-        if (!match) return img;
-        const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
-        const buffer = Buffer.from(match[2], 'base64');
-        const filename = `migrated-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
-        writeFileSync(join(this.uploadDir, filename), buffer);
         migratedImages++;
-        return this.buildProductImageUrl(filename);
+        return this.persistDataUrl(img);
       });
 
       await this.prisma.product.update({ where: { id: product.id }, data: { images: nextImages } });

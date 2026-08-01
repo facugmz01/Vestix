@@ -66,10 +66,15 @@ import { RestoreMaintenanceGuard } from './modules/backups/restore-maintenance.g
       },
     }),
 
-    // Servir archivos estáticos (Ej: Logos de empresa)
+    // Servir archivos estáticos (logos, fotos de productos, etc.)
+    // process.cwd() is reliable in both nest start and Docker (/app).
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
+      serveStaticOptions: {
+        index: false,
+        fallthrough: false,
+      },
     }),
 
     // 4. Módulos de Funcionalidad

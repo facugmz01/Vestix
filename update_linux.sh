@@ -52,10 +52,46 @@ npm install --unsafe-perm
 chmod -R +x node_modules/.bin || true
 npm run build
 
-# 6. Reiniciar servidor Backend
-echo ">>> [6/6] Reiniciando servicios (PM2)..."
+# 6. Reiniciar servidor Backend + asegurar proxy de /uploads en Nginx
+echo ">>> [6/6] Reiniciando servicios (PM2) y parcheando Nginx..."
 cd $APP_DIR/backend
 pm2 restart vestix-backend
+
+# Existing installs created before /uploads proxy support return the SPA HTML for
+# product photo URLs (browser: "isn't a valid image"). Patch idempotently.
+NGINX_CONF="/etc/nginx/sites-available/vestix"
+if [ -f "$NGINX_CONF" ] && ! grep -q 'location /uploads/' "$NGINX_CONF"; then
+  echo ">>> Agregando location /uploads/ a Nginx..."
+  sudo python3 - <<'PY'
+from pathlib import Path
+conf = Path("/etc/nginx/sites-available/vestix")
+text = conf.read_text()
+block = """
+    location /uploads/ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+    }
+"""
+needle = "    location /api/"
+if needle not in text:
+    raise SystemExit("Could not find location /api/ in nginx conf; skip uploads patch")
+# Insert before every /api/ block (HTTP + HTTPS server stanzas when present)
+text = text.replace(needle, block + "\n" + needle)
+conf.write_text(text)
+print("Patched", conf)
+PY
+  if sudo nginx -t; then
+    sudo systemctl reload nginx || sudo service nginx reload || true
+    echo ">>> Nginx recargado con /uploads/"
+  else
+    echo "⚠️  nginx -t falló tras el parche de /uploads/. Revisá $NGINX_CONF manualmente."
+  fi
+fi
 
 echo ""
 echo "======================================================"
