@@ -43,6 +43,7 @@ RUN apt-get update \
     curl \
     tini \
     gosu \
+    postgresql-client \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd --system --gid 1001 vestix \
   && useradd --system --uid 1001 --gid vestix --home-dir /app --shell /usr/sbin/nologin vestix \

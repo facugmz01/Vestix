@@ -27,6 +27,7 @@ echo ">>> Creating database backup → ${OUT_FILE}"
 "${COMPOSE[@]}" exec -T postgres \
   pg_dump -U "${POSTGRES_USER:-erp_admin}" -d "${POSTGRES_DB:-erp_prod}" \
     --no-owner --no-acl --clean --if-exists \
+    --exclude-table-data='core."BackupJob"' \
   | gzip -c > "$OUT_FILE"
 
 # Keep a stable pointer to the latest backup for rollback scripts
