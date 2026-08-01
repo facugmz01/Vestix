@@ -144,6 +144,9 @@ export interface StorefrontSettings {
   hideOutOfStock: boolean;
   hideBrandFilters: boolean;
   transferCbu?: string;
+  transferAlias?: string;
+  transferHolderName?: string;
+  transferBankName?: string;
   acceptCash: boolean;
   shippingInfo: string;
   requireShippingData: string;
@@ -1275,7 +1278,8 @@ export class SettingsService implements OnModuleInit {
             showHeader: true, showStoreName: true, imagesCarousel: [],
             priceListToShow: '', defaultSort: 'name_asc',
             hideOutOfStock: false, hideBrandFilters: false,
-            transferCbu: '', acceptCash: false, shippingInfo: '',
+            transferCbu: '', transferAlias: '', transferHolderName: '',
+            transferBankName: '', acceptCash: false, shippingInfo: '',
             requireShippingData: 'optional', whatsapp: '',
             storeLoginChannels: ['WHATSAPP'],
             instagramUrl: '', facebookUrl: '', tiktokUrl: '', youtubeUrl: '', xUrl: '',

@@ -194,7 +194,32 @@ export function StorefrontSettingsPanel() {
           </div>
 
           <div className={styles.marginTop24}>
-            <Input label="CBU / Alias para transferencia" placeholder="0000003100000000000000 / alias.banco" {...register('transferCbu')} containerClassName={styles.inputMax400} />
+            <h4 className={styles.sectionSubtitle}>Datos bancarios para transferencia</h4>
+            <p className={styles.cardDescription}>
+              Se muestran al cliente en el checkout y al confirmar un pedido pagado por transferencia.
+            </p>
+            <div className={clsx(styles.grid, styles.grid2, styles.marginTop12)}>
+              <Input
+                label="Nombre y apellido del titular"
+                placeholder="Juan Pérez"
+                {...register('transferHolderName')}
+              />
+              <Input
+                label="Entidad bancaria"
+                placeholder="Banco Nación / Mercado Pago"
+                {...register('transferBankName')}
+              />
+              <Input
+                label="CBU / CVU"
+                placeholder="0000003100000000000000"
+                {...register('transferCbu')}
+              />
+              <Input
+                label="Alias"
+                placeholder="comercio.mp"
+                {...register('transferAlias')}
+              />
+            </div>
           </div>
         </div>
       </section>

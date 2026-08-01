@@ -199,6 +199,10 @@
   color: var(--text-secondary);
 }
 
+.bankTransferPanel {
+  margin: 0 0 20px;
+}
+
 .confirmBtn {
   min-width: 180px;
 }

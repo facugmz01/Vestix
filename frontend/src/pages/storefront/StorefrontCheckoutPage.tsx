@@ -11,7 +11,7 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { StorefrontStepper } from '@/components/storefront';
+import { BankTransferDetails, hasBankTransferDetails, StorefrontStepper } from '@/components/storefront';
 import styles from './storefrontCheckout.module.css';
 
 export default function StorefrontCheckoutPage() {
@@ -35,6 +35,8 @@ export default function StorefrontCheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<string>('');
 
   const selectedShipping = settings?.shippingMethods?.find(m => m.id === shippingMethod);
+  const selectedPayment = settings?.paymentMethods?.find(pm => pm.id === paymentMethod);
+  const isBankTransfer = selectedPayment?.type === 'BANK_TRANSFER';
   const SHIPPING_COST = selectedShipping ? selectedShipping.price : 0;
   const subtotal = totalPrice();
   const grandTotal = subtotal + SHIPPING_COST;
@@ -90,13 +92,34 @@ export default function StorefrontCheckoutPage() {
       }
 
       clearCart();
-      const successPath = orderId
-        ? `${prefix}/checkout/success?orderId=${encodeURIComponent(orderId)}`
-        : `${prefix}/checkout/success`;
-      navigate(successPath, { replace: true });
+      const paymentType = data?.payment?.method || selectedPayment?.type || '';
+      const bankTransfer =
+        data?.payment?.bankTransfer ||
+        (paymentType === 'BANK_TRANSFER' && settings
+          ? {
+              transferCbu: settings.transferCbu,
+              transferAlias: settings.transferAlias,
+              transferHolderName: settings.transferHolderName,
+              transferBankName: settings.transferBankName,
+            }
+          : undefined);
+      const params = new URLSearchParams();
+      if (orderId) params.set('orderId', orderId);
+      if (paymentType) params.set('payment', paymentType);
+      const query = params.toString();
+      navigate(`${prefix}/checkout/success${query ? `?${query}` : ''}`, {
+        replace: true,
+        state: {
+          paymentMethod: paymentType,
+          bankTransfer,
+          grandTotal,
+        },
+      });
 
       if (data?.offline) {
         toast.success('Pedido registrado fuera de línea (sincronizará cuando haya conexión) 💾');
+      } else if (paymentType === 'BANK_TRANSFER') {
+        toast.success('Pedido registrado. Transferí con los datos bancarios indicados.');
       } else {
         toast.success('¡Pedido registrado! ✅');
       }
@@ -257,11 +280,32 @@ export default function StorefrontCheckoutPage() {
                     <input type="radio" checked={paymentMethod === pm.id} onChange={() => setPaymentMethod(pm.id)} className={styles.paymentRadio} />
                     <div className={styles.paymentInfo}>
                       <p className={styles.paymentName}>{pm.name}</p>
-                      <p className={styles.paymentType}>{pm.type === 'CREDIT_CARD' ? 'Mercado Pago' : pm.type}</p>
+                      <p className={styles.paymentType}>
+                        {pm.type === 'CREDIT_CARD'
+                          ? 'Mercado Pago'
+                          : pm.type === 'BANK_TRANSFER'
+                            ? 'Transferencia bancaria'
+                            : pm.type === 'CASH'
+                              ? 'Efectivo'
+                              : pm.type}
+                      </p>
                     </div>
                   </label>
                 ))}
               </div>
+              {isBankTransfer && settings && hasBankTransferDetails(settings) && (
+                <BankTransferDetails
+                  className={styles.bankTransferPanel}
+                  info={settings}
+                  amount={grandTotal}
+                  formatAmount={formatCurrency}
+                />
+              )}
+              {isBankTransfer && settings && !hasBankTransferDetails(settings) && (
+                <p className={styles.secureHint}>
+                  Elegiste transferencia. El comercio te compartirá los datos bancarios para completar el pago.
+                </p>
+              )}
               <div className={styles.stepActionsBetween}>
                 <button type="button" onClick={() => setStep(2)} className="storefront-btn storefront-btn-secondary">← Volver</button>
                 <button type="button" onClick={handleCheckout} disabled={mutation.isPending} className={clsx('storefront-btn', styles.confirmBtn)}>
