@@ -133,6 +133,8 @@ export async function upload<T>(
 
   const { data } = await apiClient.post<T>(url, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    // Phone photos can be several MB; give multipart uploads more headroom.
+    timeout: 60_000,
   });
   return data;
 }

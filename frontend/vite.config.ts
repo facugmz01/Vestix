@@ -27,6 +27,11 @@ export default defineConfig({
         changeOrigin: true,
         // rewrite: (path) => path.replace(/^\/api/, ''), // Removed this because backend expects /api
       },
+      // Product photos, logos, delivery proofs — served by Nest ServeStatic at /uploads
+      '/uploads': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
     },
   },
 });

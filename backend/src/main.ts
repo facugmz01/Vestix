@@ -30,10 +30,12 @@ async function bootstrap() {
   app.use(cookieParser());
   app.use(helmet());
   
-  // Safe payload limit for JSON body requests
+  // Safe payload limit for JSON body requests.
+  // Product create may still include a small preview data-URL; multipart uploads
+  // (preferred for photos) go through multer and are not limited by this.
   const bodyParser = require('body-parser');
-  app.use(bodyParser.json({ limit: '2mb' }));
-  app.use(bodyParser.urlencoded({ limit: '2mb', extended: true }));
+  app.use(bodyParser.json({ limit: '10mb' }));
+  app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
   // ─── CORS ───────────────────────────────────────────────────────────────────
   const allowedOrigins: string[] = [

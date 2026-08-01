@@ -7,6 +7,7 @@ import {
   Archive, Package, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { upload } from '@/api/client';
 import { productsApi, type CreateProductDto } from '@/api/products.api';
 import { identifiersApi } from '@/api/identifiers.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -15,6 +16,7 @@ import { ProductImagesUploader } from '@/features/products/components/ProductIma
 import { RelatedProductsPicker } from '@/features/products/components/RelatedProductsPicker';
 import { VariantMassGenerator } from '@/features/products/components/VariantMassGenerator';
 import { ComboRecipeBuilder } from '@/features/products/components/ComboRecipeBuilder';
+import { dataUrlToFile } from '@/features/products/utils/dataUrlToFile';
 import clsx from 'clsx';
 import styles from './ProductEditor.module.css';
 
@@ -118,7 +120,7 @@ export function ProductEditor({ initialData }: Props) {
   const { data: priceLists } = useQuery({ queryKey: queryKeys.priceLists.all(), queryFn: () => productsApi.getPriceLists() });
 
   const mutation = useMutation({
-    mutationFn: (data: CreateProductDto) => {
+    mutationFn: async (data: CreateProductDto) => {
       // Inject dimensions into metadata
       const meta = {
         dimensions: {
@@ -129,6 +131,11 @@ export function ProductEditor({ initialData }: Props) {
         },
         relatedProductIds,
       };
+
+      // Prefer multipart upload over embedding base64 in JSON (body limit + nginx).
+      const allImages = Array.isArray(data.images) ? data.images : [];
+      const dataUrlImages = allImages.filter((img) => typeof img === 'string' && img.startsWith('data:'));
+      const remoteImages = allImages.filter((img) => typeof img === 'string' && !img.startsWith('data:'));
       
       // Sanitize payload to only include whitelisted properties to prevent backend validation errors
       const safePayload: any = {
@@ -145,7 +152,7 @@ export function ProductEditor({ initialData }: Props) {
         isActive: data.isActive,
         isPublished: data.isPublished,
         metadata: meta,
-        images: data.images,
+        images: remoteImages,
       };
 
       if (data.comboLines) {
@@ -191,8 +198,18 @@ export function ProductEditor({ initialData }: Props) {
       if (!safePayload.brandId) delete safePayload.brandId;
       if (!safePayload.baseSku) delete safePayload.baseSku;
 
-      if (isEditing) return productsApi.updateProduct(initialData!.id, safePayload);
-      return productsApi.createProduct(safePayload);
+      const product = isEditing
+        ? await productsApi.updateProduct(initialData!.id, safePayload)
+        : await productsApi.createProduct(safePayload);
+
+      // Upload pending data-URL photos after the product exists (multipart → /uploads/products).
+      for (let i = 0; i < dataUrlImages.length; i++) {
+        const file = dataUrlToFile(dataUrlImages[i], `product-${i}`);
+        if (!file) continue;
+        await upload<{ url: string }>(`/products/${product.id}/images`, file, 'image');
+      }
+
+      return product;
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Producto actualizado' : 'Producto creado exitosamente');

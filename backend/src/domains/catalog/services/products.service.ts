@@ -6,6 +6,7 @@ import { CategoriesService, BrandsService } from './taxonomy.service';
 import { SettingsService } from '../../../modules/settings/settings.service';
 import { PriceHistoryService } from './price-history.service';
 import { IdentifiersService } from '../identifiers.service';
+import { MediaService } from './media.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import { isVariableProduct, normalizeProductType, syncIsVariableFlag } from '../utils/product-type.util';
@@ -26,6 +27,7 @@ export class ProductsService {
     private readonly settingsService: SettingsService,
     private readonly priceHistoryService: PriceHistoryService,
     private readonly identifiersService: IdentifiersService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -119,6 +121,9 @@ export class ProductsService {
     }
 
     const normalizedMetadata = normalizeMetadataWithDimensions(createProductDto.metadata || {});
+    // Persist any base64 data-URLs to disk so the SPA can load `/uploads/...`
+    // (inline base64 in JSON also blows past the body-parser limit on phone photos).
+    const persistedImages = this.mediaService.persistImageRefs(createProductDto.images);
 
     // 3. Create Product and Variants in a Transaction
     return this.prisma.$transaction(async (tx) => {
@@ -135,7 +140,7 @@ export class ProductsService {
           costPrice: createProductDto.costPrice || 0,
           isActive: true,
           isPublished: false,
-          images: (createProductDto.images as any) || [],
+          images: persistedImages as any,
           metadata: normalizedMetadata,
           comboLines: createProductDto.type === 'COMBO' && createProductDto.comboLines?.length ? {
             create: createProductDto.comboLines.map(cl => ({
@@ -416,13 +421,17 @@ export class ProductsService {
         await tx.productComboLine.deleteMany({ where: { parentProductId: id } });
       }
 
+      const persistedImages = images !== undefined
+        ? this.mediaService.persistImageRefs(images)
+        : undefined;
+
       const updatedProduct = await tx.product.update({
         where: { id },
         data: {
           ...data,
           ...(nextType !== undefined ? { type: nextType, isVariable: syncIsVariableFlag(nextType) } : {}),
           ...(normalizedMetadata !== undefined ? { metadata: normalizedMetadata } : {}),
-          images: images as any,
+          ...(persistedImages !== undefined ? { images: persistedImages as any } : {}),
           comboLines: effectiveType === 'COMBO' && comboLines ? {
             create: comboLines.map((cl: any) => ({
               childVariantId: cl.childVariantId,
