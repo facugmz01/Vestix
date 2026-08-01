@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Drawer, Button, Badge, Table, Input } from '@/components/ui';
 import { salesApi } from '@/api/sales.api';
+import { invoicesApi } from '@/api/invoices.api';
 import { queryKeys } from '@/api/queryKeys';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, FileText, ShoppingCart, CreditCard, Send, Pencil, Download } from 'lucide-react';
 import { ActionGuard } from '@/rbac/ActionGuard';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
+import { IssueInvoiceDrawer } from '@/features/finance/invoices/components/IssueInvoiceDrawer';
 import {
   contactMissingMessage,
   normalizePhone,
@@ -104,17 +106,25 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
   const queryClient = useQueryClient();
   const [paymentReference, setPaymentReference] = useState('');
   const [receiptChannel, setReceiptChannel] = useState<NotificationChannel | null>(null);
+  const [issueInvoiceOpen, setIssueInvoiceOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
       setPaymentReference('');
       setReceiptChannel(null);
+      setIssueInvoiceOpen(false);
     }
   }, [saleId, open]);
 
   const { data: sale, isLoading } = useQuery({
     queryKey: queryKeys.sales.detail(saleId || ''),
     queryFn: () => salesApi.getSale(saleId!),
+    enabled: open && !!saleId,
+  });
+
+  const { data: linkedInvoices = [] } = useQuery({
+    queryKey: queryKeys.invoices.bySale(saleId || ''),
+    queryFn: () => invoicesApi.getBySaleOrder(saleId!),
     enabled: open && !!saleId,
   });
 
@@ -336,6 +346,46 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
 
         {sendReceiptBlock}
 
+        {!isQuotation && sale.status !== 'CANCELLED' && (
+          <ActionGuard action="manage" subject="Finance">
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <FileText size={16} />
+                <span className={styles.sectionTitle}>Factura electrónica (ARCA)</span>
+              </div>
+              {linkedInvoices.length > 0 ? (
+                <div className={styles.fieldStack}>
+                  {linkedInvoices.map((inv) => (
+                    <div key={inv.id} className={styles.refBox}>
+                      <span className={styles.refLabel}>
+                        {inv.type} · {inv.status}
+                        {inv.cae ? ` · CAE ${inv.cae}` : ''}
+                      </span>
+                      <p className={styles.refValue}>{formatCurrency(inv.total)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.hintText}>
+                  Esta venta aún no tiene factura ARCA. Podés emitirla desde acá; el comprobante queda vinculado a la compra.
+                </p>
+              )}
+              {!linkedInvoices.some((inv) => inv.status === 'ISSUED' || inv.status === 'PENDING') && (
+                <div className={styles.actionRow}>
+                  <Button
+                    variant="secondary"
+                    icon={<FileText size={16} />}
+                    onClick={() => setIssueInvoiceOpen(true)}
+                    disabled={anyPending}
+                  >
+                    Emitir Factura ARCA
+                  </Button>
+                </div>
+              )}
+            </div>
+          </ActionGuard>
+        )}
+
         {sale.status === 'PENDING_PAYMENT' && (
           <div className={styles.fieldStack}>
             <div className={styles.alertYellow}>
@@ -491,6 +541,12 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
           )}
         </div>
       </div>
+
+      <IssueInvoiceDrawer
+        open={issueInvoiceOpen}
+        onClose={() => setIssueInvoiceOpen(false)}
+        saleOrderId={sale.id}
+      />
     </Drawer>
   );
 }

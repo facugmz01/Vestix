@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -15,6 +15,10 @@ interface Props {
   saleOrderId?: string;
 }
 
+type FormValues = Omit<IssueInvoiceDto, 'saleOrderId' | 'type'> & {
+  saleOrderId?: string;
+};
+
 const IVA_CONDITIONS = [
   'Responsable Inscripto',
   'Monotributista',
@@ -27,8 +31,9 @@ export function IssueInvoiceDrawer({ open, onClose, saleOrderId }: Props) {
   const queryClient = useQueryClient();
   const [invoiceType, setInvoiceType] = useState<InvoiceType>('FACTURA_B');
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Omit<IssueInvoiceDto, 'saleOrderId' | 'type'>>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
+      saleOrderId: saleOrderId || '',
       receiverName: '',
       receiverDocType: 'DNI',
       receiverDocNumber: '',
@@ -37,13 +42,42 @@ export function IssueInvoiceDrawer({ open, onClose, saleOrderId }: Props) {
     }
   });
 
+  useEffect(() => {
+    if (open) {
+      reset({
+        saleOrderId: saleOrderId || '',
+        receiverName: '',
+        receiverDocType: 'DNI',
+        receiverDocNumber: '',
+        receiverIvaCondition: 'Consumidor Final',
+        receiverAddress: { street: '', city: '', state: '', zipCode: '', country: 'Argentina' },
+      });
+      setInvoiceType('FACTURA_B');
+    }
+  }, [open, saleOrderId, reset]);
+
   const mutation = useMutation({
-    mutationFn: (data: Omit<IssueInvoiceDto, 'saleOrderId' | 'type'>) =>
-      invoicesApi.issueInvoice({ ...data, saleOrderId: saleOrderId!, type: invoiceType }),
-    onSuccess: () => {
+    mutationFn: (data: FormValues) => {
+      const resolvedSaleId = (saleOrderId || data.saleOrderId || '').trim();
+      if (!resolvedSaleId) {
+        throw new Error('Indicá el ID de la venta a facturar');
+      }
+      const { saleOrderId: _ignored, ...receiver } = data;
+      return invoicesApi.issueInvoice({
+        ...receiver,
+        saleOrderId: resolvedSaleId,
+        type: invoiceType,
+      });
+    },
+    onSuccess: (_res, vars) => {
+      const resolvedSaleId = (saleOrderId || vars.saleOrderId || '').trim();
       toast.success('Comprobante enviado a AFIP. Aguardando CAE...');
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all() });
-      if (saleOrderId) queryClient.invalidateQueries({ queryKey: queryKeys.invoices.bySale(saleOrderId) });
+      if (resolvedSaleId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.invoices.bySale(resolvedSaleId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.sales.detail(resolvedSaleId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.sales.all() });
+      }
       onClose();
       reset();
     },
@@ -53,7 +87,7 @@ export function IssueInvoiceDrawer({ open, onClose, saleOrderId }: Props) {
   const invoiceTypes: { value: InvoiceType; label: string; desc: string }[] = [
     { value: 'FACTURA_A', label: 'Factura A', desc: 'Responsables Inscriptos con descuento de IVA' },
     { value: 'FACTURA_B', label: 'Factura B', desc: 'Consumidores finales y Monotributistas' },
-    { value: 'FACTURA_C', label: 'Factura C', desc: 'Emisores Monotributistas / No inscriptos' },
+    { value: 'FACTURA_C', label: 'Factura C', desc: 'Emisores Monotributistas / No inscritos' },
     { value: 'NOTA_CREDITO_A', label: 'N/C A', desc: 'Nota de Crédito para Factura A' },
     { value: 'NOTA_CREDITO_B', label: 'N/C B', desc: 'Nota de Crédito para Factura B' },
   ];
@@ -95,13 +129,20 @@ export function IssueInvoiceDrawer({ open, onClose, saleOrderId }: Props) {
           </div>
         </div>
 
-        {saleOrderId && (
+        {saleOrderId ? (
           <div className={styles.linkedSaleBox}>
             <FileText size={16} color="var(--accent)" />
             <span className={styles.linkedSaleText}>
               Vinculado a Venta <strong className={styles.mono}>{saleOrderId}</strong>
             </span>
           </div>
+        ) : (
+          <Input
+            label="ID de Venta *"
+            placeholder="UUID de la venta a facturar"
+            {...register('saleOrderId', { required: 'Indicá la venta a facturar' })}
+            error={errors.saleOrderId?.message}
+          />
         )}
 
         <fieldset className={styles.fieldset}>

@@ -265,7 +265,8 @@ export class StorefrontController {
 
     const orderId = dto.id || crypto.randomUUID();
 
-    // Record the order in the ERP (status: PENDING_PAYMENT)
+    // Record the order in the ERP (status: PENDING_PAYMENT).
+    // E-commerce never auto-requests ARCA; admin emits later from backoffice.
     const saleOrderDto = {
       id: orderId,
       branchId: branch.id,
@@ -275,6 +276,7 @@ export class StorefrontController {
       paymentMethod: selectedPaymentMethod.type as any, // CASH | CREDIT_CARD | BANK_TRANSFER
       paymentAccountId: null,
       status: 'PENDING_PAYMENT',
+      issueInvoice: false,
       lines: dto.cartLines.map((l: any) => ({
         variantId: l.variantId,
         quantity: l.quantity,

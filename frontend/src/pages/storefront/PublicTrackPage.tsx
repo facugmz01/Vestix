@@ -37,8 +37,12 @@ export default function PublicTrackPage() {
     },
   );
 
-  const lat = liveData?.lastLatitude ?? data?.delivery?.lastLatitude;
-  const lng = liveData?.lastLongitude ?? data?.delivery?.lastLongitude;
+  const driverLat = liveData?.lastLatitude ?? data?.delivery?.lastLatitude;
+  const driverLng = liveData?.lastLongitude ?? data?.delivery?.lastLongitude;
+  const destLat = data?.destination?.latitude;
+  const destLng = data?.destination?.longitude;
+  const hasDriverLocation = driverLat != null && driverLng != null;
+  const hasDestination = destLat != null && destLng != null;
 
   if (isLoading) {
     return <div className={styles.centered}>Cargando seguimiento...</div>;
@@ -58,8 +62,16 @@ export default function PublicTrackPage() {
     (deliveryStatus === 'ARRIVED' && data.status === 'SHIPPED'
       ? STATUS_LABELS.ARRIVED
       : STATUS_LABELS[data.status]) || data.status;
-  const mapUrl = lat && lng
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01}%2C${lat - 0.01}%2C${lng + 0.01}%2C${lat + 0.01}&layer=mapnik&marker=${lat}%2C${lng}`
+
+  const showMap =
+    data.showMapToCustomer !== false &&
+    data.status !== 'DELIVERED' &&
+    (hasDriverLocation || hasDestination);
+  const mapLat = hasDriverLocation ? driverLat! : destLat!;
+  const mapLng = hasDriverLocation ? driverLng! : destLng!;
+  const mapTitle = hasDriverLocation ? 'Ubicación en vivo' : 'Destino de entrega';
+  const mapUrl = showMap
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${mapLng - 0.01}%2C${mapLat - 0.01}%2C${mapLng + 0.01}%2C${mapLat + 0.01}&layer=mapnik&marker=${mapLat}%2C${mapLng}`
     : null;
 
   return (
@@ -77,11 +89,11 @@ export default function PublicTrackPage() {
         </div>
       </div>
 
-      {mapUrl && data.status !== 'DELIVERED' && (
+      {mapUrl && (
         <div className={styles.card}>
           <div className={clsx(styles.cardTitle, styles.cardTitleRow)}>
-            <Navigation size={16} color="var(--purple)" /> Ubicación en vivo
-            {liveData?.lastLocationAt && (
+            <Navigation size={16} color="var(--purple)" /> {mapTitle}
+            {hasDriverLocation && liveData?.lastLocationAt && (
               <span className={styles.liveTime}>
                 {new Date(liveData.lastLocationAt).toLocaleTimeString()}
               </span>

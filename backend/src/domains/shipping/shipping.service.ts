@@ -393,6 +393,7 @@ export class ShippingService {
 
     const order = delivery.fulfillment.saleOrder;
     const fulfillment = delivery.fulfillment;
+    const settings = await this.getDeliverySettings();
 
     return {
       orderRef: formatSaleId(order.id, order.status),
@@ -400,8 +401,19 @@ export class ShippingService {
       deliveryStatus: delivery.status,
       trackingNumber: fulfillment.trackingNumber,
       courierName: fulfillment.courierName,
+      carrierType: delivery.carrierType,
+      showMapToCustomer: settings.showMapToCustomer !== false,
       city: order.shippingAddress?.city,
       state: order.shippingAddress?.state,
+      destination: order.shippingAddress
+        ? {
+            latitude: order.shippingAddress.latitude,
+            longitude: order.shippingAddress.longitude,
+            address: order.shippingAddress.address,
+            city: order.shippingAddress.city,
+            state: order.shippingAddress.state,
+          }
+        : null,
       timeline: {
         paidAt: fulfillment.paidAt,
         packedAt: fulfillment.packedAt,
@@ -832,6 +844,7 @@ export class ShippingService {
     const isCancelled =
       order.status === 'CANCELLED' || fulfillment?.status === 'CANCELLED';
     const enrichedLines = await this.enrichLines(order.lines || []);
+    const settings = await this.getDeliverySettings();
 
     return {
       orderId: order.id,
@@ -843,6 +856,8 @@ export class ShippingService {
       trackingNumber: fulfillment?.trackingNumber,
       courierName: fulfillment?.courierName,
       trackingToken: delivery?.trackingToken,
+      carrierType: delivery?.carrierType || null,
+      showMapToCustomer: settings.showMapToCustomer !== false,
       timeline: {
         paidAt: fulfillment?.paidAt,
         pickedAt: fulfillment?.pickedAt,

@@ -18,6 +18,8 @@ export interface ShippingAddress {
   city: string;
   state: string;
   zipCode: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface DeliveryTracking {
@@ -50,6 +52,8 @@ export interface OrderTracking {
   shippingAddress?: ShippingAddress;
   trackingNumber?: string;
   courierName?: string;
+  carrierType?: string | null;
+  showMapToCustomer?: boolean;
   timeline: {
     paidAt?: string;
     pickedAt?: string;
@@ -144,8 +148,17 @@ export interface PublicTracking {
   deliveryStatus?: string;
   trackingNumber?: string;
   courierName?: string;
+  carrierType?: string | null;
+  showMapToCustomer?: boolean;
   city?: string;
   state?: string;
+  destination?: {
+    latitude?: number | null;
+    longitude?: number | null;
+    address?: string;
+    city?: string;
+    state?: string;
+  } | null;
   timeline: {
     paidAt?: string;
     packedAt?: string;

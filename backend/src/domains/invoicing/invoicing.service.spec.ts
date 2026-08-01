@@ -14,6 +14,7 @@ describe('InvoicingService', () => {
     },
     saleOrder: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
   };
   const afipProducer = {
@@ -37,6 +38,7 @@ describe('InvoicingService', () => {
   it('creates a pending invoice and enqueues AFIP generation', async () => {
     prisma.invoice.findFirst.mockResolvedValue(null);
     prisma.saleOrder.findUnique.mockResolvedValue({ branchId: 'branch-1' });
+    prisma.saleOrder.update.mockResolvedValue({ id: 'order-1', issueInvoice: true });
     prisma.invoice.create.mockResolvedValue({
       id: 'inv-1',
       orderId: 'order-1',
@@ -60,6 +62,10 @@ describe('InvoicingService', () => {
         }),
       }),
     );
+    expect(prisma.saleOrder.update).toHaveBeenCalledWith({
+      where: { id: 'order-1' },
+      data: { issueInvoice: true },
+    });
     expect(afipProducer.enqueueInvoiceGeneration).toHaveBeenCalledWith('order-1', 'branch-1');
     expect(result.status).toBe(InvoiceStatus.PENDING_AFIP);
   });
