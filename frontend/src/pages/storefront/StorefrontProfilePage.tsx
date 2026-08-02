@@ -7,6 +7,7 @@ import { storefrontAuthApi } from '@/api/storefront-auth.api';
 import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { getStoreLoginChannelConfig } from '@/utils/storeLoginChannel';
+import { normalizePhone } from '@/utils/notificationRecipient';
 import type { StorefrontSettings } from '@/api/storefront.api';
 import { StorefrontRequireAuth } from '@/components/storefront/StorefrontRequireAuth';
 import { StorefrontPage, StorefrontCard, StorefrontAlert } from '@/components/storefront';
@@ -21,11 +22,7 @@ function formatPhoneDisplay(phone: string | null | undefined): string {
 }
 
 function normalizePhoneInput(raw: string): string {
-  const digits = raw.replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.startsWith('54') && digits.length > 11) return digits;
-  if (digits.startsWith('0')) return '54' + digits.slice(1);
-  return '549' + digits;
+  return normalizePhone(raw) || '';
 }
 
 function ProfileForm() {

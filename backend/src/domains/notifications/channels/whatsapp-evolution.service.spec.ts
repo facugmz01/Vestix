@@ -43,21 +43,69 @@ describe('WhatsAppEvolutionService', () => {
     );
   });
 
-  it('sendText uses Evolution v2 payload { number, text }', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      text: async () => '{"key":{"id":"abc"}}',
-    });
+  it('sendText normalizes AR numbers, checks WA existence, then sends v2 payload', async () => {
+    (global.fetch as jest.Mock)
+      // connectionState
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ instance: { state: 'open' } }),
+      })
+      // whatsappNumbers check
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify([
+            {
+              exists: true,
+              jid: '5491122334455@s.whatsapp.net',
+              number: '541122334455',
+            },
+          ]),
+      })
+      // sendText
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => '{"key":{"id":"abc"},"status":"PENDING"}',
+      });
 
-    await service.sendText('5491122334455', 'Hola');
+    await service.sendText('541122334455', 'Hola');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
+      'http://evolution.test/chat/whatsappNumbers/store-main',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ numbers: ['5491122334455', '541122334455'] }),
+      }),
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      3,
       'http://evolution.test/message/sendText/store-main',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ number: '5491122334455', text: 'Hola' }),
       }),
+    );
+  });
+
+  it('sendText fails when number has no WhatsApp', async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ instance: { state: 'open' } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify([{ exists: false, number: '5491122334455' }]),
+      });
+
+    await expect(service.sendText('5491122334455', 'Hola')).rejects.toThrow(
+      /no tiene WhatsApp/,
     );
   });
 

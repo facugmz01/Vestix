@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Mail, MessageCircle, Smartphone } from 'lucide-react';
+import { normalizePhone as normalizeWhatsAppPhone } from '@/utils/notificationRecipient';
 
 export type StoreLoginChannel = 'EMAIL' | 'WHATSAPP' | 'SMS';
 
@@ -21,11 +22,7 @@ export interface StoreLoginChannelConfig {
 }
 
 function normalizePhone(raw: string): string {
-  const digits = raw.replace(/\D/g, '');
-  if (!digits) return digits;
-  if (digits.startsWith('54') && digits.length > 11) return digits;
-  if (digits.startsWith('0')) return '54' + digits.slice(1);
-  return '549' + digits;
+  return normalizeWhatsAppPhone(raw) || raw.replace(/\D/g, '');
 }
 
 const CHANNEL_CONFIG: Record<StoreLoginChannel, StoreLoginChannelConfig> = {

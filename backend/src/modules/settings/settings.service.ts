@@ -24,6 +24,10 @@ import {
   getArcaCertFilePaths,
   sanitizeCertAlias,
 } from '../../domains/invoicing/afip-config.util';
+import {
+  normalizeWhatsAppPhone,
+  phoneFromWhatsAppJid,
+} from '../../domains/notifications/utils/phone.util';
 
 const execFileAsync = promisify(execFile);
 
@@ -1061,8 +1065,48 @@ export class SettingsService implements OnModuleInit {
           );
         }
 
+        const normalized = normalizeWhatsAppPhone(recipient) || recipient.replace(/\D/g, '');
+        let target = normalized;
+        const checkEndpoint = `${url.replace(/\/+$/, '')}/chat/whatsappNumbers/${instance}`;
+        this.logStep(logs, `Normalizado: +${normalized}`, '6/7');
+        this.logStep(logs, `POST ${checkEndpoint}`, '6/7');
+        try {
+          const checkRes = await fetch(checkEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: apiKey },
+            body: JSON.stringify({ numbers: [normalized, recipient.replace(/\D/g, '')] }),
+            signal: AbortSignal.timeout(8000),
+          });
+          const checkJson = await checkRes.json().catch(() => null) as Array<{
+            exists?: boolean;
+            jid?: string;
+            number?: string;
+          }> | null;
+          this.logStep(logs, `Check HTTP ${checkRes.status}: ${JSON.stringify(checkJson)?.slice(0, 300)}`, '6/7');
+          if (checkRes.ok && Array.isArray(checkJson)) {
+            const hit = checkJson.find((row) => row?.exists);
+            if (hit) {
+              target =
+                phoneFromWhatsAppJid(hit.jid) ||
+                normalizeWhatsAppPhone(hit.number) ||
+                normalized;
+              this.logStep(logs, `Número resuelto por Evolution: +${target}`, '6/7');
+            } else if (checkJson[0]?.exists === false) {
+              this.logStep(logs, `El número +${normalized} no tiene WhatsApp.`, '6/7');
+              this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — FALLO`, '6/7');
+              return this.buildTestResponse(
+                false,
+                `El número +${normalized} no tiene WhatsApp según Evolution.`,
+                logs,
+              );
+            }
+          }
+        } catch (checkErr: any) {
+          this.logStep(logs, `Check de número falló (${checkErr.message}); se intenta envío igual.`, '6/7');
+        }
+
         const sendEndpoint = `${url.replace(/\/+$/, '')}/message/sendText/${instance}`;
-        const payload = { number: recipient, text: 'Prueba de conexión WhatsApp — Vestix ERP' };
+        const payload = { number: target, text: 'Prueba de conexión WhatsApp — Vestix ERP' };
         this.logStep(logs, `POST ${sendEndpoint}`, '6/7');
         this.logStep(logs, `Payload: ${JSON.stringify(payload)}`, '6/7');
         const sendRes = await fetch(sendEndpoint, {
@@ -1081,7 +1125,7 @@ export class SettingsService implements OnModuleInit {
         }
 
         this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ÉXITO`, '7/7');
-        return this.buildTestResponse(true, `WhatsApp de prueba enviado a +${recipient}.`, logs);
+        return this.buildTestResponse(true, `WhatsApp de prueba enviado a +${target}.`, logs);
       }
 
       this.logStep(logs, `Prueba finalizada en ${Date.now() - startedAt}ms — ${isReady ? 'ÉXITO' : 'PARCIAL'}`, '7/7');

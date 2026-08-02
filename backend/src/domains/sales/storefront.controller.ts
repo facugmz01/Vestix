@@ -23,6 +23,7 @@ import { StorefrontOptionalAuthGuard } from './storefront-optional-auth.guard';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
+import { normalizeWhatsAppPhone } from '../notifications/utils/phone.util';
 import { resolveStorefrontBaseUrl } from './storefront-url.util';
 import * as crypto from 'crypto';
 
@@ -542,21 +543,6 @@ export class StorefrontController {
   }
 
   private normalizePhone(raw: string): string | null {
-    if (!raw) return null;
-    const digits = raw.replace(/\D/g, '');
-    if (digits.length < 8) return null;
-
-    if (digits.startsWith('549') && digits.length >= 12) return digits;
-    if (digits.startsWith('54') && digits.length >= 11) return digits;
-
-    if (digits.startsWith('0') && digits.length >= 10) {
-      return '54' + digits.slice(1);
-    }
-
-    if (digits.length >= 8 && digits.length <= 11) {
-      return '549' + digits;
-    }
-
-    return digits;
+    return normalizeWhatsAppPhone(raw);
   }
 }

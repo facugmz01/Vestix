@@ -9,6 +9,7 @@ import {
   getEventChannels,
   resolveRecipient,
 } from './utils/notification-channels.util';
+import { normalizeWhatsAppPhone } from './utils/phone.util';
 import { formatEntityId, formatSaleId } from '../../common/utils/format-id.util';
 import { buildPublicReceiptUrl } from '../sales/utils/receipt-access.util';
 
@@ -614,14 +615,7 @@ export class NotificationTriggersService {
   }
 
   private normalizePhone(raw?: string | null): string | null {
-    if (!raw) return null;
-    const digits = raw.replace(/\D/g, '');
-    if (digits.length < 8) return null;
-    if (digits.startsWith('549') && digits.length >= 12) return digits;
-    if (digits.startsWith('54') && digits.length >= 11) return digits;
-    if (digits.startsWith('0') && digits.length >= 10) return '54' + digits.slice(1);
-    if (digits.length >= 8 && digits.length <= 11) return '549' + digits;
-    return digits;
+    return normalizeWhatsAppPhone(raw);
   }
 
   private async resolveCustomerEmail(saleOrderId: string): Promise<string | null> {
