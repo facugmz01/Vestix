@@ -1,5 +1,6 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { SettingsService } from '../../../modules/settings/settings.service';
+import { normalizeWhatsAppPhone, phoneFromWhatsAppJid } from '../utils/phone.util';
 
 export interface EvolutionStatus {
   isReady: boolean;
@@ -98,10 +99,87 @@ export class WhatsAppEvolutionService {
   }
 
   /**
+   * Resolve the WhatsApp JID/number Evolution will actually deliver to.
+   * Fixes AR numbers missing the mobile "9" that otherwise appear in Manager but never reach the phone.
+   */
+  async resolveWhatsAppNumber(
+    phone: string,
+    configOverride?: { baseUrl: string; apiKey: string; instance: string },
+  ): Promise<string> {
+    const normalized = normalizeWhatsAppPhone(phone);
+    if (!normalized) {
+      throw new Error(`Invalid phone number: ${phone}`);
+    }
+
+    const config = configOverride ?? await this.getConfig();
+    const candidates = Array.from(
+      new Set(
+        [
+          normalized,
+          // Also try without forcing 9 in case the check endpoint corrects it
+          phone.replace(/\D/g, ''),
+        ].filter((n) => n && n.length >= 8),
+      ),
+    );
+
+    try {
+      const result = await this.evolutionFetch<Array<{
+        exists?: boolean;
+        jid?: string;
+        number?: string;
+      }>>(
+        `/chat/whatsappNumbers/${config.instance}`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ numbers: candidates }),
+        },
+        config,
+      );
+
+      if (result.ok && Array.isArray(result.data)) {
+        const hit = result.data.find((row) => row?.exists);
+        if (hit) {
+          const resolved =
+            phoneFromWhatsAppJid(hit.jid) ||
+            normalizeWhatsAppPhone(hit.number) ||
+            normalized;
+          if (resolved !== normalized) {
+            this.logger.log(
+              `[WhatsApp] Number resolved ${normalized} → ${resolved} (via Evolution check)`,
+            );
+          }
+          return resolved;
+        }
+
+        const anyRow = result.data[0];
+        if (anyRow && anyRow.exists === false) {
+          throw new Error(
+            `El número +${normalized} no tiene WhatsApp (Evolution check).`,
+          );
+        }
+      } else if (!result.ok) {
+        this.logger.warn(
+          `[WhatsApp] Number check unavailable (HTTP ${result.status}); sending to normalized ${normalized}`,
+        );
+      }
+    } catch (err: any) {
+      if (String(err.message || '').includes('no tiene WhatsApp')) {
+        throw err;
+      }
+      this.logger.warn(
+        `[WhatsApp] Number check failed (${err.message}); sending to normalized ${normalized}`,
+      );
+    }
+
+    return normalized;
+  }
+
+  /**
    * Sends a plain text WhatsApp message (Evolution API v2 format).
-   * Phone must be in international format without '+': e.g. 5491122334455
+   * Phone is normalized to AR WhatsApp form (549…) and verified when possible.
    */
   async sendText(phone: string, message: string) {
+    let target = phone;
     try {
       const config = await this.getConfig();
       if (!config.baseUrl || !config.apiKey) {
@@ -109,11 +187,20 @@ export class WhatsAppEvolutionService {
         throw new Error('Evolution API not configured');
       }
 
+      const { state, isReady } = await this.getConnectionState();
+      if (!isReady) {
+        throw new Error(
+          `WhatsApp session not connected (state: ${state}). Escaneá el QR en Evolution Manager.`,
+        );
+      }
+
+      target = await this.resolveWhatsAppNumber(phone, config);
+
       const result = await this.evolutionFetch(
         `/message/sendText/${config.instance}`,
         {
           method: 'POST',
-          body: JSON.stringify({ number: phone, text: message }),
+          body: JSON.stringify({ number: target, text: message }),
         },
         config,
       );
@@ -124,14 +211,19 @@ export class WhatsAppEvolutionService {
         );
       }
 
-      this.logger.log(`[WhatsApp] ✓ Message sent successfully to +${phone}`);
-      return { success: true };
+      const status = (result.data as any)?.status?.toString?.().toUpperCase?.() || '';
+      if (status === 'ERROR') {
+        throw new Error(`Evolution API marked message as ERROR for +${target}`);
+      }
+
+      this.logger.log(`[WhatsApp] ✓ Message accepted by Evolution for +${target} (status: ${status || 'ok'})`);
+      return { success: true, recipient: target };
     } catch (err: any) {
       if (err.message === 'Evolution API not configured') {
         this.logger.warn(`[WhatsApp] Cannot send message to ${phone}. Evolution API URL/Key not configured.`);
         throw err;
       }
-      this.logger.error(`[WhatsApp] Failed to send to ${phone}: ${err.message}`);
+      this.logger.error(`[WhatsApp] Failed to send to ${target}: ${err.message}`);
       throw new InternalServerErrorException(`WhatsApp delivery failed: ${err.message}`);
     }
   }

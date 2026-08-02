@@ -25,6 +25,7 @@ import {
   getStoreLoginChannels,
   resolveRecipient,
 } from '../notifications/utils/notification-channels.util';
+import { normalizeWhatsAppPhone } from '../notifications/utils/phone.util';
 import { StorefrontAuthGuard } from './storefront-auth.guard';
 import { RedisService } from '../../core/redis/redis.service';
 import { UpdateStorefrontProfileDto } from './dto/update-storefront-profile.dto';
@@ -432,25 +433,10 @@ export class StorefrontAuthController {
   }
 
   /**
-   * Normalize phone to international format without '+'.
-   * Accepts: "1122334455", "011 1234-5678", "549..." etc.
+   * Normalize phone to international WhatsApp format without '+'.
+   * Accepts: "1122334455", "011 1234-5678", "5411…", "549..." etc.
    */
   private normalizePhone(raw: string): string | null {
-    if (!raw) return null;
-    const digits = raw.replace(/\D/g, '');
-    if (digits.length < 8) return null;
-
-    if (digits.startsWith('549') && digits.length >= 12) return digits;
-    if (digits.startsWith('54') && digits.length >= 11) return digits;
-
-    if (digits.startsWith('0') && digits.length >= 10) {
-      return '54' + digits.slice(1);
-    }
-
-    if (digits.length >= 8 && digits.length <= 11) {
-      return '549' + digits;
-    }
-
-    return digits;
+    return normalizeWhatsAppPhone(raw);
   }
 }

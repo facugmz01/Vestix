@@ -11,14 +11,24 @@ export interface ResolvedRecipient {
   label: string;
 }
 
-/** Normalize phone to international format without '+' (Argentina-friendly). */
+/**
+ * Normalize phone to WhatsApp international format without '+' (Argentina-first).
+ * Always inserts the mobile "9" after 54 so Evolution delivers to the real handset
+ * (5411… appears in Manager chats but never reaches the phone).
+ */
 export function normalizePhone(raw?: string | null): string | null {
   if (!raw) return null;
-  const digits = raw.replace(/\D/g, '');
+  let digits = raw.replace(/\D/g, '');
   if (digits.length < 8) return null;
   if (digits.startsWith('549') && digits.length >= 12) return digits;
-  if (digits.startsWith('54') && digits.length >= 11) return digits;
-  if (digits.startsWith('0') && digits.length >= 10) return `54${digits.slice(1)}`;
+  if (digits.startsWith('54') && !digits.startsWith('549') && digits.length >= 11) {
+    return `549${digits.slice(2)}`;
+  }
+  if (digits.startsWith('0')) {
+    digits = digits.replace(/^0+/, '');
+    if (digits.length < 8) return null;
+    return `549${digits}`;
+  }
   if (digits.length >= 8 && digits.length <= 11) return `549${digits}`;
   return digits;
 }

@@ -21,6 +21,9 @@ services:
       - evolution-net
     restart: always
 
+  # If outbound messages appear in Manager but stay PENDING / never reach phones
+  # even with correct 549… numbers, update this image (Baileys tctoken fixes) or
+  # pin a release newer than 2.3.7 / 2.4.0 with baileys >= 7.0.0-rc13.
   evolution-api:
     image: evoapicloud/evolution-api:latest
     container_name: evolution-api
@@ -51,6 +54,7 @@ services:
       - evolution-net
     restart: always
 
+  # Port 3001 conflicts with Vestix backend locally — change host port if needed.
   evolution-manager:
     image: evoapicloud/evolution-manager:latest
     container_name: evolution-manager
