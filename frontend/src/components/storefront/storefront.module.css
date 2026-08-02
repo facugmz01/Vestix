@@ -462,3 +462,123 @@
   opacity: 1;
   cursor: pointer;
 }
+
+/* Bank transfer instructions */
+.bankTransferBox {
+  margin: 0 0 24px;
+  padding: 18px 16px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-1, var(--surface-0));
+}
+
+.bankTransferBoxCompact {
+  margin: 16px 0 0;
+  padding: 14px;
+}
+
+.bankTransferHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  color: var(--sf-primary, var(--accent));
+}
+
+.bankTransferTitle {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.bankTransferHint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.bankTransferAmount {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--sf-primary-subtle, var(--accent-subtle, rgba(59, 130, 246, 0.08)));
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.bankTransferAmount strong {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.bankTransferList {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bankTransferRow {
+  display: grid;
+  grid-template-columns: minmax(110px, 34%) 1fr;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.bankTransferRow dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.bankTransferRow dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bankTransferValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+}
+
+.bankTransferCopy {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-0);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.bankTransferCopy:hover {
+  color: var(--sf-primary, var(--accent));
+  border-color: var(--sf-primary, var(--accent));
+}
+
+@media (max-width: 520px) {
+  .bankTransferRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

@@ -386,6 +386,9 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsBoolean() hideOutOfStock?: boolean;
   @IsOptional() @IsBoolean() hideBrandFilters?: boolean;
   @IsOptional() @IsString() transferCbu?: string;
+  @IsOptional() @IsString() transferAlias?: string;
+  @IsOptional() @IsString() transferHolderName?: string;
+  @IsOptional() @IsString() transferBankName?: string;
   @IsOptional() @IsBoolean() acceptCash?: boolean;
   @IsOptional() @IsString() shippingInfo?: string;
   @IsOptional() @IsString() requireShippingData?: string;

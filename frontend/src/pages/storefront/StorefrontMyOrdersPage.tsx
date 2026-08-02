@@ -4,10 +4,13 @@ import { Package, Truck, CheckCircle, Clock, MapPin, Navigation, XCircle, Credit
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { storefrontOrdersApi } from '@/api/storefront-orders.api';
+import { storefrontApi } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
 import { StorefrontRequireAuth } from '@/components/storefront/StorefrontRequireAuth';
+import { BankTransferDetails, hasBankTransferDetails } from '@/components/storefront';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
+import { storePrefix } from '@/utils/storefrontDomain';
 import { useTrackingSse } from '@/hooks/useTrackingSse';
 import type { OrderTracking, OrderLineItem } from '@/api/shipping.api';
 import styles from './StorefrontMyOrdersPage.module.css';
@@ -156,20 +159,39 @@ function MyOrdersContent() {
             <p>Seleccioná un pedido para ver los detalles.</p>
           </div>
         ) : (
-          <OrderDetailView orderId={selectedId} />
+          <OrderDetailView
+            orderId={selectedId}
+            paymentMethod={orders.find((o: any) => o.id === selectedId)?.paymentMethod}
+            grandTotal={orders.find((o: any) => o.id === selectedId)?.grandTotal}
+          />
         )}
       </div>
     </div>
   );
 }
 
-function OrderDetailView({ orderId }: { orderId: string }) {
+function OrderDetailView({
+  orderId,
+  paymentMethod,
+  grandTotal,
+}: {
+  orderId: string;
+  paymentMethod?: string;
+  grandTotal?: number;
+}) {
   const queryClient = useQueryClient();
   const [otp, setOtp] = useState('');
+  const prefix = storePrefix();
 
   const { data: tracking, isLoading } = useQuery({
     queryKey: queryKeys.storefront.tracking(orderId),
     queryFn: () => storefrontOrdersApi.getOrderTracking(orderId),
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: ['storefrontSettings', prefix],
+    queryFn: () => storefrontApi.getSettings(),
+    enabled: paymentMethod === 'BANK_TRANSFER',
   });
 
   const { liveData, connected } = useTrackingSse(
@@ -195,6 +217,10 @@ function OrderDetailView({ orderId }: { orderId: string }) {
 
   const statusInfo = getStatusDisplay(tracking.status);
   const isCancelled = tracking.status === 'CANCELLED';
+  const showBankTransfer =
+    paymentMethod === 'BANK_TRANSFER' &&
+    tracking.status === 'PENDING_PAYMENT' &&
+    hasBankTransferDetails(settings);
 
   const driverLat = liveData?.lastLatitude ?? tracking.delivery?.lastLatitude;
   const driverLng = liveData?.lastLongitude ?? tracking.delivery?.lastLongitude;
@@ -242,6 +268,14 @@ function OrderDetailView({ orderId }: { orderId: string }) {
       )}
 
       <OrderTimeline tracking={tracking} />
+
+      {showBankTransfer && settings && (
+        <BankTransferDetails
+          info={settings}
+          amount={grandTotal ?? tracking.grandTotal}
+          formatAmount={formatCurrency}
+        />
+      )}
 
       {showMap && (
         <DeliveryMap

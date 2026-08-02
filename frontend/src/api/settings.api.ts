@@ -137,6 +137,9 @@ export interface StorefrontSettings {
   hideOutOfStock: boolean;
   hideBrandFilters?: boolean;
   transferCbu?: string;
+  transferAlias?: string;
+  transferHolderName?: string;
+  transferBankName?: string;
   acceptCash: boolean;
   shippingInfo: string;
   requireShippingData: 'optional' | 'required' | 'none';

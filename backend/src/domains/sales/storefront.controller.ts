@@ -344,12 +344,23 @@ export class StorefrontController {
     // For non-MP payments (CASH, BANK_TRANSFER, etc.)
     void this.notificationTriggers.onSaleCompleted(orderId);
 
+    const bankTransfer =
+      selectedPaymentMethod.type === 'BANK_TRANSFER'
+        ? {
+            transferCbu: storefront.transferCbu || '',
+            transferAlias: storefront.transferAlias || '',
+            transferHolderName: storefront.transferHolderName || '',
+            transferBankName: storefront.transferBankName || '',
+          }
+        : undefined;
+
     return {
       ...updatedOrder,
       payment: {
         method: selectedPaymentMethod.type,
         shippingCost,
         shippingMethod: shippingMethodLabel,
+        ...(bankTransfer ? { bankTransfer } : {}),
       },
     };
   }

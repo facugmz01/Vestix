@@ -1,18 +1,32 @@
 import { useEffect, useRef, useLayoutEffect } from 'react';
 import clsx from 'clsx';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Clock, Package, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { formatSaleId } from '@/utils/formatId';
-import { StorefrontPage, StorefrontCard } from '@/components/storefront';
+import { formatCurrency } from '@/utils/formatCurrency';
+import { storefrontApi } from '@/api/storefront.api';
+import {
+  BankTransferDetails,
+  hasBankTransferDetails,
+  StorefrontPage,
+  StorefrontCard,
+  type BankTransferInfo,
+} from '@/components/storefront';
 import sf from '@/components/storefront/storefront.module.css';
 
 type CheckoutResultStatus = 'success' | 'failure' | 'pending';
 
 interface Props {
   status: CheckoutResultStatus;
+}
+
+interface CheckoutResultLocationState {
+  paymentMethod?: string;
+  bankTransfer?: BankTransferInfo;
+  grandTotal?: number;
 }
 
 const STATUS_CONFIG: Record<
@@ -22,7 +36,7 @@ const STATUS_CONFIG: Record<
     iconColor: string;
     iconBg: string;
     title: string;
-    description: (orderId?: string | null) => string;
+    description: (orderId?: string | null, isBankTransfer?: boolean) => string;
     primaryLabel: string;
     primaryTo: (prefix: string) => string;
     secondaryLabel?: string;
@@ -34,10 +48,16 @@ const STATUS_CONFIG: Record<
     iconColor: 'var(--green)',
     iconBg: 'var(--green-bg)',
     title: '¡Gracias por tu compra!',
-    description: (orderId) =>
-      orderId
+    description: (orderId, isBankTransfer) => {
+      if (isBankTransfer) {
+        return orderId
+          ? `Tu pedido ${formatSaleId(orderId)} quedó pendiente de pago. Transferí con los datos de abajo e incluí el número de pedido en el concepto.`
+          : 'Tu pedido quedó pendiente de pago. Transferí con los datos de abajo e incluí el número de pedido en el concepto.';
+      }
+      return orderId
         ? `Tu pedido ${formatSaleId(orderId)} fue registrado correctamente. Te enviaremos novedades por correo o WhatsApp.`
-        : 'Tu pedido fue registrado correctamente. Te enviaremos novedades por correo o WhatsApp.',
+        : 'Tu pedido fue registrado correctamente. Te enviaremos novedades por correo o WhatsApp.';
+    },
     primaryLabel: 'Ver mis pedidos',
     primaryTo: (prefix) => `${prefix}/my-orders`,
     secondaryLabel: 'Seguir comprando',
@@ -90,17 +110,40 @@ function resolveMercadoPagoStatus(searchParams: URLSearchParams): CheckoutResult
 export default function StorefrontCheckoutResultPage({ status }: Props) {
   const prefix = storePrefix();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const clearCart = useCartStore((s) => s.clearCart);
+  const locationState = (location.state || {}) as CheckoutResultLocationState;
 
   const orderId =
     searchParams.get('orderId') ||
     searchParams.get('external_reference') ||
     searchParams.get('external_reference_id');
 
+  const paymentFromQuery = searchParams.get('payment') || '';
+  const paymentMethod = locationState.paymentMethod || paymentFromQuery;
+  const isBankTransfer = paymentMethod === 'BANK_TRANSFER';
+
   const mpStatus = resolveMercadoPagoStatus(searchParams);
   const effectiveStatus = mpStatus && mpStatus !== status ? mpStatus : status;
+
+  const { data: settings } = useQuery({
+    queryKey: ['storefrontSettings', prefix],
+    queryFn: () => storefrontApi.getSettings(),
+    enabled: isBankTransfer && (effectiveStatus === 'success' || effectiveStatus === 'pending'),
+  });
+
+  const bankTransferInfo: BankTransferInfo | undefined =
+    locationState.bankTransfer ||
+    (settings
+      ? {
+          transferCbu: settings.transferCbu,
+          transferAlias: settings.transferAlias,
+          transferHolderName: settings.transferHolderName,
+          transferBankName: settings.transferBankName,
+        }
+      : undefined);
 
   const config = STATUS_CONFIG[effectiveStatus];
   const Icon = config.icon;
@@ -125,6 +168,11 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
     }
   }, [effectiveStatus, clearCart, queryClient]);
 
+  const showBankDetails =
+    isBankTransfer &&
+    (effectiveStatus === 'success' || effectiveStatus === 'pending') &&
+    hasBankTransferDetails(bankTransferInfo);
+
   return (
     <StorefrontPage variant="medium" className={sf.resultPage}>
       <StorefrontCard className={sf.resultCard} padded={false}>
@@ -132,9 +180,19 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
           <Icon size={48} color={config.iconColor} />
         </div>
 
-        <h1 className={sf.resultTitle}>{config.title}</h1>
+        <h1 className={sf.resultTitle}>
+          {isBankTransfer && effectiveStatus === 'success' ? 'Pedido registrado' : config.title}
+        </h1>
 
-        <p className={sf.resultText}>{config.description(orderId)}</p>
+        <p className={sf.resultText}>{config.description(orderId, isBankTransfer)}</p>
+
+        {showBankDetails && bankTransferInfo && (
+          <BankTransferDetails
+            info={bankTransferInfo}
+            amount={locationState.grandTotal}
+            formatAmount={formatCurrency}
+          />
+        )}
 
         {effectiveStatus === 'pending' && (
           <div className={sf.resultPending}>
