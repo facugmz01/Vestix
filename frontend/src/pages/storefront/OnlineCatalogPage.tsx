@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
-import { Search, PackageX, ChevronDown, Filter, ShoppingBag } from 'lucide-react';
+import { Search, PackageX, ChevronDown, Filter, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { storefrontApi, StorefrontSettings } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -10,6 +10,86 @@ import { apiClient } from '@/api/client';
 import { StorefrontSEO } from '@/features/storefront/components/StorefrontSEO';
 import { formatCurrency } from '@/utils/formatCurrency';
 import styles from './OnlineCatalogPage.module.css';
+
+interface Banner {
+  url: string;
+  title?: string;
+  subtitle?: string;
+  ctaText?: string;
+  ctaLink?: string;
+}
+
+function BannerCarousel({ banners }: { banners: Banner[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isHovered) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [isHovered, banners.length]);
+
+  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % banners.length);
+  const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
+  const goToIndex = (index: number) => setCurrentIndex(index);
+
+  if (!banners || banners.length === 0) return null;
+
+  return (
+    <div 
+      className={styles.carousel}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {banners.map((banner, index) => {
+        const isActive = index === currentIndex;
+        return (
+          <div
+            key={index}
+            className={clsx(styles.carouselSlide, isActive ? styles.carouselSlideActive : styles.carouselSlideInactive)}
+            style={{ backgroundImage: `url(${banner.url})` }}
+          >
+            <div className={styles.carouselOverlay}></div>
+            <div className={styles.carouselContent}>
+              {banner.title && <h2 className={styles.carouselTitle}>{banner.title}</h2>}
+              {banner.subtitle && <p className={styles.carouselSubtitle}>{banner.subtitle}</p>}
+              {banner.ctaText && banner.ctaLink && (
+                <Link to={banner.ctaLink} className={styles.carouselCta}>
+                  {banner.ctaText}
+                </Link>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {banners.length > 1 && (
+        <>
+          <button type="button" onClick={handlePrev} className={clsx(styles.carouselArrow, styles.carouselArrowLeft)} aria-label="Anterior">
+            <ChevronLeft size={24} />
+          </button>
+          <button type="button" onClick={handleNext} className={clsx(styles.carouselArrow, styles.carouselArrowRight)} aria-label="Siguiente">
+            <ChevronRight size={24} />
+          </button>
+
+          <div className={styles.carouselDots}>
+            {banners.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => goToIndex(index)}
+                className={clsx(styles.carouselDot, index === currentIndex && styles.carouselDotActive)}
+                aria-label={`Ir a la diapositiva ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function OnlineCatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -158,17 +238,23 @@ export default function OnlineCatalogPage() {
     </div>
   );
 
+  const hasBanners = settings?.imagesCarousel && settings.imagesCarousel.length > 0;
+
   return (
     <main className={styles.main}>
       <StorefrontSEO title="Catálogo | Tienda Oficial" />
 
-      <div className={styles.hero}>
-        <span className={styles.heroBadge}>Nuevos Ingresos</span>
-        <h1 className={styles.heroTitle}>Nueva Colección</h1>
-        <p className={styles.heroText}>
-          Descubrí nuestros últimos productos y encontrá tu estilo perfecto comprando directo desde nuestra tienda oficial.
-        </p>
-      </div>
+      {hasBanners ? (
+        <BannerCarousel banners={settings.imagesCarousel as any} />
+      ) : (
+        <div className={styles.hero}>
+          <span className={styles.heroBadge}>Nuevos Ingresos</span>
+          <h1 className={styles.heroTitle}>Nueva Colección</h1>
+          <p className={styles.heroText}>
+            Descubrí nuestros últimos productos y encontrá tu estilo perfecto comprando directo desde nuestra tienda oficial.
+          </p>
+        </div>
+      )}
 
       <div className={clsx(styles.layout, isMobile && styles.layoutMobile)}>
         {!isMobile && (

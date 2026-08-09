@@ -33,6 +33,7 @@ export default function StorefrontCheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState<string>('');
   const [shippingAddress, setShippingAddress] = useState({ street: '', city: '', state: '', zip: '' });
   const [paymentMethod, setPaymentMethod] = useState<string>('');
+  const [buyerCuit, setBuyerCuit] = useState('');
 
   const selectedShipping = settings?.shippingMethods?.find(m => m.id === shippingMethod);
   const selectedPayment = settings?.paymentMethods?.find(pm => pm.id === paymentMethod);
@@ -101,11 +102,13 @@ export default function StorefrontCheckoutPage() {
               transferAlias: settings.transferAlias,
               transferHolderName: settings.transferHolderName,
               transferBankName: settings.transferBankName,
+              transferCuit: settings.transferCuit,
             }
           : undefined);
       const params = new URLSearchParams();
       if (orderId) params.set('orderId', orderId);
       if (paymentType) params.set('payment', paymentType);
+      if (buyerCuit) params.set('buyerCuit', buyerCuit);
       const query = params.toString();
       navigate(`${prefix}/checkout/success${query ? `?${query}` : ''}`, {
         replace: true,
@@ -296,9 +299,11 @@ export default function StorefrontCheckoutPage() {
               {isBankTransfer && settings && hasBankTransferDetails(settings) && (
                 <BankTransferDetails
                   className={styles.bankTransferPanel}
-                  info={settings}
+                  info={{ ...settings, transferCuit: (settings as any).transferCuit }}
                   amount={grandTotal}
                   formatAmount={formatCurrency}
+                  buyerCuit={buyerCuit}
+                  onBuyerCuitChange={setBuyerCuit}
                 />
               )}
               {isBankTransfer && settings && !hasBankTransferDetails(settings) && (

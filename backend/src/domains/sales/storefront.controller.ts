@@ -11,7 +11,13 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Patch,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { Request } from 'express';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { SalesService } from './sales.service';
@@ -514,6 +520,8 @@ export class StorefrontController {
 
             if (order.source === 'ECOMMERCE') {
               await this.shippingService.markFulfillmentPaid(orderId);
+              // Notify customer that their e-commerce payment was confirmed
+              void this.notificationTriggers.onStorefrontPaymentConfirmed(orderId);
             }
 
             this.logger.log(`[MercadoPago Webhook] ✓ Order ${orderId} confirmed and customer notified.`);
@@ -534,6 +542,59 @@ export class StorefrontController {
     }
 
     return { received: true };
+  }
+
+  /**
+   * PATCH /storefront/orders/:id/payment-receipt
+   * Allows a customer to upload a bank transfer receipt image/PDF.
+   * The order must belong to the authenticated customer OR be identifiable by orderId (for guest orders).
+   */
+  @Patch('orders/:id/payment-receipt')
+  @UseInterceptors(
+    FileInterceptor('receipt', {
+      storage: diskStorage({
+        destination: './uploads/receipts',
+        filename: (_req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `receipt-${unique}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+      fileFilter: (_req, file, cb) => {
+        const allowed = /\/(jpg|jpeg|png|webp|pdf)$/;
+        if (!file.mimetype.match(allowed)) {
+          return cb(new Error('Solo se permiten imágenes o PDF') as any, false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadPaymentReceipt(
+    @Param('id') orderId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: { buyerTaxId?: string; notes?: string },
+    @Req() req: Request,
+  ) {
+    if (!file) throw new Error('No se adjuntó ningún archivo.');
+
+    const order = await this.prisma.saleOrder.findUnique({ where: { id: orderId } });
+    if (!order) throw new Error('Pedido no encontrado.');
+
+    const receiptUrl = `/uploads/receipts/${file.filename}`;
+
+    await this.prisma.saleOrder.update({
+      where: { id: orderId },
+      data: {
+        paymentReceiptUrl: receiptUrl,
+        ...(body.notes ? { paymentReceiptNotes: body.notes } : {}),
+        ...(body.buyerTaxId ? { payerTaxId: body.buyerTaxId } : {}),
+      } as any,
+    });
+
+    // Notify store admin about the new receipt
+    void this.notificationTriggers.onBankTransferReceiptUploaded(orderId);
+
+    return { success: true, receiptUrl };
   }
 
   private normalizeEmail(raw: string): string | null {

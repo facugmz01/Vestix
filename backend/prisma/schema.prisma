@@ -493,6 +493,11 @@ model SaleOrder {
   shippingCost       Float            @default(0)
   shippingAddress    ShippingAddress?
 
+  // E-commerce payment receipt (bank transfer proof)
+  paymentReceiptUrl   String? // URL to uploaded receipt image/PDF
+  paymentReceiptNotes String? // Optional customer notes about the transfer
+  payerTaxId          String? // CUIT/CUIL del comprador para conciliación
+
   fulfillment OrderFulfillment?
   syncedAt    DateTime          @default(now())
 

@@ -219,7 +219,24 @@ export function StorefrontSettingsPanel() {
                 placeholder="comercio.mp"
                 {...register('transferAlias')}
               />
+              <Input
+                label="CUIT / CUIL del titular"
+                placeholder="20-12345678-9"
+                hint="Se muestra al comprador para agilizar la conciliación"
+                {...register('transferCuit')}
+              />
+              <div className={styles.selectGroup}>
+                <label className={styles.selectLabel}>Tipo de cuenta</label>
+                <select {...register('transferAccountType')} className={styles.select}>
+                  <option value="">Sin especificar</option>
+                  <option value="CA_PESOS">Caja de Ahorro en $</option>
+                  <option value="CC_PESOS">Cuenta Corriente en $</option>
+                  <option value="ALIAS_MP">Cuenta Mercado Pago</option>
+                  <option value="CVU">CVU (Fintech)</option>
+                </select>
+              </div>
             </div>
+
           </div>
         </div>
       </section>

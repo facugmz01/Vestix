@@ -1,13 +1,15 @@
-import { useEffect, useRef, useLayoutEffect } from 'react';
+import { useEffect, useRef, useLayoutEffect, useState } from 'react';
 import clsx from 'clsx';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, XCircle, Clock, Package, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Package, Loader2, Upload, CheckCheck } from 'lucide-react';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { formatSaleId } from '@/utils/formatId';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { storefrontApi } from '@/api/storefront.api';
+import { apiClient } from '@/api/client';
+import toast from 'react-hot-toast';
 import {
   BankTransferDetails,
   hasBankTransferDetails,
@@ -121,9 +123,36 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
     searchParams.get('external_reference') ||
     searchParams.get('external_reference_id');
 
+  const buyerCuit = searchParams.get('buyerCuit') || '';
   const paymentFromQuery = searchParams.get('payment') || '';
   const paymentMethod = locationState.paymentMethod || paymentFromQuery;
   const isBankTransfer = paymentMethod === 'BANK_TRANSFER';
+
+  // Receipt upload state
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptNotes, setReceiptNotes] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadDone, setUploadDone] = useState(false);
+
+  const handleReceiptUpload = async () => {
+    if (!receiptFile || !orderId) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('receipt', receiptFile);
+      if (receiptNotes) form.append('notes', receiptNotes);
+      if (buyerCuit) form.append('buyerTaxId', buyerCuit);
+      await apiClient.patch(`/storefront/orders/${orderId}/payment-receipt`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setUploadDone(true);
+      toast.success('Comprobante enviado. Te avisaremos cuando confirmemos el pago.');
+    } catch {
+      toast.error('No se pudo enviar el comprobante. Intentá nuevamente.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const mpStatus = resolveMercadoPagoStatus(searchParams);
   const effectiveStatus = mpStatus && mpStatus !== status ? mpStatus : status;
@@ -201,6 +230,49 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
           </div>
         )}
 
+        {/* Receipt Upload Section — only for bank transfer success orders */}
+        {isBankTransfer && effectiveStatus === 'success' && orderId && !uploadDone && (
+          <div style={{ margin: '20px 0', textAlign: 'left', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px', background: 'var(--surface-1)' }}>
+            <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Upload size={16} color="var(--sf-primary, var(--accent))" />
+              Adjuntá tu comprobante de transferencia
+            </p>
+            <p style={{ margin: '0 0 14px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Subí la captura o PDF de la transferencia para agilizar la confirmación de tu pedido.
+            </p>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={e => setReceiptFile(e.target.files?.[0] ?? null)}
+              style={{ display: 'block', width: '100%', marginBottom: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}
+              id="receipt-upload-input"
+            />
+            <input
+              className="storefront-input"
+              placeholder="Nota opcional (p.ej. número de referencia bancaria)"
+              value={receiptNotes}
+              onChange={e => setReceiptNotes(e.target.value)}
+              style={{ marginBottom: '12px' }}
+            />
+            <button
+              type="button"
+              className="storefront-btn"
+              onClick={handleReceiptUpload}
+              disabled={!receiptFile || uploading}
+              style={{ width: '100%', opacity: (!receiptFile || uploading) ? 0.6 : 1 }}
+            >
+              {uploading ? <><Loader2 size={15} className="animate-spin" /> Enviando...</> : <><Upload size={15} /> Enviar Comprobante</>}
+            </button>
+          </div>
+        )}
+
+        {isBankTransfer && effectiveStatus === 'success' && uploadDone && (
+          <div style={{ margin: '20px 0', padding: '16px', borderRadius: '12px', background: 'var(--green-bg)', border: '1px solid rgba(27,127,58,0.25)', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: 600 }}>
+            <CheckCheck size={18} />
+            Comprobante recibido. Te avisaremos cuando confirmemos el pago.
+          </div>
+        )}
+
         <div className={sf.resultActions}>
           <Link to={config.primaryTo(prefix)} className={clsx('storefront-btn', sf.resultPrimaryLink)}>
             <Package size={18} />
@@ -213,6 +285,7 @@ export default function StorefrontCheckoutResultPage({ status }: Props) {
             </Link>
           )}
         </div>
+
       </StorefrontCard>
     </StorefrontPage>
   );

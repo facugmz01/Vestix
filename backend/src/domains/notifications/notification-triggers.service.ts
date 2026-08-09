@@ -495,6 +495,7 @@ export class NotificationTriggersService {
       referenceId: saleOrderId,
     });
 
+
     void this.staffInbox.create({
       title: 'Entrega confirmada',
       body: `Pedido #${formatSaleId(order.id, order.status)} entregado a ${order.customer.fullName}`,
@@ -502,6 +503,89 @@ export class NotificationTriggersService {
       referenceId: saleOrderId,
     });
   }
+
+  /**
+   * Triggered when an e-commerce order payment is confirmed (MercadoPago webhook or admin action).
+   * Notifies the customer via WhatsApp/email with order details and a link to track their order.
+   */
+  async onStorefrontPaymentConfirmed(orderId: string) {
+    const settings = await this.settingsService.getNotificationSettings();
+    if (!settings.notifyOnSale) return;
+
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: orderId },
+      include: { customer: true, fulfillment: true },
+    });
+    if (!order?.customer) return;
+
+    // Build tracking URL using the fulfillment token if available
+    const trackingToken = (order.fulfillment as any)?.trackingToken;
+    const general = await this.settingsService.getGeneralSettings();
+    const baseUrl = general.website?.replace(/\/$/, '') || '';
+    const trackingUrl = trackingToken ? `${baseUrl}/track/${trackingToken}` : '';
+
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'saleChannels',
+      contact: {
+        email: order.customer.email,
+        phone: order.customer.phone,
+      },
+      templateKey: TemplateKey.STOREFRONT_PAYMENT_CONFIRMED,
+      variables: {
+        customerName: order.customer.fullName || 'Cliente',
+        orderId: formatSaleId(order.id, order.status),
+        total: this.formatMoney(order.grandTotal),
+        trackingUrl,
+      },
+      referenceId: order.id,
+    });
+
+    void this.staffInbox.create({
+      title: 'Pago confirmado (tienda web)',
+      body: `Pedido #${formatSaleId(order.id, order.status)} — ${order.customer.fullName} — $${this.formatMoney(order.grandTotal)}`,
+      event: TemplateKey.STOREFRONT_PAYMENT_CONFIRMED,
+      referenceId: orderId,
+    });
+  }
+
+  /**
+   * Triggered when a customer uploads a bank transfer receipt.
+   * Notifies store admin so they can verify and confirm the payment quickly.
+   */
+  async onBankTransferReceiptUploaded(orderId: string) {
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id: orderId },
+      include: { customer: true },
+    });
+    if (!order) return;
+
+    const managerContact = await this.resolveManagerContact();
+    const settings = await this.settingsService.getNotificationSettings();
+    if (!settings.notifyOnSale) return;
+
+    await this.dispatchToChannels({
+      settings,
+      channelKey: 'saleChannels',
+      contact: managerContact,
+      templateKey: TemplateKey.BANK_TRANSFER_RECEIPT_UPLOADED,
+      variables: {
+        customerName: order.customer?.fullName || 'Cliente',
+        orderId: formatSaleId(order.id, order.status),
+        total: this.formatMoney(order.grandTotal),
+      },
+      referenceId: order.id,
+    });
+
+    void this.staffInbox.create({
+      title: 'Comprobante de transferencia recibido',
+      body: `El cliente ${order.customer?.fullName || 'web'} adjuntó un comprobante para el pedido #${formatSaleId(order.id, order.status)}.`,
+      event: TemplateKey.BANK_TRANSFER_RECEIPT_UPLOADED,
+      referenceId: orderId,
+    });
+  }
+
+
 
   async onShiftClosed(shiftId: string) {
     const shift = await this.prisma.cashShift.findUnique({

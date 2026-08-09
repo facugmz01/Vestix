@@ -50,6 +50,10 @@ export enum TemplateKey {
   MANUAL_SALE_RECEIPT            = 'MANUAL_SALE_RECEIPT',
   MANUAL_QUOTATION_RECEIPT       = 'MANUAL_QUOTATION_RECEIPT',
 
+  // ─── Storefront / e-commerce ───────────────────────────────────────────
+  STOREFRONT_PAYMENT_CONFIRMED   = 'STOREFRONT_PAYMENT_CONFIRMED',
+  BANK_TRANSFER_RECEIPT_UPLOADED = 'BANK_TRANSFER_RECEIPT_UPLOADED',
+
   // ─── Misc ──────────────────────────────────────────────────────────────
   WELCOME_CUSTOMER               = 'WELCOME_CUSTOMER',
   OTP_CODE                       = 'OTP_CODE',

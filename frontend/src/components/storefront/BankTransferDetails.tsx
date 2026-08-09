@@ -9,6 +9,7 @@ export interface BankTransferInfo {
   transferAlias?: string | null;
   transferHolderName?: string | null;
   transferBankName?: string | null;
+  transferCuit?: string | null;
 }
 
 export function hasBankTransferDetails(info?: BankTransferInfo | null): boolean {
@@ -30,11 +31,13 @@ interface Row {
 function buildRows(info: BankTransferInfo): Row[] {
   const rows: Row[] = [];
   const holder = info.transferHolderName?.trim();
+  const cuit = info.transferCuit?.trim();
   const bank = info.transferBankName?.trim();
   const cbu = info.transferCbu?.trim();
   const alias = info.transferAlias?.trim();
 
   if (holder) rows.push({ label: 'Titular', value: holder, copyable: true });
+  if (cuit) rows.push({ label: 'CUIT / CUIL', value: cuit, copyable: true });
   if (bank) rows.push({ label: 'Entidad bancaria', value: bank, copyable: true });
   if (cbu) rows.push({ label: 'CBU / CVU', value: cbu, copyable: true });
   if (alias) rows.push({ label: 'Alias', value: alias, copyable: true });
@@ -47,9 +50,11 @@ interface Props {
   formatAmount?: (value: number) => string;
   className?: string;
   compact?: boolean;
+  buyerCuit?: string;
+  onBuyerCuitChange?: (v: string) => void;
 }
 
-export function BankTransferDetails({ info, amount, formatAmount, className, compact }: Props) {
+export function BankTransferDetails({ info, amount, formatAmount, className, compact, buyerCuit, onBuyerCuitChange }: Props) {
   const rows = buildRows(info);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -105,6 +110,20 @@ export function BankTransferDetails({ info, amount, formatAmount, className, com
           </div>
         ))}
       </dl>
+
+      {onBuyerCuitChange && (
+        <div className={styles.buyerCuitSection}>
+          <h4 className={styles.buyerCuitTitle}>Tu CUIT / CBU de origen (opcional)</h4>
+          <p className={styles.buyerCuitHint}>Ingresar tu CUIT acelera la conciliación del pago</p>
+          <input
+            type="text"
+            className="storefront-input"
+            value={buyerCuit || ''}
+            onChange={(e) => onBuyerCuitChange(e.target.value)}
+            placeholder="Ej. 20111111112"
+          />
+        </div>
+      )}
     </div>
   );
 }

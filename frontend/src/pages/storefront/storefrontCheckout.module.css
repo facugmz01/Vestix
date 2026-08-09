@@ -443,3 +443,85 @@
   color: var(--red);
   flex-shrink: 0;
 }
+
+/* Coupon / Gift Card */
+.couponRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface-1);
+}
+
+.couponIcon {
+  color: var(--sf-primary, var(--accent));
+  flex-shrink: 0;
+}
+
+.couponInput {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  height: auto !important;
+  font-size: 13px;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.couponInput:focus {
+  box-shadow: none !important;
+}
+
+.couponBtn {
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+  flex-shrink: 0;
+}
+
+.couponApplied {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(27, 127, 58, 0.3);
+  border-radius: 10px;
+  background: var(--green-bg);
+}
+
+.couponAppliedCode {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  flex: 1;
+}
+
+.couponAppliedSaving {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.couponRemoveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(196, 30, 30, 0.3);
+  background: none;
+  cursor: pointer;
+  color: var(--red);
+  flex-shrink: 0;
+}
+
+.couponRemoveBtn:hover {
+  background: var(--red-bg);
+}
+

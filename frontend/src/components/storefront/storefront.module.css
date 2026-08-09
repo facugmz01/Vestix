@@ -582,3 +582,25 @@
     gap: 4px;
   }
 }
+
+/* Buyer CUIT input within BankTransferDetails */
+.buyerCuitSection {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-strong);
+}
+
+.buyerCuitTitle {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.buyerCuitHint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+

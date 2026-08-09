@@ -140,6 +140,8 @@ export interface StorefrontSettings {
   transferAlias?: string;
   transferHolderName?: string;
   transferBankName?: string;
+  transferCuit?: string;
+  transferAccountType?: string;
   acceptCash: boolean;
   shippingInfo: string;
   requireShippingData: 'optional' | 'required' | 'none';
