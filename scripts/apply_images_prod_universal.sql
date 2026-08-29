@@ -1,0 +1,1 @@
+﻿UPDATE catalog."Product" SET "brandId" = (SELECT id FROM catalog."Brand" WHERE name = 'Meferti' LIMIT 1), "categoryId" = (SELECT id FROM catalog."Category" WHERE name = 'Tops' LIMIT 1) WHERE "baseSku" = '0220';

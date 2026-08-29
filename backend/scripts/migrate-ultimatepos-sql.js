@@ -164,10 +164,26 @@ async function runMigration() {
   console.log('🚀 INICIANDO MIGRACIÓN AUTOMATIZADA: ULTIMATE POS → VESTIX');
   console.log('======================================================\n');
 
-  const sqlPath = '/app/dump.sql';
-  if (!fs.existsSync(sqlPath)) {
-    throw new Error(`No se encontró el archivo de dump en ${sqlPath}`);
+  const possiblePaths = [
+    '/var/www/vestix/127_0_0_1 (1).sql',
+    '/app/dump.sql',
+    path.resolve(__dirname, '../../127_0_0_1 (1).sql'),
+    path.resolve(process.cwd(), '127_0_0_1 (1).sql'),
+    path.resolve(process.cwd(), 'dump.sql'),
+  ];
+
+  let sqlPath = '';
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      sqlPath = p;
+      break;
+    }
   }
+
+  if (!sqlPath) {
+    throw new Error(`No se encontró el archivo de dump en ninguna de las rutas:\n${possiblePaths.join('\n')}`);
+  }
+  console.log(`📄 Archivo de dump origen encontrado en: ${sqlPath}`);
 
   const sqlContent = fs.readFileSync(sqlPath, 'utf8');
   const data = parseSqlDump(sqlContent);
@@ -304,11 +320,15 @@ async function runMigration() {
   maps.roles[1] = superAdminRole ? superAdminRole.id : '';
   maps.roles[2] = cashierRole ? cashierRole.id : '';
 
+  const bcrypt = require('bcrypt');
+  const defaultPasswordHash = await bcrypt.hash('Admin123!', 10);
+
   const originUsers = data.users || [];
   for (const u of originUsers) {
     const email = u.email ? u.email.trim().toLowerCase() : `user_${u.id}@roindumentaria.local`;
     const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'Usuario';
     const roleId = u.id === '1' ? (superAdminRole?.id || cashierRole?.id) : (cashierRole?.id || superAdminRole?.id);
+    const passHash = u.password ? u.password.replace(/^\$2y\$/, '$2a$') : defaultPasswordHash;
 
     let user = await prisma.user.findUnique({ where: { email } });
     if (user) {
@@ -316,10 +336,10 @@ async function runMigration() {
         where: { id: user.id },
         data: {
           fullName,
-          password: u.password, // Hash Bcrypt directo
+          password: passHash,
           roleId,
           branchId: branch.id,
-          isActive: u.is_active === '1' || u.is_active === 1,
+          isActive: true,
         },
       });
     } else {
@@ -327,15 +347,31 @@ async function runMigration() {
         data: {
           email,
           fullName,
-          password: u.password,
+          password: passHash,
           roleId,
           branchId: branch.id,
-          isActive: u.is_active === '1' || u.is_active === 1,
+          isActive: true,
         },
       });
     }
     maps.users[u.id] = user.id;
     console.log(`   ✅ Usuario migrado: ${user.fullName} (${user.email}) -> Rol: ${u.id === '1' ? 'SUPER_ADMIN' : 'CASHIER'}`);
+  }
+
+  // Asegurar usuario de respaldo admin@erp.com
+  let defaultAdmin = await prisma.user.findUnique({ where: { email: 'admin@erp.com' } });
+  if (!defaultAdmin) {
+    defaultAdmin = await prisma.user.create({
+      data: {
+        email: 'admin@erp.com',
+        fullName: 'Administrador General',
+        password: defaultPasswordHash,
+        roleId: superAdminRole.id,
+        branchId: branch.id,
+        isActive: true,
+      },
+    });
+    console.log(`   ✅ Usuario de rescate creado: admin@erp.com (SUPER_ADMIN)`);
   }
   console.log('');
 

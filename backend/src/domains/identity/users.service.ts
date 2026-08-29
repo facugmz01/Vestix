@@ -138,10 +138,18 @@ export class UsersService implements OnModuleInit {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
 
-    const { password, role, ...updateData } = updateUserDto as any;
+    const { password, role, email, ...updateData } = updateUserDto as any;
     const data: any = { ...updateData };
+
+    if (email && email !== existing.email) {
+      const emailExists = await this.prisma.user.findUnique({ where: { email } });
+      if (emailExists) {
+        throw new ConflictException('Ya existe un usuario con este correo electrónico');
+      }
+      data.email = email;
+    }
 
     if (password) {
       if (password.length < 8) {
@@ -153,6 +161,10 @@ export class UsersService implements OnModuleInit {
     if (role) {
       const dbRole = await this.resolveRole(role);
       data.roleId = dbRole.id;
+    }
+
+    if ('branchId' in updateUserDto) {
+      data.branchId = updateUserDto.branchId || null;
     }
 
     const user = await this.prisma.user.update({

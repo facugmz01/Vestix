@@ -25,7 +25,7 @@ export class CreateUserDto {
 
   @IsUUID('4')
   @IsOptional()
-  branchId?: string;
+  branchId?: string | null;
 
   @IsBoolean()
   @IsOptional()

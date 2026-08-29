@@ -68,9 +68,12 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
 
   const mutation = useMutation({
     mutationFn: (data: CreateUserDto) => {
-      const payload = { ...data };
+      const payload: any = { ...data };
       if (isEditing && !payload.password) {
         delete payload.password;
+      }
+      if (!payload.branchId) {
+        payload.branchId = null;
       }
       if (isEditing && userToEdit) {
         return usersApi.updateUser(userToEdit.id, payload);
@@ -93,14 +96,14 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
       toast.error('Completá los campos obligatorios');
       return;
     }
-    if (!isEditing && formData.password && formData.password.length < 8) {
+    if (formData.password && formData.password.length < 8) {
       toast.error('La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
-    const payload = { ...formData };
+    const payload: any = { ...formData };
     if (!payload.branchId) {
-      delete payload.branchId;
+      payload.branchId = null;
     }
 
     mutation.mutate(payload);
@@ -163,9 +166,10 @@ export function UserFormDrawer({ open, onClose, userToEdit }: Props) {
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="Nueva contraseña (mínimo 8 caracteres)"
             />
             <p className={styles.hintSm}>
-              Dejá en blanco si no querés cambiarla.
+              Dejá en blanco si no querés cambiarla. Mínimo 8 caracteres.
             </p>
           </div>
         )}
