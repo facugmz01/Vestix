@@ -136,6 +136,7 @@ export interface StorefrontSettings {
   defaultSort: string;
   hideOutOfStock: boolean;
   hideBrandFilters?: boolean;
+  hidePrices?: boolean;
   transferCbu?: string;
   transferAlias?: string;
   transferHolderName?: string;
@@ -146,6 +147,8 @@ export interface StorefrontSettings {
   shippingInfo: string;
   requireShippingData: 'optional' | 'required' | 'none';
   whatsapp: string;
+  whatsappNumber?: string;
+  whatsappMessageTemplate?: string;
   instagramUrl: string;
   facebookUrl: string;
   tiktokUrl: string;

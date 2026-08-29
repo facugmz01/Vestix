@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ArrowRight, PackageX, Tag, Loader2, Check, X } from 'lucide-react';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
+import { Trash2, ArrowRight, PackageX, Tag, Loader2, Check, X, MessageSquareText } from 'lucide-react';
 import clsx from 'clsx';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { StorefrontPage, StorefrontCard } from '@/components/storefront';
+import type { StorefrontSettings } from '@/api/storefront.api';
 import sf from '@/components/storefront/storefront.module.css';
 import styles from './storefrontCheckout.module.css';
 import { storefrontCouponsApi, type CouponValidationResult } from '@/api/storefront-coupons.api';
@@ -14,11 +15,29 @@ import { storefrontCouponsApi, type CouponValidationResult } from '@/api/storefr
 export default function StorefrontCartPage() {
   const navigate = useNavigate();
   const prefix = storePrefix();
+  const { settings } = useOutletContext<{ settings?: StorefrontSettings }>();
   const { items, updateQty, removeItem, totalPrice } = useCartStore();
 
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<CouponValidationResult | null>(null);
+
+  if (settings?.hidePrices) {
+    return (
+      <StorefrontPage variant="medium">
+        <StorefrontCard className={sf.emptyState}>
+          <MessageSquareText size={56} className={sf.emptyIcon} style={{ color: '#25D366' }} />
+          <h2 className={sf.emptyTitle}>Modo Catálogo Activo</h2>
+          <p className={sf.emptyText}>
+            Nuestra tienda opera en modalidad de catálogo con consultas directas vía WhatsApp. Las compras por carrito se encuentran deshabilitadas.
+          </p>
+          <Link to={`${prefix}/`} className="storefront-btn">
+            Explorar Catálogo
+          </Link>
+        </StorefrontCard>
+      </StorefrontPage>
+    );
+  }
 
   const handleRemove = (variantId: string, name: string) => {
     removeItem(variantId);

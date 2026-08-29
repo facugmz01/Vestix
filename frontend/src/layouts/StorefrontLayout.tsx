@@ -155,14 +155,16 @@ export default function StorefrontLayout() {
               </Link>
             )}
 
-            <Link to={`${prefix}/cart`} className={styles.cartLink} title="Carrito de compras">
-              <ShoppingCart size={20} />
-              {totalItems > 0 && (
-                <span className={styles.cartBadge}>
-                  {totalItems > 99 ? '99+' : totalItems}
-                </span>
-              )}
-            </Link>
+            {!settings?.hidePrices && (
+              <Link to={`${prefix}/cart`} className={styles.cartLink} title="Carrito de compras">
+                <ShoppingCart size={20} />
+                {totalItems > 0 && (
+                  <span className={styles.cartBadge}>
+                    {totalItems > 99 ? '99+' : totalItems}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
         </div>
       </header>

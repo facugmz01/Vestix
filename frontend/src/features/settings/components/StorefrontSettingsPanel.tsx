@@ -2,7 +2,23 @@ import { useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Save, ExternalLink, Copy, Image as ImageIcon, CreditCard, Truck, Share2, Globe, Plus, Trash2, Store, Navigation, KeyRound } from 'lucide-react';
+import {
+  Save,
+  ExternalLink,
+  Copy,
+  Image as ImageIcon,
+  CreditCard,
+  Truck,
+  Share2,
+  Globe,
+  Plus,
+  Trash2,
+  Store,
+  Navigation,
+  KeyRound,
+  MessageSquareText,
+  Eye,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -28,7 +44,7 @@ export function StorefrontSettingsPanel() {
     queryFn: () => financeApi.getPaymentMethods(),
   });
 
-  const { register, control, handleSubmit, reset, formState: { isDirty } } = useForm<StorefrontSettingsFormData>({
+  const { register, control, handleSubmit, reset, watch, formState: { isDirty } } = useForm<StorefrontSettingsFormData>({
     resolver: zodResolver(storefrontSettingsSchema),
     defaultValues: parseStorefrontSettings({}),
   });
@@ -37,6 +53,21 @@ export function StorefrontSettingsPanel() {
     control,
     name: 'shippingMethods'
   });
+
+  const watchedHidePrices = watch('hidePrices');
+  const watchedTemplate = watch('whatsappMessageTemplate') || 'Hola, quiero consultar el precio de {product_name} (SKU: {sku})';
+  const watchedWhatsAppNumber = watch('whatsappNumber') || watch('whatsapp') || '';
+
+  const samplePreviewText = watchedTemplate
+    .replace(/\{product_name\}/g, 'Remera Oversize Cotton')
+    .replace(/\{sku\}/g, 'REM-OVR-BLK-L')
+    .replace(/\{variant\}/g, 'L - Negro')
+    .replace(/\{url\}/g, `${window.location.origin}/store/product/prod_demo`);
+
+  const cleanSampleNumber = watchedWhatsAppNumber.replace(/\D/g, '');
+  const sampleWhatsAppUrl = cleanSampleNumber
+    ? `https://wa.me/${cleanSampleNumber}?text=${encodeURIComponent(samplePreviewText)}`
+    : '#';
 
   useEffect(() => {
     if (settings?.storefront) {
@@ -107,6 +138,93 @@ export function StorefrontSettingsPanel() {
 
       <section className={styles.card}>
         <header className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><MessageSquareText size={18} /> Modo Catálogo / Consultas por WhatsApp</h3>
+          <p className={styles.cardDescription}>
+            Permite ocultar los precios de los productos y reemplazar la compra directa por un botón de consulta instantánea a WhatsApp.
+          </p>
+        </header>
+        <div className={styles.cardBody}>
+          <ToggleSwitch
+            label="Activar Modo Catálogo (Ocultar Precios)"
+            hint="Oculta precios, descuentos y carrito en la tienda pública; las compras se gestionan vía WhatsApp."
+            {...register('hidePrices')}
+          />
+
+          <div className={clsx(styles.grid, styles.grid2, styles.marginTop16)}>
+            <Input
+              label="Número de WhatsApp receptor"
+              placeholder="5491112345678"
+              hint="Código de país y área sin '+' ni espacios (ej: 54911XXXXXXXX)."
+              {...register('whatsappNumber')}
+            />
+            <div className={styles.selectGroup}>
+              <label className={styles.selectLabel}>Variables disponibles para el mensaje</label>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: '1.5', marginTop: '4px' }}>
+                Podés usar <code>{'{product_name}'}</code>, <code>{'{sku}'}</code>, <code>{'{variant}'}</code> y <code>{'{url}'}</code> dentro de la plantilla.
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.marginTop16}>
+            <label className={styles.selectLabel}>Plantilla del mensaje predeterminado</label>
+            <textarea
+              className={styles.textarea}
+              rows={3}
+              placeholder="Hola, quiero consultar el precio de {product_name} (SKU: {sku})"
+              {...register('whatsappMessageTemplate')}
+            />
+          </div>
+
+          {/* Dynamic Live Preview */}
+          <div style={{
+            marginTop: '16px',
+            padding: '14px',
+            borderRadius: '8px',
+            backgroundColor: 'var(--bg-secondary, #f8fafc)',
+            border: '1px solid var(--border-color, #e2e8f0)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontWeight: 600, fontSize: '0.875rem' }}>
+              <Eye size={16} color="var(--primary, #2563eb)" />
+              <span>Vista previa del mensaje en WhatsApp:</span>
+            </div>
+            <div style={{
+              backgroundColor: '#dcf8c6',
+              color: '#111827',
+              padding: '10px 14px',
+              borderRadius: '8px 8px 0 8px',
+              fontSize: '0.875rem',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              maxWidth: '90%',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            }}>
+              {samplePreviewText}
+            </div>
+            {cleanSampleNumber ? (
+              <div style={{ marginTop: '10px', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                Destinatario configurado: <strong>+{cleanSampleNumber}</strong>
+                {sampleWhatsAppUrl !== '#' && (
+                  <a
+                    href={sampleWhatsAppUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ marginLeft: '12px', color: '#16a34a', textDecoration: 'underline', fontWeight: 500 }}
+                  >
+                    Probar enlace WhatsApp ↗
+                  </a>
+                )}
+              </div>
+            ) : (
+              <div style={{ marginTop: '10px', fontSize: '0.8125rem', color: '#dc2626' }}>
+                ⚠️ Recordá ingresar el número de WhatsApp para que el botón funcione correctamente.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <header className={styles.cardHeader}>
           <h3 className={styles.cardTitle}><KeyRound size={18} /> Inicio de sesión de clientes</h3>
           <p className={styles.cardDescription}>
             Canal por defecto para enviar el código OTP cuando un cliente ingresa a la tienda online.
@@ -155,20 +273,23 @@ export function StorefrontSettingsPanel() {
           <div className={clsx(styles.grid, styles.grid2)}>
             <div className={styles.selectGroup}>
               <label className={styles.selectLabel}>Precio a mostrar en tienda</label>
-              <select {...register('priceListToShow')} className={styles.select}>
+              <select {...register('priceListToShow')} className={styles.select} disabled={watchedHidePrices}>
                 <option value="">Precio Base (Sin Lista)</option>
                 {priceLists?.data?.map((pl) => (
                   <option key={pl.id} value={pl.id}>{pl.name}</option>
                 ))}
               </select>
+              {watchedHidePrices && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Deshabilitado en Modo Catálogo</span>
+              )}
             </div>
 
             <div className={styles.selectGroup}>
               <label className={styles.selectLabel}>Orden por defecto</label>
               <select {...register('defaultSort')} className={styles.select}>
                 <option value="name_asc">Nombre A → Z</option>
-                <option value="price_asc">Menor Precio</option>
-                <option value="price_desc">Mayor Precio</option>
+                <option value="price_asc" disabled={watchedHidePrices}>Menor Precio</option>
+                <option value="price_desc" disabled={watchedHidePrices}>Mayor Precio</option>
               </select>
             </div>
           </div>

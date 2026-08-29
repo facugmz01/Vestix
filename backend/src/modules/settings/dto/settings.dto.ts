@@ -385,6 +385,7 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsString() defaultSort?: string;
   @IsOptional() @IsBoolean() hideOutOfStock?: boolean;
   @IsOptional() @IsBoolean() hideBrandFilters?: boolean;
+  @IsOptional() @IsBoolean() hidePrices?: boolean;
   @IsOptional() @IsString() transferCbu?: string;
   @IsOptional() @IsString() transferAlias?: string;
   @IsOptional() @IsString() transferHolderName?: string;
@@ -393,6 +394,8 @@ export class StorefrontSettingsDto {
   @IsOptional() @IsString() shippingInfo?: string;
   @IsOptional() @IsString() requireShippingData?: string;
   @IsOptional() @IsString() whatsapp?: string;
+  @IsOptional() @IsString() whatsappNumber?: string;
+  @IsOptional() @IsString() whatsappMessageTemplate?: string;
   @IsOptional() @IsString() instagramUrl?: string;
   @IsOptional() @IsString() facebookUrl?: string;
   @IsOptional() @IsString() tiktokUrl?: string;

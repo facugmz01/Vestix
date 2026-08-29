@@ -112,6 +112,20 @@ describe('SettingsService', () => {
     });
   });
 
+  describe('getStorefrontSettings', () => {
+    it('should return storefront settings with catalog defaults', async () => {
+      mockPrismaService.systemSettings.findUnique.mockResolvedValueOnce({
+        ...defaultRow,
+        storefront: { enabled: true, hidePrices: true, whatsappNumber: '5491112345678' },
+      });
+      const result = await service.getStorefrontSettings();
+      expect(result.enabled).toBe(true);
+      expect(result.hidePrices).toBe(true);
+      expect(result.whatsappNumber).toBe('5491112345678');
+      expect(result.whatsappMessageTemplate).toContain('{product_name}');
+    });
+  });
+
   describe('updateSection', () => {
     it('should update a section and audit the change', async () => {
       mockPrismaService.systemSettings.findUnique.mockResolvedValueOnce(defaultRow);

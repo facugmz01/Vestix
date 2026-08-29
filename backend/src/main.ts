@@ -39,16 +39,21 @@ async function bootstrap() {
 
   // ─── CORS ───────────────────────────────────────────────────────────────────
   const allowedOrigins: string[] = [
+    'http://localhost',
+    'http://localhost:80',
+    'http://localhost:3000',
     'http://localhost:5173',
+    'http://127.0.0.1',
+    'http://127.0.0.1:80',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
     'https://app.roindumentaria.com.ar',
     'https://roindumentaria.com.ar',
   ];
 
   // Add the deployed frontend origin(s) from env. FRONTEND_URL is the documented
   // variable (see .env.example); APP_URL/CORS_ORIGIN are accepted as aliases for
-  // backwards compatibility with existing deploy scripts/docs. Without this, any
-  // deployment on a domain other than the hardcoded ones above would be rejected
-  // by CORS. Accepts a comma-separated list for multiple origins.
+  // backwards compatibility with existing deploy scripts/docs. Accepts a comma-separated list.
   const envOrigins = [process.env.FRONTEND_URL, process.env.APP_URL, process.env.CORS_ORIGIN]
     .filter((v): v is string => Boolean(v))
     .flatMap((v) => v.split(','))
@@ -62,15 +67,22 @@ async function bootstrap() {
     allowedOrigins.push(`http://${process.env.STOREFRONT_DOMAIN}`);
   }
 
+  // Regex to match localhost, 127.0.0.1, or private IPv4 addresses (10.x, 172.16-31.x, 192.168.x)
+  const privateIpPattern = /^https?:\/\/(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, curl, etc.)
+      // Allow requests with no origin (server-to-server, curl, mobile apps, etc.)
       if (!origin) return callback(null, true);
 
       // Allow any tienda.* subdomain dynamically
       if (origin.includes('://tienda.')) return callback(null, true);
 
+      // Allow exact matches in allowed origins
       if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // Allow local / LAN / WSL IPs dynamically
+      if (privateIpPattern.test(origin)) return callback(null, true);
 
       callback(new Error('Not allowed by CORS'));
     },

@@ -147,6 +147,7 @@ export interface StorefrontSettings {
   defaultSort: string;
   hideOutOfStock: boolean;
   hideBrandFilters: boolean;
+  hidePrices?: boolean;
   transferCbu?: string;
   transferAlias?: string;
   transferHolderName?: string;
@@ -157,6 +158,8 @@ export interface StorefrontSettings {
   shippingInfo: string;
   requireShippingData: string;
   whatsapp: string;
+  whatsappNumber?: string;
+  whatsappMessageTemplate?: string;
   instagramUrl: string;
   facebookUrl: string;
   tiktokUrl: string;
@@ -353,6 +356,10 @@ export class SettingsService implements OnModuleInit {
     const legacyLogin = legacyNotifications?.storeLoginChannels;
     return {
       ...storefront,
+      hidePrices: storefront.hidePrices ?? false,
+      whatsappNumber: storefront.whatsappNumber || storefront.whatsapp || '',
+      whatsappMessageTemplate:
+        storefront.whatsappMessageTemplate || 'Hola, quiero consultar el precio de {product_name} (SKU: {sku})',
       storeLoginChannels: storefront.storeLoginChannels?.length
         ? storefront.storeLoginChannels
         : legacyLogin?.length
@@ -1324,9 +1331,12 @@ export class SettingsService implements OnModuleInit {
             showHeader: true, showStoreName: true, imagesCarousel: [],
             priceListToShow: '', defaultSort: 'name_asc',
             hideOutOfStock: false, hideBrandFilters: false,
+            hidePrices: false,
             transferCbu: '', transferAlias: '', transferHolderName: '',
             transferBankName: '', acceptCash: false, shippingInfo: '',
             requireShippingData: 'optional', whatsapp: '',
+            whatsappNumber: '',
+            whatsappMessageTemplate: 'Hola, quiero consultar el precio de {product_name} (SKU: {sku})',
             storeLoginChannels: ['WHATSAPP'],
             instagramUrl: '', facebookUrl: '', tiktokUrl: '', youtubeUrl: '', xUrl: '',
             deliverySettings: {

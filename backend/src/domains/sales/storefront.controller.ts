@@ -8,6 +8,7 @@ import {
   Req,
   UseGuards,
   ForbiddenException,
+  BadRequestException,
   HttpCode,
   HttpStatus,
   Logger,
@@ -102,6 +103,10 @@ export class StorefrontController {
 
     return {
       ...storefront,
+      hidePrices: Boolean(storefront.hidePrices),
+      whatsappNumber: storefront.whatsappNumber || storefront.whatsapp || '',
+      whatsappMessageTemplate:
+        storefront.whatsappMessageTemplate || 'Hola, quiero consultar el precio de {product_name} (SKU: {sku})',
       pwa,
       paymentMethods,
     };
@@ -115,6 +120,13 @@ export class StorefrontController {
   @Post('checkout')
   @UseGuards(StorefrontOptionalAuthGuard)
   async checkout(@Body() dto: any, @Req() req: Request) {
+    const storefront = await this.settingsService.getStorefrontSettings();
+    if (storefront.hidePrices) {
+      throw new BadRequestException(
+        'El checkout no está disponible en modo catálogo. Por favor realice su consulta vía WhatsApp.',
+      );
+    }
+
     // If authenticated via storefront token, use that customer
     const reqUser = (req as any).user;
     let customerId: string | null = reqUser?.customerId || null;
@@ -251,8 +263,6 @@ export class StorefrontController {
     const branch = await this.prisma.branch.findFirst({ where: { isMain: true } });
     if (!branch) throw new Error('No se encontró la sucursal principal.');
     const warehouse = await this.prisma.warehouse.findFirst({ where: { branchId: branch.id } });
-
-    const storefront = await this.settingsService.getStorefrontSettings();
 
     const shippingMethods = storefront.shippingMethods || [];
     const selectedShipping = shippingMethods.find(m => m.id === dto.shippingInfo?.method);

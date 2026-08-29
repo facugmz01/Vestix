@@ -26,7 +26,8 @@ export class CatalogService {
     }
 
     const storefrontSettings = await this.settingsService.getStorefrontSettings();
-    const priceListId = storefrontSettings.priceListToShow;
+    const hidePrices = Boolean(storefrontSettings.hidePrices);
+    const priceListId = hidePrices ? null : storefrontSettings.priceListToShow;
 
     const page = filters.page || 1;
     const pageSize = filters.pageSize || 50;
@@ -71,7 +72,7 @@ export class CatalogService {
       const mappedVariants = product.variants.map(v => {
         const variantStocks = stockByVariant.get(v.id) || [];
         const stock = variantStocks.reduce((ssum, s) => ssum + s.availableQuantity, 0);
-        const resolved = priceListId ? (priceMap.get(v.id) ?? v.basePrice) : v.basePrice;
+        const resolved = hidePrices ? 0 : priceListId ? (priceMap.get(v.id) ?? v.basePrice) : v.basePrice;
         return {
           id: v.id,
           sku: v.sku,
@@ -79,19 +80,21 @@ export class CatalogService {
           color: v.color,
           stock,
           price: resolved,
-          basePrice: v.basePrice,
+          basePrice: hidePrices ? 0 : v.basePrice,
         };
       });
 
       const inStockVariants = mappedVariants.filter(v => v.stock > 0);
       const pricePool = (inStockVariants.length ? inStockVariants : mappedVariants).map(v => v.price);
       const basePool = mappedVariants.map(v => v.basePrice);
-      const resolvedPrice = pricePool.length ? Math.min(...pricePool) : 0;
-      const basePrice = basePool.length ? Math.min(...basePool) : 0;
+      const resolvedPrice = hidePrices ? 0 : pricePool.length ? Math.min(...pricePool) : 0;
+      const basePrice = hidePrices ? 0 : basePool.length ? Math.min(...basePool) : 0;
       const availableQty = mappedVariants.reduce((sum, v) => sum + v.stock, 0);
 
-      if (filters.minPrice && resolvedPrice < filters.minPrice) continue;
-      if (filters.maxPrice && resolvedPrice > filters.maxPrice) continue;
+      if (!hidePrices) {
+        if (filters.minPrice && resolvedPrice < filters.minPrice) continue;
+        if (filters.maxPrice && resolvedPrice > filters.maxPrice) continue;
+      }
       if (filters.inStockOnly && availableQty <= 0) continue;
 
       if (filters.attributes?.length) {
@@ -110,7 +113,7 @@ export class CatalogService {
         brand: product.brandId ? brandMap.get(product.brandId) || null : null,
         category: product.categoryId ? categoryMap.get(product.categoryId) || null : null,
         price: resolvedPrice,
-        maxPrice: pricePool.length ? Math.max(...pricePool) : resolvedPrice,
+        maxPrice: hidePrices ? 0 : pricePool.length ? Math.max(...pricePool) : resolvedPrice,
         basePrice,
         inStock: availableQty > 0,
         availableQuantity: availableQty,
@@ -120,9 +123,9 @@ export class CatalogService {
       });
     }
 
-    if (filters.sortBy === 'PRICE_ASC') {
+    if (!hidePrices && filters.sortBy === 'PRICE_ASC') {
       results.sort((a, b) => a.price - b.price);
-    } else if (filters.sortBy === 'PRICE_DESC') {
+    } else if (!hidePrices && filters.sortBy === 'PRICE_DESC') {
       results.sort((a, b) => b.price - a.price);
     } else if (filters.sortBy === 'NEWEST') {
       results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -165,7 +168,8 @@ export class CatalogService {
       this.settingsService.getStorefrontSettings(),
     ]);
 
-    const priceListId = storefrontSettings.priceListToShow;
+    const hidePrices = Boolean(storefrontSettings.hidePrices);
+    const priceListId = hidePrices ? null : storefrontSettings.priceListToShow;
     const priceMap = priceListId
       ? await this.pricingService.resolvePricesForVariants(variantIds, priceListId)
       : new Map<string, number>();
@@ -180,7 +184,7 @@ export class CatalogService {
     const mappedVariants = product.variants.map(v => {
       const variantStocks = stockByVariant.get(v.id) || [];
       const stock = variantStocks.reduce((ssum, s) => ssum + s.availableQuantity, 0);
-      const resolved = priceListId ? (priceMap.get(v.id) ?? v.basePrice) : v.basePrice;
+      const resolved = hidePrices ? 0 : priceListId ? (priceMap.get(v.id) ?? v.basePrice) : v.basePrice;
       return {
         id: v.id,
         sku: v.sku,
@@ -188,15 +192,15 @@ export class CatalogService {
         color: v.color,
         stock,
         price: resolved,
-        basePrice: v.basePrice,
+        basePrice: hidePrices ? 0 : v.basePrice,
         attributes: v.attributes,
       };
     });
 
     const inStockVariants = mappedVariants.filter(v => v.stock > 0);
     const pricePool = (inStockVariants.length ? inStockVariants : mappedVariants).map(v => v.price);
-    const resolvedPrice = pricePool.length ? Math.min(...pricePool) : 0;
-    const basePrice = mappedVariants.length ? Math.min(...mappedVariants.map(v => v.basePrice)) : 0;
+    const resolvedPrice = hidePrices ? 0 : pricePool.length ? Math.min(...pricePool) : 0;
+    const basePrice = hidePrices ? 0 : mappedVariants.length ? Math.min(...mappedVariants.map(v => v.basePrice)) : 0;
     const availableQty = mappedVariants.reduce((sum, v) => sum + v.stock, 0);
 
     const metadata = (product.metadata || {}) as Record<string, any>;
@@ -218,7 +222,7 @@ export class CatalogService {
 
       relatedProducts = related.map(p => {
         const prices = p.variants.map(v => relPriceMap.get(v.id) ?? v.basePrice);
-        const minPrice = prices.length ? Math.min(...prices) : 0;
+        const minPrice = hidePrices ? 0 : prices.length ? Math.min(...prices) : 0;
         return {
           id: p.id,
           name: p.name,
@@ -235,7 +239,7 @@ export class CatalogService {
       brand: brand?.name || null,
       category: category?.name || null,
       price: resolvedPrice,
-      maxPrice: pricePool.length ? Math.max(...pricePool) : resolvedPrice,
+      maxPrice: hidePrices ? 0 : pricePool.length ? Math.max(...pricePool) : resolvedPrice,
       basePrice,
       inStock: availableQty > 0,
       availableQuantity: availableQty,

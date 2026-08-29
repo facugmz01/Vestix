@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ShoppingCart, ShieldCheck, Truck, RotateCcw, Check } from 'lucide-react';
 import clsx from 'clsx';
-import { storefrontApi } from '@/api/storefront.api';
+import { storefrontApi, type StorefrontSettings } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
 import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { WhatsAppInquiryButton } from '@/components/storefront';
 import styles from './OnlineProductDetailPage.module.css';
 
 export default function OnlineProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const prefix = storePrefix();
   const addItem = useCartStore(s => s.addItem);
+  const { settings } = useOutletContext<{ settings?: StorefrontSettings }>();
+  const hidePrices = Boolean(settings?.hidePrices);
 
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [qty, setQty] = useState(1);
@@ -137,11 +140,19 @@ export default function OnlineProductDetailPage() {
 
           <div className={styles.buyBox}>
             <div className={styles.priceBlock}>
-              <span className={styles.price}>
-                {selectedVariant ? formatCurrency(displayPrice) : priceRange}
-              </span>
-              {product.basePrice && product.basePrice > product.price && (
-                <span className={styles.priceStrike}>{formatCurrency(product.basePrice)}</span>
+              {hidePrices ? (
+                <span style={{ color: '#16a34a', fontSize: '1.25rem', fontWeight: 700 }}>
+                  Consultar Precio
+                </span>
+              ) : (
+                <>
+                  <span className={styles.price}>
+                    {selectedVariant ? formatCurrency(displayPrice) : priceRange}
+                  </span>
+                  {product.basePrice && product.basePrice > product.price && (
+                    <span className={styles.priceStrike}>{formatCurrency(product.basePrice)}</span>
+                  )}
+                </>
               )}
               <div className={styles.stockRow}>
                 <span
@@ -183,25 +194,39 @@ export default function OnlineProductDetailPage() {
               </div>
             )}
 
-            <div className={styles.cartRow}>
-              <div className={styles.qtyControl}>
-                <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className={styles.qtyBtn}>−</button>
-                <div className={styles.qtyValue}>{qty}</div>
-                <button type="button" onClick={() => setQty(qty + 1)} className={styles.qtyBtn}>+</button>
+            {hidePrices ? (
+              <div style={{ marginTop: '8px', width: '100%' }}>
+                <WhatsAppInquiryButton
+                  product={product}
+                  variant={selectedVariant}
+                  whatsappNumber={settings?.whatsappNumber || settings?.whatsapp}
+                  messageTemplate={settings?.whatsappMessageTemplate}
+                  size="lg"
+                  className="w-full"
+                  label="Consultar por WhatsApp"
+                />
               </div>
+            ) : (
+              <div className={styles.cartRow}>
+                <div className={styles.qtyControl}>
+                  <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className={styles.qtyBtn}>−</button>
+                  <div className={styles.qtyValue}>{qty}</div>
+                  <button type="button" onClick={() => setQty(qty + 1)} className={styles.qtyBtn}>+</button>
+                </div>
 
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={!isAvailable}
-                className={clsx(
-                  styles.addBtn,
-                  justAdded ? styles.addBtnSuccess : isAvailable ? styles.addBtnAvailable : styles.addBtnDisabled,
-                )}
-              >
-                {justAdded ? <><Check size={18} /> Agregado!</> : <><ShoppingCart size={18} /> {isAvailable ? 'Agregar al Carrito' : 'Agotado'}</>}
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={!isAvailable}
+                  className={clsx(
+                    styles.addBtn,
+                    justAdded ? styles.addBtnSuccess : isAvailable ? styles.addBtnAvailable : styles.addBtnDisabled,
+                  )}
+                >
+                  {justAdded ? <><Check size={18} /> Agregado!</> : <><ShoppingCart size={18} /> {isAvailable ? 'Agregar al Carrito' : 'Agotado'}</>}
+                </button>
+              </div>
+            )}
           </div>
 
           {product.relatedProducts && product.relatedProducts.length > 0 && (
@@ -219,7 +244,13 @@ export default function OnlineProductDetailPage() {
                     </div>
                     <div className={styles.relatedBody}>
                       <p className={styles.relatedName}>{rp.name}</p>
-                      <p className={styles.relatedPrice}>{formatCurrency(rp.price)}</p>
+                      {hidePrices ? (
+                        <p className={styles.relatedPrice} style={{ color: '#16a34a', fontWeight: 600 }}>
+                          Consultar
+                        </p>
+                      ) : (
+                        <p className={styles.relatedPrice}>{formatCurrency(rp.price)}</p>
+                      )}
                     </div>
                   </Link>
                 ))}

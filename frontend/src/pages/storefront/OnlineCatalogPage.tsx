@@ -99,6 +99,8 @@ export default function OnlineCatalogPage() {
   const [categoryId, setCategoryId] = useState('');
   const [brandId, setBrandId] = useState('');
   const [sortBy, setSortBy] = useState<'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST'>('NEWEST');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
   const prefix = storePrefix();
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -135,9 +137,13 @@ export default function OnlineCatalogPage() {
     return () => clearTimeout(t);
   }, [searchInput, setSearchParams]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, categoryId, brandId, sortBy, pageSize]);
+
   const { data, isLoading } = useQuery({
-    queryKey: queryKeys.storefront.products({ search, categoryId, brand: brandId, sortBy }),
-    queryFn: () => storefrontApi.getProducts({ search, categoryId, brand: brandId, sortBy }),
+    queryKey: queryKeys.storefront.products({ search, categoryId, brand: brandId, sortBy, page, pageSize }),
+    queryFn: () => storefrontApi.getProducts({ search, categoryId, brand: brandId, sortBy, page, pageSize }),
   });
 
   const { data: categoriesData } = useQuery({
@@ -151,14 +157,41 @@ export default function OnlineCatalogPage() {
   });
 
   const products = data?.data || [];
+  const totalProducts = data?.metadata?.total ?? products.length;
+  const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
   const categories: { id: string; name: string }[] = categoriesData || [];
   const brands: { id: string; name: string }[] = brandsData || [];
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages || newPage === page) return;
+    setPage(newPage);
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push('...');
+      const start = Math.max(2, page - 1);
+      const end = Math.min(totalPages - 1, page + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (page < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   const clearFilters = () => {
     setSearchInput('');
     setSearch('');
     setCategoryId('');
     setBrandId('');
+    setPage(1);
     setShowFiltersMobile(false);
   };
 
@@ -284,7 +317,11 @@ export default function OnlineCatalogPage() {
             <div>
               {!isLoading && (
                 <p className={styles.resultCount}>
-                  Mostrando <strong>{products.length}</strong> productos
+                  Mostrando{' '}
+                  <strong>
+                    {totalProducts > 0 ? (page - 1) * pageSize + 1 : 0} - {Math.min(page * pageSize, totalProducts)}
+                  </strong>{' '}
+                  de <strong>{totalProducts}</strong> productos
                 </p>
               )}
             </div>
@@ -299,6 +336,25 @@ export default function OnlineCatalogPage() {
                 </button>
               )}
 
+              <div className={styles.pageSizeWrap}>
+                <span className={styles.pageSizeLabel}>Mostrar:</span>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className={styles.pageSizeSelect}
+                    aria-label="Cantidad de productos por página"
+                  >
+                    <option value={12}>12 por pág.</option>
+                    <option value={24}>24 por pág.</option>
+                    <option value={48}>48 por pág.</option>
+                    <option value={96}>96 por pág.</option>
+                    <option value={1000}>Todos</option>
+                  </select>
+                  <ChevronDown size={14} className={styles.sortIcon} aria-hidden />
+                </div>
+              </div>
+
               <div className={styles.sortWrap}>
                 <select
                   value={sortBy}
@@ -307,8 +363,12 @@ export default function OnlineCatalogPage() {
                   aria-label="Ordenar productos"
                 >
                   <option value="NEWEST">Más Recientes</option>
-                  <option value="PRICE_ASC">Menor Precio</option>
-                  <option value="PRICE_DESC">Mayor Precio</option>
+                  {!settings?.hidePrices && (
+                    <>
+                      <option value="PRICE_ASC">Menor Precio</option>
+                      <option value="PRICE_DESC">Mayor Precio</option>
+                    </>
+                  )}
                 </select>
                 <ChevronDown size={14} className={styles.sortIcon} aria-hidden />
               </div>
@@ -337,46 +397,102 @@ export default function OnlineCatalogPage() {
               )}
             </div>
           ) : (
-            <div className={styles.grid}>
-              {products.map(p => {
-                const isAvailable = p.inStock;
-                const hasImage = p.images && p.images.length > 0;
-                const price = p.price || p.basePrice || 0;
+            <>
+              <div className={styles.grid}>
+                {products.map(p => {
+                  const isAvailable = p.inStock;
+                  const hasImage = p.images && p.images.length > 0;
+                  const price = p.price || p.basePrice || 0;
+                  const hidePrices = Boolean(settings?.hidePrices);
 
-                return (
-                  <Link key={p.id} to={`${prefix}/product/${p.id}`} className={styles.productCard}>
-                    <div className={styles.imageArea}>
-                      {hasImage ? (
-                        <img src={p.images![0]} alt={p.name} className={styles.productImage} loading="lazy" />
-                      ) : (
-                        <div className={styles.placeholder}>
-                          <ShoppingBag size={48} color="var(--text-primary)" className={styles.placeholderIcon} />
-                          <span className={styles.placeholderLetter}>{p.name.charAt(0).toUpperCase()}</span>
+                  return (
+                    <Link key={p.id} to={`${prefix}/product/${p.id}`} className={styles.productCard}>
+                      <div className={styles.imageArea}>
+                        {hasImage ? (
+                          <img src={p.images![0]} alt={p.name} className={styles.productImage} loading="lazy" />
+                        ) : (
+                          <div className={styles.placeholder}>
+                            <ShoppingBag size={48} color="var(--text-primary)" className={styles.placeholderIcon} />
+                            <span className={styles.placeholderLetter}>{p.name.charAt(0).toUpperCase()}</span>
+                          </div>
+                        )}
+
+                        <div className={styles.badges}>
+                          {!isAvailable && <span className={styles.soldOut}>Agotado</span>}
                         </div>
-                      )}
 
-                      <div className={styles.badges}>
-                        {!isAvailable && <span className={styles.soldOut}>Agotado</span>}
+                        {!isMobile && (
+                          <div className={styles.quickAdd}>
+                            {hidePrices ? 'Consultar' : 'Ver Detalles'}
+                          </div>
+                        )}
                       </div>
 
-                      {!isMobile && <div className={styles.quickAdd}>Ver Detalles</div>}
-                    </div>
+                      <div className={styles.productBody}>
+                        <span className={styles.categoryLabel}>
+                          {p.brand || p.category || 'Categoría'}
+                        </span>
+                        <h3 className={styles.productName}>{p.name}</h3>
+                        {hidePrices ? (
+                          <p className={styles.productPrice} style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.9rem' }}>
+                            Consultar por WhatsApp
+                          </p>
+                        ) : (
+                          <p className={styles.productPrice}>
+                            {p.maxPrice && p.maxPrice > price
+                              ? `Desde ${formatCurrency(price)}`
+                              : formatCurrency(price)}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
 
-                    <div className={styles.productBody}>
-                      <span className={styles.categoryLabel}>
-                        {p.brand || p.category || 'Categoría'}
-                      </span>
-                      <h3 className={styles.productName}>{p.name}</h3>
-                      <p className={styles.productPrice}>
-                        {p.maxPrice && p.maxPrice > price
-                          ? `Desde ${formatCurrency(price)}`
-                          : formatCurrency(price)}
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+              {totalPages > 1 && (
+                <nav className={styles.pagination} aria-label="Paginación de productos">
+                  <p className={styles.paginationInfo}>
+                    Página <strong>{page}</strong> de <strong>{totalPages}</strong> ({totalProducts} productos)
+                  </p>
+                  <div className={styles.paginationButtons}>
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(page - 1)}
+                      disabled={page <= 1}
+                      className={styles.pageBtn}
+                      aria-label="Página anterior"
+                    >
+                      <ChevronLeft size={16} /> Anterior
+                    </button>
+                    {getPageNumbers().map((pNum, idx) =>
+                      typeof pNum === 'string' ? (
+                        <span key={`ellipsis-${idx}`} className={styles.pageEllipsis}>…</span>
+                      ) : (
+                        <button
+                          key={pNum}
+                          type="button"
+                          onClick={() => handlePageChange(pNum)}
+                          className={clsx(styles.pageBtn, pNum === page && styles.pageBtnActive)}
+                          aria-current={pNum === page ? 'page' : undefined}
+                        >
+                          {pNum}
+                        </button>
+                      )
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(page + 1)}
+                      disabled={page >= totalPages}
+                      className={styles.pageBtn}
+                      aria-label="Página siguiente"
+                    >
+                      Siguiente <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </nav>
+              )}
+            </>
           )}
         </div>
       </div>

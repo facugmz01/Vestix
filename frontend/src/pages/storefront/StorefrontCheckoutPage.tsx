@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Truck, Store, CreditCard, User, Loader2 } from 'lucide-react';
+import { Truck, Store, CreditCard, User, Loader2, MessageSquareText } from 'lucide-react';
 import clsx from 'clsx';
 import { storefrontOrdersApi, type CheckoutDto } from '@/api/storefront-orders.api';
 import { storefrontApi } from '@/api/storefront.api';
@@ -11,7 +11,8 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { BankTransferDetails, hasBankTransferDetails, StorefrontStepper } from '@/components/storefront';
+import { BankTransferDetails, hasBankTransferDetails, StorefrontStepper, StorefrontPage, StorefrontCard } from '@/components/storefront';
+import sf from '@/components/storefront/storefront.module.css';
 import styles from './storefrontCheckout.module.css';
 
 export default function StorefrontCheckoutPage() {
@@ -195,6 +196,23 @@ export default function StorefrontCheckoutPage() {
       <div className={styles.loadingWrap}>
         <Loader2 size={32} className="spin" color="var(--accent)" />
       </div>
+    );
+  }
+
+  if (settings?.hidePrices) {
+    return (
+      <StorefrontPage variant="medium">
+        <StorefrontCard className={sf.emptyState}>
+          <MessageSquareText size={56} className={sf.emptyIcon} style={{ color: '#25D366' }} />
+          <h2 className={sf.emptyTitle}>Modo Catálogo Activo</h2>
+          <p className={sf.emptyText}>
+            El checkout online se encuentra deshabilitado porque la tienda opera en modo catálogo. Por favor contactanos directamente por WhatsApp para realizar consultas o compras.
+          </p>
+          <Link to={`${prefix}/`} className="storefront-btn">
+            Volver al Catálogo
+          </Link>
+        </StorefrontCard>
+      </StorefrontPage>
     );
   }
 

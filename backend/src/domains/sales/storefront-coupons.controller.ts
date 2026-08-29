@@ -41,64 +41,7 @@ export class StorefrontCouponsController {
       };
     }
 
-    // 2. Check promotions with coupon code
-    const now = new Date();
-    const promo = await this.prisma.promotion.findFirst({
-      where: {
-        couponCode: { equals: code, mode: 'insensitive' },
-        isActive: true,
-        OR: [
-          { startsAt: null },
-          { startsAt: { lte: now } },
-        ],
-        AND: [
-          {
-            OR: [
-              { endsAt: null },
-              { endsAt: { gte: now } },
-            ],
-          },
-        ],
-      },
-    });
-
-    if (!promo) {
-      return { valid: false, message: 'Código no encontrado o inválido.' };
-    }
-
-    // Check usage limit
-    if (promo.usageLimit && promo.usageCount >= promo.usageLimit) {
-      return { valid: false, message: 'El cupón ha alcanzado su límite de uso.' };
-    }
-
-    // Check minimum purchase
-    if (promo.minPurchaseAmount && body.cartTotal < promo.minPurchaseAmount) {
-      return {
-        valid: false,
-        message: `El cupón requiere una compra mínima de $${promo.minPurchaseAmount.toFixed(2)}.`,
-      };
-    }
-
-    let discountAmount = 0;
-    if (promo.discountType === 'PERCENTAGE') {
-      discountAmount = (body.cartTotal * (promo.discountValue || 0)) / 100;
-      if (promo.maxDiscountAmount) {
-        discountAmount = Math.min(discountAmount, promo.maxDiscountAmount);
-      }
-    } else {
-      discountAmount = Math.min(promo.discountValue || 0, body.cartTotal);
-    }
-
-    return {
-      valid: true,
-      type: 'COUPON' as const,
-      code,
-      promotionId: promo.id,
-      promotionName: promo.name,
-      discountType: promo.discountType,
-      discountValue: promo.discountValue,
-      discountAmount: Math.round(discountAmount * 100) / 100,
-      message: `Cupón aplicado: ${promo.name}`,
-    };
+    // 2. Promotion/coupon lookup is not available yet (Promotion model pending)
+    return { valid: false, message: 'Código no encontrado o inválido.' };
   }
 }

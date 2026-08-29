@@ -4,3 +4,5 @@ export { StorefrontAlert } from './StorefrontAlert';
 export { StorefrontStepper } from './StorefrontStepper';
 export { BankTransferDetails, hasBankTransferDetails } from './BankTransferDetails';
 export type { BankTransferInfo } from './BankTransferDetails';
+export { WhatsAppInquiryButton, buildWhatsAppInquiryUrl, WhatsAppIcon } from './WhatsAppInquiryButton';
+export type { WhatsAppInquiryButtonProps } from './WhatsAppInquiryButton';
