@@ -1,8 +1,11 @@
 import {
+  IsBoolean,
   IsDateString,
+  IsDefined,
   IsEnum,
   IsIn,
   IsNotEmpty,
+  IsNotEmptyObject,
   IsNumber,
   IsOptional,
   IsString,
@@ -88,7 +91,7 @@ export class GiftCardTemplateSettingsDto {
   @IsOptional() @IsString() subtitle?: string;
   @IsOptional() @IsString() backgroundColor?: string;
   @IsOptional() @IsString() backgroundGradientEnd?: string;
-  @IsOptional() useGradient?: boolean;
+  @IsOptional() @IsBoolean() useGradient?: boolean;
   @IsOptional() @IsString() textColor?: string;
   @IsOptional() @IsString() accentColor?: string;
   @IsOptional() @IsNumber() cardWidthMm?: number;
@@ -96,18 +99,20 @@ export class GiftCardTemplateSettingsDto {
   @IsOptional() @IsNumber() borderRadiusPx?: number;
   @IsOptional() @IsIn(['sans-serif', 'serif', 'monospace']) fontFamily?: 'sans-serif' | 'serif' | 'monospace';
   @IsOptional() @IsNumber() amountFontSizePx?: number;
-  @IsOptional() showLogo?: boolean;
+  @IsOptional() @IsBoolean() showLogo?: boolean;
   @IsOptional() @IsString() logoUrl?: string;
-  @IsOptional() showQr?: boolean;
+  @IsOptional() @IsBoolean() showQr?: boolean;
   @IsOptional() @IsNumber() qrSizePx?: number;
-  @IsOptional() showRecipient?: boolean;
-  @IsOptional() showExpiry?: boolean;
-  @IsOptional() showCode?: boolean;
+  @IsOptional() @IsBoolean() showRecipient?: boolean;
+  @IsOptional() @IsBoolean() showExpiry?: boolean;
+  @IsOptional() @IsBoolean() showCode?: boolean;
   @IsOptional() @IsString() footerText?: string;
   @IsOptional() @IsNumber() paperMarginMm?: number;
 }
 
 export class UpdateGiftCardTemplateDto {
+  @IsDefined()
+  @IsNotEmptyObject()
   @ValidateNested()
   @Type(() => GiftCardTemplateSettingsDto)
   template: GiftCardTemplateSettingsDto;

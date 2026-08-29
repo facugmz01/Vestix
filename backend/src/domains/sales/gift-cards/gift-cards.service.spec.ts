@@ -222,4 +222,80 @@ describe('GiftCardsService', () => {
     prisma.giftCard.findUnique.mockResolvedValue(null);
     await expect(service.getBalance('MISSING')).rejects.toThrow(NotFoundException);
   });
+
+  describe('GiftCard Template Management', () => {
+    it('returns template settings from SettingsService', async () => {
+      const mockSettings = {
+        template: {
+          brandLabel: 'TIENDA MODA',
+          title: 'Voucher Especial',
+          subtitle: '',
+          backgroundColor: '#000000',
+          backgroundGradientEnd: '#222222',
+          useGradient: false,
+          textColor: '#ffffff',
+          accentColor: '#gold',
+          cardWidthMm: 85,
+          cardHeightMm: 54,
+          borderRadiusPx: 12,
+          fontFamily: 'serif' as const,
+          amountFontSizePx: 24,
+          showLogo: true,
+          logoUrl: '/logo.png',
+          showQr: true,
+          qrSizePx: 100,
+          showRecipient: true,
+          showExpiry: true,
+          showCode: true,
+          footerText: 'Válido por 90 días',
+          paperMarginMm: 10,
+        },
+      };
+      settingsService.getGiftCardsSettings.mockResolvedValue(mockSettings);
+
+      const result = await service.getTemplate();
+
+      expect(settingsService.getGiftCardsSettings).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockSettings);
+    });
+
+    it('persists template updates via SettingsService and returns refreshed template', async () => {
+      const updatedTemplate = {
+        brandLabel: 'VESTIX VIP',
+        title: 'Gift Card Premium',
+        subtitle: 'Edición Limitada',
+        backgroundColor: '#111111',
+        backgroundGradientEnd: '#333333',
+        useGradient: true,
+        textColor: '#ffffff',
+        accentColor: '#ff0055',
+        cardWidthMm: 90,
+        cardHeightMm: 60,
+        borderRadiusPx: 8,
+        fontFamily: 'sans-serif' as const,
+        amountFontSizePx: 32,
+        showLogo: false,
+        logoUrl: '',
+        showQr: true,
+        qrSizePx: 140,
+        showRecipient: true,
+        showExpiry: false,
+        showCode: true,
+        footerText: 'Solo para compras online y presenciales',
+        paperMarginMm: 5,
+      };
+
+      settingsService.updateSection.mockResolvedValue({ id: 'default' });
+      settingsService.getGiftCardsSettings.mockResolvedValue({ template: updatedTemplate });
+
+      const result = await service.updateTemplate(updatedTemplate, 'user-admin-id');
+
+      expect(settingsService.updateSection).toHaveBeenCalledWith(
+        'giftCards',
+        { template: updatedTemplate },
+        'user-admin-id',
+      );
+      expect(result).toEqual({ template: updatedTemplate });
+    });
+  });
 });

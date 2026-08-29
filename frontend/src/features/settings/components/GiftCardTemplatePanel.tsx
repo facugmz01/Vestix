@@ -40,10 +40,9 @@ export function GiftCardTemplatePanel() {
   const previewTemplate = watch();
 
   const onSubmit = (template: GiftCardTemplateFormData) => {
-    mutation.mutate(
-      { template },
-      { onSuccess: () => reset(template) },
-    );
+    mutation.mutate(template, {
+      onSuccess: () => reset(template),
+    });
   };
 
   if (isLoading) {

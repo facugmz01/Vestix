@@ -25,6 +25,9 @@ export function useUpdateGiftCardTemplate() {
       queryClient.invalidateQueries({ queryKey: queryKeys.giftCards.template() });
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.get() });
     },
-    onError: (error: Error) => toast.error(error.message || 'Error al guardar la plantilla'),
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message || error?.message || 'Error al guardar la plantilla';
+      toast.error(typeof msg === 'string' ? msg : 'Error al validar la plantilla');
+    },
   });
 }

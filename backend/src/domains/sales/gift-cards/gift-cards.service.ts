@@ -157,7 +157,8 @@ export class GiftCardsService {
   }
 
   async updateTemplate(template: GiftCardTemplateSettings, userId: string) {
-    return this.settingsService.updateSection('giftCards', { template }, userId);
+    await this.settingsService.updateSection('giftCards', { template }, userId);
+    return this.getTemplate();
   }
 
   async verifyByToken(token: string) {
