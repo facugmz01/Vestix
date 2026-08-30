@@ -378,23 +378,21 @@ export class AccountsService {
           await this.prisma.$transaction(async (tx) => {
             const customer = await tx.customer.findUnique({ where: { id: order.customerId! } });
             if (customer) {
-              const prevBalance = customer.currentAccountBalance || 0;
-              const newBalance = prevBalance + order.grandTotal;
-              await tx.customer.update({
+              const updated = await tx.customer.update({
                 where: { id: customer.id },
-                data: { currentAccountBalance: newBalance },
+                data: { usedCredit: { increment: order.grandTotal } },
               });
               await tx.currentAccountMovement.create({
                 data: {
                   accountId: customer.id,
                   entityType: 'CUSTOMER',
-                  documentType: 'DEBIT_NOTE',
+                  documentType: 'INVOICE',
                   referenceId: order.id,
-                  description: `Reconciliación: Cargo Venta #${order.id.slice(0, 8)}`,
+                  description: `Reconciliación: Venta #${order.id.slice(0, 8)}`,
                   amount: order.grandTotal,
                   debit: order.grandTotal,
                   credit: 0,
-                  balanceAfter: newBalance,
+                  balanceAfter: Math.max(0, updated.usedCredit),
                   createdAt: order.createdAt,
                 },
               });
