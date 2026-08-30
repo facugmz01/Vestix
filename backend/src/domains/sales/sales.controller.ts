@@ -3,7 +3,7 @@ import { SalesService } from './sales.service';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
 import { ShippingService } from '../shipping/shipping.service';
-import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateOrderDto, EmitOrderInvoiceDto } from './dto/create-order.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
 import { ConfirmPaymentDto } from './dto/confirm-payment.dto';
@@ -27,6 +27,12 @@ export class SalesController {
   @RequirePermissions({ action: 'create', subject: 'Sales' })
   async checkout(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
     return this.checkoutOrchestrator.processCheckout(createOrderDto, req.user?.userId);
+  }
+
+  @Post('orders/:id/emit-invoice')
+  @RequirePermissions({ action: 'update', subject: 'Sales' })
+  async emitInvoice(@Param('id') id: string, @Body() body: EmitOrderInvoiceDto) {
+    return this.salesService.emitOrderInvoice(id, body);
   }
 
   @Post('orders/:id/confirm-payment')

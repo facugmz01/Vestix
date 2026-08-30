@@ -87,6 +87,9 @@ export const salesApi = {
   cancelSale: (id: string) =>
     post<SaleOrder>(`/sales/orders/${id}/cancel`, {}),
 
+  emitInvoice: (id: string, payload?: { invoiceType?: string; fiscalCustomerData?: any }) =>
+    post<{ success: boolean; message: string; orderId: string; invoiceId: string; invoiceType: string; status: string }>(`/sales/orders/${id}/emit-invoice`, payload ?? {}),
+
   bulkImportSales: (rows: any[], updateStock: boolean, paymentResolution: string, branchId: string) =>
     post<{ success: boolean; createdCount: number; errorCount: number; errors: string[] }>('/sales/bulk-import', { rows, updateStock, paymentResolution, branchId }),
 

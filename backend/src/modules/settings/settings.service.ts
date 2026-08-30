@@ -229,6 +229,11 @@ export interface ArcaSettings {
   certAlias: string;
 }
 
+export interface InvoicingSettings {
+  defaultInvoiceType: string;
+  autoIssueOnSale: boolean;
+}
+
 export interface OfflineSettings {
   offlineModeEnabled: boolean;
   posOfflineTtlHours: number;
@@ -534,6 +539,19 @@ export class SettingsService implements OnModuleInit {
   async getArcaSettings(): Promise<ArcaSettings> {
     const row = await this.getCachedRaw();
     return (row?.arca as ArcaSettings) ?? {} as ArcaSettings;
+  }
+
+  async getInvoicingSettings(): Promise<InvoicingSettings> {
+    const row = await this.getCachedRaw();
+    const stored = (row?.invoicing as InvoicingSettings) ?? {} as InvoicingSettings;
+    return {
+      defaultInvoiceType: (stored as any)?.default_invoice_type || stored?.defaultInvoiceType || 'FACTURA_B',
+      autoIssueOnSale: (stored as any)?.auto_invoicing_enabled !== undefined
+        ? Boolean((stored as any).auto_invoicing_enabled)
+        : stored?.autoIssueOnSale !== undefined
+          ? Boolean(stored.autoIssueOnSale)
+          : false,
+    };
   }
 
   async getOfflineSettings(): Promise<OfflineSettings> {

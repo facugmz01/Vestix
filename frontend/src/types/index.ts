@@ -274,12 +274,14 @@ export type SaleOrderStatus = 'QUOTATION' | 'QUOTE' | 'PENDING_PAYMENT' | 'CONFI
 export interface SaleOrder {
   id: string; branchId: string; warehouseId?: string | null; source: OrderSource; status: SaleOrderStatus;
   customerId?: string; customerName?: string;
-  customer?: { fullName?: string; phone?: string | null; email?: string | null };
+  customer?: { fullName?: string; phone?: string | null; email?: string | null; taxId?: string; taxCondition?: string };
   lines: OrderLineItem[];
   payments?: SaleOrderPayment[];
   subtotal: number; cartDiscountTotal: number; grandTotal: number;
   afipInvoiceId?: string;
   issueInvoice?: boolean;
+  invoicingStatus?: 'NOT_REQUESTED' | 'PENDING' | 'INVOICED' | 'FAILED';
+  invoices?: ElectronicInvoice[];
   paymentMethod: PaymentMethod; createdAt: string; syncedAt?: string;
   shippingMethodId?: string | null;
   shippingMethodName?: string | null;

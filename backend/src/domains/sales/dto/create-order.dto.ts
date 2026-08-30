@@ -51,6 +51,28 @@ export class GiftCardRedemptionDto {
   amount: number;
 }
 
+export class FiscalCustomerDto {
+  @IsString()
+  @IsOptional()
+  taxId?: string;
+
+  @IsString()
+  @IsOptional()
+  docType?: 'CUIT' | 'CUIL' | 'DNI';
+
+  @IsString()
+  @IsOptional()
+  businessName?: string;
+
+  @IsString()
+  @IsOptional()
+  taxCondition?: string;
+
+  @IsString()
+  @IsOptional()
+  fiscalAddress?: string;
+}
+
 export class LoyaltyRedemptionDto {
   @IsInt()
   @Min(1)
@@ -117,6 +139,19 @@ export class CreateOrderDto implements SharedCreateSaleDto {
   @IsOptional()
   issueInvoice?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  emitInvoice?: boolean;
+
+  @IsString()
+  @IsOptional()
+  invoiceType?: string; // 'FACTURA_A', 'FACTURA_B', 'FACTURA_C', etc.
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FiscalCustomerDto)
+  fiscalCustomerData?: FiscalCustomerDto;
+
   @IsString()
   @IsOptional()
   paymentReference?: string;
@@ -137,3 +172,15 @@ export class CreateOrderDto implements SharedCreateSaleDto {
   @Type(() => LoyaltyRedemptionDto)
   loyaltyRedemption?: LoyaltyRedemptionDto;
 }
+
+export class EmitOrderInvoiceDto {
+  @IsOptional()
+  @IsString()
+  invoiceType?: string; // 'FACTURA_A', 'FACTURA_B', 'FACTURA_C', etc.
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FiscalCustomerDto)
+  fiscalCustomerData?: FiscalCustomerDto;
+}
+

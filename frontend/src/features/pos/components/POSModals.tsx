@@ -43,10 +43,17 @@ export function POSModals({
   isShiftLoading: boolean;
   issueInvoice: boolean;
   setIssueInvoice: (issue: boolean) => void;
+  invoiceType?: string;
+  setInvoiceType?: (type: string) => void;
 }) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [amountTendered, setAmountTendered] = useState(grandTotal);
+
+  const [localInvoiceType, setLocalInvoiceType] = useState('FACTURA_B');
+  const [fiscalTaxId, setFiscalTaxId] = useState('');
+  const [fiscalBusinessName, setFiscalBusinessName] = useState('');
+  const [fiscalTaxCondition, setFiscalTaxCondition] = useState('Consumidor Final');
 
   const selectedCustomerId = usePosStore(s => s.selectedCustomerId);
 
@@ -55,6 +62,31 @@ export function POSModals({
     queryFn: () => customersApi.getCustomer(selectedCustomerId),
     enabled: !!selectedCustomerId,
   });
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      setFiscalTaxId(selectedCustomer.taxId || '');
+      setFiscalBusinessName(selectedCustomer.fullName || '');
+      const condition = selectedCustomer.taxCondition || 'Consumidor Final';
+      setFiscalTaxCondition(condition);
+      if (condition === 'RESPONSABLE_INSCRIPTO' || condition === 'Responsable Inscripto') {
+        setLocalInvoiceType('FACTURA_A');
+      } else {
+        setLocalInvoiceType('FACTURA_B');
+      }
+    } else {
+      setFiscalTaxId('');
+      setFiscalBusinessName('');
+      setFiscalTaxCondition('Consumidor Final');
+      setLocalInvoiceType('FACTURA_B');
+    }
+  }, [selectedCustomer]);
+
+  const activeInvoiceType = invoiceType || localInvoiceType;
+  const handleSelectInvoiceType = (type: string) => {
+    setLocalInvoiceType(type);
+    if (setInvoiceType) setInvoiceType(type);
+  };
 
   const { data: branch } = useQuery({
     queryKey: queryKeys.branches.detail(user?.branchId ?? ''),
@@ -103,7 +135,17 @@ export function POSModals({
 
   const handleConfirmSale = () => {
     if (paymentMethod === 'CASH' && amountDue > 0.01 && amountTendered < amountDue) return;
-    onConfirmCheckout('CONFIRMED');
+    const fiscalCustomerData = issueInvoice ? {
+      taxId: fiscalTaxId.trim() || undefined,
+      docType: (fiscalTaxId.trim().length === 11 ? 'CUIT' : 'DNI') as 'CUIT' | 'DNI',
+      businessName: fiscalBusinessName.trim() || undefined,
+      taxCondition: fiscalTaxCondition || undefined,
+    } : undefined;
+
+    (onConfirmCheckout as any)('CONFIRMED', {
+      invoiceType: activeInvoiceType,
+      fiscalCustomerData,
+    });
   };
 
   return (
@@ -245,8 +287,64 @@ export function POSModals({
                 onChange={e => setIssueInvoice(e.target.checked)}
                 className={styles.invoiceCheckbox}
               />
-              Emitir e Imprimir Factura Electrónica (AFIP)
+              Emitir Factura Electrónica (AFIP / ARCA)
             </label>
+
+            {issueInvoice && (
+              <div className={styles.invoiceOptionsBox}>
+                <div>
+                  <label className={styles.payFieldLabel} style={{ marginBottom: 6, fontSize: 13 }}>
+                    Tipo de Comprobante
+                  </label>
+                  <div className={styles.invoiceTypeGrid}>
+                    <button
+                      type="button"
+                      className={`${styles.invoiceTypeBtn} ${activeInvoiceType === 'FACTURA_B' ? styles.invoiceTypeBtnActive : ''}`}
+                      onClick={() => handleSelectInvoiceType('FACTURA_B')}
+                    >
+                      Factura B
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.invoiceTypeBtn} ${activeInvoiceType === 'FACTURA_A' ? styles.invoiceTypeBtnActive : ''}`}
+                      onClick={() => handleSelectInvoiceType('FACTURA_A')}
+                    >
+                      Factura A
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.invoiceTypeBtn} ${activeInvoiceType === 'FACTURA_C' ? styles.invoiceTypeBtnActive : ''}`}
+                      onClick={() => handleSelectInvoiceType('FACTURA_C')}
+                    >
+                      Factura C
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.fiscalFieldsGrid}>
+                  <div>
+                    <label className={styles.payFieldLabel} style={{ marginBottom: 4, fontSize: 12 }}>
+                      {activeInvoiceType === 'FACTURA_A' ? 'CUIT Receptor *' : 'DNI / CUIT (Opcional)'}
+                    </label>
+                    <Input
+                      placeholder={activeInvoiceType === 'FACTURA_A' ? 'CUIT (11 dígitos)' : 'DNI o CUIT'}
+                      value={fiscalTaxId}
+                      onChange={e => setFiscalTaxId(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className={styles.payFieldLabel} style={{ marginBottom: 4, fontSize: 12 }}>
+                      {activeInvoiceType === 'FACTURA_A' ? 'Razón Social *' : 'Nombre / Razón Social'}
+                    </label>
+                    <Input
+                      placeholder="Nombre o Razón Social"
+                      value={fiscalBusinessName}
+                      onChange={e => setFiscalBusinessName(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <Button
@@ -256,7 +354,7 @@ export function POSModals({
             loading={isCheckoutLoading}
             disabled={!canConfirmSale}
           >
-            Completar Venta y Emitir Ticket
+            {issueInvoice ? 'Completar Venta y Emitir Factura AFIP' : 'Cobrar e Imprimir Ticket (No Fiscal)'}
           </Button>
         </div>
       </Modal>

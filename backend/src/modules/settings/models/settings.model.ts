@@ -43,6 +43,12 @@ export interface SystemSettings {
     defaultWholesalePriceListId?: string;
   };
 
+  // ─── INVOICING / AFIP DEFAULTS ───────────────────────────────────────────
+  invoicing?: {
+    defaultInvoiceType: string; // e.g. 'FACTURA_B', 'FACTURA_A', 'FACTURA_C', 'NONE'
+    autoIssueOnSale: boolean;   // default: false (explicit/optional invoice on sale)
+  };
+
   // ─── INVENTORY RULES ─────────────────────────────────────────────────────
   inventory: {
     allowNegativeStock: boolean;     // Super Admin override only

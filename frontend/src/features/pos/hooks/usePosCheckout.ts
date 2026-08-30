@@ -46,7 +46,17 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
   const clearCart = usePosStore(state => state.clearCart);
 
   return useMutation({
-    mutationFn: async ({ status, grandTotal, amountDue, subtotal, cartDiscountTotal, paymentMethod, issueInvoice }: {
+    mutationFn: async ({
+      status,
+      grandTotal,
+      amountDue,
+      subtotal,
+      cartDiscountTotal,
+      paymentMethod,
+      issueInvoice,
+      invoiceType,
+      fiscalCustomerData,
+    }: {
       status: 'CONFIRMED' | 'QUOTATION';
       grandTotal: number;
       amountDue: number;
@@ -55,6 +65,14 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       cartDiscountTotal?: number;
       paymentMethod: string;
       issueInvoice: boolean;
+      invoiceType?: string;
+      fiscalCustomerData?: {
+        taxId?: string;
+        docType?: 'CUIT' | 'CUIL' | 'DNI';
+        businessName?: string;
+        taxCondition?: string;
+        fiscalAddress?: string;
+      };
     }) => {
       if (!activeShift) throw new Error('No hay sesión de caja activa');
       if (!currentBranchId) {
@@ -143,6 +161,9 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
           };
         }),
         issueInvoice,
+        emitInvoice: issueInvoice,
+        invoiceType: issueInvoice ? (invoiceType || 'FACTURA_B') : undefined,
+        fiscalCustomerData: issueInvoice ? fiscalCustomerData : undefined,
       };
 
       if (status !== 'QUOTATION' && giftCardAmount > 0 && giftCardCode) {

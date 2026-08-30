@@ -27,6 +27,7 @@ import { PosShiftSalesDrawer } from '@/features/pos/components/PosShiftSalesDraw
 import type { PosPaymentMethodId } from '@/features/pos/constants/posPaymentMethods';
 import { computePosAmountDue } from '@/features/pos/utils/posRedemption';
 import { loyaltyApi } from '@/api/loyalty.api';
+import { settingsApi } from '@/api/settings.api';
 import type { ProductVariant } from '@/types';
 
 export default function POSPage() {
@@ -44,6 +45,13 @@ export default function POSPage() {
     queryKey: queryKeys.loyalty.settings(),
     queryFn: () => loyaltyApi.getSettings(),
   });
+
+  const { data: systemSettings } = useQuery({
+    queryKey: queryKeys.settings.all(),
+    queryFn: () => settingsApi.getSettings(),
+    staleTime: 300_000,
+  });
+
   const cartDiscountPct = usePosStore(state => state.cartDiscountPct);
   const selectedCustomerId = usePosStore(state => state.selectedCustomerId);
   const suspendedSales = usePosStore(state => state.suspendedSales);
@@ -63,6 +71,12 @@ export default function POSPage() {
   const [issueInvoice, setIssueInvoice] = useState(false);
   const [variantPickerOpen, setVariantPickerOpen] = useState(false);
   const [variantPickerOptions, setVariantPickerOptions] = useState<ProductVariant[]>([]);
+
+  useEffect(() => {
+    if (systemSettings?.invoicing?.autoIssueOnSale !== undefined) {
+      setIssueInvoice(Boolean(systemSettings.invoicing.autoIssueOnSale));
+    }
+  }, [systemSettings]);
 
   const {
     isOnline,
@@ -245,7 +259,19 @@ export default function POSPage() {
     onEscape: () => setSearch(''),
   });
 
-  const handleConfirmCheckout = (status: 'CONFIRMED' | 'QUOTATION') => {
+  const handleConfirmCheckout = (
+    status: 'CONFIRMED' | 'QUOTATION',
+    fiscalOptions?: {
+      invoiceType?: string;
+      fiscalCustomerData?: {
+        taxId?: string;
+        docType?: 'CUIT' | 'CUIL' | 'DNI';
+        businessName?: string;
+        taxCondition?: string;
+        fiscalAddress?: string;
+      };
+    },
+  ) => {
     checkoutMutation.mutate({
       status,
       grandTotal,
@@ -254,6 +280,8 @@ export default function POSPage() {
       cartDiscountTotal: Math.max(0, globalDiscount),
       paymentMethod,
       issueInvoice,
+      invoiceType: fiscalOptions?.invoiceType,
+      fiscalCustomerData: fiscalOptions?.fiscalCustomerData,
     });
   };
 

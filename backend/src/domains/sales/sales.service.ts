@@ -1,7 +1,9 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { BulkImportSalesDto } from './dto/bulk-sales.dto';
+import { EmitOrderInvoiceDto } from './dto/create-order.dto';
 import { v4 as uuidv4 } from 'uuid';
+import * as crypto from 'crypto';
 
 import { CatalogFacade } from '../catalog/catalog.facade';
 import { SaleOrderRepository } from './repositories/sale-order.repository';
@@ -9,6 +11,7 @@ import { verifyReceiptAccessToken } from './utils/receipt-access.util';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { resolveReceiptStyle } from './models/receipt-style.model';
 import { CurrentAccountsService } from '../finance/current-accounts.service';
+import { AfipProducer } from '../invoicing/afip.producer';
 
 @Injectable()
 export class SalesService {
@@ -18,7 +21,29 @@ export class SalesService {
     private readonly catalogFacade: CatalogFacade,
     private readonly settingsService: SettingsService,
     private readonly currentAccountsService: CurrentAccountsService,
+    private readonly afipProducer: AfipProducer,
   ) { }
+
+  /**
+   * Resolves the high-level fiscal invoicing state for a SaleOrder.
+   */
+  computeInvoicingStatus(order: any): 'NOT_REQUESTED' | 'PENDING' | 'INVOICED' | 'FAILED' {
+    const invoices = order?.invoices || [];
+    const hasApproved = invoices.some((inv: any) => inv.status === 'APPROVED' && (inv.cae || inv.receiptNumber));
+    if (hasApproved) return 'INVOICED';
+
+    const hasPending = invoices.some((inv: any) => inv.status === 'PENDING_AFIP' || inv.status === 'PENDING');
+    if (hasPending) return 'PENDING';
+
+    const hasFailed = invoices.some((inv: any) => inv.status === 'FAILED' || inv.status === 'REJECTED');
+    if (hasFailed) return 'FAILED';
+
+    if (order?.issueInvoice) {
+      return 'PENDING';
+    }
+
+    return 'NOT_REQUESTED';
+  }
 
   /**
    * Domain-specific read operations.
@@ -55,6 +80,7 @@ export class SalesService {
 
       (order as any).customerName =
         order.customer?.fullName || (order as any).customerName || 'Consumidor Final';
+      (order as any).invoicingStatus = this.computeInvoicingStatus(order);
     }
 
     return order;
@@ -133,7 +159,8 @@ export class SalesService {
     return { 
       data: data.map(order => ({
         ...order,
-        customerName: order.customer?.fullName || 'Consumidor Final'
+        customerName: order.customer?.fullName || 'Consumidor Final',
+        invoicingStatus: this.computeInvoicingStatus(order),
       })), 
       total 
     };
@@ -327,5 +354,108 @@ export class SalesService {
         errors
       };
     }, { timeout: 30000 }); // Increase timeout for massive imports
+  }
+
+  /**
+   * Post-sale / deferred electronic invoice emission for previously un-invoiced orders.
+   */
+  async emitOrderInvoice(id: string, dto?: EmitOrderInvoiceDto) {
+    const order = await this.prisma.saleOrder.findUnique({
+      where: { id },
+      include: { customer: true, invoices: true, lines: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Venta no encontrada');
+    }
+
+    if (order.status === 'CANCELLED') {
+      throw new BadRequestException('No se puede emitir factura para una venta cancelada');
+    }
+
+    if (order.status === 'QUOTATION' || order.status === 'QUOTE') {
+      throw new BadRequestException('No se puede emitir factura para un presupuesto. Debe confirmarse la venta primero.');
+    }
+
+    const approvedInvoice = order.invoices.find(
+      inv => inv.status === 'APPROVED' && (inv.cae || inv.receiptNumber)
+    );
+    if (approvedInvoice) {
+      throw new BadRequestException(
+        `Esta orden ya posee una factura emitida con CAE (Comprobante: ${approvedInvoice.receiptNumber || approvedInvoice.id}, CAE: ${approvedInvoice.cae || 'N/A'}).`
+      );
+    }
+
+    const pendingInvoice = order.invoices.find(inv => inv.status === 'PENDING_AFIP');
+    if (pendingInvoice) {
+      throw new BadRequestException('La orden ya se encuentra en proceso de facturación ante AFIP.');
+    }
+
+    // Sync customer fiscal data if provided
+    if (dto?.fiscalCustomerData && order.customerId) {
+      await this.prisma.customer.update({
+        where: { id: order.customerId },
+        data: {
+          taxId: dto.fiscalCustomerData.taxId || undefined,
+          fullName: dto.fiscalCustomerData.businessName || undefined,
+          taxCondition: dto.fiscalCustomerData.taxCondition || undefined,
+        },
+      });
+    }
+
+    const targetType = dto?.invoiceType || (order.customer?.taxCondition === 'RESPONSABLE_INSCRIPTO' ? 'FACTURA_A' : 'FACTURA_B');
+    const docType = dto?.fiscalCustomerData?.docType || (dto?.fiscalCustomerData?.taxId?.length === 11 ? 'CUIT' : (order.customer?.taxId?.length === 11 ? 'CUIT' : 'DNI'));
+    const docNumber = dto?.fiscalCustomerData?.taxId || order.customer?.taxId || '0';
+
+    const netAmount = Math.round((order.grandTotal / 1.21) * 100) / 100;
+    const vatAmount = Math.round((order.grandTotal - netAmount) * 100) / 100;
+
+    const failedInvoice = order.invoices.find(inv => inv.status === 'FAILED' || inv.status === 'REJECTED');
+    let invoice;
+    if (failedInvoice) {
+      invoice = await this.prisma.invoice.update({
+        where: { id: failedInvoice.id },
+        data: {
+          type: targetType,
+          customerDocumentType: docType,
+          customerDocumentNumber: docNumber,
+          netAmount,
+          vatAmount,
+          totalAmount: order.grandTotal,
+          status: 'PENDING_AFIP',
+          afipErrorMessage: null,
+        },
+      });
+    } else {
+      invoice = await this.prisma.invoice.create({
+        data: {
+          id: crypto.randomUUID(),
+          orderId: order.id,
+          type: targetType,
+          customerDocumentType: docType,
+          customerDocumentNumber: docNumber,
+          netAmount,
+          vatAmount,
+          totalAmount: order.grandTotal,
+          status: 'PENDING_AFIP',
+        },
+      });
+    }
+
+    await this.prisma.saleOrder.update({
+      where: { id: order.id },
+      data: { issueInvoice: true },
+    });
+
+    await this.afipProducer.enqueueInvoiceGeneration(order.id, order.branchId);
+
+    return {
+      success: true,
+      message: 'Factura enviada a la cola de emisión de AFIP / ARCA.',
+      orderId: order.id,
+      invoiceId: invoice.id,
+      invoiceType: invoice.type,
+      status: 'PENDING_AFIP',
+    };
   }
 }

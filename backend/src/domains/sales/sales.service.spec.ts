@@ -19,14 +19,25 @@ describe('SalesService.getOrderById', () => {
     getPosSettings: (jest.fn() as any).mockResolvedValue({ receiptStyle: DEFAULT_RECEIPT_STYLE }),
   };
 
+  const mockAfipProducer: any = {
+    enqueueInvoiceGeneration: jest.fn(),
+  };
+
   let service: SalesService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new SalesService(mockPrisma, mockRepository, mockCatalogFacade, mockSettingsService, {
-      chargeCustomerSaleInTx: jest.fn(),
-      reverseCustomerSaleInTx: jest.fn(),
-    } as any);
+    service = new SalesService(
+      mockPrisma,
+      mockRepository,
+      mockCatalogFacade,
+      mockSettingsService,
+      {
+        chargeCustomerSaleInTx: jest.fn(),
+        reverseCustomerSaleInTx: jest.fn(),
+      } as any,
+      mockAfipProducer,
+    );
   });
 
   it('maps productName and variantSku from historical fields and live catalog', async () => {
@@ -147,5 +158,100 @@ describe('SalesService.getOrderById', () => {
     expect(receipt.lines[0].productName).toBe('Remera');
     expect(receipt.branchSettings.posReceiptHeader).toBe('RO Indumentaria');
     expect(receipt.receiptStyle?.paperWidthMm).toBe(80);
+  });
+
+  describe('computeInvoicingStatus', () => {
+    it('returns INVOICED when approved invoice with CAE exists', () => {
+      const status = service.computeInvoicingStatus({
+        invoices: [{ status: 'APPROVED', cae: '12345678901234' }],
+      });
+      expect(status).toBe('INVOICED');
+    });
+
+    it('returns PENDING when invoice is in PENDING_AFIP status', () => {
+      const status = service.computeInvoicingStatus({
+        invoices: [{ status: 'PENDING_AFIP' }],
+      });
+      expect(status).toBe('PENDING');
+    });
+
+    it('returns FAILED when invoice has failed/rejected status', () => {
+      const status = service.computeInvoicingStatus({
+        invoices: [{ status: 'FAILED', afipErrorMessage: 'CUIT inválido' }],
+      });
+      expect(status).toBe('FAILED');
+    });
+
+    it('returns NOT_REQUESTED when no invoices exist and issueInvoice is false', () => {
+      const status = service.computeInvoicingStatus({
+        issueInvoice: false,
+        invoices: [],
+      });
+      expect(status).toBe('NOT_REQUESTED');
+    });
+  });
+
+  describe('emitOrderInvoice', () => {
+    it('enqueues invoice generation and creates draft invoice for un-invoiced sale', async () => {
+      const mockOrder = {
+        id: 'order-123',
+        branchId: 'branch-1',
+        status: 'COMPLETED',
+        grandTotal: 12100,
+        customerId: 'cust-1',
+        customer: { id: 'cust-1', taxId: '20123456789', taxCondition: 'CONSUMIDOR_FINAL' },
+        invoices: [],
+        lines: [],
+      };
+
+      (mockPrisma as any).saleOrder = {
+        findUnique: (jest.fn() as any).mockResolvedValue(mockOrder),
+        update: (jest.fn() as any).mockResolvedValue({ ...mockOrder, issueInvoice: true }),
+      };
+      (mockPrisma as any).invoice = {
+        create: (jest.fn() as any).mockResolvedValue({
+          id: 'inv-1',
+          orderId: 'order-123',
+          type: 'FACTURA_B',
+          status: 'PENDING_AFIP',
+        }),
+      };
+
+      const result = await service.emitOrderInvoice('order-123', {
+        invoiceType: 'FACTURA_B',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.status).toBe('PENDING_AFIP');
+      expect(mockAfipProducer.enqueueInvoiceGeneration).toHaveBeenCalledWith('order-123', 'branch-1');
+    });
+
+    it('rejects invoice emission for cancelled order', async () => {
+      (mockPrisma as any).saleOrder = {
+        findUnique: (jest.fn() as any).mockResolvedValue({
+          id: 'order-cancelled',
+          status: 'CANCELLED',
+          invoices: [],
+        }),
+      };
+
+      await expect(service.emitOrderInvoice('order-cancelled')).rejects.toThrow(
+        'No se puede emitir factura para una venta cancelada',
+      );
+    });
+
+    it('rejects invoice emission if order already has an approved CAE invoice', async () => {
+      (mockPrisma as any).saleOrder = {
+        findUnique: (jest.fn() as any).mockResolvedValue({
+          id: 'order-already-invoiced',
+          status: 'COMPLETED',
+          invoices: [{ status: 'APPROVED', cae: '74839201928374', receiptNumber: '0001-00000042' }],
+        }),
+      };
+
+      await expect(service.emitOrderInvoice('order-already-invoiced')).rejects.toThrow(
+        'Esta orden ya posee una factura emitida con CAE',
+      );
+    });
   });
 });

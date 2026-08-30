@@ -180,8 +180,8 @@ export function InvoicingSettingsPanel() {
             <hr className={styles.divider} />
 
             <ToggleSwitch 
-              label="Ventas sin comprobante fiscal" 
-              hint="Ideal para presupuestos o control de caja."
+              label="Facturación electrónica automática por defecto" 
+              hint="Si está desactivado (recomendado), se emitirá ticket no fiscal por defecto y el cajero podrá optar por emitir factura AFIP en el modal de cobro o diferirla."
               {...register('autoIssueOnSale')} 
             />
           </div>

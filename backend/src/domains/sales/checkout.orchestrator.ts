@@ -67,8 +67,19 @@ export class CheckoutOrchestrator {
       }
     }
 
-    // Load Pricing Settings (from shared cache — no extra DB query)
-    const pricingSettings = await this.settingsService.getPricingSettings();
+    // Load Pricing & Invoicing Settings (from shared cache — no extra DB query)
+    const [pricingSettings, invoicingSettings] = await Promise.all([
+      this.settingsService.getPricingSettings(),
+      this.settingsService.getInvoicingSettings(),
+    ]);
+
+    const shouldEmitInvoice = !isQuote && (
+      dto.emitInvoice !== undefined
+        ? Boolean(dto.emitInvoice)
+        : dto.issueInvoice !== undefined
+          ? Boolean(dto.issueInvoice)
+          : Boolean(invoicingSettings?.autoIssueOnSale)
+    );
 
     // 2. PRICING EVALUATION (Server-Authoritative)
     const evaluatedLines = [];
@@ -305,6 +316,18 @@ export class CheckoutOrchestrator {
         }
       }
 
+      // If customer fiscal data is provided, sync it with the customer profile
+      if (dto.fiscalCustomerData && dto.customerId) {
+        await tx.customer.update({
+          where: { id: dto.customerId },
+          data: {
+            taxId: dto.fiscalCustomerData.taxId || undefined,
+            fullName: dto.fiscalCustomerData.businessName || undefined,
+            taxCondition: dto.fiscalCustomerData.taxCondition || undefined,
+          },
+        });
+      }
+
       // --- C. SALES BOUNDARY ---
       const order = await tx.saleOrder.create({
         data: {
@@ -321,7 +344,7 @@ export class CheckoutOrchestrator {
           paymentAccountId: dto.paymentAccountId,
           status: dto.status || 'COMPLETED',
           cashShiftId: dto.cashShiftId,
-          issueInvoice: dto.issueInvoice ?? true, // Default to true if not specified
+          issueInvoice: shouldEmitInvoice,
           createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
           lines: {
             create: finalLinesForDB.map(l => ({
@@ -339,6 +362,25 @@ export class CheckoutOrchestrator {
         },
         include: { lines: true }
       });
+
+      // If fiscal invoice is explicitly requested with a specific invoiceType, create the initial draft
+      if (shouldEmitInvoice && dto.invoiceType) {
+        const netAmount = Math.round((pricedTotal / 1.21) * 100) / 100;
+        const vatAmount = Math.round((pricedTotal - netAmount) * 100) / 100;
+        await tx.invoice.create({
+          data: {
+            id: crypto.randomUUID(),
+            orderId: order.id,
+            type: dto.invoiceType,
+            customerDocumentType: dto.fiscalCustomerData?.docType || (dto.fiscalCustomerData?.taxId?.length === 11 ? 'CUIT' : 'DNI'),
+            customerDocumentNumber: dto.fiscalCustomerData?.taxId || '0',
+            netAmount,
+            vatAmount,
+            totalAmount: pricedTotal,
+            status: 'PENDING_AFIP',
+          },
+        });
+      }
 
       if (hasSplitPayments && !deferFinance) {
         await this.processPaymentSplits(tx, dto, order.id, amountDue);

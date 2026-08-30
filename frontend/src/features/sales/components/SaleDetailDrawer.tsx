@@ -188,6 +188,16 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
     onError: (err: any) => toast.error(err.message || 'Error al exportar PDF'),
   });
 
+  const emitInvoiceMutation = useMutation({
+    mutationFn: () => salesApi.emitInvoice(saleId!),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Factura AFIP enviada a procesamiento');
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.invoices() });
+    },
+    onError: (err: any) => toast.error(err.message || 'Error al emitir factura AFIP'),
+  });
+
   if (!saleId || isLoading || !sale) {
     return <Drawer open={open} onClose={onClose} title="Cargando..." width="lg"><div /></Drawer>;
   }
@@ -351,34 +361,47 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
             <div className={styles.section}>
               <div className={styles.sectionHeader}>
                 <FileText size={16} />
-                <span className={styles.sectionTitle}>Factura electrónica (ARCA)</span>
+                <span className={styles.sectionTitle}>Factura electrónica (AFIP / ARCA)</span>
               </div>
               {linkedInvoices.length > 0 ? (
                 <div className={styles.fieldStack}>
                   {linkedInvoices.map((inv) => (
                     <div key={inv.id} className={styles.refBox}>
                       <span className={styles.refLabel}>
-                        {inv.type} · {inv.status}
+                        {inv.type} · {inv.status === 'APPROVED' ? 'Aprobada (CAE)' : inv.status}
                         {inv.cae ? ` · CAE ${inv.cae}` : ''}
                       </span>
-                      <p className={styles.refValue}>{formatCurrency(inv.total)}</p>
+                      <p className={styles.refValue}>{formatCurrency(inv.total || (inv as any).totalAmount || sale.grandTotal)}</p>
+                      {inv.afipErrorMessage && (
+                        <p style={{ color: 'var(--red)', fontSize: '12px', marginTop: '4px' }}>
+                          Error: {inv.afipErrorMessage}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
                 <p className={styles.hintText}>
-                  Esta venta aún no tiene factura ARCA. Podés emitirla desde acá; el comprobante queda vinculado a la compra.
+                  Esta venta fue registrada sin factura electrónica AFIP (Ticket No Fiscal). Podés emitir la factura electrónica en cualquier momento.
                 </p>
               )}
-              {!linkedInvoices.some((inv) => inv.status === 'ISSUED' || inv.status === 'PENDING') && (
+              {!linkedInvoices.some((inv) => inv.status === 'APPROVED' || inv.status === 'PENDING_AFIP' || inv.status === 'ISSUED' || inv.status === 'PENDING') && (
                 <div className={styles.actionRow}>
                   <Button
-                    variant="secondary"
+                    variant="primary"
                     icon={<FileText size={16} />}
+                    onClick={() => emitInvoiceMutation.mutate()}
+                    loading={emitInvoiceMutation.isPending}
+                    disabled={anyPending}
+                  >
+                    Emitir Factura AFIP Ahora
+                  </Button>
+                  <Button
+                    variant="secondary"
                     onClick={() => setIssueInvoiceOpen(true)}
                     disabled={anyPending}
                   >
-                    Emitir Factura ARCA
+                    Opciones avanzadas
                   </Button>
                 </div>
               )}

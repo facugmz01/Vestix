@@ -125,14 +125,22 @@ export class SkuBarcodeSettingsDto {
 }
 
 export class InvoicingSettingsDto {
-  // NOTE: EXENTO added to allowed values to match the frontend select option
+  // Supports standard and alias keys
   @IsOptional()
-  @IsIn(['FACTURA_B', 'FACTURA_A', 'FACTURA_C', 'EXENTO'])
+  @IsIn(['FACTURA_B', 'FACTURA_A', 'FACTURA_C', 'EXENTO', 'NONE', 'TICKET_NON_FISCAL'])
   defaultInvoiceType?: string;
+
+  @IsOptional()
+  @IsIn(['FACTURA_B', 'FACTURA_A', 'FACTURA_C', 'EXENTO', 'NONE', 'TICKET_NON_FISCAL'])
+  default_invoice_type?: string;
 
   @IsOptional()
   @IsBoolean()
   autoIssueOnSale?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  auto_invoicing_enabled?: boolean;
 }
 
 export class NotificationSettingsDto {

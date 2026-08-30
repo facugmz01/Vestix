@@ -21,6 +21,9 @@ export class SaleOrderRepository {
         payments: { include: { paymentMethod: true } },
         shippingAddress: true,
         fulfillment: { include: { delivery: true } },
+        invoices: {
+          orderBy: { createdAt: 'desc' },
+        },
       }
     });
   }
@@ -30,7 +33,14 @@ export class SaleOrderRepository {
       where: { branchId },
       orderBy: { createdAt: 'desc' },
       take,
-      include: { lines: true, customer: true, shippingAddress: true }
+      include: {
+        lines: true,
+        customer: true,
+        shippingAddress: true,
+        invoices: {
+          orderBy: { createdAt: 'desc' },
+        },
+      }
     });
   }
 
@@ -46,6 +56,9 @@ export class SaleOrderRepository {
           customer: true,
           shippingAddress: true,
           fulfillment: { include: { delivery: true } },
+          invoices: {
+            orderBy: { createdAt: 'desc' },
+          },
         }
       }),
       this.prisma.saleOrder.count({ where })

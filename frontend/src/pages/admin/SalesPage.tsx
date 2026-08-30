@@ -1,6 +1,6 @@
 import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle, Truck } from 'lucide-react';
+import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle, Truck, FileText } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { 
@@ -143,6 +143,17 @@ export default function SalesPage() {
     }
   };
 
+  const handleEmitInvoice = async (id: string) => {
+    if (!window.confirm('¿Emitir factura electrónica AFIP / ARCA para esta venta?')) return;
+    try {
+      await salesApi.emitInvoice(id);
+      toast.success('Factura enviada a la cola de emisión de AFIP');
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al solicitar emisión de factura');
+    }
+  };
+
   const cancellableStatuses = ['PENDING_PAYMENT', 'CONFIRMED', 'COMPLETED', 'READY_FOR_PICKUP', 'DELIVERED'];
 
   return (
@@ -251,12 +262,44 @@ export default function SalesPage() {
                 )
               },
               {
+                key: 'fiscalStatus',
+                header: 'Estado Fiscal',
+                render: (s) => {
+                  const status = s.invoicingStatus || (s.issueInvoice ? 'PENDING' : 'NOT_REQUESTED');
+                  if (status === 'INVOICED') {
+                    return <Badge color="green">Facturado CAE</Badge>;
+                  }
+                  if (status === 'PENDING') {
+                    return <Badge color="yellow">Pendiente AFIP</Badge>;
+                  }
+                  if (status === 'FAILED') {
+                    return <Badge color="red">Error AFIP</Badge>;
+                  }
+                  return <Badge color="gray">Sin Facturar</Badge>;
+                }
+              },
+              {
                 key: 'actions',
                 header: '',
                 render: (s) => {
                   const homeDelivery = isHomeDelivery(s);
+                  const fiscalStatus = s.invoicingStatus || (s.issueInvoice ? 'PENDING' : 'NOT_REQUESTED');
+                  const canEmitInvoice = fiscalStatus !== 'INVOICED' && fiscalStatus !== 'PENDING' && s.status !== 'CANCELLED' && s.status !== 'QUOTATION' && s.status !== 'QUOTE';
                   return (
                   <div className={adminStyles.rowActions}>
+                    {canEmitInvoice && (
+                      <ActionGuard action="update" subject="Sales">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleEmitInvoice(s.id)}
+                          aria-label="Emitir Factura AFIP"
+                          title="Emitir Factura AFIP / ARCA"
+                        >
+                          <FileText size={16} />
+                        </Button>
+                      </ActionGuard>
+                    )}
                     {s.status === 'PENDING_PAYMENT' && (
                       <ActionGuard action="update" subject="Sales">
                         <Button variant="primary" size="sm" onClick={() => handleConfirmPayment(s.id)} aria-label="Validar Pago" title="Validar Pago y Confirmar">
