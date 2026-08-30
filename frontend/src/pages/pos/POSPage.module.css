@@ -650,6 +650,68 @@ html.dark .layout {
   color: var(--text-muted);
 }
 
+.comboBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--pos-accent-soft, #ede9fe);
+  color: var(--pos-accent, #7c3aed);
+  border: 1px solid var(--pos-accent-border, #c4b5fd);
+  padding: 1px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.comboBreakdown {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: var(--surface-2, rgba(0, 0, 0, 0.03));
+  border-radius: 6px;
+  border: 1px dashed var(--border, rgba(0, 0, 0, 0.1));
+}
+
+.comboBreakdownTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary, #64748b);
+  margin-bottom: 3px;
+}
+
+.comboBreakdownList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.comboBreakdownItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-primary, #334155);
+}
+
+.comboItemQty {
+  font-weight: 700;
+  color: var(--pos-accent, #7c3aed);
+}
+
+.comboItemName {
+  font-weight: 500;
+}
+
+.comboItemSku {
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--pos-mono);
+}
+
 .cartItemPrice {
   font-size: 14px;
   font-weight: 700;

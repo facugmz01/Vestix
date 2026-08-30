@@ -21,7 +21,25 @@ type CartVariant = {
   sku?: string;
   basePrice: number;
   imageUrl?: string | null;
-  product?: { name?: string; images?: string[] };
+  product?: {
+    name?: string;
+    type?: string;
+    images?: string[];
+    comboLines?: Array<{
+      id?: string;
+      childVariantId: string;
+      quantity: number;
+      productName?: string;
+      variantSku?: string;
+      childVariant?: {
+        sku?: string;
+        size?: string;
+        color?: string;
+        basePrice?: number;
+        product?: { name?: string };
+      };
+    }>;
+  };
 };
 
 export function POSCart({
@@ -161,6 +179,9 @@ export function POSCart({
               const variant = item.variant as CartVariant;
               const imageUrl = getVariantImage(variant);
               const lineTotal = (variant.basePrice * item.qty) * (1 - item.discountPct / 100);
+              const isCombo = variant.product?.type === 'COMBO';
+              const comboLines = variant.product?.comboLines;
+
               return (
                 <div key={`${variant.id}-${index}`} className={styles.cartItem}>
                   <div className={styles.cartItemThumb} aria-hidden={!imageUrl}>
@@ -174,12 +195,38 @@ export function POSCart({
                   <div className={styles.cartItemDetails}>
                     <span className={styles.cartItemName}>
                       {getVariantName(variant)}
+                      {isCombo && <span className={styles.comboBadge}>COMBO</span>}
                     </span>
                     <span className={styles.cartItemSku}>
                       {variant.sku || '—'}
                       {variant.size ? ` · ${variant.size}` : ''}
                       {item.discountPct > 0 ? ` · −${item.discountPct}%` : ''}
                     </span>
+
+                    {isCombo && comboLines && comboLines.length > 0 && (
+                      <div className={styles.comboBreakdown}>
+                        <div className={styles.comboBreakdownTitle}>
+                          Contiene {comboLines.length} producto{comboLines.length === 1 ? '' : 's'}:
+                        </div>
+                        <ul className={styles.comboBreakdownList}>
+                          {comboLines.map((cl, clIdx) => {
+                            const compName = cl.childVariant?.product?.name || cl.productName || 'Componente';
+                            const compSku = cl.childVariant?.sku || cl.variantSku;
+                            const compQty = cl.quantity * item.qty;
+                            return (
+                              <li key={cl.id || cl.childVariantId || clIdx} className={styles.comboBreakdownItem}>
+                                <span className={styles.comboItemQty}>• {compQty}x</span>
+                                <span className={styles.comboItemName}>
+                                  {compName} {cl.childVariant?.size ? `(${cl.childVariant.size})` : ''}
+                                </span>
+                                {compSku && <span className={styles.comboItemSku}>[{compSku}]</span>}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+
                     <div className={styles.qtyControl}>
                       <button type="button" className={styles.qtyBtn} aria-label="Reducir cantidad" onClick={() => updateQty(variant.id, item.qty - 1)}>
                         −

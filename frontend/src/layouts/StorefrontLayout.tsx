@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, LogIn, ChevronDown, Loader2, UserCircle, Search } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LogIn, ChevronDown, Loader2, UserCircle } from 'lucide-react';
 import { Suspense, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCartStore } from '@/store/cart.store';
@@ -7,6 +7,7 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { storefrontApi } from '@/api/storefront.api';
 import { buildStorefrontThemeCss } from '@/utils/storefrontTheme';
+import { StorefrontSearchBar } from '@/components/storefront';
 import styles from './StorefrontLayout.module.css';
 
 export default function StorefrontLayout() {
@@ -81,25 +82,13 @@ export default function StorefrontLayout() {
 
           {!isMobile && (
             <div className={styles.searchWrap}>
-              <form
-                className={styles.searchForm}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const q = new FormData(e.currentTarget).get('q');
-                  if (q) navigate(`${prefix}/?search=${encodeURIComponent(q.toString())}`);
-                }}
-              >
-                <Search size={16} className={styles.searchIcon} aria-hidden />
-                <input
-                  name="q"
-                  type="search"
-                  placeholder="Buscar productos..."
-                  className={styles.searchInput}
-                  aria-label="Buscar productos"
-                />
-              </form>
+              <StorefrontSearchBar
+                hidePrices={Boolean(settings?.hidePrices)}
+                placeholder="Buscar por nombre, categoría, marca, SKU..."
+              />
             </div>
           )}
+
 
           <div className={styles.navControls}>
             {isAuthenticated && customer ? (
@@ -167,7 +156,17 @@ export default function StorefrontLayout() {
             )}
           </div>
         </div>
+
+        {isMobile && (
+          <div className={styles.mobileSearchRow}>
+            <StorefrontSearchBar
+              hidePrices={Boolean(settings?.hidePrices)}
+              placeholder="Buscar productos, marcas, SKUs..."
+            />
+          </div>
+        )}
       </header>
+
 
       <main className={styles.main}>
         {isLoading ? (

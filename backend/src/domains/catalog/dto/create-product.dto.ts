@@ -8,12 +8,17 @@ export enum ProductType {
 }
 
 export class ProductComboLineDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @IsUUID('4')
   @IsNotEmpty()
   childVariantId: string;
 
   @IsNumber()
   @IsNotEmpty()
+  @Type(() => Number)
   quantity: number;
 }
 

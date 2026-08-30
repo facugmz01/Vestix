@@ -1,6 +1,6 @@
 import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
-import { Eye, Wallet, CheckCircle, Plus, Pencil } from 'lucide-react';
+import { Eye, Wallet, CheckCircle, Plus, Pencil, Scale } from 'lucide-react';
 
 import {
   PageContainer, Section, Table, Button, Badge, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
@@ -13,6 +13,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { CashSessionDetailDrawer } from '@/features/finance/components/CashSessionDetailDrawer';
 import { TreasuryAccountDetailDrawer } from '@/features/finance/components/TreasuryAccountDetailDrawer';
 import { TreasuryAccountFormDrawer } from '@/features/finance/components/TreasuryAccountFormDrawer';
+import { AccountAdjustmentModal } from '@/features/finance/components/AccountAdjustmentModal';
 import { useListPage } from '@/hooks/useListPage';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatShortId } from '@/utils/formatId';
@@ -30,6 +31,8 @@ export default function CashSessionsPage() {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [accountFormOpen, setAccountFormOpen] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<FinancialAccount | null>(null);
+  const [adjustModalOpen, setAdjustModalOpen] = useState(false);
+  const [accountToAdjust, setAccountToAdjust] = useState<FinancialAccount | null>(null);
 
   const statusFilter = filters.status;
 
@@ -123,6 +126,18 @@ export default function CashSessionsPage() {
                       <Eye size={16} />
                     </Button>
                     <ActionGuard action="manage" subject="Finance">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setAccountToAdjust(a);
+                          setAdjustModalOpen(true);
+                        }}
+                        title="Ajustar / Conciliar saldo"
+                        aria-label="Ajustar saldo"
+                      >
+                        <Scale size={16} />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleEditAccount(a)} aria-label="Editar">
                         <Pencil size={16} />
                       </Button>
@@ -233,6 +248,19 @@ export default function CashSessionsPage() {
         }}
         accountToEdit={accountToEdit}
       />
+
+      {adjustModalOpen && (
+        <AccountAdjustmentModal
+          open={adjustModalOpen}
+          onClose={() => {
+            setAdjustModalOpen(false);
+            setAccountToAdjust(null);
+            refetchAccounts();
+          }}
+          account={accountToAdjust}
+          accountId={accountToAdjust?.id}
+        />
+      )}
     </PageContainer>
   );
 }

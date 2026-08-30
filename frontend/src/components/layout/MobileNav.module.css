@@ -211,10 +211,56 @@
   width: 100%;
 }
 
-.drawerParentRow {
+/* Parent button in mobile drawer (Accordion toggle only) */
+.drawerParentBtn {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm, 8px);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.drawerParentBtn:hover {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+.drawerParentBtnActive {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--surface-1);
+}
+
+.drawerParentBtnExpanded {
+  color: var(--text-primary);
+}
+
+.drawerParentLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.drawerChevron {
+  color: var(--text-muted);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(0deg);
+  flex-shrink: 0;
+}
+
+.drawerChevronOpen {
+  transform: rotate(180deg);
+  color: var(--text-primary);
 }
 
 .drawerLink {
@@ -242,17 +288,6 @@
   font-weight: 600;
 }
 
-.drawerChevronBtn {
-  background: transparent;
-  border: none;
-  padding: 8px 10px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
 .drawerSubLinks {
   margin-left: 16px;
   padding-left: 12px;
@@ -262,6 +297,12 @@
   gap: 2px;
   margin-top: 2px;
   margin-bottom: 6px;
+  animation: fadeInDrawerSub 0.18s ease;
+}
+
+@keyframes fadeInDrawerSub {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .drawerSubLink {
@@ -292,6 +333,18 @@
   height: 4px;
   border-radius: 50%;
   background: currentColor;
+  flex-shrink: 0;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 /* Hide mobile bottom bar on desktop */

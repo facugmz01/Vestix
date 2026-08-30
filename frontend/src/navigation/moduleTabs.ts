@@ -2,7 +2,7 @@ import {
   Package, Layers, FolderKanban, Percent,
   Warehouse, History, Truck,
   ShoppingCart, Users, FileText,
-  Wallet, CreditCard, Banknote, Gift, Palette, Printer, LayoutTemplate, Search,
+  Wallet, CreditCard, Banknote, Gift, Palette, Printer, LayoutTemplate, Search, Receipt,
 } from 'lucide-react';
 import type { TabItem } from '@/components/ui/Tabs';
 
@@ -70,6 +70,7 @@ export const SALES_TABS: TabItem[] = [
 
 export const FINANCE_TABS: TabItem[] = [
   { id: 'treasury', label: 'Cajas y Tesorería', to: '/admin/finance/treasury', icon: Wallet },
+  { id: 'expenses', label: 'Gastos Operativos', to: '/admin/finance/expenses', icon: Receipt },
   { id: 'payments', label: 'Pagos y Cobros', to: '/admin/finance/payments', icon: CreditCard },
   { id: 'current-accounts', label: 'Cuentas Corrientes', to: '/admin/finance/current-accounts', icon: Banknote },
   { id: 'invoices', label: 'Facturación AFIP', to: '/admin/finance/invoices', icon: FileText },

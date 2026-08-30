@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
-import { Search, PackageX, ChevronDown, Filter, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, PackageX, ChevronDown, Filter, ShoppingBag, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import clsx from 'clsx';
 import { storefrontApi, StorefrontSettings } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -9,6 +10,7 @@ import { storePrefix } from '@/utils/storefrontDomain';
 import { apiClient } from '@/api/client';
 import { StorefrontSEO } from '@/features/storefront/components/StorefrontSEO';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { useDebounce } from '@/hooks/useDebounce';
 import styles from './OnlineCatalogPage.module.css';
 
 interface Banner {
@@ -93,9 +95,11 @@ function BannerCarousel({ banners }: { banners: Banner[] }) {
 
 export default function OnlineCatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialSearch = searchParams.get('search') || '';
-  const [searchInput, setSearchInput] = useState(initialSearch);
-  const [search, setSearch] = useState(initialSearch);
+  const urlSearchTerm = searchParams.get('search') || searchParams.get('q') || '';
+  
+  const [searchInput, setSearchInput] = useState(urlSearchTerm);
+  const debouncedSearch = useDebounce<string>(searchInput.trim(), 350);
+
   const [categoryId, setCategoryId] = useState('');
   const [brandId, setBrandId] = useState('');
   const [sortBy, setSortBy] = useState<'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST'>('NEWEST');
@@ -117,33 +121,47 @@ export default function OnlineCatalogPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Sync state if URL changes externally
   useEffect(() => {
-    const q = searchParams.get('search');
-    if (q !== null && q !== searchInput) {
-      setSearchInput(q);
-      setSearch(q);
+    if (urlSearchTerm !== searchInput) {
+      setSearchInput(urlSearchTerm);
     }
-  }, [searchParams, searchInput]);
+  }, [urlSearchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Update URL search parameters without destroying existing params (preserving category, brand, etc.)
   useEffect(() => {
-    const t = setTimeout(() => {
-      setSearch(searchInput);
-      if (searchInput) {
-        setSearchParams({ search: searchInput }, { replace: true });
+    const currentParam = searchParams.get('search') || searchParams.get('q') || '';
+    if (debouncedSearch !== currentParam) {
+      const nextParams = new URLSearchParams(searchParams);
+      if (debouncedSearch) {
+        nextParams.set('search', debouncedSearch);
+        nextParams.delete('q');
       } else {
-        setSearchParams({}, { replace: true });
+        nextParams.delete('search');
+        nextParams.delete('q');
       }
-    }, 400);
-    return () => clearTimeout(t);
-  }, [searchInput, setSearchParams]);
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [debouncedSearch, searchParams, setSearchParams]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, categoryId, brandId, sortBy, pageSize]);
+  }, [debouncedSearch, categoryId, brandId, sortBy, pageSize]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.storefront.products({ search, categoryId, brand: brandId, sortBy, page, pageSize }),
-    queryFn: () => storefrontApi.getProducts({ search, categoryId, brand: brandId, sortBy, page, pageSize }),
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: queryKeys.storefront.products({
+      search: debouncedSearch,
+      categoryId,
+      brand: brandId,
+      sortBy,
+      page,
+      pageSize,
+    }),
+    queryFn: ({ signal }) =>
+      storefrontApi.getProducts(
+        { search: debouncedSearch, categoryId, brand: brandId, sortBy, page, pageSize },
+        { signal }
+      ),
   });
 
   const { data: categoriesData } = useQuery({
@@ -188,14 +206,17 @@ export default function OnlineCatalogPage() {
 
   const clearFilters = () => {
     setSearchInput('');
-    setSearch('');
     setCategoryId('');
     setBrandId('');
     setPage(1);
     setShowFiltersMobile(false);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('search');
+    nextParams.delete('q');
+    setSearchParams(nextParams, { replace: true });
   };
 
-  const activeFiltersCount = (categoryId ? 1 : 0) + (brandId ? 1 : 0) + (search ? 1 : 0);
+  const activeFiltersCount = (categoryId ? 1 : 0) + (brandId ? 1 : 0) + (debouncedSearch ? 1 : 0);
 
   const renderFilterButton = (
     label: string,
@@ -219,12 +240,34 @@ export default function OnlineCatalogPage() {
           <input
             type="search"
             className={clsx('storefront-input', styles.searchInput)}
-            placeholder="Ej: Remera, Zapatillas..."
+            placeholder="Ej: Remera, Zapatillas, SKU..."
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             aria-label="Buscar productos"
           />
           <Search size={16} className={styles.searchIcon} aria-hidden />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput('')}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px',
+              }}
+              aria-label="Limpiar búsqueda"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -238,6 +281,7 @@ export default function OnlineCatalogPage() {
             if (isMobile) setShowFiltersMobile(false);
           })}
           {categories.map(c => renderFilterButton(c.name, categoryId === c.id, () => {
+
             setCategoryId(c.id);
             if (isMobile) setShowFiltersMobile(false);
           }))}

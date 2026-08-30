@@ -1,64 +1,94 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-interface SidebarState {
-  isCollapsed: boolean;
-  isMobileOpen: boolean;
-  expandedGroups: Record<string, boolean>;
+export interface SidebarState {
+  isCollapsed: boolean; // Estado colapsado en desktop (mini-bar vs ancho completo)
+  isMobileOpen: boolean; // Estado drawer en móvil
+  expandedGroups: string[]; // Lista de IDs/keys de menús padre abiertos (acordeones)
 
-  // Actions
-  toggleCollapse: () => void;
-  setCollapsed: (collapsed: boolean) => void;
-  toggleMobile: () => void;
+  // Acciones principales requeridas
+  toggleSidebar: () => void; // Acción única para desktop
+  toggleMobileSidebar: () => void; // Acción para mobile
+  toggleGroup: (groupId: string) => void; // Abrir/cerrar submenú padre
+  closeGroup: (groupId: string) => void;
+  setCollapsed: (value: boolean) => void;
+
+  // Métodos de compatibilidad y control granular
   setMobileOpen: (open: boolean) => void;
   closeMobile: () => void;
-  toggleGroup: (groupId: string) => void;
   setGroupExpanded: (groupId: string, expanded: boolean) => void;
+  isGroupExpanded: (groupId: string) => boolean;
+
+  // Alias para retrocompatibilidad
+  toggleCollapse: () => void;
+  toggleMobile: () => void;
 }
 
 export const useSidebarStore = create<SidebarState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       isCollapsed: false,
       isMobileOpen: false,
-      expandedGroups: {
-        catalog: true,
-        inventory: false,
-        purchasing: false,
-        sales: false,
-        crm: false,
-        finance: false,
-        reports: false,
-        system: false,
+      expandedGroups: ['catalog'],
+
+      toggleSidebar: () =>
+        set((state) => ({
+          isCollapsed: !state.isCollapsed,
+        })),
+
+      toggleMobileSidebar: () =>
+        set((state) => ({
+          isMobileOpen: !state.isMobileOpen,
+        })),
+
+      toggleGroup: (groupId: string) =>
+        set((state) => {
+          const isExpanded = state.expandedGroups.includes(groupId);
+          return {
+            expandedGroups: isExpanded
+              ? state.expandedGroups.filter((id) => id !== groupId)
+              : [...state.expandedGroups, groupId],
+          };
+        }),
+
+      closeGroup: (groupId: string) =>
+        set((state) => ({
+          expandedGroups: state.expandedGroups.filter((id) => id !== groupId),
+        })),
+
+      setCollapsed: (isCollapsed: boolean) =>
+        set({ isCollapsed }),
+
+      setMobileOpen: (isMobileOpen: boolean) =>
+        set({ isMobileOpen }),
+
+      closeMobile: () =>
+        set({ isMobileOpen: false }),
+
+      setGroupExpanded: (groupId: string, expanded: boolean) =>
+        set((state) => {
+          const exists = state.expandedGroups.includes(groupId);
+          if (expanded && !exists) {
+            return { expandedGroups: [...state.expandedGroups, groupId] };
+          }
+          if (!expanded && exists) {
+            return { expandedGroups: state.expandedGroups.filter((id) => id !== groupId) };
+          }
+          return state;
+        }),
+
+      isGroupExpanded: (groupId: string) => {
+        return get().expandedGroups.includes(groupId);
       },
 
-      toggleCollapse: () => set((state) => ({ isCollapsed: !state.isCollapsed })),
-      setCollapsed: (isCollapsed) => set({ isCollapsed }),
-
-      toggleMobile: () => set((state) => ({ isMobileOpen: !state.isMobileOpen })),
-      setMobileOpen: (isMobileOpen) => set({ isMobileOpen }),
-      closeMobile: () => set({ isMobileOpen: false }),
-
-      toggleGroup: (groupId) =>
-        set((state) => ({
-          expandedGroups: {
-            ...state.expandedGroups,
-            [groupId]: !state.expandedGroups[groupId],
-          },
-        })),
-
-      setGroupExpanded: (groupId, expanded) =>
-        set((state) => ({
-          expandedGroups: {
-            ...state.expandedGroups,
-            [groupId]: expanded,
-          },
-        })),
+      // Aliases for seamless backward compatibility
+      toggleCollapse: () => get().toggleSidebar(),
+      toggleMobile: () => get().toggleMobileSidebar(),
     }),
     {
-      name: 'vestix_sidebar_state_v1',
+      name: 'vestix_sidebar_state_v2',
       storage: createJSONStorage(() => localStorage),
-      // Do not persist mobile open state across reloads
+      // No persistir el estado del drawer móvil entre recargas
       partialize: (state) => ({
         isCollapsed: state.isCollapsed,
         expandedGroups: state.expandedGroups,

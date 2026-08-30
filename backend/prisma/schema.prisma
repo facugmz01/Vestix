@@ -39,9 +39,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relaciones inversas agregadas
-  openedShifts     CashShift[]    @relation("OpenedShifts")
-  closedShifts     CashShift[]    @relation("ClosedShifts")
-  receivedReceipts GoodsReceipt[] @relation("ReceivedByUser")
+  openedShifts               CashShift[]         @relation("OpenedShifts")
+  closedShifts               CashShift[]         @relation("ClosedShifts")
+  receivedReceipts           GoodsReceipt[]      @relation("ReceivedByUser")
+  expenses                   Expense[]           @relation("CreatedExpenses")
+  approvedAccountAdjustments AccountAdjustment[] @relation("ApprovedAccountAdjustments")
 
   @@schema("core")
 }
@@ -104,6 +106,7 @@ model Branch {
   cashRegisters     CashRegister[]
   users             User[]
   financialAccounts FinancialAccount[] // Relación agregada
+  expenses          Expense[]
 
   @@schema("core")
 }
@@ -846,19 +849,23 @@ model FinancialAccount {
   paymentReceipts         PaymentReceipt[]
   treasuryReceipts        TreasuryReceipt[]
   currentAccountMovements CurrentAccountMovement[]
+  expenses                Expense[]
+  adjustments             AccountAdjustment[]
 
   @@schema("finance")
 }
 
 model FinancialTransaction {
-  id          String           @id @default(uuid())
-  accountId   String
-  account     FinancialAccount @relation(fields: [accountId], references: [id])
-  type        String // DEBIT | CREDIT
-  amount      Float
-  referenceId String
-  description String
-  createdAt   DateTime         @default(now())
+  id                String             @id @default(uuid())
+  accountId         String
+  account           FinancialAccount   @relation(fields: [accountId], references: [id])
+  type              String // DEBIT | CREDIT
+  amount            Float
+  referenceId       String
+  description       String
+  createdAt         DateTime           @default(now())
+  expense           Expense?
+  accountAdjustment AccountAdjustment?
 
   @@schema("finance")
 }
@@ -939,6 +946,7 @@ model CashShift {
   closedAt       DateTime?
   notes          String?
   sales          SaleOrder[]
+  expenses       Expense[]
 
   @@schema("finance")
 }
@@ -963,6 +971,75 @@ model CurrentAccountMovement {
   @@index([entityType])
   @@index([financialAccountId])
   @@index([createdAt])
+  @@schema("finance")
+}
+
+model ExpenseCategory {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  code        String            @unique
+  description String?
+  parentId    String?
+  parent      ExpenseCategory?  @relation("ExpenseCategoryHierarchy", fields: [parentId], references: [id])
+  children    ExpenseCategory[] @relation("ExpenseCategoryHierarchy")
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  expenses    Expense[]
+
+  @@schema("finance")
+}
+
+model Expense {
+  id                     String                @id @default(uuid())
+  expenseCategoryId      String
+  expenseCategory        ExpenseCategory       @relation(fields: [expenseCategoryId], references: [id])
+  amount                 Float
+  currency               String                @default("ARS")
+  date                   DateTime              @default(now())
+  description            String
+  notes                  String?
+  receiptNumber          String?
+  voucherUrl             String?
+  status                 String                @default("PAID") // PENDING | PAID | CANCELLED
+  cashShiftId            String?
+  cashShift              CashShift?            @relation(fields: [cashShiftId], references: [id])
+  financialAccountId     String?
+  financialAccount       FinancialAccount?     @relation(fields: [financialAccountId], references: [id])
+  createdById            String
+  createdBy              User                  @relation("CreatedExpenses", fields: [createdById], references: [id])
+  branchId               String?
+  branch                 Branch?               @relation(fields: [branchId], references: [id])
+  financialTransactionId String?               @unique
+  financialTransaction   FinancialTransaction? @relation(fields: [financialTransactionId], references: [id])
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  @@index([date])
+  @@index([expenseCategoryId])
+  @@index([branchId])
+  @@index([financialAccountId])
+  @@index([cashShiftId])
+  @@index([status])
+  @@schema("finance")
+}
+
+model AccountAdjustment {
+  id                     String                @id @default(uuid())
+  financialAccountId     String
+  financialAccount       FinancialAccount      @relation(fields: [financialAccountId], references: [id])
+  previousBalance        Float
+  adjustedBalance        Float
+  difference             Float
+  type                   String                // INCOME_SURPLUS | EXPENSE_DEFICIT | RECONCILIATION
+  reason                 String
+  approvedById           String
+  approvedBy             User                  @relation("ApprovedAccountAdjustments", fields: [approvedById], references: [id])
+  financialTransactionId String?               @unique
+  financialTransaction   FinancialTransaction? @relation(fields: [financialTransactionId], references: [id])
+  createdAt              DateTime              @default(now())
+
+  @@index([financialAccountId, createdAt])
   @@schema("finance")
 }
 

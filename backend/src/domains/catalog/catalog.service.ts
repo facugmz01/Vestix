@@ -12,17 +12,95 @@ export class CatalogService {
     private readonly settingsService: SettingsService,
   ) {}
 
+  /**
+   * Builds an optimized Prisma search condition for public storefront search.
+   * - Splits search query into tokens (multi-word support).
+   * - Generates accent-stripped variations to ensure accent-insensitive matching in PostgreSQL.
+   * - Evaluates Product.name, Product.description, Product.baseSku, Category.name, Brand.name,
+   *   ProductVariant.sku, ProductVariant.barcode, ProductVariant.color, ProductVariant.size,
+   *   and ProductBarcode.barcode.
+   * - Combines multiple tokens with AND so all keywords are matched across any product attribute.
+   */
+  private buildSearchCondition(searchQuery?: string) {
+    if (!searchQuery) return undefined;
+    const sanitized = searchQuery.trim();
+    if (!sanitized) return undefined;
+
+    const tokens = sanitized.split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return undefined;
+
+    const getVariations = (term: string) => {
+      const unaccented = term.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const unique = new Set<string>([term]);
+      if (unaccented && unaccented.toLowerCase() !== term.toLowerCase()) {
+        unique.add(unaccented);
+      }
+      return Array.from(unique);
+    };
+
+    const buildTokenCondition = (token: string) => {
+      const variations = getVariations(token);
+      const orBranches: any[] = [];
+
+      for (const term of variations) {
+        orBranches.push(
+          { name: { contains: term, mode: 'insensitive' as const } },
+          { description: { contains: term, mode: 'insensitive' as const } },
+          { baseSku: { contains: term, mode: 'insensitive' as const } },
+          { brand: { name: { contains: term, mode: 'insensitive' as const } } },
+          { category: { name: { contains: term, mode: 'insensitive' as const } } },
+          {
+            variants: {
+              some: {
+                isActive: true,
+                OR: [
+                  { sku: { contains: term, mode: 'insensitive' as const } },
+                  { barcode: { contains: term, mode: 'insensitive' as const } },
+                  { color: { contains: term, mode: 'insensitive' as const } },
+                  { size: { contains: term, mode: 'insensitive' as const } },
+                  {
+                    barcodes: {
+                      some: {
+                        barcode: { contains: term, mode: 'insensitive' as const },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        );
+      }
+
+      return { OR: orBranches };
+    };
+
+    if (tokens.length === 1) {
+      return buildTokenCondition(tokens[0]);
+    }
+
+    return {
+      AND: tokens.map(t => buildTokenCondition(t)),
+    };
+  }
+
   async getPublicCatalog(filters: CatalogFilterDto) {
     const where: any = { isActive: true, isPublished: true };
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.brandId || filters.brand) where.brandId = filters.brandId || filters.brand;
 
-    if (filters.searchQuery) {
-      where.OR = [
-        { name: { contains: filters.searchQuery, mode: 'insensitive' } },
-        { baseSku: { contains: filters.searchQuery, mode: 'insensitive' } },
-        { variants: { some: { sku: { contains: filters.searchQuery, mode: 'insensitive' } } } },
-      ];
+    const searchTerm =
+      filters instanceof CatalogFilterDto && typeof filters.getResolvedSearchQuery === 'function'
+        ? filters.getResolvedSearchQuery()
+        : (filters.searchQuery || filters.q || filters.query || filters.search)?.trim();
+
+    const searchCondition = this.buildSearchCondition(searchTerm);
+    if (searchCondition) {
+      if (searchCondition.OR) {
+        where.OR = searchCondition.OR;
+      } else if (searchCondition.AND) {
+        where.AND = searchCondition.AND;
+      }
     }
 
     const storefrontSettings = await this.settingsService.getStorefrontSettings();
@@ -30,7 +108,8 @@ export class CatalogService {
     const priceListId = hidePrices ? null : storefrontSettings.priceListToShow;
 
     const page = filters.page || 1;
-    const pageSize = filters.pageSize || 50;
+    const pageSize = filters.limit || filters.pageSize || 50;
+
 
     let orderBy: any = { name: 'asc' };
     if (filters.sortBy === 'NEWEST') orderBy = { createdAt: 'desc' };

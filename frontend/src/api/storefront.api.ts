@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from 'axios';
 import { get } from './client';
 import { cleanParams } from './requestUtils';
 import type { PagedResponse } from '@/types';
@@ -35,7 +36,10 @@ export interface StorefrontProduct {
 export interface StorefrontFilters {
   page?: number;
   pageSize?: number;
+  limit?: number;
   search?: string;
+  searchQuery?: string;
+  q?: string;
   categoryId?: string;
   brand?: string;
   sortBy?: 'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST';
@@ -49,17 +53,27 @@ export interface StorefrontSettings extends AdminStorefrontSettings {
 }
 
 export const storefrontApi = {
-  getProducts: (filters?: StorefrontFilters) => {
-    const { search, ...rest } = filters || {};
+  getProducts: (filters?: StorefrontFilters, config?: AxiosRequestConfig) => {
+    const { search, searchQuery, q, ...rest } = filters || {};
+    const queryTerm = search || searchQuery || q;
     return get<PagedResponse<StorefrontProduct>>('/catalog/public', {
-      params: cleanParams({ ...rest, searchQuery: search })
+      ...config,
+      params: cleanParams({ ...rest, searchQuery: queryTerm }),
     });
   },
 
-  getProduct: (id: string) =>
-    get<StorefrontProduct>(`/catalog/public/${id}`),
+  searchQuick: (query: string, limit = 6, config?: AxiosRequestConfig) => {
+    return get<PagedResponse<StorefrontProduct>>('/catalog/public', {
+      ...config,
+      params: cleanParams({ searchQuery: query.trim(), limit, pageSize: limit }),
+    });
+  },
 
-  getSettings: () =>
-    get<StorefrontSettings>('/storefront/settings'),
+  getProduct: (id: string, config?: AxiosRequestConfig) =>
+    get<StorefrontProduct>(`/catalog/public/${id}`, config),
+
+  getSettings: (config?: AxiosRequestConfig) =>
+    get<StorefrontSettings>('/storefront/settings', config),
 };
+
 

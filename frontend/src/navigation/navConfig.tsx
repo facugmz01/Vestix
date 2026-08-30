@@ -212,6 +212,7 @@ export const NAV_SEGMENTS: NavSegment[] = [
         subject: 'Finance',
         children: [
           { id: 'fin-treasury', label: 'Cajas y Tesorería', to: '/admin/finance/treasury', icon: Wallet, end: true },
+          { id: 'fin-expenses', label: 'Gastos Operativos', to: '/admin/finance/expenses', icon: Receipt },
           { id: 'fin-payments', label: 'Cobros y Pagos', to: '/admin/finance/payments', icon: CreditCard },
           { id: 'fin-current-accounts', label: 'Cuentas Corrientes', to: '/admin/finance/current-accounts', icon: BadgeDollarSign },
           { id: 'fin-invoices', label: 'Facturación AFIP', to: '/admin/finance/invoices', icon: FileText },

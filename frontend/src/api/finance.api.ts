@@ -1,6 +1,16 @@
-import { get, post, patch } from './client';
+import { get, post, patch, del } from './client';
 import { cleanParams } from './requestUtils';
-import type { CurrentAccount, CurrentAccountMovement, FinancialAccount, PagedResponse, PaymentMethodEntity } from '@/types';
+import type {
+  CurrentAccount,
+  CurrentAccountMovement,
+  FinancialAccount,
+  PagedResponse,
+  PaymentMethodEntity,
+  Expense,
+  ExpenseCategory,
+  ExpenseSummary,
+  AccountAdjustment,
+} from '@/types';
 
 export interface CurrentAccountFilters {
   page?: number;
@@ -14,6 +24,47 @@ export interface MovementFilters {
   pageSize?: number;
   startDate?: string;
   endDate?: string;
+}
+
+export interface ExpenseFilters {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  expenseCategoryId?: string;
+  branchId?: string;
+  financialAccountId?: string;
+  cashShiftId?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface CreateExpensePayload {
+  expenseCategoryId: string;
+  amount: number;
+  currency?: string;
+  date?: string;
+  description: string;
+  notes?: string;
+  receiptNumber?: string;
+  voucherUrl?: string;
+  originType: 'CASH_SHIFT' | 'FINANCIAL_ACCOUNT';
+  cashShiftId?: string;
+  financialAccountId?: string;
+  branchId?: string;
+}
+
+export interface CreateExpenseCategoryPayload {
+  name: string;
+  code: string;
+  description?: string;
+  parentId?: string;
+  isActive?: boolean;
+}
+
+export interface AdjustAccountPayload {
+  adjustedBalance: number;
+  reason: string;
 }
 
 export const financeApi = {
@@ -55,6 +106,12 @@ export const financeApi = {
       page: number;
       pageSize: number;
     }>(`/finance/treasury/accounts/${accountId}/transactions`, { params: cleanParams(filters ?? {}) }),
+
+  adjustAccount: (accountId: string, payload: AdjustAccountPayload) =>
+    post<AccountAdjustment>(`/finance/treasury/accounts/${accountId}/adjust`, payload),
+
+  getAccountAdjustments: (accountId: string) =>
+    get<AccountAdjustment[]>(`/finance/treasury/accounts/${accountId}/adjustments`),
 
   getPaymentMethods: () => get<PaymentMethodEntity[]>('/finance/payment-methods'),
 
@@ -98,4 +155,35 @@ export const financeApi = {
 
   sendManualStatement: (accountId: string, payload: { channel: 'EMAIL' | 'WHATSAPP' | 'SMS'; recipient: string }) =>
     post<{ success: boolean; message: string }>(`/finance/current-accounts/${accountId}/send-statement`, payload),
+
+  // ─── EXPENSES ENDPOINTS ──────────────────────────────────────────────────
+  getExpenses: (filters?: ExpenseFilters) =>
+    get<PagedResponse<Expense>>('/finance/expenses', { params: cleanParams(filters ?? {}) }),
+
+  getExpensesSummary: (filters?: ExpenseFilters) =>
+    get<ExpenseSummary>('/finance/expenses/summary', { params: cleanParams(filters ?? {}) }),
+
+  getExpenseById: (id: string) =>
+    get<Expense>(`/finance/expenses/${id}`),
+
+  createExpense: (payload: CreateExpensePayload) =>
+    post<Expense>('/finance/expenses', payload),
+
+  cancelExpense: (id: string, reason: string) =>
+    post<Expense>(`/finance/expenses/${id}/cancel`, { reason }),
+
+  getExpenseCategories: (includeInactive = false) =>
+    get<ExpenseCategory[]>('/finance/expenses/categories', {
+      params: includeInactive ? { includeInactive: 'true' } : undefined,
+    }),
+
+  createExpenseCategory: (payload: CreateExpenseCategoryPayload) =>
+    post<ExpenseCategory>('/finance/expenses/categories', payload),
+
+  updateExpenseCategory: (id: string, payload: Partial<CreateExpenseCategoryPayload>) =>
+    patch<ExpenseCategory>(`/finance/expenses/categories/${id}`, payload),
+
+  deleteExpenseCategory: (id: string) =>
+    del<ExpenseCategory>(`/finance/expenses/categories/${id}`),
 };
+

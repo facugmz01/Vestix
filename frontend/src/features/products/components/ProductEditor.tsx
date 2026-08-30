@@ -95,7 +95,14 @@ export function ProductEditor({ initialData }: Props) {
         isVariable: source.type === 'VARIABLE' || source.isVariable || false,
         costPrice: source.costPrice || 0,
         basePrice: source.variants?.[0]?.basePrice || 0,
-        comboLines: source.comboLines || [],
+        comboLines: (source.comboLines || []).map((cl: any) => ({
+          id: cl.id,
+          childVariantId: cl.childVariantId,
+          quantity: cl.quantity,
+          productName: cl.childVariant?.product?.name || cl.productName || 'Producto',
+          variantSku: cl.childVariant?.sku || cl.variantSku || '',
+          basePrice: cl.childVariant?.basePrice ?? cl.basePrice ?? 0,
+        })),
       });
 
       const meta = source.metadata as any;
@@ -157,6 +164,7 @@ export function ProductEditor({ initialData }: Props) {
 
       if (data.comboLines) {
         safePayload.comboLines = data.comboLines.map((c: any) => ({
+          ...(c.id ? { id: c.id } : {}),
           childVariantId: c.childVariantId,
           quantity: Number(c.quantity) || 1
         }));

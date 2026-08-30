@@ -1,38 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import {
   Menu,
   X,
   ChevronDown,
-  ChevronRight,
   Zap,
   LayoutDashboard,
   Package,
   ShoppingCart,
 } from 'lucide-react';
 import { useNavGroups } from '@/navigation/useNav';
-import type { NavItem, NavSubItem } from '@/navigation/navConfig';
+import type { NavSubItem } from '@/navigation/navConfig';
 import { useSidebarStore } from '@/store/sidebar.store';
 import { APP_CONFIG } from '@/config/app.config';
 import styles from './MobileNav.module.css';
 
 /**
- * Mobile navigation:
- * 1. Fixed bottom quick bar (< 768px)
- * 2. Left Slide-over Mobile Drawer synchronized with TopBar hamburger trigger and useSidebarStore.
+ * Navegación Mobile:
+ * 1. Barra rápida inferior fija (< 768px).
+ * 2. Slide-over Drawer lateral sincronizado con TopBar y useSidebarStore.
+ *    Los menús padre actúan como acordeones estrictos (no navegables).
  */
 export function MobileNav() {
   const location = useLocation();
   const segments = useNavGroups();
-  const { isMobileOpen, closeMobile, setMobileOpen, expandedGroups, toggleGroup } = useSidebarStore();
+  const {
+    isMobileOpen,
+    closeMobile,
+    setMobileOpen,
+    expandedGroups,
+    toggleGroup,
+  } = useSidebarStore();
 
-  // Close drawer on route change
+  // Cerrar drawer automáticamente al cambiar de ruta
   useEffect(() => {
     closeMobile();
   }, [location.pathname, closeMobile]);
 
-  // Handle ESC key to close mobile drawer
+  // Manejar tecla ESC para cerrar el drawer móvil
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isMobileOpen) {
@@ -97,13 +103,14 @@ export function MobileNav() {
           className={clsx(styles.bottomTab, isMobileOpen && styles.bottomTabActive)}
           onClick={() => setMobileOpen(!isMobileOpen)}
           aria-label="Abrir menú completo"
+          aria-expanded={isMobileOpen}
         >
           <Menu size={20} />
           <span className={styles.bottomTabLabel}>Menú</span>
         </button>
       </nav>
 
-      {/* ── 2. MOBILE DRAWER WITH BACKDROP (Synchronized with useSidebarStore) ── */}
+      {/* ── 2. MOBILE DRAWER WITH BACKDROP (Sincronizado con useSidebarStore) ── */}
       {isMobileOpen && (
         <div
           className={styles.backdrop}
@@ -121,7 +128,7 @@ export function MobileNav() {
         {/* Drawer Header */}
         <div className={styles.drawerHeader}>
           <div className={styles.drawerBrand}>
-            <div className={styles.drawerLogo}>
+            <div className={styles.drawerLogo} aria-hidden="true">
               {APP_CONFIG.appName.charAt(0)}
             </div>
             <div>
@@ -140,7 +147,7 @@ export function MobileNav() {
           </button>
         </div>
 
-        {/* POS Direct Launcher in Drawer */}
+        {/* POS Direct Launcher en Drawer */}
         <div className={styles.drawerPosLauncher}>
           <NavLink
             to="/pos"
@@ -162,45 +169,49 @@ export function MobileNav() {
                 {segment.items.map((item) => {
                   const Icon = item.icon;
                   const hasChildren = Boolean(item.children && item.children.length > 0);
-                  const isExpanded = Boolean(expandedGroups[item.id]);
+                  const isExpanded = expandedGroups.includes(item.id);
+                  const isChildActive =
+                    hasChildren &&
+                    item.children!.some(
+                      (c) =>
+                        location.pathname === c.to ||
+                        (c.to !== '/admin' && location.pathname.startsWith(c.to + '/'))
+                    );
 
                   return (
                     <div key={item.id} className={styles.drawerItemWrapper}>
                       {hasChildren ? (
                         <div>
-                          <div className={styles.drawerParentRow}>
-                            <NavLink
-                              to={item.to}
-                              end={item.end}
-                              onClick={closeMobile}
-                              className={({ isActive }) =>
-                                clsx(
-                                  styles.drawerLink,
-                                  isActive && styles.drawerLinkActive
-                                )
-                              }
-                            >
+                          {/* Botón Padre Acordeón Móvil (No navega, solo expande/colapsa) */}
+                          <button
+                            type="button"
+                            className={clsx(
+                              styles.drawerParentBtn,
+                              isChildActive && styles.drawerParentBtnActive,
+                              isExpanded && styles.drawerParentBtnExpanded
+                            )}
+                            onClick={() => toggleGroup(item.id)}
+                            aria-expanded={isExpanded}
+                            aria-label={`${isExpanded ? 'Colapsar' : 'Expandir'} submenú de ${item.label}`}
+                          >
+                            <div className={styles.drawerParentLeft}>
                               <Icon size={18} />
                               <span>{item.label}</span>
-                            </NavLink>
-
-                            <button
-                              type="button"
-                              className={styles.drawerChevronBtn}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleGroup(item.id);
-                              }}
-                              aria-label="Alternar submenú"
-                            >
-                              {isExpanded ? (
-                                <ChevronDown size={16} />
-                              ) : (
-                                <ChevronRight size={16} />
+                              {item.badge && (
+                                <span className={styles.badge}>{item.badge}</span>
                               )}
-                            </button>
-                          </div>
+                            </div>
 
+                            <ChevronDown
+                              size={16}
+                              className={clsx(
+                                styles.drawerChevron,
+                                isExpanded && styles.drawerChevronOpen
+                              )}
+                            />
+                          </button>
+
+                          {/* Submenús Hijos */}
                           {isExpanded && (
                             <div className={styles.drawerSubLinks}>
                               {item.children!.map((child: NavSubItem) => {
@@ -221,6 +232,9 @@ export function MobileNav() {
                                     <span className={styles.drawerSubDot} />
                                     {SubIcon && <SubIcon size={14} />}
                                     <span>{child.label}</span>
+                                    {child.badge && (
+                                      <span className={styles.badge}>{child.badge}</span>
+                                    )}
                                   </NavLink>
                                 );
                               })}
@@ -241,6 +255,9 @@ export function MobileNav() {
                         >
                           <Icon size={18} />
                           <span>{item.label}</span>
+                          {item.badge && (
+                            <span className={styles.badge}>{item.badge}</span>
+                          )}
                         </NavLink>
                       )}
                     </div>

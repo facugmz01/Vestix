@@ -6,6 +6,7 @@ import { CashService } from './cash/cash.service';
 import { CurrentAccountsService } from './current-accounts.service';
 import { FinanceDocumentsService } from './finance-documents.service';
 import { NotificationTriggersService } from '../notifications/notification-triggers.service';
+import { AccountAdjustmentsService } from './account-adjustments.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 
 @Controller('finance')
@@ -17,6 +18,7 @@ export class FinanceController {
     private readonly currentAccountsService: CurrentAccountsService,
     private readonly financeDocumentsService: FinanceDocumentsService,
     private readonly notificationTriggers: NotificationTriggersService,
+    private readonly accountAdjustmentsService: AccountAdjustmentsService,
   ) {}
   
   @Get('current-accounts')
@@ -137,6 +139,25 @@ export class FinanceController {
       page: Number(page) || 1,
       pageSize: Number(pageSize) || 30,
     });
+  }
+
+  @Post('treasury/accounts/:id/adjust')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  adjustAccount(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: import('./dto/adjust-account.dto').AdjustAccountBalanceDto,
+  ) {
+    return this.accountAdjustmentsService.adjustAccountBalance(id, dto, {
+      userId: req.user.userId || req.user.id,
+      email: req.user.email,
+    });
+  }
+
+  @Get('treasury/accounts/:id/adjustments')
+  @RequirePermissions({ action: 'read', subject: 'Finance' })
+  getAccountAdjustments(@Param('id') id: string) {
+    return this.accountAdjustmentsService.getAccountAdjustments(id);
   }
 
   // --- Payment Methods ---

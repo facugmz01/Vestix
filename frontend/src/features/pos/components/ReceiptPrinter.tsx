@@ -149,6 +149,18 @@ export const ReceiptPrinter = forwardRef<HTMLDivElement, ReceiptPrinterProps>(
                     Bonif: -{formatCurrency(line.discountAmount)} (Orig: {formatCurrency(line.basePrice * line.quantity)})
                   </div>
                 )}
+                {line.variant?.product?.type === 'COMBO' && line.variant?.product?.comboLines && (
+                  <div className={`${styles.lineSub} receipt-sub-size`}>
+                    {line.variant.product.comboLines.map((cl: any, idx: number) => {
+                      const cName = cl.childVariant?.product?.name || cl.productName || 'Componente';
+                      return (
+                        <div key={idx}>
+                          ↳ {cl.quantity * line.quantity}x {cName} {cl.childVariant?.size ? `(${cl.childVariant.size})` : ''}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}

@@ -1,0 +1,272 @@
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.auditWarning {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  align-items: flex-start;
+}
+
+.warningIcon {
+  color: var(--primary, #6366f1);
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.auditTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary, #f8fafc);
+  margin-bottom: 0.25rem;
+}
+
+.auditText {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.fieldLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.lockedAccountCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--surface-subtle, rgba(30, 41, 59, 0.5));
+  border: 1px solid var(--border-color, #334155);
+}
+
+.accountIcon {
+  color: #38bdf8;
+}
+
+.accountMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.accountName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #f8fafc);
+}
+
+.accountSub {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+}
+
+.selectInput,
+.textareaInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color, #334155);
+  background: var(--surface-bg, #0f172a);
+  color: #f8fafc;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.selectInput:focus,
+.textareaInput:focus {
+  border-color: var(--primary, #6366f1);
+}
+
+.balanceComparisonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.balanceBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem;
+  border-radius: 0.625rem;
+  background: var(--surface-subtle, rgba(30, 41, 59, 0.5));
+  border: 1px solid var(--border-color, #334155);
+}
+
+.balanceBoxReal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem;
+  border-radius: 0.625rem;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid var(--primary, #6366f1);
+}
+
+.balanceBoxLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.balanceBoxValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #f8fafc);
+}
+
+.balanceBoxHint {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748b);
+}
+
+.realBalanceInput {
+  width: 100%;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color, #334155);
+  background: var(--surface-bg, #0f172a);
+  color: #f8fafc;
+  font-size: 1.25rem;
+  font-weight: 700;
+  outline: none;
+}
+
+.realBalanceInput:focus {
+  border-color: var(--primary, #6366f1);
+}
+
+.differenceCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.diffNeutral {
+  background: rgba(100, 116, 139, 0.1);
+  border-color: rgba(100, 116, 139, 0.2);
+  color: var(--text-secondary, #94a3b8);
+}
+
+.diffNeutral .diffIconWrapper {
+  color: #94a3b8;
+}
+
+.diffSurplus {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.diffSurplus .diffIconWrapper {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.diffSurplus .diffAmountTag {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.diffDeficit {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.diffDeficit .diffIconWrapper {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.diffDeficit .diffAmountTag {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.diffHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.diffIconWrapper {
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.diffTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.diffSubtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0.125rem 0 0 0;
+}
+
+.diffAmountTag {
+  font-size: 1.125rem;
+  font-weight: 700;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.charCounter {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.6875rem;
+}
+
+.counterWarning {
+  color: #f87171;
+}
+
+.counterOk {
+  color: #34d399;
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-size: 0.8125rem;
+}
+
+.footerActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+}

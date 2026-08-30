@@ -1,25 +1,45 @@
 import { IsString, IsOptional, IsBoolean, IsArray, IsNumber } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class CatalogFilterDto {
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   searchQuery?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  q?: string;
+
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  query?: string;
+
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  search?: string;
+
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   sortBy?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   categoryId?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   brandId?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   brand?: string;
 
   @IsBoolean()
@@ -39,7 +59,7 @@ export class CatalogFilterDto {
   
   @IsArray()
   @IsOptional()
-  attributes?: { key: string, value: string }[]; // Dynamic filtering, e.g., [{ key: 'Size', value: 'L' }]
+  attributes?: { key: string; value: string }[]; // Dynamic filtering, e.g., [{ key: 'Size', value: 'L' }]
 
   @IsNumber()
   @IsOptional()
@@ -50,4 +70,19 @@ export class CatalogFilterDto {
   @IsOptional()
   @Type(() => Number)
   pageSize?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  limit?: number;
+
+  /**
+   * Helper to retrieve the active trimmed search query regardless of which param name was sent.
+   */
+  getResolvedSearchQuery(): string | undefined {
+    const raw = this.searchQuery || this.q || this.query || this.search;
+    const trimmed = raw?.trim();
+    return trimmed && trimmed.length > 0 ? trimmed : undefined;
+  }
 }
+

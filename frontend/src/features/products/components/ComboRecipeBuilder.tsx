@@ -7,11 +7,13 @@ import clsx from 'clsx';
 import styles from './ProductFormWidgets.module.css';
 
 interface ComboLine {
+  id?: string;
   childVariantId: string;
   quantity: number;
   productName?: string;
   variantSku?: string;
   basePrice?: number;
+  childVariant?: any;
 }
 
 interface Props {
@@ -30,12 +32,17 @@ export function ComboRecipeBuilder({ lines, onChange }: Props) {
 
   const addVariant = (v: any) => {
     if (lines.find(l => l.childVariantId === v.id)) return;
+    const name = v.product?.name
+      ? `${v.product.name}${v.size ? ` - ${v.size}` : ''}${v.color ? ` - ${v.color}` : ''}`
+      : (v.sku || 'Componente');
+
     onChange([...lines, {
       childVariantId: v.id,
       quantity: 1,
-      productName: v.product?.name || '',
+      productName: name,
       variantSku: v.sku,
-      basePrice: v.basePrice || 0
+      basePrice: v.basePrice || 0,
+      childVariant: v,
     }]);
     setSearchTerm('');
   };
@@ -53,7 +60,10 @@ export function ComboRecipeBuilder({ lines, onChange }: Props) {
     onChange(newLines);
   };
 
-  const totalCost = lines.reduce((sum, l) => sum + ((l.basePrice || 0) * l.quantity), 0);
+  const totalCost = lines.reduce((sum, l) => {
+    const price = l.basePrice ?? l.childVariant?.basePrice ?? 0;
+    return sum + (price * l.quantity);
+  }, 0);
 
   return (
     <div className={styles.stack}>
@@ -111,29 +121,36 @@ export function ComboRecipeBuilder({ lines, onChange }: Props) {
               </tr>
             </thead>
             <tbody>
-              {lines.map((l, i) => (
-                <tr key={i}>
-                  <td>
-                    <div className={styles.cellName}>{l.productName || 'Producto Variante'}</div>
-                    <div className={styles.cellSku}>{l.variantSku}</div>
-                  </td>
-                  <td className={styles.tdCenter}>
-                    <input 
-                      type="number" 
-                      min="1"
-                      value={l.quantity} 
-                      onChange={(e) => updateQuantity(i, Number(e.target.value))}
-                      className={styles.qtyInput}
-                    />
-                  </td>
-                  <td className={styles.tdRight}>
-                    ${((l.basePrice || 0) * l.quantity).toLocaleString()}
-                  </td>
-                  <td className={styles.tdRight}>
-                    <Button variant="ghost" size="sm" icon={<Trash2 size={14} color="var(--red)" />} onClick={() => removeLine(i)} />
-                  </td>
-                </tr>
-              ))}
+              {lines.map((l, i) => {
+                const compName = l.productName || l.childVariant?.product?.name || 'Producto Variante';
+                const compSku = l.variantSku || l.childVariant?.sku || '';
+                const compPrice = l.basePrice ?? l.childVariant?.basePrice ?? 0;
+                const subtotal = compPrice * l.quantity;
+
+                return (
+                  <tr key={l.id || l.childVariantId || i}>
+                    <td>
+                      <div className={styles.cellName}>{compName}</div>
+                      {compSku && <div className={styles.cellSku}>{compSku}</div>}
+                    </td>
+                    <td className={styles.tdCenter}>
+                      <input 
+                        type="number" 
+                        min="1"
+                        value={l.quantity} 
+                        onChange={(e) => updateQuantity(i, Number(e.target.value))}
+                        className={styles.qtyInput}
+                      />
+                    </td>
+                    <td className={styles.tdRight}>
+                      ${subtotal.toLocaleString()}
+                    </td>
+                    <td className={styles.tdRight}>
+                      <Button variant="ghost" size="sm" icon={<Trash2 size={14} color="var(--red)" />} onClick={() => removeLine(i)} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr>

@@ -283,14 +283,17 @@ export class CheckoutOrchestrator {
       if (!isQuote && dto.warehouseId) {
         if (dto.status === 'PENDING_PAYMENT') {
           for (const line of finalLinesForDB) {
-            await this.inventoryService.reserveStock(
-              line.variantId,
-              dto.warehouseId,
-              dto.branchId,
-              line.quantity,
-              dto.id,
-              tx
-            );
+            const movements = await this.resolveStockMovements(line.variantId, line.quantity, tx);
+            for (const movement of movements) {
+              await this.inventoryService.reserveStock(
+                movement.variantId,
+                dto.warehouseId,
+                dto.branchId,
+                movement.quantity,
+                dto.id,
+                tx
+              );
+            }
           }
         } else {
           await this.deductStock(tx, {
@@ -417,7 +420,10 @@ export class CheckoutOrchestrator {
       }
       if (dto.warehouseId && result.order.status !== 'PENDING_PAYMENT') {
         for (const line of result.order.lines) {
-          void this.notificationTriggers.checkLowStock(line.variantId, dto.warehouseId, dto.branchId);
+          const movements = await this.resolveStockMovements(line.variantId, line.quantity);
+          for (const movement of movements) {
+            void this.notificationTriggers.checkLowStock(movement.variantId, dto.warehouseId, dto.branchId);
+          }
         }
       }
     }
@@ -635,7 +641,10 @@ export class CheckoutOrchestrator {
       void this.loyaltyService.earnPointsForOrder(quote.customerId, updated.grandTotal, updated.id);
     }
     for (const line of updated.lines) {
-      void this.notificationTriggers.checkLowStock(line.variantId, targetWarehouseId, quote.branchId);
+      const movements = await this.resolveStockMovements(line.variantId, line.quantity);
+      for (const movement of movements) {
+        void this.notificationTriggers.checkLowStock(movement.variantId, targetWarehouseId, quote.branchId);
+      }
     }
     return updated;
   }
@@ -716,14 +725,17 @@ export class CheckoutOrchestrator {
     const updated = await this.prisma.$transaction(async (tx) => {
       if (targetWarehouseId) {
         for (const line of order.lines) {
-          await this.inventoryService.consumeReservation(
-            line.variantId,
-            targetWarehouseId,
-            order.branchId,
-            line.quantity,
-            order.id,
-            tx,
-          );
+          const movements = await this.resolveStockMovements(line.variantId, line.quantity, tx);
+          for (const movement of movements) {
+            await this.inventoryService.consumeReservation(
+              movement.variantId,
+              targetWarehouseId,
+              order.branchId,
+              movement.quantity,
+              order.id,
+              tx,
+            );
+          }
         }
       }
 
@@ -766,7 +778,10 @@ export class CheckoutOrchestrator {
     }
     if (targetWarehouseId) {
       for (const line of updated.lines) {
-        void this.notificationTriggers.checkLowStock(line.variantId, targetWarehouseId, order.branchId);
+        const movements = await this.resolveStockMovements(line.variantId, line.quantity);
+        for (const movement of movements) {
+          void this.notificationTriggers.checkLowStock(movement.variantId, targetWarehouseId, order.branchId);
+        }
       }
     }
 
@@ -798,14 +813,17 @@ export class CheckoutOrchestrator {
       return this.prisma.$transaction(async (tx) => {
         if (order.warehouseId) {
           for (const line of order.lines) {
-            await this.inventoryService.releaseReservation(
-              line.variantId,
-              order.warehouseId,
-              order.branchId,
-              line.quantity,
-              order.id,
-              tx,
-            );
+            const movements = await this.resolveStockMovements(line.variantId, line.quantity, tx);
+            for (const movement of movements) {
+              await this.inventoryService.releaseReservation(
+                movement.variantId,
+                order.warehouseId,
+                order.branchId,
+                movement.quantity,
+                order.id,
+                tx,
+              );
+            }
           }
         }
 

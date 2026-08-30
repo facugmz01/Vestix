@@ -144,14 +144,24 @@ export class ProductsService {
           isPublished: false,
           images: persistedImages as any,
           metadata: normalizedMetadata,
-          comboLines: createProductDto.type === 'COMBO' && createProductDto.comboLines?.length ? {
+          comboLines: productType === 'COMBO' && createProductDto.comboLines?.length ? {
             create: createProductDto.comboLines.map(cl => ({
               childVariantId: cl.childVariantId,
-              quantity: cl.quantity
+              quantity: Number(cl.quantity) || 1,
             }))
           } : undefined
         },
-        include: { category: true, brand: true }
+        include: {
+          category: true,
+          brand: true,
+          comboLines: {
+            include: {
+              childVariant: {
+                include: { product: true }
+              }
+            }
+          }
+        }
       });
 
       // 4. Create Variants
@@ -209,7 +219,21 @@ export class ProductsService {
         });
       }
 
-      return product;
+      return tx.product.findUnique({
+        where: { id: product.id },
+        include: {
+          category: true,
+          brand: true,
+          variants: true,
+          comboLines: {
+            include: {
+              childVariant: {
+                include: { product: true }
+              }
+            }
+          }
+        }
+      });
     });
   }
 
@@ -330,7 +354,18 @@ export class ProductsService {
   async findOne(id: string) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      include: { category: true, brand: true, variants: true }
+      include: {
+        category: true,
+        brand: true,
+        variants: true,
+        comboLines: {
+          include: {
+            childVariant: {
+              include: { product: true }
+            }
+          }
+        }
+      }
     });
     if (!product) throw new NotFoundException(`Producto ${id} no encontrado`);
     return product;
@@ -419,7 +454,11 @@ export class ProductsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      if (effectiveType === 'COMBO' && comboLines !== undefined) {
+      if (effectiveType === 'COMBO') {
+        if (comboLines !== undefined) {
+          await tx.productComboLine.deleteMany({ where: { parentProductId: id } });
+        }
+      } else {
         await tx.productComboLine.deleteMany({ where: { parentProductId: id } });
       }
 
@@ -427,21 +466,20 @@ export class ProductsService {
         ? this.mediaService.persistImageRefs(images)
         : undefined;
 
-      const updatedProduct = await tx.product.update({
+      await tx.product.update({
         where: { id },
         data: {
           ...data,
           ...(nextType !== undefined ? { type: nextType, isVariable: syncIsVariableFlag(nextType) } : {}),
           ...(normalizedMetadata !== undefined ? { metadata: normalizedMetadata } : {}),
           ...(persistedImages !== undefined ? { images: persistedImages as any } : {}),
-          comboLines: effectiveType === 'COMBO' && comboLines ? {
+          comboLines: effectiveType === 'COMBO' && comboLines?.length ? {
             create: comboLines.map((cl: any) => ({
               childVariantId: cl.childVariantId,
-              quantity: cl.quantity
+              quantity: Number(cl.quantity) || 1,
             }))
           } : undefined
         },
-        include: { category: true, brand: true, comboLines: true }
       });
 
       if (variants && Array.isArray(variants)) {
@@ -542,7 +580,21 @@ export class ProductsService {
         }
       }
 
-      return updatedProduct;
+      return tx.product.findUnique({
+        where: { id },
+        include: {
+          category: true,
+          brand: true,
+          variants: true,
+          comboLines: {
+            include: {
+              childVariant: {
+                include: { product: true }
+              }
+            }
+          }
+        }
+      });
     });
   }
 
@@ -1041,16 +1093,33 @@ export class ProductsService {
 
   async findAllVariants(search?: string) {
     const where: any = {};
-    if (search) {
+    if (search?.trim()) {
+      const term = search.trim();
       where.OR = [
-        { sku: { contains: search, mode: 'insensitive' } },
-        { barcode: { contains: search, mode: 'insensitive' } },
-        { product: { name: { contains: search, mode: 'insensitive' } } },
+        { sku: { contains: term, mode: 'insensitive' } },
+        { barcode: { contains: term, mode: 'insensitive' } },
+        { barcodes: { some: { barcode: { contains: term, mode: 'insensitive' } } } },
+        { product: { name: { contains: term, mode: 'insensitive' } } },
+        { product: { baseSku: { contains: term, mode: 'insensitive' } } },
       ];
     }
     return this.prisma.productVariant.findMany({
       where,
-      include: { product: true },
+      include: {
+        product: {
+          include: {
+            category: true,
+            brand: true,
+            comboLines: {
+              include: {
+                childVariant: {
+                  include: { product: true },
+                },
+              },
+            },
+          },
+        },
+      },
       take: 50,
     });
   }
@@ -1108,12 +1177,20 @@ export class ProductsService {
     const where: any = { isPublished: true, isActive: true };
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.brandId) where.brandId = query.brandId;
-    if (query.search) {
+    if (query.search?.trim()) {
+      const term = query.search.trim();
       where.OR = [
-        { name: { contains: query.search, mode: 'insensitive' } },
-        { baseSku: { contains: query.search, mode: 'insensitive' } },
+        { name: { contains: term, mode: 'insensitive' } },
+        { description: { contains: term, mode: 'insensitive' } },
+        { baseSku: { contains: term, mode: 'insensitive' } },
+        { brand: { name: { contains: term, mode: 'insensitive' } } },
+        { category: { name: { contains: term, mode: 'insensitive' } } },
+        { variants: { some: { sku: { contains: term, mode: 'insensitive' } } } },
+        { variants: { some: { barcode: { contains: term, mode: 'insensitive' } } } },
+        { variants: { some: { barcodes: { some: { barcode: { contains: term, mode: 'insensitive' } } } } } },
       ];
     }
+
 
     const [data, total] = await Promise.all([
       this.prisma.product.findMany({

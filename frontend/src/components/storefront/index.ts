@@ -6,3 +6,6 @@ export { BankTransferDetails, hasBankTransferDetails } from './BankTransferDetai
 export type { BankTransferInfo } from './BankTransferDetails';
 export { WhatsAppInquiryButton, buildWhatsAppInquiryUrl, WhatsAppIcon } from './WhatsAppInquiryButton';
 export type { WhatsAppInquiryButtonProps } from './WhatsAppInquiryButton';
+export { StorefrontSearchBar } from './StorefrontSearchBar';
+export type { StorefrontSearchBarProps } from './StorefrontSearchBar';
+

@@ -1,17 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import {
-  ChevronDown,
-  ChevronRight,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Zap,
-} from 'lucide-react';
+import { Zap } from 'lucide-react';
 import clsx from 'clsx';
 import { useNavGroups } from '@/navigation/useNav';
-import type { NavItem, NavSubItem } from '@/navigation/navConfig';
+import type { NavItem } from '@/navigation/navConfig';
 import { useSidebarStore } from '@/store/sidebar.store';
 import { APP_CONFIG } from '@/config/app.config';
+import { SidebarItem } from './SidebarItem';
+import { SidebarGroupItem } from './SidebarGroupItem';
 import styles from './Sidebar.module.css';
 
 interface HoveredFlyout {
@@ -26,17 +22,16 @@ export function Sidebar() {
 
   const {
     isCollapsed,
-    toggleCollapse,
     expandedGroups,
     toggleGroup,
     setGroupExpanded,
   } = useSidebarStore();
 
-  // Active hover tooltip item in collapsed mode positioned via fixed viewport coordinates
+  // Popover flotante al pasar el cursor en modo colapsado (Desktop mini-bar)
   const [hoveredFlyout, setHoveredFlyout] = useState<HoveredFlyout | null>(null);
   const hoverTimeoutRef = useRef<number | null>(null);
 
-  // Auto-expand group if current route is inside it
+  // Auto-expandir el grupo padre si la ruta actual pertenece a uno de sus hijos
   useEffect(() => {
     segments.forEach((segment) => {
       segment.items.forEach((item) => {
@@ -44,17 +39,20 @@ export function Sidebar() {
           const isCurrentActive =
             location.pathname === item.to ||
             item.children.some(
-              (c) => location.pathname === c.to || location.pathname.startsWith(c.to + '/')
+              (c) =>
+                location.pathname === c.to ||
+                (c.to !== '/admin' && location.pathname.startsWith(c.to + '/'))
             );
-          if (isCurrentActive && !expandedGroups[item.id]) {
+
+          if (isCurrentActive && !expandedGroups.includes(item.id)) {
             setGroupExpanded(item.id, true);
           }
         }
       });
     });
-  }, [location.pathname]);
+  }, [location.pathname, segments, expandedGroups, setGroupExpanded]);
 
-  // Close flyout on scroll or route change
+  // Cerrar flyout al cambiar de ruta o cambiar estado de colapso
   useEffect(() => {
     setHoveredFlyout(null);
   }, [location.pathname, isCollapsed]);
@@ -62,13 +60,13 @@ export function Sidebar() {
   const handleMouseEnter = (item: NavItem, e: React.MouseEvent<HTMLElement>) => {
     if (!isCollapsed) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     const windowHeight = window.innerHeight;
     const estimatedHeight = 50 + (item.children?.length ?? 0) * 36;
     let targetTop = rect.top;
 
-    // Keep popover inside screen bounds
+    // Mantener el popover dentro del viewport
     if (targetTop + estimatedHeight > windowHeight - 16) {
       targetTop = Math.max(16, windowHeight - estimatedHeight - 16);
     }
@@ -91,34 +89,15 @@ export function Sidebar() {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
   };
 
-  const handleToggleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setHoveredFlyout(null);
-    toggleCollapse();
-  };
-
   return (
     <aside
       className={clsx(styles.sidebar, isCollapsed && styles.collapsed)}
       aria-label="Navegación principal del sistema"
     >
-      {/* ── 1. HEADER ──────────────────────────────────────────────────────── */}
+      {/* ── 1. HEADER (Branding limpio, sin botones duplicados de toggle) ───── */}
       <div className={styles.header}>
-        <div
-          className={styles.brand}
-          onClick={isCollapsed ? handleToggleClick : undefined}
-          title={isCollapsed ? 'Clic para expandir menú' : undefined}
-          role={isCollapsed ? 'button' : undefined}
-          tabIndex={isCollapsed ? 0 : undefined}
-          onKeyDown={(e) => {
-            if (isCollapsed && (e.key === 'Enter' || e.key === ' ')) {
-              e.preventDefault();
-              toggleCollapse();
-            }
-          }}
-        >
-          <div className={styles.brandLogo} aria-hidden>
+        <div className={styles.brand}>
+          <div className={styles.brandLogo} aria-hidden="true">
             <span>{APP_CONFIG.appName.charAt(0)}</span>
           </div>
           {!isCollapsed && (
@@ -128,16 +107,6 @@ export function Sidebar() {
             </div>
           )}
         </div>
-
-        <button
-          type="button"
-          className={styles.collapseToggle}
-          onClick={handleToggleClick}
-          aria-label={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
-          title={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
-        >
-          {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-        </button>
       </div>
 
       {/* ── 2. QUICK POS LAUNCHER ─────────────────────────────────────────── */}
@@ -149,7 +118,7 @@ export function Sidebar() {
           }
           title="Terminal POS (F9)"
         >
-          <Zap size={18} className={styles.posIcon} />
+          <Zap size={18} className={styles.posIcon} aria-hidden="true" />
           {!isCollapsed && (
             <div className={styles.posLabelContainer}>
               <span className={styles.posLabel}>Terminal POS</span>
@@ -178,17 +147,8 @@ export function Sidebar() {
 
             <div className={styles.itemList}>
               {segment.items.map((item) => {
-                const Icon = item.icon;
                 const hasChildren = Boolean(item.children && item.children.length > 0);
-                const isGroupExpanded = Boolean(expandedGroups[item.id]);
-                const isItemActive =
-                  location.pathname === item.to ||
-                  (item.children &&
-                    item.children.some(
-                      (c) =>
-                        location.pathname === c.to ||
-                        location.pathname.startsWith(c.to + '/')
-                    ));
+                const isGroupExpanded = expandedGroups.includes(item.id);
 
                 return (
                   <div
@@ -200,102 +160,18 @@ export function Sidebar() {
                     onMouseEnter={(e) => handleMouseEnter(item, e)}
                     onMouseLeave={handleMouseLeave}
                   >
-                    {/* Top-level Nav Item */}
-                    {hasChildren && !isCollapsed ? (
-                      <div
-                        className={clsx(
-                          styles.parentRow,
-                          isItemActive && styles.parentRowActive
-                        )}
-                      >
-                        <NavLink
-                          to={item.to}
-                          end={item.end}
-                          className={({ isActive }) =>
-                            clsx(styles.parentLink, isActive && styles.activeLink)
-                          }
-                          title={item.label}
-                        >
-                          <Icon size={18} className={styles.itemIcon} aria-hidden />
-                          <span className={styles.itemLabel}>{item.label}</span>
-                          {item.badge && (
-                            <span className={styles.badge}>{item.badge}</span>
-                          )}
-                        </NavLink>
-
-                        <button
-                          type="button"
-                          className={styles.chevronButton}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleGroup(item.id);
-                          }}
-                          aria-label={
-                            isGroupExpanded
-                              ? `Colapsar submenú de ${item.label}`
-                              : `Desplegar submenú de ${item.label}`
-                          }
-                        >
-                          {isGroupExpanded ? (
-                            <ChevronDown size={14} />
-                          ) : (
-                            <ChevronRight size={14} />
-                          )}
-                        </button>
-                      </div>
+                    {hasChildren ? (
+                      <SidebarGroupItem
+                        item={item}
+                        isCollapsed={isCollapsed}
+                        isExpanded={isGroupExpanded}
+                        onToggle={() => toggleGroup(item.id)}
+                      />
                     ) : (
-                      <NavLink
-                        to={item.to}
-                        end={item.end}
-                        className={({ isActive }) =>
-                          clsx(
-                            styles.navItem,
-                            (isActive || (isCollapsed && isItemActive)) && styles.active
-                          )
-                        }
-                        title={isCollapsed ? item.label : undefined}
-                        aria-label={item.label}
-                      >
-                        <Icon size={18} className={styles.itemIcon} aria-hidden />
-                        {!isCollapsed && (
-                          <span className={styles.itemLabel}>{item.label}</span>
-                        )}
-                        {!isCollapsed && item.badge && (
-                          <span className={styles.badge}>{item.badge}</span>
-                        )}
-                      </NavLink>
-                    )}
-
-                    {/* Sub-items (Expanded in Desktop) */}
-                    {!isCollapsed && hasChildren && isGroupExpanded && (
-                      <div className={styles.childrenContainer}>
-                        {item.children!.map((child: NavSubItem) => {
-                          const SubIcon = child.icon;
-                          return (
-                            <NavLink
-                              key={child.id}
-                              to={child.to}
-                              end={child.end}
-                              className={({ isActive }) =>
-                                clsx(
-                                  styles.childItem,
-                                  isActive && styles.childItemActive
-                                )
-                              }
-                            >
-                              <span className={styles.childDot} />
-                              {SubIcon && (
-                                <SubIcon size={14} className={styles.childIcon} />
-                              )}
-                              <span className={styles.childLabel}>{child.label}</span>
-                              {child.badge && (
-                                <span className={styles.badge}>{child.badge}</span>
-                              )}
-                            </NavLink>
-                          );
-                        })}
-                      </div>
+                      <SidebarItem
+                        item={item}
+                        isCollapsed={isCollapsed}
+                      />
                     )}
                   </div>
                 );
@@ -305,7 +181,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* ── 4. FIXED FLOATING FLYOUT POPOVER IN COLLAPSED MODE ─────────────── */}
+      {/* ── 4. FLOATING FLYOUT POPOVER EN MODO COLAPSADO ───────────────────── */}
       {isCollapsed && hoveredFlyout && (
         <div
           className={styles.fixedFlyoutPopover}
@@ -315,26 +191,30 @@ export function Sidebar() {
           }}
           onMouseEnter={handlePopoverMouseEnter}
           onMouseLeave={handleMouseLeave}
+          role="dialog"
+          aria-label={hoveredFlyout.item.label}
         >
           <div className={styles.flyoutHeader}>
             <span className={styles.flyoutTitle}>{hoveredFlyout.item.label}</span>
           </div>
 
           <div className={styles.flyoutBody}>
-            {/* Direct link to main view */}
-            <NavLink
-              to={hoveredFlyout.item.to}
-              end={hoveredFlyout.item.end}
-              className={({ isActive }) =>
-                clsx(styles.flyoutLink, isActive && styles.flyoutLinkActive)
-              }
-              onClick={() => setHoveredFlyout(null)}
-            >
-              <span className={styles.flyoutBullet}>•</span>
-              <span>Vista Principal</span>
-            </NavLink>
+            {/* Si no tiene hijos, link a la vista directa */}
+            {(!hoveredFlyout.item.children || hoveredFlyout.item.children.length === 0) && (
+              <NavLink
+                to={hoveredFlyout.item.to}
+                end={hoveredFlyout.item.end}
+                className={({ isActive }) =>
+                  clsx(styles.flyoutLink, isActive && styles.flyoutLinkActive)
+                }
+                onClick={() => setHoveredFlyout(null)}
+              >
+                <span className={styles.flyoutBullet}>•</span>
+                <span>{hoveredFlyout.item.label}</span>
+              </NavLink>
+            )}
 
-            {/* Submodule child links */}
+            {/* Si tiene hijos, lista de submódulos reales */}
             {hoveredFlyout.item.children &&
               hoveredFlyout.item.children.map((child) => (
                 <NavLink
@@ -348,6 +228,9 @@ export function Sidebar() {
                 >
                   <span className={styles.flyoutBullet}>•</span>
                   <span>{child.label}</span>
+                  {child.badge && (
+                    <span className={styles.badge}>{child.badge}</span>
+                  )}
                 </NavLink>
               ))}
           </div>

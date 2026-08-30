@@ -46,6 +46,7 @@ const ReturnsPage    = lazy(() => import('@/pages/admin/ReturnsPage'));
 const CustomersPage  = lazy(() => import('@/pages/admin/CustomersPage'));
 const CurrentAccountsPage = lazy(() => import('@/pages/admin/CurrentAccountsPage'));
 const CashSessionsPage = lazy(() => import('@/pages/admin/CashSessionsPage'));
+const ExpensesPage   = lazy(() => import('@/pages/admin/ExpensesPage'));
 const PaymentsPage   = lazy(() => import('@/pages/admin/PaymentsPage'));
 const InvoicesPage   = lazy(() => import('@/pages/admin/InvoicesPage'));
 const POSPage        = lazy(() => import('@/pages/pos/POSPage'));
@@ -230,6 +231,7 @@ export default function App() {
               <Route element={<RequirePermission action="read"   subject="Finance" />}>
                 <Route path="/admin/finance/current-accounts" element={<CurrentAccountsPage />} />
                 <Route path="/admin/finance/treasury"         element={<CashSessionsPage />} />
+                <Route path="/admin/finance/expenses"         element={<ExpensesPage />} />
                 <Route path="/admin/finance/payments"         element={<PaymentsPage />} />
                 <Route path="/admin/finance/invoices"         element={<InvoicesPage />} />
               </Route>

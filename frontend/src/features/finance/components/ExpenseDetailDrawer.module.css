@@ -1,0 +1,244 @@
+.drawerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.loadingPlaceholder {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted, #64748b);
+  font-size: 0.875rem;
+}
+
+.heroAmountCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color, #334155);
+}
+
+.heroPaid {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.heroCancelled {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.heroAmountMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.heroLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.heroAmount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #f8fafc);
+}
+
+.infoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--surface-subtle, rgba(30, 41, 59, 0.4));
+  border: 1px solid var(--border-color, #334155);
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.infoLabel {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.infoValue {
+  color: var(--text-primary, #f8fafc);
+}
+
+.infoValueBold {
+  color: var(--text-primary, #f8fafc);
+  font-weight: 600;
+  text-align: right;
+  max-width: 65%;
+}
+
+.categoryBadge {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.receiptTag {
+  background: var(--surface-bg, #0f172a);
+  color: var(--text-primary, #f8fafc);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color, #334155);
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--primary, #6366f1);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.sectionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--surface-subtle, rgba(30, 41, 59, 0.4));
+  border: 1px solid var(--border-color, #334155);
+}
+
+.sectionCardTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.originDetailRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cashIcon {
+  color: #10b981;
+}
+
+.bankIcon {
+  color: #38bdf8;
+}
+
+.originTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary, #f8fafc);
+  margin: 0;
+}
+
+.originSub {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+  margin: 0.125rem 0 0 0;
+}
+
+.auditStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.auditItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.auditIcon {
+  color: var(--text-muted, #64748b);
+  flex-shrink: 0;
+}
+
+.notesBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.875rem;
+  border-radius: 0.625rem;
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.notesTitle {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #fbbf24;
+  text-transform: uppercase;
+}
+
+.notesText {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.drawerFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.cancelReasonBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 1rem;
+}
+
+.cancelLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.cancelInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color, #334155);
+  background: var(--surface-bg, #0f172a);
+  color: #f8fafc;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.cancelInput:focus {
+  border-color: #ef4444;
+}
+
+.cancelErrorText {
+  color: #f87171;
+  font-size: 0.75rem;
+  margin: 0;
+}

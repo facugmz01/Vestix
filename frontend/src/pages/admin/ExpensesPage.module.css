@@ -1,0 +1,199 @@
+.headerButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  background: var(--surface-card, rgba(30, 41, 59, 0.6));
+  border: 1px solid var(--border-color, #334155);
+  backdrop-filter: blur(12px);
+}
+
+.metricHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metricTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metricIconBoxRed {
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+.metricIconBoxIndigo {
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+}
+
+.metricIconBoxSky {
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+}
+
+.metricValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary, #f8fafc);
+}
+
+.metricValueSm {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #f8fafc);
+}
+
+.metricHint {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+}
+
+.channelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.channelLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.channelValue {
+  color: var(--text-primary, #f8fafc);
+}
+
+.cashDot {
+  color: #10b981;
+}
+
+.bankDot {
+  color: #38bdf8;
+}
+
+.filtersWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.filterSelect {
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color, #334155);
+  background: var(--surface-bg, #0f172a);
+  color: var(--text-primary, #f8fafc);
+  font-size: 0.8125rem;
+  outline: none;
+}
+
+.filterSelect:focus {
+  border-color: var(--primary, #6366f1);
+}
+
+.filterSelect option {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.tableDate {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8125rem;
+  color: var(--text-primary, #f8fafc);
+}
+
+.tableTime {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748b);
+}
+
+.categoryTag {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  display: inline-block;
+}
+
+.descCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  max-width: 280px;
+}
+
+.descText {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary, #f8fafc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.receiptSmallTag {
+  font-size: 0.6875rem;
+  font-family: monospace;
+  color: var(--text-muted, #94a3b8);
+}
+
+.originCell {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.cashIcon {
+  color: #10b981;
+}
+
+.bankIcon {
+  color: #38bdf8;
+}
+
+.amountText {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #f43f5e;
+}
+
+.amountCancelled {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted, #64748b);
+  text-decoration: line-through;
+}

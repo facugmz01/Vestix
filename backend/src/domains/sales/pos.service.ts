@@ -34,6 +34,20 @@ export class PosService {
     const code = (rawCode || '').replace(/[\r\n\t]/g, '').trim();
     if (!code) return null;
 
+    const productInclude = {
+      include: {
+        category: true,
+        brand: true,
+        comboLines: {
+          include: {
+            childVariant: {
+              include: { product: true }
+            }
+          }
+        }
+      }
+    };
+
     // 1. Primary barcode match
     const byPrimary = await this.prisma.productVariant.findFirst({
       where: {
@@ -42,7 +56,7 @@ export class PosService {
         product: { isActive: true },
       },
       include: {
-        product: { include: { category: true, brand: true } },
+        product: productInclude,
         barcodes: true,
       },
     });
@@ -57,7 +71,7 @@ export class PosService {
       include: {
         variant: {
           include: {
-            product: { include: { category: true, brand: true } },
+            product: productInclude,
             barcodes: true,
           },
         },
@@ -73,7 +87,7 @@ export class PosService {
         product: { isActive: true },
       },
       include: {
-        product: { include: { category: true, brand: true } },
+        product: productInclude,
         barcodes: true,
       },
     });
@@ -86,7 +100,7 @@ export class PosService {
         isActive: true,
       },
       include: {
-        product: { include: { category: true, brand: true } },
+        product: productInclude,
         barcodes: true,
       },
     });
@@ -98,7 +112,7 @@ export class PosService {
       const byId = await this.prisma.productVariant.findFirst({
         where: { id: code, isActive: true, product: { isActive: true } },
         include: {
-          product: { include: { category: true, brand: true } },
+          product: productInclude,
           barcodes: true,
         },
       });
@@ -107,7 +121,7 @@ export class PosService {
       const byProductId = await this.prisma.productVariant.findFirst({
         where: { productId: code, isActive: true, product: { isActive: true } },
         include: {
-          product: { include: { category: true, brand: true } },
+          product: productInclude,
           barcodes: true,
         },
       });
@@ -183,6 +197,7 @@ export class PosService {
         category: variant.product.category ? { id: variant.product.category.id, name: variant.product.category.name } : null,
         brand: variant.product.brand ? { id: variant.product.brand.id, name: variant.product.brand.name } : null,
         isActive: variant.product.isActive,
+        comboLines: (variant.product as any).comboLines,
       },
       stockLevels: stockLevels.map(s => {
         const wh = warehouseMap.get(s.warehouseId);
@@ -374,7 +389,19 @@ export class PosService {
           : {}),
       },
       include: {
-        product: { include: { category: true, brand: true } },
+        product: {
+          include: {
+            category: true,
+            brand: true,
+            comboLines: {
+              include: {
+                childVariant: {
+                  include: { product: true }
+                }
+              }
+            }
+          }
+        },
         barcodes: true,
       },
       take: 50,
@@ -467,6 +494,7 @@ export class PosService {
           category: v.product?.category ? { id: v.product.category.id, name: v.product.category.name } : null,
           brand: v.product?.brand ? { id: v.product.brand.id, name: v.product.brand.name } : null,
           isActive: v.product?.isActive,
+          comboLines: (v.product as any)?.comboLines,
         },
         stockLevels: variantStocks.map(s => {
           const wh = warehouseMap.get(s.warehouseId);

@@ -18,6 +18,15 @@ export class CatalogController {
     return this.catalogService.getPublicCatalog({ ...filters, inStockOnly: inStockOnly ?? filters.inStockOnly });
   }
 
+  @Get('search')
+  async searchPublicCatalog(
+    @Query() filters: CatalogFilterDto,
+    @Query('inStockOnly', ParseBooleanQueryPipe) inStockOnly?: boolean,
+  ) {
+    return this.catalogService.getPublicCatalog({ ...filters, inStockOnly: inStockOnly ?? filters.inStockOnly });
+  }
+
+
   @Get('categories/public')
   async getPublicCategories() {
     return this.catalogService.getPublicCategories();

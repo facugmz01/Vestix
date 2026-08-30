@@ -114,8 +114,13 @@ export type ProductType = 'SINGLE' | 'VARIABLE' | 'COMBO';
 
 export interface ProductComboLine {
   id?: string;
+  parentProductId?: string;
   childVariantId: string;
   quantity: number;
+  childVariant?: ProductVariant;
+  productName?: string;
+  variantSku?: string;
+  basePrice?: number;
 }
 
 export interface Product {
@@ -155,6 +160,7 @@ export interface ProductVariant {
   isActive: boolean;
   attributes?: Record<string, string>;
   imageUrl?: string;
+  product?: Product;
 }
 
 // ─── INVENTORY ───────────────────────────────────────────────────────────
@@ -753,3 +759,118 @@ export interface CartLine {
 
 // ─── PAGINATION ──────────────────────────────────────────────────────────
 export interface PagedResponse<T> { data: T[]; total: number; page: number; pageSize: number; }
+
+// ─── EXPENSES & OPERATIONAL OUTFLOWS ───────────────────────────────────────
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  parentId?: string | null;
+  parent?: ExpenseCategory | null;
+  children?: ExpenseCategory[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  _count?: { expenses: number };
+}
+
+export type ExpenseStatus = 'PAID' | 'PENDING' | 'CANCELLED';
+export type ExpenseOriginType = 'CASH_SHIFT' | 'FINANCIAL_ACCOUNT';
+
+export interface Expense {
+  id: string;
+  expenseCategoryId: string;
+  expenseCategory: ExpenseCategory;
+  amount: number;
+  currency: string;
+  date: string;
+  description: string;
+  notes?: string | null;
+  receiptNumber?: string | null;
+  voucherUrl?: string | null;
+  status: ExpenseStatus;
+  cashShiftId?: string | null;
+  cashShift?: {
+    id: string;
+    cashRegister?: { id: string; name: string; code: string; branch?: { name: string } };
+    openedByUser?: { id: string; fullName?: string; email: string };
+  } | null;
+  financialAccountId?: string | null;
+  financialAccount?: {
+    id: string;
+    name: string;
+    type: string;
+    currency: string;
+  } | null;
+  createdById: string;
+  createdBy: {
+    id: string;
+    fullName?: string;
+    email: string;
+  };
+  branchId?: string | null;
+  branch?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
+  financialTransactionId?: string | null;
+  financialTransaction?: {
+    id: string;
+    type: string;
+    amount: number;
+    referenceId: string;
+  } | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ExpenseCategorySummary {
+  id: string;
+  name: string;
+  code: string;
+  total: number;
+  count: number;
+  percentage: number;
+}
+
+export interface ExpenseSummary {
+  totalAmount: number;
+  count: number;
+  byCategory: ExpenseCategorySummary[];
+  byOrigin: {
+    cashTotal: number;
+    bankTotal: number;
+  };
+  topCategory?: ExpenseCategorySummary | null;
+}
+
+// ─── ACCOUNT ADJUSTMENTS & RECONCILIATION ──────────────────────────────────
+export type AccountAdjustmentType = 'INCOME_SURPLUS' | 'EXPENSE_DEFICIT' | 'RECONCILIATION';
+
+export interface AccountAdjustment {
+  id: string;
+  financialAccountId: string;
+  financialAccount?: FinancialAccount;
+  previousBalance: number;
+  adjustedBalance: number;
+  difference: number;
+  type: AccountAdjustmentType;
+  reason: string;
+  approvedById: string;
+  approvedBy?: {
+    id: string;
+    fullName?: string;
+    email: string;
+  };
+  financialTransactionId?: string | null;
+  financialTransaction?: {
+    id: string;
+    type: string;
+    amount: number;
+    referenceId: string;
+  } | null;
+  createdAt: string;
+}
+
