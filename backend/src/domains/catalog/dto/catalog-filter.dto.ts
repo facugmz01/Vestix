@@ -80,9 +80,15 @@ export class CatalogFilterDto {
    * Helper to retrieve the active trimmed search query regardless of which param name was sent.
    */
   getResolvedSearchQuery(): string | undefined {
-    const raw = this.searchQuery || this.q || this.query || this.search;
-    const trimmed = raw?.trim();
-    return trimmed && trimmed.length > 0 ? trimmed : undefined;
+    return resolveSearchQuery(this);
   }
 }
+
+export function resolveSearchQuery(filters?: Partial<CatalogFilterDto>): string | undefined {
+  if (!filters) return undefined;
+  const raw = filters.searchQuery || filters.q || filters.query || filters.search;
+  const trimmed = typeof raw === 'string' ? raw.trim() : undefined;
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
+}
+
 

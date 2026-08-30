@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CatalogFilterDto } from './dto/catalog-filter.dto';
+import { CatalogFilterDto, resolveSearchQuery } from './dto/catalog-filter.dto';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { PricingService } from './pricing.service';
 import { SettingsService } from '../../modules/settings/settings.service';
@@ -21,7 +21,7 @@ export class CatalogService {
    *   and ProductBarcode.barcode.
    * - Combines multiple tokens with AND so all keywords are matched across any product attribute.
    */
-  private buildSearchCondition(searchQuery?: string) {
+  private buildSearchCondition(searchQuery?: string): { OR: any[] } | { AND: any[] } | undefined {
     if (!searchQuery) return undefined;
     const sanitized = searchQuery.trim();
     if (!sanitized) return undefined;
@@ -84,21 +84,17 @@ export class CatalogService {
     };
   }
 
-  async getPublicCatalog(filters: CatalogFilterDto) {
+  async getPublicCatalog(filters: Partial<CatalogFilterDto>) {
     const where: any = { isActive: true, isPublished: true };
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.brandId || filters.brand) where.brandId = filters.brandId || filters.brand;
 
-    const searchTerm =
-      filters instanceof CatalogFilterDto && typeof filters.getResolvedSearchQuery === 'function'
-        ? filters.getResolvedSearchQuery()
-        : (filters.searchQuery || filters.q || filters.query || filters.search)?.trim();
-
+    const searchTerm = resolveSearchQuery(filters);
     const searchCondition = this.buildSearchCondition(searchTerm);
     if (searchCondition) {
-      if (searchCondition.OR) {
+      if ('OR' in searchCondition) {
         where.OR = searchCondition.OR;
-      } else if (searchCondition.AND) {
+      } else if ('AND' in searchCondition) {
         where.AND = searchCondition.AND;
       }
     }
@@ -106,6 +102,7 @@ export class CatalogService {
     const storefrontSettings = await this.settingsService.getStorefrontSettings();
     const hidePrices = Boolean(storefrontSettings.hidePrices);
     const priceListId = hidePrices ? null : storefrontSettings.priceListToShow;
+
 
     const page = filters.page || 1;
     const pageSize = filters.limit || filters.pageSize || 50;
