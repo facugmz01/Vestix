@@ -111,18 +111,6 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         throw new Error('No hay depósito configurado para esta sucursal');
       }
 
-      let paymentAccountId: string | undefined;
-      try {
-        const accounts = await queryClient.fetchQuery({
-          queryKey: ['treasury-accounts', currentBranchId],
-          queryFn: () => get<{ id: string; isActive?: boolean; branchId?: string }[]>('/finance/treasury/accounts'),
-          staleTime: 600_000,
-        });
-        paymentAccountId = accounts?.find(a => a.isActive && (!a.branchId || a.branchId === currentBranchId))?.id;
-      } catch {
-        paymentAccountId = undefined;
-      }
-
       const resolvedMethod = paymentSplits.length > 0
         ? 'MULTIPLE'
         : amountDue <= 0.01
@@ -136,7 +124,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         customerId: selectedCustomerId || undefined,
         source: 'POS',
         paymentMethod: resolvedMethod,
-        paymentAccountId: resolvedMethod === 'CUSTOMER_CREDIT' ? undefined : paymentAccountId,
+        paymentAccountId: undefined,
         paymentReference: resolvedPaymentReference,
         payments: paymentSplits.length > 0 ? paymentSplits : undefined,
         cashShiftId: activeShift.id,

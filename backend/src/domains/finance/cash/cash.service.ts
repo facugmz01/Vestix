@@ -107,9 +107,15 @@ export class CashService {
     // En un sistema real, es: Saldo Inicial + Ventas en Efectivo - Egresos/Retiros.
     // Para simplificar, buscamos los pagos de tipo CASH vinculados a las ventas de este turno.
     
-    // Obtener la cuenta de EFECTIVO vinculada a la caja
+    // Obtener la cuenta de EFECTIVO vinculada a la caja (con fallback a cuenta CASH de sucursal)
     const cashPaymentMethod = shift.cashRegister.paymentMethods.find(p => p.type === 'CASH');
-    const cashAccountId = cashPaymentMethod?.accountId;
+    let cashAccountId = cashPaymentMethod?.accountId;
+    if (!cashAccountId) {
+      const branchCash = await this.prisma.financialAccount.findFirst({
+        where: { branchId: shift.cashRegister.branchId, type: 'CASH', isActive: true },
+      });
+      cashAccountId = branchCash?.id;
+    }
 
     let expected = shift.openingAmount;
 
@@ -245,7 +251,59 @@ export class CashService {
       }
     });
     if (!shift) throw new NotFoundException('Turno no encontrado');
-    return shift;
+
+    const [orders, expenses] = await Promise.all([
+      this.prisma.saleOrder.findMany({
+        where: { cashShiftId: shiftId, status: { in: ['COMPLETED', 'CONFIRMED'] } },
+        include: { payments: { include: { paymentMethod: true } } },
+      }),
+      this.prisma.expense.findMany({
+        where: { cashShiftId: shiftId, status: 'PAID' },
+      }),
+    ]);
+
+    let totalCashSales = 0;
+    let totalCardSales = 0;
+    let totalTransferSales = 0;
+    let totalCreditSales = 0;
+    let totalSales = 0;
+
+    for (const o of orders) {
+      totalSales += o.grandTotal;
+      if (o.payments && o.payments.length > 0) {
+        for (const p of o.payments) {
+          const type = p.paymentMethod?.type || o.paymentMethod;
+          if (type === 'CASH') totalCashSales += p.amount;
+          else if (type === 'CREDIT_CARD') totalCardSales += p.amount;
+          else if (type === 'BANK_TRANSFER') totalTransferSales += p.amount;
+          else if (type === 'CUSTOMER_CREDIT') totalCreditSales += p.amount;
+          else totalCashSales += p.amount;
+        }
+      } else {
+        const type = o.paymentMethod;
+        if (type === 'CASH') totalCashSales += o.grandTotal;
+        else if (type === 'CREDIT_CARD') totalCardSales += o.grandTotal;
+        else if (type === 'BANK_TRANSFER') totalTransferSales += o.grandTotal;
+        else if (type === 'CUSTOMER_CREDIT') totalCreditSales += o.grandTotal;
+        else totalCashSales += o.grandTotal;
+      }
+    }
+
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+    return {
+      ...shift,
+      metrics: {
+        ordersCount: orders.length,
+        totalSales,
+        totalCashSales,
+        totalCardSales,
+        totalTransferSales,
+        totalCreditSales,
+        totalExpenses,
+        currentExpectedCash: shift.openingAmount + totalCashSales - totalExpenses,
+      },
+    };
   }
 
   async getShiftMovements(shiftId: string) {
@@ -256,12 +314,20 @@ export class CashService {
     if (!shift) throw new NotFoundException('Turno no encontrado');
 
     const cashPaymentMethod = shift.cashRegister.paymentMethods.find(p => p.type === 'CASH');
-    if (!cashPaymentMethod?.accountId) return [];
+    let cashAccountId = cashPaymentMethod?.accountId;
+    if (!cashAccountId) {
+      const branchCash = await this.prisma.financialAccount.findFirst({
+        where: { branchId: shift.cashRegister.branchId, type: 'CASH', isActive: true },
+      });
+      cashAccountId = branchCash?.id;
+    }
+
+    if (!cashAccountId) return [];
 
     const end = shift.closedAt || new Date();
     const transactions = await this.prisma.financialTransaction.findMany({
       where: {
-        accountId: cashPaymentMethod.accountId,
+        accountId: cashAccountId,
         createdAt: { gte: shift.openedAt, lte: end }
       },
       orderBy: { createdAt: 'desc' }

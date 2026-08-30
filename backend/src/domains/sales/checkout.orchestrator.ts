@@ -17,6 +17,18 @@ import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { applyManualCartDiscount } from './utils/manual-cart-discount';
 import * as crypto from 'crypto';
 
+export function normalizePaymentMethodType(raw?: string | null): string {
+  if (!raw) return 'CASH';
+  const u = String(raw).trim().toUpperCase();
+  if (['EFECTIVO', 'CASH', 'CONTADO', 'DINERO'].includes(u)) return 'CASH';
+  if (['TRANSFERENCIA', 'TRANSFER', 'BANK_TRANSFER', 'DEPOSITO', 'DEPOSIT', 'BANCO'].includes(u)) return 'BANK_TRANSFER';
+  if (['TARJETA', 'DEBIT_CARD', 'CREDIT_CARD', 'CARD', 'QR_MERCADOPAGO', 'MERCADOPAGO', 'MP', 'MERCADO_PAGO'].includes(u)) return 'CREDIT_CARD';
+  if (['CUENTA_CORRIENTE', 'CUSTOMER_CREDIT', 'STORE_CREDIT', 'CREDITO', 'CREDIT'].includes(u)) return 'CUSTOMER_CREDIT';
+  if (u === 'GIFT_CARD') return 'GIFT_CARD';
+  if (u === 'LOYALTY') return 'LOYALTY';
+  return u;
+}
+
 @Injectable()
 export class CheckoutOrchestrator {
   constructor(
@@ -260,37 +272,7 @@ export class CheckoutOrchestrator {
 
       const amountDue = Math.round((pricedTotal - giftCardAmount - loyaltyAmount) * 100) / 100;
 
-      // --- A. FINANCE BOUNDARY ---
-      const hasSplitPayments = !isQuote && dto.payments && dto.payments.length > 0;
-      const deferFinance = dto.status === 'PENDING_PAYMENT';
-
-      if (!isQuote && !hasSplitPayments && !deferFinance && amountDue > 0.01) {
-        if (dto.paymentMethod === 'CUSTOMER_CREDIT') {
-          if (!dto.customerId) throw new BadRequestException('Customer ID required for credit');
-          await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
-            customerId: dto.customerId,
-            amount: amountDue,
-            orderId: dto.id,
-          });
-        } else if (!isBackoffice) {
-          const treasuryMethod = dto.paymentMethod === 'QR_MERCADOPAGO' ? 'QR_MERCADOPAGO' : dto.paymentMethod;
-          const accountId = await this.resolvePaymentAccountId(tx, dto, treasuryMethod);
-          if (accountId) {
-            const refNote = dto.paymentReference ? ` Ref: ${dto.paymentReference}` : '';
-            const description = `Checkout via ${treasuryMethod}${refNote}`;
-            await this.postSaleLedgerEntry(
-              tx,
-              accountId,
-              amountDue,
-              dto.id,
-              description,
-              dto.customerId || 'Walk-in',
-            );
-          }
-        }
-      }
-
-      // --- B. INVENTORY BOUNDARY ---
+      // --- A. INVENTORY BOUNDARY ---
       if (!isQuote && dto.warehouseId) {
         if (dto.status === 'PENDING_PAYMENT') {
           for (const line of finalLinesForDB) {
@@ -328,7 +310,10 @@ export class CheckoutOrchestrator {
         });
       }
 
-      // --- C. SALES BOUNDARY ---
+      // --- B. SALES BOUNDARY (Create SaleOrder Header & Lines) ---
+      const hasSplitPayments = !isQuote && dto.payments && dto.payments.length > 0;
+      const deferFinance = dto.status === 'PENDING_PAYMENT';
+
       const order = await tx.saleOrder.create({
         data: {
           id: dto.id,
@@ -343,7 +328,7 @@ export class CheckoutOrchestrator {
           paymentMethod: dto.paymentMethod,
           paymentAccountId: dto.paymentAccountId,
           status: dto.status || 'COMPLETED',
-          cashShiftId: dto.cashShiftId,
+          cashShiftId: dto.cashShiftId || null,
           issueInvoice: shouldEmitInvoice,
           createdAt: dto.createdAtIso ? new Date(dto.createdAtIso) : new Date(),
           lines: {
@@ -363,6 +348,87 @@ export class CheckoutOrchestrator {
         include: { lines: true }
       });
 
+      // --- C. ATOMIC FINANCE BOUNDARY ---
+      let resolvedPrimaryAccountId: string | null = null;
+
+      if (!isQuote && !deferFinance) {
+        if (hasSplitPayments) {
+          await this.processPaymentSplits(tx, dto, order.id, amountDue);
+        } else if (amountDue > 0.01) {
+          const normMethod = normalizePaymentMethodType(dto.paymentMethod);
+          if (normMethod === 'CUSTOMER_CREDIT') {
+            if (!dto.customerId) throw new BadRequestException('Customer ID required for credit');
+            await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
+              customerId: dto.customerId,
+              amount: amountDue,
+              orderId: order.id,
+            });
+            const pm = await this.ensurePaymentMethod(tx, 'CUSTOMER_CREDIT');
+            if (pm) {
+              await tx.saleOrderPayment.create({
+                data: {
+                  orderId: order.id,
+                  paymentMethodId: pm.id,
+                  amount: amountDue,
+                  referenceId: dto.paymentReference || null,
+                },
+              });
+            }
+          } else {
+            const accountId = await this.accountsService.resolvePaymentAccountInTx(
+              tx,
+              dto.branchId,
+              normMethod,
+              dto.cashShiftId,
+              dto.paymentAccountId,
+            );
+            resolvedPrimaryAccountId = accountId;
+
+            const refNote = dto.paymentReference ? ` Ref: ${dto.paymentReference}` : '';
+            const description = `Cobro Venta #${order.id.slice(0, 8)} via ${dto.paymentMethod || normMethod}${refNote}`;
+            await this.postSaleLedgerEntry(
+              tx,
+              accountId,
+              amountDue,
+              order.id,
+              description,
+              dto.customerId || 'Walk-in',
+            );
+
+            const pm = await this.ensurePaymentMethod(tx, normMethod, accountId);
+            if (pm) {
+              await tx.saleOrderPayment.create({
+                data: {
+                  orderId: order.id,
+                  paymentMethodId: pm.id,
+                  amount: amountDue,
+                  referenceId: dto.paymentReference || null,
+                },
+              });
+            }
+
+            await tx.saleOrder.update({
+              where: { id: order.id },
+              data: { financialAccountId: accountId },
+            });
+          }
+        }
+
+        // Redemptions (Gift cards / Loyalty)
+        if (giftCardAmount > 0) {
+          await this.recordRedemptionPayment(tx, order.id, 'GIFT_CARD', giftCardAmount, dto.giftCardRedemption?.code);
+        }
+        if (loyaltyAmount > 0) {
+          await this.recordRedemptionPayment(
+            tx,
+            order.id,
+            'LOYALTY',
+            loyaltyAmount,
+            dto.loyaltyRedemption ? String(dto.loyaltyRedemption.points) : undefined,
+          );
+        }
+      }
+
       // If fiscal invoice is explicitly requested with a specific invoiceType, create the initial draft
       if (shouldEmitInvoice && dto.invoiceType) {
         const netAmount = Math.round((pricedTotal / 1.21) * 100) / 100;
@@ -380,42 +446,6 @@ export class CheckoutOrchestrator {
             status: 'PENDING_AFIP',
           },
         });
-      }
-
-      if (hasSplitPayments && !deferFinance) {
-        await this.processPaymentSplits(tx, dto, order.id, amountDue);
-      } else if (!isQuote) {
-        if (giftCardAmount > 0) {
-          await this.recordRedemptionPayment(tx, order.id, 'GIFT_CARD', giftCardAmount, dto.giftCardRedemption?.code);
-        }
-        if (loyaltyAmount > 0) {
-          await this.recordRedemptionPayment(
-            tx,
-            order.id,
-            'LOYALTY',
-            loyaltyAmount,
-            dto.loyaltyRedemption ? String(dto.loyaltyRedemption.points) : undefined,
-          );
-        }
-        if (amountDue > 0.01) {
-          const pmType =
-            dto.paymentMethod === 'QR_MERCADOPAGO'
-              ? 'CREDIT_CARD'
-              : dto.paymentMethod === 'CUSTOMER_CREDIT'
-                ? 'CUSTOMER_CREDIT'
-                : dto.paymentMethod;
-          const pm = await this.ensurePaymentMethod(tx, pmType);
-          if (pm) {
-            await tx.saleOrderPayment.create({
-              data: {
-                orderId: order.id,
-                paymentMethodId: pm.id,
-                amount: amountDue,
-                referenceId: dto.paymentReference || null,
-              },
-            });
-          }
-        }
       }
 
       // --- D. DATA INTEGRITY BOUNDARY (Price Variance) ---
@@ -939,26 +969,42 @@ export class CheckoutOrchestrator {
 
     if (order.payments?.length > 0) {
       for (const payment of order.payments) {
-        const methodType = payment.paymentMethod.type;
+        const methodType = normalizePaymentMethodType(payment.paymentMethod?.type || order.paymentMethod);
         if (methodType === 'CUSTOMER_CREDIT') {
           if (!order.customerId) throw new BadRequestException('Customer ID required for credit');
-          await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
-            customerId: order.customerId,
-            amount: payment.amount,
-            orderId: order.id,
+          const alreadyCharged = await tx.currentAccountMovement.count({
+            where: { referenceId: order.id, entityType: 'CUSTOMER' },
           });
-        } else if (payment.paymentMethod.accountId) {
+          if (alreadyCharged === 0) {
+            await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
+              customerId: order.customerId,
+              amount: payment.amount,
+              orderId: order.id,
+            });
+          }
+        } else if (methodType !== 'GIFT_CARD' && methodType !== 'LOYALTY') {
+          const accountId =
+            payment.paymentMethod?.accountId ||
+            await this.accountsService.resolvePaymentAccountInTx(
+              tx,
+              order.branchId,
+              methodType,
+              order.cashShiftId,
+              order.paymentAccountId,
+            );
+
           const alreadyPosted = await tx.financialTransaction.count({
             where: {
               referenceId: order.id,
               type: 'DEBIT',
-              accountId: payment.paymentMethod.accountId,
+              accountId,
             },
           });
           if (alreadyPosted > 0) continue;
+
           await this.postSaleLedgerEntry(
             tx,
-            payment.paymentMethod.accountId,
+            accountId,
             payment.amount,
             order.id,
             `Pago confirmado via ${methodType}${refNote}`,
@@ -969,36 +1015,48 @@ export class CheckoutOrchestrator {
       return;
     }
 
-    if (order.paymentMethod === 'CUSTOMER_CREDIT') {
+    const normMethod = normalizePaymentMethodType(order.paymentMethod);
+    if (normMethod === 'CUSTOMER_CREDIT') {
       if (!order.customerId) throw new BadRequestException('Customer ID required for credit');
-      await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
-        customerId: order.customerId,
-        amount: order.grandTotal,
-        orderId: order.id,
+      const alreadyCharged = await tx.currentAccountMovement.count({
+        where: { referenceId: order.id, entityType: 'CUSTOMER' },
       });
+      if (alreadyCharged === 0) {
+        await this.currentAccountsService.chargeCustomerSaleInTx(tx, {
+          customerId: order.customerId,
+          amount: order.grandTotal,
+          orderId: order.id,
+        });
+      }
       return;
     }
 
+    const accountId = await this.accountsService.resolvePaymentAccountInTx(
+      tx,
+      order.branchId,
+      normMethod,
+      order.cashShiftId,
+      order.paymentAccountId,
+    );
+
     const existingTreasury = await tx.financialTransaction.count({
-      where: { referenceId: order.id, type: 'DEBIT' },
+      where: { referenceId: order.id, type: 'DEBIT', accountId },
     });
     if (existingTreasury > 0) return;
 
-    const treasuryMethod =
-      order.paymentMethod === 'QR_MERCADOPAGO' ? 'QR_MERCADOPAGO' : order.paymentMethod;
-    const pm = await tx.paymentMethod.findFirst({
-      where: { type: treasuryMethod, isActive: true },
+    await this.postSaleLedgerEntry(
+      tx,
+      accountId,
+      order.grandTotal,
+      order.id,
+      `Pago confirmado via ${normMethod}${refNote}`,
+      order.customerId || 'Walk-in',
+    );
+
+    await tx.saleOrder.update({
+      where: { id: order.id },
+      data: { financialAccountId: accountId },
     });
-    if (pm?.accountId) {
-      await this.postSaleLedgerEntry(
-        tx,
-        pm.accountId,
-        order.grandTotal,
-        order.id,
-        `Pago confirmado via ${treasuryMethod}${refNote}`,
-        order.customerId || 'Walk-in',
-      );
-    }
   }
 
   private async reverseOrderFinance(tx: any, order: any) {
@@ -1029,7 +1087,7 @@ export class CheckoutOrchestrator {
     if (!creditReversed && order.customerId) {
       const creditPayments = (order.payments || []).filter(
         (p: { paymentMethod?: { type?: string }; amount: number }) =>
-          p.paymentMethod?.type === 'CUSTOMER_CREDIT',
+          normalizePaymentMethodType(p.paymentMethod?.type) === 'CUSTOMER_CREDIT',
       );
       const creditTotal = creditPayments.reduce(
         (sum: number, p: { amount: number }) => sum + p.amount,
@@ -1050,24 +1108,14 @@ export class CheckoutOrchestrator {
     dto: CreateOrderDto,
     methodType: string,
   ): Promise<string | null> {
-    if (dto.paymentAccountId) return dto.paymentAccountId;
-
-    if (dto.cashShiftId) {
-      const shift = await tx.cashShift.findUnique({
-        where: { id: dto.cashShiftId },
-        include: { cashRegister: { include: { paymentMethods: true } } },
-      });
-      const registerPm = shift?.cashRegister.paymentMethods.find(
-        (p: { type: string; isActive: boolean; accountId?: string | null }) =>
-          p.type === methodType && p.isActive,
-      );
-      if (registerPm?.accountId) return registerPm.accountId;
-    }
-
-    const pm = await tx.paymentMethod.findFirst({
-      where: { type: methodType, isActive: true },
-    });
-    return pm?.accountId ?? null;
+    const norm = normalizePaymentMethodType(methodType);
+    return this.accountsService.resolvePaymentAccountInTx(
+      tx,
+      dto.branchId,
+      norm,
+      dto.cashShiftId,
+      dto.paymentAccountId,
+    );
   }
 
   private async postSaleLedgerEntry(
@@ -1109,11 +1157,11 @@ export class CheckoutOrchestrator {
       throw new BadRequestException(`Split payments ($${splitTotal}) must equal order total ($${posTotal})`);
     }
 
+    let primaryAccountId: string | null = null;
+
     for (const split of splits) {
-      const methodType = split.method === 'QR_MERCADOPAGO' ? 'CREDIT_CARD'
-        : split.method === 'DEBIT_CARD' ? 'CREDIT_CARD'
-        : split.method === 'STORE_CREDIT' ? 'CUSTOMER_CREDIT'
-        : split.method;
+      if (split.amount <= 0.01) continue;
+      const methodType = normalizePaymentMethodType(split.method);
 
       if (methodType === 'CUSTOMER_CREDIT') {
         if (!dto.customerId) throw new BadRequestException('Customer ID required for credit payment');
@@ -1134,23 +1182,28 @@ export class CheckoutOrchestrator {
           });
         }
       } else if (methodType === 'GIFT_CARD' || methodType === 'LOYALTY') {
-        // Redemptions are processed before splits; skip duplicate ledger entries
+        // Redemptions are processed separately; skip duplicate ledger entries
       } else {
-        const pm = await tx.paymentMethod.findFirst({
-          where: { type: methodType, isActive: true },
-          include: { account: true },
-        });
-        if (pm?.accountId) {
-          const description = `Split payment via ${split.method}${split.reference ? ` Ref: ${split.reference}` : ''}`;
-          await this.postSaleLedgerEntry(
-            tx,
-            pm.accountId,
-            split.amount,
-            orderId,
-            description,
-            dto.customerId || 'Walk-in',
-          );
-        }
+        const accountId = await this.accountsService.resolvePaymentAccountInTx(
+          tx,
+          dto.branchId,
+          methodType,
+          dto.cashShiftId,
+          dto.paymentAccountId,
+        );
+        if (!primaryAccountId) primaryAccountId = accountId;
+
+        const description = `Cobro Venta #${orderId.slice(0, 8)} via ${split.method}${split.reference ? ` Ref: ${split.reference}` : ''}`;
+        await this.postSaleLedgerEntry(
+          tx,
+          accountId,
+          split.amount,
+          orderId,
+          description,
+          dto.customerId || 'Walk-in',
+        );
+
+        const pm = await this.ensurePaymentMethod(tx, methodType, accountId);
         if (pm) {
           await tx.saleOrderPayment.create({
             data: {
@@ -1162,6 +1215,13 @@ export class CheckoutOrchestrator {
           });
         }
       }
+    }
+
+    if (primaryAccountId) {
+      await tx.saleOrder.update({
+        where: { id: orderId },
+        data: { financialAccountId: primaryAccountId },
+      });
     }
   }
 
@@ -1178,15 +1238,47 @@ export class CheckoutOrchestrator {
       || 'default_category';
   }
 
-  /** Ensures a PaymentMethod row exists (e.g. CUSTOMER_CREDIT is not always seeded). */
-  private async ensurePaymentMethod(tx: any, type: string) {
-    let pm = await tx.paymentMethod.findFirst({ where: { type, isActive: true } });
-    if (pm) return pm;
-    if (type !== 'CUSTOMER_CREDIT') return null;
+  /** Ensures a PaymentMethod row exists and is linked to the specified account. */
+  private async ensurePaymentMethod(tx: any, type: string, accountId?: string) {
+    const norm = normalizePaymentMethodType(type);
+    let pm = await tx.paymentMethod.findFirst({
+      where: {
+        type: norm,
+        isActive: true,
+        ...(accountId ? { accountId } : {}),
+      },
+    });
+
+    if (!pm) {
+      pm = await tx.paymentMethod.findFirst({
+        where: { type: norm, isActive: true },
+      });
+    }
+
+    if (pm) {
+      if (accountId && !pm.accountId) {
+        pm = await tx.paymentMethod.update({
+          where: { id: pm.id },
+          data: { accountId },
+        });
+      }
+      return pm;
+    }
+
+    const defaultNames: Record<string, string> = {
+      CASH: 'Efectivo',
+      BANK_TRANSFER: 'Transferencia Bancaria',
+      CREDIT_CARD: 'Tarjeta / Pago Digital',
+      CUSTOMER_CREDIT: 'Cuenta Corriente',
+      GIFT_CARD: 'Tarjeta de Regalo',
+      LOYALTY: 'Puntos de Fidelización',
+    };
+
     pm = await tx.paymentMethod.create({
       data: {
-        name: 'Cuenta Corriente',
-        type: 'CUSTOMER_CREDIT',
+        name: defaultNames[norm] || norm,
+        type: norm,
+        accountId: accountId || null,
         isActive: true,
       },
     });
@@ -1200,7 +1292,8 @@ export class CheckoutOrchestrator {
     amount: number,
     reference?: string,
   ) {
-    const pm = await tx.paymentMethod.findFirst({ where: { type, isActive: true } });
+    const norm = normalizePaymentMethodType(type);
+    const pm = await this.ensurePaymentMethod(tx, norm);
     if (!pm) return;
     await tx.saleOrderPayment.create({
       data: {

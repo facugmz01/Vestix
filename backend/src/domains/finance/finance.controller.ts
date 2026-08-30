@@ -160,6 +160,12 @@ export class FinanceController {
     return this.accountAdjustmentsService.getAccountAdjustments(id);
   }
 
+  @Post('treasury/reconcile-orphan-sales')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  reconcileOrphanSales(@Body() body: { branchId?: string; limit?: number }) {
+    return this.accountsService.reconcileOrphanSales(body);
+  }
+
   // --- Payment Methods ---
   @Get('payment-methods')
   @RequirePermissions({ action: 'read', subject: 'Settings' }) // or Finance depending on user setup
