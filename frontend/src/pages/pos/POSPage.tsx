@@ -47,7 +47,7 @@ export default function POSPage() {
   });
 
   const { data: systemSettings } = useQuery({
-    queryKey: queryKeys.settings.all(),
+    queryKey: queryKeys.settings.get(),
     queryFn: () => settingsApi.getSettings(),
     staleTime: 300_000,
   });

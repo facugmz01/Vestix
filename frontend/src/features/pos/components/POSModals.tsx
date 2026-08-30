@@ -31,6 +31,8 @@ export function POSModals({
   isShiftLoading,
   issueInvoice,
   setIssueInvoice,
+  invoiceType,
+  setInvoiceType,
 }: {
   grandTotal: number;
   amountDue: number;
