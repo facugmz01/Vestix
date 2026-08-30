@@ -11,6 +11,7 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { generateUUID } from '@/utils/generateUUID';
 import { BankTransferDetails, hasBankTransferDetails, StorefrontStepper, StorefrontPage, StorefrontCard } from '@/components/storefront';
 import sf from '@/components/storefront/storefront.module.css';
 import styles from './storefrontCheckout.module.css';
@@ -45,7 +46,7 @@ export default function StorefrontCheckoutPage() {
 
   const mutation = useMutation({
     mutationFn: async (data: CheckoutDto) => {
-      const orderId = data.id || crypto.randomUUID();
+      const orderId = data.id || generateUUID();
       const payload = { ...data, id: orderId };
 
       if (!navigator.onLine) {

@@ -30,18 +30,91 @@ export class PosService {
     private readonly qrStore: PosQrStoreService,
   ) {}
 
-  private async findVariantByBarcode(barcode: string) {
-    const byPrimary = await this.prisma.productVariant.findUnique({
-      where: { barcode },
-      include: { product: { include: { category: true } } },
+  private async findVariantByBarcode(rawCode: string) {
+    const code = (rawCode || '').replace(/[\r\n\t]/g, '').trim();
+    if (!code) return null;
+
+    // 1. Primary barcode match
+    const byPrimary = await this.prisma.productVariant.findFirst({
+      where: {
+        barcode: { equals: code, mode: 'insensitive' },
+        isActive: true,
+        product: { isActive: true },
+      },
+      include: {
+        product: { include: { category: true, brand: true } },
+        barcodes: true,
+      },
     });
     if (byPrimary) return byPrimary;
 
-    const alt = await this.prisma.productBarcode.findUnique({
-      where: { barcode },
-      include: { variant: { include: { product: { include: { category: true } } } } },
+    // 2. Secondary/Alternate barcode match (ProductBarcode)
+    const alt = await this.prisma.productBarcode.findFirst({
+      where: {
+        barcode: { equals: code, mode: 'insensitive' },
+        variant: { isActive: true, product: { isActive: true } },
+      },
+      include: {
+        variant: {
+          include: {
+            product: { include: { category: true, brand: true } },
+            barcodes: true,
+          },
+        },
+      },
     });
-    return alt?.variant ?? null;
+    if (alt?.variant) return alt.variant;
+
+    // 3. Variant SKU match
+    const bySku = await this.prisma.productVariant.findFirst({
+      where: {
+        sku: { equals: code, mode: 'insensitive' },
+        isActive: true,
+        product: { isActive: true },
+      },
+      include: {
+        product: { include: { category: true, brand: true } },
+        barcodes: true,
+      },
+    });
+    if (bySku) return bySku;
+
+    // 4. Product baseSku match (first active variant)
+    const byBaseSku = await this.prisma.productVariant.findFirst({
+      where: {
+        product: { baseSku: { equals: code, mode: 'insensitive' }, isActive: true },
+        isActive: true,
+      },
+      include: {
+        product: { include: { category: true, brand: true } },
+        barcodes: true,
+      },
+    });
+    if (byBaseSku) return byBaseSku;
+
+    // 5. Variant ID or Product ID match (UUID lookup)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(code);
+    if (isUuid) {
+      const byId = await this.prisma.productVariant.findFirst({
+        where: { id: code, isActive: true, product: { isActive: true } },
+        include: {
+          product: { include: { category: true, brand: true } },
+          barcodes: true,
+        },
+      });
+      if (byId) return byId;
+
+      const byProductId = await this.prisma.productVariant.findFirst({
+        where: { productId: code, isActive: true, product: { isActive: true } },
+        include: {
+          product: { include: { category: true, brand: true } },
+          barcodes: true,
+        },
+      });
+      if (byProductId) return byProductId;
+    }
+
+    return null;
   }
 
   private async setQrOrderStatus(orderId: string, status: PosQrPaymentStatus) {
@@ -51,21 +124,85 @@ export class PosService {
     }
   }
 
-  async resolveBarcode(barcode: string) {
-    const variant = await this.findVariantByBarcode(barcode);
+  async resolveBarcode(
+    barcode: string,
+    options?: { branchId?: string; priceListId?: string; customerId?: string },
+  ) {
+    const cleanCode = (barcode || '').replace(/[\r\n\t]/g, '').trim();
+    const variant = await this.findVariantByBarcode(cleanCode);
 
     if (!variant) {
-      throw new NotFoundException(`Producto con código de barras ${barcode} no encontrado.`);
+      throw new NotFoundException(`Producto o variante con código "${cleanCode}" no encontrado.`);
     }
+
+    const [resolvedPrice, stockLevels, warehouses, pricingSettings] = await Promise.all([
+      this.pricingService.resolvePrice(
+        variant.id,
+        variant.basePrice,
+        options?.customerId,
+        options?.branchId,
+        options?.priceListId,
+      ),
+      this.prisma.stockLevel.findMany({ where: { variantId: variant.id } }),
+      this.prisma.warehouse.findMany({ include: { branch: true } }),
+      this.settingsService.getPricingSettings(),
+    ]);
+
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+    const totalStock = stockLevels.reduce((acc, s) => acc + s.availableQuantity, 0);
+
+    const productImages = variant.product?.images;
+    const firstProductImage = Array.isArray(productImages) ? (productImages as string[])[0] : undefined;
 
     return {
       variantId: variant.id,
+      id: variant.id,
+      productId: variant.productId,
       categoryId: variant.product.categoryId,
+      category: variant.product.category?.name,
+      brand: variant.product.brand?.name,
       sku: variant.sku,
+      barcode: variant.barcode,
+      barcodes: [variant.barcode, ...(variant.barcodes?.map(b => b.barcode) || [])].filter(Boolean),
       name: variant.product.name,
-      basePrice: variant.basePrice,
+      basePrice: resolvedPrice,
+      originalBasePrice: variant.basePrice,
+      costPrice: variant.costPrice,
       color: variant.color,
       size: variant.size,
+      attributes: variant.attributes || {},
+      imageUrl: variant.imageUrl || firstProductImage || null,
+      stock: totalStock,
+      product: {
+        id: variant.product.id,
+        name: variant.product.name,
+        baseSku: variant.product.baseSku,
+        description: variant.product.description,
+        type: variant.product.type,
+        images: Array.isArray(variant.product.images) ? variant.product.images : [],
+        category: variant.product.category ? { id: variant.product.category.id, name: variant.product.category.name } : null,
+        brand: variant.product.brand ? { id: variant.product.brand.id, name: variant.product.brand.name } : null,
+        isActive: variant.product.isActive,
+      },
+      stockLevels: stockLevels.map(s => {
+        const wh = warehouseMap.get(s.warehouseId);
+        return {
+          id: s.id,
+          warehouseId: s.warehouseId,
+          warehouseName: wh?.name || 'Depósito',
+          branchId: s.branchId || wh?.branchId,
+          branchName: wh?.branch?.name || 'Sucursal',
+          availableQuantity: s.availableQuantity,
+          physicalQuantity: s.physicalQuantity,
+          reservedQuantity: s.reservedQuantity,
+        };
+      }),
+      pricing: {
+        effectivePrice: resolvedPrice,
+        basePrice: variant.basePrice,
+        taxRate: pricingSettings?.vatDefaultPct ?? 21,
+        taxIncluded: pricingSettings?.showPricesWithTax ?? true,
+      },
     };
   }
 
@@ -200,23 +337,29 @@ export class PosService {
   async searchCatalog(
     query: string,
     customerId?: string,
-    filters?: { categoryId?: string; brandId?: string },
+    filters?: { categoryId?: string; brandId?: string; branchId?: string; priceListId?: string },
   ) {
-    const q = (query || '').trim();
+    const q = (query || '').replace(/[\r\n\t]/g, '').trim();
     const categoryId = filters?.categoryId?.trim() || undefined;
     const brandId = filters?.brandId?.trim() || undefined;
+    const branchId = filters?.branchId?.trim() || undefined;
+    const priceListId = filters?.priceListId?.trim() || undefined;
 
     // Empty query with no filters is intentional for the POS product grid
     // (frontend calls search with q=''). Purchase UIs gate requests until the
     // user types or picks a filter, so they never hit this browse path.
-    const productFilter = {
+    const productFilter: Record<string, any> = {
+      isActive: true,
       ...(categoryId ? { categoryId } : {}),
       ...(brandId ? { brandId } : {}),
     };
 
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(q);
+
     const variants = await this.prisma.productVariant.findMany({
       where: {
         isActive: true,
+        product: productFilter,
         ...(q
           ? {
               OR: [
@@ -224,10 +367,11 @@ export class PosService {
                 { barcode: { contains: q, mode: 'insensitive' } },
                 { barcodes: { some: { barcode: { contains: q, mode: 'insensitive' } } } },
                 { product: { name: { contains: q, mode: 'insensitive' } } },
+                { product: { baseSku: { contains: q, mode: 'insensitive' } } },
+                ...(isUuid ? [{ id: q }, { productId: q }] : []),
               ],
             }
           : {}),
-        ...(Object.keys(productFilter).length > 0 ? { product: productFilter } : {}),
       },
       include: {
         product: { include: { category: true, brand: true } },
@@ -237,10 +381,29 @@ export class PosService {
       orderBy: { sku: 'asc' },
     });
 
+    if (variants.length === 0) {
+      return [];
+    }
+
     const variantIds = variants.map(v => v.id);
-    const stockLevels = await this.prisma.stockLevel.findMany({
-      where: { variantId: { in: variantIds } },
-    });
+
+    // Parallel batch queries for stock, warehouses, batch pricing, and tax settings
+    const [stockLevels, warehouses, pricingSettings, priceMap] = await Promise.all([
+      this.prisma.stockLevel.findMany({
+        where: { variantId: { in: variantIds } },
+      }),
+      this.prisma.warehouse.findMany({
+        include: { branch: true },
+      }),
+      this.settingsService.getPricingSettings(),
+      this.pricingService.resolveVariantPricingBatch(
+        variants.map(v => ({ id: v.id, basePrice: v.basePrice || 0, costPrice: v.costPrice || 0 })),
+        { customerId, branchId, priceListId },
+      ),
+    ]);
+
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+
     const stockByVariant = new Map<string, typeof stockLevels>();
     for (const stock of stockLevels) {
       const arr = stockByVariant.get(stock.variantId) || [];
@@ -248,37 +411,95 @@ export class PosService {
       stockByVariant.set(stock.variantId, arr);
     }
 
-    return Promise.all(
-      variants.map(async v => {
-        const resolvedPrice = await this.pricingService.resolvePrice(
-          v.id,
-          v.basePrice || 0,
-          customerId,
-        );
-        const variantStocks = stockByVariant.get(v.id) || [];
+    const mapped = variants.map(v => {
+      const variantStocks = stockByVariant.get(v.id) || [];
+      const totalStock = variantStocks.reduce((acc, s) => acc + s.availableQuantity, 0);
+      const pricingInfo = priceMap.get(v.id) || {
+        resolvedPrice: v.basePrice || 0,
+        overridePrice: null,
+        basePrice: v.basePrice || 0,
+        priceListName: 'General',
+        currency: 'ARS',
+      };
 
-        const productImages = v.product?.images;
-        const firstProductImage = Array.isArray(productImages) ? (productImages as string[])[0] : undefined;
+      const productImages = v.product?.images;
+      const firstProductImage = Array.isArray(productImages) ? (productImages as string[])[0] : undefined;
+      const allBarcodes = [v.barcode, ...(v.barcodes?.map(b => b.barcode) || [])].filter(Boolean) as string[];
 
-        return {
-          id: v.id,
-          productId: v.productId,
-          sku: v.sku,
-          barcode: v.barcode,
-          barcodes: v.barcodes.map(b => b.barcode),
+      // Check if this variant was an exact match to the query
+      const isExactMatch = Boolean(
+        q && (
+          v.barcode?.toLowerCase() === q.toLowerCase() ||
+          v.sku?.toLowerCase() === q.toLowerCase() ||
+          allBarcodes.some(b => b.toLowerCase() === q.toLowerCase())
+        ),
+      );
+
+      return {
+        id: v.id,
+        productId: v.productId,
+        sku: v.sku,
+        barcode: v.barcode || null,
+        barcodes: allBarcodes,
+        name: v.product?.name || 'Producto Desconocido',
+        categoryId: v.product?.categoryId,
+        category: v.product?.category?.name,
+        brand: v.product?.brand?.name,
+        size: v.size || null,
+        color: v.color || null,
+        attributes: (v.attributes || {}) as Record<string, string>,
+        costPrice: v.costPrice || 0,
+        basePrice: pricingInfo.resolvedPrice,
+        originalBasePrice: v.basePrice || 0,
+        overridePrice: pricingInfo.overridePrice,
+        imageUrl: v.imageUrl || firstProductImage || null,
+        stock: totalStock,
+        isExactMatch,
+
+        // Rich nested structures for Price Inquiry & Sales Forms
+        product: {
+          id: v.product?.id,
           name: v.product?.name || 'Producto Desconocido',
-          categoryId: v.product?.categoryId,
-          category: v.product?.category?.name,
-          brand: v.product?.brand?.name,
-          size: v.size,
-          color: v.color,
-          costPrice: v.costPrice || 0,
-          basePrice: resolvedPrice,
-          imageUrl: v.imageUrl || firstProductImage || null,
-          stock: variantStocks.reduce((acc, s) => acc + s.availableQuantity, 0),
-        };
-      }),
-    );
+          baseSku: v.product?.baseSku,
+          description: v.product?.description,
+          type: v.product?.type,
+          images: Array.isArray(v.product?.images) ? (v.product.images as string[]) : [],
+          category: v.product?.category ? { id: v.product.category.id, name: v.product.category.name } : null,
+          brand: v.product?.brand ? { id: v.product.brand.id, name: v.product.brand.name } : null,
+          isActive: v.product?.isActive,
+        },
+        stockLevels: variantStocks.map(s => {
+          const wh = warehouseMap.get(s.warehouseId);
+          return {
+            id: s.id,
+            warehouseId: s.warehouseId,
+            warehouseName: wh?.name || 'Depósito',
+            branchId: s.branchId || wh?.branchId,
+            branchName: wh?.branch?.name || 'Sucursal',
+            availableQuantity: s.availableQuantity,
+            physicalQuantity: s.physicalQuantity,
+            reservedQuantity: s.reservedQuantity,
+          };
+        }),
+        pricing: {
+          effectivePrice: pricingInfo.resolvedPrice,
+          basePrice: v.basePrice || 0,
+          overridePrice: pricingInfo.overridePrice,
+          priceListId: pricingInfo.priceListId,
+          priceListName: pricingInfo.priceListName,
+          currency: pricingInfo.currency,
+          taxRate: pricingSettings?.vatDefaultPct ?? 21,
+          taxIncluded: pricingSettings?.showPricesWithTax ?? true,
+        },
+      };
+    });
+
+    // If there's an exact barcode/SKU match, sort it to the very top
+    if (q) {
+      mapped.sort((a, b) => (b.isExactMatch ? 1 : 0) - (a.isExactMatch ? 1 : 0));
+    }
+
+    return mapped;
   }
 
   async getRegisters(branchId?: string) {

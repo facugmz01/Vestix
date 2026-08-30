@@ -34,8 +34,28 @@ export class PosController {
     @Query('customerId') customerId?: string,
     @Query('categoryId') categoryId?: string,
     @Query('brandId') brandId?: string,
+    @Query('branchId') branchId?: string,
+    @Query('priceListId') priceListId?: string,
   ) {
-    return this.posService.searchCatalog(q ?? '', customerId, { categoryId, brandId });
+    return this.posService.searchCatalog(q ?? '', customerId, {
+      categoryId,
+      brandId,
+      branchId,
+      priceListId,
+    });
+  }
+
+  @Get('price-check')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  async priceCheck(
+    @Query('code') code: string,
+    @Query('q') q?: string,
+    @Query('branchId') branchId?: string,
+    @Query('priceListId') priceListId?: string,
+    @Query('customerId') customerId?: string,
+  ) {
+    const query = (code || q || '').trim();
+    return this.posService.resolveBarcode(query, { branchId, priceListId, customerId });
   }
 
   @Post('scan')

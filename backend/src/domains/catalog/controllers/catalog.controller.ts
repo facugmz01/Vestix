@@ -149,6 +149,19 @@ export class ProductsController {
     return this.productsService.findAll(query);
   }
 
+  @Get('price-check')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  priceCheck(
+    @Query('code') code: string,
+    @Query('q') q?: string,
+    @Query('branchId') branchId?: string,
+    @Query('priceListId') priceListId?: string,
+    @Query('customerId') customerId?: string,
+  ) {
+    const raw = code || q || '';
+    return this.productsService.priceCheck(raw, { branchId, priceListId, customerId });
+  }
+
   @Get(':id/price-history')
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
   getPriceHistory(@Param('id', ParseUUIDPipe) id: string) {

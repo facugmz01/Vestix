@@ -27,6 +27,7 @@ import { useGetSettings, useUpdateSettingsSection } from '../hooks/useSettings';
 import { storefrontSettingsSchema, parseStorefrontSettings, type StorefrontSettingsFormData } from '../schemas/storefrontSettings.schema';
 import { priceListsApi } from '@/api/priceLists.api';
 import { financeApi } from '@/api/finance.api';
+import { generateUUID } from '@/utils/generateUUID';
 import styles from './SettingsShared.module.css';
 import { NotificationChannelPicker } from './NotificationChannelPicker';
 
@@ -384,7 +385,7 @@ export function StorefrontSettingsPanel() {
                 <Button type="button" variant="outline" icon={<Trash2 size={16} />} onClick={() => removeShipping(index)} className={clsx(styles.btnDangerOutline, styles.deleteShippingBtn)} />
               </div>
             ))}
-            <Button type="button" variant="outline" icon={<Plus size={16} />} onClick={() => appendShipping({ id: crypto.randomUUID(), name: '', price: 0, type: 'SHIPPING' })} className={styles.btnAlignStart}>
+            <Button type="button" variant="outline" icon={<Plus size={16} />} onClick={() => appendShipping({ id: generateUUID(), name: '', price: 0, type: 'SHIPPING' })} className={styles.btnAlignStart}>
               Agregar opción
             </Button>
           </div>

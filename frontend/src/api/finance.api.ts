@@ -18,6 +18,7 @@ export interface MovementFilters {
 
 export const financeApi = {
   getTreasuryAccounts: () => get<FinancialAccount[]>('/finance/treasury/accounts'),
+  getAccounts: () => get<FinancialAccount[]>('/finance/treasury/accounts'),
 
   createTreasuryAccount: (dto: {
     name: string;
@@ -67,13 +68,29 @@ export const financeApi = {
     get<PagedResponse<CurrentAccountMovement>>(`/finance/current-accounts/${accountId}/movements`, { params: cleanParams(filters ?? {}) }),
 
   // Action endpoints for generating receipts/notes
-  registerPaymentReceipt: (accountId: string, payload: { amount: number, referenceId: string, description: string }) =>
-    post<CurrentAccountMovement>(`/finance/current-accounts/${accountId}/receipts`, payload),
+  registerPaymentReceipt: (
+    accountId: string,
+    payload: {
+      amount: number;
+      referenceId: string;
+      description?: string;
+      financialAccountId?: string;
+    },
+  ) => post<CurrentAccountMovement>(`/finance/current-accounts/${accountId}/receipts`, payload),
 
-  issueCreditNote: (accountId: string, payload: { amount: number, referenceId: string, description: string }) =>
+  linkMovementFinancialAccount: (
+    movementId: string,
+    payload: { financialAccountId: string; applyBalanceEffect?: boolean },
+  ) =>
+    patch<CurrentAccountMovement>(
+      `/finance/current-accounts/movements/${movementId}/link-financial-account`,
+      payload,
+    ),
+
+  issueCreditNote: (accountId: string, payload: { amount: number; referenceId: string; description?: string }) =>
     post<CurrentAccountMovement>(`/finance/current-accounts/${accountId}/credit-notes`, payload),
 
-  issueDebitNote: (accountId: string, payload: { amount: number, referenceId: string, description: string, dueDate: string }) =>
+  issueDebitNote: (accountId: string, payload: { amount: number; referenceId: string; description?: string; dueDate?: string }) =>
     post<CurrentAccountMovement>(`/finance/current-accounts/${accountId}/debit-notes`, payload),
 
   sendOverdueStatements: () =>

@@ -73,9 +73,18 @@ export class FinanceController {
   @RequirePermissions({ action: 'manage', subject: 'Finance' })
   registerPaymentReceipt(
     @Param('id') id: string,
-    @Body() body: { amount: number; referenceId: string; description: string },
+    @Body() body: { amount: number; referenceId: string; description?: string; financialAccountId?: string },
   ) {
     return this.currentAccountsService.registerPaymentReceipt(id, body);
+  }
+
+  @Patch('current-accounts/movements/:movementId/link-financial-account')
+  @RequirePermissions({ action: 'manage', subject: 'Finance' })
+  linkMovementFinancialAccount(
+    @Param('movementId') movementId: string,
+    @Body() body: { financialAccountId: string; applyBalanceEffect?: boolean },
+  ) {
+    return this.currentAccountsService.linkFinancialAccountToMovement(movementId, body);
   }
 
   @Post('current-accounts/:id/credit-notes')

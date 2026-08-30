@@ -1,55 +1,76 @@
-/* AdminLayout.module.css (Mobile First) */
+/* AdminLayout.module.css */
 
-/* DockWrapper (Desktop Sidebar) is hidden on mobile by default */
-.dockWrapper {
-  display: none;
-}
-
-/* Base Canvas for mobile */
-.canvas {
-  flex: 1; 
-  min-width: 0;
-  display: flex; 
-  flex-direction: column;
-  gap: 16px; /* slightly smaller gap on mobile */
+.workspace {
+  position: relative;
+  display: flex;
+  width: 100vw;
+  height: 100dvh;
+  padding: 12px;
+  gap: 16px;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* Base Content area for mobile */
+/* Sidebar Wrapper on Desktop */
+.sidebarWrapper {
+  display: none;
+  height: 100%;
+  flex-shrink: 0;
+  width: 272px;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebarWrapperCollapsed {
+  width: 72px;
+}
+
+/* Main Content Canvas */
+.canvas {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Scrollable Main Area */
 .content {
   flex: 1;
-  padding: 16px; 
-  /* Safe area padding for bottom nav */
-  padding-bottom: max(80px, env(safe-area-inset-bottom, 80px)); 
+  min-width: 0;
   width: 100%;
-  margin: 0 auto;
-  overflow-y: visible; /* on mobile, we might scroll the whole page or just this container */
-  animation: fadeIn 0.22s ease;
-}
-
-/* Animations */
-@keyframes fadeIn { 
-  from { opacity: 0; transform: translateY(6px); } 
-  to { opacity: 1; transform: translateY(0); } 
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 4px 72px 4px; /* Space for bottom nav on mobile */
+  outline: none;
 }
 
 /* --- Breakpoints --- */
 
-/* Tablet and Desktop */
 @media (min-width: 768px) {
-  .canvas {
-    gap: 24px;
+  .workspace {
+    padding: 16px;
+    gap: 20px;
   }
+
+  .canvas {
+    gap: 16px;
+  }
+
   .content {
-    padding: 0 16px 24px 16px;
-    max-width: none;
-    overflow-y: auto; /* internal scroll */
+    padding: 4px 4px 24px 4px;
   }
 }
 
-/* Desktop Only (Sidebar visible) */
 @media (min-width: 1024px) {
-  .dockWrapper {
+  .sidebarWrapper {
     display: flex;
+  }
+
+  .workspace {
+    padding: 16px 20px;
+    gap: 20px;
   }
 }

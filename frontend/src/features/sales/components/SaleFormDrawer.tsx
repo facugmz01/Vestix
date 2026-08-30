@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { X, Calculator, Percent, Search, Package } from 'lucide-react';
 import clsx from 'clsx';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { generateUUID } from '@/utils/generateUUID';
 import styles from './SaleFormDrawer.module.css';
 
 interface Props {
@@ -184,7 +185,7 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
       }
 
       const payload = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         branchId,
         warehouseId,
         customerId: customerId || undefined,

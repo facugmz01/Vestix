@@ -592,6 +592,13 @@ export interface CurrentAccountMovement {
   balanceAfter: number;
   dueDate?: string;
   status?: MovementStatus;
+  financialAccountId?: string | null;
+  financialAccount?: {
+    id: string;
+    name: string;
+    type: string;
+    currency?: string;
+  } | null;
 }
 
 export interface CurrentAccount {

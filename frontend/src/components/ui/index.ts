@@ -1,4 +1,4 @@
-// ─── Existing components (already generated) ──────────────────────────────────
+// ─── Core UI Primitives ────────────────────────────────────────────────────────
 export { Button }       from './Button';
 export { Badge }        from './Badge';
 export { Card }         from './Card';
@@ -7,10 +7,12 @@ export { Table }        from './Table';
 export { Modal }        from './Modal';
 export { Spinner, PageSpinner } from './Spinner';
 
-// ─── New components ────────────────────────────────────────────────────────────
+// ─── Layout Primitives ────────────────────────────────────────────────────────
 export { PageContainer }  from './PageContainer';
+export type { PageContainerProps } from './PageContainer';
 export { PageHeader }     from './PageHeader';
-export { Section }        from './Section';
+export type { PageHeaderProps } from './PageHeader';
+export { Section, Section as ContentSection } from './Section';
 export { SearchInput }    from './SearchInput';
 export { FiltersBar }     from './FiltersBar';
 export { Pagination }     from './Pagination';

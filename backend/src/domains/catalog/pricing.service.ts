@@ -58,7 +58,7 @@ export class PricingService {
     return entry;
   }
 
-  private async findDefaultPriceList(): Promise<PriceList | null> {
+  async findDefaultPriceList(): Promise<PriceList | null> {
     const pricing = await this.settingsService.getPricingSettings();
     if (pricing?.defaultPriceListId) {
       const fromSettings = await this.prisma.priceList.findFirst({
@@ -70,6 +70,50 @@ export class PricingService {
     return this.prisma.priceList.findFirst({
       where: { isDefault: true, isActive: true },
     });
+  }
+
+  async resolveActivePriceList(options?: {
+    customerId?: string;
+    branchId?: string;
+    priceListId?: string;
+  }): Promise<PriceList | null> {
+    // 1. Explicit price list
+    if (options?.priceListId) {
+      const explicit = await this.prisma.priceList.findUnique({
+        where: { id: options.priceListId },
+      });
+      if (explicit && explicit.isActive) return explicit;
+    }
+
+    // 2. Customer assigned price list
+    if (options?.customerId) {
+      const customer = await this.prisma.customer.findUnique({
+        where: { id: options.customerId },
+        include: { priceList: true },
+      });
+      if (customer?.priceList?.isActive) {
+        return customer.priceList;
+      }
+    }
+
+    // 3. Branch assigned default price list
+    if (options?.branchId) {
+      const branch = await this.prisma.branch.findUnique({
+        where: { id: options.branchId },
+      });
+      const settings = (branch?.settings || {}) as Record<string, any>;
+      if (settings?.defaultPriceListId) {
+        const branchPriceList = await this.prisma.priceList.findUnique({
+          where: { id: settings.defaultPriceListId },
+        });
+        if (branchPriceList && branchPriceList.isActive) {
+          return branchPriceList;
+        }
+      }
+    }
+
+    // 4. Global Settings default price list
+    return this.findDefaultPriceList();
   }
 
   private isModifierList(list: Pick<PriceList, 'type' | 'isPercentageBased'>): boolean {
@@ -98,7 +142,7 @@ export class PricingService {
     if (entryOverride != null) return entryOverride;
     return variant.basePrice > 0
       ? variant.basePrice
-      : Number((variant.costPrice * list.margin).toFixed(2));
+      : Number((variant.costPrice * (list.margin || 1.0)).toFixed(2));
   }
 
   private isListValidNow(list: Pick<PriceList, 'validFrom' | 'validTo'>, now = new Date()): boolean {
@@ -107,22 +151,14 @@ export class PricingService {
     return true;
   }
 
-  async resolvePrice(variantId: string, basePrice: number, customerId?: string): Promise<number> {
-    let activePriceList: PriceList | null = null;
-
-    if (customerId) {
-      const customer = await this.prisma.customer.findUnique({
-        where: { id: customerId },
-        include: { priceList: true },
-      });
-      if (customer?.priceList?.isActive) {
-        activePriceList = customer.priceList;
-      }
-    }
-
-    if (!activePriceList) {
-      activePriceList = await this.findDefaultPriceList();
-    }
+  async resolvePrice(
+    variantId: string,
+    basePrice: number,
+    customerId?: string,
+    branchId?: string,
+    priceListId?: string,
+  ): Promise<number> {
+    const activePriceList = await this.resolveActivePriceList({ customerId, branchId, priceListId });
 
     if (!activePriceList || !this.isListValidNow(activePriceList)) return basePrice;
 
@@ -141,6 +177,85 @@ export class PricingService {
         });
 
     return this.computePriceFromList(activePriceList, variant, entry?.overridePrice);
+  }
+
+  /**
+   * Ultra-fast batch variant pricing resolver that resolves all prices in a single query.
+   * Eliminates the N+1 database problem in catalog searches, POS and price checkers.
+   */
+  async resolveVariantPricingBatch(
+    variants: Array<{ id: string; basePrice: number; costPrice: number }>,
+    options?: { customerId?: string; branchId?: string; priceListId?: string },
+  ): Promise<
+    Map<
+      string,
+      {
+        resolvedPrice: number;
+        overridePrice: number | null;
+        basePrice: number;
+        priceListName: string;
+        priceListId?: string;
+        currency: string;
+      }
+    >
+  > {
+    const result = new Map<
+      string,
+      {
+        resolvedPrice: number;
+        overridePrice: number | null;
+        basePrice: number;
+        priceListName: string;
+        priceListId?: string;
+        currency: string;
+      }
+    >();
+
+    if (!variants.length) return result;
+
+    const activePriceList = await this.resolveActivePriceList(options);
+    const now = new Date();
+    const isListActive = activePriceList && activePriceList.isActive && this.isListValidNow(activePriceList, now);
+
+    const variantIds = variants.map(v => v.id);
+    let entryMap = new Map<string, number>();
+
+    if (isListActive && !this.isModifierList(activePriceList)) {
+      const entries = await this.prisma.priceListEntry.findMany({
+        where: {
+          priceListId: activePriceList.id,
+          variantId: { in: variantIds },
+        },
+      });
+      entryMap = new Map(entries.map(e => [e.variantId, e.overridePrice]));
+    }
+
+    for (const variant of variants) {
+      if (!isListActive) {
+        result.set(variant.id, {
+          resolvedPrice: variant.basePrice,
+          overridePrice: null,
+          basePrice: variant.basePrice,
+          priceListName: 'General',
+          currency: 'ARS',
+        });
+        continue;
+      }
+
+      const override = entryMap.get(variant.id) ?? null;
+      const computed = this.computePriceFromList(activePriceList, variant, override);
+
+      result.set(variant.id, {
+        resolvedPrice: computed,
+        overridePrice: override,
+        basePrice: variant.basePrice,
+        priceListName: activePriceList.name,
+        priceListId: activePriceList.id,
+        currency: activePriceList.currency || 'ARS',
+      });
+    }
+
+    return result;
   }
 
   async resolvePricesForVariants(
@@ -195,7 +310,7 @@ export class PricingService {
       ? null
       : await this.prisma.priceListEntry.findUnique({
           where: {
-            priceListId_variantId: { priceListId, variantId },
+            priceListId_variantId: { priceListId: activePriceList.id, variantId },
           },
         });
 

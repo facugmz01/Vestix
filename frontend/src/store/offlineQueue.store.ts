@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import { get, set, del } from 'idb-keyval';
+import { generateUUID } from '@/utils/generateUUID';
 
 // ─── Custom IndexedDB Storage Driver ──────────────────────────────────────────
 const idbStorage: StateStorage = {
@@ -71,7 +72,7 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
           ...s.operations,
           {
             ...op,
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             createdAt: new Date().toISOString(),
             status: 'PENDING',
             retryCount: 0,

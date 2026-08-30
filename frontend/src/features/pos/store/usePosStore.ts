@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { generateUUID } from '@/utils/generateUUID';
 import type { ProductVariant } from '@/types';
 
 export interface CartItem {
@@ -226,7 +227,7 @@ export const usePosStore = create<PosState>()(
       suspendSale: (total) => set((state) => {
         if (state.cart.length === 0) return state;
         const newSale: SuspendedSale = {
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           date: new Date().toISOString(),
           cart: state.cart,
           customerId: state.selectedCustomerId,

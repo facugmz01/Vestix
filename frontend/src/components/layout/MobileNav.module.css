@@ -1,70 +1,302 @@
-.nav {
-  display: none;
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+/* ─── MOBILE NAV & DRAWER (Clean Minimalist) ─────────────────────────────── */
+
+/* ── 1. BOTTOM QUICK TAB BAR (< 1024px) ─────────────────────────────────── */
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
   background: var(--surface-0);
-  border-top: 1px solid var(--border-strong);
-  padding: 8px 0 env(safe-area-inset-bottom, 8px);
-  justify-content: space-around; align-items: center;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  z-index: 900;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
 }
-@media (max-width: 1023px) { .nav { display: flex; } }
 
-.tab {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  flex: 1; padding: 6px 4px;
-  color: var(--text-secondary); font-size: 11px; font-weight: 500;
-  text-decoration: none; transition: color .15s, background .15s;
-  border-radius: var(--radius-sm);
-  margin: 0 2px;
-}
-.tab:hover { color: var(--text-primary); background: var(--surface-1); }
-.tab.active {
-  color: var(--accent);
-  font-weight: 600;
-  background: var(--accent-subtle);
-}
-.label { line-height: 1.2; }
-
-.menuStack {
+.bottomTab {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 16px 0;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.menuGroupTitle {
-  font-size: 12px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 0 0 12px;
-  padding-left: 12px;
+.bottomTab:hover {
+  color: var(--text-primary);
+}
+
+.bottomTabActive {
+  color: var(--accent);
   font-weight: 600;
 }
 
-.menuLinks {
+.bottomTabLabel {
+  font-size: 10px;
+  letter-spacing: -0.01em;
+}
+
+.posQuickTab {
+  color: var(--accent);
+}
+
+.posTabIcon {
+  filter: drop-shadow(0 2px 6px var(--accent-glow));
+}
+
+/* ── 2. MOBILE DRAWER WITH BACKDROP ─────────────────────────────────────── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  animation: fadeInBackdrop 0.2s ease forwards;
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mobileDrawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(84vw, 320px);
+  background: var(--surface-0);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.drawerOpen {
+  transform: translateX(0);
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.drawerBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawerLogo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent) 0%, #38bdf8 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.drawerTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+}
+
+.drawerSubtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.drawerPosLauncher {
+  padding: 12px 14px 6px 14px;
+  flex-shrink: 0;
+}
+
+.drawerPosBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius, 12px);
+  background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.drawerNavStack {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px 24px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawerSegment {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.menuLink {
+.drawerSegmentTitle {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 4px 8px;
+}
+
+.drawerLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawerItemWrapper {
+  width: 100%;
+}
+
+.drawerParentRow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  justify-content: space-between;
+}
+
+.drawerLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm, 8px);
+  color: var(--text-secondary);
   text-decoration: none;
-  border-radius: 8px;
-  color: var(--text-primary);
+  font-size: 13px;
   font-weight: 500;
-  transition: background 0.2s;
+  flex: 1;
+  transition: all 0.15s ease;
 }
 
-.menuLink:hover {
-  background: var(--bg-elevated);
+.drawerLink:hover {
+  background: var(--surface-1);
+  color: var(--text-primary);
 }
 
-.menuLinkActive {
+.drawerLinkActive {
+  background: var(--accent-subtle);
   color: var(--accent);
-  background: var(--bg-elevated);
   font-weight: 600;
+}
+
+.drawerChevronBtn {
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.drawerSubLinks {
+  margin-left: 16px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+.drawerSubLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.drawerSubLink:hover {
+  color: var(--text-primary);
+  background: var(--surface-1);
+}
+
+.drawerSubLinkActive {
+  color: var(--accent);
+  background: var(--accent-subtle);
+  font-weight: 600;
+}
+
+.drawerSubDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Hide mobile bottom bar on desktop */
+@media (min-width: 1024px) {
+  .bottomBar {
+    display: none;
+  }
 }

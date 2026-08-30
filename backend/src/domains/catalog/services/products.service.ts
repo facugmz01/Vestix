@@ -7,6 +7,7 @@ import { SettingsService } from '../../../modules/settings/settings.service';
 import { PriceHistoryService } from './price-history.service';
 import { IdentifiersService } from '../identifiers.service';
 import { MediaService } from './media.service';
+import { PricingService } from '../pricing.service';
 import { BulkValidateDto, BulkImportDto } from '../dto/bulk-product.dto';
 import { BulkUpdatePricesDto } from '../dto/bulk-update-prices.dto';
 import { isVariableProduct, normalizeProductType, syncIsVariableFlag } from '../utils/product-type.util';
@@ -28,6 +29,7 @@ export class ProductsService {
     private readonly priceHistoryService: PriceHistoryService,
     private readonly identifiersService: IdentifiersService,
     private readonly mediaService: MediaService,
+    private readonly pricingService: PricingService,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -1241,6 +1243,181 @@ export class ProductsService {
       inStock: totalStock > 0,
       totalStock,
       variants: mappedVariants,
+    };
+  }
+
+  async priceCheck(
+    rawCode: string,
+    options?: { branchId?: string; priceListId?: string; customerId?: string },
+  ) {
+    const code = (rawCode || '').replace(/[\r\n\t]/g, '').trim();
+    if (!code) {
+      throw new BadRequestException('Debe ingresar un código de barras o SKU');
+    }
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(code);
+
+    // Search for matching variants or product by barcode, secondary barcode, SKU, baseSku, product name, or UUID
+    const matchingVariants = await this.prisma.productVariant.findMany({
+      where: {
+        isActive: true,
+        product: { isActive: true },
+        OR: [
+          { barcode: { equals: code, mode: 'insensitive' } },
+          { barcodes: { some: { barcode: { equals: code, mode: 'insensitive' } } } },
+          { sku: { equals: code, mode: 'insensitive' } },
+          { product: { baseSku: { equals: code, mode: 'insensitive' } } },
+          { sku: { contains: code, mode: 'insensitive' } },
+          { barcode: { contains: code, mode: 'insensitive' } },
+          { product: { name: { contains: code, mode: 'insensitive' } } },
+          ...(isUuid ? [{ id: code }, { productId: code }] : []),
+        ],
+      },
+      include: {
+        product: {
+          include: {
+            category: true,
+            brand: true,
+            variants: {
+              where: { isActive: true },
+              include: { barcodes: true },
+              orderBy: { sku: 'asc' },
+            },
+          },
+        },
+        barcodes: true,
+      },
+      take: 25,
+    });
+
+    if (matchingVariants.length === 0) {
+      throw new NotFoundException(`No se encontró ningún artículo para el código "${code}"`);
+    }
+
+    // Determine primary product (first matched variant's parent product)
+    const primaryProduct = matchingVariants[0].product;
+    const allProductVariants = primaryProduct.variants;
+    const allVariantIds = allProductVariants.map(v => v.id);
+
+    const [stockLevels, warehouses, pricingSettings, priceMap] = await Promise.all([
+      this.prisma.stockLevel.findMany({
+        where: { variantId: { in: allVariantIds } },
+      }),
+      this.prisma.warehouse.findMany({
+        include: { branch: true },
+      }),
+      this.settingsService.getPricingSettings(),
+      this.pricingService.resolveVariantPricingBatch(
+        allProductVariants.map(v => ({ id: v.id, basePrice: v.basePrice || 0, costPrice: v.costPrice || 0 })),
+        options,
+      ),
+    ]);
+
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
+    const stockByVariant = new Map<string, typeof stockLevels>();
+    for (const stock of stockLevels) {
+      const arr = stockByVariant.get(stock.variantId) || [];
+      arr.push(stock);
+      stockByVariant.set(stock.variantId, arr);
+    }
+
+    const formatVariant = (v: (typeof allProductVariants)[0]) => {
+      const variantStocks = stockByVariant.get(v.id) || [];
+      const totalAvailable = variantStocks.reduce((sum, s) => sum + s.availableQuantity, 0);
+      const totalPhysical = variantStocks.reduce((sum, s) => sum + s.physicalQuantity, 0);
+      const totalReserved = variantStocks.reduce((sum, s) => sum + s.reservedQuantity, 0);
+      const pricing = priceMap.get(v.id) || {
+        resolvedPrice: v.basePrice || 0,
+        overridePrice: null,
+        basePrice: v.basePrice || 0,
+        priceListName: 'General',
+        currency: 'ARS',
+      };
+
+      const allBarcodes = [v.barcode, ...(v.barcodes?.map(b => b.barcode) || [])].filter(Boolean) as string[];
+
+      const isScanned = Boolean(
+        v.barcode?.toLowerCase() === code.toLowerCase() ||
+        v.sku?.toLowerCase() === code.toLowerCase() ||
+        allBarcodes.some(b => b.toLowerCase() === code.toLowerCase()),
+      );
+
+      return {
+        id: v.id,
+        productId: v.productId,
+        sku: v.sku,
+        barcode: v.barcode || null,
+        barcodes: allBarcodes,
+        size: v.size || null,
+        color: v.color || null,
+        attributes: (v.attributes || {}) as Record<string, string>,
+        imageUrl: v.imageUrl || (Array.isArray(primaryProduct.images) ? (primaryProduct.images as string[])[0] : null),
+        costPrice: v.costPrice || 0,
+        basePrice: v.basePrice || 0,
+        overridePrice: pricing.overridePrice,
+        effectivePrice: pricing.resolvedPrice,
+        isScannedMatch: isScanned,
+        stock: {
+          available: totalAvailable,
+          physical: totalPhysical,
+          reserved: totalReserved,
+          byWarehouse: variantStocks.map(s => {
+            const wh = warehouseMap.get(s.warehouseId);
+            return {
+              warehouseId: s.warehouseId,
+              warehouseName: wh?.name || 'Depósito',
+              branchId: s.branchId || wh?.branchId,
+              branchName: wh?.branch?.name || 'Sucursal',
+              availableQuantity: s.availableQuantity,
+              physicalQuantity: s.physicalQuantity,
+              reservedQuantity: s.reservedQuantity,
+            };
+          }),
+        },
+      };
+    };
+
+    const formattedVariants = allProductVariants.map(formatVariant);
+    const matched = formattedVariants.find(v => v.isScannedMatch) || formattedVariants[0];
+
+    const prices = formattedVariants.map(v => v.effectivePrice);
+    const minPrice = prices.length ? Math.min(...prices) : 0;
+    const maxPrice = prices.length ? Math.max(...prices) : 0;
+
+    const totalAvailable = formattedVariants.reduce((sum, v) => sum + v.stock.available, 0);
+    const totalPhysical = formattedVariants.reduce((sum, v) => sum + v.stock.physical, 0);
+
+    return {
+      query: code,
+      found: true,
+      product: {
+        id: primaryProduct.id,
+        name: primaryProduct.name,
+        baseSku: primaryProduct.baseSku || null,
+        description: primaryProduct.description || null,
+        type: primaryProduct.type,
+        images: Array.isArray(primaryProduct.images) ? (primaryProduct.images as string[]) : [],
+        category: primaryProduct.category ? { id: primaryProduct.category.id, name: primaryProduct.category.name } : null,
+        brand: primaryProduct.brand ? { id: primaryProduct.brand.id, name: primaryProduct.brand.name } : null,
+        costPrice: primaryProduct.costPrice || 0,
+        isActive: primaryProduct.isActive,
+      },
+      matchedVariant: matched,
+      variants: formattedVariants,
+      pricingSummary: {
+        minPrice,
+        maxPrice,
+        currency: 'ARS',
+        priceListName: priceMap.get(matched.id)?.priceListName || 'General',
+        priceListId: priceMap.get(matched.id)?.priceListId,
+        vatDefaultPct: pricingSettings?.vatDefaultPct ?? 21,
+        showPricesWithTax: pricingSettings?.showPricesWithTax ?? true,
+      },
+      stockSummary: {
+        totalAvailable,
+        totalPhysical,
+        warehousesCount: warehouses.length,
+      },
     };
   }
 }

@@ -1,3 +1,5 @@
+import { generateUUID } from './generateUUID';
+
 const STORAGE_KEY = 'driver_gps_queue_v1';
 
 export interface QueuedGpsPoint {
@@ -24,7 +26,7 @@ function writeQueue(queue: QueuedGpsPoint[]) {
 export function enqueueGpsPoint(token: string, latitude: number, longitude: number) {
   const queue = readQueue();
   queue.push({
-    id: crypto.randomUUID(),
+    id: generateUUID(),
     token,
     latitude,
     longitude,

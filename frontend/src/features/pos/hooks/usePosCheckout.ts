@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { get } from '@/api/client';
 import { warehousesApi } from '@/api/warehouses.api';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { generateUUID } from '@/utils/generateUUID';
 import type { SaleOrder, PaymentMethod, ProductVariant } from '@/types';
 
 function buildOfflineReceipt(dto: Record<string, unknown>): SaleOrder {
@@ -75,7 +76,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         throw new Error('El carrito está vacío');
       }
 
-      const orderId = crypto.randomUUID();
+      const orderId = generateUUID();
 
       let resolvedPaymentReference = paymentReference || undefined;
       if (paymentMethod === 'QR_MERCADOPAGO' && qrOrderId) {

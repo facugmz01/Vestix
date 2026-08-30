@@ -78,4 +78,56 @@ describe('CurrentAccountsService', () => {
 
     await expect(service.findById('missing')).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('should register payment receipt and credit financial account', async () => {
+    const tx = {
+      financialAccount: {
+        findUnique: jest.fn<any>().mockResolvedValue({ id: 'fa-1', name: 'Caja Principal', balance: 5000, isActive: true, type: 'CASH' }),
+        update: jest.fn<any>().mockResolvedValue({ id: 'fa-1', balance: 6000 }),
+      },
+      financialTransaction: {
+        create: jest.fn<any>().mockResolvedValue({ id: 'ft-1' }),
+      },
+      paymentReceipt: {
+        create: jest.fn<any>().mockResolvedValue({ id: 'pr-1' }),
+      },
+      customer: {
+        update: jest.fn<any>().mockResolvedValue({ id: 'cust-1', usedCredit: 500 }),
+      },
+      currentAccountMovement: {
+        create: jest.fn<any>().mockResolvedValue({
+          id: 'mov-1',
+          accountId: 'cust-1',
+          documentType: 'RECEIPT',
+          referenceId: 'REC-001',
+          description: 'Cobro en efectivo',
+          amount: 1000,
+          credit: 1000,
+          debit: 0,
+          balanceAfter: 500,
+          createdAt: new Date(),
+          financialAccountId: 'fa-1',
+          financialAccount: { id: 'fa-1', name: 'Caja Principal', type: 'CASH', currency: 'ARS' },
+        }),
+      },
+    };
+
+    mockPrisma.$transaction = jest.fn<any>((cb: any) => cb(tx));
+    mockPrisma.customer.findUnique.mockResolvedValueOnce({ id: 'cust-1', fullName: 'Cliente A', usedCredit: 1500 });
+
+    const res = await service.registerPaymentReceipt('cust-1', {
+      amount: 1000,
+      referenceId: 'REC-001',
+      description: 'Cobro en efectivo',
+      financialAccountId: 'fa-1',
+    });
+
+    expect(res.amount).toBe(1000);
+    expect(res.financialAccountId).toBe('fa-1');
+    expect(tx.financialAccount.update).toHaveBeenCalledWith({
+      where: { id: 'fa-1' },
+      data: { balance: { increment: 1000 } },
+    });
+    expect(tx.financialTransaction.create).toHaveBeenCalled();
+  });
 });

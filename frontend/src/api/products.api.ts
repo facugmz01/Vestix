@@ -88,6 +88,16 @@ export const productsApi = {
       `/products/${id}/price-history`,
     ),
 
+  priceCheck: (code: string, options?: { branchId?: string; priceListId?: string; customerId?: string }) =>
+    get<any>('/products/price-check', {
+      params: {
+        code,
+        branchId: options?.branchId,
+        priceListId: options?.priceListId,
+        customerId: options?.customerId,
+      },
+    }),
+
   migrateBase64Images: () =>
     post<{ migratedProducts: number; migratedImages: number }>('/products/migrate-base64-images'),
 };

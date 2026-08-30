@@ -3,6 +3,7 @@ import { Modal, Button, Input } from '@/components/ui';
 import { Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { generateUUID } from '@/utils/generateUUID';
 import { usePosStore } from '../store/usePosStore';
 import type { PaymentMethodType } from '@/types';
 import styles from '@/pages/pos/POSPage.module.css';
@@ -51,7 +52,7 @@ export function PosMixedPaymentModal({ open, grandTotal, onClose, onConfirm, isL
       return;
     }
     setLines(prev => [...prev, {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       method: 'CREDIT_CARD',
       amount: remaining,
       reference: '',

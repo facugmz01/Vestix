@@ -842,9 +842,10 @@ model FinancialAccount {
   paymentMethods PaymentMethod[]
 
   // Relaciones inversas agregadas
-  saleOrders       SaleOrder[]
-  paymentReceipts  PaymentReceipt[]
-  treasuryReceipts TreasuryReceipt[]
+  saleOrders              SaleOrder[]
+  paymentReceipts         PaymentReceipt[]
+  treasuryReceipts        TreasuryReceipt[]
+  currentAccountMovements CurrentAccountMovement[]
 
   @@schema("finance")
 }
@@ -943,21 +944,24 @@ model CashShift {
 }
 
 model CurrentAccountMovement {
-  id           String   @id @default(uuid())
-  accountId    String
-  entityType   String   // CUSTOMER | SUPPLIER
-  documentType String   // RECEIPT | CREDIT_NOTE | DEBIT_NOTE
-  referenceId  String
-  description  String
-  amount       Float
-  debit        Float    @default(0)
-  credit       Float    @default(0)
-  balanceAfter Float
-  dueDate      DateTime?
-  createdAt    DateTime @default(now())
+  id                 String            @id @default(uuid())
+  accountId          String
+  entityType         String            // CUSTOMER | SUPPLIER
+  documentType       String            // RECEIPT | CREDIT_NOTE | DEBIT_NOTE
+  referenceId        String
+  description        String
+  amount             Float
+  debit              Float             @default(0)
+  credit             Float             @default(0)
+  balanceAfter       Float
+  dueDate            DateTime?
+  financialAccountId String?
+  financialAccount   FinancialAccount? @relation(fields: [financialAccountId], references: [id])
+  createdAt          DateTime          @default(now())
 
   @@index([accountId])
   @@index([entityType])
+  @@index([financialAccountId])
   @@index([createdAt])
   @@schema("finance")
 }

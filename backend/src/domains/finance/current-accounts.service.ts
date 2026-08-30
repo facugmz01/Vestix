@@ -79,6 +79,11 @@ export class CurrentAccountsService {
 
     const manualMovements = await this.prisma.currentAccountMovement.findMany({
       where: { accountId },
+      include: {
+        financialAccount: {
+          select: { id: true, name: true, type: true, currency: true },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -125,6 +130,8 @@ export class CurrentAccountsService {
           debit,
           credit: 0,
           balanceAfter: 0,
+          financialAccountId: null,
+          financialAccount: null,
         });
       }
     } else {
@@ -151,6 +158,8 @@ export class CurrentAccountsService {
           debit: 0,
           credit: outstanding,
           balanceAfter: 0,
+          financialAccountId: null,
+          financialAccount: null,
         });
       }
     }
@@ -173,6 +182,8 @@ export class CurrentAccountsService {
       credit: number;
       balanceAfter: number;
       dueDate?: Date | null;
+      financialAccountId?: string | null;
+      financialAccount?: { id: string; name: string; type: string; currency: string } | null;
       createdAt: Date;
     },
     accountId: string,
@@ -187,6 +198,8 @@ export class CurrentAccountsService {
     credit: number;
     balanceAfter: number;
     dueDate?: string;
+    financialAccountId?: string | null;
+    financialAccount?: { id: string; name: string; type: string; currency: string } | null;
   } {
     return {
       id: m.id,
@@ -199,6 +212,8 @@ export class CurrentAccountsService {
       credit: m.credit,
       balanceAfter: m.balanceAfter,
       ...(m.dueDate ? { dueDate: m.dueDate.toISOString() } : {}),
+      financialAccountId: m.financialAccountId || null,
+      financialAccount: m.financialAccount || null,
     };
   }
 
@@ -335,15 +350,91 @@ export class CurrentAccountsService {
 
   async registerPaymentReceipt(
     accountId: string,
-    payload: { amount: number; referenceId: string; description: string },
+    payload: {
+      amount: number;
+      referenceId: string;
+      description?: string;
+      financialAccountId?: string;
+    },
   ) {
     return this.applyMovement(accountId, {
       documentType: 'RECEIPT',
       referenceId: payload.referenceId,
       description: payload.description || 'Recibo de cobro',
       amount: payload.amount,
+      financialAccountId: payload.financialAccountId,
       customerEffect: 'decrement',
       supplierEffect: 'decrement',
+    });
+  }
+
+  async linkFinancialAccountToMovement(
+    movementId: string,
+    payload: { financialAccountId: string; applyBalanceEffect?: boolean },
+  ) {
+    const movement = await this.prisma.currentAccountMovement.findUnique({
+      where: { id: movementId },
+    });
+    if (!movement) throw new NotFoundException('Movimiento de cuenta corriente no encontrado');
+
+    const financialAccount = await this.prisma.financialAccount.findUnique({
+      where: { id: payload.financialAccountId },
+    });
+    if (!financialAccount || !financialAccount.isActive) {
+      throw new NotFoundException('Cuenta financiera no encontrada o inactiva');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const applyEffect = payload.applyBalanceEffect ?? !movement.financialAccountId;
+
+      if (applyEffect && movement.documentType === 'RECEIPT') {
+        if (movement.entityType === 'CUSTOMER') {
+          await tx.financialTransaction.create({
+            data: {
+              accountId: payload.financialAccountId,
+              type: 'DEBIT',
+              amount: movement.amount,
+              referenceId: movement.referenceId || movement.id,
+              description: movement.description || `Cobranza CC vinculada - ${movement.referenceId}`,
+            },
+          });
+          await tx.financialAccount.update({
+            where: { id: payload.financialAccountId },
+            data: { balance: { increment: movement.amount } },
+          });
+        } else if (movement.entityType === 'SUPPLIER') {
+          if (financialAccount.type === 'CASH' && financialAccount.balance < movement.amount) {
+            throw new BadRequestException(
+              `Fondos insuficientes en la cuenta ${financialAccount.name}. Saldo: $${financialAccount.balance}`,
+            );
+          }
+          await tx.financialTransaction.create({
+            data: {
+              accountId: payload.financialAccountId,
+              type: 'CREDIT',
+              amount: movement.amount,
+              referenceId: movement.referenceId || movement.id,
+              description: movement.description || `Pago CC vinculado - ${movement.referenceId}`,
+            },
+          });
+          await tx.financialAccount.update({
+            where: { id: payload.financialAccountId },
+            data: { balance: { decrement: movement.amount } },
+          });
+        }
+      }
+
+      const updated = await tx.currentAccountMovement.update({
+        where: { id: movementId },
+        data: { financialAccountId: payload.financialAccountId },
+        include: {
+          financialAccount: {
+            select: { id: true, name: true, type: true, currency: true },
+          },
+        },
+      });
+
+      return this.mapMovementRow(updated, updated.accountId);
     });
   }
 
@@ -383,6 +474,7 @@ export class CurrentAccountsService {
       referenceId: string;
       description: string;
       amount: number;
+      financialAccountId?: string;
       customerEffect: 'increment' | 'decrement';
       supplierEffect: 'increment' | 'decrement';
       dueDate?: Date;
@@ -395,6 +487,42 @@ export class CurrentAccountsService {
     const customer = await this.prisma.customer.findUnique({ where: { id: accountId } });
     if (customer) {
       return this.prisma.$transaction(async (tx) => {
+        let financialAccount: any = null;
+        if (input.financialAccountId) {
+          financialAccount = await tx.financialAccount.findUnique({
+            where: { id: input.financialAccountId },
+          });
+          if (!financialAccount || !financialAccount.isActive) {
+            throw new NotFoundException('Cuenta financiera no encontrada o inactiva');
+          }
+
+          if (input.documentType === 'RECEIPT') {
+            await tx.financialTransaction.create({
+              data: {
+                accountId: input.financialAccountId,
+                type: 'DEBIT',
+                amount: input.amount,
+                referenceId: input.referenceId,
+                description: input.description || `Cobranza CC - ${customer.fullName}`,
+              },
+            });
+
+            await tx.financialAccount.update({
+              where: { id: input.financialAccountId },
+              data: { balance: { increment: input.amount } },
+            });
+
+            await tx.paymentReceipt.create({
+              data: {
+                accountId: input.financialAccountId,
+                amount: input.amount,
+                payerName: customer.fullName,
+                referenceId: input.referenceId,
+              },
+            });
+          }
+        }
+
         const updated = await tx.customer.update({
           where: { id: accountId },
           data: {
@@ -418,6 +546,12 @@ export class CurrentAccountsService {
             credit: isCredit ? input.amount : 0,
             balanceAfter,
             dueDate: input.dueDate,
+            financialAccountId: input.financialAccountId || null,
+          },
+          include: {
+            financialAccount: {
+              select: { id: true, name: true, type: true, currency: true },
+            },
           },
         });
         return this.mapMovementResponse(movement, 'CUSTOMER');
@@ -427,6 +561,39 @@ export class CurrentAccountsService {
     const supplier = await this.prisma.supplier.findUnique({ where: { id: accountId } });
     if (supplier) {
       return this.prisma.$transaction(async (tx) => {
+        let financialAccount: any = null;
+        if (input.financialAccountId) {
+          financialAccount = await tx.financialAccount.findUnique({
+            where: { id: input.financialAccountId },
+          });
+          if (!financialAccount || !financialAccount.isActive) {
+            throw new NotFoundException('Cuenta financiera no encontrada o inactiva');
+          }
+
+          if (input.documentType === 'RECEIPT') {
+            if (financialAccount.type === 'CASH' && financialAccount.balance < input.amount) {
+              throw new BadRequestException(
+                `Fondos insuficientes en la cuenta ${financialAccount.name}. Saldo: $${financialAccount.balance}`,
+              );
+            }
+
+            await tx.financialTransaction.create({
+              data: {
+                accountId: input.financialAccountId,
+                type: 'CREDIT',
+                amount: input.amount,
+                referenceId: input.referenceId,
+                description: input.description || `Pago CC - ${supplier.companyName}`,
+              },
+            });
+
+            await tx.financialAccount.update({
+              where: { id: input.financialAccountId },
+              data: { balance: { decrement: input.amount } },
+            });
+          }
+        }
+
         const updated = await tx.supplier.update({
           where: { id: accountId },
           data: {
@@ -450,6 +617,12 @@ export class CurrentAccountsService {
             credit: isDebit ? 0 : input.amount,
             balanceAfter,
             dueDate: input.dueDate,
+            financialAccountId: input.financialAccountId || null,
+          },
+          include: {
+            financialAccount: {
+              select: { id: true, name: true, type: true, currency: true },
+            },
           },
         });
         return this.mapMovementResponse(movement, 'SUPPLIER');
@@ -471,6 +644,8 @@ export class CurrentAccountsService {
       debit: number;
       balanceAfter: number;
       dueDate?: Date | null;
+      financialAccountId?: string | null;
+      financialAccount?: { id: string; name: string; type: string; currency: string } | null;
       createdAt: Date;
     },
     _entityType: 'CUSTOMER' | 'SUPPLIER',
@@ -487,6 +662,8 @@ export class CurrentAccountsService {
       balanceAfter: movement.balanceAfter,
       dueDate: movement.dueDate ? movement.dueDate.toISOString() : undefined,
       amount: movement.amount,
+      financialAccountId: movement.financialAccountId || null,
+      financialAccount: movement.financialAccount || null,
     };
   }
 

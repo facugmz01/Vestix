@@ -1,56 +1,181 @@
-/* TopBar.module.css (Mobile First) */
+/* TopBar.module.css */
+
 .topbar {
-  height: 64px;
-  display: flex; 
-  align-items: center; 
+  height: 60px;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 12px;
   background: var(--surface-0);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  position: sticky; 
-  top: 0; 
-  z-index: 10;
+  border-radius: var(--radius-lg, 16px);
+  position: sticky;
+  top: 0;
+  z-index: 30;
   flex-shrink: 0;
   box-shadow: var(--shadow-sm);
   gap: 12px;
+  min-width: 0;
 }
 
-/* Breadcrumbs hidden by default on small screens */
-.breadcrumbs { 
-  display: none; 
+/* ── 1. LEFT SECTION (Trigger + Breadcrumbs) ─────────────────────────────── */
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
 }
-.crumbList { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
-.crumb { display: flex; align-items: center; gap: 4px; }
-.homeIcon { color: var(--text-muted); }
+
+.sidebarTrigger {
+  flex-shrink: 0;
+}
+
+.breadcrumbs {
+  display: none;
+  min-width: 0;
+}
+
+.crumbList {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.homeIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 .crumbLink {
-  font-size: 14px; color: var(--text-secondary); text-decoration: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
   transition: var(--transition);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
-.crumbLink:hover { color: var(--accent); }
-.crumbCurrent { font-size: 14px; font-weight: 600; color: var(--text-primary); white-space: nowrap; }
-.sep { color: var(--text-muted); }
 
-.spacer { flex: 0; }
+.crumbLink:hover {
+  color: var(--accent);
+}
 
-/* Search Bar fluid on mobile */
+.crumbCurrent {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.sep {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── 2. RIGHT SECTION (Badges, Search, User) ─────────────────────────────── */
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Branch Badge */
+.branchBadge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.branchIcon {
+  color: var(--text-muted);
+}
+
+/* Shift Status Badge */
+.shiftBadge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.shiftActive {
+  background: var(--green-bg, rgba(27, 127, 58, 0.12));
+  color: var(--green, #1b7f3a);
+  border: 1px solid rgba(27, 127, 58, 0.3);
+}
+
+.shiftClosed {
+  background: var(--surface-1);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.shiftDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.shiftDotActive {
+  background: var(--green, #1b7f3a);
+  box-shadow: 0 0 6px var(--green, #1b7f3a);
+  animation: pulseGreen 2s infinite ease-in-out;
+}
+
+@keyframes pulseGreen {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Search Trigger */
 .searchBar {
   display: flex;
   align-items: center;
   gap: 8px;
   background: var(--surface-1);
-  padding: 8px 16px;
-  border-radius: var(--radius);
-  flex: 1;
-  min-width: 0;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 8px);
   border: 1px solid var(--border);
   transition: var(--transition);
   cursor: pointer;
   font-family: inherit;
   color: inherit;
   text-align: left;
+  height: 36px;
 }
+
 .searchBar:hover,
 .searchBar:focus-visible {
   background: var(--surface-0);
@@ -58,106 +183,31 @@
   box-shadow: 0 0 0 3px var(--accent-glow);
   outline: none;
 }
+
 .searchPlaceholder {
-  flex: 1;
-  min-width: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .searchKbd {
   display: none;
   flex-shrink: 0;
-  padding: 2px 6px;
+  padding: 2px 5px;
   border: 1px solid var(--border);
   border-radius: 4px;
   background: var(--surface-0);
   color: var(--text-muted);
-  font-size: 11px;
-  font-family: inherit;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
   line-height: 1.2;
 }
 
-/* User Profile */
-.userProfile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 12px 4px 4px;
-  border-radius: var(--radius-full);
+/* Theme Toggle */
+.themeBtn {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  transition: var(--transition);
-}
-.userProfile:hover { background: var(--surface-2); }
-.avatar {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: white;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 600; font-size: 14px;
-  flex-shrink: 0;
-}
-.userName { 
-  display: none; /* Hidden on mobile */
-  font-weight: 600; 
-  font-size: 14px; 
-  color: var(--text-primary); 
-}
-.logoutBtn {
-  background: transparent; border: none;
-  color: var(--text-muted); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  padding: 4px; border-radius: 50%;
-  transition: var(--transition);
-}
-.logoutBtn:hover { color: var(--red); background: var(--red-bg); }
-
-/* --- Breakpoints --- */
-
-/* Tablet & Desktop */
-@media (min-width: 768px) {
-  .topbar {
-    height: 72px;
-    padding: 0 32px;
-    gap: 24px;
-  }
-  .breadcrumbs {
-    display: block;
-    flex: 1;
-  }
-  .spacer { flex: 1; }
-  .searchBar {
-    flex: none;
-    width: 280px;
-    gap: 12px;
-    padding: 10px 20px;
-  }
-  .searchBar:hover,
-  .searchBar:focus-visible {
-    box-shadow: 0 0 0 4px var(--accent-glow);
-  }
-  .searchKbd {
-    display: inline-block;
-  }
-  .userProfile {
-    padding: 6px 16px 6px 6px;
-  }
-  .avatar {
-    width: 36px; height: 36px;
-  }
-  .userName {
-    display: block;
-  }
-}
-
-.themeBtn {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: var(--radius-sm, 8px);
   width: 36px;
   height: 36px;
   cursor: pointer;
@@ -165,12 +215,113 @@
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  margin-left: 12px;
-  transition: all 0.2s;
-  font-family: inherit;
+  transition: all 0.2s ease;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .themeBtn:hover {
-  background: var(--bg-surface-hover);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+/* User Profile */
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.userMeta {
+  display: none;
+  flex-direction: column;
+}
+
+.userName {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.userRole {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.1;
+}
+
+.logoutBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.logoutBtn:hover {
+  color: var(--red, #e11d48);
+  background: var(--red-bg, rgba(225, 29, 72, 0.1));
+}
+
+/* --- Breakpoints --- */
+
+@media (min-width: 768px) {
+  .topbar {
+    height: 64px;
+    padding: 0 18px;
+    gap: 16px;
+  }
+
+  .breadcrumbs {
+    display: block;
+  }
+
+  .searchKbd {
+    display: inline-block;
+  }
+
+  .shiftBadge {
+    display: flex;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .branchBadge {
+    display: flex;
+  }
+
+  .userMeta {
+    display: flex;
+  }
 }
