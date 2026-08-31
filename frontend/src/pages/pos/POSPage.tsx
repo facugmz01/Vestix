@@ -164,21 +164,38 @@ export default function POSPage() {
     navigate('/pos', { replace: true, state: {} });
   }, [location.state]);
 
-  const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
-  const clientSubtotal = cart.reduce((acc, item) => acc + (item.variant.basePrice * item.qty), 0);
-  const clientLineDiscounts = cart.reduce((acc, item) => acc + ((item.variant.basePrice * item.qty) * (item.discountPct / 100)), 0);
-  const clientTotalAfterLines = clientSubtotal - clientLineDiscounts;
-  const clientGlobalDiscount = clientTotalAfterLines * (cartDiscountPct / 100);
+  const globalDiscountType = usePosStore(s => s.globalDiscountType);
+  const globalDiscountValue = usePosStore(s => s.globalDiscountValue);
 
-  const subtotal = cartCalculation?.subtotal ?? clientSubtotal;
-  const lineDiscounts = cartCalculation?.lineDiscountsTotal ?? clientLineDiscounts;
-  // Manual cart % only — never mix in line discounts or promotions.
-  const globalDiscount = cartDiscountPct > 0 && cartDiscountPct < 100
-    ? (cartCalculation?.grandTotal != null
-        ? Number(((cartCalculation.grandTotal / (1 - cartDiscountPct / 100)) - cartCalculation.grandTotal).toFixed(2))
-        : clientGlobalDiscount)
-    : (cartDiscountPct >= 100 ? clientTotalAfterLines : 0);
-  const grandTotal = cartCalculation?.grandTotal ?? (clientTotalAfterLines - clientGlobalDiscount);
+  const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
+  const clientSubtotal = cart.reduce((acc, item) => {
+    const base = item.customUnitPrice ?? item.variant.basePrice;
+    return acc + (base * item.qty);
+  }, 0);
+
+  const clientLineDiscounts = cart.reduce((acc, item) => {
+    const base = item.customUnitPrice ?? item.variant.basePrice;
+    const gross = base * item.qty;
+    if (item.discountType === 'FIXED') {
+      return acc + Math.min(gross, item.discountValue || 0);
+    }
+    const pct = item.discountType === 'PERCENTAGE' ? (item.discountValue || 0) : (item.discountPct || 0);
+    return acc + (gross * (pct / 100));
+  }, 0);
+
+  const clientTotalAfterLines = Math.max(0, clientSubtotal - clientLineDiscounts);
+  let clientGlobalDiscount = 0;
+  if (globalDiscountType === 'FIXED') {
+    clientGlobalDiscount = Math.min(clientTotalAfterLines, globalDiscountValue || 0);
+  } else {
+    const pct = globalDiscountValue || cartDiscountPct || 0;
+    clientGlobalDiscount = clientTotalAfterLines * (pct / 100);
+  }
+
+  const subtotal = clientSubtotal;
+  const lineDiscounts = clientLineDiscounts;
+  const globalDiscount = clientGlobalDiscount;
+  const grandTotal = Math.max(0, clientTotalAfterLines - clientGlobalDiscount);
   const loyaltyDiscount = loyaltyPointsToRedeem * (loyaltySettings?.redeemValuePerPoint ?? 1);
   const amountDue = computePosAmountDue(
     grandTotal,

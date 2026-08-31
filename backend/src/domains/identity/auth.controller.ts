@@ -5,6 +5,8 @@ import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { isCookieSecure } from '../../core/http/cookie-options';
 
+import { AuthorizeActionDto } from './dto/authorize-action.dto';
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -28,6 +30,14 @@ export class AuthController {
       message: 'Login exitoso', 
       user: this.transformUser(result.user) 
     };
+  }
+
+  @Post('authorize-action')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async authorizeAction(@Body() dto: AuthorizeActionDto) {
+    return this.authService.authorizeSupervisorAction(dto);
   }
 
   @Get('me')

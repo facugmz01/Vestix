@@ -15,6 +15,10 @@ import { GiftCardsService } from './gift-cards/gift-cards.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { applyManualCartDiscount } from './utils/manual-cart-discount';
+import { AuthService } from '../identity/auth.service';
+import { AuditService } from '../../modules/audit/audit.service';
+import { RbacService } from '../../core/rbac/rbac.service';
+import { roleHasPermissions } from '../../core/rbac/permission-match.util';
 import * as crypto from 'crypto';
 
 export function normalizePaymentMethodType(raw?: string | null): string {
@@ -44,7 +48,21 @@ export class CheckoutOrchestrator {
     private readonly currentAccountsService: CurrentAccountsService,
     private readonly loyaltyService: LoyaltyService,
     private readonly giftCardsService: GiftCardsService,
+    private readonly authService: AuthService,
+    private readonly auditService: AuditService,
+    private readonly rbacService: RbacService,
   ) {}
+
+  private async userHasPermission(userId: string | undefined, action: string, subject: string): Promise<boolean> {
+    if (!userId) return false;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: { include: { permissions: true } } },
+    });
+    if (!user || !user.role) return false;
+    if (user.role.name === 'SUPER_ADMIN') return true;
+    return roleHasPermissions(user.role.permissions || [], [{ action, subject }]);
+  }
 
   /**
    * The master orchestrator for checkout.
@@ -93,8 +111,10 @@ export class CheckoutOrchestrator {
           : Boolean(invoicingSettings?.autoIssueOnSale)
     );
 
-    // 2. PRICING EVALUATION (Server-Authoritative)
+    // 2. PRICING EVALUATION (Server-Authoritative with RBAC / Supervisor validation)
     const evaluatedLines = [];
+    let hasAnyPriceOverrideOrDiscount = false;
+
     for (const lineDto of dto.lines) {
       const variant = await this.prisma.productVariant.findUnique({
         where: { id: lineDto.variantId },
@@ -102,41 +122,98 @@ export class CheckoutOrchestrator {
       });
       if (!variant) throw new BadRequestException(`Variant ${lineDto.variantId} not found`);
 
-      // If a manual override is provided (e.g. from POS or Backoffice), trust it.
-      // Otherwise, resolve the price automatically from price lists.
-      let resolvedBasePrice: number;
-      if (lineDto.unitPriceOverride !== undefined) {
-        resolvedBasePrice = lineDto.unitPriceOverride;
-      } else {
-        resolvedBasePrice = await this.pricingService.resolvePrice(lineDto.variantId, variant.basePrice, dto.customerId);
-      }
+      const catalogResolvedPrice = await this.pricingService.resolvePrice(lineDto.variantId, variant.basePrice, dto.customerId);
+
+      // --- Price Override Validation ---
+      const rawCustomPrice = lineDto.customUnitPrice !== undefined ? lineDto.customUnitPrice : lineDto.unitPriceOverride;
+      const isPriceOverridden = rawCustomPrice !== undefined && Math.abs(rawCustomPrice - catalogResolvedPrice) > 0.01;
       
-      const manualDiscountPct = lineDto.discountPct || 0;
-      
-      if (manualDiscountPct > 0) {
-        if (pricingSettings.allowManualDiscount === false) {
-          throw new BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
+      let resolvedBasePrice = catalogResolvedPrice;
+      let priceOverrideAuthorizedBy: string | null = null;
+
+      if (isPriceOverridden && rawCustomPrice !== undefined) {
+        hasAnyPriceOverrideOrDiscount = true;
+        let isAllowed = await this.userHasPermission(cashierUserId, 'override', 'Price');
+        if (!isAllowed) {
+          const token = lineDto.supervisorApprovalToken || dto.supervisorApprovalToken;
+          if (token) {
+            const approval = this.authService.verifyApprovalToken(token, 'override:Price');
+            priceOverrideAuthorizedBy = approval.supervisorId;
+            isAllowed = true;
+          }
+        } else {
+          priceOverrideAuthorizedBy = cashierUserId || null;
         }
-        if (pricingSettings.maxDiscountPct && manualDiscountPct > pricingSettings.maxDiscountPct) {
-          throw new BadRequestException(`El descuento manual excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`);
+
+        if (!isAllowed) {
+          throw new BadRequestException(
+            `No tienes permiso para modificar el precio unitario del producto ${variant.sku || variant.product?.name}. Se requiere autorización de supervisor.`
+          );
+        }
+        resolvedBasePrice = Math.max(0, rawCustomPrice);
+      }
+
+      // --- Line Discount Validation & Calculation ---
+      let manualDiscountAmount = 0;
+      let lineDiscountAuthorizedBy: string | null = null;
+      const hasLineDiscount = (lineDto.discountType && lineDto.discountValue !== undefined && lineDto.discountValue > 0) ||
+                              (lineDto.discountPct !== undefined && lineDto.discountPct > 0);
+
+      if (hasLineDiscount) {
+        hasAnyPriceOverrideOrDiscount = true;
+        let isAllowed = await this.userHasPermission(cashierUserId, 'apply', 'Discount');
+        if (!isAllowed) {
+          const token = lineDto.supervisorApprovalToken || dto.supervisorApprovalToken;
+          if (token) {
+            const approval = this.authService.verifyApprovalToken(token, 'apply:Discount');
+            lineDiscountAuthorizedBy = approval.supervisorId;
+            isAllowed = true;
+          }
+        } else {
+          lineDiscountAuthorizedBy = cashierUserId || null;
+        }
+
+        if (!isAllowed) {
+          throw new BadRequestException(
+            `No tienes permiso para aplicar descuentos en la línea de ${variant.sku || variant.product?.name}. Se requiere autorización de supervisor.`
+          );
+        }
+
+        if (lineDto.discountType === 'FIXED') {
+          const maxLineTotal = resolvedBasePrice * lineDto.quantity;
+          manualDiscountAmount = Math.min(lineDto.discountValue!, maxLineTotal);
+        } else {
+          // PERCENTAGE or legacy discountPct
+          const pct = lineDto.discountType === 'PERCENTAGE' ? (lineDto.discountValue || 0) : (lineDto.discountPct || 0);
+          if (pct > 0) {
+            if (pricingSettings.allowManualDiscount === false && !lineDiscountAuthorizedBy) {
+              throw new BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
+            }
+            if (pricingSettings.maxDiscountPct && pct > pricingSettings.maxDiscountPct && !lineDiscountAuthorizedBy) {
+              throw new BadRequestException(`El descuento manual excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`);
+            }
+            manualDiscountAmount = (resolvedBasePrice * lineDto.quantity) * (pct / 100);
+          }
         }
       }
-      
-      const manualDiscountAmount = resolvedBasePrice * (manualDiscountPct / 100);
-      const finalPriceAfterManualDiscount = resolvedBasePrice - manualDiscountAmount;
-      
+
+      const lineTotalAfterDiscount = (resolvedBasePrice * lineDto.quantity) - manualDiscountAmount;
+      const finalPriceAfterManualDiscount = lineDto.quantity > 0 ? lineTotalAfterDiscount / lineDto.quantity : resolvedBasePrice;
       const resolvedCategoryId = this.resolveLineCategoryId(lineDto.categoryId, variant.product?.categoryId);
 
       evaluatedLines.push({
         variantId: lineDto.variantId,
         categoryId: resolvedCategoryId,
         quantity: lineDto.quantity,
+        catalogResolvedPrice,
         basePrice: resolvedBasePrice,
-        manualDiscountAmount: manualDiscountAmount,
+        manualDiscountAmount: Math.round(manualDiscountAmount * 100) / 100,
         finalPrice: finalPriceAfterManualDiscount,
         historicalSku: variant.sku,
         historicalName: variant.product?.name || null,
         historicalCost: variant.costPrice ?? null,
+        priceOverrideAuthorizedBy,
+        lineDiscountAuthorizedBy,
       });
     }
 
@@ -164,16 +241,41 @@ export class CheckoutOrchestrator {
 
     const merchandiseTotal = serverCalculatedTotal;
 
-    // Manual cart-level discount (Backoffice global %, POS cart discount).
-    // This is additive to promotional discounts already reflected in merchandiseTotal.
+    // --- Global Cart Discount Validation & Calculation ---
+    let globalDiscountAuthorizedBy: string | null = null;
+    const hasGlobalDiscount = (dto.globalDiscountType && dto.globalDiscountValue !== undefined && dto.globalDiscountValue > 0) ||
+                              (dto.cartDiscountTotal !== undefined && dto.cartDiscountTotal > 0);
+
+    if (hasGlobalDiscount) {
+      hasAnyPriceOverrideOrDiscount = true;
+      let isAllowed = await this.userHasPermission(cashierUserId, 'apply', 'Discount');
+      if (!isAllowed) {
+        const token = dto.supervisorApprovalToken;
+        if (token) {
+          const approval = this.authService.verifyApprovalToken(token, 'apply:Discount');
+          globalDiscountAuthorizedBy = approval.supervisorId;
+          isAllowed = true;
+        }
+      } else {
+        globalDiscountAuthorizedBy = cashierUserId || null;
+      }
+
+      if (!isAllowed) {
+        throw new BadRequestException('No tienes permiso para aplicar descuento general a la venta. Se requiere autorización de supervisor.');
+      }
+    }
+
     let manualCartDiscount = 0;
     let pricedTotal = merchandiseTotal;
     try {
       const discounted = applyManualCartDiscount({
         merchandiseTotal,
         cartDiscountTotal: dto.cartDiscountTotal,
+        globalDiscountType: dto.globalDiscountType,
+        globalDiscountValue: dto.globalDiscountValue,
         allowManualDiscount: pricingSettings.allowManualDiscount,
         maxDiscountPct: pricingSettings.maxDiscountPct,
+        hasSupervisorOverride: Boolean(globalDiscountAuthorizedBy),
       });
       manualCartDiscount = discounted.manualCartDiscount;
       pricedTotal = discounted.pricedTotal;
@@ -500,6 +602,33 @@ export class CheckoutOrchestrator {
       }
     }
 
+    if (result.status === 'SUCCESS' && result.order && hasAnyPriceOverrideOrDiscount) {
+      void this.auditService.log({
+        userId: cashierUserId || 'system',
+        action: 'UPDATE',
+        module: 'Sales',
+        resource: 'SaleOrder',
+        resourceId: result.order.id,
+        newValue: {
+          orderId: result.order.id,
+          globalDiscount: manualCartDiscount,
+          globalDiscountType: dto.globalDiscountType,
+          globalDiscountValue: dto.globalDiscountValue,
+          globalAuthorizedBy: globalDiscountAuthorizedBy,
+          lines: evaluatedLines.map(l => ({
+            variantId: l.variantId,
+            sku: l.historicalSku,
+            originalPrice: l.catalogResolvedPrice,
+            appliedBasePrice: l.basePrice,
+            discountAmount: l.manualDiscountAmount,
+            priceOverrideAuthorizedBy: l.priceOverrideAuthorizedBy,
+            lineDiscountAuthorizedBy: l.lineDiscountAuthorizedBy,
+          })),
+        },
+        description: `Descuentos o modificación de precio en Venta #${result.order.id.slice(0, 8)}`,
+      }).catch(() => {});
+    }
+
     return result;
   }
 
@@ -530,8 +659,9 @@ export class CheckoutOrchestrator {
       if (!variant) throw new BadRequestException(`Variant ${lineDto.variantId} not found`);
 
       let resolvedBasePrice: number;
-      if (lineDto.unitPriceOverride !== undefined) {
-        resolvedBasePrice = lineDto.unitPriceOverride;
+      const rawCustomPrice = lineDto.customUnitPrice !== undefined ? lineDto.customUnitPrice : lineDto.unitPriceOverride;
+      if (rawCustomPrice !== undefined) {
+        resolvedBasePrice = Math.max(0, rawCustomPrice);
       } else {
         resolvedBasePrice = await this.pricingService.resolvePrice(
           lineDto.variantId,
@@ -540,23 +670,29 @@ export class CheckoutOrchestrator {
         );
       }
 
-      const manualDiscountPct = lineDto.discountPct || 0;
-      if (manualDiscountPct > 0) {
-        if (pricingSettings.allowManualDiscount === false) {
-          throw new BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
-        }
-        if (pricingSettings.maxDiscountPct && manualDiscountPct > pricingSettings.maxDiscountPct) {
-          throw new BadRequestException(`El descuento manual excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`);
+      let manualDiscountAmount = 0;
+      if (lineDto.discountType === 'FIXED') {
+        const maxLineTotal = resolvedBasePrice * lineDto.quantity;
+        manualDiscountAmount = Math.min(lineDto.discountValue || 0, maxLineTotal);
+      } else {
+        const manualDiscountPct = lineDto.discountType === 'PERCENTAGE' ? (lineDto.discountValue || 0) : (lineDto.discountPct || 0);
+        if (manualDiscountPct > 0) {
+          if (pricingSettings.allowManualDiscount === false) {
+            throw new BadRequestException('Los descuentos manuales están deshabilitados por configuración del sistema.');
+          }
+          if (pricingSettings.maxDiscountPct && manualDiscountPct > pricingSettings.maxDiscountPct) {
+            throw new BadRequestException(`El descuento manual excede el máximo permitido del ${pricingSettings.maxDiscountPct}%`);
+          }
+          manualDiscountAmount = (resolvedBasePrice * lineDto.quantity) * (manualDiscountPct / 100);
         }
       }
 
-      const manualDiscountAmount = resolvedBasePrice * (manualDiscountPct / 100);
       evaluatedLines.push({
         variantId: lineDto.variantId,
         categoryId: this.resolveLineCategoryId(lineDto.categoryId, variant.product?.categoryId),
         quantity: lineDto.quantity,
         basePrice: resolvedBasePrice,
-        manualDiscountAmount,
+        manualDiscountAmount: Math.round(manualDiscountAmount * 100) / 100,
         historicalSku: variant.sku,
         historicalName: variant.product?.name || null,
         historicalCost: variant.costPrice ?? null,
@@ -568,7 +704,7 @@ export class CheckoutOrchestrator {
       variantId: l.variantId,
       categoryId: l.categoryId,
       quantity: l.quantity,
-      unitPrice: l.basePrice - (l.manualDiscountAmount),
+      unitPrice: l.basePrice - (l.manualDiscountAmount / l.quantity),
     })));
 
     const finalLinesForDB = evaluatedLines.map((line, index) => {
@@ -588,6 +724,8 @@ export class CheckoutOrchestrator {
       const discounted = applyManualCartDiscount({
         merchandiseTotal,
         cartDiscountTotal: dto.cartDiscountTotal ?? 0,
+        globalDiscountType: dto.globalDiscountType,
+        globalDiscountValue: dto.globalDiscountValue,
         allowManualDiscount: pricingSettings.allowManualDiscount,
         maxDiscountPct: pricingSettings.maxDiscountPct,
       });

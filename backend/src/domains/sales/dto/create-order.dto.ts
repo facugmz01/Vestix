@@ -25,6 +25,22 @@ class OrderLineDto implements CreateSaleLineDto {
   @IsNumber()
   @IsOptional()
   unitPriceOverride?: number;
+
+  @IsNumber()
+  @IsOptional()
+  customUnitPrice?: number;
+
+  @IsString()
+  @IsOptional()
+  discountType?: 'PERCENTAGE' | 'FIXED';
+
+  @IsNumber()
+  @IsOptional()
+  discountValue?: number;
+
+  @IsString()
+  @IsOptional()
+  supervisorApprovalToken?: string;
 }
 
 export class PaymentSplitDto {
@@ -126,6 +142,18 @@ export class CreateOrderDto implements SharedCreateSaleDto {
   @IsNumber()
   @IsOptional()
   cartDiscountTotal?: number; // Manual cart-level discount amount (excludes line discounts & promotions)
+
+  @IsString()
+  @IsOptional()
+  globalDiscountType?: 'PERCENTAGE' | 'FIXED';
+
+  @IsNumber()
+  @IsOptional()
+  globalDiscountValue?: number;
+
+  @IsString()
+  @IsOptional()
+  supervisorApprovalToken?: string;
 
   @IsBoolean()
   @IsOptional()

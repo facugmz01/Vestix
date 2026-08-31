@@ -22,6 +22,18 @@ class UpdateQuotationLineDto {
   @IsNumber()
   @IsOptional()
   unitPriceOverride?: number;
+
+  @IsNumber()
+  @IsOptional()
+  customUnitPrice?: number;
+
+  @IsString()
+  @IsOptional()
+  discountType?: 'PERCENTAGE' | 'FIXED';
+
+  @IsNumber()
+  @IsOptional()
+  discountValue?: number;
 }
 
 export class UpdateQuotationDto {
@@ -50,4 +62,12 @@ export class UpdateQuotationDto {
   @IsNumber()
   @IsOptional()
   cartDiscountTotal?: number;
+
+  @IsString()
+  @IsOptional()
+  globalDiscountType?: 'PERCENTAGE' | 'FIXED';
+
+  @IsNumber()
+  @IsOptional()
+  globalDiscountValue?: number;
 }

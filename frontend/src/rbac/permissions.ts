@@ -6,35 +6,39 @@
 
 // ─── Actions (verbs) ─────────────────────────────────────────────────────────
 export const Actions = {
-  READ:   'read',
-  CREATE: 'create',
-  UPDATE: 'update',
-  DELETE: 'delete',
-  MANAGE: 'manage', // Superpower: implies all actions on the subject
+  READ:     'read',
+  CREATE:   'create',
+  UPDATE:   'update',
+  DELETE:   'delete',
+  MANAGE:   'manage', // Superpower: implies all actions on the subject
+  APPLY:    'apply',
+  OVERRIDE: 'override',
 } as const;
 export type Action = (typeof Actions)[keyof typeof Actions];
 
 // ─── Subjects (domain resources) ─────────────────────────────────────────────
 export const Subjects = {
-  CATALOG:    'Catalog',
-  INVENTORY:  'Inventory',
-  PURCHASING: 'Purchasing',
-  SALES:      'Sales',
-  CUSTOMERS:  'Customers',
-  SUPPLIERS:  'Suppliers',
-  FINANCE:    'Finance',
-  REPORTS:    'Reports',
-  SETTINGS:   'Settings',
-  SYNC:       'Sync',
-  USERS:      'Users',
-  LABELS:     'Labels',
-  DELIVERY:   'Delivery',
-  BRANCH:     'Branch',
-  SYSTEM:     'System',
-  PRICING:    'Pricing',
+  CATALOG:      'Catalog',
+  INVENTORY:    'Inventory',
+  PURCHASING:   'Purchasing',
+  SALES:        'Sales',
+  CUSTOMERS:    'Customers',
+  SUPPLIERS:    'Suppliers',
+  FINANCE:      'Finance',
+  REPORTS:      'Reports',
+  SETTINGS:     'Settings',
+  SYNC:         'Sync',
+  USERS:        'Users',
+  LABELS:       'Labels',
+  DELIVERY:     'Delivery',
+  BRANCH:       'Branch',
+  SYSTEM:       'System',
+  PRICING:      'Pricing',
+  DISCOUNT:     'Discount',
+  PRICE:        'Price',
   INTEGRATIONS: 'Integrations',
   BACKUPS:      'Backups',
-  ALL:        'all',
+  ALL:          'all',
 } as const;
 export type Subject = (typeof Subjects)[keyof typeof Subjects];
 
@@ -88,6 +92,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<Role, PermissionTuple[]> = {
     { action: 'print',        subject: Subjects.LABELS     },
     { action: Actions.MANAGE, subject: Subjects.LABELS     },
     { action: Actions.MANAGE, subject: Subjects.DELIVERY   },
+    { action: Actions.APPLY,  subject: Subjects.DISCOUNT   },
+    { action: Actions.OVERRIDE, subject: Subjects.PRICE    },
   ],
   CASHIER: [
     { action: Actions.CREATE, subject: Subjects.SALES     },

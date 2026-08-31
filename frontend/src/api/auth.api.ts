@@ -1,6 +1,25 @@
 import { apiClient } from './client';
 import type { AuthUser, LoginDto } from '@/types';
 
+export interface AuthorizeActionDto {
+  email: string;
+  password: string;
+  action: string;
+  subject?: string;
+  reason?: string;
+}
+
+export interface AuthorizeActionResult {
+  message: string;
+  supervisorApprovalToken: string;
+  supervisor: {
+    id: string;
+    email: string;
+    fullName: string;
+    role: string;
+  };
+}
+
 export const authApi = {
   /**
    * Exchange credentials. The backend handles setting the HttpOnly cookie.
@@ -19,6 +38,17 @@ export const authApi = {
    */
   me: async (): Promise<AuthUser> => {
     const { data } = await apiClient.get<AuthUser>('/auth/me');
+    return data;
+  },
+
+  /**
+   * Validate supervisor credentials for a sensitive action and obtain a short-lived approval token.
+   */
+  authorizeAction: async (dto: AuthorizeActionDto): Promise<AuthorizeActionResult> => {
+    const { data } = await apiClient.post<AuthorizeActionResult>(
+      '/auth/authorize-action',
+      dto
+    );
     return data;
   },
 

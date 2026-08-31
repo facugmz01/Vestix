@@ -7,8 +7,11 @@ import { customersApi } from '@/api/customers.api';
 import { branchesApi } from '@/api/branches.api';
 import { queryKeys } from '@/api/queryKeys';
 import { settingsApi } from '@/api/settings.api';
+import { usePermissions } from '@/rbac/usePermissions';
+import { SupervisorApprovalModal } from '@/components/modals/SupervisorApprovalModal';
+import type { AuthorizeActionResult } from '@/api/auth.api';
 import toast from 'react-hot-toast';
-import { X, Calculator, Percent, Search, Package } from 'lucide-react';
+import { X, Calculator, Percent, DollarSign, Search, Package, Tag, Edit3, ShieldAlert } from 'lucide-react';
 import clsx from 'clsx';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { generateUUID } from '@/utils/generateUUID';
@@ -21,8 +24,22 @@ interface Props {
   saleIdToEdit?: string | null;
 }
 
+interface SaleFormLine {
+  variantId: string;
+  variantSku: string;
+  variantName: string;
+  quantity: number;
+  originalPrice: number;
+  basePrice: number;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  discountPct: number;
+  supervisorApprovalToken?: string;
+}
+
 export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
   const queryClient = useQueryClient();
+  const { can, isSuperAdmin } = usePermissions();
   const isEditing = !!saleIdToEdit;
 
   const [branchId, setBranchId] = useState('');
@@ -31,8 +48,18 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<CreateSaleDto['paymentMethod']>('CASH');
   const [hydratedEditId, setHydratedEditId] = useState<string | null>(null);
   
-  const [lines, setLines] = useState<{ variantId: string; variantSku: string; variantName: string; quantity: number; basePrice: number; discountPct: number }[]>([]);
-  const [globalDiscount, setGlobalDiscount] = useState<number>(0);
+  const [lines, setLines] = useState<SaleFormLine[]>([]);
+  const [globalDiscountType, setGlobalDiscountType] = useState<'PERCENTAGE' | 'FIXED'>('PERCENTAGE');
+  const [globalDiscountValue, setGlobalDiscountValue] = useState<number>(0);
+  const [globalSupervisorToken, setGlobalSupervisorToken] = useState<string | undefined>();
+
+  // Supervisor modal
+  const [supervisorModalOpen, setSupervisorModalOpen] = useState(false);
+  const [pendingSupervisorAction, setPendingSupervisorAction] = useState<{
+    action: string;
+    label: string;
+    onApproved: (res: AuthorizeActionResult) => void;
+  } | null>(null);
 
   // Product search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,6 +77,8 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
   });
 
   const allowManualDiscount = pricingSettings?.allowManualDiscount !== false;
+  const hasDiscountPermission = isSuperAdmin() || can('apply', 'Discount') || can('manage', 'Sales');
+  const hasPriceOverridePermission = isSuperAdmin() || can('override', 'Price') || can('manage', 'Sales');
 
   const { data: searchResults, isFetching: isSearching } = useQuery({
     queryKey: ['sale-form', 'product-search', searchQuery],
@@ -67,7 +96,9 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
     setWarehouseId('');
     setCustomerId('');
     setLines([]);
-    setGlobalDiscount(0);
+    setGlobalDiscountType('PERCENTAGE');
+    setGlobalDiscountValue(0);
+    setGlobalSupervisorToken(undefined);
     setPaymentMethod('CASH');
     setSearchQuery('');
   }, [open, saleIdToEdit]);
@@ -81,7 +112,7 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
     setCustomerId(saleToEdit.customerId || '');
     setPaymentMethod((saleToEdit.paymentMethod as CreateSaleDto['paymentMethod']) || 'CASH');
 
-    const mappedLines = saleToEdit.lines.map((l) => {
+    const mappedLines: SaleFormLine[] = saleToEdit.lines.map((l) => {
       const lineBase = l.basePrice * l.quantity;
       const discountPct = lineBase > 0
         ? Math.round(((l.discountAmount || 0) / lineBase) * 10000) / 100
@@ -91,7 +122,10 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
         variantSku: l.variantSku || l.historicalSku || l.variant?.sku || '',
         variantName: l.productName || l.historicalName || l.variant?.product?.name || l.variantSku || 'Producto',
         quantity: l.quantity,
+        originalPrice: l.basePrice,
         basePrice: l.basePrice,
+        discountType: 'PERCENTAGE',
+        discountValue: discountPct,
         discountPct,
       };
     });
@@ -104,7 +138,8 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
     const globalPct = afterLines > 0
       ? Math.round(((saleToEdit.cartDiscountTotal || 0) / afterLines) * 10000) / 100
       : 0;
-    setGlobalDiscount(Math.min(100, Math.max(0, globalPct)));
+    setGlobalDiscountType('PERCENTAGE');
+    setGlobalDiscountValue(Math.min(100, Math.max(0, globalPct)));
     setHydratedEditId(saleIdToEdit);
   }, [open, saleToEdit, saleIdToEdit, hydratedEditId]);
 
@@ -140,7 +175,10 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
         variantSku: variant.sku,
         variantName: variant.product?.name || variant.sku,
         quantity: qtyInput,
+        originalPrice: variant.basePrice || 0,
         basePrice: variant.basePrice || 0,
+        discountType: 'PERCENTAGE',
+        discountValue: 0,
         discountPct: 0,
       }]);
     }
@@ -151,17 +189,83 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
 
   const removeLine = (idx: number) => setLines(lines.filter((_, i) => i !== idx));
   
-  const updateLine = (idx: number, field: 'quantity' | 'basePrice' | 'discountPct', value: number) => {
-    const newLines = [...lines];
-    (newLines[idx] as any)[field] = Math.max(field === 'discountPct' ? 0 : 0.01, field === 'discountPct' ? Math.min(100, value) : value);
-    setLines(newLines);
+  const updateLine = (idx: number, field: 'quantity' | 'basePrice' | 'discountValue' | 'discountType', value: any) => {
+    const targetLine = lines[idx];
+    if (!targetLine) return;
+
+    if (field === 'basePrice') {
+      const newPrice = Math.max(0.01, Number(value));
+      const isPriceModified = Math.abs(newPrice - targetLine.originalPrice) > 0.01;
+      if (isPriceModified && !hasPriceOverridePermission && !targetLine.supervisorApprovalToken) {
+        setPendingSupervisorAction({
+          action: 'override:Price',
+          label: `Modificar Precio Unitario (${targetLine.variantSku})`,
+          onApproved: (res) => {
+            const next = [...lines];
+            next[idx] = { ...next[idx], basePrice: newPrice, supervisorApprovalToken: res.supervisorApprovalToken };
+            setLines(next);
+          },
+        });
+        setSupervisorModalOpen(true);
+        return;
+      }
+      const next = [...lines];
+      next[idx] = { ...next[idx], basePrice: newPrice };
+      setLines(next);
+      return;
+    }
+
+    if (field === 'discountValue' || field === 'discountType') {
+      const newType = field === 'discountType' ? value : targetLine.discountType;
+      const newVal = field === 'discountValue' ? Math.max(0, Number(value)) : targetLine.discountValue;
+      if (newVal > 0 && !hasDiscountPermission && !targetLine.supervisorApprovalToken) {
+        setPendingSupervisorAction({
+          action: 'apply:Discount',
+          label: `Aplicar Descuento de Línea (${targetLine.variantSku})`,
+          onApproved: (res) => {
+            const next = [...lines];
+            next[idx] = {
+              ...next[idx],
+              discountType: newType,
+              discountValue: newVal,
+              discountPct: newType === 'PERCENTAGE' ? newVal : (targetLine.basePrice * targetLine.quantity > 0 ? (newVal / (targetLine.basePrice * targetLine.quantity)) * 100 : 0),
+              supervisorApprovalToken: res.supervisorApprovalToken,
+            };
+            setLines(next);
+          },
+        });
+        setSupervisorModalOpen(true);
+        return;
+      }
+      const next = [...lines];
+      next[idx] = {
+        ...next[idx],
+        discountType: newType,
+        discountValue: newVal,
+        discountPct: newType === 'PERCENTAGE' ? newVal : (targetLine.basePrice * targetLine.quantity > 0 ? (newVal / (targetLine.basePrice * targetLine.quantity)) * 100 : 0),
+      };
+      setLines(next);
+      return;
+    }
+
+    const next = [...lines];
+    (next[idx] as any)[field] = Math.max(1, Number(value));
+    setLines(next);
   };
 
   const subtotal = lines.reduce((acc, line) => acc + (line.basePrice * line.quantity), 0);
-  const lineDiscountsTotal = lines.reduce((acc, line) => acc + ((line.basePrice * line.quantity) * (line.discountPct / 100)), 0);
-  const totalAfterLines = subtotal - lineDiscountsTotal;
-  const cartDiscountAmt = totalAfterLines * (globalDiscount / 100);
-  const grandTotal = totalAfterLines - cartDiscountAmt;
+  const lineDiscountsTotal = lines.reduce((acc, line) => {
+    const gross = line.basePrice * line.quantity;
+    if (line.discountType === 'FIXED') {
+      return acc + Math.min(gross, line.discountValue || 0);
+    }
+    return acc + (gross * ((line.discountValue || line.discountPct || 0) / 100));
+  }, 0);
+  const totalAfterLines = Math.max(0, subtotal - lineDiscountsTotal);
+  const cartDiscountAmt = globalDiscountType === 'FIXED'
+    ? Math.min(totalAfterLines, globalDiscountValue || 0)
+    : totalAfterLines * ((globalDiscountValue || 0) / 100);
+  const grandTotal = Math.max(0, totalAfterLines - cartDiscountAmt);
 
   const mutation = useMutation({
     mutationFn: async (data: { status: 'QUOTATION' | 'CONFIRMED' | 'PENDING_PAYMENT' }) => {
@@ -170,7 +274,11 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
         categoryId: 'default',
         quantity: l.quantity,
         unitPriceOverride: l.basePrice,
+        customUnitPrice: l.basePrice,
+        discountType: l.discountType,
+        discountValue: l.discountValue,
         discountPct: l.discountPct,
+        supervisorApprovalToken: l.supervisorApprovalToken,
       }));
 
       if (isEditing && saleIdToEdit) {
@@ -180,6 +288,8 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
           paymentMethod,
           posGrandTotal: grandTotal,
           cartDiscountTotal: cartDiscountAmt,
+          globalDiscountType,
+          globalDiscountValue,
           lines: linesPayload,
         });
       }
@@ -195,6 +305,9 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
         posGrandTotal: grandTotal,
         createdAtIso: new Date().toISOString(),
         cartDiscountTotal: cartDiscountAmt,
+        globalDiscountType,
+        globalDiscountValue,
+        supervisorApprovalToken: globalSupervisorToken,
         lines: linesPayload,
       };
       return salesApi.createSale(payload as any);
@@ -386,7 +499,7 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
                   <th className={styles.linesTh}>Producto</th>
                   <th className={styles.linesTh}>Precio U. ($)</th>
                   <th className={styles.linesTh}>Cant.</th>
-                  <th className={styles.linesTh}>Desc. %</th>
+                  <th className={styles.linesTh}>Desc.</th>
                   <th className={styles.linesTh}>Total L.</th>
                   <th className={styles.linesTh}></th>
                 </tr>
@@ -399,51 +512,77 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
                     </td>
                   </tr>
                 )}
-                {lines.map((l, i) => (
-                  <tr key={i}>
-                    <td className={styles.linesTd}>
-                      <div className={styles.lineName}>{l.variantName}</div>
-                      <div className={styles.lineSku}>{l.variantSku}</div>
-                    </td>
-                    <td className={styles.linesTd}>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={l.basePrice}
-                        onChange={e => updateLine(i, 'basePrice', Number(e.target.value))}
-                        className={styles.inputPrice}
-                      />
-                    </td>
-                    <td className={styles.linesTd}>
-                      <input
-                        type="number"
-                        min="1"
-                        value={l.quantity}
-                        onChange={e => updateLine(i, 'quantity', Number(e.target.value))}
-                        className={styles.inputQty}
-                      />
-                    </td>
-                    <td className={styles.linesTd}>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={l.discountPct}
-                        onChange={e => updateLine(i, 'discountPct', Number(e.target.value))}
-                        disabled={!allowManualDiscount}
-                        title={!allowManualDiscount ? 'Descuentos manuales deshabilitados' : ''}
-                        className={clsx(styles.inputDiscount, !allowManualDiscount && styles.inputDiscountDisabled)}
-                      />
-                    </td>
-                    <td className={clsx(styles.linesTd, styles.lineTotal)}>
-                      {formatCurrency((l.basePrice * l.quantity) * (1 - (l.discountPct / 100)))}
-                    </td>
-                    <td className={clsx(styles.linesTd, styles.removeCell)}>
-                      <X size={16} color="var(--red)" className={styles.removeBtn} onClick={() => removeLine(i)} />
-                    </td>
-                  </tr>
-                ))}
+                {lines.map((l, i) => {
+                  const lineDiscountAmt = l.discountType === 'FIXED'
+                    ? Math.min(l.basePrice * l.quantity, l.discountValue || 0)
+                    : (l.basePrice * l.quantity) * ((l.discountValue || l.discountPct || 0) / 100);
+                  const lineTotal = Math.max(0, (l.basePrice * l.quantity) - lineDiscountAmt);
+
+                  return (
+                    <tr key={i}>
+                      <td className={styles.linesTd}>
+                        <div className={styles.lineName}>{l.variantName}</div>
+                        <div className={styles.lineSku}>{l.variantSku}</div>
+                      </td>
+                      <td className={styles.linesTd}>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={l.basePrice}
+                          onChange={e => updateLine(i, 'basePrice', Number(e.target.value))}
+                          className={styles.inputPrice}
+                        />
+                      </td>
+                      <td className={styles.linesTd}>
+                        <input
+                          type="number"
+                          min="1"
+                          value={l.quantity}
+                          onChange={e => updateLine(i, 'quantity', Number(e.target.value))}
+                          className={styles.inputQty}
+                        />
+                      </td>
+                      <td className={styles.linesTd}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            max={l.discountType === 'PERCENTAGE' ? 100 : l.basePrice * l.quantity}
+                            value={l.discountValue || ''}
+                            placeholder="0"
+                            onChange={e => updateLine(i, 'discountValue', Number(e.target.value))}
+                            disabled={!allowManualDiscount}
+                            title={!allowManualDiscount ? 'Descuentos manuales deshabilitados' : ''}
+                            className={clsx(styles.inputDiscount, !allowManualDiscount && styles.inputDiscountDisabled)}
+                            style={{ width: '55px' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateLine(i, 'discountType', l.discountType === 'PERCENTAGE' ? 'FIXED' : 'PERCENTAGE')}
+                            style={{
+                              padding: '2px 4px',
+                              fontSize: '0.75rem',
+                              borderRadius: '4px',
+                              border: '1px solid var(--color-border-subtle, #cbd5e1)',
+                              background: '#f8fafc',
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {l.discountType === 'FIXED' ? '$' : '%'}
+                          </button>
+                        </div>
+                      </td>
+                      <td className={clsx(styles.linesTd, styles.lineTotal)}>
+                        {formatCurrency(lineTotal)}
+                      </td>
+                      <td className={clsx(styles.linesTd, styles.removeCell)}>
+                        <X size={16} color="var(--red)" className={styles.removeBtn} onClick={() => removeLine(i)} />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -462,17 +601,53 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
             </div>
           )}
           <div className={styles.totalsDiscountRow}>
-            <span className={styles.discountLabel}><Percent size={14} /> Descuento Global (%):</span>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={globalDiscount}
-              onChange={e => setGlobalDiscount(Number(e.target.value))}
-              disabled={!allowManualDiscount}
-              title={!allowManualDiscount ? 'Descuentos manuales deshabilitados' : ''}
-              className={clsx(styles.discountInput, !allowManualDiscount && styles.discountInputDisabled)}
-            />
+            <span className={styles.discountLabel}>
+              <Tag size={14} /> Descuento Global:
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                type="number"
+                min="0"
+                max={globalDiscountType === 'PERCENTAGE' ? 100 : totalAfterLines}
+                value={globalDiscountValue || ''}
+                placeholder="0"
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  if (val > 0 && !hasDiscountPermission && !globalSupervisorToken) {
+                    setPendingSupervisorAction({
+                      action: 'apply:Discount',
+                      label: 'Aplicar Descuento Global',
+                      onApproved: (res) => {
+                        setGlobalSupervisorToken(res.supervisorApprovalToken);
+                        setGlobalDiscountValue(val);
+                      },
+                    });
+                    setSupervisorModalOpen(true);
+                  } else {
+                    setGlobalDiscountValue(val);
+                  }
+                }}
+                disabled={!allowManualDiscount}
+                title={!allowManualDiscount ? 'Descuentos manuales deshabilitados' : ''}
+                className={clsx(styles.discountInput, !allowManualDiscount && styles.discountInputDisabled)}
+                style={{ width: '70px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setGlobalDiscountType(t => t === 'PERCENTAGE' ? 'FIXED' : 'PERCENTAGE')}
+                style={{
+                  padding: '3px 6px',
+                  fontSize: '0.8rem',
+                  borderRadius: '4px',
+                  border: '1px solid var(--color-border-subtle, #cbd5e1)',
+                  background: '#f8fafc',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                {globalDiscountType === 'FIXED' ? '$ Monto' : '% Pct'}
+              </button>
+            </div>
           </div>
           <div className={styles.grandTotal}>
             <span>Total Neto:</span>
@@ -481,6 +656,19 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
         </div>
 
       </div>
+
+      {pendingSupervisorAction && (
+        <SupervisorApprovalModal
+          open={supervisorModalOpen}
+          onClose={() => setSupervisorModalOpen(false)}
+          action={pendingSupervisorAction.action}
+          actionLabel={pendingSupervisorAction.label}
+          onApproved={(res) => {
+            pendingSupervisorAction.onApproved(res);
+            setSupervisorModalOpen(false);
+          }}
+        />
+      )}
     </Drawer>
   );
 }

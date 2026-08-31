@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  FileText, PauseCircle, CloudOff, Tags, Trash2, Gift, ChevronDown,
+  FileText, PauseCircle, CloudOff, Tags, Trash2, Gift, ChevronDown, Tag, Edit3, Percent, DollarSign,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePosStore } from '../store/usePosStore';
@@ -11,6 +11,7 @@ import { computeIvaBreakdown } from '../utils/posTax';
 import { POS_PAYMENT_METHODS, type PosPaymentMethodId } from '../constants/posPaymentMethods';
 import { PosCustomerSearch } from './PosCustomerSearch';
 import { PosRedemptionPanel } from './PosRedemptionPanel';
+import { DiscountModal, type DiscountApplyData } from './DiscountModal';
 import styles from '@/pages/pos/POSPage.module.css';
 
 type CartVariant = {
@@ -73,10 +74,14 @@ export function POSCart({
 }) {
   const cart = usePosStore(s => s.cart);
   const cartDiscountPct = usePosStore(s => s.cartDiscountPct);
+  const globalDiscountType = usePosStore(s => s.globalDiscountType);
+  const globalDiscountValue = usePosStore(s => s.globalDiscountValue);
   const selectedCustomerId = usePosStore(s => s.selectedCustomerId);
 
   const updateQty = usePosStore(s => s.updateQty);
   const updateDiscount = usePosStore(s => s.updateDiscount);
+  const updateLineDiscountAndPrice = usePosStore(s => s.updateLineDiscountAndPrice);
+  const setGlobalDiscountData = usePosStore(s => s.setGlobalDiscountData);
   const removeLine = usePosStore(s => s.removeLine);
   const clearCart = usePosStore(s => s.clearCart);
   const setCartDiscountPct = usePosStore(s => s.setCartDiscountPct);
@@ -84,6 +89,18 @@ export function POSCart({
 
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PosPaymentMethodId>('CASH');
+
+  const [discountModalConfig, setDiscountModalConfig] = useState<{
+    open: boolean;
+    mode: 'LINE' | 'GLOBAL';
+    variantId?: string;
+    productName?: string;
+    basePrice?: number;
+    customUnitPrice?: number;
+    quantity?: number;
+    discountType?: 'PERCENTAGE' | 'FIXED';
+    discountValue?: number;
+  }>({ open: false, mode: 'GLOBAL' });
 
   const { data: selectedCustomer } = useQuery({
     queryKey: ['customer', selectedCustomerId],
@@ -178,7 +195,14 @@ export function POSCart({
             cart.map((item, index) => {
               const variant = item.variant as CartVariant;
               const imageUrl = getVariantImage(variant);
-              const lineTotal = (variant.basePrice * item.qty) * (1 - item.discountPct / 100);
+              const effectivePrice = item.customUnitPrice ?? variant.basePrice;
+              const isPriceOverridden = item.customUnitPrice !== undefined && Math.abs(item.customUnitPrice - variant.basePrice) > 0.01;
+              const hasDiscount = (item.discountType === 'FIXED' && (item.discountValue || 0) > 0) || (item.discountPct > 0);
+              
+              const discountAmt = item.discountType === 'FIXED'
+                ? Math.min(effectivePrice * item.qty, item.discountValue || 0)
+                : (effectivePrice * item.qty) * ((item.discountValue ?? item.discountPct ?? 0) / 100);
+              const lineTotal = Math.max(0, (effectivePrice * item.qty) - discountAmt);
               const isCombo = variant.product?.type === 'COMBO';
               const comboLines = variant.product?.comboLines;
 
@@ -200,7 +224,16 @@ export function POSCart({
                     <span className={styles.cartItemSku}>
                       {variant.sku || '—'}
                       {variant.size ? ` · ${variant.size}` : ''}
-                      {item.discountPct > 0 ? ` · −${item.discountPct}%` : ''}
+                      {isPriceOverridden && (
+                        <span style={{ color: 'var(--color-primary-600, #2563eb)', fontWeight: 600, marginLeft: 4 }}>
+                          · Precio: {formatCurrency(effectivePrice)}
+                        </span>
+                      )}
+                      {hasDiscount && (
+                        <span style={{ color: 'var(--color-danger-600, #dc2626)', fontWeight: 600, marginLeft: 4 }}>
+                          · −{item.discountType === 'FIXED' ? formatCurrency(item.discountValue || 0) : `${item.discountValue ?? item.discountPct}%`}
+                        </span>
+                      )}
                     </span>
 
                     {isCombo && comboLines && comboLines.length > 0 && (
@@ -242,16 +275,41 @@ export function POSCart({
                       <button type="button" className={styles.qtyBtn} aria-label="Aumentar cantidad" onClick={() => updateQty(variant.id, item.qty + 1)}>
                         +
                       </button>
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        aria-label="Descuento porcentaje"
-                        value={item.discountPct}
-                        onChange={e => updateDiscount(variant.id, Math.min(100, Math.max(0, Number(e.target.value))))}
-                        className={styles.discountInput}
-                        title="Desc. %"
-                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDiscountModalConfig({
+                            open: true,
+                            mode: 'LINE',
+                            variantId: variant.id,
+                            productName: getVariantName(variant),
+                            basePrice: variant.basePrice,
+                            customUnitPrice: item.customUnitPrice,
+                            quantity: item.qty,
+                            discountType: item.discountType || 'PERCENTAGE',
+                            discountValue: item.discountValue ?? item.discountPct ?? 0,
+                          })
+                        }
+                        title="Modificar precio o aplicar descuento a esta línea"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          padding: '3px 7px',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          borderRadius: '4px',
+                          border: isPriceOverridden || hasDiscount ? '1px solid var(--color-primary-300, #93c5fd)' : '1px solid var(--color-border-subtle, #cbd5e1)',
+                          background: isPriceOverridden || hasDiscount ? 'var(--color-primary-50, #eff6ff)' : '#fff',
+                          color: isPriceOverridden || hasDiscount ? 'var(--color-primary-700, #1d4ed8)' : 'var(--color-text-secondary, #475569)',
+                          cursor: 'pointer',
+                          marginLeft: '4px',
+                        }}
+                      >
+                        <Tag size={12} />
+                        {isPriceOverridden || hasDiscount ? 'Editado' : 'Desc / Precio'}
+                      </button>
                     </div>
                   </div>
 
@@ -282,26 +340,53 @@ export function POSCart({
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
           </div>
+
+          {lineDiscounts > 0 && (
+            <div className={styles.summaryRow} style={{ color: 'var(--color-danger-600, #dc2626)' }}>
+              <span>Descuentos Línea</span>
+              <span className={styles.discountTotal}>(−) {formatCurrency(lineDiscounts)}</span>
+            </div>
+          )}
+
           <div className={`${styles.summaryRow} ${styles.summaryRowCenter}`}>
             <span className={styles.discountLabelRow}>
-              Descuento
-              <input
-                type="number"
-                min={0}
-                max={100}
-                aria-label="Descuento global porcentaje"
-                className={styles.discountInputLg}
-                value={cartDiscountPct}
-                onChange={e => setCartDiscountPct(Math.min(100, Math.max(0, Number(e.target.value))))}
-              />
-              %
+              <span>Desc. Global:</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setDiscountModalConfig({
+                    open: true,
+                    mode: 'GLOBAL',
+                    discountType: globalDiscountType,
+                    discountValue: globalDiscountValue,
+                  })
+                }
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--color-border-subtle, #cbd5e1)',
+                  background: globalDiscount > 0 ? 'var(--color-primary-50, #eff6ff)' : '#fff',
+                  color: globalDiscount > 0 ? 'var(--color-primary-700, #1d4ed8)' : 'var(--color-text-secondary, #475569)',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginLeft: '4px',
+                }}
+              >
+                {globalDiscountType === 'FIXED' ? '$' : '%'} {globalDiscountValue > 0 ? `${globalDiscountValue}${globalDiscountType === 'PERCENTAGE' ? '%' : ''}` : 'Aplicar'}
+              </button>
             </span>
-            <span className={styles.discountTotal}>(−) {formatCurrency(lineDiscounts + globalDiscount)}</span>
+            <span className={styles.discountTotal}>(−) {formatCurrency(globalDiscount)}</span>
           </div>
+
           <div className={styles.summaryRow}>
             <span>IVA 21%</span>
             <span>{formatCurrency(iva.iva)}</span>
           </div>
+
           {(giftCardAmount > 0 || loyaltyDiscount > 0) && (
             <>
               {giftCardAmount > 0 && (
@@ -381,6 +466,38 @@ export function POSCart({
           </div>
         </div>
       </div>
+
+      {/* DISCOUNT MODAL (LINE / GLOBAL) */}
+      <DiscountModal
+        open={discountModalConfig.open}
+        onClose={() => setDiscountModalConfig(c => ({ ...c, open: false }))}
+        mode={discountModalConfig.mode}
+        initialBasePrice={discountModalConfig.basePrice}
+        initialCustomUnitPrice={discountModalConfig.customUnitPrice}
+        initialQuantity={discountModalConfig.quantity}
+        initialDiscountType={discountModalConfig.discountType}
+        initialDiscountValue={discountModalConfig.discountValue}
+        productName={discountModalConfig.productName}
+        subtotal={subtotal - lineDiscounts}
+        onApply={(data: DiscountApplyData) => {
+          if (data.mode === 'LINE' && discountModalConfig.variantId) {
+            updateLineDiscountAndPrice(discountModalConfig.variantId, {
+              customUnitPrice: data.customUnitPrice,
+              discountType: data.discountType,
+              discountValue: data.discountValue,
+              supervisorApprovalToken: data.supervisorApprovalToken,
+              authorizedByName: data.authorizedByName,
+            });
+          } else if (data.mode === 'GLOBAL') {
+            setGlobalDiscountData({
+              discountType: data.discountType,
+              discountValue: data.discountValue,
+              supervisorApprovalToken: data.supervisorApprovalToken,
+              authorizedByName: data.authorizedByName,
+            });
+          }
+        }}
+      />
     </aside>
   );
 }

@@ -44,4 +44,60 @@ describe('applyManualCartDiscount', () => {
       }),
     ).toThrow('CART_DISCOUNT_EXCEEDS_TOTAL');
   });
+
+  it('calculates PERCENTAGE discount correctly', () => {
+    const result = applyManualCartDiscount({
+      merchandiseTotal: 10000,
+      globalDiscountType: 'PERCENTAGE',
+      globalDiscountValue: 15,
+    });
+    expect(result.manualCartDiscount).toBe(1500);
+    expect(result.pricedTotal).toBe(8500);
+    expect(result.effectiveDiscountPct).toBe(15);
+  });
+
+  it('calculates FIXED amount discount correctly', () => {
+    const result = applyManualCartDiscount({
+      merchandiseTotal: 10000,
+      globalDiscountType: 'FIXED',
+      globalDiscountValue: 2000,
+    });
+    expect(result.manualCartDiscount).toBe(2000);
+    expect(result.pricedTotal).toBe(8000);
+    expect(result.effectiveDiscountPct).toBe(20);
+  });
+
+  it('caps FIXED amount discount to merchandise total', () => {
+    const result = applyManualCartDiscount({
+      merchandiseTotal: 5000,
+      globalDiscountType: 'FIXED',
+      globalDiscountValue: 8000,
+    });
+    expect(result.manualCartDiscount).toBe(5000);
+    expect(result.pricedTotal).toBe(0);
+  });
+
+  it('allows exceeding maxDiscountPct when supervisor override is true', () => {
+    const result = applyManualCartDiscount({
+      merchandiseTotal: 10000,
+      globalDiscountType: 'PERCENTAGE',
+      globalDiscountValue: 50,
+      maxDiscountPct: 20,
+      hasSupervisorOverride: true,
+    });
+    expect(result.manualCartDiscount).toBe(5000);
+    expect(result.pricedTotal).toBe(5000);
+  });
+
+  it('allows discount when allowManualDiscount is false if supervisor override is true', () => {
+    const result = applyManualCartDiscount({
+      merchandiseTotal: 10000,
+      globalDiscountType: 'PERCENTAGE',
+      globalDiscountValue: 10,
+      allowManualDiscount: false,
+      hasSupervisorOverride: true,
+    });
+    expect(result.manualCartDiscount).toBe(1000);
+    expect(result.pricedTotal).toBe(9000);
+  });
 });

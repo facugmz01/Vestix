@@ -7,6 +7,11 @@ export interface CartItem {
   variant: ProductVariant;
   qty: number;
   discountPct: number;
+  customUnitPrice?: number;
+  discountType?: 'PERCENTAGE' | 'FIXED';
+  discountValue?: number;
+  supervisorApprovalToken?: string;
+  authorizedByName?: string;
 }
 
 export interface SuspendedSale {
@@ -16,17 +21,25 @@ export interface SuspendedSale {
   customerId: string;
   discount: number;
   total: number;
+  globalDiscountType?: 'PERCENTAGE' | 'FIXED';
+  globalDiscountValue?: number;
 }
 
 export interface LastSaleSnapshot {
   cart: CartItem[];
   customerId: string;
   cartDiscountPct: number;
+  globalDiscountType?: 'PERCENTAGE' | 'FIXED';
+  globalDiscountValue?: number;
 }
 
 interface PosState {
   cart: CartItem[];
   cartDiscountPct: number;
+  globalDiscountType: 'PERCENTAGE' | 'FIXED';
+  globalDiscountValue: number;
+  globalSupervisorToken?: string;
+  globalAuthorizedByName?: string;
   selectedCustomerId: string;
 
   suspendedSales: SuspendedSale[];
@@ -56,11 +69,27 @@ interface PosState {
   addVariantWithRecent: (variant: ProductVariant) => void;
   updateQty: (id: string, qty: number) => void;
   updateDiscount: (id: string, pct: number) => void;
+  updateLineDiscountAndPrice: (
+    id: string,
+    updates: {
+      customUnitPrice?: number;
+      discountType?: 'PERCENTAGE' | 'FIXED';
+      discountValue?: number;
+      supervisorApprovalToken?: string;
+      authorizedByName?: string;
+    },
+  ) => void;
   removeLine: (id: string) => void;
   clearCart: () => void;
 
   setCustomerId: (id: string) => void;
   setCartDiscountPct: (pct: number) => void;
+  setGlobalDiscountData: (updates: {
+    discountType?: 'PERCENTAGE' | 'FIXED';
+    discountValue?: number;
+    supervisorApprovalToken?: string;
+    authorizedByName?: string;
+  }) => void;
 
   toggleFavorite: (variantId: string) => void;
   recordRecentVariant: (variantId: string) => void;
@@ -97,6 +126,10 @@ export const usePosStore = create<PosState>()(
     (set, get) => ({
       cart: [],
       cartDiscountPct: 0,
+      globalDiscountType: 'PERCENTAGE',
+      globalDiscountValue: 0,
+      globalSupervisorToken: undefined,
+      globalAuthorizedByName: undefined,
       selectedCustomerId: '',
       suspendedSales: [],
       favoriteVariantIds: [],
@@ -142,7 +175,34 @@ export const usePosStore = create<PosState>()(
       }),
 
       updateDiscount: (id, pct) => set((state) => ({
-        cart: state.cart.map(i => i.variant.id === id ? { ...i, discountPct: pct } : i),
+        cart: state.cart.map(i => i.variant.id === id ? { ...i, discountPct: pct, discountType: 'PERCENTAGE', discountValue: pct } : i),
+      })),
+
+      updateLineDiscountAndPrice: (id, updates) => set((state) => ({
+        cart: state.cart.map(i => {
+          if (i.variant.id !== id) return i;
+          const basePrice = updates.customUnitPrice !== undefined ? updates.customUnitPrice : (i.customUnitPrice ?? i.variant.basePrice);
+          const dType = updates.discountType ?? i.discountType ?? 'PERCENTAGE';
+          const dVal = updates.discountValue !== undefined ? updates.discountValue : (i.discountValue ?? i.discountPct ?? 0);
+          
+          let discountPct = 0;
+          if (dType === 'PERCENTAGE') {
+            discountPct = dVal;
+          } else {
+            const lineTotal = basePrice * i.qty;
+            discountPct = lineTotal > 0 ? Math.min(100, (dVal / lineTotal) * 100) : 0;
+          }
+
+          return {
+            ...i,
+            customUnitPrice: updates.customUnitPrice,
+            discountType: dType,
+            discountValue: dVal,
+            discountPct,
+            supervisorApprovalToken: updates.supervisorApprovalToken ?? i.supervisorApprovalToken,
+            authorizedByName: updates.authorizedByName ?? i.authorizedByName,
+          };
+        }),
       })),
 
       removeLine: (id) => set((state) => ({
@@ -153,6 +213,10 @@ export const usePosStore = create<PosState>()(
         cart: [],
         selectedCustomerId: '',
         cartDiscountPct: 0,
+        globalDiscountType: 'PERCENTAGE',
+        globalDiscountValue: 0,
+        globalSupervisorToken: undefined,
+        globalAuthorizedByName: undefined,
         paymentReference: '',
         paymentSplits: [],
         giftCardCode: '',
@@ -164,7 +228,23 @@ export const usePosStore = create<PosState>()(
         selectedCustomerId: id,
         loyaltyPointsToRedeem: 0,
       }),
-      setCartDiscountPct: (pct) => set({ cartDiscountPct: pct }),
+      setCartDiscountPct: (pct) => set({
+        cartDiscountPct: pct,
+        globalDiscountType: 'PERCENTAGE',
+        globalDiscountValue: pct,
+      }),
+
+      setGlobalDiscountData: (updates) => set((state) => {
+        const dType = updates.discountType ?? state.globalDiscountType ?? 'PERCENTAGE';
+        const dVal = updates.discountValue !== undefined ? updates.discountValue : state.globalDiscountValue;
+        return {
+          globalDiscountType: dType,
+          globalDiscountValue: dVal,
+          cartDiscountPct: dType === 'PERCENTAGE' ? dVal : state.cartDiscountPct,
+          globalSupervisorToken: updates.supervisorApprovalToken ?? state.globalSupervisorToken,
+          globalAuthorizedByName: updates.authorizedByName ?? state.globalAuthorizedByName,
+        };
+      }),
 
       toggleFavorite: (variantId) => set((state) => {
         const exists = state.favoriteVariantIds.includes(variantId);

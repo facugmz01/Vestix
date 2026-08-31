@@ -131,6 +131,9 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
         status: status === 'QUOTATION' ? 'QUOTE' : 'COMPLETED',
         posGrandTotal: amountDue,
         cartDiscountTotal: Math.max(0, cartDiscountTotal ?? 0),
+        globalDiscountType: usePosStore.getState().globalDiscountType,
+        globalDiscountValue: usePosStore.getState().globalDiscountValue,
+        supervisorApprovalToken: usePosStore.getState().globalSupervisorToken,
         createdAtIso: new Date().toISOString(),
         lines: cart.map(i => {
           const variant = i.variant as ProductVariant & {
@@ -144,8 +147,12 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
             variantId: variant.id,
             ...(categoryId ? { categoryId } : {}),
             quantity: i.qty,
-            unitPriceOverride: variant.basePrice,
+            unitPriceOverride: i.customUnitPrice ?? variant.basePrice,
+            customUnitPrice: i.customUnitPrice,
+            discountType: i.discountType,
+            discountValue: i.discountValue,
             discountPct: i.discountPct,
+            supervisorApprovalToken: i.supervisorApprovalToken,
           };
         }),
         issueInvoice,

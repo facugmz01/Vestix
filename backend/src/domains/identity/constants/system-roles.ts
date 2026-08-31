@@ -33,6 +33,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, { action: string; subject:
     { action: 'print', subject: 'Labels' },
     { action: 'manage', subject: 'Labels' },
     { action: 'manage', subject: 'Delivery' },
+    { action: 'apply', subject: 'Discount' },
+    { action: 'override', subject: 'Price' },
   ],
   CASHIER: [
     { action: 'create', subject: 'Sales' },
