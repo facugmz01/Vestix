@@ -1,0 +1,104 @@
+.storiesContainer {
+  padding: 12px 16px;
+  background: var(--surface-0, #ffffff);
+  border-bottom: 1px solid var(--border, #f1f5f9);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.storiesContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.storiesTrack {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: max-content;
+}
+
+.storyItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+.storyRing {
+  width: 58px;
+  height: 58px;
+  border-radius: 9999px;
+  padding: 2.5px;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.storyItem:active .storyRing {
+  transform: scale(0.95);
+}
+
+.storyRingActive {
+  background: linear-gradient(45deg, #f59e0b, #ec4899, #8b5cf6);
+}
+
+.waRing {
+  background: #25d366;
+}
+
+.storyInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--surface-0, #ffffff);
+  border: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #475569);
+  overflow: hidden;
+}
+
+.waInner {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.storyIcon {
+  color: var(--sf-primary, var(--accent, #6366f1));
+}
+
+.waIcon {
+  color: #ffffff;
+}
+
+.storyInitial {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text-primary, #0f172a);
+}
+
+.storyLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  max-width: 64px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.storyLabelActive {
+  color: var(--text-primary, #0f172a);
+  font-weight: 800;
+}

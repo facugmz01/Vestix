@@ -103,6 +103,7 @@ export class StorefrontController {
 
     return {
       ...storefront,
+      storefrontTheme: storefront.storefrontTheme || 'classic',
       hidePrices: Boolean(storefront.hidePrices),
       whatsappNumber: storefront.whatsappNumber || storefront.whatsapp || '',
       whatsappMessageTemplate:

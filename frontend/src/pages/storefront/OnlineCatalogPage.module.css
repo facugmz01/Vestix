@@ -346,6 +346,42 @@
   }
 }
 
+:global(.theme-grid-catalog) {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+}
+
+@media (min-width: 768px) {
+  :global(.theme-grid-catalog) {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+:global(.theme-grid-minimal) {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px !important;
+}
+
+@media (min-width: 768px) {
+  :global(.theme-grid-minimal) {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+    gap: 28px !important;
+  }
+}
+
+:global(.theme-grid-app_like) {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px !important;
+}
+
+@media (min-width: 768px) {
+  :global(.theme-grid-app_like) {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)) !important;
+    gap: 20px !important;
+  }
+}
+
 .skeletonGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
-import { Search, PackageX, ChevronDown, Filter, ShoppingBag, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, PackageX, ChevronDown, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import clsx from 'clsx';
 import { storefrontApi, StorefrontSettings } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -11,6 +11,7 @@ import { apiClient } from '@/api/client';
 import { StorefrontSEO } from '@/features/storefront/components/StorefrontSEO';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { useDebounce } from '@/hooks/useDebounce';
+import { ThemeProductCard, ThemeStoriesBar } from '@/components/storefront';
 import styles from './OnlineCatalogPage.module.css';
 
 interface Banner {
@@ -315,22 +316,39 @@ export default function OnlineCatalogPage() {
     </div>
   );
 
-  const hasBanners = settings?.imagesCarousel && settings.imagesCarousel.length > 0;
+  const theme = settings?.storefrontTheme || 'classic';
 
   return (
     <main className={styles.main}>
-      <StorefrontSEO title="Catálogo | Tienda Oficial" />
+      <StorefrontSEO
+        title="Catálogo de Productos"
+        description="Explorá nuestra colección completa de productos con stock actualizado en tiempo real."
+      />
 
-      {hasBanners ? (
-        <BannerCarousel banners={settings.imagesCarousel as any} />
-      ) : (
+      {settings?.imagesCarousel && settings.imagesCarousel.length > 0 && (
+        <BannerCarousel banners={settings.imagesCarousel as Banner[]} />
+      )}
+
+      {(!settings?.imagesCarousel || settings.imagesCarousel.length === 0) && (
         <div className={styles.hero}>
-          <span className={styles.heroBadge}>Nuevos Ingresos</span>
+          <div className={styles.heroBadge}>Catálogo Online</div>
           <h1 className={styles.heroTitle}>Nueva Colección</h1>
           <p className={styles.heroText}>
             Descubrí nuestros últimos productos y encontrá tu estilo perfecto comprando directo desde nuestra tienda oficial.
           </p>
         </div>
+      )}
+
+      {theme === 'app_like' && (
+        <ThemeStoriesBar
+          categories={categories}
+          selectedCategory={categoryId}
+          onSelectCategory={(id) => {
+            setCategoryId(id);
+            setPage(1);
+          }}
+          whatsappNumber={settings?.whatsappNumber || settings?.whatsapp}
+        />
       )}
 
       <div className={clsx(styles.layout, isMobile && styles.layoutMobile)}>
@@ -442,56 +460,19 @@ export default function OnlineCatalogPage() {
             </div>
           ) : (
             <>
-              <div className={styles.grid}>
-                {products.map(p => {
-                  const isAvailable = p.inStock;
-                  const hasImage = p.images && p.images.length > 0;
-                  const price = p.price || p.basePrice || 0;
-                  const hidePrices = Boolean(settings?.hidePrices);
-
-                  return (
-                    <Link key={p.id} to={`${prefix}/product/${p.id}`} className={styles.productCard}>
-                      <div className={styles.imageArea}>
-                        {hasImage ? (
-                          <img src={p.images![0]} alt={p.name} className={styles.productImage} loading="lazy" />
-                        ) : (
-                          <div className={styles.placeholder}>
-                            <ShoppingBag size={48} color="var(--text-primary)" className={styles.placeholderIcon} />
-                            <span className={styles.placeholderLetter}>{p.name.charAt(0).toUpperCase()}</span>
-                          </div>
-                        )}
-
-                        <div className={styles.badges}>
-                          {!isAvailable && <span className={styles.soldOut}>Agotado</span>}
-                        </div>
-
-                        {!isMobile && (
-                          <div className={styles.quickAdd}>
-                            {hidePrices ? 'Consultar' : 'Ver Detalles'}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className={styles.productBody}>
-                        <span className={styles.categoryLabel}>
-                          {p.brand || p.category || 'Categoría'}
-                        </span>
-                        <h3 className={styles.productName}>{p.name}</h3>
-                        {hidePrices ? (
-                          <p className={styles.productPrice} style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.9rem' }}>
-                            Consultar por WhatsApp
-                          </p>
-                        ) : (
-                          <p className={styles.productPrice}>
-                            {p.maxPrice && p.maxPrice > price
-                              ? `Desde ${formatCurrency(price)}`
-                              : formatCurrency(price)}
-                          </p>
-                        )}
-                      </div>
-                    </Link>
-                  );
-                })}
+              <div className={clsx(styles.grid, `theme-grid-${theme}`)}>
+                {products.map(p => (
+                  <ThemeProductCard
+                    key={p.id}
+                    product={p}
+                    prefix={prefix}
+                    theme={theme}
+                    hidePrices={Boolean(settings?.hidePrices)}
+                    isMobile={isMobile}
+                    whatsappNumber={settings?.whatsappNumber || settings?.whatsapp}
+                    whatsappMessageTemplate={settings?.whatsappMessageTemplate}
+                  />
+                ))}
               </div>
 
               {totalPages > 1 && (

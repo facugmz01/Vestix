@@ -125,6 +125,7 @@ export interface ArcaSettings {
 }
 
 export interface StorefrontSettings {
+  storefrontTheme?: 'classic' | 'minimal' | 'streetwear' | 'catalog' | 'app_like';
   enabled: boolean;
   primaryColor: string;
   fontFamily: string;

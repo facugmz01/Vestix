@@ -7,7 +7,8 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { storefrontApi } from '@/api/storefront.api';
 import { buildStorefrontThemeCss } from '@/utils/storefrontTheme';
-import { StorefrontSearchBar } from '@/components/storefront';
+import { StorefrontSearchBar, ThemeBottomNav } from '@/components/storefront';
+import clsx from 'clsx';
 import styles from './StorefrontLayout.module.css';
 
 export default function StorefrontLayout() {
@@ -69,9 +70,11 @@ export default function StorefrontLayout() {
     if (shellRef.current) shellRef.current.style.fontFamily = fontFamily;
   }, [fontFamily]);
 
+  const theme = settings?.storefrontTheme || 'classic';
+
   return (
-    <div ref={shellRef} className={styles.shell}>
-      <style>{buildStorefrontThemeCss(primaryColor)}</style>
+    <div ref={shellRef} className={clsx(styles.shell, `storefront-theme-${theme}`)}>
+      <style>{buildStorefrontThemeCss(primaryColor, theme)}</style>
 
       <header className={styles.header}>
         <div className={styles.headerInner}>
@@ -191,6 +194,15 @@ export default function StorefrontLayout() {
           </div>
         </div>
       </footer>
+
+      {theme === 'app_like' && (
+        <ThemeBottomNav
+          prefix={prefix}
+          whatsappNumber={settings?.whatsappNumber || settings?.whatsapp}
+          hidePrices={Boolean(settings?.hidePrices)}
+          totalItems={totalItems}
+        />
+      )}
     </div>
   );
 }

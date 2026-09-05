@@ -8,4 +8,7 @@ export { WhatsAppInquiryButton, buildWhatsAppInquiryUrl, WhatsAppIcon } from './
 export type { WhatsAppInquiryButtonProps } from './WhatsAppInquiryButton';
 export { StorefrontSearchBar } from './StorefrontSearchBar';
 export type { StorefrontSearchBarProps } from './StorefrontSearchBar';
+export { ThemeProductCard } from './ThemeProductCard';
+export { ThemeBottomNav } from './ThemeBottomNav';
+export { ThemeStoriesBar } from './ThemeStoriesBar';
 

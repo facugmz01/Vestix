@@ -18,6 +18,11 @@ import {
   KeyRound,
   MessageSquareText,
   Eye,
+  Palette,
+  Sparkles,
+  Zap,
+  Smartphone,
+  LayoutGrid,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -109,6 +114,128 @@ export function StorefrontSettingsPanel() {
 
           <ToggleSwitch label="Habilitar Tienda web pública" hint="Los clientes pueden visitar tu catálogo cuando está activo." {...register('enabled')} />
           
+          <hr className={styles.divider} />
+
+          <div>
+            <label className={styles.selectLabel} style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Palette size={16} /> Plantilla y Estilo Visual de la Tienda
+            </label>
+            <p className={styles.cardDescription} style={{ marginBottom: '14px' }}>
+              Selecciona el concepto visual de diseño y experiencia de usuario que verán los clientes en la tienda pública.
+            </p>
+
+            <Controller
+              control={control}
+              name="storefrontTheme"
+              render={({ field }) => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                  {[
+                    {
+                      id: 'classic',
+                      title: 'Clásico Vestix',
+                      badge: 'Original',
+                      badgeBg: '#475569',
+                      desc: 'Diseño equilibrado y tradicional con catálogo estándar.',
+                      icon: <Store size={18} />
+                    },
+                    {
+                      id: 'minimal',
+                      title: 'Fashion Minimalist',
+                      badge: 'Zara / Dutti',
+                      badgeBg: '#18181b',
+                      desc: 'Look editorial de alta costura, fotos 3:4 y tipografía fina.',
+                      icon: <Sparkles size={18} />
+                    },
+                    {
+                      id: 'streetwear',
+                      title: 'Modern Streetwear',
+                      badge: 'Nike / ASOS',
+                      badgeBg: '#eab308',
+                      desc: 'Alto contraste, badges flúor (Drop, Sale) y carruseles snap.',
+                      icon: <Zap size={18} />
+                    },
+                    {
+                      id: 'catalog',
+                      title: 'Catalog High-Density',
+                      badge: 'Mayorista / WhatsApp',
+                      badgeBg: '#16a34a',
+                      desc: 'SKU visible, chips de talle/color y botón WhatsApp en card.',
+                      icon: <LayoutGrid size={18} />
+                    },
+                    {
+                      id: 'app_like',
+                      title: 'App-Like Native',
+                      badge: 'Instagram Shop',
+                      badgeBg: '#a855f7',
+                      desc: 'Bottom bar fija en móvil, stories en cabecera y tarjetas suaves.',
+                      icon: <Smartphone size={18} />
+                    }
+                  ].map(themeItem => {
+                    const isSelected = (field.value || 'classic') === themeItem.id;
+                    return (
+                      <div
+                        key={themeItem.id}
+                        onClick={() => field.onChange(themeItem.id)}
+                        style={{
+                          border: isSelected ? '2px solid var(--accent, #2563eb)' : '1px solid var(--border-color, #e2e8f0)',
+                          borderRadius: '12px',
+                          padding: '12px',
+                          cursor: 'pointer',
+                          backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'var(--card-bg, #ffffff)',
+                          transition: 'all 0.15s ease-in-out',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          boxShadow: isSelected ? '0 0 0 1px var(--accent, #2563eb)' : 'none'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <div style={{ color: isSelected ? 'var(--accent, #2563eb)' : '#64748b' }}>
+                              {themeItem.icon}
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                padding: '2px 7px',
+                                borderRadius: '9999px',
+                                backgroundColor: themeItem.badgeBg,
+                                color: '#ffffff'
+                              }}
+                            >
+                              {themeItem.badge}
+                            </span>
+                          </div>
+                          <div style={{ fontWeight: 600, fontSize: '13px', color: isSelected ? 'var(--accent, #2563eb)' : 'var(--text-primary)' }}>
+                            {themeItem.title}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', lineHeight: 1.35 }}>
+                            {themeItem.desc}
+                          </div>
+                        </div>
+
+                        <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <input
+                            type="radio"
+                            name="storefrontThemeRadio"
+                            checked={isSelected}
+                            onChange={() => field.onChange(themeItem.id)}
+                            style={{ accentColor: 'var(--accent, #2563eb)', cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: '11px', fontWeight: isSelected ? 600 : 400, color: isSelected ? 'var(--accent, #2563eb)' : '#64748b' }}>
+                            {isSelected ? 'Plantilla Activa' : 'Seleccionar'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            />
+          </div>
+
           <hr className={styles.divider} />
 
           <div className={clsx(styles.grid, styles.grid2)}>

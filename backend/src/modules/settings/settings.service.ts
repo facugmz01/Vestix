@@ -137,6 +137,7 @@ export interface NotificationSettings {
 }
 
 export interface StorefrontSettings {
+  storefrontTheme?: 'classic' | 'minimal' | 'streetwear' | 'catalog' | 'app_like';
   enabled: boolean;
   primaryColor: string;
   fontFamily: string;
@@ -361,6 +362,7 @@ export class SettingsService implements OnModuleInit {
     const legacyLogin = legacyNotifications?.storeLoginChannels;
     return {
       ...storefront,
+      storefrontTheme: storefront.storefrontTheme || 'classic',
       hidePrices: storefront.hidePrices ?? false,
       whatsappNumber: storefront.whatsappNumber || storefront.whatsapp || '',
       whatsappMessageTemplate:
