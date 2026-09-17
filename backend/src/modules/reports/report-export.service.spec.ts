@@ -67,15 +67,40 @@ describe('ReportExportService', () => {
     const result = await service.export('sales', { from: '2026-01-01', to: '2026-01-31' });
     const csv = Buffer.from(result.base64, 'base64').toString('utf-8');
 
-    expect(result.downloadUrl).toContain('data:text/csv;charset=utf-8,');
+    expect(result.downloadUrl).toContain('data:text/csv;charset=utf-8;base64,');
     expect(result.contentType).toBe('text/csv; charset=utf-8');
-    expect(result.filename).toMatch(/^sales-report-/);
-    expect(csv).toContain('Sales Summary');
-    expect(csv).toContain('Total Orders,2');
-    expect(csv).toContain('SKU-1,Shirt,3,300');
+    expect(result.filename).toMatch(/^informe-ventas-/);
+    expect(csv).toContain('INFORME DE VENTAS');
+    expect(csv).toContain('Cantidad de Órdenes,2');
+    expect(csv).toContain('SKU-1,Shirt,-,3,$300.00');
     expect(mockSalesReport.getSalesSummary).toHaveBeenCalled();
     expect(mockSalesReport.getTopSellers).toHaveBeenCalled();
     expect(mockSalesReport.getCogsReport).toHaveBeenCalled();
+  });
+
+  it('should generate sales PDF when format is pdf', async () => {
+    mockSalesReport.getSalesSummary.mockResolvedValue({
+      totalGrossSales: 1000,
+      totalDiscounts: 50,
+      totalNetSales: 950,
+      totalOrders: 2,
+      averageTicket: 475,
+      byPaymentMethod: [],
+      byChannel: [],
+    });
+    mockSalesReport.getTopSellers.mockResolvedValue([]);
+    mockSalesReport.getCogsReport.mockResolvedValue({
+      totalCOGS: 120,
+      totalRevenue: 950,
+      grossProfit: 830,
+      grossMarginPct: 87.37,
+    });
+
+    const result = await service.export('sales', { from: '2026-01-01', to: '2026-01-31', format: 'pdf' });
+    expect(result.contentType).toBe('application/pdf');
+    expect(result.filename).toMatch(/^informe-ventas-.*\.pdf$/);
+    expect(result.downloadUrl).toContain('data:application/pdf;base64,');
+    expect(result.base64.length).toBeGreaterThan(100);
   });
 
   it('should generate stock CSV with valuation lines', async () => {
@@ -101,8 +126,8 @@ describe('ReportExportService', () => {
     const result = await service.export('stock', { branchId: 'b1' });
     const csv = Buffer.from(result.base64, 'base64').toString('utf-8');
 
-    expect(csv).toContain('Stock Valuation');
-    expect(csv).toContain('SKU-2,10,0,50,80,500,800');
+    expect(csv).toContain('VALORACIÓN DE STOCK');
+    expect(csv).toContain('SKU-2,10,0,$50.00,$80.00,$500.00,$800.00');
     expect(mockStockReport.getStockValuation).toHaveBeenCalledWith('b1');
   });
 
@@ -118,8 +143,8 @@ describe('ReportExportService', () => {
     const result = await service.export('purchases', { from: '2026-01-01', to: '2026-01-31' });
     const csv = Buffer.from(result.base64, 'base64').toString('utf-8');
 
-    expect(csv).toContain('Purchases Summary');
-    expect(csv).toContain('Acme,2000');
+    expect(csv).toContain('INFORME DE COMPRAS');
+    expect(csv).toContain('Acme,$2000.00');
   });
 
   it('should generate cash CSV with daily series', async () => {
@@ -134,8 +159,8 @@ describe('ReportExportService', () => {
     const result = await service.export('cash', { from: '2026-01-01', to: '2026-01-31', branchId: 'b1' });
     const csv = Buffer.from(result.base64, 'base64').toString('utf-8');
 
-    expect(csv).toContain('Cash Summary');
-    expect(csv).toContain('2026-01-01,1000,200');
+    expect(csv).toContain('INFORME DE CAJA Y TESORERÍA');
+    expect(csv).toContain('2026-01-01,$1000.00,$200.00');
     expect(mockCashReport.getCashSummary).toHaveBeenCalledWith(
       expect.objectContaining({ branchId: 'b1' }),
     );

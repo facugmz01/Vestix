@@ -5,6 +5,7 @@ import { StockReportService } from './stock-report.service';
 import { PurchasesReportService } from './purchases-report.service';
 import { CashReportService } from './cash-report.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { getPresetDateRange } from './utils/report-date.util';
 
 @Injectable()
 export class DashboardService {
@@ -18,26 +19,15 @@ export class DashboardService {
     private readonly prisma: PrismaService,
   ) {}
 
-  private buildTodayRange() {
-    const from = new Date();
-    from.setHours(0, 0, 0, 0);
-    return { from, to: new Date() };
-  }
-
-  private buildMonthRange() {
-    const to = new Date();
-    const from = new Date(to.getFullYear(), to.getMonth(), 1);
-    return { from, to };
-  }
-
   /**
    * MANAGEMENT DASHBOARD
-   * Incluye ventas, compras, deuda proveedores y egresos/ingresos de tesorería.
+   * Includes ventas, compras, deuda proveedores y egresos/ingresos de tesorería.
+   * Ranges are strictly bounded to Argentina time (America/Argentina/Buenos_Aires, UTC-3).
    */
   async getDashboard(branchId?: string): Promise<DashboardSummary> {
     const t0 = Date.now();
-    const today = this.buildTodayRange();
-    const month = this.buildMonthRange();
+    const today = getPresetDateRange('today');
+    const month = getPresetDateRange('month');
 
     const [
       todaySales,
@@ -57,10 +47,13 @@ export class DashboardService {
       this.salesReport.getTopSellers({ from: month.from, to: month.to, branchId }, 5),
       this.stockReport.getLowStockAlerts(branchId),
       this.prisma.saleOrder.count({
-        where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
+        where: {
+          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+          ...(branchId ? { branchId } : {}),
+        },
       }),
-      this.purchasesReport.getPurchasesSummary({ from: today.from, to: today.to }),
-      this.purchasesReport.getPurchasesSummary({ from: month.from, to: month.to }),
+      this.purchasesReport.getPurchasesSummary({ from: today.from, to: today.to, branchId }),
+      this.purchasesReport.getPurchasesSummary({ from: month.from, to: month.to, branchId }),
       this.cashReport.getCashSummary({ from: today.from, to: today.to, branchId }),
       this.cashReport.getCashSummary({ from: month.from, to: month.to, branchId }),
       this.prisma.financialAccount.findMany({

@@ -4,7 +4,10 @@ import { PurchasesReportService } from './purchases-report.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 
 const mockPrismaService: any = {
-  purchaseOrder: { findMany: jest.fn() },
+  purchaseOrder: {
+    aggregate: jest.fn(),
+  },
+  $queryRaw: jest.fn(),
 };
 
 describe('PurchasesReportService', () => {
@@ -31,7 +34,12 @@ describe('PurchasesReportService', () => {
     const to = new Date('2026-01-31');
 
     it('should return zero totals when no orders', async () => {
-      mockPrismaService.purchaseOrder.findMany.mockResolvedValueOnce([]);
+      mockPrismaService.purchaseOrder.aggregate.mockResolvedValueOnce({
+        _count: { id: 0 },
+        _sum: { totalAmount: 0, paidAmount: 0 },
+      });
+      mockPrismaService.$queryRaw.mockResolvedValueOnce([]);
+
       const result = await service.getPurchasesSummary({ from, to });
       expect(result.totalOrders).toBe(0);
       expect(result.totalAmount).toBe(0);
@@ -41,10 +49,13 @@ describe('PurchasesReportService', () => {
     });
 
     it('should aggregate orders and track top suppliers', async () => {
-      mockPrismaService.purchaseOrder.findMany.mockResolvedValueOnce([
-        { totalAmount: 5000, paidAmount: 3000, supplier: { companyName: 'SupplierA' } },
-        { totalAmount: 2000, paidAmount: 2000, supplier: { companyName: 'SupplierB' } },
-        { totalAmount: 8000, paidAmount: 5000, supplier: { companyName: 'SupplierA' } },
+      mockPrismaService.purchaseOrder.aggregate.mockResolvedValueOnce({
+        _count: { id: 3 },
+        _sum: { totalAmount: 15000, paidAmount: 10000 },
+      });
+      mockPrismaService.$queryRaw.mockResolvedValueOnce([
+        { supplierName: 'SupplierA', totalAmount: 13000 },
+        { supplierName: 'SupplierB', totalAmount: 2000 },
       ]);
 
       const result = await service.getPurchasesSummary({ from, to });
@@ -55,19 +66,6 @@ describe('PurchasesReportService', () => {
       expect(result.topSuppliers[0].supplierName).toBe('SupplierA');
       expect(result.topSuppliers[0].totalAmount).toBe(13000);
       expect(result.topSuppliers[1].supplierName).toBe('SupplierB');
-    });
-
-    it('should limit top suppliers to 5', async () => {
-      const orders = Array.from({ length: 10 }, (_, i) => ({
-        totalAmount: 1000 * (i + 1),
-        paidAmount: 500,
-        supplier: { companyName: `Supplier${i}` },
-      }));
-      mockPrismaService.purchaseOrder.findMany.mockResolvedValueOnce(orders);
-
-      const result = await service.getPurchasesSummary({ from, to });
-      expect(result.topSuppliers).toHaveLength(5);
-      expect(result.topSuppliers[0].totalAmount).toBeGreaterThan(result.topSuppliers[4].totalAmount);
     });
   });
 });

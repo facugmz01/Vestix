@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import {
   StockValuationReport,
@@ -16,108 +17,115 @@ export class StockReportService {
   async getStockValuation(branchId?: string): Promise<StockValuationReport> {
     this.logger.log(`[StockReport] Valuation requested${branchId ? ` for branch ${branchId}` : ' (all branches)'}`);
 
-    let branchFilter = {};
+    let warehouseCondition = Prisma.empty;
     if (branchId) {
-      const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
-      branchFilter = { warehouseId: { in: warehouses.map(w => w.id) } };
-    }
-
-    const stockLevels = await this.prisma.stockLevel.findMany({
-      where: { ...branchFilter }
-    });
-
-    const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
-    
-    // Chunk queries to avoid Postgres 65535 parameter limit
-    const chunkSize = 10000;
-    const variants = [];
-    for (let i = 0; i < variantIds.length; i += chunkSize) {
-      const chunk = variantIds.slice(i, i + chunkSize);
-      const chunkResult = await this.prisma.productVariant.findMany({
-        where: { id: { in: chunk } },
-        include: { product: true }
+      const warehouses = await this.prisma.warehouse.findMany({
+        where: { branchId },
+        select: { id: true },
       });
-      variants.push(...chunkResult);
+      const warehouseIds = warehouses.map(w => w.id);
+      if (warehouseIds.length > 0) {
+        warehouseCondition = Prisma.sql`WHERE sl."warehouseId" IN (${Prisma.join(warehouseIds)})`;
+      }
     }
-    
-    const variantMap = new Map(variants.map(v => [v.id, v]));
 
-    const lines = stockLevels.map(sl => {
-      const v = variantMap.get(sl.variantId);
-      const unitCostWac = v?.costPrice || 0;
-      const unitRetailPrice = v?.basePrice || 0;
-      
-      return {
-        variantId: sl.variantId,
-        sku: v?.sku || 'Unknown',
-        availableQty: sl.availableQuantity,
-        reservedQty: sl.reservedQuantity,
-        unitCostWac,
-        unitRetailPrice,
-        totalCostValue: parseFloat((sl.availableQuantity * unitCostWac).toFixed(2)),
-        totalRetailValue: parseFloat((sl.availableQuantity * unitRetailPrice).toFixed(2)),
-      };
-    });
+    const lines: Array<{
+      variantId: string;
+      sku: string;
+      availableQty: number;
+      reservedQty: number;
+      unitCostWac: number;
+      unitRetailPrice: number;
+      totalCostValue: number;
+      totalRetailValue: number;
+    }> = await this.prisma.$queryRaw`
+      SELECT 
+        sl."variantId",
+        COALESCE(pv.sku, 'Unknown') AS sku,
+        sl."availableQuantity"::int AS "availableQty",
+        sl."reservedQuantity"::int AS "reservedQty",
+        COALESCE(pv."costPrice", 0)::float AS "unitCostWac",
+        COALESCE(pv."basePrice", 0)::float AS "unitRetailPrice",
+        ROUND((sl."availableQuantity" * COALESCE(pv."costPrice", 0))::numeric, 2)::float AS "totalCostValue",
+        ROUND((sl."availableQuantity" * COALESCE(pv."basePrice", 0))::numeric, 2)::float AS "totalRetailValue"
+      FROM "inventory"."StockLevel" sl
+      JOIN "catalog"."ProductVariant" pv ON pv.id = sl."variantId"
+      ${warehouseCondition};
+    `;
 
-    const totalCost = lines.reduce((s, l) => s + l.totalCostValue, 0);
-    const totalRetail = lines.reduce((s, l) => s + l.totalRetailValue, 0);
+    let totalUnits = 0;
+    let totalCost = 0;
+    let totalRetail = 0;
+
+    for (const l of lines || []) {
+      totalUnits += Number(l.availableQty) || 0;
+      totalCost += Number(l.totalCostValue) || 0;
+      totalRetail += Number(l.totalRetailValue) || 0;
+    }
+
+    totalCost = Math.round(totalCost * 100) / 100;
+    totalRetail = Math.round(totalRetail * 100) / 100;
+
+    const potentialMargin = totalRetail > 0
+      ? parseFloat((((totalRetail - totalCost) / totalRetail) * 100).toFixed(2))
+      : 0;
 
     return {
       generatedAt: new Date(),
       branchId,
-      totalSKUs: lines.length,
-      totalUnits: lines.reduce((s, l) => s + l.availableQty, 0),
-      totalValueAtCost: parseFloat(totalCost.toFixed(2)),
-      totalValueAtRetail: parseFloat(totalRetail.toFixed(2)),
-      potentialMargin: totalRetail > 0 ? parseFloat((((totalRetail - totalCost) / totalRetail) * 100).toFixed(2)) : 0,
-      lines,
+      totalSKUs: (lines || []).length,
+      totalUnits,
+      totalValueAtCost: totalCost,
+      totalValueAtRetail: totalRetail,
+      potentialMargin,
+      lines: lines || [],
     };
   }
 
   async getLowStockAlerts(branchId?: string, reorderPoint = DEFAULT_REORDER_POINT, limit = 50): Promise<LowStockAlert[]> {
-    let branchFilter = {};
+    let warehouseCondition = Prisma.empty;
     if (branchId) {
-      const warehouses = await this.prisma.warehouse.findMany({ where: { branchId } });
-      branchFilter = { warehouseId: { in: warehouses.map(w => w.id) } };
-    }
-
-    const stockLevels = await this.prisma.stockLevel.findMany({
-      where: {
-        availableQuantity: { lte: reorderPoint },
-        ...branchFilter
-      },
-      orderBy: {
-        availableQuantity: 'asc'
-      },
-      take: limit
-    });
-
-    const variantIds = [...new Set(stockLevels.map(sl => sl.variantId))];
-    
-    // Chunk queries to avoid Postgres 65535 parameter limit
-    const chunkSize = 10000;
-    const variants = [];
-    for (let i = 0; i < variantIds.length; i += chunkSize) {
-      const chunk = variantIds.slice(i, i + chunkSize);
-      const chunkResult = await this.prisma.productVariant.findMany({
-        where: { id: { in: chunk } },
-        include: { product: true }
+      const warehouses = await this.prisma.warehouse.findMany({
+        where: { branchId },
+        select: { id: true },
       });
-      variants.push(...chunkResult);
+      const warehouseIds = warehouses.map(w => w.id);
+      if (warehouseIds.length > 0) {
+        warehouseCondition = Prisma.sql`AND sl."warehouseId" IN (${Prisma.join(warehouseIds)})`;
+      }
     }
-    
-    const variantMap = new Map(variants.map(v => [v.id, v]));
 
-    return stockLevels.map(sl => {
-      const v = variantMap.get(sl.variantId);
-      return {
-        variantId: sl.variantId,
-        sku: v?.sku || 'Unknown',
-        name: v?.product?.name || 'Unknown',
-        branchId: sl.branchId || branchId || 'Unknown',
-        availableQuantity: sl.availableQuantity,
-        reorderPoint: reorderPoint
-      };
-    });
+    const rows: Array<{
+      variantId: string;
+      sku: string;
+      name: string;
+      branchId: string;
+      availableQuantity: number;
+      reorderPoint: number;
+    }> = await this.prisma.$queryRaw`
+      SELECT 
+        sl."variantId",
+        COALESCE(pv.sku, 'Unknown') AS sku,
+        COALESCE(p.name, 'Unknown') AS name,
+        COALESCE(sl."branchId", ${branchId || ''}) AS "branchId",
+        sl."availableQuantity"::int AS "availableQuantity",
+        ${reorderPoint}::int AS "reorderPoint"
+      FROM "inventory"."StockLevel" sl
+      JOIN "catalog"."ProductVariant" pv ON pv.id = sl."variantId"
+      LEFT JOIN "catalog"."Product" p ON p.id = pv."productId"
+      WHERE sl."availableQuantity" <= ${reorderPoint}
+        ${warehouseCondition}
+      ORDER BY sl."availableQuantity" ASC
+      LIMIT ${limit};
+    `;
+
+    return (rows || []).map(r => ({
+      variantId: r.variantId,
+      sku: r.sku,
+      name: r.name,
+      branchId: r.branchId || branchId || 'General',
+      availableQuantity: Number(r.availableQuantity),
+      reorderPoint: Number(r.reorderPoint),
+    }));
   }
 }

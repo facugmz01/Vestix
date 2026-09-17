@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../core/prisma/prisma.service';
 
 export interface PurchasesSummaryReport {
@@ -14,45 +15,60 @@ export interface PurchasesSummaryReport {
 export class PurchasesReportService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getPurchasesSummary(params: { from: Date; to: Date }): Promise<PurchasesSummaryReport> {
-    const { from, to } = params;
+  /**
+   * Summarises purchase orders and supplier expenses using database aggregations.
+   */
+  async getPurchasesSummary(params: { from: Date; to: Date; branchId?: string }): Promise<PurchasesSummaryReport> {
+    const { from, to, branchId } = params;
 
-    const orders = await this.prisma.purchaseOrder.findMany({
+    const branchFilter = branchId ? { branchId } : {};
+
+    const agg = await this.prisma.purchaseOrder.aggregate({
+      _count: { id: true },
+      _sum: {
+        totalAmount: true,
+        paidAmount: true,
+      },
       where: {
         createdAt: { gte: from, lte: to },
         status: { notIn: ['CANCELLED', 'DRAFT'] },
+        ...branchFilter,
       },
-      include: {
-        supplier: true,
-      }
     });
 
-    let totalAmount = 0;
-    let totalReceived = 0;
-    let pendingAmount = 0;
-    
-    const supplierMap = new Map<string, number>();
+    const totalOrders = agg._count.id || 0;
+    const totalAmount = Math.round((agg._sum.totalAmount || 0) * 100) / 100;
+    const totalReceived = Math.round((agg._sum.paidAmount || 0) * 100) / 100;
+    const pendingAmount = Math.max(0, Math.round((totalAmount - totalReceived) * 100) / 100);
 
-    for (const order of orders) {
-      totalAmount += order.totalAmount;
-      totalReceived += order.paidAmount; // assuming paidAmount is tracked, or we use totalAmount for received if COMPLETED? Actually, let's use paidAmount as what's "received/paid" in terms of cash, but "received" could mean stock. The interface asks for totalReceived, pendingAmount. Let's assume financial.
-      pendingAmount += (order.totalAmount - order.paidAmount);
+    const branchSql = branchId
+      ? Prisma.sql`AND po."branchId" = ${branchId}`
+      : Prisma.empty;
 
-      const supplierName = order.supplier.companyName;
-      const currentVal = supplierMap.get(supplierName) ?? 0;
-      supplierMap.set(supplierName, currentVal + order.totalAmount);
-    }
+    const supplierRows: Array<{ supplierName: string; totalAmount: number }> = await this.prisma.$queryRaw`
+      SELECT 
+        s."companyName" AS "supplierName",
+        ROUND(COALESCE(SUM(po."totalAmount"), 0)::numeric, 2)::float AS "totalAmount"
+      FROM "purchasing"."PurchaseOrder" po
+      JOIN "purchasing"."Supplier" s ON s.id = po."supplierId"
+      WHERE po.status NOT IN ('CANCELLED', 'DRAFT')
+        AND po."createdAt" >= ${from} AND po."createdAt" <= ${to}
+        ${branchSql}
+      GROUP BY s."companyName"
+      ORDER BY "totalAmount" DESC
+      LIMIT 5;
+    `;
 
-    const topSuppliers = Array.from(supplierMap.entries())
-      .map(([supplierName, totalAmount]) => ({ supplierName, totalAmount }))
-      .sort((a, b) => b.totalAmount - a.totalAmount)
-      .slice(0, 5);
+    const topSuppliers = (supplierRows || []).map(r => ({
+      supplierName: r.supplierName,
+      totalAmount: Number(r.totalAmount),
+    }));
 
     return {
       period: { from, to },
-      totalOrders: orders.length,
+      totalOrders,
       totalAmount,
-      totalReceived, // financial paid amount for now
+      totalReceived,
       pendingAmount,
       topSuppliers,
     };

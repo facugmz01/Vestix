@@ -46,11 +46,11 @@ export const reportsApi = {
   getSalesSummary: (from: string, to: string, branchId?: string) =>
     get<SalesSummaryReport>('/reports/sales/summary', { params: cleanParams({ from, to, branchId }) }),
 
-  getTopSellers: (from: string, to: string, limit?: number) =>
-    get<TopSellingVariant[]>('/reports/sales/top-sellers', { params: cleanParams({ from, to, limit }) }),
+  getTopSellers: (from: string, to: string, branchId?: string, limit?: number) =>
+    get<TopSellingVariant[]>('/reports/sales/top-sellers', { params: cleanParams({ from, to, branchId, limit }) }),
 
-  getCogs: (from: string, to: string) =>
-    get<CogsReport>('/reports/sales/cogs', { params: { from, to } }),
+  getCogs: (from: string, to: string, branchId?: string) =>
+    get<CogsReport>('/reports/sales/cogs', { params: cleanParams({ from, to, branchId }) }),
 
   getStockValuation: (branchId?: string) =>
     get<StockValuationReport>('/reports/stock/valuation', { params: cleanParams({ branchId }) }),
@@ -58,8 +58,8 @@ export const reportsApi = {
   getLowStockAlerts: (branchId?: string, reorderPoint?: number) =>
     get<LowStockAlert[]>('/reports/stock/low-stock', { params: cleanParams({ branchId, reorderPoint }) }),
 
-  getPurchasesSummary: (from: string, to: string) =>
-    get<PurchasesSummaryReport>('/reports/purchases/summary', { params: { from, to } }),
+  getPurchasesSummary: (from: string, to: string, branchId?: string) =>
+    get<PurchasesSummaryReport>('/reports/purchases/summary', { params: cleanParams({ from, to, branchId }) }),
 
   getCashSummary: (from: string, to: string, branchId?: string) =>
     get<CashSummaryReport>('/reports/cash/summary', { params: cleanParams({ from, to, branchId }) }),

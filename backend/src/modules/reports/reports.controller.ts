@@ -9,6 +9,7 @@ import { LibroIvaService } from './libro-iva.service';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
+import { toStartOfDayArgentina, toEndOfDayArgentina } from './utils/report-date.util';
 
 @Controller('reports')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -23,23 +24,10 @@ export class ReportsController {
     private readonly libroIvaService: LibroIvaService,
   ) {}
 
-  private parseDate(val: string, fallback: Date): Date {
-    if (!val) return fallback;
-    const d = new Date(val);
-    return isNaN(d.getTime()) ? fallback : d;
-  }
-
-  private getDefaultFrom(): Date {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(1);
-    return d;
-  }
-
   @Get('dashboard')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
   getDashboard(@Query('branchId') branchId?: string) {
-    return this.dashboardService.getDashboard(branchId);
+    return this.dashboardService.getDashboard(branchId || undefined);
   }
 
   @Get('sales/summary')
@@ -50,40 +38,60 @@ export class ReportsController {
     @Query('branchId') branchId?: string,
   ) {
     return this.salesReport.getSalesSummary({ 
-      from: this.parseDate(from, this.getDefaultFrom()), 
-      to: this.parseDate(to, new Date()), 
-      branchId 
+      from: toStartOfDayArgentina(from), 
+      to: toEndOfDayArgentina(to), 
+      branchId: branchId || undefined,
     });
   }
 
   @Get('sales/top-sellers')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
-  getTopSellers(@Query('from') from: string, @Query('to') to: string) {
-    return this.salesReport.getTopSellers({ 
-      from: this.parseDate(from, this.getDefaultFrom()), 
-      to: this.parseDate(to, new Date()) 
-    });
+  getTopSellers(
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('branchId') branchId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.salesReport.getTopSellers(
+      { 
+        from: toStartOfDayArgentina(from), 
+        to: toEndOfDayArgentina(to),
+        branchId: branchId || undefined,
+      },
+      limit ? parseInt(limit, 10) : 10,
+    );
   }
 
   @Get('sales/cogs')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
-  getCogsReport(@Query('from') from: string, @Query('to') to: string) {
+  getCogsReport(
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('branchId') branchId?: string,
+  ) {
     return this.salesReport.getCogsReport({ 
-      from: this.parseDate(from, this.getDefaultFrom()), 
-      to: this.parseDate(to, new Date()) 
+      from: toStartOfDayArgentina(from), 
+      to: toEndOfDayArgentina(to),
+      branchId: branchId || undefined,
     });
   }
 
   @Get('stock/valuation')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
   getStockValuation(@Query('branchId') branchId?: string) {
-    return this.stockReport.getStockValuation(branchId);
+    return this.stockReport.getStockValuation(branchId || undefined);
   }
 
   @Get('stock/low-stock')
   @RequirePermissions({ action: 'read', subject: 'Reports' })
-  getLowStockAlerts(@Query('branchId') branchId?: string, @Query('reorderPoint') reorderPoint?: string) {
-    return this.stockReport.getLowStockAlerts(branchId, reorderPoint ? parseInt(reorderPoint) : undefined);
+  getLowStockAlerts(
+    @Query('branchId') branchId?: string,
+    @Query('reorderPoint') reorderPoint?: string,
+  ) {
+    return this.stockReport.getLowStockAlerts(
+      branchId || undefined,
+      reorderPoint ? parseInt(reorderPoint, 10) : undefined,
+    );
   }
 
   @Get('purchases/summary')
@@ -94,8 +102,9 @@ export class ReportsController {
     @Query('branchId') branchId?: string,
   ) {
     return this.purchasesReport.getPurchasesSummary({ 
-      from: this.parseDate(from, this.getDefaultFrom()), 
-      to: this.parseDate(to, new Date()) 
+      from: toStartOfDayArgentina(from), 
+      to: toEndOfDayArgentina(to),
+      branchId: branchId || undefined,
     });
   }
 
@@ -107,9 +116,9 @@ export class ReportsController {
     @Query('branchId') branchId?: string,
   ) {
     return this.cashReport.getCashSummary({ 
-      from: this.parseDate(from, this.getDefaultFrom()), 
-      to: this.parseDate(to, new Date()), 
-      branchId 
+      from: toStartOfDayArgentina(from), 
+      to: toEndOfDayArgentina(to), 
+      branchId: branchId || undefined,
     });
   }
 
@@ -120,8 +129,8 @@ export class ReportsController {
     @Query('to') to: string,
   ) {
     return this.libroIvaService.getVentas({
-      from: this.parseDate(from, this.getDefaultFrom()),
-      to: this.parseDate(to, new Date()),
+      from: toStartOfDayArgentina(from),
+      to: toEndOfDayArgentina(to),
     });
   }
 
@@ -132,8 +141,8 @@ export class ReportsController {
     @Query('to') to: string,
   ) {
     return this.libroIvaService.getCompras({
-      from: this.parseDate(from, this.getDefaultFrom()),
-      to: this.parseDate(to, new Date()),
+      from: toStartOfDayArgentina(from),
+      to: toEndOfDayArgentina(to),
     });
   }
 

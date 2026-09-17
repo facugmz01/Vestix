@@ -1,19 +1,27 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import {
   TrendingUp, ShoppingBag, Package, Wallet,
-  BarChart2, RefreshCw, Calendar, AlertCircle,
+  BarChart2, AlertCircle, DollarSign,
 } from 'lucide-react';
 
-import { PageContainer, Section, Button } from '@/components/ui';
+import { PageContainer, Section } from '@/components/ui';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { KpiCard, EmptyState, ErrorState } from '@/features/reports/components/ChartPrimitives';
+import {
+  KpiCard,
+  KpiCardSkeleton,
+  EmptyState,
+  ErrorState,
+  ResponsiveBarChart,
+} from '@/features/reports/components/ChartPrimitives';
+import { ReportFilterBar } from '@/features/reports/components/ReportFilterBar';
 import { SalesReportPanel }     from '@/features/reports/components/SalesReportPanel';
 import { StockReportPanel }     from '@/features/reports/components/StockReportPanel';
 import { PurchasesReportPanel } from '@/features/reports/components/PurchasesReportPanel';
 import { CashReportPanel }      from '@/features/reports/components/CashReportPanel';
 import { useDashboard }         from '@/features/reports/hooks/useDashboard';
-import { useReportFilters, DATE_PRESETS } from '@/features/reports/hooks/useReportFilters';
+import { useDashboardFilters }  from '@/features/reports/hooks/useDashboardFilters';
 import adminStyles from '@/styles/AdminListShared.module.css';
 import styles from './ReportsPage.module.css';
 
@@ -44,57 +52,14 @@ function TabNav({ activeTab, onChange }: { activeTab: ReportTab; onChange: (t: R
   );
 }
 
-function DateRangePicker({
-  from, to,
-  setFrom, setTo,
-  onPreset,
-}: {
-  from: string; to: string;
-  setFrom: (v: string) => void;
-  setTo:   (v: string) => void;
-  onPreset: (p: unknown) => void;
-}) {
-  return (
-    <div className={clsx('glass-panel', styles.datePickerBar)}>
-      <Calendar size={16} color="var(--text-secondary)" />
-      <label className={styles.dateLabel}>Período:</label>
-      <input
-        type="date"
-        value={from}
-        onChange={e => setFrom(e.target.value)}
-        className={styles.dateInput}
-      />
-      <span className={styles.dateSep}>—</span>
-      <input
-        type="date"
-        value={to}
-        onChange={e => setTo(e.target.value)}
-        className={styles.dateInput}
-      />
-      <div className={styles.presetGroup}>
-        {DATE_PRESETS.map(p => (
-          <button
-            key={p.value}
-            type="button"
-            onClick={() => onPreset(p.value)}
-            className={styles.presetBtn}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function OverviewTab({ branchId }: { branchId?: string }) {
   const { dashboard, isLoading, isError, refetch } = useDashboard(branchId, true);
 
   if (isLoading) {
     return (
       <div className={styles.kpiSkeletonGrid}>
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className={styles.kpiSkeleton} />
+        {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+          <KpiCardSkeleton key={i} />
         ))}
       </div>
     );
@@ -110,7 +75,7 @@ function OverviewTab({ branchId }: { branchId?: string }) {
   }
 
   if (!dashboard) {
-    return <EmptyState message="No hay datos disponibles." icon={<AlertCircle size={32} />} />;
+    return <EmptyState message="No hay datos disponibles para el período." icon={<AlertCircle size={32} />} />;
   }
 
   return (
@@ -119,7 +84,7 @@ function OverviewTab({ branchId }: { branchId?: string }) {
         <KpiCard
           label="Ventas Hoy"
           value={formatCurrency(dashboard.today?.revenue ?? 0)}
-          icon={<TrendingUp size={20} />}
+          icon={<DollarSign size={20} />}
           color="#22c55e"
           trend={{ value: 0, label: `${dashboard.today?.orders ?? 0} pedidos` }}
         />
@@ -138,7 +103,7 @@ function OverviewTab({ branchId }: { branchId?: string }) {
           trend={{ value: 0, label: `Mes ${formatCurrency(dashboard.thisMonth?.purchasesDebt ?? 0)}` }}
         />
         <KpiCard
-          label="Saldo Cajas"
+          label="Saldo Cajas (Efectivo)"
           value={formatCurrency(dashboard.today?.cashInDrawers ?? 0)}
           icon={<Wallet size={20} />}
           color="#8b5cf6"
@@ -147,11 +112,11 @@ function OverviewTab({ branchId }: { branchId?: string }) {
 
       <div className={adminStyles.statCardGrid4} style={{ marginTop: 16 }}>
         <KpiCard
-          label="Pedidos del Mes"
-          value={String(dashboard.thisMonth?.orders ?? 0)}
+          label="Ventas del Mes"
+          value={formatCurrency(dashboard.thisMonth?.revenue ?? 0)}
           icon={<TrendingUp size={20} />}
           color="#3b82f6"
-          trend={{ value: 0, label: formatCurrency(dashboard.thisMonth?.revenue ?? 0) }}
+          trend={{ value: 0, label: `${dashboard.thisMonth?.orders ?? 0} pedidos` }}
         />
         <KpiCard
           label="Compras del Mes"
@@ -175,11 +140,29 @@ function OverviewTab({ branchId }: { branchId?: string }) {
         />
       </div>
 
+      {dashboard.topSellers && dashboard.topSellers.length > 0 && (
+        <div className="glass-panel" style={{ marginTop: 24, padding: 20, borderRadius: 'var(--radius-lg)' }}>
+          <h4 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700 }}>
+            Top 5 Productos del Mes
+          </h4>
+          <ResponsiveBarChart
+            data={dashboard.topSellers.map(t => ({
+              label: t.name.length > 18 ? t.name.slice(0, 16) + '…' : t.name,
+              sublabel: `${t.category || 'General'} | SKU: ${t.sku}`,
+              value: t.totalUnitsSold,
+              color: '#3b82f6',
+            }))}
+            height={190}
+            formatValue={(v) => `${v} un.`}
+          />
+        </div>
+      )}
+
       {(dashboard.pendingOrders ?? 0) > 0 && (
-        <div className={styles.pendingCard}>
-          <h4 className={styles.pendingTitle}>Pedidos Pendientes</h4>
+        <div className={styles.pendingCard} style={{ marginTop: 16 }}>
+          <h4 className={styles.pendingTitle}>Pedidos Pendientes de Despacho</h4>
           <p className={styles.pendingValue}>
-            {dashboard.pendingOrders}
+            {dashboard.pendingOrders} pedidos pendientes de entrega
           </p>
         </div>
       )}
@@ -189,26 +172,31 @@ function OverviewTab({ branchId }: { branchId?: string }) {
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<ReportTab>('overview');
-  const [branchId] = useState('');
+  const filters = useDashboardFilters();
+  const { branchId, from, to } = filters;
 
-  const { from, to, setFrom, setTo, applyPreset } = useReportFilters('month');
-  const { refetch } = useDashboard(branchId || undefined, activeTab === 'overview');
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ['reports'] });
+    setTimeout(() => setIsRefreshing(false), 400);
+  };
 
   return (
     <PageContainer
       title="Reportes y Dashboards"
-      subtitle="Análisis operativo y financiero del negocio con datos en tiempo real."
-      action={
-        <Button variant="ghost" size="sm" onClick={refetch} icon={<RefreshCw size={14} />}>
-          Actualizar
-        </Button>
-      }
+      subtitle="Análisis operativo y financiero con agregaciones en tiempo real (Hora Argentina UTC-3)."
     >
-      <TabNav activeTab={activeTab} onChange={setActiveTab} />
+      {/* Barra de Filtros Globales Sticky con Sucursal y Presets de Fecha */}
+      <ReportFilterBar
+        filters={filters}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+      />
 
-      {activeTab !== 'overview' && (
-        <DateRangePicker from={from} to={to} setFrom={setFrom} setTo={setTo} onPreset={applyPreset} />
-      )}
+      <TabNav activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'overview'  && <Section><OverviewTab branchId={branchId || undefined} /></Section>}
       {activeTab === 'sales'     && <Section><SalesReportPanel from={from} to={to} branchId={branchId || undefined} /></Section>}

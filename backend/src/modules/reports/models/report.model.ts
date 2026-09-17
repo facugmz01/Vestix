@@ -21,6 +21,7 @@ export interface TopSellingVariant {
   variantId: string;
   name: string;
   sku: string;
+  category?: string;
   totalUnitsSold: number;
   totalRevenue: number;
 }

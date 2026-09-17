@@ -8,6 +8,7 @@ import { CashReportService } from './cash-report.service';
 import { PurchasesReportService } from './purchases-report.service';
 import { ReportExportService } from './report-export.service';
 import { LibroIvaService } from './libro-iva.service';
+import { toStartOfDayArgentina, toEndOfDayArgentina } from './utils/report-date.util';
 import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 
@@ -87,8 +88,8 @@ describe('ReportsController', () => {
       mockSalesReport.getSalesSummary.mockReturnValue({ totalOrders: 5 });
       controller.getSalesSummary('2026-01-01', '2026-01-31', 'b1');
       const call = mockSalesReport.getSalesSummary.mock.calls[0][0];
-      expect(call.from).toEqual(new Date('2026-01-01'));
-      expect(call.to).toEqual(new Date('2026-01-31'));
+      expect(call.from).toEqual(toStartOfDayArgentina('2026-01-01'));
+      expect(call.to).toEqual(toEndOfDayArgentina('2026-01-31'));
       expect(call.branchId).toBe('b1');
     });
   });
@@ -98,7 +99,8 @@ describe('ReportsController', () => {
       mockSalesReport.getTopSellers.mockReturnValue([]);
       controller.getTopSellers('2026-01-01', '2026-01-31');
       const call = mockSalesReport.getTopSellers.mock.calls[0][0];
-      expect(call.from).toEqual(new Date('2026-01-01'));
+      expect(call.from).toEqual(toStartOfDayArgentina('2026-01-01'));
+      expect(call.to).toEqual(toEndOfDayArgentina('2026-01-31'));
     });
   });
 
@@ -137,8 +139,8 @@ describe('ReportsController', () => {
       mockPurchasesReport.getPurchasesSummary.mockReturnValue({ totalOrders: 3 });
       controller.getPurchasesSummary('2026-01-01', '2026-01-31', 'b1');
       const call = mockPurchasesReport.getPurchasesSummary.mock.calls[0][0];
-      expect(call.from).toEqual(new Date('2026-01-01'));
-      expect(call.to).toEqual(new Date('2026-01-31'));
+      expect(call.from).toEqual(toStartOfDayArgentina('2026-01-01'));
+      expect(call.to).toEqual(toEndOfDayArgentina('2026-01-31'));
     });
   });
 
@@ -147,7 +149,8 @@ describe('ReportsController', () => {
       mockCashReport.getCashSummary.mockReturnValue({ netCash: 500 });
       controller.getCashSummary('2026-01-01', '2026-01-31', 'b1');
       const call = mockCashReport.getCashSummary.mock.calls[0][0];
-      expect(call.from).toEqual(new Date('2026-01-01'));
+      expect(call.from).toEqual(toStartOfDayArgentina('2026-01-01'));
+      expect(call.to).toEqual(toEndOfDayArgentina('2026-01-31'));
       expect(call.branchId).toBe('b1');
     });
   });

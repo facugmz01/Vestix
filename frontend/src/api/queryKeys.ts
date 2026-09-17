@@ -205,11 +205,11 @@ export const queryKeys = {
   reports: {
     dashboard:        (branchId?: string)                           => branchId ? ['reports', 'dashboard', branchId] : ['reports', 'dashboard'],
     salesSummary:     (from: string, to: string, branchId?: string) => branchId ? ['reports', 'sales-summary', from, to, branchId] : ['reports', 'sales-summary', from, to],
-    topSellers:       (from: string, to: string)                    => ['reports', 'top-sellers', from, to]             as const,
-    cogs:             (from: string, to: string)                    => ['reports', 'cogs', from, to]                    as const,
+    topSellers:       (from: string, to: string, branchId?: string) => branchId ? ['reports', 'top-sellers', from, to, branchId] : ['reports', 'top-sellers', from, to],
+    cogs:             (from: string, to: string, branchId?: string) => branchId ? ['reports', 'cogs', from, to, branchId] : ['reports', 'cogs', from, to],
     stockValuation:   (branchId?: string)                           => branchId ? ['reports', 'stock-valuation', branchId] : ['reports', 'stock-valuation'],
     lowStock:         (branchId?: string, reorderPoint?: number)    => ['reports', 'low-stock', branchId, reorderPoint] as const,
-    purchasesSummary: (from: string, to: string)                    => ['reports', 'purchases-summary', from, to]       as const,
+    purchasesSummary: (from: string, to: string, branchId?: string) => branchId ? ['reports', 'purchases-summary', from, to, branchId] : ['reports', 'purchases-summary', from, to],
     cashSummary:      (from: string, to: string, branchId?: string) => branchId ? ['reports', 'cash-summary', from, to, branchId] : ['reports', 'cash-summary', from, to],
   },
 

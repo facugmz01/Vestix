@@ -1,7 +1,14 @@
-/* Chart primitives — dynamic bar heights/colors via CSS vars set in useLayoutEffect */
+/* Chart primitives & Recharts wrapper styling */
 
 .chartFull {
   width: 100%;
+  min-width: 0;
+}
+
+.responsiveChartWrapper {
+  width: 100%;
+  min-width: 0;
+  position: relative;
 }
 
 .barChartArea {
@@ -165,6 +172,53 @@
   color: var(--text-muted);
 }
 
+/* Skeletons */
+.kpiSkeletonCard {
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  animation: pulseAnim 1.5s ease-in-out infinite;
+}
+
+.skeletonHeader {
+  display: flex;
+  justify-content: space-between;
+}
+
+.skeletonBarSmall {
+  width: 90px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+
+.skeletonIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.skeletonBarLarge {
+  width: 140px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+.chartSkeleton {
+  width: 100%;
+  border-radius: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  animation: pulseAnim 1.5s ease-in-out infinite;
+}
+
 .emptyState {
   padding: 48px 24px;
   text-align: center;
@@ -208,7 +262,36 @@
   font-family: inherit;
 }
 
+/* Custom Tooltip for Recharts */
+.tooltipCard {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.tooltipLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.tooltipValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
 @keyframes kpiCountIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseAnim {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
 }
