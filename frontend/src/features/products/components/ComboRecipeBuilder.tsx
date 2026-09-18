@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/api/products.api';
 import { Button } from '@/components/ui';
@@ -23,6 +23,25 @@ interface Props {
 
 export function ComboRecipeBuilder({ lines, onChange }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
   
   const { data: variants } = useQuery({
     queryKey: ['variants-search', searchTerm],
@@ -45,6 +64,7 @@ export function ComboRecipeBuilder({ lines, onChange }: Props) {
       childVariant: v,
     }]);
     setSearchTerm('');
+    setIsOpen(false);
   };
 
   const removeLine = (index: number) => {
@@ -71,19 +91,23 @@ export function ComboRecipeBuilder({ lines, onChange }: Props) {
         Agrega los productos que componen este Combo/Kit. Al venderse, se descontará el stock de cada componente automáticamente.
       </p>
 
-      <div className={styles.searchWrap}>
+      <div className={styles.searchWrap} ref={searchWrapRef}>
         <div className={styles.searchRow}>
           <Search size={16} color="var(--text-muted)" />
           <input
             type="text"
             placeholder="Buscar producto por nombre o SKU para agregar al combo..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setIsOpen(true);
+            }}
+            onFocus={() => setIsOpen(true)}
             className={styles.searchInput}
           />
         </div>
 
-        {searchTerm.length > 2 && variants && (
+        {isOpen && searchTerm.length > 2 && variants && (
           <div className={styles.dropdown}>
             {variants.length === 0 ? (
               <div className={styles.dropdownEmpty}>No se encontraron productos</div>

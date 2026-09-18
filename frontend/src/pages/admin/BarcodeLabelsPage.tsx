@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/api/products.api';
 import { labelsApi } from '@/api/labels.api';
@@ -40,9 +40,28 @@ function toPrintData(item: LabelItem, storeName: string, logoUrl?: string): Labe
 
 export default function BarcodeLabelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
   const [labelItems, setLabelItems] = useState<LabelItem[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: variants } = useQuery({
@@ -95,6 +114,7 @@ export default function BarcodeLabelsPage() {
       quantity: 1,
     }]);
     setSearchTerm('');
+    setIsOpen(false);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -190,19 +210,23 @@ export default function BarcodeLabelsPage() {
               )}
             </div>
 
-            <div className={styles.searchSection}>
+            <div className={styles.searchSection} ref={searchWrapRef}>
               <div className={styles.searchInputWrapper}>
                 <Search className={styles.searchIcon} size={18} />
                 <input
                   type="text"
                   placeholder="Buscar producto por nombre o SKU..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setIsOpen(true);
+                  }}
+                  onFocus={() => setIsOpen(true)}
                   className={styles.searchInput}
                 />
               </div>
 
-              {searchTerm.length > 2 && variants && (
+              {isOpen && searchTerm.length > 2 && variants && (
                 <div className={styles.searchResults}>
                   {variants.length === 0 ? (
                     <div className={styles.noResults}>No se encontraron productos</div>

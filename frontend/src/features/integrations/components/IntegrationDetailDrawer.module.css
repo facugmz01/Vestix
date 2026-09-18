@@ -237,7 +237,7 @@
   border-radius: 6px;
   border: 1px solid var(--border);
   font-size: 13px;
-  background: var(--bg-base);
+  background: var(--surface-0);
   color: var(--text-primary);
   font-family: inherit;
 }
@@ -247,13 +247,13 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  background: var(--surface-0);
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
-  max-height: 150px;
+  max-height: 180px;
   overflow-y: auto;
-  z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  box-shadow: var(--shadow-xl, 0 12px 32px rgba(0, 0, 0, 0.18));
 }
 
 .typeaheadItem {
@@ -262,10 +262,11 @@
   font-size: 12px;
   border-bottom: 1px solid var(--border);
   transition: background 0.2s;
+  background: var(--surface-0);
 }
 
 .typeaheadItem:hover {
-  background: var(--bg-base);
+  background: var(--surface-1);
 }
 
 .saveMappingBtn {

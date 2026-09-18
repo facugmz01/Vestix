@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -87,8 +87,27 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
   // Variant Mapping UI States
   const [variantSearch, setVariantSearch] = useState('');
   const [selectedVariantId, setSelectedVariantId] = useState('');
+  const [variantDropdownOpen, setVariantDropdownOpen] = useState(false);
+  const variantSearchWrapRef = useRef<HTMLDivElement>(null);
   const [wcProductId, setWcProductId] = useState('');
   const [wcVariationId, setWcVariationId] = useState('');
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (variantSearchWrapRef.current && !variantSearchWrapRef.current.contains(e.target as Node)) {
+        setVariantDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setVariantDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const fields = integration ? (PROVIDER_FIELDS[integration.provider] ?? []) : [];
 
@@ -444,7 +463,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
               <div className={clsx('grid-responsive grid-cols-3', styles.mappingGrid)}>
                 
                 {/* Variant Search Autocomplete */}
-                <div className={styles.typeaheadWrap}>
+                <div className={styles.typeaheadWrap} ref={variantSearchWrapRef}>
                   <label className={styles.typeaheadLabel}>Variante ERP (Buscar por SKU/Nombre)</label>
                   <input
                     type="text"
@@ -452,11 +471,13 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                     placeholder="Escribe 2+ caracteres..."
                     onChange={e => {
                       setVariantSearch(e.target.value);
+                      setVariantDropdownOpen(true);
                       if (selectedVariantId) setSelectedVariantId('');
                     }}
+                    onFocus={() => setVariantDropdownOpen(true)}
                     className={styles.typeaheadInput}
                   />
-                  {variantSearch.length >= 2 && !selectedVariantId && searchedVariants && searchedVariants.length > 0 && (
+                  {variantDropdownOpen && variantSearch.length >= 2 && !selectedVariantId && searchedVariants && searchedVariants.length > 0 && (
                     <div className={styles.typeaheadDropdown}>
                       {searchedVariants.map((v: any) => (
                         <div
@@ -464,6 +485,7 @@ export function IntegrationDetailDrawer({ open, onClose, integration }: Props) {
                           onClick={() => {
                             setSelectedVariantId(v.id);
                             setVariantSearch(`${v.product?.name} (${v.sku})`);
+                            setVariantDropdownOpen(false);
                           }}
                           className={styles.typeaheadItem}
                         >
