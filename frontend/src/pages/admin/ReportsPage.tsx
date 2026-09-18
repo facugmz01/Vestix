@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import {
@@ -53,6 +54,7 @@ function TabNav({ activeTab, onChange }: { activeTab: ReportTab; onChange: (t: R
 }
 
 function OverviewTab({ branchId }: { branchId?: string }) {
+  const navigate = useNavigate();
   const { dashboard, isLoading, isError, refetch } = useDashboard(branchId, true);
 
   if (isLoading) {
@@ -159,7 +161,20 @@ function OverviewTab({ branchId }: { branchId?: string }) {
       )}
 
       {(dashboard.pendingOrders ?? 0) > 0 && (
-        <div className={styles.pendingCard} style={{ marginTop: 16 }}>
+        <div
+          className={styles.pendingCard}
+          style={{ marginTop: 16, cursor: 'pointer' }}
+          onClick={() => navigate('/admin/delivery')}
+          title="Ver envíos en Envíos y Despacho"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/admin/delivery');
+            }
+          }}
+        >
           <h4 className={styles.pendingTitle}>Pedidos Pendientes de Despacho</h4>
           <p className={styles.pendingValue}>
             {dashboard.pendingOrders} pedidos pendientes de entrega

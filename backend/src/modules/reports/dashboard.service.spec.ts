@@ -111,6 +111,13 @@ describe('DashboardService', () => {
       expect(result.thisMonth.netCash).toBe(5500);
       expect(result.supplierPayableBalance).toBe(4200);
       expect(result.pendingOrders).toBe(3);
+      expect(mockPrismaService.saleOrder.count).toHaveBeenCalledWith({
+        where: {
+          status: {
+            notIn: expect.arrayContaining(['DELIVERED', 'COMPLETED', 'CANCELLED', 'QUOTE', 'QUOTATION']),
+          },
+        },
+      });
     });
 
     it('should pass branchId to sub-reports', async () => {

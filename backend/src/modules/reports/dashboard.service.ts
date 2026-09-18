@@ -6,6 +6,7 @@ import { PurchasesReportService } from './purchases-report.service';
 import { CashReportService } from './cash-report.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { getPresetDateRange } from './utils/report-date.util';
+import { NON_PENDING_ORDER_STATUSES } from './report.constants';
 
 @Injectable()
 export class DashboardService {
@@ -48,7 +49,7 @@ export class DashboardService {
       this.stockReport.getLowStockAlerts(branchId),
       this.prisma.saleOrder.count({
         where: {
-          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+          status: { notIn: [...NON_PENDING_ORDER_STATUSES] },
           ...(branchId ? { branchId } : {}),
         },
       }),
