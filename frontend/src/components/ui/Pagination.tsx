@@ -18,6 +18,12 @@ export function Pagination({ page, pageSize, total, onPageChange }: Props) {
 
   const pages = buildPageRange(page, totalPages);
 
+  const handlePageChange = (newPage: number) => {
+    onPageChange(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('main-content-area')?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className={styles.bar}>
       <span className={styles.info}>
@@ -26,7 +32,7 @@ export function Pagination({ page, pageSize, total, onPageChange }: Props) {
       <div className={styles.controls}>
         <button
           className={styles.btn}
-          onClick={() => onPageChange(page - 1)}
+          onClick={() => handlePageChange(page - 1)}
           disabled={page <= 1}
           aria-label="Página anterior"
         >
@@ -40,7 +46,7 @@ export function Pagination({ page, pageSize, total, onPageChange }: Props) {
             <button
               key={p}
               className={`${styles.btn} ${p === page ? styles.active : ''}`}
-              onClick={() => onPageChange(p as number)}
+              onClick={() => handlePageChange(p as number)}
               aria-label={`Página ${p}`}
               aria-current={p === page ? 'page' : undefined}
             >
@@ -51,7 +57,7 @@ export function Pagination({ page, pageSize, total, onPageChange }: Props) {
 
         <button
           className={styles.btn}
-          onClick={() => onPageChange(page + 1)}
+          onClick={() => handlePageChange(page + 1)}
           disabled={page >= totalPages}
           aria-label="Página siguiente"
         >

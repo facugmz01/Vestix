@@ -32,12 +32,7 @@
 }
 
 @media (min-width: 1024px) {
-  .desktopIcon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .mobileIcon {
+  .trigger {
     display: none;
   }
 }

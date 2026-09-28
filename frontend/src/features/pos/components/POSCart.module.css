@@ -1,0 +1,26 @@
+/* POSCart.module.css — micro-interactions and animations for POS cart */
+
+@keyframes qtyPulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px var(--accent-glow, rgba(79, 70, 229, 0.25));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.qtyPulse {
+  animation: qtyPulse 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qtyBtnMicro {
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease !important;
+}
+
+.qtyBtnMicro:active {
+  transform: scale(0.86) !important;
+}

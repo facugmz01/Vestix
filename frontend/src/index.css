@@ -2,32 +2,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Decorative page background (not used on controls) */
-  --bg-base: radial-gradient(circle at 10% 10%, #E8EFFF 0%, #FFFFFF 40%, #FFF5FA 100%);
+  /* Clean enterprise page background */
+  --bg-base: #F8FAFC;
 
-  /* Radios */
-  --radius-sm: 8px;
-  --radius:    12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  /* Refined geometry */
+  --radius-sm: 6px;
+  --radius:    8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* Sombras Difusas */
-  --shadow-sm:  0 2px 8px rgba(0,0,0,0.03);
-  --shadow-md:  0 8px 24px rgba(0,0,0,0.05);
-  --shadow-lg:  0 12px 48px rgba(0,0,0,0.08);
-  --shadow-glow: 0 0 0 4px var(--accent-glow);
+  /* Refined subtle modern shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 0 3px var(--accent-glow);
 
   /* Tipografía */
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --backdrop-blur: blur(20px) saturate(120%);
-  --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --backdrop-blur: none;
+  --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html.dark {
-  --bg-base: radial-gradient(circle at 10% 10%, #1A1A1E 0%, #0F0F13 40%, #050508 100%);
+  --bg-base: #0F172A;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -121,26 +121,43 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 .animate-slide { animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 .animate-scale { animation: scaleIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 
-/* ─── GLASS PANELS (GLOBAL REUSABLE) ────────────────────────────────────── */
+/* ─── CRISP SOLID SURFACES (GLOBAL REUSABLE) ────────────────────────────── */
 .glass-panel {
   background: var(--surface-0);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card {
   background: var(--surface-0);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  transition: var(--transition);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
   border-color: var(--border-strong);
   box-shadow: var(--shadow-md);
-  background: var(--surface-1);
+}
+
+/* ─── PAGE TRANSITIONS ─────────────────────────────────────────────────── */
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: pageFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  width: 100%;
 }
 
 /* ─── STOREFRONT SHARED UI ────────────────────────────────────────────── */

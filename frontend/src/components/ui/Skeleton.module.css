@@ -3,41 +3,267 @@
   width: var(--sk-w, 100%);
   height: var(--sk-h, 16px);
   border-radius: var(--sk-radius, 6px);
-  background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-overlay) 50%, var(--bg-elevated) 75%);
-  background-size: 600px 100%;
-  animation: shimmer 1.4s infinite linear;
+  background: linear-gradient(
+    90deg,
+    var(--surface-2, #F1F5F9) 0%,
+    var(--surface-0, #FFFFFF) 50%,
+    var(--surface-2, #F1F5F9) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-.headerRow {
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+:global(html.dark) .skeleton,
+:global(.dark) .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-1, #1E293B) 0%,
+    var(--surface-2, #334155) 50%,
+    var(--surface-1, #1E293B) 100%
+  );
+  background-size: 200% 100%;
 }
 
-/* Size utilities */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Size & Radius Utilities */
+.w30p { --sk-w: 30%; }
 .w40p { --sk-w: 40%; }
 .w50p { --sk-w: 50%; }
 .w65p { --sk-w: 65%; }
 .w70p { --sk-w: 70%; }
+.w80p { --sk-w: 80%; }
+.w100p { --sk-w: 100%; }
+
 .h11 { --sk-h: 11px; }
 .h12 { --sk-h: 12px; }
 .h14 { --sk-h: 14px; }
+.h16 { --sk-h: 16px; }
+.h20 { --sk-h: 20px; }
 .h28 { --sk-h: 28px; }
+.h32 { --sk-h: 32px; }
+.h36 { --sk-h: 36px; }
+.h38 { --sk-h: 38px; }
 .h160 { --sk-h: 160px; }
+
+.r4 { --sk-radius: 4px; }
+.r6 { --sk-radius: 6px; }
+.r8 { --sk-radius: 8px; }
 .r10 { --sk-radius: 10px; }
+.rFull { --sk-radius: 9999px; }
 
-@keyframes shimmer {
-  0%   { background-position: -600px 0; }
-  100% { background-position:  600px 0; }
+/* Table Skeleton */
+.tableWrapper {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-0, #FFFFFF);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
 }
 
-.tableWrapper { display:flex; flex-direction:column; gap:0; }
+.headerRow {
+  background: var(--surface-1, #F8FAFC);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
 .row {
-  display:flex; align-items:center; gap:20px;
-  padding:14px 16px;
-  border-bottom:1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
 }
-.row:last-child { border-bottom:none; }
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
-.card { display:flex; flex-direction:column; gap:8px; padding:12px; background:var(--bg-surface); border-radius:var(--radius-lg); border:1px solid var(--border); }
-.statsRow { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
-.statCard { display:flex; flex-direction:column; gap:10px; padding:20px; background:var(--bg-surface); border-radius:var(--radius-lg); border:1px solid var(--border); }
+
+.row:last-child {
+  border-bottom: none;
+}
+
+/* Card Grid Skeleton */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: var(--surface-0, #FFFFFF);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 6px;
+}
+
+/* Stats Skeleton */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: var(--surface-0, #FFFFFF);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+.statHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Form Skeleton */
+.formWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: var(--surface-0, #FFFFFF);
+  padding: 24px;
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+.formGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.formGrid1 {
+  grid-template-columns: 1fr;
+}
+
+.formGrid2 {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* Detail Drawer Skeleton */
+.drawerSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.drawerHero {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--surface-1, #F8FAFC);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--border);
+}
+
+.drawerHeroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.drawerTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.drawerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.drawerStatsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.drawerMiniCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--surface-0, #FFFFFF);
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--border);
+}
+
+.drawerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-1, #F8FAFC);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--border);
+}
+
+.drawerFields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drawerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}

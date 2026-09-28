@@ -19,20 +19,25 @@
   box-shadow: var(--btn-shadow);
   
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
   text-decoration: none;
   outline: none;
+  user-select: none;
 }
 
 /* Accessibility Focus Ring */
 .button:focus-visible {
-  outline: 2px solid var(--accent, #3b82f6);
+  outline: 2px solid var(--accent, #4f46e5);
   outline-offset: 2px;
 }
 
 .button:active:not(:disabled) {
-  transform: translateY(1px) scale(0.98);
+  transform: scale(0.97);
 }
 
 .button:disabled {

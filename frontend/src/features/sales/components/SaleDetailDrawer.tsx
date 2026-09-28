@@ -19,6 +19,7 @@ import {
   type ResolvedRecipient,
 } from '@/utils/notificationRecipient';
 import type { OrderLineItem } from '@/types';
+import { OrderLifecycleTimeline } from '@/components/common/OrderLifecycleTimeline';
 import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
@@ -336,6 +337,8 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
             <p className={styles.heroDate}>{new Date(sale.createdAt).toLocaleString()}</p>
           </div>
         </div>
+
+        <OrderLifecycleTimeline status={sale.status} createdAt={sale.createdAt} />
 
         <div className="grid-responsive grid-cols-3">
           <div className={styles.statCard}>

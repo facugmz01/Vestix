@@ -23,6 +23,7 @@ import { PurchasesReportPanel } from '@/features/reports/components/PurchasesRep
 import { CashReportPanel }      from '@/features/reports/components/CashReportPanel';
 import { useDashboard }         from '@/features/reports/hooks/useDashboard';
 import { useDashboardFilters }  from '@/features/reports/hooks/useDashboardFilters';
+import { OnboardingQuickStart } from '@/components/dashboard/OnboardingQuickStart';
 import adminStyles from '@/styles/AdminListShared.module.css';
 import styles from './ReportsPage.module.css';
 
@@ -204,6 +205,8 @@ export default function ReportsPage() {
       title="Reportes y Dashboards"
       subtitle="Análisis operativo y financiero con agregaciones en tiempo real (Hora Argentina UTC-3)."
     >
+      <OnboardingQuickStart />
+
       {/* Barra de Filtros Globales Sticky con Sucursal y Presets de Fecha */}
       <ReportFilterBar
         filters={filters}

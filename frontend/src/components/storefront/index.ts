@@ -9,6 +9,9 @@ export type { WhatsAppInquiryButtonProps } from './WhatsAppInquiryButton';
 export { StorefrontSearchBar } from './StorefrontSearchBar';
 export type { StorefrontSearchBarProps } from './StorefrontSearchBar';
 export { ThemeProductCard } from './ThemeProductCard';
+export { StorefrontProductCard, ProgressiveProductImage } from './StorefrontProductCard';
+export type { StorefrontProductCardProps, ProgressiveProductImageProps } from './StorefrontProductCard';
 export { ThemeBottomNav } from './ThemeBottomNav';
 export { ThemeStoriesBar } from './ThemeStoriesBar';
+
 

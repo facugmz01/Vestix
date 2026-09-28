@@ -1,51 +1,51 @@
 /**
- * Semantic design tokens — solid surfaces for readable UI.
- * Decorative gradients live in index.css (--bg-decorative).
+ * Semantic design tokens — Enterprise Modern Design System (Linear / Vercel / Stripe feel).
+ * Solid, high-contrast surfaces with refined typography and WCAG AA compliance.
  */
 
 :root {
   /* Solid surfaces (content areas) */
   --surface-0: #FFFFFF;
-  --surface-1: #F5F5F7;
-  --surface-2: #E8E8ED;
+  --surface-1: #F8FAFC;
+  --surface-2: #F1F5F9;
   --surface-raised: #FFFFFF;
 
-  /* Text — WCAG AA on --surface-0 */
-  --text-primary: #1D1D1F;
-  --text-secondary: #3C3C43;
-  --text-muted: #636366;
-  --text-disabled: #AEAEB2;
+  /* Text — WCAG AA on --surface-0 / --surface-1 */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-disabled: #94A3B8;
   --text-inverted: #FFFFFF;
 
   /* Borders */
-  --border: #D1D1D6;
-  --border-strong: #C7C7CC;
-  --border-focus: rgba(0, 102, 204, 0.45);
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --border-focus: rgba(79, 70, 229, 0.4);
 
-  /* Interactive */
-  --accent: #0066CC;
-  --accent-hover: #0055AA;
-  --accent-glow: rgba(0, 102, 204, 0.2);
-  --accent-subtle: rgba(0, 102, 204, 0.1);
+  /* Interactive — Modern Indigo */
+  --accent: #4F46E5;
+  --accent-hover: #4338CA;
+  --accent-glow: rgba(79, 70, 229, 0.18);
+  --accent-subtle: rgba(79, 70, 229, 0.08);
 
-  /* Status */
-  --green: #1B7F3A;
-  --green-bg: rgba(27, 127, 58, 0.12);
-  --yellow: #9A6700;
-  --yellow-bg: rgba(154, 103, 0, 0.12);
-  --red: #C41E1E;
-  --red-bg: rgba(196, 30, 30, 0.12);
-  --blue: #0066CC;
-  --blue-bg: rgba(0, 102, 204, 0.12);
-  --purple: #7C3AED;
-  --purple-bg: rgba(124, 58, 237, 0.12);
+  /* Status (WCAG AA refined) */
+  --green: #16A34A;
+  --green-bg: rgba(22, 163, 74, 0.1);
+  --yellow: #D97706;
+  --yellow-bg: rgba(217, 119, 6, 0.1);
+  --red: #DC2626;
+  --red-bg: rgba(220, 38, 38, 0.1);
+  --blue: #2563EB;
+  --blue-bg: rgba(37, 99, 235, 0.1);
+  --purple: #9333EA;
+  --purple-bg: rgba(147, 51, 234, 0.1);
 
   /* Functional aliases (backward compat) */
   --bg-sidebar: var(--surface-1);
   --bg-surface: var(--surface-0);
   --bg-surface-hover: var(--surface-1);
   --bg-elevated: var(--surface-raised);
-  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-overlay: rgba(15, 23, 42, 0.5);
   --bg-disabled: var(--surface-1);
 
   /* POS shell */
@@ -63,36 +63,41 @@
 }
 
 html.dark {
-  --surface-0: #1C1C1E;
-  --surface-1: #2C2C2E;
-  --surface-2: #3A3A3C;
-  --surface-raised: #2C2C2E;
+  /* Solid surfaces (content areas) */
+  --surface-0: #0F172A;
+  --surface-1: #1E293B;
+  --surface-2: #334155;
+  --surface-raised: #1E293B;
 
-  --text-primary: #F5F5F7;
-  --text-secondary: #D1D1D6;
-  --text-muted: #98989D;
-  --text-disabled: #636366;
-  --text-inverted: #1D1D1F;
+  /* Text — WCAG AA on dark surfaces */
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-disabled: #64748B;
+  --text-inverted: #0F172A;
 
-  --border: #48484A;
-  --border-strong: #636366;
-  --border-focus: rgba(10, 132, 255, 0.5);
+  /* Borders */
+  --border: #334155;
+  --border-strong: #475569;
+  --border-focus: rgba(99, 102, 241, 0.5);
 
-  --accent: #0A84FF;
-  --accent-hover: #409CFF;
-  --accent-glow: rgba(10, 132, 255, 0.3);
-  --accent-subtle: rgba(10, 132, 255, 0.15);
+  /* Interactive — Modern Indigo (Dark mode) */
+  --accent: #6366F1;
+  --accent-hover: #818CF8;
+  --accent-glow: rgba(99, 102, 241, 0.25);
+  --accent-subtle: rgba(99, 102, 241, 0.15);
 
-  --green: #32D74B;
-  --green-bg: rgba(50, 215, 75, 0.15);
-  --yellow: #FFD60A;
-  --yellow-bg: rgba(255, 214, 10, 0.15);
-  --red: #FF453A;
-  --red-bg: rgba(255, 69, 58, 0.15);
-  --blue: #0A84FF;
-  --blue-bg: rgba(10, 132, 255, 0.15);
-  --purple: #BF5AF2;
-  --purple-bg: rgba(191, 90, 242, 0.15);
+  /* Status (WCAG AA refined) */
+  --green: #22C55E;
+  --green-bg: rgba(34, 197, 94, 0.15);
+  --yellow: #F59E0B;
+  --yellow-bg: rgba(245, 158, 11, 0.15);
+  --red: #EF4444;
+  --red-bg: rgba(239, 68, 68, 0.15);
+  --blue: #3B82F6;
+  --blue-bg: rgba(59, 130, 246, 0.15);
+  --purple: #A855F7;
+  --purple-bg: rgba(168, 85, 247, 0.15);
 
   --bg-overlay: rgba(0, 0, 0, 0.75);
 

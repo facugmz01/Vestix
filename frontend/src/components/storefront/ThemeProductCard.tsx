@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import type { StorefrontProduct } from '@/api/storefront.api';
 import type { StorefrontTheme } from '@/utils/storefrontTheme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { ProgressiveProductImage } from './ProgressiveProductImage';
 import styles from './ThemeProductCard.module.css';
 
 interface ThemeProductCardProps {
@@ -70,19 +71,15 @@ export function ThemeProductCard({
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className={clsx(styles.minimalImageWrap, 'theme-card-img')}>
-          {primaryImg ? (
-            <img
-              src={isHovered && secondaryImg ? secondaryImg : primaryImg}
-              alt={product.name}
-              className={styles.minimalImg}
-              loading="lazy"
-            />
-          ) : (
-            <div className={styles.placeholderBox}>
-              <ShoppingBag size={32} strokeWidth={1} />
-              <span>{product.name.charAt(0).toUpperCase()}</span>
-            </div>
-          )}
+          <ProgressiveProductImage
+            src={primaryImg}
+            secondarySrc={secondaryImg}
+            isHovered={isHovered}
+            alt={product.name}
+            productName={product.name}
+            imgClassName={styles.minimalImg}
+            fallbackIcon="shirt"
+          />
 
           {!isAvailable && <span className={styles.minimalAgotadoBadge}>Agotado</span>}
 
@@ -122,19 +119,16 @@ export function ThemeProductCard({
         onMouseLeave={() => setIsHovered(false)}
       >
         <Link to={productUrl} className={clsx(styles.streetwearImageWrap, 'theme-card-img')}>
-          {primaryImg ? (
-            <img
-              src={isHovered && secondaryImg ? secondaryImg : primaryImg}
-              alt={product.name}
-              className={styles.streetwearImg}
-              loading="lazy"
-            />
-          ) : (
-            <div className={styles.placeholderBoxDark}>
-              <ShoppingBag size={32} />
-              <span>{product.name.charAt(0).toUpperCase()}</span>
-            </div>
-          )}
+          <ProgressiveProductImage
+            src={primaryImg}
+            secondarySrc={secondaryImg}
+            isHovered={isHovered}
+            alt={product.name}
+            productName={product.name}
+            imgClassName={styles.streetwearImg}
+            dark={true}
+            fallbackIcon="shirt"
+          />
 
           <div className={styles.streetwearBadges}>
             {discountPct > 0 && (
@@ -194,14 +188,13 @@ export function ThemeProductCard({
     return (
       <div className={clsx(styles.catalogCard, 'theme-product-card')}>
         <Link to={productUrl} className={clsx(styles.catalogImageWrap, 'theme-card-img')}>
-          {primaryImg ? (
-            <img src={primaryImg} alt={product.name} className={styles.catalogImg} loading="lazy" />
-          ) : (
-            <div className={styles.placeholderBox}>
-              <ShoppingBag size={28} />
-              <span>{product.name.charAt(0).toUpperCase()}</span>
-            </div>
-          )}
+          <ProgressiveProductImage
+            src={primaryImg}
+            alt={product.name}
+            productName={product.name}
+            imgClassName={styles.catalogImg}
+            fallbackIcon="package"
+          />
           <span className={styles.catalogSkuBadge}>SKU: {firstSku}</span>
           {!isAvailable && <span className={styles.catalogAgotadoBadge}>Agotado</span>}
         </Link>
@@ -271,14 +264,13 @@ export function ThemeProductCard({
       <div className={clsx(styles.appLikeCard, 'theme-product-card')}>
         <div className={clsx(styles.appLikeImageWrap, 'theme-card-img')}>
           <Link to={productUrl} className={styles.appLikeImgLink}>
-            {primaryImg ? (
-              <img src={primaryImg} alt={product.name} className={styles.appLikeImg} loading="lazy" />
-            ) : (
-              <div className={styles.placeholderBox}>
-                <ShoppingBag size={32} />
-                <span>{product.name.charAt(0).toUpperCase()}</span>
-              </div>
-            )}
+            <ProgressiveProductImage
+              src={primaryImg}
+              alt={product.name}
+              productName={product.name}
+              imgClassName={styles.appLikeImg}
+              fallbackIcon="shirt"
+            />
           </Link>
 
           {/* Floating Wishlist Button */}
@@ -339,14 +331,13 @@ export function ThemeProductCard({
   return (
     <Link to={productUrl} className={clsx(styles.classicCard, 'theme-product-card')}>
       <div className={clsx(styles.classicImageArea, 'theme-card-img')}>
-        {primaryImg ? (
-          <img src={primaryImg} alt={product.name} className={styles.classicProductImage} loading="lazy" />
-        ) : (
-          <div className={styles.classicPlaceholder}>
-            <ShoppingBag size={48} color="var(--text-primary)" />
-            <span className={styles.classicPlaceholderLetter}>{product.name.charAt(0).toUpperCase()}</span>
-          </div>
-        )}
+        <ProgressiveProductImage
+          src={primaryImg}
+          alt={product.name}
+          productName={product.name}
+          imgClassName={styles.classicProductImage}
+          fallbackIcon="shirt"
+        />
 
         <div className={styles.classicBadges}>
           {!isAvailable && <span className={styles.classicSoldOut}>Agotado</span>}

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Zap } from 'lucide-react';
+import { Zap, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import clsx from 'clsx';
 import { useNavGroups } from '@/navigation/useNav';
 import type { NavItem } from '@/navigation/navConfig';
@@ -25,6 +25,7 @@ export function Sidebar() {
     expandedGroups,
     toggleGroup,
     setGroupExpanded,
+    toggleSidebar,
   } = useSidebarStore();
 
   // Popover flotante al pasar el cursor en modo colapsado (Desktop mini-bar)
@@ -181,7 +182,27 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* ── 4. FLOATING FLYOUT POPOVER EN MODO COLAPSADO ───────────────────── */}
+      {/* ── 4. FOOTER (Control de colapso/expansión) ──────────────────────── */}
+      <div className={styles.footer}>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className={styles.collapseButton}
+          aria-label={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
+          title={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen size={18} className={styles.collapseIcon} aria-hidden="true" />
+          ) : (
+            <>
+              <PanelLeftClose size={18} className={styles.collapseIcon} aria-hidden="true" />
+              <span className={styles.collapseText}>Colapsar menú</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* ── 5. FLOATING FLYOUT POPOVER EN MODO COLAPSADO ───────────────────── */}
       {isCollapsed && hoveredFlyout && (
         <div
           className={styles.fixedFlyoutPopover}

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import { Sidebar }     from './Sidebar';
 import { TopBar }      from './TopBar';
@@ -10,6 +10,7 @@ import styles from './AdminLayout.module.css';
 
 export function AdminLayout() {
   const isCollapsed = useSidebarStore((s) => s.isCollapsed);
+  const location = useLocation();
 
   // Trigger window resize event when sidebar collapses or expands
   // This allows charts (Recharts) and data grids to resize smoothly without layout shift
@@ -19,6 +20,14 @@ export function AdminLayout() {
     }, 320); // match sidebar transition duration
     return () => clearTimeout(timer);
   }, [isCollapsed]);
+
+  // Reset scroll to top on route change
+  useEffect(() => {
+    const mainEl = document.getElementById('main-content-area');
+    if (mainEl) {
+      mainEl.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   return (
     <div className={clsx('spatial-workspace', styles.workspace)}>
@@ -33,7 +42,9 @@ export function AdminLayout() {
       <div className={styles.canvas}>
         <TopBar />
         <main className={styles.content} id="main-content-area" tabIndex={-1}>
-          <Outlet />
+          <div key={location.pathname} className={clsx('page-transition', styles.pageTransition)}>
+            <Outlet />
+          </div>
         </main>
       </div>
 

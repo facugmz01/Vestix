@@ -13,6 +13,7 @@ import { PosCustomerSearch } from './PosCustomerSearch';
 import { PosRedemptionPanel } from './PosRedemptionPanel';
 import { DiscountModal, type DiscountApplyData } from './DiscountModal';
 import styles from '@/pages/pos/POSPage.module.css';
+import cartStyles from './POSCart.module.css';
 
 type CartVariant = {
   id: string;
@@ -89,6 +90,15 @@ export function POSCart({
 
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PosPaymentMethodId>('CASH');
+  const [pulsingVariantId, setPulsingVariantId] = useState<string | null>(null);
+
+  const handleUpdateQty = (variantId: string, newQty: number) => {
+    updateQty(variantId, newQty);
+    setPulsingVariantId(variantId);
+    setTimeout(() => {
+      setPulsingVariantId(prev => (prev === variantId ? null : prev));
+    }, 350);
+  };
 
   const [discountModalConfig, setDiscountModalConfig] = useState<{
     open: boolean;
@@ -260,8 +270,13 @@ export function POSCart({
                       </div>
                     )}
 
-                    <div className={styles.qtyControl}>
-                      <button type="button" className={styles.qtyBtn} aria-label="Reducir cantidad" onClick={() => updateQty(variant.id, item.qty - 1)}>
+                    <div className={`${styles.qtyControl} ${pulsingVariantId === variant.id ? (cartStyles.qtyPulse || styles.qtyPulse) : ''}`}>
+                      <button
+                        type="button"
+                        className={`${styles.qtyBtn} ${cartStyles.qtyBtnMicro}`}
+                        aria-label="Reducir cantidad"
+                        onClick={() => handleUpdateQty(variant.id, item.qty - 1)}
+                      >
                         −
                       </button>
                       <input
@@ -270,9 +285,14 @@ export function POSCart({
                         value={item.qty}
                         min={1}
                         aria-label="Cantidad"
-                        onChange={e => updateQty(variant.id, Number(e.target.value))}
+                        onChange={e => handleUpdateQty(variant.id, Number(e.target.value))}
                       />
-                      <button type="button" className={styles.qtyBtn} aria-label="Aumentar cantidad" onClick={() => updateQty(variant.id, item.qty + 1)}>
+                      <button
+                        type="button"
+                        className={`${styles.qtyBtn} ${cartStyles.qtyBtnMicro}`}
+                        aria-label="Aumentar cantidad"
+                        onClick={() => handleUpdateQty(variant.id, item.qty + 1)}
+                      >
                         +
                       </button>
 
