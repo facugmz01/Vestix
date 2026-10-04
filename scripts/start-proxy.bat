@@ -1,0 +1,3 @@
+@echo off
+echo Iniciando proxy de red Windows -> Contenedores Podman/WSL (puertos 80 y 3000)...
+node "%~dp0wsl-port-proxy.js"
