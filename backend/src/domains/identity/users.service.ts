@@ -3,13 +3,24 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  UnauthorizedException,
   OnModuleInit,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AssignBranchesDto } from './dto/assign-branches.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { DisableMfaDto } from './dto/mfa.dto';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import {
+  generateTotpSecret,
+  verifyTotpToken,
+  buildOtpauthUrl,
+  generateQrCodeDataUrl,
+  generateBackupCodes,
+} from './totp.util';
 
 export interface UserListFilters {
   page: number;
@@ -55,6 +66,7 @@ export class UsersService implements OnModuleInit {
       data: {
         email: userData.email,
         fullName: userData.fullName,
+        phone: userData.phone || null,
         roleId: dbRole.id,
         branchId: branchId,
         password: hashedPassword,
@@ -167,6 +179,10 @@ export class UsersService implements OnModuleInit {
       data.branchId = updateUserDto.branchId || null;
     }
 
+    if ('phone' in updateUserDto) {
+      data.phone = updateUserDto.phone || null;
+    }
+
     const user = await this.prisma.user.update({
       where: { id },
       data,
@@ -232,14 +248,204 @@ export class UsersService implements OnModuleInit {
     return dbRole;
   }
 
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const data: any = {};
+
+    if (dto.fullName !== undefined) {
+      data.fullName = dto.fullName.trim();
+    }
+
+    if (dto.phone !== undefined) {
+      data.phone = dto.phone ? dto.phone.trim() : null;
+    }
+
+    if (dto.email && dto.email.toLowerCase().trim() !== user.email.toLowerCase()) {
+      const targetEmail = dto.email.toLowerCase().trim();
+      const existing = await this.prisma.user.findUnique({ where: { email: targetEmail } });
+      if (existing && existing.id !== userId) {
+        throw new ConflictException('Ya existe un usuario con este correo electrónico');
+      }
+      data.email = targetEmail;
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: this.userSelect(),
+    });
+
+    return this.formatUser(updated);
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('La contraseña actual es incorrecta');
+    }
+
+    if (dto.newPassword.length < 8) {
+      throw new BadRequestException('La nueva contraseña debe tener al menos 8 caracteres');
+    }
+
+    const isSamePassword = await bcrypt.compare(dto.newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException('La nueva contraseña debe ser diferente a la actual');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { success: true, message: 'Contraseña actualizada correctamente' };
+  }
+
+  async generateMfa(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const secret = generateTotpSecret();
+    const otpauthUrl = buildOtpauthUrl(user.email, secret, 'Vestix');
+    const qrCode = await generateQrCodeDataUrl(otpauthUrl);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { mfaPendingSecret: secret },
+    });
+
+    return {
+      secret,
+      otpauthUrl,
+      qrCode,
+    };
+  }
+
+  async enableMfa(userId: string, code: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (!user.mfaPendingSecret) {
+      throw new BadRequestException('No hay una configuración de MFA pendiente. Generá un nuevo código QR.');
+    }
+
+    const isValid = verifyTotpToken(code, user.mfaPendingSecret);
+    if (!isValid) {
+      throw new BadRequestException('El código de verificación es inválido o ha expirado. Verificá la hora de tu dispositivo.');
+    }
+
+    const backupCodes = generateBackupCodes(8);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        mfaEnabled: true,
+        mfaSecret: user.mfaPendingSecret,
+        mfaPendingSecret: null,
+        mfaBackupCodes: backupCodes,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Autenticación de dos factores (MFA) activada con éxito',
+      backupCodes,
+    };
+  }
+
+  async disableMfa(userId: string, dto: DisableMfaDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const isMatch = await bcrypt.compare(dto.password, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('La contraseña ingresada es incorrecta');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        mfaEnabled: false,
+        mfaSecret: null,
+        mfaPendingSecret: null,
+        mfaBackupCodes: [],
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Autenticación de dos factores (MFA) desactivada correctamente',
+    };
+  }
+
+  async verifyMfaLogin(userId: string, code: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        role: {
+          include: {
+            permissions: true,
+          },
+        },
+        branch: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Usuario inválido o inactivo');
+    }
+
+    if (!user.mfaEnabled || !user.mfaSecret) {
+      throw new BadRequestException('MFA no está configurado para esta cuenta');
+    }
+
+    // Check TOTP code
+    const isTotpValid = verifyTotpToken(code, user.mfaSecret);
+    if (isTotpValid) {
+      return user;
+    }
+
+    // Check backup codes
+    const cleanCode = code.trim().toUpperCase();
+    if (user.mfaBackupCodes && user.mfaBackupCodes.includes(cleanCode)) {
+      // Consume backup code
+      const remaining = user.mfaBackupCodes.filter((c) => c !== cleanCode);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { mfaBackupCodes: remaining },
+      });
+      return user;
+    }
+
+    throw new UnauthorizedException('Código de verificación incorrecto o expirado');
+  }
+
   private userSelect() {
     return {
       id: true,
       email: true,
       fullName: true,
+      phone: true,
       roleId: true,
       branchId: true,
       isActive: true,
+      mfaEnabled: true,
       createdAt: true,
       updatedAt: true,
       role: true,
@@ -252,10 +458,12 @@ export class UsersService implements OnModuleInit {
       id: u.id,
       email: u.email,
       fullName: u.fullName,
+      phone: u.phone,
       role: u.role?.name || 'USER',
       branchId: u.branchId,
       branchName: u.branch?.name,
       isActive: u.isActive,
+      mfaEnabled: u.mfaEnabled ?? false,
       createdAt: u.createdAt,
     };
   }
@@ -265,10 +473,12 @@ export class UsersService implements OnModuleInit {
       id: u.id,
       email: u.email,
       fullName: u.fullName,
+      phone: u.phone,
       role: u.role?.name || 'USER',
       branchId: u.branchId,
       branchName: u.branch?.name,
       isActive: u.isActive,
+      mfaEnabled: u.mfaEnabled ?? false,
       createdAt: u.createdAt,
     };
   }
@@ -278,10 +488,12 @@ export class UsersService implements OnModuleInit {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
+      phone: user.phone,
       role: user.role?.name || 'USER',
       branchId: user.branchId,
       branchName: user.branch?.name,
       isActive: user.isActive,
+      mfaEnabled: user.mfaEnabled ?? false,
       createdAt: user.createdAt,
       permissions: user.role?.permissions || [],
     };

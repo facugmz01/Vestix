@@ -57,6 +57,7 @@ const AuditPage      = lazy(() => import('@/pages/admin/AuditPage'));
 const BackupsPage    = lazy(() => import('@/pages/admin/BackupsPage'));
 const SyncStatusPage = lazy(() => import('@/pages/admin/SyncStatusPage'));
 const SettingsPage   = lazy(() => import('@/pages/admin/SettingsPage'));
+const ProfilePage    = lazy(() => import('@/pages/admin/ProfilePage'));
 const UsersPage      = lazy(() => import('@/pages/admin/UsersPage'));
 const RolesPage      = lazy(() => import('@/pages/admin/RolesPage'));
 const BranchesPage   = lazy(() => import('@/pages/admin/BranchesPage'));
@@ -174,6 +175,7 @@ export default function App() {
             <Route element={<AdminLayout />}>
               {!isStorefrontDomain() && <Route index element={<Navigate to="/admin" replace />} />}
               <Route path="/admin" element={<ReportsPage />} />
+              <Route path="/admin/profile" element={<ProfilePage />} />
 
               <Route element={<RequirePermission action="read"   subject="Catalog" />}>
                 <Route path="/admin/catalog"    element={<CatalogPage />} />

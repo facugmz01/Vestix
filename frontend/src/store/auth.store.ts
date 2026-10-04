@@ -11,6 +11,7 @@ interface AuthState {
 
   // Mutators
   setAuth:         (user: AuthUser) => void;
+  updateUser:      (partial: Partial<AuthUser>) => void;
   clearAuth:       () => void;
   loadCurrentUser: () => Promise<void>;
 
@@ -28,6 +29,12 @@ export const useAuthStore = create<AuthState>()(
 
       setAuth: (user) => {
         set({ user, isAuthenticated: true, isLoadingUser: false });
+      },
+
+      updateUser: (partial) => {
+        const current = get().user;
+        if (!current) return;
+        set({ user: { ...current, ...partial } });
       },
 
       clearAuth: () => {

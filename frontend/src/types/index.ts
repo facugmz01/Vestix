@@ -1,8 +1,39 @@
 // ─── AUTH ────────────────────────────────────────────────────────────────
 export interface LoginDto { email: string; password: string; }
+export interface LoginResponse {
+  message: string;
+  user?: AuthUser;
+  mfaRequired?: boolean;
+  mfaToken?: string;
+}
 export interface AuthUser {
-  id: string; email: string; fullName: string;
-  role: string; branchId?: string; permissions: Permission[];
+  id: string;
+  email: string;
+  fullName: string;
+  phone?: string | null;
+  role: string;
+  branchId?: string;
+  permissions: Permission[];
+  mfaEnabled?: boolean;
+}
+export interface UpdateProfileDto {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+}
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+}
+export interface MfaSetupResponse {
+  secret: string;
+  otpauthUrl: string;
+  qrCode: string;
+}
+export interface MfaEnableResponse {
+  success: boolean;
+  message: string;
+  backupCodes: string[];
 }
 export interface Permission { action: string; subject: string; }
 

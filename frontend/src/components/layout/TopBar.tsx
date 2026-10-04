@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -9,6 +10,10 @@ import {
   Moon,
   Store,
   Wallet,
+  User as UserIcon,
+  Lock,
+  ShieldCheck,
+  ChevronDown,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useBreadcrumbs } from '@/navigation/useBreadcrumbs';
@@ -30,6 +35,19 @@ export function TopBar() {
   const { theme, toggleTheme } = useThemeStore();
   const openSearch = useGlobalSearchStore((s) => s.open);
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const roleLabel = user?.role ? (ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] ?? user.role) : '';
 
   // Query active cash shift to display context badge in topbar
@@ -41,6 +59,7 @@ export function TopBar() {
   });
 
   const handleLogout = () => {
+    setMenuOpen(false);
     authApi.logout();
     clearAuth();
   };
@@ -136,24 +155,76 @@ export function TopBar() {
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>
 
-        {/* User Profile Pill */}
-        <div className={styles.userProfile}>
-          <div className={styles.avatar} aria-hidden>
-            {user?.fullName?.[0]?.toUpperCase() ?? 'U'}
-          </div>
-          <div className={styles.userMeta}>
-            <span className={styles.userName}>{user?.fullName ?? 'Usuario'}</span>
-            <span className={styles.userRole}>{roleLabel}</span>
-          </div>
+        {/* User Profile Pill & Dropdown */}
+        <div className={styles.userWrapper} ref={menuRef}>
           <button
             type="button"
-            className={styles.logoutBtn}
-            onClick={handleLogout}
-            title="Cerrar sesión"
-            aria-label="Cerrar sesión"
+            className={styles.userProfileBtn}
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-expanded={menuOpen}
+            aria-haspopup="true"
+            title="Opciones de cuenta"
           >
-            <LogOut size={15} />
+            <div className={styles.avatar} aria-hidden>
+              {user?.fullName?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? 'U'}
+            </div>
+            <div className={styles.userMeta}>
+              <span className={styles.userName}>{user?.fullName ?? 'Usuario'}</span>
+              <span className={styles.userRole}>{roleLabel}</span>
+            </div>
+            <ChevronDown size={14} color="var(--text-muted)" style={{ marginRight: '2px' }} />
           </button>
+
+          {menuOpen && (
+            <div className={styles.userDropdown} role="menu">
+              <div className={styles.dropdownHeader}>
+                <p className={styles.dropdownUserName}>{user?.fullName || 'Usuario'}</p>
+                <p className={styles.dropdownUserEmail}>{user?.email}</p>
+              </div>
+
+              <Link
+                to="/admin/profile?tab=profile"
+                className={styles.dropdownItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <UserIcon size={15} />
+                <span>Mi Perfil</span>
+              </Link>
+
+              <Link
+                to="/admin/profile?tab=security"
+                className={styles.dropdownItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Lock size={15} />
+                <span>Cambiar Contraseña</span>
+              </Link>
+
+              <Link
+                to="/admin/profile?tab=mfa"
+                className={styles.dropdownItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <ShieldCheck size={15} />
+                <span>Seguridad y MFA</span>
+              </Link>
+
+              <div className={styles.dropdownDivider} />
+
+              <button
+                type="button"
+                className={clsx(styles.dropdownItem, styles.dropdownLogout)}
+                role="menuitem"
+                onClick={handleLogout}
+              >
+                <LogOut size={15} />
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

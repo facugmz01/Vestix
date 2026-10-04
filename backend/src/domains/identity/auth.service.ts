@@ -135,5 +135,48 @@ export class AuthService {
   async getUserById(id: string) {
     return this.usersService.findOne(id);
   }
+
+  generateMfaPendingToken(user: any) {
+    return this.jwtService.sign(
+      { sub: user.id, email: user.email, type: 'MFA_PENDING' },
+      { expiresIn: '5m' },
+    );
+  }
+
+  verifyMfaPendingToken(token: string): { sub: string; email: string } {
+    try {
+      const payload = this.jwtService.verify(token);
+      if (!payload || payload.type !== 'MFA_PENDING' || !payload.sub) {
+        throw new UnauthorizedException('Token de autenticación MFA inválido o expirado');
+      }
+      return payload;
+    } catch {
+      throw new UnauthorizedException('Token de autenticación MFA expirado o inválido');
+    }
+  }
+
+  async verifyMfaLogin(userId: string, code: string) {
+    return this.usersService.verifyMfaLogin(userId, code);
+  }
+
+  async updateProfile(userId: string, dto: any) {
+    return this.usersService.updateProfile(userId, dto);
+  }
+
+  async changePassword(userId: string, dto: any) {
+    return this.usersService.changePassword(userId, dto);
+  }
+
+  async generateMfa(userId: string) {
+    return this.usersService.generateMfa(userId);
+  }
+
+  async enableMfa(userId: string, code: string) {
+    return this.usersService.enableMfa(userId, code);
+  }
+
+  async disableMfa(userId: string, dto: any) {
+    return this.usersService.disableMfa(userId, dto);
+  }
 }
 
