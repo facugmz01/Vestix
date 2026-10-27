@@ -9,9 +9,11 @@ interface Props {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
+  width?: 'sm' | 'md' | 'lg' | string;
 }
 
-export function Modal({ open, title, onClose, children, footer, size = 'md' }: Props) {
+export function Modal({ open, title, onClose, children, footer, size = 'md', width }: Props) {
+  const effectiveSize = (width === 'sm' || width === 'md' || width === 'lg') ? width : size;
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -36,7 +38,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md' }: P
     <div className={styles.overlay} onClick={onClose} role="presentation">
       <div
         ref={panelRef}
-        className={`${styles.panel} ${styles[size]}`}
+        className={`${styles.panel} ${styles[effectiveSize]}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

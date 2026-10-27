@@ -144,7 +144,7 @@ export class CashService {
         data: { status: 'CLOSED' },
       });
 
-      return tx.cashShift.update({
+      const updatedShift = await tx.cashShift.update({
         where: { id: shiftId },
         data: {
           status: 'CLOSED',
@@ -156,19 +156,22 @@ export class CashService {
           notes,
         },
       });
-    });
 
-    // STRICT RECONCILIATION:
-    if (difference !== 0 && cashAccountId) {
-      const adjustmentType = difference < 0 ? 'CREDIT' : 'DEBIT'; // Credit removes money, Debit adds money
-      await this.accountsService.postTransaction(
-        cashAccountId,
-        adjustmentType,
-        Math.abs(difference),
-        `SHIFT-ADJ-${shift.id}`,
-        `Ajuste de Cierre de Caja (Arqueo). Esperado: ${expected}, Contado: ${actualCountedBalance}`
-      );
-    }
+      // STRICT RECONCILIATION: atomic ledger entry inside the same transaction
+      if (difference !== 0 && cashAccountId) {
+        const adjustmentType = difference < 0 ? 'CREDIT' : 'DEBIT'; // Credit removes money, Debit adds money
+        await this.accountsService.postTransactionInTx(
+          tx,
+          cashAccountId,
+          adjustmentType,
+          Math.abs(difference),
+          `SHIFT-ADJ-${shift.id}`,
+          `Ajuste de Cierre de Caja (Arqueo). Esperado: ${expected}, Contado: ${actualCountedBalance}`
+        );
+      }
+
+      return updatedShift;
+    });
 
     void this.notificationTriggers.onShiftClosed(shiftId);
     return closedShift;

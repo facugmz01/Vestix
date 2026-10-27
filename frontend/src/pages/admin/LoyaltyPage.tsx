@@ -70,7 +70,7 @@ export default function LoyaltyPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const accountNotFound = accountError && (accountError as ApiError).status === 404;
+  const accountNotFound = accountError && ((accountError as unknown as ApiError).status === 404 || (accountError as any).response?.status === 404);
 
   return (
     <PageContainer

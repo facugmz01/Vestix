@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { CheckoutOrchestrator } from './checkout.orchestrator';
@@ -14,6 +14,9 @@ import { AccountsService } from '../finance/accounts.service';
 import { CurrentAccountsService } from '../finance/current-accounts.service';
 import { LoyaltyService } from './loyalty/loyalty.service';
 import { GiftCardsService } from './gift-cards/gift-cards.service';
+import { AuthService } from '../identity/auth.service';
+import { AuditService } from '../../modules/audit/audit.service';
+import { RbacService } from '../../core/rbac/rbac.service';
 import { OrderSource, PaymentMethod } from './models/order.model';
 
 describe('CheckoutOrchestrator Financial Impact & Atomicity', () => {
@@ -123,6 +126,9 @@ describe('CheckoutOrchestrator Financial Impact & Atomicity', () => {
         { provide: CurrentAccountsService, useValue: currentAccountsServiceMock },
         { provide: LoyaltyService, useValue: loyaltyServiceMock },
         { provide: GiftCardsService, useValue: { getBalance: jest.fn() } },
+        { provide: AuthService, useValue: { verifyApprovalToken: jest.fn<any>() } },
+        { provide: AuditService, useValue: { log: jest.fn<any>().mockResolvedValue({}) } },
+        { provide: RbacService, useValue: { validateUserPermissions: jest.fn<any>().mockResolvedValue(true) } },
       ],
     }).compile();
 
@@ -154,7 +160,11 @@ describe('CheckoutOrchestrator Financial Impact & Atomicity', () => {
       product: { type: 'SINGLE' },
     });
 
-    txMock.saleOrder.create.mockImplementation((args: any) => Promise.resolve({ id: args.data.id, ...args.data }));
+    txMock.saleOrder.create.mockImplementation((args: any) => Promise.resolve({
+      id: args.data.id,
+      ...args.data,
+      lines: Array.isArray(args.data.lines?.create) ? args.data.lines.create : [],
+    }));
     txMock.saleOrder.update.mockImplementation((args: any) => Promise.resolve({ id: args.where.id, ...args.data }));
     txMock.paymentMethod.findFirst.mockResolvedValue({ id: 'pm-cash-1', type: 'CASH', accountId: 'acc-cash-1' });
     accountsServiceMock.resolvePaymentAccountInTx.mockResolvedValue('acc-cash-1');

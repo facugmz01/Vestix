@@ -5,6 +5,7 @@ import { Logger } from 'nestjs-pino';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { GlobalHttpExceptionFilter } from './core/filters/http-exception.filter';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
   // ─── CONFIGURATION VALIDATION ──────────────────────────────────────────────
@@ -17,10 +18,15 @@ async function bootstrap() {
   }
 
   // ─── APP CREATION ───────────────────────────────────────────────────────────
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     // nestjs-pino replaces NestJS default logger with structured JSON output
     bufferLogs: true,
   });
+
+  // ─── TRUST PROXY ────────────────────────────────────────────────────────────
+  // Enables Express to read X-Forwarded-For headers from Nginx reverse proxy so
+  // throttler and audit interceptor see real client IPs instead of Docker bridge IP.
+  app.set('trust proxy', 1);
 
   // ─── STRUCTURED LOGGING ─────────────────────────────────────────────────────
   // Requires LoggerModule registered in AppModule via nestjs-pino
@@ -29,6 +35,12 @@ async function bootstrap() {
   // ─── MIDDLEWARE ─────────────────────────────────────────────────────────────
   app.use(cookieParser());
   app.use(helmet());
+
+  // ─── SECURITY: BLOCK DIRECT STATIC ACCESS TO SENSITIVE UPLOADS ───────────────
+  // AFIP certificates/private keys and database dumps must never be served over HTTP.
+  app.use(['/uploads/arca', '/uploads/backups'], (_req, res) => {
+    res.status(404).json({ statusCode: 404, message: 'Not Found' });
+  });
   
   // Safe payload limit for JSON body requests.
   // Product create may still include a small preview data-URL; multipart uploads
@@ -75,8 +87,15 @@ async function bootstrap() {
       // Allow requests with no origin (server-to-server, curl, mobile apps, etc.)
       if (!origin) return callback(null, true);
 
-      // Allow any tienda.* subdomain dynamically
-      if (origin.includes('://tienda.')) return callback(null, true);
+      // Allow any tienda.* subdomain on roindumentaria.com.ar or configured STOREFRONT_DOMAIN
+      const isTiendaDomain = /^https?:\/\/(tienda\.)?([a-zA-Z0-9-]+\.)?roindumentaria\.com\.ar(:\d+)?$/.test(origin);
+      if (isTiendaDomain) return callback(null, true);
+
+      if (process.env.STOREFRONT_DOMAIN) {
+        const escaped = process.env.STOREFRONT_DOMAIN.trim().replace(/^\.+/, '').replace(/\./g, '\\.');
+        const sfPattern = new RegExp(`^https?:\\/\\/([a-zA-Z0-9-]+\\.)*${escaped}(:\\d+)?$`);
+        if (sfPattern.test(origin)) return callback(null, true);
+      }
 
       // Allow exact matches in allowed origins
       if (allowedOrigins.includes(origin)) return callback(null, true);

@@ -52,7 +52,7 @@ export default function GiftCardsPage() {
     },
     onSuccess: (res) => {
       if ('valid' in res) {
-        setVerifyResult(res);
+        setVerifyResult(res as GiftCardVerification);
         toast.success(res.valid ? 'Gift card legítima' : 'Gift card no válida');
       } else {
         toast.success(`Saldo ${res.code}: ${formatCurrency(res.balance)}`);
@@ -125,7 +125,7 @@ export default function GiftCardsPage() {
         ) : cards.length === 0 ? (
           <EmptyState icon={<Gift size={40} />} title="Sin gift cards" description="Emití la primera tarjeta de regalo." />
         ) : (
-          <Table
+          <Table<GiftCard>
             columns={[
               { key: 'code', label: 'Código', render: (c: GiftCard) => <code>{c.code}</code> },
               { key: 'balance', label: 'Saldo', render: (c: GiftCard) => formatCurrency(c.balance) },

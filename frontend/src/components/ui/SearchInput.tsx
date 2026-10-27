@@ -5,23 +5,25 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 interface Props {
   placeholder?: string;
-  onSearch:     (value: string) => void;
+  onSearch?:     (value: string) => void;
+  onChange?:     (value: string) => void;
   delay?:       number;
   id?:          string;
   value?:       string;
 }
 
 /**
- * Debounced search input. Fires onSearch after the user stops typing.
+ * Debounced search input. Fires onSearch/onChange after the user stops typing.
  * Includes a clear button when the field has content.
  */
-export function SearchInput({ placeholder = 'Buscar…', onSearch, delay = 350, id = 'search', value: controlledValue }: Props) {
+export function SearchInput({ placeholder = 'Buscar…', onSearch, onChange, delay = 350, id = 'search', value: controlledValue }: Props) {
   const [raw, setRaw] = useState(controlledValue ?? '');
+  const handleCallback = onSearch || onChange || (() => {});
 
-  // Fire onSearch with debounce
-  useDebounce<string>(raw, delay, onSearch);
+  // Fire onSearch/onChange with debounce
+  useDebounce<string>(raw, delay, handleCallback);
 
-  const handleClear = () => { setRaw(''); onSearch(''); };
+  const handleClear = () => { setRaw(''); handleCallback(''); };
 
   return (
     <div className={styles.wrapper}>

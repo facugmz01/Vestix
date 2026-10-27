@@ -93,7 +93,14 @@ export default function PublicReceiptPage() {
         <ReceiptPrinter
           ref={printRef}
           order={receiptOrder}
-          branchSettings={data.branchSettings}
+          branchSettings={
+            data.branchSettings
+              ? {
+                  posReceiptHeader: data.branchSettings.posReceiptHeader ?? undefined,
+                  posReceiptFooter: data.branchSettings.posReceiptFooter ?? undefined,
+                }
+              : undefined
+          }
           receiptStyle={data.receiptStyle}
         />
       </div>

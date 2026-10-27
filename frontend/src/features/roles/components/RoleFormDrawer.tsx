@@ -159,7 +159,7 @@ export function RoleFormDrawer({ open, onClose, roleToEdit }: Props) {
                       <td className={styles.permissionsTdSubject}>{subject}</td>
                       {MATRIX_ACTIONS.map(action => {
                         const supportsAction =
-                          AVAILABLE_ACTIONS.includes(action as typeof Actions[keyof typeof Actions]) ||
+                          (AVAILABLE_ACTIONS as readonly string[]).includes(action) ||
                           (CUSTOM_ACTIONS_BY_SUBJECT[subject] ?? []).includes(action);
                         const isChecked = isManaged || hasPermission(action, subject);
                         const isDisabled = !supportsAction || roleToEdit?.isSystem || (isManaged && action !== Actions.MANAGE);

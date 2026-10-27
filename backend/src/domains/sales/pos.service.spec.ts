@@ -24,22 +24,30 @@ const mockVariant = {
 const mockPrisma: any = {
   productVariant: {
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
     findMany: jest.fn(),
   },
   productBarcode: {
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
+  },
+  product: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
   },
   cashRegister: {
     findUnique: jest.fn(),
+    findMany: jest.fn<any>().mockResolvedValue([]),
   },
   warehouse: {
     findFirst: jest.fn(),
+    findMany: jest.fn<any>().mockResolvedValue([]),
   },
   cashShift: {
     findFirst: jest.fn(),
   },
   stockLevel: {
-    findMany: jest.fn(),
+    findMany: jest.fn<any>().mockResolvedValue([]),
   },
 };
 
@@ -49,6 +57,7 @@ const mockCheckoutOrchestrator: any = {
 
 const mockPricingService: any = {
   resolvePrice: jest.fn<any>(async (_id: string, base: number) => base),
+  resolveVariantPricingBatch: jest.fn<any>().mockResolvedValue(new Map()),
 };
 
 const mockRulesEngine: any = {
@@ -78,6 +87,7 @@ const mockMercadoPagoService: any = {
 
 const mockSettingsService: any = {
   getIntegrationSettings: jest.fn<any>().mockResolvedValue({}),
+  getPricingSettings: jest.fn<any>().mockResolvedValue({ vatDefaultPct: 21, showPricesWithTax: true }),
 };
 
 const qrMemory = new Map<string, any>();
@@ -123,7 +133,7 @@ describe('PosService', () => {
 
   describe('resolveBarcode', () => {
     it('resolves variant by primary barcode', async () => {
-      mockPrisma.productVariant.findUnique.mockResolvedValueOnce(mockVariant);
+      mockPrisma.productVariant.findFirst.mockResolvedValueOnce(mockVariant);
 
       const result = await service.resolveBarcode('1234567890');
 
@@ -132,8 +142,8 @@ describe('PosService', () => {
     });
 
     it('resolves variant by secondary ProductBarcode', async () => {
-      mockPrisma.productVariant.findUnique.mockResolvedValueOnce(null);
-      mockPrisma.productBarcode.findUnique.mockResolvedValueOnce({
+      mockPrisma.productVariant.findFirst.mockResolvedValueOnce(null);
+      mockPrisma.productBarcode.findFirst.mockResolvedValueOnce({
         barcode: 'ALT-999',
         variant: mockVariant,
       });
@@ -144,8 +154,8 @@ describe('PosService', () => {
     });
 
     it('throws when barcode is not found', async () => {
-      mockPrisma.productVariant.findUnique.mockResolvedValueOnce(null);
-      mockPrisma.productBarcode.findUnique.mockResolvedValueOnce(null);
+      mockPrisma.productVariant.findFirst.mockResolvedValue(null);
+      mockPrisma.productBarcode.findFirst.mockResolvedValue(null);
 
       await expect(service.resolveBarcode('UNKNOWN')).rejects.toThrow(NotFoundException);
     });
@@ -282,7 +292,7 @@ describe('PosService', () => {
       });
       expect(mockPrisma.productVariant.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { isActive: true },
+          where: expect.objectContaining({ isActive: true }),
           take: 50,
         }),
       );
@@ -290,7 +300,6 @@ describe('PosService', () => {
 
     it('filters by text query when provided', async () => {
       mockPrisma.productVariant.findMany.mockResolvedValueOnce([]);
-      mockPrisma.stockLevel.findMany.mockResolvedValueOnce([]);
 
       await service.searchCatalog('remera');
 

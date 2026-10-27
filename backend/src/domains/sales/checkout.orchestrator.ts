@@ -592,7 +592,7 @@ export class CheckoutOrchestrator {
           void this.loyaltyService.earnPointsForOrder(dto.customerId, earnBase, result.order.id);
         }
       }
-      if (dto.warehouseId && result.order.status !== 'PENDING_PAYMENT') {
+      if (dto.warehouseId && result.order.status !== 'PENDING_PAYMENT' && Array.isArray(result.order.lines)) {
         for (const line of result.order.lines) {
           const movements = await this.resolveStockMovements(line.variantId, line.quantity);
           for (const movement of movements) {

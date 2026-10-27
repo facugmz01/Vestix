@@ -14,6 +14,9 @@ import { AccountsService } from '../finance/accounts.service';
 import { CurrentAccountsService } from '../finance/current-accounts.service';
 import { LoyaltyService } from './loyalty/loyalty.service';
 import { GiftCardsService } from './gift-cards/gift-cards.service';
+import { AuthService } from '../identity/auth.service';
+import { AuditService } from '../../modules/audit/audit.service';
+import { RbacService } from '../../core/rbac/rbac.service';
 
 describe('CheckoutOrchestrator.confirmQuotation', () => {
   let orchestrator: CheckoutOrchestrator;
@@ -93,6 +96,9 @@ describe('CheckoutOrchestrator.confirmQuotation', () => {
         { provide: CurrentAccountsService, useValue: currentAccountsServiceMock },
         { provide: LoyaltyService, useValue: loyaltyServiceMock },
         { provide: GiftCardsService, useValue: {} },
+        { provide: AuthService, useValue: { verifyApprovalToken: jest.fn<any>() } },
+        { provide: AuditService, useValue: { log: jest.fn<any>().mockResolvedValue({}) } },
+        { provide: RbacService, useValue: { validateUserPermissions: jest.fn<any>().mockResolvedValue(true) } },
       ],
     }).compile();
 
@@ -104,6 +110,7 @@ describe('CheckoutOrchestrator.confirmQuotation', () => {
       product: { type: 'SIMPLE', comboItems: [] },
     });
     txMock.financialTransaction.count.mockResolvedValue(0);
+    txMock.currentAccountMovement.count.mockResolvedValue(0);
     txMock.outboxEvent.create.mockResolvedValue({});
     currentAccountsServiceMock.chargeCustomerSaleInTx.mockResolvedValue({});
   });

@@ -7,6 +7,7 @@ import {
   ToggleSwitch,
 } from '@/components/ui';
 import { financeApi, type CreateExpenseCategoryPayload } from '@/api/finance.api';
+import type { ExpenseCategory } from '@/types';
 import { Plus, Tag, AlertTriangle, Layers } from 'lucide-react';
 import styles from './ExpenseCategoriesModal.module.css';
 
@@ -23,15 +24,15 @@ export function ExpenseCategoriesModal({ open, onClose }: Props) {
   const [description, setDescription] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { data: rawCategories, isLoading } = useQuery({
+  const { data: rawCategories, isLoading } = useQuery<ExpenseCategory[]>({
     queryKey: ['expenses', 'categories', 'all'],
     queryFn: () => financeApi.getExpenseCategories(true),
     enabled: open,
   });
-  const categories = Array.isArray(rawCategories)
+  const categories: ExpenseCategory[] = Array.isArray(rawCategories)
     ? rawCategories
-    : Array.isArray(rawCategories?.data)
-    ? rawCategories.data
+    : Array.isArray((rawCategories as any)?.data)
+    ? (rawCategories as any).data
     : [];
 
   const createMutation = useMutation({
@@ -204,8 +205,8 @@ export function ExpenseCategoriesModal({ open, onClose }: Props) {
                 <div className={styles.switchWrapper}>
                   <ToggleSwitch
                     checked={cat.isActive}
-                    onChange={(checked) =>
-                      toggleStatusMutation.mutate({ id: cat.id, isActive: checked })
+                    onChange={(e) =>
+                      toggleStatusMutation.mutate({ id: cat.id, isActive: e.target.checked })
                     }
                     title={cat.isActive ? 'Desactivar categoría' : 'Activar categoría'}
                   />

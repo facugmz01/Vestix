@@ -13,15 +13,31 @@ export class AfipProducer {
    * Completely decouples the POS from external API latency.
    */
   async enqueueInvoiceGeneration(orderId: string, branchId: string) {
-    await this.invoiceQueue.add('generate_invoice', { orderId, branchId }, {
-      jobId: `invoice_${orderId}`, // Idempotency key: prevents double-queueing
-    });
+    await this.invoiceQueue.add(
+      'generate_invoice',
+      { orderId, branchId },
+      {
+        jobId: `invoice_${orderId}`, // Idempotency key: prevents double-queueing
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: false,
+        removeOnFail: false,
+      },
+    );
   }
 
   async enqueueCreditNote(returnId: string, branchId: string) {
-    await this.invoiceQueue.add('generate_credit_note', { returnId, branchId }, {
-      jobId: `credit_note_${returnId}`, // Idempotency key
-    });
+    await this.invoiceQueue.add(
+      'generate_credit_note',
+      { returnId, branchId },
+      {
+        jobId: `credit_note_${returnId}`, // Idempotency key
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: false,
+        removeOnFail: false,
+      },
+    );
   }
 
   async enqueueDebitNote(orderId: string, branchId: string, amount: number, reason?: string) {
@@ -30,6 +46,10 @@ export class AfipProducer {
       { orderId, branchId, amount, reason },
       {
         jobId: `debit_note_${orderId}_${amount}`,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: false,
+        removeOnFail: false,
       },
     );
   }

@@ -51,7 +51,7 @@ export function StorefrontSettingsPanel() {
   });
 
   const { register, control, handleSubmit, reset, watch, formState: { isDirty } } = useForm<StorefrontSettingsFormData>({
-    resolver: zodResolver(storefrontSettingsSchema),
+    resolver: zodResolver(storefrontSettingsSchema) as any,
     defaultValues: parseStorefrontSettings({}),
   });
 

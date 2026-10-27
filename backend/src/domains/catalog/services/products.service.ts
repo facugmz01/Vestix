@@ -167,6 +167,7 @@ export class ProductsService {
       // 4. Create Variants
       if (variableProduct && createProductDto.variants?.length) {
         const usedSkus = new Set<string>();
+        const usedBarcodes = new Set<string>();
         for (const v of createProductDto.variants) {
           const attrs = (v.attributes && typeof v.attributes === 'object')
             ? Object.fromEntries(
@@ -190,11 +191,22 @@ export class ProductsService {
           }
           usedSkus.add(sku.toUpperCase());
 
+          const barcode = (v.barcode || '').trim() || null;
+          if (barcode) {
+            if (usedBarcodes.has(barcode.toUpperCase())) {
+              throw new ConflictException(`El Código de Barras ${barcode} está duplicado en las variantes enviadas.`);
+            }
+            if (!(await this.identifiersService.validateBarcodeUniqueness(barcode))) {
+              throw new ConflictException(`El Código de Barras ${barcode} ya está en uso.`);
+            }
+            usedBarcodes.add(barcode.toUpperCase());
+          }
+
           await tx.productVariant.create({
             data: {
               productId: product.id,
               sku,
-              barcode: (v.barcode || '').trim() || null,
+              barcode,
               size: v.size,
               color: v.color,
               imageUrl: v.imageUrl,
@@ -207,11 +219,16 @@ export class ProductsService {
         }
       } else {
         // Simple / combo product: create one default variant
+        const defaultBarcode = createProductDto.variants?.[0]?.barcode?.trim() || null;
+        if (defaultBarcode && !(await this.identifiersService.validateBarcodeUniqueness(defaultBarcode))) {
+          throw new ConflictException(`El Código de Barras ${defaultBarcode} ya está en uso.`);
+        }
+
         await tx.productVariant.create({
           data: {
             productId: product.id,
             sku: finalSku,
-            barcode: createProductDto.variants?.[0]?.barcode?.trim() || null,
+            barcode: defaultBarcode,
             basePrice: createProductDto.basePrice || createProductDto.variants?.[0]?.basePrice || 0,
             costPrice: createProductDto.costPrice || 0,
             isActive: true
@@ -506,10 +523,39 @@ export class ProductsService {
         }
 
         // Update or create variants
+        const usedSkus = new Set<string>(
+          existingVariants
+            .filter(v => variantsToKeepIds.includes(v.id))
+            .map(v => v.sku.toUpperCase()),
+        );
+        const usedBarcodes = new Set<string>(
+          existingVariants
+            .filter(v => variantsToKeepIds.includes(v.id) && v.barcode)
+            .map(v => v.barcode!.toUpperCase()),
+        );
+
         for (const variant of variants) {
           if (variant.id) {
             // Update
             const { id: varId, productId, createdAt, updatedAt, ...varData } = variant as any;
+            if (varData.sku) {
+              const cleanSku = String(varData.sku).trim();
+              const conflictSku = await tx.productVariant.findFirst({
+                where: { sku: { equals: cleanSku, mode: 'insensitive' }, id: { not: varId } },
+              });
+              if (conflictSku) {
+                throw new ConflictException(`El SKU ${cleanSku} ya está en uso por otra variante.`);
+              }
+            }
+            if (varData.barcode) {
+              const cleanBarcode = String(varData.barcode).trim();
+              const conflictBc = await tx.productVariant.findFirst({
+                where: { barcode: { equals: cleanBarcode, mode: 'insensitive' }, id: { not: varId } },
+              });
+              if (conflictBc) {
+                throw new ConflictException(`El Código de Barras ${cleanBarcode} ya está en uso por otra variante.`);
+              }
+            }
             await tx.productVariant.update({
               where: { id: varId },
               data: varData
@@ -531,7 +577,13 @@ export class ProductsService {
             let sku = (variant.sku || '').trim();
             if (!sku) {
               sku = await this.identifiersService.ensureUniqueVariantSku(finalSku, attrs);
+            } else if (!(await this.identifiersService.validateSkuUniqueness(sku))) {
+              throw new ConflictException(`El SKU ${sku} ya está en uso`);
             }
+            while (usedSkus.has(sku.toUpperCase())) {
+              sku = `${sku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+            }
+            usedSkus.add(sku.toUpperCase());
 
             let barcode = (variant.barcode || '').trim() || null;
             if (!barcode) {
@@ -539,6 +591,14 @@ export class ProductsService {
               if (skuSettings.barcodeAutoGenerate !== false) {
                 barcode = await this.identifiersService.generateUniqueBarcode();
               }
+            } else {
+              if (usedBarcodes.has(barcode.toUpperCase())) {
+                throw new ConflictException(`El Código de Barras ${barcode} está duplicado en las variantes enviadas.`);
+              }
+              if (!(await this.identifiersService.validateBarcodeUniqueness(barcode))) {
+                throw new ConflictException(`El Código de Barras ${barcode} ya está en uso.`);
+              }
+              usedBarcodes.add(barcode.toUpperCase());
             }
 
             await tx.productVariant.create({
@@ -640,6 +700,8 @@ export class ProductsService {
     let barcode = (data.barcode || '').trim() || null;
     if (!barcode && skuSettings.barcodeAutoGenerate !== false) {
       barcode = await this.identifiersService.generateUniqueBarcode();
+    } else if (barcode && !(await this.identifiersService.validateBarcodeUniqueness(barcode))) {
+      throw new ConflictException(`El Código de Barras ${barcode} ya está en uso.`);
     }
 
     return this.prisma.productVariant.create({
@@ -656,6 +718,28 @@ export class ProductsService {
   async updateVariant(id: string, data: any, changedBy?: string) {
     const existing = await this.prisma.productVariant.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException(`Variante ${id} no encontrada`);
+
+    if (data.sku && String(data.sku).trim().toUpperCase() !== existing.sku.toUpperCase()) {
+      const cleanSku = String(data.sku).trim();
+      const conflictSku = await this.prisma.productVariant.findFirst({
+        where: { sku: { equals: cleanSku, mode: 'insensitive' }, id: { not: id } },
+      });
+      if (conflictSku) throw new ConflictException(`El SKU ${cleanSku} ya está en uso.`);
+    }
+
+    if (data.barcode !== undefined && String(data.barcode || '').trim().toUpperCase() !== (existing.barcode || '').trim().toUpperCase()) {
+      const cleanBarcode = String(data.barcode || '').trim();
+      if (cleanBarcode) {
+        const conflictBc = await this.prisma.productVariant.findFirst({
+          where: { barcode: { equals: cleanBarcode, mode: 'insensitive' }, id: { not: id } },
+        });
+        if (conflictBc) throw new ConflictException(`El Código de Barras ${cleanBarcode} ya está en uso.`);
+        const conflictAlt = await this.prisma.productBarcode.findFirst({
+          where: { barcode: { equals: cleanBarcode, mode: 'insensitive' } },
+        });
+        if (conflictAlt) throw new ConflictException(`El Código de Barras ${cleanBarcode} ya está en uso como código secundario.`);
+      }
+    }
 
     const updated = await this.prisma.productVariant.update({ where: { id }, data });
 
@@ -727,13 +811,17 @@ export class ProductsService {
     }
 
     const combinations = cartesianCombinations(attributes);
-    const skuPrefix = product.baseSku || productId.substring(0, 8);
+    const skuPrefix = (product.baseSku || '').trim() || 'PROD';
     const basePrice = dto.basePrice ?? 0;
     const costPrice = dto.costPrice ?? product.costPrice ?? 0;
     const skuSettings = await this.settingsService.getSkuBarcodeSettings();
     const autoBarcode = skuSettings.barcodeAutoGenerate !== false;
 
-    const usedSkus = new Set<string>();
+    const existingVariants = await this.prisma.productVariant.findMany({
+      where: { productId },
+      select: { sku: true },
+    });
+    const usedSkus = new Set<string>(existingVariants.map(v => v.sku.toUpperCase()));
     const created = [];
 
     for (const combo of combinations) {

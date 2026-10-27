@@ -186,7 +186,7 @@ export function usePosCheckout(activeShift: { id: string } | null | undefined, c
       }
 
       try {
-        const res = await salesApi.createSale(dto as Parameters<typeof salesApi.createSale>[0]);
+        const res = await salesApi.createSale(dto as unknown as Parameters<typeof salesApi.createSale>[0]);
         return { offline: false, res: res.order || res, dto };
       } catch (err: unknown) {
         // apiClient normalizes HTTP errors to { status, message } (no .response).

@@ -90,6 +90,7 @@ export const queryKeys = {
   finance: {
     currentAccounts: (filters?: object) => withFilters(['finance', 'currentAccounts'], filters),
     movements:       (accountId: string, filters?: object) => withFilters(['finance', 'movements', accountId], filters),
+    invoices:        (filters?: object) => withFilters(['invoices', 'list'], filters),
   },
   treasury: {
     shifts:          (filters?: object) => withFilters(['treasury', 'shifts'], filters),

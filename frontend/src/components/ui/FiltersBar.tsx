@@ -47,19 +47,29 @@ export interface FiltersBarProps {
   /** Right-side slot for action buttons or badges */
   actions?: ReactNode;
   className?: string;
+  /** Optional explicit slot for search bar (alternative to passing in children) */
+  search?: ReactNode;
+  /** Optional explicit slot for filters (alternative to passing in children) */
+  filters?: ReactNode;
 }
 
 /**
  * Horizontal container for filter controls (search, selects, date pickers)
  * with quick preset pills support and responsive wrapping.
  */
-export function FiltersBar({ children, presets, actions, className }: FiltersBarProps) {
+export function FiltersBar({ children, presets, actions, className, search, filters }: FiltersBarProps) {
   return (
     <div className={clsx(styles.container, className)}>
       {presets && <div className={styles.presets}>{presets}</div>}
-      {(children || actions) && (
+      {(children || actions || search || filters) && (
         <div className={styles.bar}>
-          {children && <div className={styles.filters}>{children}</div>}
+          {(children || search || filters) && (
+            <div className={styles.filters}>
+              {search}
+              {children}
+              {filters}
+            </div>
+          )}
           {actions && <div className={styles.actions}>{actions}</div>}
         </div>
       )}

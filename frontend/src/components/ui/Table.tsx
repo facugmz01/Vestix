@@ -1,9 +1,10 @@
 import styles from './Table.module.css';
 import { useLayoutEffect, useRef } from 'react';
 
-interface Column<T> {
+export interface Column<T = any> {
   key: string;
-  header: string;
+  header?: React.ReactNode;
+  label?: React.ReactNode;
   render?: (row: T) => React.ReactNode;
   width?: string;
 }
@@ -18,17 +19,18 @@ function ThWithWidth({ width, children }: { width?: string; children: React.Reac
   );
 }
 
-interface Props<T> {
+export interface Props<T = any> {
   columns: Column<T>[];
   data: T[];
-  keyField: keyof T;
+  keyField?: keyof T;
+  keyExtractor?: (row: T) => string | number;
   loading?: boolean;
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
 }
 
-export function Table<T>({
-  columns, data, keyField, loading, emptyMessage = 'Sin resultados', onRowClick,
+export function Table<T = any>({
+  columns, data, keyField, keyExtractor, loading, emptyMessage = 'Sin resultados', onRowClick,
 }: Props<T>) {
   return (
     <div className={styles.wrapper}>
@@ -36,7 +38,7 @@ export function Table<T>({
         <thead>
           <tr>
             {columns.map((col) => (
-              <ThWithWidth key={col.key} width={col.width}>{col.header}</ThWithWidth>
+              <ThWithWidth key={col.key} width={col.width}>{col.header ?? col.label}</ThWithWidth>
             ))}
           </tr>
         </thead>
@@ -50,19 +52,29 @@ export function Table<T>({
               <span className={styles.emptyMessage}>{emptyMessage}</span>
             </td></tr>
           ) : (
-            data.map((row) => (
-              <tr
-                key={String(row[keyField])}
-                onClick={() => onRowClick?.(row)}
-                className={onRowClick ? styles.clickable : undefined}
-              >
-                {columns.map((col) => (
-                  <td key={col.key}>
-                    {col.render ? col.render(row) : String(row[col.key as keyof T] ?? '')}
-                  </td>
-                ))}
-              </tr>
-            ))
+            data.map((row, index) => {
+              const rowKey = keyExtractor
+                ? String(keyExtractor(row))
+                : keyField
+                  ? String(row[keyField])
+                  : (row as any)?.id != null
+                    ? String((row as any).id)
+                    : String(index);
+
+              return (
+                <tr
+                  key={rowKey}
+                  onClick={() => onRowClick?.(row)}
+                  className={onRowClick ? styles.clickable : undefined}
+                >
+                  {columns.map((col) => (
+                    <td key={col.key}>
+                      {col.render ? col.render(row) : String((row as any)[col.key] ?? '')}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

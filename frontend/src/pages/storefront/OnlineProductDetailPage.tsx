@@ -94,7 +94,8 @@ export default function OnlineProductDetailPage() {
     setTimeout(() => setJustAdded(false), 2500);
   };
 
-  const hasImages = product.images && product.images.length > 0;
+  const productImages = product.images || [];
+  const hasImages = productImages.length > 0;
 
   return (
     <div className={styles.page}>
@@ -106,15 +107,15 @@ export default function OnlineProductDetailPage() {
         <div className={styles.gallery}>
           <div className={clsx(styles.mainImage, hasImages && styles.mainImageHasPhoto)}>
             {hasImages ? (
-              <img src={product.images[activeImageIndex] || product.images[0]} alt={product.name} />
+              <img src={productImages[activeImageIndex] || productImages[0]} alt={product.name} />
             ) : (
               <span className={styles.placeholderLetter}>{product.name.charAt(0).toUpperCase()}</span>
             )}
           </div>
 
-          {product.images && product.images.length > 1 && (
+          {productImages.length > 1 && (
             <div className={styles.thumbnails}>
-              {product.images.map((img: string, i: number) => (
+              {productImages.map((img: string, i: number) => (
                 <button
                   key={i}
                   type="button"

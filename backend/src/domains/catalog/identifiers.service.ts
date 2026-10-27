@@ -75,19 +75,13 @@ export class IdentifiersService {
       sku = SkuGeneratorUtil.generateVariantSku(base, attributes);
     } else {
       const attrList = Array.isArray(attributes) ? attributes.filter(Boolean) : [];
-      const cleaned = attrList.map(a =>
-        String(a).replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase(),
-      );
+      const cleaned = attrList
+        .map(a => SkuGeneratorUtil.formatAttributeTrait(a))
+        .filter(Boolean);
       sku = cleaned.length ? `${base}-${cleaned.join('-')}` : base;
     }
 
-    let isUnique = await this.validateSkuUniqueness(sku);
-
-    if (!isUnique) {
-      sku = `${sku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
-    }
-
-    return sku;
+    return this.ensureUniqueSku(sku);
   }
 
   /**
@@ -95,10 +89,7 @@ export class IdentifiersService {
    * random suffix only when the candidate already exists.
    */
   async ensureUniqueVariantSku(baseSku: string, attributes: Record<string, string> = {}): Promise<string> {
-    let sku = Object.keys(attributes).length
-      ? SkuGeneratorUtil.generateVariantSku(baseSku, attributes)
-      : baseSku;
-
+    const sku = SkuGeneratorUtil.generateVariantSku(baseSku, attributes);
     return this.ensureUniqueSku(sku);
   }
 
@@ -115,15 +106,27 @@ export class IdentifiersService {
 
   async validateBarcodeUniqueness(barcode: string): Promise<boolean> {
     if (!barcode?.trim()) return true;
-    const existingVariant = await this.prisma.productVariant.findFirst({ where: { barcode } });
+    const cleanBarcode = barcode.trim();
+    const existingVariant = await this.prisma.productVariant.findFirst({
+      where: { barcode: { equals: cleanBarcode, mode: 'insensitive' } },
+    });
     if (existingVariant) return false;
-    const existingAlt = await this.prisma.productBarcode.findFirst({ where: { barcode } });
+    const existingAlt = await this.prisma.productBarcode.findFirst({
+      where: { barcode: { equals: cleanBarcode, mode: 'insensitive' } },
+    });
     return !existingAlt;
   }
 
   async validateSkuUniqueness(sku: string): Promise<boolean> {
-    const existingProduct = await this.prisma.product.findFirst({ where: { baseSku: sku } });
-    const existingVariant = await this.prisma.productVariant.findFirst({ where: { sku } });
-    return !existingProduct && !existingVariant;
+    if (!sku?.trim()) return true;
+    const cleanSku = sku.trim();
+    const existingProduct = await this.prisma.product.findFirst({
+      where: { baseSku: { equals: cleanSku, mode: 'insensitive' } },
+    });
+    if (existingProduct) return false;
+    const existingVariant = await this.prisma.productVariant.findFirst({
+      where: { sku: { equals: cleanSku, mode: 'insensitive' } },
+    });
+    return !existingVariant;
   }
 }

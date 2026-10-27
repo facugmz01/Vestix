@@ -40,15 +40,15 @@ export function AccountAdjustmentModal({
   const [formError, setFormError] = useState<string | null>(null);
 
   // Fetch all accounts if not provided
-  const { data: rawAccounts } = useQuery({
+  const { data: rawAccounts } = useQuery<FinancialAccount[]>({
     queryKey: ['treasury', 'accounts'],
     queryFn: () => financeApi.getTreasuryAccounts(),
     enabled: open,
   });
-  const accounts = Array.isArray(rawAccounts)
+  const accounts: FinancialAccount[] = Array.isArray(rawAccounts)
     ? rawAccounts
-    : Array.isArray(rawAccounts?.data)
-    ? rawAccounts.data
+    : Array.isArray((rawAccounts as any)?.data)
+    ? (rawAccounts as any).data
     : [];
 
   const activeAccount =

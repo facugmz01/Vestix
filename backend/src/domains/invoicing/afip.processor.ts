@@ -228,7 +228,7 @@ export class AfipProcessor extends WorkerHost {
       });
 
       this.logger.error(`AFIP invoice failed for Order ${order.id}: ${errorMessage}`);
-      return { status: 'FAILED', reason: errorMessage };
+      throw error;
     }
   }
 
@@ -354,7 +354,7 @@ export class AfipProcessor extends WorkerHost {
       });
 
       this.logger.error(`AFIP credit note failed for Return ${data.returnId}: ${errorMessage}`);
-      return { status: 'FAILED', reason: errorMessage };
+      throw error;
     }
   }
 
@@ -480,7 +480,7 @@ export class AfipProcessor extends WorkerHost {
       });
 
       this.logger.error(`AFIP debit note failed for Order ${data.orderId}: ${errorMessage}`);
-      return { status: 'FAILED', reason: errorMessage };
+      throw error;
     }
   }
 }

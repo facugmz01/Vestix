@@ -23,7 +23,7 @@ interface StepItem {
   desc: string;
   link: string;
   linkLabel: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ElementType;
 }
 
 const ONBOARDING_STEPS: StepItem[] = [

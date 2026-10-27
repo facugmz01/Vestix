@@ -66,12 +66,18 @@ export const salesApi = {
     paymentMethod?: string;
     posGrandTotal?: number;
     cartDiscountTotal?: number;
+    globalDiscountType?: string;
+    globalDiscountValue?: number;
     lines: Array<{
       variantId: string;
       categoryId?: string;
       quantity: number;
       unitPriceOverride?: number;
+      customUnitPrice?: number;
+      discountType?: string;
+      discountValue?: number;
       discountPct?: number;
+      supervisorApprovalToken?: string;
     }>;
   }) => patch<SaleOrder>(`/sales/orders/${id}`, dto),
 

@@ -68,7 +68,7 @@ export function StorefrontSearchBar({
   });
 
   const products: StorefrontProduct[] = data?.data || [];
-  const totalCount = data?.metadata?.total ?? products.length;
+  const totalCount = (data as any)?.metadata?.total ?? (data as any)?.total ?? products.length;
   const showDropdownPanel =
     !hideDropdown &&
     isOpen &&

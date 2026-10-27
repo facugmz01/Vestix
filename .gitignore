@@ -8,3 +8,8 @@ tsconfig.tsbuildinfo
 /backups/
 backend/uploads/backups/
 docker-data/
+*.sql
+*.dump
+*.tar.gz
+*.xlsx
+*.bak

@@ -20,7 +20,7 @@ interface StepConfig {
   id: number;
   label: string;
   sublabel: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ElementType;
   statuses: string[];
 }
 

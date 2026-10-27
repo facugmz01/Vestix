@@ -32,7 +32,7 @@ export function CollectionFormDrawer({ open, onClose, collectionToEdit }: Props)
   const isEditing = !!collectionToEdit;
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: { name: '', season: '', year: '', isActive: true, productIds: [] },
   });
 

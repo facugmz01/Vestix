@@ -175,7 +175,7 @@ export function NotificationSettingsPanel() {
   const mutation = useUpdateSettingsSection('notifications');
 
   const { register, watch, handleSubmit, reset, control, formState: { isDirty } } = useForm<NotificationSettingsFormData>({
-    resolver: zodResolver(notificationSettingsSchema),
+    resolver: zodResolver(notificationSettingsSchema) as any,
     defaultValues: parseNotificationSettings({}),
   });
 
@@ -430,7 +430,7 @@ export function IntegrationSettingsPanel() {
   const [mpTestLoading, setMpTestLoading] = useState(false);
 
   const { register, watch, handleSubmit, reset, formState: { isDirty } } = useForm<IntegrationSettingsFormData>({
-    resolver: zodResolver(integrationSettingsSchema),
+    resolver: zodResolver(integrationSettingsSchema) as any,
     defaultValues: parseIntegrationSettings({}),
   });
 
@@ -443,7 +443,7 @@ export function IntegrationSettingsPanel() {
       ...data,
       ...(data.mpEnvironment === '' ? { mpEnvironment: undefined } : {}),
     };
-    mutation.mutate(payload, { onSuccess: () => reset(data) });
+    mutation.mutate(payload as any, { onSuccess: () => reset(data) });
   };
 
   const mercadopagoEnabled = watch('mercadopagoEnabled');

@@ -19,7 +19,7 @@ export default function DeliveryCarriersPage() {
   const mutation = useUpdateSettingsSection('storefront');
 
   const { register, handleSubmit, reset, formState: { isDirty } } = useForm<StorefrontSettingsFormData>({
-    resolver: zodResolver(storefrontSettingsSchema),
+    resolver: zodResolver(storefrontSettingsSchema) as any,
   });
 
   useEffect(() => {

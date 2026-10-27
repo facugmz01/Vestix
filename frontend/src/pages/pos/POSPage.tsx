@@ -314,7 +314,7 @@ export default function POSPage() {
         isSyncing={isSyncing}
         lastCatalogSync={lastCatalogSync}
         catalogCount={catalogCount}
-        onForceSync={forceSync}
+        onForceSync={async () => { await forceSync(); }}
         onForceCatalogSync={handleForceCatalogSync}
         search={search}
         setSearch={setSearch}

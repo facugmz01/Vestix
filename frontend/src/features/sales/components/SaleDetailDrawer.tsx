@@ -371,13 +371,13 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
                   {linkedInvoices.map((inv) => (
                     <div key={inv.id} className={styles.refBox}>
                       <span className={styles.refLabel}>
-                        {inv.type} · {inv.status === 'APPROVED' ? 'Aprobada (CAE)' : inv.status}
+                        {inv.type} · {(inv.status as string) === 'APPROVED' || inv.status === 'ISSUED' ? 'Aprobada (CAE)' : inv.status}
                         {inv.cae ? ` · CAE ${inv.cae}` : ''}
                       </span>
                       <p className={styles.refValue}>{formatCurrency(inv.total || (inv as any).totalAmount || sale.grandTotal)}</p>
-                      {inv.afipErrorMessage && (
+                      {(inv.afipMessage || (inv as any).afipErrorMessage) && (
                         <p style={{ color: 'var(--red)', fontSize: '12px', marginTop: '4px' }}>
-                          Error: {inv.afipErrorMessage}
+                          Error: {inv.afipMessage || (inv as any).afipErrorMessage}
                         </p>
                       )}
                     </div>
@@ -388,7 +388,7 @@ export function SaleDetailDrawer({ open, onClose, saleId, onEditQuotation }: Pro
                   Esta venta fue registrada sin factura electrónica AFIP (Ticket No Fiscal). Podés emitir la factura electrónica en cualquier momento.
                 </p>
               )}
-              {!linkedInvoices.some((inv) => inv.status === 'APPROVED' || inv.status === 'PENDING_AFIP' || inv.status === 'ISSUED' || inv.status === 'PENDING') && (
+              {!linkedInvoices.some((inv) => (inv.status as string) === 'APPROVED' || inv.status === 'ISSUED' || (inv.status as string) === 'PENDING_AFIP' || inv.status === 'PENDING') && (
                 <div className={styles.actionRow}>
                   <Button
                     variant="primary"

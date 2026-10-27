@@ -14,13 +14,72 @@ interface Props {
   onGenerate: (variants: any[]) => void;
 }
 
+function formatTraitCode(val: unknown, isSize: boolean = false): string {
+  if (val == null) return '';
+  const str = String(val).trim();
+  if (!str) return '';
+
+  const normalized = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  if (isSize) {
+    const cleaned = normalized.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    return cleaned.substring(0, 4);
+  }
+
+  const words = normalized.split(/[\s\-_/]+/).filter(w => w.trim().length > 0);
+  if (words.length >= 2) {
+    const w1 = words[0].replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const w2 = words[1].replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (w1.length >= 2 && w2.length >= 1) {
+      return `${w1.substring(0, 2)}${w2.substring(0, 1)}`;
+    }
+  }
+
+  const cleaned = normalized.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  return cleaned.substring(0, 3);
+}
+
+function isSizeKey(key: string): boolean {
+  const k = (key || '').toLowerCase().trim();
+  return (
+    ['size', 'sizes', 'talle', 'talles', 'talla', 'tallas', 'tamano', 'tamanos'].includes(k) ||
+    k.startsWith('talle')
+  );
+}
+
+function isColorKey(key: string): boolean {
+  const k = (key || '').toLowerCase().trim();
+  return ['color', 'colores', 'cor'].includes(k);
+}
+
 function buildVariantSku(baseSku: string, attributes: Record<string, string>): string {
   const base = (baseSku || 'PROD').trim() || 'PROD';
-  const sortedKeys = Object.keys(attributes).sort();
-  const parts = sortedKeys.map(key =>
-    String(attributes[key]).replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase(),
-  ).filter(Boolean);
-  return parts.length ? `${base}-${parts.join('-')}` : base;
+  const validKeys = Object.keys(attributes || {}).filter(k => {
+    const v = attributes[k];
+    return v != null && String(v).trim() !== '';
+  });
+
+  if (validKeys.length === 0) return base;
+
+  const sortedKeys = [...validKeys].sort((a, b) => {
+    const aIsColor = isColorKey(a);
+    const bIsColor = isColorKey(b);
+    if (aIsColor && !bIsColor) return -1;
+    if (!aIsColor && bIsColor) return 1;
+
+    const aIsSize = isSizeKey(a);
+    const bIsSize = isSizeKey(b);
+    if (aIsSize && !bIsSize) return -1;
+    if (!aIsSize && bIsSize) return 1;
+
+    return a.toLowerCase().localeCompare(b.toLowerCase());
+  });
+
+  const traits = sortedKeys
+    .map(key => formatTraitCode(attributes[key], isSizeKey(key)))
+    .filter(Boolean);
+
+  return traits.length > 0 ? `${base}-${traits.join('-')}` : base;
 }
 
 export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate }: Props) {
@@ -70,10 +129,11 @@ export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate
       );
 
       let sku = buildVariantSku(baseSku || '', combo);
-      while (usedSkus.has(sku)) {
-        sku = `${sku}-X`;
+      while (usedSkus.has(sku.toUpperCase())) {
+        const rand = Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, '0');
+        sku = `${sku}-${rand}`;
       }
-      usedSkus.add(sku);
+      usedSkus.add(sku.toUpperCase());
 
       return {
         color: colorKey ? combo[colorKey] : undefined,

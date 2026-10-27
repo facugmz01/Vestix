@@ -114,7 +114,7 @@ export function TopBar() {
           )}
           title={
             activeShift
-              ? `Caja Abierta: Turno iniciado con ${formatCurrency(activeShift.openingAmount)}`
+              ? `Caja Abierta: Turno iniciado con ${formatCurrency(activeShift.openingBalance ?? (activeShift as any).openingAmount ?? 0)}`
               : 'Sin turno de caja activo'
           }
         >

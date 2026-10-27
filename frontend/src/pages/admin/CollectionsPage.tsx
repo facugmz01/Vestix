@@ -71,7 +71,7 @@ export default function CollectionsPage() {
         ) : collections.length === 0 ? (
           <EmptyState icon={<Layers size={40} />} title="Sin colecciones" description="Creá tu primera colección para organizar el catálogo por temporada." />
         ) : (
-          <Table
+          <Table<ProductCollection>
             columns={[
               { key: 'name', label: 'Nombre', render: (c: ProductCollection) => <strong>{c.name}</strong> },
               { key: 'season', label: 'Temporada', render: (c: ProductCollection) => c.season || '—' },

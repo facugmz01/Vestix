@@ -9,6 +9,7 @@ import {
 import { financeApi, type CreateExpensePayload } from '@/api/finance.api';
 import { treasuryApi } from '@/api/treasury.api';
 import { branchesApi } from '@/api/branches.api';
+import type { FinancialAccount } from '@/types';
 import { formatCurrency } from '@/utils/formatCurrency';
 import {
   Wallet,
@@ -60,15 +61,15 @@ export function NewExpenseModal({
   });
   const categories = Array.isArray(rawCategories) ? rawCategories : [];
 
-  const { data: rawAccounts } = useQuery({
+  const { data: rawAccounts } = useQuery<FinancialAccount[]>({
     queryKey: ['treasury', 'accounts'],
     queryFn: () => financeApi.getTreasuryAccounts(),
     enabled: open,
   });
-  const accounts = Array.isArray(rawAccounts)
+  const accounts: FinancialAccount[] = Array.isArray(rawAccounts)
     ? rawAccounts
-    : Array.isArray(rawAccounts?.data)
-    ? rawAccounts.data
+    : Array.isArray((rawAccounts as any)?.data)
+    ? (rawAccounts as any).data
     : [];
 
   const { data: activeShiftData } = useQuery({
@@ -243,7 +244,7 @@ export function NewExpenseModal({
               {activeShiftData ? (
                 <div className={styles.shiftStatusRow}>
                   <span className={styles.statusDotGreen}></span>
-                  <span>Turno Activo: {activeShiftData.cashRegister?.name || 'Caja actual'}</span>
+                  <span>Turno Activo: {(activeShiftData as any).cashRegister?.name || activeShiftData.accountName || 'Caja actual'}</span>
                 </div>
               ) : (
                 <div className={styles.shiftStatusRow}>

@@ -6,6 +6,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   label?: string;
   error?: string;
   helperText?: string;
+  hint?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   containerClassName?: string;
@@ -15,6 +16,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   label,
   error,
   helperText,
+  hint,
   leftIcon,
   rightIcon,
   className,
@@ -31,10 +33,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   const errorId = `${inputId}-error`;
 
   const isInvalid = !!error || ariaInvalid === true || ariaInvalid === 'true';
+  const effectiveHelper = helperText ?? hint;
 
   let describedBy = ariaDescribedBy || '';
   if (error) describedBy += ` ${errorId}`;
-  else if (helperText) describedBy += ` ${helperId}`;
+  else if (effectiveHelper) describedBy += ` ${helperId}`;
 
   return (
     <div className={clsx(styles.wrapper, containerClassName)}>
@@ -81,9 +84,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
         <span id={errorId} className={styles.error} role="alert" aria-live="polite">
           {error}
         </span>
-      ) : helperText ? (
+      ) : effectiveHelper ? (
         <span id={helperId} className={styles.helperText}>
-          {helperText}
+          {effectiveHelper}
         </span>
       ) : null}
     </div>

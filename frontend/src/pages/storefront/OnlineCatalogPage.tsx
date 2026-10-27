@@ -176,7 +176,7 @@ export default function OnlineCatalogPage() {
   });
 
   const products = data?.data || [];
-  const totalProducts = data?.metadata?.total ?? products.length;
+  const totalProducts = (data as any)?.metadata?.total ?? (data as any)?.total ?? products.length;
   const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
   const categories: { id: string; name: string }[] = categoriesData || [];
   const brands: { id: string; name: string }[] = brandsData || [];
@@ -448,8 +448,8 @@ export default function OnlineCatalogPage() {
               <PackageX size={64} color="var(--text-muted)" className={styles.emptyIcon} />
               <h3 className={styles.emptyTitle}>No encontramos productos</h3>
               <p className={styles.emptyText}>
-                {search
-                  ? `No hay resultados que coincidan con "${search}".`
+                {debouncedSearch
+                  ? `No hay resultados que coincidan con "${debouncedSearch}".`
                   : 'No hay productos publicados que coincidan con los filtros seleccionados.'}
               </p>
               {activeFiltersCount > 0 && (

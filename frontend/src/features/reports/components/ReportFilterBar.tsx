@@ -4,6 +4,7 @@ import { Store, Calendar, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { branchesApi } from '@/api/branches.api';
 import { queryKeys } from '@/api/queryKeys';
+import type { Branch } from '@/types';
 import { Button } from '@/components/ui';
 import {
   DATE_PRESETS,
@@ -27,7 +28,7 @@ export function ReportFilterBar({ filters, onRefresh, isRefreshing }: Props) {
     staleTime: 1000 * 60 * 10,
   });
 
-  const branches = branchData?.items || [];
+  const branches: Branch[] = branchData?.data || (branchData as any)?.items || [];
 
   return (
     <div className={clsx('glass-panel', styles.filterBarSticky)}>

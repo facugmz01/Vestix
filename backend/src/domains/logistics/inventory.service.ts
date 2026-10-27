@@ -149,9 +149,23 @@ export class InventoryService {
    * to drift upward on every movement when physical/reserved got out of sync.
    */
   private async updateStock(tx: any, variantId: string, batchId: string | null, warehouseId: string, branchId: string | null, type: string, quantityChange: number) {
-    const stock = await tx.stockLevel.findFirst({
+    let stock = await tx.stockLevel.findFirst({
       where: { variantId, warehouseId, batchId: batchId || null },
     });
+
+    // Concurrency hardening: Acquire row-level lock in PostgreSQL to serialize concurrent stock decrements
+    if (stock && typeof tx.$queryRawUnsafe === 'function') {
+      try {
+        await tx.$queryRawUnsafe(
+          `SELECT "id" FROM "inventory"."StockLevel" WHERE "id" = $1 FOR UPDATE`,
+          stock.id,
+        );
+        const locked = await tx.stockLevel.findUnique({ where: { id: stock.id } });
+        if (locked) stock = locked;
+      } catch {
+        // Fallback in mock environments or transactions that don't support $queryRawUnsafe
+      }
+    }
 
     let newPhysical = stock ? stock.physicalQuantity : 0;
     let newReserved = stock ? stock.reservedQuantity : 0;

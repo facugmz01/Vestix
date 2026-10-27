@@ -151,7 +151,7 @@ function OverviewTab({ branchId }: { branchId?: string }) {
           <ResponsiveBarChart
             data={dashboard.topSellers.map(t => ({
               label: t.name.length > 18 ? t.name.slice(0, 16) + '…' : t.name,
-              sublabel: `${t.category || 'General'} | SKU: ${t.sku}`,
+              sublabel: `${(t as any).category || 'General'} | SKU: ${t.sku}`,
               value: t.totalUnitsSold,
               color: '#3b82f6',
             }))}

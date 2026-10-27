@@ -216,7 +216,7 @@ export function SalesReportPanel({ from, to, branchId }: Props) {
           <ResponsiveBarChart
             data={topSellers.slice(0, 10).map((t, i) => ({
               label: t.name ? (t.name.length > 18 ? t.name.slice(0, 16) + '…' : t.name) : `SKU ${t.sku}`,
-              sublabel: `${t.category || 'General'} | SKU: ${t.sku}`,
+              sublabel: `${(t as any).category || 'General'} | SKU: ${t.sku}`,
               value: t.totalUnitsSold,
               color: COLORS[i % COLORS.length],
             }))}
