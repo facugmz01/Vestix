@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
 import { productsApi } from '@/api/products.api';
+import { identifiersApi } from '@/api/identifiers.api';
 import { queryKeys } from '@/api/queryKeys';
 import { Button } from '@/components/ui';
 import clsx from 'clsx';
@@ -11,6 +12,7 @@ interface Props {
   costPrice: number;
   basePrice: number;
   baseSku?: string;
+  onBaseSkuChange?: (sku: string) => void;
   onGenerate: (variants: any[]) => void;
 }
 
@@ -82,8 +84,9 @@ function buildVariantSku(baseSku: string, attributes: Record<string, string>): s
   return traits.length > 0 ? `${base}-${traits.join('-')}` : base;
 }
 
-export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate }: Props) {
+export function VariantMassGenerator({ costPrice, basePrice, baseSku, onBaseSkuChange, onGenerate }: Props) {
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string[]>>({});
+  const [generating, setGenerating] = useState(false);
   
   const { data: attributes } = useQuery({
     queryKey: queryKeys.attributes.all(),
@@ -100,9 +103,29 @@ export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate
     });
   };
 
-  const generate = () => {
+  const generate = async () => {
     const attrNames = Object.keys(selectedAttributes).filter(k => selectedAttributes[k].length > 0);
     if (attrNames.length === 0) return;
+
+    setGenerating(true);
+    let effectiveBaseSku = (baseSku || '').trim();
+
+    // If no base SKU defined yet, auto-generate sequential base SKU from settings (e.g. SKU0001, PROD-0001)
+    if (!effectiveBaseSku) {
+      try {
+        const res = await identifiersApi.generateBaseSku();
+        if (res?.sku) {
+          effectiveBaseSku = res.sku;
+          onBaseSkuChange?.(res.sku);
+        }
+      } catch (err) {
+        console.error('Error auto-generating base SKU:', err);
+      }
+    }
+
+    if (!effectiveBaseSku) {
+      effectiveBaseSku = 'PROD';
+    }
 
     let combinations: any[] = [{}];
     
@@ -128,7 +151,7 @@ export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate
         k.toLowerCase().startsWith('talle')
       );
 
-      let sku = buildVariantSku(baseSku || '', combo);
+      let sku = buildVariantSku(effectiveBaseSku, combo);
       while (usedSkus.has(sku.toUpperCase())) {
         const rand = Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, '0');
         sku = `${sku}-${rand}`;
@@ -149,6 +172,7 @@ export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate
 
     onGenerate(variants);
     setSelectedAttributes({});
+    setGenerating(false);
   };
 
   return (
@@ -178,7 +202,7 @@ export function VariantMassGenerator({ costPrice, basePrice, baseSku, onGenerate
         ))}
       </div>
 
-      <Button type="button" variant="secondary" icon={<RefreshCw size={14} />} onClick={generate}>
+      <Button type="button" variant="secondary" icon={<RefreshCw size={14} />} onClick={generate} loading={generating} disabled={generating}>
         Generar Combinaciones
       </Button>
     </div>

@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
-  ArrowLeft, Wand2, Plus, Image as ImageIcon,
+  ArrowLeft, Wand2, Image as ImageIcon,
   Archive, Package, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -555,6 +555,7 @@ export function ProductEditor({ initialData }: Props) {
                 costPrice={formData.costPrice || 0} 
                 basePrice={formData.basePrice || 0}
                 baseSku={formData.baseSku || ''}
+                onBaseSkuChange={(newSku) => setFormData(prev => ({ ...prev, baseSku: newSku }))}
                 onGenerate={(vars) => setFormData({ ...formData, variants: vars })} 
               />
               {formData.variants && formData.variants.length > 0 && (
@@ -574,7 +575,7 @@ export function ProductEditor({ initialData }: Props) {
                       {formData.variants.map((v, i) => (
                         <tr key={i}>
                           <td className={styles.variantCell}>
-                            {v.color} {v.size} {Object.entries(v.attributes || {}).filter(([k]) => k.toLowerCase() !== 'color' && k.toLowerCase() !== 'talle').map(([_, val]) => val).join(' ')}
+                            {Object.values(v.attributes || {}).filter(Boolean).join(' / ') || [v.color, v.size].filter(Boolean).join(' / ')}
                           </td>
                           <td>
                             <input 
@@ -693,14 +694,6 @@ export function ProductEditor({ initialData }: Props) {
             </div>
           )}
 
-          {/* Atributos Adicionales */}
-          <div className={styles.card}>
-            <h3 className={styles.cardTitle}>
-              <Wand2 size={18} color="var(--text-muted)" /> Atributos adicionales
-            </h3>
-            <p className={styles.hint}>Sin atributos libres aún.</p>
-            <Button variant="secondary" size="sm" icon={<Plus size={14} />}>Agregar atributo</Button>
-          </div>
 
           {/* Productos relacionados */}
           <div className={styles.card}>
