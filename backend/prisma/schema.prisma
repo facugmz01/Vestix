@@ -193,7 +193,7 @@ model Product {
   manageBatches Boolean                 @default(false)
   costPrice     Float                   @default(0)
   isActive      Boolean                 @default(true)
-  isPublished   Boolean                 @default(false)
+  isPublished   Boolean                 @default(true)
   images        Json                    @default("[]")
   metadata      Json                    @default("{}")
   variants      ProductVariant[]

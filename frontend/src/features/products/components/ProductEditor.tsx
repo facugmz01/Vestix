@@ -46,7 +46,7 @@ export function ProductEditor({ initialData }: Props) {
     type: 'SINGLE',
     manageBatches: false,
     isActive: true,
-    isPublished: false,
+    isPublished: true,
     images: [],
     variants: [],
     isVariable: false,
@@ -753,10 +753,10 @@ export function ProductEditor({ initialData }: Props) {
             </div>
 
             <div className={styles.checkboxRow}>
-              <input type="checkbox" checked={!formData.isPublished} onChange={(e) => setFormData({...formData, isPublished: !e.target.checked})} className={styles.checkbox} />
+              <input type="checkbox" checked={formData.isPublished} onChange={(e) => setFormData({...formData, isPublished: e.target.checked})} className={styles.checkbox} />
               <div>
-                <label className={styles.checkboxLabel}>Ocultar en la web</label>
-                <span className={styles.checkboxHint}>No aparece en la tienda web del comercio.</span>
+                <label className={clsx(styles.checkboxLabel, formData.isPublished && styles.checkboxLabelActive)}>Publicar en la tienda web</label>
+                <span className={styles.checkboxHint}>Visible en la tienda online y catálogo web.</span>
               </div>
             </div>
           </div>

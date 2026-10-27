@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray, ValidateNested, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray, ValidateNested, IsEnum, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class BulkProductRowDto {
@@ -41,6 +41,10 @@ export class BulkProductRowDto {
   @IsString()
   @IsOptional()
   variant?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isPublished?: boolean;
 
   @IsEnum(['overwrite', 'skip'])
   @IsOptional()

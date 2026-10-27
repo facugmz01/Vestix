@@ -140,8 +140,8 @@ export class ProductsService {
           manageBatches: createProductDto.manageBatches || false,
           isVariable: syncIsVariableFlag(productType),
           costPrice: createProductDto.costPrice || 0,
-          isActive: true,
-          isPublished: false,
+          isActive: createProductDto.isActive ?? true,
+          isPublished: createProductDto.isPublished ?? true,
           images: persistedImages as any,
           metadata: normalizedMetadata,
           comboLines: productType === 'COMBO' && createProductDto.comboLines?.length ? {
@@ -1033,7 +1033,8 @@ export class ProductsService {
               categoryId,
               brandId,
               type: isVariable ? 'VARIABLE' : 'SINGLE',
-              isVariable
+              isVariable,
+              ...(firstRow.isPublished !== undefined ? { isPublished: Boolean(firstRow.isPublished) } : {})
             }
           });
         } else {
@@ -1044,6 +1045,7 @@ export class ProductsService {
               categoryId,
               brandId,
               isActive: true,
+              isPublished: firstRow.isPublished !== undefined ? Boolean(firstRow.isPublished) : true,
               type: isVariable ? 'VARIABLE' : 'SINGLE',
               isVariable
             }
