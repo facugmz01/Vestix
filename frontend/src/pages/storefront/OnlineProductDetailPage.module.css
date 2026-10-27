@@ -40,19 +40,30 @@
 .gallery {
   flex: 1;
   width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+}
+
+.mainImageWrapper {
+  position: relative;
+  width: 100%;
+  background: var(--surface-1);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  user-select: none;
 }
 
 .mainImage {
-  background: var(--surface-1);
-  border-radius: 16px;
+  width: 100%;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
+  cursor: zoom-in;
+  position: relative;
   overflow: hidden;
 }
 
@@ -64,6 +75,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.mainImage:hover img {
+  transform: scale(1.02);
 }
 
 .placeholderLetter {
@@ -77,15 +93,148 @@
   .placeholderLetter { font-size: 120px; }
 }
 
-.thumbnails {
+.mainNavBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1e293b;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.mainNavBtn:hover {
+  background: #ffffff;
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.mainNavBtn:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.mainNavBtnPrev {
+  left: 12px;
+}
+
+.mainNavBtnNext {
+  right: 12px;
+}
+
+.badgeCounter {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.zoomBtn {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 4;
+  transition: all 0.2s ease;
+}
+
+.zoomBtn:hover {
+  background: rgba(15, 23, 42, 0.88);
+  transform: scale(1.1);
+}
+
+.thumbnailsWrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.thumbArrowBtn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  z-index: 2;
+}
+
+.thumbArrowBtn:hover {
+  background: var(--surface-2, #e2e8f0);
+  transform: scale(1.05);
+}
+
+.thumbArrowBtn:active {
+  transform: scale(0.95);
+}
+
+.thumbnailsTrack {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  scroll-behavior: smooth;
+  padding: 4px 2px;
+  flex: 1;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.thumbnailsTrack::-webkit-scrollbar {
+  height: 6px;
+}
+
+.thumbnailsTrack::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thumbnailsTrack::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
 }
 
 .thumb {
-  width: 80px;
+  width: 72px;
+  height: 72px;
   flex-shrink: 0;
   aspect-ratio: 1;
   background: var(--surface-1);
@@ -93,16 +242,154 @@
   border: 2px solid transparent;
   cursor: pointer;
   overflow: hidden;
+  padding: 0;
+  transition: all 0.2s ease;
+  opacity: 0.65;
+}
+
+.thumb:hover {
+  opacity: 1;
+  border-color: var(--text-muted);
 }
 
 .thumbActive {
+  opacity: 1;
   border-color: var(--sf-primary, var(--accent));
+  box-shadow: 0 0 0 1px var(--sf-primary, var(--accent));
 }
 
 .thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+/* Lightbox Modal */
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 29, 0.94);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lightboxContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightboxImageWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 85vh;
+}
+
+.lightboxImage {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.lightboxCloseBtn {
+  position: absolute;
+  top: -46px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.lightboxCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.lightboxNavBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+.lightboxNavBtn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.lightboxNavBtnPrev {
+  left: -60px;
+}
+
+.lightboxNavBtnNext {
+  right: -60px;
+}
+
+@media (max-width: 768px) {
+  .lightboxNavBtnPrev {
+    left: 8px;
+  }
+  .lightboxNavBtnNext {
+    right: 8px;
+  }
+  .lightboxCloseBtn {
+    top: -40px;
+    right: 0;
+  }
+}
+
+.lightboxCounter {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
 }
 
 .info {

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ShoppingCart, ShieldCheck, Truck, RotateCcw, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingCart, ShieldCheck, Truck, RotateCcw, Check, Maximize2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { storefrontApi, type StorefrontSettings } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -23,12 +23,97 @@ export default function OnlineProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [justAdded, setJustAdded] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  const thumbnailTrackRef = useRef<HTMLDivElement>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchDeltaXRef = useRef<number>(0);
 
   const { data: product, isLoading } = useQuery({
     queryKey: queryKeys.storefront.product(id!),
     queryFn: () => storefrontApi.getProduct(id!),
     enabled: !!id,
   });
+
+  const productImages = product?.images || [];
+  const hasImages = productImages.length > 0;
+  const totalImages = productImages.length;
+
+  const handlePrevImage = useCallback(() => {
+    setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : totalImages - 1));
+  }, [totalImages]);
+
+  const handleNextImage = useCallback(() => {
+    setActiveImageIndex((prev) => (prev < totalImages - 1 ? prev + 1 : 0));
+  }, [totalImages]);
+
+  // Touch swipe handling for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchDeltaXRef.current = 0;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartXRef.current !== null) {
+      touchDeltaXRef.current = e.touches[0].clientX - touchStartXRef.current;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartXRef.current === null) return;
+    const threshold = 40;
+    if (touchDeltaXRef.current > threshold) {
+      handlePrevImage();
+    } else if (touchDeltaXRef.current < -threshold) {
+      handleNextImage();
+    }
+    touchStartXRef.current = null;
+    touchDeltaXRef.current = 0;
+  };
+
+  // Keyboard navigation when Lightbox is open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsLightboxOpen(false);
+      } else if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      }
+    };
+    if (isLightboxOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isLightboxOpen, handlePrevImage, handleNextImage]);
+
+  // Reset active image if out of bounds
+  useEffect(() => {
+    if (activeImageIndex >= totalImages && totalImages > 0) {
+      setActiveImageIndex(0);
+    }
+  }, [totalImages, activeImageIndex]);
+
+  // Auto-scroll active thumbnail into view
+  useEffect(() => {
+    if (thumbnailTrackRef.current) {
+      const activeEl = thumbnailTrackRef.current.children[activeImageIndex] as HTMLElement | undefined;
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [activeImageIndex]);
+
+  const handleScrollThumbnails = (direction: 'left' | 'right') => {
+    if (thumbnailTrackRef.current) {
+      const scrollAmount = 220;
+      thumbnailTrackRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   useEffect(() => {
     if ((product?.variants?.length ?? 0) > 0 && !selectedVariantId) {
@@ -94,9 +179,6 @@ export default function OnlineProductDetailPage() {
     setTimeout(() => setJustAdded(false), 2500);
   };
 
-  const productImages = product.images || [];
-  const hasImages = productImages.length > 0;
-
   return (
     <div className={styles.page}>
       <Link to={`${prefix}/`} className={styles.backLink}>
@@ -105,26 +187,105 @@ export default function OnlineProductDetailPage() {
 
       <div className={styles.layout}>
         <div className={styles.gallery}>
-          <div className={clsx(styles.mainImage, hasImages && styles.mainImageHasPhoto)}>
-            {hasImages ? (
-              <img src={productImages[activeImageIndex] || productImages[0]} alt={product.name} />
-            ) : (
-              <span className={styles.placeholderLetter}>{product.name.charAt(0).toUpperCase()}</span>
+          <div
+            className={styles.mainImageWrapper}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div
+              className={clsx(styles.mainImage, hasImages && styles.mainImageHasPhoto)}
+              onClick={() => hasImages && setIsLightboxOpen(true)}
+              role={hasImages ? 'button' : undefined}
+              tabIndex={hasImages ? 0 : undefined}
+              title={hasImages ? 'Ampliar imagen' : undefined}
+            >
+              {hasImages ? (
+                <img src={productImages[activeImageIndex] || productImages[0]} alt={product.name} />
+              ) : (
+                <span className={styles.placeholderLetter}>{product.name.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+
+            {hasImages && totalImages > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePrevImage();
+                  }}
+                  className={clsx(styles.mainNavBtn, styles.mainNavBtnPrev)}
+                  aria-label="Imagen anterior"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNextImage();
+                  }}
+                  className={clsx(styles.mainNavBtn, styles.mainNavBtnNext)}
+                  aria-label="Siguiente imagen"
+                >
+                  <ChevronRight size={20} />
+                </button>
+                <div className={styles.badgeCounter}>
+                  {activeImageIndex + 1} / {totalImages}
+                </div>
+              </>
+            )}
+
+            {hasImages && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLightboxOpen(true);
+                }}
+                className={styles.zoomBtn}
+                aria-label="Ampliar imagen"
+                title="Ampliar imagen"
+              >
+                <Maximize2 size={16} />
+              </button>
             )}
           </div>
 
-          {productImages.length > 1 && (
-            <div className={styles.thumbnails}>
-              {productImages.map((img: string, i: number) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setActiveImageIndex(i)}
-                  className={clsx(styles.thumb, i === activeImageIndex && styles.thumbActive)}
-                >
-                  <img src={img} alt={`${product.name} thumbnail ${i}`} />
-                </button>
-              ))}
+          {totalImages > 1 && (
+            <div className={styles.thumbnailsWrapper}>
+              <button
+                type="button"
+                onClick={() => handleScrollThumbnails('left')}
+                className={styles.thumbArrowBtn}
+                aria-label="Desplazar miniaturas hacia la izquierda"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div ref={thumbnailTrackRef} className={styles.thumbnailsTrack}>
+                {productImages.map((img: string, i: number) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActiveImageIndex(i)}
+                    className={clsx(styles.thumb, i === activeImageIndex && styles.thumbActive)}
+                    aria-label={`Ver foto ${i + 1} de ${product.name}`}
+                  >
+                    <img src={img} alt="" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleScrollThumbnails('right')}
+                className={styles.thumbArrowBtn}
+                aria-label="Desplazar miniaturas hacia la derecha"
+              >
+                <ChevronRight size={16} />
+              </button>
             </div>
           )}
         </div>
@@ -278,6 +439,57 @@ export default function OnlineProductDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Lightbox / Fullscreen Modal */}
+      {isLightboxOpen && hasImages && (
+        <div
+          className={styles.lightboxOverlay}
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className={styles.lightboxCloseBtn}
+              onClick={() => setIsLightboxOpen(false)}
+              aria-label="Cerrar vista ampliada"
+            >
+              <X size={24} />
+            </button>
+
+            <div className={styles.lightboxImageWrap}>
+              <img
+                src={productImages[activeImageIndex] || productImages[0]}
+                alt={product.name}
+                className={styles.lightboxImage}
+              />
+            </div>
+
+            {totalImages > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrevImage}
+                  className={clsx(styles.lightboxNavBtn, styles.lightboxNavBtnPrev)}
+                  aria-label="Imagen anterior"
+                >
+                  <ChevronLeft size={28} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextImage}
+                  className={clsx(styles.lightboxNavBtn, styles.lightboxNavBtnNext)}
+                  aria-label="Siguiente imagen"
+                >
+                  <ChevronRight size={28} />
+                </button>
+                <div className={styles.lightboxCounter}>
+                  {activeImageIndex + 1} / {totalImages}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
