@@ -94,14 +94,28 @@
   --btn-color: var(--text-primary);
 }
 
+.variant-edit {
+  --btn-bg: var(--accent-subtle, rgba(79, 70, 229, 0.08));
+  --btn-color: var(--accent, #4f46e5);
+  --btn-border: rgba(79, 70, 229, 0.25);
+}
+.variant-edit:hover {
+  --btn-bg: var(--accent, #4f46e5);
+  --btn-color: #ffffff;
+  --btn-border: var(--accent, #4f46e5);
+  --btn-shadow: 0 2px 8px var(--accent-glow, rgba(79, 70, 229, 0.3));
+}
+
 .variant-danger {
   --btn-bg: var(--red-bg, #fee2e2);
   --btn-color: var(--red, #ef4444);
-  --btn-border: var(--red-border, rgba(239,68,68,0.2));
+  --btn-border: var(--red-border, rgba(239, 68, 68, 0.25));
 }
 .variant-danger:hover {
   --btn-bg: var(--red, #ef4444);
   --btn-color: #ffffff;
+  --btn-border: var(--red, #ef4444);
+  --btn-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
 }
 
 /* --- Contenido Interno y Loading --- */

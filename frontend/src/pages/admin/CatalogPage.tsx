@@ -72,20 +72,22 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDuplicate?.(product); }}
-              className={styles.cardActionBtn}
-              title="Duplicar"
+              className={clsx(styles.cardActionBtn, styles.cardActionBtnDuplicate)}
+              title="Duplicar producto"
+              aria-label={`Duplicar ${product.name}`}
             >
-              <Copy size={13} />
+              <Copy size={14} />
             </button>
           </ActionGuard>
           <ActionGuard action="manage" subject="Catalog">
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onEdit(product); }}
-              className={styles.cardActionBtn}
-              title="Editar"
+              className={clsx(styles.cardActionBtn, styles.cardActionBtnEdit)}
+              title="Editar producto"
+              aria-label={`Editar ${product.name}`}
             >
-              <Edit2 size={13} />
+              <Edit2 size={14} />
             </button>
           </ActionGuard>
           <ActionGuard action="manage" subject="Catalog">
@@ -93,9 +95,10 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(product); }}
               className={clsx(styles.cardActionBtn, styles.cardActionBtnDanger)}
-              title="Eliminar"
+              title="Eliminar producto"
+              aria-label={`Eliminar ${product.name}`}
             >
-              <Trash2 size={13} />
+              <Trash2 size={14} />
             </button>
           </ActionGuard>
         </div>

@@ -210,27 +210,45 @@ export default function ProductVariantsPage() {
                 render: (v) => (
                   <div className={adminStyles.rowActions}>
                     <ActionGuard action="print" subject="Labels">
-                      <Button variant="ghost" size="sm" onClick={() => handlePrint(v)} aria-label="Imprimir Etiquetas" title="Imprimir etiquetas de código de barras">
-                        <Printer size={16} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handlePrint(v); }}
+                        aria-label={`Imprimir etiquetas para ${v.sku}`}
+                        title="Imprimir etiquetas de código de barras"
+                      >
+                        <Printer size={15} />
                       </Button>
                     </ActionGuard>
-                    <Button variant="ghost" size="sm" onClick={() => handleView(v)} aria-label="Ver" title="Ver ficha">
-                      <Eye size={16} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); handleView(v); }}
+                      aria-label={`Ver ficha de ${v.sku}`}
+                      title="Ver ficha"
+                    >
+                      <Eye size={15} />
                     </Button>
                     <ActionGuard action="manage" subject="Catalog">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(v)} aria-label="Editar" title="Editar variante">
-                        <Edit2 size={16} />
+                      <Button
+                        variant="edit"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleEdit(v); }}
+                        aria-label={`Editar variante ${v.sku}`}
+                        title="Editar variante"
+                      >
+                        <Edit2 size={15} />
                       </Button>
                     </ActionGuard>
                     <ActionGuard action="manage" subject="Catalog">
                       <Button 
-                        variant="ghost" 
+                        variant="danger" 
                         size="sm" 
-                        onClick={() => handleDeletePrompt(v)} 
-                        aria-label="Eliminar" 
+                        onClick={(e) => { e.stopPropagation(); handleDeletePrompt(v); }} 
+                        aria-label={`Eliminar variante ${v.sku}`} 
                         title="Eliminar variante"
                       >
-                        <Trash2 size={16} color="var(--red)" />
+                        <Trash2 size={15} />
                       </Button>
                     </ActionGuard>
                   </div>

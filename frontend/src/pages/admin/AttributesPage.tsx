@@ -254,20 +254,22 @@ export default function AttributesPage() {
                   <div className={adminStyles.rowActions}>
                     <ActionGuard action="manage" subject="Catalog">
                       <Button
-                        variant="ghost"
+                        variant="edit"
                         size="sm"
                         icon={<Pencil size={14} />}
                         onClick={() => openEditCategory(c)}
-                        aria-label="Editar"
+                        aria-label={`Editar categoría ${c.name}`}
+                        title="Editar categoría"
                       />
                     </ActionGuard>
                     <ActionGuard action="manage" subject="Catalog">
                       <Button
-                        variant="ghost"
+                        variant="danger"
                         size="sm"
                         icon={<Trash2 size={14} />}
                         onClick={() => setDeleteTarget({ kind: 'categories', item: c })}
-                        aria-label="Eliminar"
+                        aria-label={`Eliminar categoría ${c.name}`}
+                        title="Eliminar categoría"
                       />
                     </ActionGuard>
                   </div>
@@ -293,20 +295,22 @@ export default function AttributesPage() {
                   <div className={adminStyles.rowActions}>
                     <ActionGuard action="manage" subject="Catalog">
                       <Button
-                        variant="ghost"
+                        variant="edit"
                         size="sm"
                         icon={<Pencil size={14} />}
                         onClick={() => openEditBrand(b)}
-                        aria-label="Editar"
+                        aria-label={`Editar marca ${b.name}`}
+                        title="Editar marca"
                       />
                     </ActionGuard>
                     <ActionGuard action="manage" subject="Catalog">
                       <Button
-                        variant="ghost"
+                        variant="danger"
                         size="sm"
                         icon={<Trash2 size={14} />}
                         onClick={() => setDeleteTarget({ kind: 'brands', item: b })}
-                        aria-label="Eliminar"
+                        aria-label={`Eliminar marca ${b.name}`}
+                        title="Eliminar marca"
                       />
                     </ActionGuard>
                   </div>
@@ -346,20 +350,22 @@ export default function AttributesPage() {
                   <div className={adminStyles.rowActions}>
                     <ActionGuard action="manage" subject="Catalog">
                       <Button
-                        variant="ghost"
+                        variant="edit"
                         size="sm"
                         icon={<Pencil size={14} />}
                         onClick={() => openEditAttribute(a)}
-                        aria-label="Editar"
+                        aria-label={`Editar atributo ${a.name}`}
+                        title="Editar atributo"
                       />
                     </ActionGuard>
                     <ActionGuard action="manage" subject="Catalog">
                       <Button
-                        variant="ghost"
+                        variant="danger"
                         size="sm"
                         icon={<Trash2 size={14} />}
                         onClick={() => setDeleteTarget({ kind: 'attributes', item: a })}
-                        aria-label="Eliminar"
+                        aria-label={`Eliminar atributo ${a.name}`}
+                        title="Eliminar atributo"
                       />
                     </ActionGuard>
                   </div>

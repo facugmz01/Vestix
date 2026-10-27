@@ -83,10 +83,24 @@ export default function CollectionsPage() {
               { key: 'actions', label: '', render: (c: ProductCollection) => (
                 <div className={adminStyles.rowActions}>
                   <ActionGuard action="update" subject="Catalog">
-                    <Button variant="ghost" size="sm" icon={<Edit2 size={14} />} onClick={() => { setSelected(c); setFormOpen(true); }} />
+                    <Button
+                      variant="edit"
+                      size="sm"
+                      icon={<Edit2 size={14} />}
+                      onClick={(e) => { e.stopPropagation(); setSelected(c); setFormOpen(true); }}
+                      aria-label={`Editar colección ${c.name}`}
+                      title="Editar colección"
+                    />
                   </ActionGuard>
                   <ActionGuard action="delete" subject="Catalog">
-                    <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => { setSelected(c); setDeleteOpen(true); }} />
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={<Trash2 size={14} />}
+                      onClick={(e) => { e.stopPropagation(); setSelected(c); setDeleteOpen(true); }}
+                      aria-label={`Eliminar colección ${c.name}`}
+                      title="Eliminar colección"
+                    />
                   </ActionGuard>
                 </div>
               )},

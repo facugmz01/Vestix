@@ -77,30 +77,72 @@
   display: flex;
   gap: 6px;
   opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateY(-6px);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 2;
 }
 
-.card:hover .cardActions {
+.card:hover .cardActions,
+.card:focus-within .cardActions {
   opacity: 1;
   transform: translateY(0);
 }
 
 .cardActionBtn {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-inverted);
-  background: rgba(0, 0, 0, 0.75);
+  color: #ffffff; /* Explicit high-contrast white on dark/colored badge buttons */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
+.cardActionBtn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Duplicar: neutral dark slate */
+.cardActionBtnDuplicate {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.cardActionBtnDuplicate:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+}
+
+/* Editar: distinct vibrant Indigo / Blue with high contrast */
+.cardActionBtnEdit {
+  background: #4F46E5;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.4);
+}
+.cardActionBtnEdit:hover {
+  background: #4338CA;
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.6);
+  transform: scale(1.08);
+}
+
+/* Eliminar: distinct vibrant Danger Red with high contrast */
 .cardActionBtnDanger {
-  background: rgba(196, 30, 30, 0.85);
+  background: #DC2626;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
+}
+.cardActionBtnDanger:hover {
+  background: #B91C1C;
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.6);
+  transform: scale(1.08);
 }
 
 .cardBody {
