@@ -16,6 +16,7 @@ import { ProductImagesUploader } from '@/features/products/components/ProductIma
 import { RelatedProductsPicker } from '@/features/products/components/RelatedProductsPicker';
 import { VariantMassGenerator } from '@/features/products/components/VariantMassGenerator';
 import { ComboRecipeBuilder } from '@/features/products/components/ComboRecipeBuilder';
+import { MercadoPagoPriceSuggester } from '@/features/products/components/MercadoPagoPriceSuggester';
 import { dataUrlToFile } from '@/features/products/utils/dataUrlToFile';
 import clsx from 'clsx';
 import styles from './ProductEditor.module.css';
@@ -448,7 +449,28 @@ export function ProductEditor({ initialData }: Props) {
                     value={formData.costPrice || ''}
                     onChange={(e) => {
                       const val = parseFloat(e.target.value) || 0;
-                      setFormData({ ...formData, costPrice: val, basePrice: val });
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        costPrice: val, 
+                        basePrice: prev.basePrice && prev.basePrice !== prev.costPrice ? prev.basePrice : val 
+                      }));
+                    }}
+                    className={clsx(styles.input, styles.inputWithPrefix)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={styles.label}>Precio base de venta</label>
+                <div className={styles.priceInputWrap}>
+                  <span className={styles.pricePrefix}>$</span>
+                  <input
+                    type="number"
+                    value={formData.basePrice || ''}
+                    placeholder={formData.costPrice ? String(formData.costPrice) : '0'}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setFormData(prev => ({ ...prev, basePrice: val }));
                     }}
                     className={clsx(styles.input, styles.inputWithPrefix)}
                   />
@@ -494,6 +516,19 @@ export function ProductEditor({ initialData }: Props) {
                 );
               })}
             </div>
+
+            {/* Sugeridor de Precios Mercado Pago con Fundamentación */}
+            <MercadoPagoPriceSuggester
+              costPrice={formData.costPrice || 0}
+              existingPriceLists={priceLists}
+              onApplyPrice={(suggestedPrice) => {
+                setFormData(prev => ({
+                  ...prev,
+                  basePrice: suggestedPrice,
+                }));
+                toast.success(`Precio base fijado en $${suggestedPrice.toLocaleString('es-AR')}`);
+              }}
+            />
 
             <div className={styles.priceActions}>
               <Button type="button" variant="ghost" size="sm" icon={<span className={styles.currencyIcon}>$</span>} onClick={() => {

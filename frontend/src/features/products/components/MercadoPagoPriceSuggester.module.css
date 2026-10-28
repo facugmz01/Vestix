@@ -1,0 +1,251 @@
+.container {
+  background: var(--surface-1, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-left: 4px solid #009ee3;
+  border-radius: var(--radius, 8px);
+  padding: 16px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.titleArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mpBadge {
+  background: rgba(0, 158, 227, 0.12);
+  color: #009ee3;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 158, 227, 0.25);
+}
+
+.guaranteeBadge {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.gridControls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #64748b);
+}
+
+.select, .input {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--surface-0, #ffffff);
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: var(--radius, 6px);
+  font-size: 13px;
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.select:focus, .input:focus {
+  border-color: #009ee3;
+}
+
+.taxToggleBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.taxToggleBtn:hover {
+  color: var(--text-primary, #0f172a);
+}
+
+.taxesRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 10px;
+  background: var(--surface-0, #ffffff);
+  border-radius: 6px;
+  border: 1px dashed var(--border, #cbd5e1);
+  margin-bottom: 14px;
+}
+
+.resultCard {
+  background: var(--surface-0, #ffffff);
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resultMainRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.priceDisplay {
+  display: flex;
+  flex-direction: column;
+}
+
+.priceLabel {
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+  font-weight: 500;
+}
+
+.suggestedPrice {
+  font-size: 26px;
+  font-weight: 700;
+  color: #009ee3;
+  line-height: 1.1;
+  font-feature-settings: 'tnum';
+}
+
+.secondaryPrices {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.cashPriceText {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.profitText {
+  color: var(--text-primary, #0f172a);
+  font-weight: 600;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.explanationSection {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+.breakdownGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.breakdownItem {
+  background: var(--surface-1, #f8fafc);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+.breakdownItemLabel {
+  font-size: 11px;
+  color: var(--text-secondary, #64748b);
+  display: block;
+}
+
+.breakdownItemValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+}
+
+.breakdownItemPct {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  margin-left: 4px;
+}
+
+.fundamentationBox {
+  background: #0f172a;
+  color: #f1f5f9;
+  padding: 14px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  position: relative;
+  overflow-x: auto;
+}
+
+.copyBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copyBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
