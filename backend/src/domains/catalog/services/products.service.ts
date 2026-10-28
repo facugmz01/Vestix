@@ -84,7 +84,7 @@ export class ProductsService {
     }
 
     // 2b. Base SKU Uniqueness & Generation
-    let finalSku = createProductDto.baseSku?.trim();
+    let finalSku = createProductDto.baseSku?.trim().toUpperCase();
     if (!finalSku) {
       if (skuSettings.skuAutoGenerate !== false) {
         finalSku = await this.identifiersService.generateBaseSku();
@@ -92,8 +92,10 @@ export class ProductsService {
         finalSku = `PROD-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
       }
     }
-    const exists = await this.prisma.product.findUnique({ where: { baseSku: finalSku } });
-    if (exists) throw new ConflictException(`El SKU Base ${finalSku} ya está en uso`);
+    finalSku = finalSku.toUpperCase();
+    if (!(await this.identifiersService.validateSkuUniqueness(finalSku))) {
+      throw new ConflictException(`El SKU Base ${finalSku} ya está en uso`);
+    }
 
     // Prepare barcodes before create (respect barcodeAutoGenerate setting)
     if (variableProduct && createProductDto.variants?.length) {
@@ -180,16 +182,17 @@ export class ProductsService {
                 ...(v.size ? { Talle: v.size } : {}),
               };
 
-          let sku = (v.sku || '').trim();
+          let sku = (v.sku || '').trim().toUpperCase();
           if (!sku) {
             sku = await this.identifiersService.ensureUniqueVariantSku(finalSku, attrs);
           } else if (!(await this.identifiersService.validateSkuUniqueness(sku))) {
             throw new ConflictException(`El SKU ${sku} ya está en uso`);
           }
-          while (usedSkus.has(sku.toUpperCase())) {
+          sku = sku.toUpperCase();
+          while (usedSkus.has(sku)) {
             sku = `${sku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
           }
-          usedSkus.add(sku.toUpperCase());
+          usedSkus.add(sku);
 
           const barcode = (v.barcode || '').trim() || null;
           if (barcode) {
@@ -539,7 +542,8 @@ export class ProductsService {
             // Update
             const { id: varId, productId, createdAt, updatedAt, ...varData } = variant as any;
             if (varData.sku) {
-              const cleanSku = String(varData.sku).trim();
+              const cleanSku = String(varData.sku).trim().toUpperCase();
+              varData.sku = cleanSku;
               const conflictSku = await tx.productVariant.findFirst({
                 where: { sku: { equals: cleanSku, mode: 'insensitive' }, id: { not: varId } },
               });
@@ -562,7 +566,7 @@ export class ProductsService {
             });
           } else {
             // Create
-            const finalSku = updateProductDto.baseSku || product.baseSku || 'PROD';
+            const finalSku = (updateProductDto.baseSku || product.baseSku || 'PROD').trim().toUpperCase();
             const attrs = (variant.attributes && typeof variant.attributes === 'object')
               ? Object.fromEntries(
                   Object.entries(variant.attributes)
@@ -574,16 +578,17 @@ export class ProductsService {
                   ...(variant.size ? { Talle: variant.size } : {}),
                 };
 
-            let sku = (variant.sku || '').trim();
+            let sku = (variant.sku || '').trim().toUpperCase();
             if (!sku) {
               sku = await this.identifiersService.ensureUniqueVariantSku(finalSku, attrs);
             } else if (!(await this.identifiersService.validateSkuUniqueness(sku))) {
               throw new ConflictException(`El SKU ${sku} ya está en uso`);
             }
-            while (usedSkus.has(sku.toUpperCase())) {
+            sku = sku.toUpperCase();
+            while (usedSkus.has(sku)) {
               sku = `${sku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
             }
-            usedSkus.add(sku.toUpperCase());
+            usedSkus.add(sku);
 
             let barcode = (variant.barcode || '').trim() || null;
             if (!barcode) {
@@ -690,12 +695,13 @@ export class ProductsService {
           ...(data.size ? { Talle: data.size } : {}),
         };
 
-    let sku = (data.sku || '').trim();
+    let sku = (data.sku || '').trim().toUpperCase();
     if (!sku) {
-      sku = await this.identifiersService.ensureUniqueVariantSku(product.baseSku || 'PROD', attrs);
+      sku = await this.identifiersService.ensureUniqueVariantSku((product.baseSku || 'PROD').toUpperCase(), attrs);
     } else if (!(await this.identifiersService.validateSkuUniqueness(sku))) {
       throw new ConflictException(`El SKU ${sku} ya está en uso`);
     }
+    sku = sku.toUpperCase();
 
     let barcode = (data.barcode || '').trim() || null;
     if (!barcode && skuSettings.barcodeAutoGenerate !== false) {
@@ -720,7 +726,8 @@ export class ProductsService {
     if (!existing) throw new NotFoundException(`Variante ${id} no encontrada`);
 
     if (data.sku && String(data.sku).trim().toUpperCase() !== existing.sku.toUpperCase()) {
-      const cleanSku = String(data.sku).trim();
+      const cleanSku = String(data.sku).trim().toUpperCase();
+      data.sku = cleanSku;
       const conflictSku = await this.prisma.productVariant.findFirst({
         where: { sku: { equals: cleanSku, mode: 'insensitive' }, id: { not: id } },
       });
@@ -811,7 +818,7 @@ export class ProductsService {
     }
 
     const combinations = cartesianCombinations(attributes);
-    const skuPrefix = (product.baseSku || '').trim() || 'PROD';
+    const skuPrefix = (product.baseSku || '').trim().toUpperCase() || 'PROD';
     const basePrice = dto.basePrice ?? 0;
     const costPrice = dto.costPrice ?? product.costPrice ?? 0;
     const skuSettings = await this.settingsService.getSkuBarcodeSettings();
@@ -826,11 +833,11 @@ export class ProductsService {
 
     for (const combo of combinations) {
       const { color, size } = extractColorAndSize(combo);
-      let sku = await this.identifiersService.ensureUniqueVariantSku(skuPrefix, combo);
-      while (usedSkus.has(sku.toUpperCase())) {
+      let sku = (await this.identifiersService.ensureUniqueVariantSku(skuPrefix, combo)).toUpperCase();
+      while (usedSkus.has(sku)) {
         sku = `${sku}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
       }
-      usedSkus.add(sku.toUpperCase());
+      usedSkus.add(sku);
 
       const barcode = autoBarcode
         ? await this.identifiersService.generateUniqueBarcode()

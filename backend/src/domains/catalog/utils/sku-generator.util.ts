@@ -80,7 +80,7 @@ export class SkuGeneratorUtil {
    * e.g. TSH-BASC + { Talle: 'XXXL', Color: 'Azul Marino' } -> TSH-BASC-AZM-XXXL
    */
   static generateVariantSku(baseSku: string, attributes: Record<string, any>): string {
-    const cleanBase = (baseSku || 'PROD').trim() || 'PROD';
+    const cleanBase = (baseSku || 'PROD').trim().toUpperCase() || 'PROD';
     if (!attributes || typeof attributes !== 'object') {
       return cleanBase;
     }
