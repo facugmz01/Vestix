@@ -3,6 +3,7 @@ import {
   Warehouse, History, Truck,
   ShoppingCart, Users, FileText,
   Wallet, CreditCard, Banknote, Gift, Palette, Printer, LayoutTemplate, Search, Receipt,
+  Calculator,
 } from 'lucide-react';
 import type { TabItem } from '@/components/ui/Tabs';
 
@@ -29,6 +30,7 @@ export const CATALOG_TABS: TabItem[] = [
     icon: Banknote,
     children: [
       { id: 'prices', label: 'Listas de Precios', to: '/admin/price-lists', icon: Banknote },
+      { id: 'pricing-calculator', label: 'Calculadora de Precios', to: '/admin/pricing-calculator', icon: Calculator },
       { id: 'price-inquiry', label: 'Consulta de Precios', to: '/admin/price-inquiry', icon: Search },
       { id: 'promotions', label: 'Promociones', to: '/admin/promotions', icon: Percent },
     ],

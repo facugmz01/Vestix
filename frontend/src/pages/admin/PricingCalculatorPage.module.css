@@ -1,0 +1,310 @@
+.calcLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .calcLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--surface-0, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: var(--radius, 8px);
+  padding: 20px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subSectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #64748b);
+  margin-top: 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .grid2, .grid3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #64748b);
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputPrefix {
+  position: absolute;
+  left: 10px;
+  font-size: 13px;
+  color: var(--text-muted, #94a3b8);
+  pointer-events: none;
+}
+
+.inputWithPrefix {
+  padding-left: 24px !important;
+}
+
+.input, .select {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface-0, #ffffff);
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: var(--radius, 6px);
+  font-size: 14px;
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus, .select:focus {
+  border-color: #009ee3;
+}
+
+.infoBadge {
+  background: rgba(0, 158, 227, 0.08);
+  border: 1px solid rgba(0, 158, 227, 0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.landedCostBanner {
+  background: linear-gradient(135deg, rgba(0, 158, 227, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border: 1px solid rgba(0, 158, 227, 0.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.landedCostLabel {
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+  font-weight: 500;
+}
+
+.landedCostValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+.resultHeroCard {
+  background: var(--surface-0, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-top: 4px solid #009ee3;
+  border-radius: var(--radius, 8px);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mainPriceDisplay {
+  background: var(--surface-1, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.heroPrice {
+  font-size: 32px;
+  font-weight: 800;
+  color: #009ee3;
+  line-height: 1;
+  font-feature-settings: 'tnum';
+}
+
+.heroCashPrice {
+  font-size: 18px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.metricTile {
+  background: var(--surface-1, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metricTileLabel {
+  font-size: 11px;
+  color: var(--text-secondary, #64748b);
+}
+
+.metricTileValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+.fundamentationBox {
+  background: #0f172a;
+  color: #f1f5f9;
+  padding: 14px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  position: relative;
+  overflow-x: auto;
+  max-height: 380px;
+}
+
+.copyBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copyBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.tabsBar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  padding-bottom: 8px;
+}
+
+.tabBtn {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius, 6px);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.tabBtnActive {
+  background: var(--surface-1, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+  font-weight: 600;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.simTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.simTable th {
+  background: var(--surface-1, #f8fafc);
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--text-secondary, #64748b);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  font-weight: 600;
+}
+
+.simTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  color: var(--text-primary, #0f172a);
+}
+
+.simTotalRow {
+  background: var(--surface-1, #f8fafc);
+  font-weight: 700;
+}

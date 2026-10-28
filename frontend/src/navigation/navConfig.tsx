@@ -49,6 +49,7 @@ import {
   KeyRound,
   PlusCircle,
   List,
+  Calculator,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Action, Subject } from '@/rbac/permissions';
@@ -130,6 +131,7 @@ export const NAV_SEGMENTS: NavSegment[] = [
           { id: 'cat-attributes', label: 'Categorías y Talles', to: '/admin/attributes', icon: Layers },
           { id: 'cat-collections', label: 'Colecciones', to: '/admin/collections', icon: FolderKanban },
           { id: 'cat-price-lists', label: 'Listas de Precios', to: '/admin/price-lists', icon: Banknote },
+          { id: 'cat-pricing-calculator', label: 'Calculadora de Precios', to: '/admin/pricing-calculator', icon: Calculator },
           { id: 'cat-promotions', label: 'Promociones (2x1)', to: '/admin/promotions', icon: Percent },
           { id: 'cat-price-inquiry', label: 'Consulta de Precios', to: '/admin/price-inquiry', icon: Search },
           { id: 'cat-barcodes', label: 'Impresión Etiquetas', to: '/admin/barcodes', icon: Printer },

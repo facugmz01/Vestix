@@ -65,6 +65,7 @@ const WarehousesPage = lazy(() => import('@/pages/admin/WarehousesPage'));
 const LocationsPage  = lazy(() => import('@/pages/admin/LocationsPage'));
 const CashRegistersPage = lazy(() => import('@/pages/admin/CashRegistersPage'));
 const PriceInquiryPage = lazy(() => import('@/pages/admin/PriceInquiryPage'));
+const PricingCalculatorPage = lazy(() => import('@/pages/admin/PricingCalculatorPage'));
 const PriceListsPage = lazy(() => import('@/pages/admin/PriceListsPage'));
 const QRScannerPage = lazy(() => import('@/pages/admin/QRScannerPage'));
 const LoyaltyPage  = lazy(() => import('@/pages/admin/LoyaltyPage'));
@@ -188,6 +189,7 @@ export default function App() {
                 <Route path="/admin/promotions"  element={<PromotionsPage />} />
                 <Route path="/admin/collections" element={<CollectionsPage />} />
                 <Route path="/admin/price-inquiry" element={<PriceInquiryPage />} />
+                <Route path="/admin/pricing-calculator" element={<PricingCalculatorPage />} />
                 <Route path="/admin/scanner" element={<QRScannerPage />} />
                 <Route path="/admin/barcodes" element={<BarcodeLabelsPage />} />
                 <Route path="/admin/label-templates" element={<LabelTemplatesPage />} />
