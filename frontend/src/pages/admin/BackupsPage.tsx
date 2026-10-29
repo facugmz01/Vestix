@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Database, Download, Trash2, RotateCcw, Plus, AlertTriangle,
-  Clock, CheckCircle, XCircle, Loader2,
+  Clock, CheckCircle, XCircle, Loader2, Info, Copy,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -35,7 +35,8 @@ export default function BackupsPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [restoreTarget, setRestoreTarget] = useState<BackupJob | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<BackupJob | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ job: BackupJob; force: boolean } | null>(null);
+  const [errorTarget, setErrorTarget] = useState<BackupJob | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.backups.all({ page, pageSize }),
@@ -67,9 +68,9 @@ export default function BackupsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => backupsApi.remove(id),
+    mutationFn: ({ id, force }: { id: string; force: boolean }) => backupsApi.remove(id, force),
     onSuccess: () => {
-      toast.success('Backup eliminado');
+      toast.success('Registro eliminado');
       setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.backups.all() });
     },
@@ -200,48 +201,69 @@ export default function BackupsPage() {
               {
                 key: 'error',
                 header: 'Error',
-                render: (j: BackupJob) => j.error
-                  ? <span className={styles.errorCell} title={j.error}>{j.error}</span>
-                  : <span className={styles.emptyDash}>—</span>,
+                render: (j: BackupJob) => j.error ? (
+                  <button
+                    type="button"
+                    onClick={() => setErrorTarget(j)}
+                    className={styles.errorButton}
+                    title="Hacé clic para ver el detalle completo del error"
+                  >
+                    <Info size={13} />
+                    <span className={styles.errorCell}>{j.error}</span>
+                  </button>
+                ) : (
+                  <span className={styles.emptyDash}>—</span>
+                ),
               },
               {
                 key: 'actions',
                 header: '',
-                render: (j: BackupJob) => (
-                  <div className={styles.actions}>
-                    {j.status === 'COMPLETED' && j.type === 'MANUAL' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<Download size={16} />}
-                        onClick={() => handleDownload(j)}
-                        aria-label="Descargar"
-                      />
-                    )}
-                    {j.status === 'COMPLETED' && j.type === 'MANUAL' && (
-                      <ActionGuard action="manage" subject="Backups">
+                render: (j: BackupJob) => {
+                  const isStuck =
+                    (j.status === 'PENDING' || j.status === 'IN_PROGRESS') &&
+                    Date.now() - new Date(j.createdAt).getTime() > 2 * 60 * 1000;
+                  const canDelete =
+                    j.status === 'COMPLETED' ||
+                    j.status === 'FAILED' ||
+                    isStuck;
+
+                  return (
+                    <div className={styles.actions}>
+                      {j.status === 'COMPLETED' && j.type === 'MANUAL' && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          icon={<RotateCcw size={16} />}
-                          onClick={() => setRestoreTarget(j)}
-                          aria-label="Restaurar"
+                          icon={<Download size={16} />}
+                          onClick={() => handleDownload(j)}
+                          aria-label="Descargar"
                         />
-                      </ActionGuard>
-                    )}
-                    {j.type === 'MANUAL' && j.status !== 'PENDING' && j.status !== 'IN_PROGRESS' && (
-                      <ActionGuard action="manage" subject="Backups">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Trash2 size={16} />}
-                          onClick={() => setDeleteTarget(j)}
-                          aria-label="Eliminar"
-                        />
-                      </ActionGuard>
-                    )}
-                  </div>
-                ),
+                      )}
+                      {j.status === 'COMPLETED' && j.type === 'MANUAL' && (
+                        <ActionGuard action="manage" subject="Backups">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<RotateCcw size={16} />}
+                            onClick={() => setRestoreTarget(j)}
+                            aria-label="Restaurar"
+                          />
+                        </ActionGuard>
+                      )}
+                      {canDelete && (
+                        <ActionGuard action="manage" subject="Backups">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Trash2 size={16} />}
+                            onClick={() => setDeleteTarget({ job: j, force: isStuck })}
+                            aria-label={isStuck ? 'Forzar cancelación' : 'Eliminar'}
+                            title={isStuck ? 'Forzar cancelación / desbloqueo' : 'Eliminar registro'}
+                          />
+                        </ActionGuard>
+                      )}
+                    </div>
+                  );
+                },
               },
             ]}
           />
@@ -267,17 +289,39 @@ export default function BackupsPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Eliminar backup"
+        title={deleteTarget?.force ? 'Forzar eliminación de tarea bloqueada' : 'Eliminar registro'}
         message={
           deleteTarget
-            ? `¿Eliminar el backup "${deleteTarget.filename}"? Esta acción no se puede deshacer.`
+            ? deleteTarget.force
+              ? `¿Deseás forzar la eliminación de la tarea "${deleteTarget.job.filename ?? deleteTarget.job.id}"? Esto desbloqueará la creación de nuevos backups.`
+              : `¿Eliminar el registro "${deleteTarget.job.filename ?? deleteTarget.job.id}"? Esta acción no se puede deshacer.`
             : ''
         }
-        confirmLabel="Eliminar"
+        confirmLabel={deleteTarget?.force ? 'Forzar eliminación' : 'Eliminar'}
         variant="danger"
         loading={deleteMutation.isPending}
-        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        onConfirm={() =>
+          deleteTarget &&
+          deleteMutation.mutate({ id: deleteTarget.job.id, force: deleteTarget.force })
+        }
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!errorTarget}
+        title="Detalle del Error de Backup"
+        message={errorTarget?.error ?? ''}
+        confirmLabel="Copiar Error"
+        variant="warning"
+        loading={false}
+        onConfirm={() => {
+          if (errorTarget?.error) {
+            navigator.clipboard.writeText(errorTarget.error);
+            toast.success('Error copiado al portapapeles');
+          }
+          setErrorTarget(null);
+        }}
+        onCancel={() => setErrorTarget(null)}
       />
     </PageContainer>
   );

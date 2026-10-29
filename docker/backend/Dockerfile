@@ -41,9 +41,16 @@ RUN apt-get update \
     openssl \
     ca-certificates \
     curl \
+    gnupg \
     tini \
     gosu \
-    postgresql-client \
+  && install -d /etc/apt/keyrings \
+  && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/keyrings/postgresql.gpg \
+  && echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-client-16 \
+  && apt-get purge -y gnupg \
+  && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd --system --gid 1001 vestix \
   && useradd --system --uid 1001 --gid vestix --home-dir /app --shell /usr/sbin/nologin vestix \

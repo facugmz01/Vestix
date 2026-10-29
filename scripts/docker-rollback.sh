@@ -89,8 +89,7 @@ DROP SCHEMA IF EXISTS finance CASCADE;
 DROP SCHEMA IF EXISTS settings CASCADE;" >/dev/null
 
   gunzip -c "$BACKUP_FILE" | "${COMPOSE[@]}" exec -T postgres \
-    psql -U "${POSTGRES_USER:-erp_admin}" -d "${POSTGRES_DB:-erp_prod}" \
-    -v ON_ERROR_STOP=1 >/dev/null
+    psql -U "${POSTGRES_USER:-erp_admin}" -d "${POSTGRES_DB:-erp_prod}" >/dev/null
 
   "${COMPOSE[@]}" restart backend
 fi

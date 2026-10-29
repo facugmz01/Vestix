@@ -40,6 +40,22 @@
   color: var(--text-muted);
 }
 
+.errorButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--danger, #ef4444);
+  text-align: left;
+}
+
+.errorButton:hover .errorCell {
+  text-decoration: underline;
+}
+
 .errorCell {
   display: block;
   max-width: 220px;

@@ -27,7 +27,9 @@ import {
 import { 
   suggestMercadoPagoPrice, 
   MP_FEE_RATES, 
-  type MercadoPagoModality 
+  MP_INSTALLMENT_PLANS,
+  type MercadoPagoModality,
+  type MercadoPagoInstallmentPlan
 } from '@/features/products/utils/mercadopagoPricing';
 import { priceListsApi } from '@/api/priceLists.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -65,6 +67,9 @@ export default function PricingCalculatorPage() {
   const [profitMargin, setProfitMargin] = useState<number>(60);
   const [modality, setModality] = useState<MercadoPagoModality>('POINT_CREDIT_INSTANT');
   const [customFee, setCustomFee] = useState<number>(6.39);
+  const [installmentPlan, setInstallmentPlan] = useState<MercadoPagoInstallmentPlan>('NONE');
+  const [customInstallmentsCount, setCustomInstallmentsCount] = useState<number>(3);
+  const [customInstallmentFee, setCustomInstallmentFee] = useState<number>(8.99);
   const [iibbPercent, setIibbPercent] = useState<number>(3.5);
   const [productIvaPercent, setProductIvaPercent] = useState<number>(21);
   const [showFundamentation, setShowFundamentation] = useState<boolean>(true);
@@ -83,6 +88,9 @@ export default function PricingCalculatorPage() {
         profitMarginPercent: profitMargin,
         mpModality: modality,
         customMpFeePercent: customFee,
+        installmentPlan,
+        customInstallmentsCount,
+        customInstallmentFeePercent: customInstallmentFee,
         iibbPercent,
         productIvaPercent,
       });
@@ -96,6 +104,9 @@ export default function PricingCalculatorPage() {
     profitMargin,
     modality,
     customFee,
+    installmentPlan,
+    customInstallmentsCount,
+    customInstallmentFee,
     iibbPercent,
     productIvaPercent,
   ]);
@@ -127,6 +138,9 @@ export default function PricingCalculatorPage() {
           profitMarginPercent: item.profitMargin,
           mpModality: modality,
           customMpFeePercent: customFee,
+          installmentPlan,
+          customInstallmentsCount,
+          customInstallmentFeePercent: customInstallmentFee,
           iibbPercent,
           productIvaPercent,
         });
@@ -139,6 +153,8 @@ export default function PricingCalculatorPage() {
           totalProfit: res.expectedNetProfit * item.quantity,
           totalRevenue: res.suggestedPrice * item.quantity,
           modifierPercentage: res.modifierPercentage,
+          installmentsCount: res.installmentsCount,
+          installmentAmount: res.installmentAmount,
         };
       } catch {
         return {
@@ -150,6 +166,8 @@ export default function PricingCalculatorPage() {
           totalProfit: 0,
           totalRevenue: 0,
           modifierPercentage: 0,
+          installmentsCount: 1,
+          installmentAmount: 0,
         };
       }
     });
@@ -159,6 +177,9 @@ export default function PricingCalculatorPage() {
     batchProratedExpensesUnit,
     modality,
     customFee,
+    installmentPlan,
+    customInstallmentsCount,
+    customInstallmentFee,
     iibbPercent,
     productIvaPercent,
   ]);
@@ -212,7 +233,10 @@ export default function PricingCalculatorPage() {
 
   const handleCreateList = () => {
     if (!singleSuggestion) return;
-    const defaultName = `Mercado Pago (${MP_FEE_RATES[modality as Exclude<MercadoPagoModality, 'CUSTOM'>]?.days || 'Point'})`;
+    const planSuffix = singleSuggestion.installmentsCount > 1
+      ? ` - ${singleSuggestion.installmentPlanLabel}`
+      : ` (${MP_FEE_RATES[modality as Exclude<MercadoPagoModality, 'CUSTOM'>]?.days || 'Point'})`;
+    const defaultName = `Mercado Pago${planSuffix}`;
     createPriceListMutation.mutate({
       name: defaultName,
       modifierPct: singleSuggestion.modifierPercentage,
@@ -415,6 +439,53 @@ export default function PricingCalculatorPage() {
               </div>
 
               <div className={styles.field}>
+                <label className={styles.label}>Plan de Cuotas Sin Interés</label>
+                <select
+                  value={installmentPlan}
+                  onChange={(e) => setInstallmentPlan(e.target.value as MercadoPagoInstallmentPlan)}
+                  className={styles.select}
+                >
+                  <option value="NONE">1 pago (Sin cuotas)</option>
+                  <option value="CUOTA_SIMPLE_3">Cuota Simple 3 (+6.03%)</option>
+                  <option value="CUOTA_SIMPLE_6">Cuota Simple 6 (+11.54%)</option>
+                  <option value="INSTALLMENTS_2">2 cuotas (+5.99%)</option>
+                  <option value="INSTALLMENTS_3">3 cuotas (+8.99%)</option>
+                  <option value="INSTALLMENTS_6">6 cuotas (+16.49%)</option>
+                  <option value="INSTALLMENTS_9">9 cuotas (+24.99%)</option>
+                  <option value="INSTALLMENTS_12">12 cuotas (+32.99%)</option>
+                  <option value="CUSTOM_INSTALLMENTS">Personalizado (% cuotas)</option>
+                </select>
+              </div>
+            </div>
+
+            {installmentPlan === 'CUSTOM_INSTALLMENTS' && (
+              <div className={styles.grid2} style={{ marginTop: 12 }}>
+                <div className={styles.field}>
+                  <label className={styles.label}>Cant. de Cuotas</label>
+                  <input
+                    type="number"
+                    min={2}
+                    max={24}
+                    value={customInstallmentsCount}
+                    onChange={(e) => setCustomInstallmentsCount(parseInt(e.target.value) || 2)}
+                    className={styles.input}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Costo Financiación Cuotas (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={customInstallmentFee}
+                    onChange={(e) => setCustomInstallmentFee(parseFloat(e.target.value) || 0)}
+                    className={styles.input}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className={styles.grid2} style={{ marginTop: 12 }}>
+              <div className={styles.field}>
                 <label className={styles.label}>Ganancia Neta Deseada (%)</label>
                 <input
                   type="number"
@@ -423,20 +494,33 @@ export default function PricingCalculatorPage() {
                   className={styles.input}
                 />
               </div>
-            </div>
 
-            {modality === 'CUSTOM' && (
-              <div className={styles.field} style={{ marginTop: 12 }}>
-                <label className={styles.label}>Arancel MP personalizado (%)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={customFee}
-                  onChange={(e) => setCustomFee(parseFloat(e.target.value) || 0)}
-                  className={styles.input}
-                />
-              </div>
-            )}
+              {modality === 'CUSTOM' ? (
+                <div className={styles.field}>
+                  <label className={styles.label}>Arancel MP personalizado (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={customFee}
+                    onChange={(e) => setCustomFee(parseFloat(e.target.value) || 0)}
+                    className={styles.input}
+                  />
+                </div>
+              ) : (
+                <div className={styles.field}>
+                  <label className={styles.label}>Alícuota IVA de la Prenda (%)</label>
+                  <select
+                    value={productIvaPercent}
+                    onChange={(e) => setProductIvaPercent(parseFloat(e.target.value) || 0)}
+                    className={styles.select}
+                  >
+                    <option value="21">21% (General / Indumentaria)</option>
+                    <option value="10.5">10.5% (Reducido)</option>
+                    <option value="0">0% (Exento)</option>
+                  </select>
+                </div>
+              )}
+            </div>
 
             <div className={styles.grid2} style={{ marginTop: 12 }}>
               <div className={styles.field}>
@@ -450,18 +534,20 @@ export default function PricingCalculatorPage() {
                 />
               </div>
 
-              <div className={styles.field}>
-                <label className={styles.label}>Alícuota IVA de la Prenda (%)</label>
-                <select
-                  value={productIvaPercent}
-                  onChange={(e) => setProductIvaPercent(parseFloat(e.target.value) || 0)}
-                  className={styles.select}
-                >
-                  <option value="21">21% (General / Indumentaria)</option>
-                  <option value="10.5">10.5% (Reducido)</option>
-                  <option value="0">0% (Exento)</option>
-                </select>
-              </div>
+              {modality === 'CUSTOM' && (
+                <div className={styles.field}>
+                  <label className={styles.label}>Alícuota IVA de la Prenda (%)</label>
+                  <select
+                    value={productIvaPercent}
+                    onChange={(e) => setProductIvaPercent(parseFloat(e.target.value) || 0)}
+                    className={styles.select}
+                  >
+                    <option value="21">21% (General / Indumentaria)</option>
+                    <option value="10.5">10.5% (Reducido)</option>
+                    <option value="0">0% (Exento)</option>
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -487,6 +573,11 @@ export default function PricingCalculatorPage() {
                   <div className={styles.heroPrice}>
                     ${singleSuggestion.suggestedPrice.toLocaleString('es-AR')}
                   </div>
+                  {singleSuggestion.installmentsCount > 1 && (
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0284c7', marginTop: 4 }}>
+                      💳 {singleSuggestion.installmentsCount} cuotas fijas de ${singleSuggestion.installmentAmount.toLocaleString('es-AR')} sin interés
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
@@ -519,16 +610,25 @@ export default function PricingCalculatorPage() {
                 </div>
 
                 <div className={styles.metricTile}>
-                  <span className={styles.metricTileLabel}>Modificador Lista</span>
-                  <span className={styles.metricTileValue} style={{ color: '#009ee3' }}>
-                    +{singleSuggestion.modifierPercentage}%
+                  <span className={styles.metricTileLabel}>Arancel Base MP</span>
+                  <span className={styles.metricTileValue} style={{ color: '#e11d48' }}>
+                    -${singleSuggestion.mpBaseFeeAmount.toLocaleString('es-AR')}
                   </span>
                 </div>
 
+                {singleSuggestion.installmentsCount > 1 && (
+                  <div className={styles.metricTile}>
+                    <span className={styles.metricTileLabel}>Costo Financiación Cuotas</span>
+                    <span className={styles.metricTileValue} style={{ color: '#9333ea' }}>
+                      -${singleSuggestion.mpFinancingFeeAmount.toLocaleString('es-AR')}
+                    </span>
+                  </div>
+                )}
+
                 <div className={styles.metricTile}>
-                  <span className={styles.metricTileLabel}>Comisión MP</span>
-                  <span className={styles.metricTileValue} style={{ color: '#e11d48' }}>
-                    -${singleSuggestion.mpDeductionTotal.toLocaleString('es-AR')}
+                  <span className={styles.metricTileLabel}>Modificador Lista</span>
+                  <span className={styles.metricTileValue} style={{ color: '#009ee3' }}>
+                    +{singleSuggestion.modifierPercentage}%
                   </span>
                 </div>
               </div>
@@ -582,7 +682,7 @@ export default function PricingCalculatorPage() {
               <Badge color="blue">{totalBatchUnits} prendas en total</Badge>
             </div>
 
-            <div className={styles.grid3}>
+            <div className={styles.grid2}>
               <div className={styles.field}>
                 <label className={styles.label}>Flete Total del Envío ($)</label>
                 <div className={styles.inputWrap}>
@@ -608,7 +708,9 @@ export default function PricingCalculatorPage() {
                   />
                 </div>
               </div>
+            </div>
 
+            <div className={styles.grid2} style={{ marginTop: 12 }}>
               <div className={styles.field}>
                 <label className={styles.label}>Modalidad Mercado Pago</label>
                 <select
@@ -622,6 +724,25 @@ export default function PricingCalculatorPage() {
                     </option>
                   ))}
                   <option value="CUSTOM">Personalizado</option>
+                </select>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Plan de Cuotas Sin Interés</label>
+                <select
+                  value={installmentPlan}
+                  onChange={(e) => setInstallmentPlan(e.target.value as MercadoPagoInstallmentPlan)}
+                  className={styles.select}
+                >
+                  <option value="NONE">1 pago (Sin cuotas)</option>
+                  <option value="CUOTA_SIMPLE_3">Cuota Simple 3 (+6.03%)</option>
+                  <option value="CUOTA_SIMPLE_6">Cuota Simple 6 (+11.54%)</option>
+                  <option value="INSTALLMENTS_2">2 cuotas (+5.99%)</option>
+                  <option value="INSTALLMENTS_3">3 cuotas (+8.99%)</option>
+                  <option value="INSTALLMENTS_6">6 cuotas (+16.49%)</option>
+                  <option value="INSTALLMENTS_9">9 cuotas (+24.99%)</option>
+                  <option value="INSTALLMENTS_12">12 cuotas (+32.99%)</option>
+                  <option value="CUSTOM_INSTALLMENTS">Personalizado (% cuotas)</option>
                 </select>
               </div>
             </div>
@@ -707,8 +828,15 @@ export default function PricingCalculatorPage() {
                           style={{ padding: '4px 8px', fontSize: 13 }}
                         />
                       </td>
-                      <td style={{ fontWeight: 700, color: '#009ee3', fontSize: 14 }}>
-                        ${item.suggestedPrice.toLocaleString('es-AR')}
+                      <td>
+                        <div style={{ fontWeight: 700, color: '#009ee3', fontSize: 14 }}>
+                          ${item.suggestedPrice.toLocaleString('es-AR')}
+                        </div>
+                        {item.installmentsCount > 1 && (
+                          <div style={{ fontSize: 11, color: '#0284c7', fontWeight: 600 }}>
+                            {item.installmentsCount}x ${Math.round(item.installmentAmount).toLocaleString('es-AR')}
+                          </div>
+                        )}
                       </td>
                       <td style={{ color: '#10b981', fontWeight: 600 }}>
                         ${item.cashPrice.toLocaleString('es-AR')}

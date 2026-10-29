@@ -92,12 +92,14 @@ export class BackupsController {
   @RequirePermissions({ action: 'manage', subject: 'Backups' })
   remove(
     @Param('id', ParseUUIDPipe) id: string,
+    @Query('force') force: string | undefined,
     @CurrentUser() user: { id?: string; userId?: string; email?: string },
   ) {
     return this.backupsService.remove(
       id,
       user?.id ?? user?.userId,
       user?.email,
+      force === 'true',
     );
   }
 }

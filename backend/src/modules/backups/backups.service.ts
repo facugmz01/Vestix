@@ -3,13 +3,14 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { AuditService, AuditAction } from '../audit/audit.service';
 import { CreateBackupDto } from './dto/create-backup.dto';
-import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
 export const BACKUPS_QUEUE = 'backups_queue';
@@ -28,7 +29,7 @@ export interface DbConnectionConfig {
 }
 
 @Injectable()
-export class BackupsService {
+export class BackupsService implements OnModuleInit {
   private readonly logger = new Logger(BackupsService.name);
   private readonly backupDir = join(process.cwd(), 'uploads', 'backups');
 
@@ -40,10 +41,97 @@ export class BackupsService {
     this.ensureBackupDir();
   }
 
+  async onModuleInit() {
+    this.ensureBackupDir();
+    await this.cleanStaleJobs().catch((err) => {
+      this.logger.error(`Error al limpiar tareas de backup obsoletas en inicio: ${err}`);
+    });
+    await this.reconcileExistingBackups().catch((err) => {
+      this.logger.error(`Error al sincronizar backups desde disco en inicio: ${err}`);
+    });
+  }
+
   private ensureBackupDir() {
     if (!existsSync(this.backupDir)) {
       mkdirSync(this.backupDir, { recursive: true });
     }
+  }
+
+  /**
+   * Identifies jobs stuck in PENDING or IN_PROGRESS for more than 15 minutes
+   * (e.g. following a server restart or crash) and marks them FAILED so they
+   * do not permanently lock out future backup or restore operations.
+   */
+  async cleanStaleJobs(): Promise<number> {
+    const cutoff = new Date(Date.now() - 15 * 60 * 1000);
+    const staleJobs = await this.prisma.backupJob.findMany({
+      where: {
+        status: { in: ['PENDING', 'IN_PROGRESS'] },
+        createdAt: { lt: cutoff },
+      },
+    });
+
+    if (staleJobs.length === 0) return 0;
+
+    for (const job of staleJobs) {
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'FAILED',
+          error: 'Operación interrumpida o cancelada por tiempo de espera (timeout).',
+          completedAt: new Date(),
+        },
+      });
+      this.logger.warn(`[Backups] Tarea obsoleta ${job.id} (${job.type}) marcada como FAILED.`);
+    }
+
+    return staleJobs.length;
+  }
+
+  /**
+   * Scans uploads/backups for .sql files not yet registered in the DB
+   * and registers them as COMPLETED so they remain visible/restorable.
+   */
+  async reconcileExistingBackups(): Promise<number> {
+    if (!existsSync(this.backupDir)) return 0;
+    const existing = await this.prisma.backupJob.findMany({
+      where: { type: 'MANUAL', filename: { not: null } },
+      select: { filename: true },
+    });
+    const known = new Set(existing.map((j) => j.filename).filter(Boolean) as string[]);
+    let count = 0;
+
+    const files = readdirSync(this.backupDir);
+    for (const filename of files) {
+      if (!filename.endsWith('.sql') || known.has(filename)) continue;
+      const filePath = join(this.backupDir, filename);
+      let fileSize: bigint | undefined;
+      try {
+        fileSize = BigInt(statSync(filePath).size);
+      } catch {
+        continue;
+      }
+
+      await this.prisma.backupJob.create({
+        data: {
+          filename,
+          filePath,
+          fileSize,
+          format: 'SQL',
+          status: 'COMPLETED',
+          type: 'MANUAL',
+          description: 'Sincronizado desde disco',
+          completedAt: new Date(),
+        },
+      });
+      known.add(filename);
+      count++;
+    }
+
+    if (count > 0) {
+      this.logger.log(`[Backups] Sincronizados ${count} archivos de backup encontrados en disco.`);
+    }
+    return count;
   }
 
   parseDatabaseUrl(): DbConnectionConfig {
@@ -92,6 +180,8 @@ export class BackupsService {
   }
 
   async create(dto: CreateBackupDto, userId?: string, userEmail?: string) {
+    await this.cleanStaleJobs();
+
     const inProgress = await this.prisma.backupJob.count({
       where: { status: { in: ['PENDING', 'IN_PROGRESS'] }, type: 'MANUAL' },
     });
@@ -116,7 +206,20 @@ export class BackupsService {
       },
     });
 
-    await this.backupsQueue.add('create', { backupId: job.id, type: 'CREATE' });
+    try {
+      await this.backupsQueue.add('create', { backupId: job.id, type: 'CREATE' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      await this.prisma.backupJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'FAILED',
+          error: `Error al encolar en Redis: ${message}`,
+          completedAt: new Date(),
+        },
+      });
+      throw new BadRequestException(`No se pudo iniciar el backup (cola de tareas no disponible): ${message}`);
+    }
 
     this.auditService.log({
       userId: userId ?? 'system',
@@ -132,6 +235,8 @@ export class BackupsService {
   }
 
   async restore(id: string, userId?: string, userEmail?: string) {
+    await this.cleanStaleJobs();
+
     const job = await this.prisma.backupJob.findUnique({ where: { id } });
     if (!job) throw new NotFoundException('Backup no encontrado');
     if (job.status !== 'COMPLETED') {
@@ -161,12 +266,25 @@ export class BackupsService {
       },
     });
 
-    // Small delay so the HTTP 201 can flush before the worker drops schemas.
-    await this.backupsQueue.add(
-      'restore',
-      { backupId: restoreJob.id, type: 'RESTORE' },
-      { delay: 1500 },
-    );
+    try {
+      // Small delay so the HTTP 201 can flush before the worker drops schemas.
+      await this.backupsQueue.add(
+        'restore',
+        { backupId: restoreJob.id, type: 'RESTORE' },
+        { delay: 1500 },
+      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      await this.prisma.backupJob.update({
+        where: { id: restoreJob.id },
+        data: {
+          status: 'FAILED',
+          error: `Error al encolar en Redis: ${message}`,
+          completedAt: new Date(),
+        },
+      });
+      throw new BadRequestException(`No se pudo iniciar la restauración (cola de tareas no disponible): ${message}`);
+    }
 
     this.auditService.log({
       userId: userId ?? 'system',
@@ -181,11 +299,15 @@ export class BackupsService {
     return this.serialize(restoreJob);
   }
 
-  async remove(id: string, userId?: string, userEmail?: string) {
+  async remove(id: string, userId?: string, userEmail?: string, force = false) {
     const job = await this.prisma.backupJob.findUnique({ where: { id } });
     if (!job) throw new NotFoundException('Backup no encontrado');
     if (job.status === 'IN_PROGRESS' || job.status === 'PENDING') {
-      throw new BadRequestException('No se puede eliminar un backup en progreso');
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const isStuck = job.createdAt < fiveMinutesAgo;
+      if (!force && !isStuck) {
+        throw new BadRequestException('No se puede eliminar un backup en progreso reciente');
+      }
     }
 
     if (job.filePath && existsSync(job.filePath) && job.type === 'MANUAL') {

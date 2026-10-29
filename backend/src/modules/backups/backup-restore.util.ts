@@ -31,6 +31,14 @@ function quoteIdent(ident: string): string {
 export function buildPrepareRestoreSql(
   schemas: readonly string[] = APP_DATABASE_SCHEMAS,
 ): string {
+  const terminateConnections = `
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = current_database()
+  AND pid <> pg_backend_pid()
+  AND usename = current_user;
+`.trim();
+
   const dropSchemas = schemas
     .map((schema) => `DROP SCHEMA IF EXISTS ${quoteIdent(schema)} CASCADE;`)
     .join('\n');
@@ -72,5 +80,5 @@ BEGIN
 END
 $prepare$;`.trim();
 
-  return `${dropSchemas}\n${cleanPublic}`;
+  return `${terminateConnections}\n${dropSchemas}\n${cleanPublic}`;
 }

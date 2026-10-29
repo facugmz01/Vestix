@@ -21,6 +21,11 @@ describe('buildPrepareRestoreSql', () => {
     expect(sql).not.toContain('DROP SCHEMA IF EXISTS "public"');
   });
 
+  it('terminates active backend connections for the database before dropping schemas', () => {
+    const sql = buildPrepareRestoreSql();
+    expect(sql).toContain('SELECT pg_terminate_backend(pid)');
+  });
+
   it('rejects unsafe schema identifiers', () => {
     expect(() => buildPrepareRestoreSql(['core; DROP TABLE x'])).toThrow(
       /Invalid SQL identifier/,

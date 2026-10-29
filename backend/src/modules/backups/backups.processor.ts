@@ -63,12 +63,15 @@ export class BackupsProcessor extends WorkerHost {
     try {
       if (type === 'CREATE') {
         await this.runPgDump(record.filePath!);
-        const fileSize = statSync(record.filePath!).size;
+        const stat = statSync(record.filePath!);
+        if (stat.size === 0) {
+          throw new Error('El archivo de backup generado está vacío (0 bytes). Verifique la conexión a la base de datos.');
+        }
         await this.prisma.backupJob.update({
           where: { id: backupId },
           data: {
             status: 'COMPLETED',
-            fileSize: BigInt(fileSize),
+            fileSize: BigInt(stat.size),
             completedAt: new Date(),
           },
         });
@@ -109,6 +112,14 @@ export class BackupsProcessor extends WorkerHost {
     }
   }
 
+  private getPgDumpCmd(): string {
+    return process.env.PG_DUMP_PATH || 'pg_dump';
+  }
+
+  private getPsqlCmd(): string {
+    return process.env.PSQL_PATH || 'psql';
+  }
+
   private async runPgDump(filePath: string) {
     const db = this.backupsService.parseDatabaseUrl();
     const args = [
@@ -127,7 +138,7 @@ export class BackupsProcessor extends WorkerHost {
       '-f', filePath,
     ];
 
-    await execFileAsync('pg_dump', args, {
+    await execFileAsync(this.getPgDumpCmd(), args, {
       env: { ...process.env, PGPASSWORD: db.password },
       maxBuffer: 1024 * 1024 * 256,
     });
@@ -139,17 +150,20 @@ export class BackupsProcessor extends WorkerHost {
     // schemas like "catalog" already exist. Clear app schemas first.
     await this.prepareDatabaseForRestore(db);
 
+    // Note: Do not pass ON_ERROR_STOP=1 here because plain pg_dump with --clean --if-exists
+    // emits DROP statements on objects in schemas that prepareDatabaseForRestore already
+    // dropped CASCADE. Postgres reports non-fatal notices for those drops and proceeds
+    // with table creation and data copying.
     const args = [
       '-h', db.host,
       '-p', String(db.port),
       '-U', db.user,
       '-d', db.database,
-      '-v', 'ON_ERROR_STOP=1',
       '-X', // ignore .psqlrc
       '-f', filePath,
     ];
 
-    await execFileAsync('psql', args, {
+    await execFileAsync(this.getPsqlCmd(), args, {
       env: { ...process.env, PGPASSWORD: db.password },
       maxBuffer: 1024 * 1024 * 256,
     });
@@ -160,7 +174,7 @@ export class BackupsProcessor extends WorkerHost {
     this.logger.warn('[Backups] Dropping existing app schemas before restore');
 
     await execFileAsync(
-      'psql',
+      this.getPsqlCmd(),
       [
         '-h', db.host,
         '-p', String(db.port),
@@ -312,7 +326,10 @@ export class BackupsProcessor extends WorkerHost {
 
   private formatExecError(err: unknown): string {
     if (!err || typeof err !== 'object') return String(err);
-    const e = err as { stderr?: unknown; stdout?: unknown; message?: unknown };
+    const e = err as { stderr?: unknown; stdout?: unknown; message?: unknown; code?: unknown };
+    if (e.code === 'ENOENT') {
+      return `Herramienta de base de datos no encontrada (${e.message}). Verifique que postgresql-client esté instalado en el sistema o configure PG_DUMP_PATH / PSQL_PATH.`;
+    }
     const parts = [e.stderr, e.stdout, e.message]
       .map((part) => {
         if (part == null) return '';
