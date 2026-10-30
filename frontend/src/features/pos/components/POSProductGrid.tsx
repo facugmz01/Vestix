@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Tags, Star } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { resolveProductImage } from '@/utils/imageUrl';
+import { SafeImage } from '@/components/ui';
 import { PosFavoritesBar } from './PosFavoritesBar';
 import styles from '@/pages/pos/POSPage.module.css';
 import type { ProductVariant } from '@/types';
@@ -54,8 +56,7 @@ export function POSProductGrid({
   const getName = (p: PosVariant) =>
     p.name || p.productName || p.product?.name || 'Producto';
 
-  const getImage = (p: PosVariant) =>
-    p.imageUrl || p.product?.images?.[0] || null;
+  const getImage = (p: PosVariant) => resolveProductImage(p);
 
   return (
     <section className={styles.productsArea} aria-label="Catálogo de productos">
@@ -118,11 +119,12 @@ export function POSProductGrid({
                 aria-label={`Agregar ${name}`}
               >
                 <div className={styles.productImg}>
-                  {getImage(p) ? (
-                    <img src={getImage(p)!} alt="" className={styles.productImgFile} />
-                  ) : (
-                    <Tags size={32} />
-                  )}
+                  <SafeImage
+                    src={getImage(p)}
+                    alt=""
+                    className={styles.productImgFile}
+                    fallback={<Tags size={32} />}
+                  />
                 </div>
                 <div className={styles.productInfo}>
                   <div className={styles.productName} title={name}>{name}</div>

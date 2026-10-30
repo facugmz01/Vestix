@@ -6,6 +6,8 @@ import clsx from 'clsx';
 import { storefrontApi, type StorefrontProduct } from '@/api/storefront.api';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { resolveFirstProductImage } from '@/utils/imageUrl';
+import { SafeImage } from '@/components/ui';
 import { useDebounce } from '@/hooks/useDebounce';
 import styles from './StorefrontSearchBar.module.css';
 
@@ -246,9 +248,7 @@ export function StorefrontSearchBar({
               <ul className={styles.resultsList}>
                 {products.map((product, idx) => {
                   const isHighlighted = highlightedIndex === idx;
-                  const thumb = Array.isArray(product.images) && product.images.length > 0
-                    ? product.images[0]
-                    : null;
+                  const thumb = resolveFirstProductImage(product.images);
 
                   return (
                     <li
@@ -260,11 +260,13 @@ export function StorefrontSearchBar({
                       onMouseEnter={() => setHighlightedIndex(idx)}
                     >
                       <div className={styles.productThumbnail}>
-                        {thumb ? (
-                          <img src={thumb} alt={product.name} className={styles.thumbnailImg} loading="lazy" />
-                        ) : (
-                          <ShoppingBag size={18} />
-                        )}
+                        <SafeImage
+                          src={thumb}
+                          alt={product.name}
+                          className={styles.thumbnailImg}
+                          loading="lazy"
+                          fallback={<ShoppingBag size={18} />}
+                        />
                       </div>
 
                       <div className={styles.productInfo}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { Shirt, Package } from 'lucide-react';
+import { normalizeImageUrl } from '@/utils/imageUrl';
 import styles from './ThemeProductCard.module.css';
 
 export interface ProgressiveProductImageProps {
@@ -31,8 +32,9 @@ export function ProgressiveProductImage({
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  // Active source depends on hover state
-  const activeSrc = isHovered && secondarySrc ? secondarySrc : src;
+  const normalizedSrc = normalizeImageUrl(src);
+  const normalizedSecondary = normalizeImageUrl(secondarySrc);
+  const activeSrc = isHovered && normalizedSecondary ? normalizedSecondary : normalizedSrc;
 
   // Reset loading & error state whenever target image URL changes
   useEffect(() => {

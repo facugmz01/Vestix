@@ -1,5 +1,6 @@
 import { db, SYNC_META_KEYS, type PosCatalogItem } from '../db/db';
 import { get } from '@/api/client';
+import { normalizeImageUrl } from '@/utils/imageUrl';
 import type { ProductVariant } from '@/types';
 
 interface CatalogSyncItem {
@@ -56,7 +57,7 @@ export class CatalogSyncService {
       brandName: item.brandName,
       size: item.size ?? null,
       color: item.color ?? null,
-      imageUrl: item.imageUrl ?? null,
+      imageUrl: normalizeImageUrl(item.imageUrl),
       stock: item.stock ?? 0,
       updatedAt: item.updatedAt || new Date().toISOString(),
     };
@@ -93,7 +94,7 @@ export class CatalogSyncService {
       categoryId: item.categoryId,
       brand: item.brandName,
       stock: item.stock,
-      imageUrl: item.imageUrl,
+      imageUrl: normalizeImageUrl(item.imageUrl),
       product: item.categoryId ? { categoryId: item.categoryId } : undefined,
     } as ProductVariant & {
       name: string;

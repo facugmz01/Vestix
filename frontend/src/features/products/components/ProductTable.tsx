@@ -1,7 +1,8 @@
-import { Table } from '@/components/ui';
+import { Table, SafeImage } from '@/components/ui';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { ProductActionsMenu } from './ProductActionsMenu';
 import { Image as ImageIcon } from 'lucide-react';
+import { resolveFirstProductImage } from '@/utils/imageUrl';
 import type { Product } from '@/types';
 import styles from './ProductTable.module.css';
 
@@ -22,15 +23,19 @@ export function ProductTable({ products, onView, onEdit, onDelete }: Props) {
         {
           key: 'image',
           header: 'Img',
-          render: (p) => (
-            <div className={styles.thumb}>
-              {p.images && p.images.length > 0 ? (
-                <img src={p.images[0]} alt="preview" className={styles.thumbImg} />
-              ) : (
-                <ImageIcon size={16} color="var(--text-muted)" />
-              )}
-            </div>
-          )
+          render: (p) => {
+            const img = resolveFirstProductImage(p.images);
+            return (
+              <div className={styles.thumb}>
+                <SafeImage
+                  src={img}
+                  alt={p.name}
+                  className={styles.thumbImg}
+                  fallback={<ImageIcon size={16} color="var(--text-muted)" />}
+                />
+              </div>
+            );
+          }
         },
         {
           key: 'name',

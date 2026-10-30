@@ -9,6 +9,7 @@ import { MercadoPagoService } from './mercadopago.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../modules/settings/settings.service';
 import { PosQrStoreService, type PosQrPaymentStatus } from './pos-qr-store.service';
+import { resolveVariantImageUrl, parseProductImages } from '../catalog/utils/product-image.util';
 import * as crypto from 'crypto';
 
 export type { PosQrPaymentStatus };
@@ -165,9 +166,6 @@ export class PosService {
     const warehouseMap = new Map(warehouses.map(w => [w.id, w]));
     const totalStock = stockLevels.reduce((acc, s) => acc + s.availableQuantity, 0);
 
-    const productImages = variant.product?.images;
-    const firstProductImage = Array.isArray(productImages) ? (productImages as string[])[0] : undefined;
-
     return {
       variantId: variant.id,
       id: variant.id,
@@ -185,7 +183,7 @@ export class PosService {
       color: variant.color,
       size: variant.size,
       attributes: variant.attributes || {},
-      imageUrl: variant.imageUrl || firstProductImage || null,
+      imageUrl: resolveVariantImageUrl(variant.imageUrl, variant.product?.images),
       stock: totalStock,
       product: {
         id: variant.product.id,
@@ -193,7 +191,7 @@ export class PosService {
         baseSku: variant.product.baseSku,
         description: variant.product.description,
         type: variant.product.type,
-        images: Array.isArray(variant.product.images) ? variant.product.images : [],
+        images: parseProductImages(variant.product.images),
         category: variant.product.category ? { id: variant.product.category.id, name: variant.product.category.name } : null,
         brand: variant.product.brand ? { id: variant.product.brand.id, name: variant.product.brand.name } : null,
         isActive: variant.product.isActive,
@@ -449,8 +447,6 @@ export class PosService {
         currency: 'ARS',
       };
 
-      const productImages = v.product?.images;
-      const firstProductImage = Array.isArray(productImages) ? (productImages as string[])[0] : undefined;
       const allBarcodes = [v.barcode, ...(v.barcodes?.map(b => b.barcode) || [])].filter(Boolean) as string[];
 
       // Check if this variant was an exact match to the query
@@ -479,7 +475,7 @@ export class PosService {
         basePrice: pricingInfo.resolvedPrice,
         originalBasePrice: v.basePrice || 0,
         overridePrice: pricingInfo.overridePrice,
-        imageUrl: v.imageUrl || firstProductImage || null,
+        imageUrl: resolveVariantImageUrl(v.imageUrl, v.product?.images),
         stock: totalStock,
         isExactMatch,
 
@@ -490,7 +486,7 @@ export class PosService {
           baseSku: v.product?.baseSku,
           description: v.product?.description,
           type: v.product?.type,
-          images: Array.isArray(v.product?.images) ? (v.product.images as string[]) : [],
+          images: parseProductImages(v.product?.images),
           category: v.product?.category ? { id: v.product.category.id, name: v.product.category.name } : null,
           brand: v.product?.brand ? { id: v.product.brand.id, name: v.product.brand.name } : null,
           isActive: v.product?.isActive,
@@ -763,11 +759,6 @@ export class PosService {
       incremental: !!sinceDate,
       removedIds,
       data: catalog.map(v => {
-        const productImages = v.product?.images;
-        const firstProductImage = Array.isArray(productImages)
-          ? (productImages as string[])[0]
-          : undefined;
-
         return {
           id: v.id,
           productId: v.productId,
@@ -781,7 +772,7 @@ export class PosService {
           brandName: v.product.brand?.name,
           size: v.size,
           color: v.color,
-          imageUrl: v.imageUrl || firstProductImage || null,
+          imageUrl: resolveVariantImageUrl(v.imageUrl, v.product?.images),
           stock: stockByVariant.get(v.id) ?? 0,
           updatedAt: v.updatedAt.toISOString(),
         };

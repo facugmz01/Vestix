@@ -1,6 +1,7 @@
-import { Drawer, Badge, Button } from '@/components/ui';
+import { Drawer, Badge, Button, SafeImage } from '@/components/ui';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { Package, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
+import { resolveFirstProductImage } from '@/utils/imageUrl';
 import type { Product } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/api/products.api';
@@ -33,15 +34,18 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
     <Drawer open={open} onClose={onClose} title="Ficha Técnica" width="md">
       <div className={styles.stack}>
         <div className={styles.header}>
-          {displayProduct.images && displayProduct.images.length > 0 ? (
-            <div className={styles.thumb}>
-              <img src={displayProduct.images[0]} alt={displayProduct.name} className={styles.thumbImg} />
-            </div>
-          ) : (
-            <div className={styles.thumbEmpty}>
-              <ImageIcon size={32} />
-            </div>
-          )}
+          <div className={styles.thumb}>
+            <SafeImage
+              src={resolveFirstProductImage(displayProduct.images)}
+              alt={displayProduct.name}
+              className={styles.thumbImg}
+              fallback={
+                <div className={styles.thumbEmpty}>
+                  <ImageIcon size={32} />
+                </div>
+              }
+            />
+          </div>
 
           <div className={styles.headerInfo}>
             <div className={styles.headerTop}>

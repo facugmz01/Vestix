@@ -11,11 +11,12 @@ import toast from 'react-hot-toast';
 
 import {
   PageContainer, Tabs, Pagination, EmptyState, ApiErrorDisplay,
-  TableSkeleton, ConfirmDialog, SearchInput, Button
+  TableSkeleton, ConfirmDialog, SearchInput, Button, SafeImage
 } from '@/components/ui';
 
 import { productsApi } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';
+import { resolveFirstProductImage } from '@/utils/imageUrl';
 import type { Product } from '@/types';
 import { ActionGuard } from '@/rbac/ActionGuard';
 
@@ -59,13 +60,16 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
   return (
     <div className={styles.card} onClick={() => onView(product)}>
       <div className={styles.cardImage}>
-        {product.images && product.images.length > 0 ? (
-          <img src={product.images[0]} alt={product.name} className={styles.cardImg} />
-        ) : (
-          <div className={styles.cardPlaceholder}>
-            <Package size={36} />
-          </div>
-        )}
+        <SafeImage
+          src={resolveFirstProductImage(product.images)}
+          alt={product.name}
+          className={styles.cardImg}
+          fallback={
+            <div className={styles.cardPlaceholder}>
+              <Package size={36} />
+            </div>
+          }
+        />
 
         <div className={styles.cardActions}>
           <ActionGuard action="create" subject="Catalog">

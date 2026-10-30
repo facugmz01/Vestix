@@ -17,6 +17,7 @@ import {
   cartesianCombinations,
   extractColorAndSize,
 } from '../utils/generate-variants.util';
+import { sanitizeImageUrl, resolveVariantImageUrl, parseProductImages } from '../utils/product-image.util';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -212,7 +213,7 @@ export class ProductsService {
               barcode,
               size: v.size,
               color: v.color,
-              imageUrl: v.imageUrl,
+              imageUrl: sanitizeImageUrl(v.imageUrl),
               attributes: v.attributes || attrs,
               costPrice: v.costPrice || createProductDto.costPrice || 0,
               basePrice: v.basePrice ?? createProductDto.basePrice ?? 0,
@@ -234,6 +235,7 @@ export class ProductsService {
             barcode: defaultBarcode,
             basePrice: createProductDto.basePrice || createProductDto.variants?.[0]?.basePrice || 0,
             costPrice: createProductDto.costPrice || 0,
+            imageUrl: sanitizeImageUrl(createProductDto.variants?.[0]?.imageUrl) || (persistedImages && persistedImages[0]) || null,
             isActive: true
           }
         });
@@ -1525,7 +1527,7 @@ export class ProductsService {
         size: v.size || null,
         color: v.color || null,
         attributes: (v.attributes || {}) as Record<string, string>,
-        imageUrl: v.imageUrl || (Array.isArray(primaryProduct.images) ? (primaryProduct.images as string[])[0] : null),
+        imageUrl: resolveVariantImageUrl(v.imageUrl, primaryProduct.images),
         costPrice: v.costPrice || 0,
         basePrice: v.basePrice || 0,
         overridePrice: pricing.overridePrice,
@@ -1570,7 +1572,7 @@ export class ProductsService {
         baseSku: primaryProduct.baseSku || null,
         description: primaryProduct.description || null,
         type: primaryProduct.type,
-        images: Array.isArray(primaryProduct.images) ? (primaryProduct.images as string[]) : [],
+        images: parseProductImages(primaryProduct.images),
         category: primaryProduct.category ? { id: primaryProduct.category.id, name: primaryProduct.category.name } : null,
         brand: primaryProduct.brand ? { id: primaryProduct.brand.id, name: primaryProduct.brand.name } : null,
         costPrice: primaryProduct.costPrice || 0,

@@ -24,13 +24,15 @@ import {
   Badge, 
   EmptyState, 
   TableSkeleton, 
-  Tabs 
+  Tabs,
+  SafeImage
 } from '@/components/ui';
 
 import { posApi } from '@/api/pos.api';
 import { priceListsApi } from '@/api/priceLists.api';
 import { branchesApi } from '@/api/branches.api';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { resolveProductImage } from '@/utils/imageUrl';
 import adminStyles from '@/styles/AdminListShared.module.css';
 import styles from './PriceInquiryPage.module.css';
 
@@ -170,11 +172,7 @@ export default function PriceInquiryPage() {
     : [];
 
   // Images resolution
-  const heroImage =
-    primaryItem?.imageUrl ||
-    (primaryItem?.product?.images && primaryItem.product.images.length > 0
-      ? primaryItem.product.images[0]
-      : null);
+  const heroImage = resolveProductImage(primaryItem);
 
   return (
     <PageContainer
@@ -310,18 +308,17 @@ export default function PriceInquiryPage() {
                     onKeyDown={(e) => heroImage && e.key === 'Enter' && setPreviewImage(heroImage)}
                     title={heroImage ? 'Click para ampliar imagen' : undefined}
                   >
-                    {heroImage ? (
-                      <img
-                        src={heroImage}
-                        alt={primaryItem.product?.name || primaryItem.name}
-                        className={styles.heroImg}
-                      />
-                    ) : (
-                      <div className={styles.heroImagePlaceholder}>
-                        <Package size={36} />
-                        <span style={{ fontSize: 11 }}>Sin Imagen</span>
-                      </div>
-                    )}
+                    <SafeImage
+                      src={heroImage}
+                      alt={primaryItem.product?.name || primaryItem.name}
+                      className={styles.heroImg}
+                      fallback={
+                        <div className={styles.heroImagePlaceholder}>
+                          <Package size={36} />
+                          <span style={{ fontSize: 11 }}>Sin Imagen</span>
+                        </div>
+                      }
+                    />
                   </div>
 
                   {/* Body Info */}
@@ -528,11 +525,7 @@ export default function PriceInquiryPage() {
                         key: 'image',
                         header: '',
                         render: (v: any) => {
-                          const imgUrl =
-                            v.imageUrl ||
-                            (v.product?.images && v.product.images.length > 0
-                              ? v.product.images[0]
-                              : null);
+                          const imgUrl = resolveProductImage(v);
                           return (
                             <div
                               className={styles.thumb}
@@ -543,13 +536,16 @@ export default function PriceInquiryPage() {
                                 imgUrl && e.key === 'Enter' && setPreviewImage(imgUrl)
                               }
                             >
-                              {imgUrl ? (
-                                <img src={imgUrl} alt={v.sku} className={styles.thumbImg} />
-                              ) : (
-                                <div className={styles.thumbPlaceholder}>
-                                  <Package size={20} />
-                                </div>
-                              )}
+                              <SafeImage
+                                src={imgUrl}
+                                alt={v.sku}
+                                className={styles.thumbImg}
+                                fallback={
+                                  <div className={styles.thumbPlaceholder}>
+                                    <Package size={20} />
+                                  </div>
+                                }
+                              />
                             </div>
                           );
                         },

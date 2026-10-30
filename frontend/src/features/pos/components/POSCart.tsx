@@ -12,6 +12,8 @@ import { POS_PAYMENT_METHODS, type PosPaymentMethodId } from '../constants/posPa
 import { PosCustomerSearch } from './PosCustomerSearch';
 import { PosRedemptionPanel } from './PosRedemptionPanel';
 import { DiscountModal, type DiscountApplyData } from './DiscountModal';
+import { resolveProductImage } from '@/utils/imageUrl';
+import { SafeImage } from '@/components/ui';
 import styles from '@/pages/pos/POSPage.module.css';
 import cartStyles from './POSCart.module.css';
 
@@ -125,8 +127,7 @@ export function POSCart({
   const getVariantName = (variant: CartVariant) =>
     variant.name || variant.productName || variant.product?.name || 'Producto';
 
-  const getVariantImage = (variant: CartVariant) =>
-    variant.imageUrl || variant.product?.images?.[0] || null;
+  const getVariantImage = (variant: CartVariant) => resolveProductImage(variant);
 
   const handleClearCart = () => {
     if (cart.length === 0) return;
@@ -219,11 +220,12 @@ export function POSCart({
               return (
                 <div key={`${variant.id}-${index}`} className={styles.cartItem}>
                   <div className={styles.cartItemThumb} aria-hidden={!imageUrl}>
-                    {imageUrl ? (
-                      <img src={imageUrl} alt="" className={styles.cartItemThumbImg} />
-                    ) : (
-                      <Tags size={18} />
-                    )}
+                    <SafeImage
+                      src={imageUrl}
+                      alt=""
+                      className={styles.cartItemThumbImg}
+                      fallback={<Tags size={18} />}
+                    />
                   </div>
 
                   <div className={styles.cartItemDetails}>

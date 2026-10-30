@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import type { StorefrontProduct } from '@/api/storefront.api';
 import type { StorefrontTheme } from '@/utils/storefrontTheme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { normalizeImageUrl } from '@/utils/imageUrl';
 import { ProgressiveProductImage } from './ProgressiveProductImage';
 import styles from './ThemeProductCard.module.css';
 
@@ -31,9 +32,11 @@ export function ThemeProductCard({
   const [isLiked, setIsLiked] = useState(false);
 
   const isAvailable = product.inStock;
-  const hasImages = product.images && product.images.length > 0;
-  const primaryImg = hasImages ? product.images![0] : null;
-  const secondaryImg = hasImages && product.images!.length > 1 ? product.images![1] : primaryImg;
+  const validImages = Array.isArray(product.images)
+    ? product.images.map(normalizeImageUrl).filter((img): img is string => Boolean(img))
+    : [];
+  const primaryImg = validImages[0] || null;
+  const secondaryImg = validImages.length > 1 ? validImages[1] : primaryImg;
 
   const price = product.price || product.basePrice || 0;
   const oldPrice = product.basePrice && product.basePrice > price ? product.basePrice : null;

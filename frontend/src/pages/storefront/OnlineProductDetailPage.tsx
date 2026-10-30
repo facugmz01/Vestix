@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cart.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { normalizeImageUrl } from '@/utils/imageUrl';
 import { WhatsAppInquiryButton } from '@/components/storefront';
 import styles from './OnlineProductDetailPage.module.css';
 
@@ -35,7 +36,9 @@ export default function OnlineProductDetailPage() {
     enabled: !!id,
   });
 
-  const productImages = product?.images || [];
+  const productImages = (product?.images || [])
+    .map(normalizeImageUrl)
+    .filter((img): img is string => Boolean(img));
   const hasImages = productImages.length > 0;
   const totalImages = productImages.length;
 

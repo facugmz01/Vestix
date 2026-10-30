@@ -22,6 +22,8 @@ export { ConfirmDialog }  from './ConfirmDialog';
 export { EmptyState }     from './EmptyState';
 export { ApiErrorDisplay }from './ApiErrorDisplay';
 export { ToggleSwitch }   from './ToggleSwitch';
+export { SafeImage }      from './SafeImage';
+export type { SafeImageProps } from './SafeImage';
 
 export {
   Skeleton, TableSkeleton, CardGridSkeleton, StatsSkeleton, FormSkeleton, DetailDrawerSkeleton,
