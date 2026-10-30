@@ -221,4 +221,58 @@ describe('ProductsService - isPublished default behavior', () => {
       );
     });
   });
+
+  describe('Cost Price Immutability', () => {
+    it('bulkUpdatePrices updates basePrice but NEVER modifies costPrice', async () => {
+      prismaMock.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-100',
+          costPrice: 13000,
+          variants: [
+            { id: 'var-101', costPrice: 13000, basePrice: 20000 },
+            { id: 'var-102', costPrice: 13000, basePrice: 22000 },
+          ],
+        },
+      ]);
+      prismaMock.productVariant.update = jest.fn().mockResolvedValue({});
+      prismaMock.product.update = jest.fn().mockResolvedValue({});
+
+      await service.bulkUpdatePrices({ percentage: 15 });
+
+      // Must NOT update product costPrice
+      expect(prismaMock.product.update).not.toHaveBeenCalled();
+
+      // Must update variant basePrice only, leaving costPrice untouched
+      expect(prismaMock.productVariant.update).toHaveBeenCalledWith({
+        where: { id: 'var-101' },
+        data: { basePrice: 23000 },
+      });
+      expect(prismaMock.productVariant.update).toHaveBeenCalledWith({
+        where: { id: 'var-102' },
+        data: { basePrice: 25300 },
+      });
+    });
+
+    it('updateVariant NEVER modifies costPrice when already set (>0)', async () => {
+      prismaMock.productVariant.findUnique.mockResolvedValue({
+        id: 'var-200',
+        costPrice: 8500,
+        basePrice: 15000,
+        sku: 'KIMCHI-01',
+      });
+      prismaMock.productVariant.update = jest.fn().mockResolvedValue({});
+
+      await service.updateVariant('var-200', {
+        costPrice: 9999, // Attempted manual overwrite
+        basePrice: 17000,
+      });
+
+      expect(prismaMock.productVariant.update).toHaveBeenCalledWith({
+        where: { id: 'var-200' },
+        data: {
+          basePrice: 17000,
+        },
+      });
+    });
+  });
 });

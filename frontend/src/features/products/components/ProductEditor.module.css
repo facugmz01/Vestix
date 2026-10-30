@@ -135,6 +135,34 @@
   position: relative;
 }
 
+.costLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.costLockedBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-2, #2a2a2a);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inputLocked {
+  background: var(--surface-2, #1f1f1f) !important;
+  color: var(--text-secondary) !important;
+  cursor: not-allowed !important;
+  border-color: var(--border) !important;
+  opacity: 0.85;
+}
+
 .pricePrefix {
   position: absolute;
   left: 12px;

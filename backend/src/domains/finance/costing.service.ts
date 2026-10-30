@@ -19,7 +19,7 @@ export class CostingService {
     if (!variant) return incomingUnitCost;
 
     const stockLevels = await db.stockLevel.findMany({ where: { variantId } });
-    const onHandQty = stockLevels.reduce((sum: number, sl: any) => sum + (sl.quantity ?? 0), 0);
+    const onHandQty = stockLevels.reduce((sum: number, sl: any) => sum + (sl.physicalQuantity ?? sl.quantity ?? 0), 0);
     const currentCost = variant.costPrice ?? 0;
 
     if (onHandQty <= 0 || incomingQty <= 0) {

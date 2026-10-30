@@ -56,14 +56,20 @@ export function BulkPriceUpdaterModal({ open, onClose }: Props) {
       toast.error('Debes ingresar un porcentaje');
       return;
     }
+    if (!categoryId && !brandId) {
+      const confirmed = window.confirm(
+        '⚠️ ATENCIÓN: No seleccionaste ninguna categoría ni marca.\n\nEsto modificará los precios de venta de TODOS los productos de la tienda.\n\n¿Deseas continuar?'
+      );
+      if (!confirmed) return;
+    }
     mutation.mutate();
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Actualización Masiva de Precios">
+    <Modal open={open} onClose={onClose} title="Actualización Masiva de Precios de Venta">
       <div className={styles.modalBody}>
         <p className={styles.modalIntro}>
-          Esta herramienta modificará el <strong>Precio de Costo</strong> de los productos filtrados, lo cual impactará automáticamente en todas las listas de precios en cascada.
+          Esta herramienta modificará el <strong>Precio Base de Venta</strong> de los productos filtrados. El <strong>Precio de Costo</strong> permanece inalterado ya que proviene exclusivamente de las Órdenes de Compra.
         </p>
 
         <div>

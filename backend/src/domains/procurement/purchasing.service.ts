@@ -328,6 +328,16 @@ export class PurchasingService {
             });
 
             if (dto.updateStock) {
+              // Enforce rule: Purchase Order establishes the variant and product costPrice
+              await tx.productVariant.update({
+                where: { id: variant.id },
+                data: { costPrice: line.unitCost }
+              });
+              await tx.product.update({
+                where: { id: variant.productId },
+                data: { costPrice: line.unitCost }
+              });
+
               await tx.inventoryMovement.create({
                 data: {
                   variantId: variant.id,

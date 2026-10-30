@@ -452,7 +452,7 @@ export class ProductsService {
       if (exists) throw new ConflictException('El SKU Base ya está en uso por otro producto');
     }
 
-    const { variants, images, basePrice, comboLines, type, isVariable, ...data } = updateProductDto;
+    const { variants, images, basePrice, costPrice, comboLines, type, isVariable, ...data } = updateProductDto;
     const nextType = type !== undefined ? normalizeProductType({ type, isVariable }) : undefined;
     const effectiveType = nextType ?? product.type;
     const normalizedMetadata = updateProductDto.metadata
@@ -492,6 +492,9 @@ export class ProductsService {
         where: { id },
         data: {
           ...data,
+          // Cost is immutable and only originates from Purchase Orders.
+          // Only permit initial cost setting if current cost is 0 and no PO has set it yet.
+          ...(product.costPrice === 0 && costPrice !== undefined ? { costPrice: Number(costPrice) || 0 } : {}),
           ...(nextType !== undefined ? { type: nextType, isVariable: syncIsVariableFlag(nextType) } : {}),
           ...(normalizedMetadata !== undefined ? { metadata: normalizedMetadata } : {}),
           ...(persistedImages !== undefined ? { images: persistedImages as any } : {}),
@@ -541,8 +544,8 @@ export class ProductsService {
 
         for (const variant of variants) {
           if (variant.id) {
-            // Update
-            const { id: varId, productId, createdAt, updatedAt, ...varData } = variant as any;
+            // Update: Strip costPrice so manual edits NEVER overwrite purchase order cost
+            const { id: varId, productId, createdAt, updatedAt, costPrice: _ignoredCost, ...varData } = variant as any;
             if (varData.sku) {
               const cleanSku = String(varData.sku).trim().toUpperCase();
               varData.sku = cleanSku;
@@ -555,6 +558,7 @@ export class ProductsService {
             }
             if (varData.barcode) {
               const cleanBarcode = String(varData.barcode).trim();
+              varData.barcode = cleanBarcode;
               const conflictBc = await tx.productVariant.findFirst({
                 where: { barcode: { equals: cleanBarcode, mode: 'insensitive' }, id: { not: varId } },
               });
@@ -750,7 +754,16 @@ export class ProductsService {
       }
     }
 
-    const updated = await this.prisma.productVariant.update({ where: { id }, data });
+    const { costPrice: _ignoredCost, ...updateData } = data;
+    const updated = await this.prisma.productVariant.update({
+      where: { id },
+      data: {
+        ...updateData,
+        // Cost is immutable and only originates from Purchase Orders.
+        // Only permit setting initial cost if current cost is 0.
+        ...(existing.costPrice === 0 && data.costPrice !== undefined ? { costPrice: Number(data.costPrice) || 0 } : {}),
+      },
+    });
 
     if (data.basePrice !== undefined && data.basePrice !== existing.basePrice) {
       await this.priceHistoryService.recordChange({
@@ -1078,7 +1091,9 @@ export class ProductsService {
               where: { id: existingVariant.id },
               data: {
                 barcode: row.barcode || null,
-                costPrice,
+                // Cost price is immutable and originates only from Purchase Orders.
+                // Do not overwrite existing cost price if already set (>0).
+                costPrice: existingVariant.costPrice > 0 ? existingVariant.costPrice : costPrice,
                 basePrice,
                 size: variantName,
                 isActive: true
@@ -1239,19 +1254,13 @@ export class ProductsService {
       let updatedCount = 0;
 
       for (const product of products) {
-        const newCost = Math.round((product.costPrice || 0) * multiplier);
-        
-        await tx.product.update({
-          where: { id: product.id },
-          data: { costPrice: newCost }
-        });
-
+        // Business Rule: costPrice is immutable and comes strictly from Purchase Orders.
+        // Bulk price updater modifies only basePrice (Selling Price).
         for (const variant of product.variants) {
-          const vCost = Math.round((variant.costPrice || 0) * multiplier);
           const vBase = Math.round((variant.basePrice || 0) * multiplier);
           await tx.productVariant.update({
             where: { id: variant.id },
-            data: { costPrice: vCost, basePrice: vBase }
+            data: { basePrice: vBase }
           });
           if (vBase !== variant.basePrice) {
             await this.priceHistoryService.recordChange({

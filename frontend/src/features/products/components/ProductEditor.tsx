@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   ArrowLeft, Wand2, Image as ImageIcon,
-  Archive, Package, Truck
+  Archive, Package, Truck, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { upload } from '@/api/client';
@@ -441,21 +441,30 @@ export function ProductEditor({ initialData }: Props) {
 
             <div className={styles.priceGrid}>
               <div>
-                <label className={styles.label}>Precio de costo</label>
+                <div className={styles.costLabelRow}>
+                  <label className={styles.label}>Precio de costo</label>
+                  {isEditing ? (
+                    <span className={styles.costLockedBadge} title="El costo proviene de las Órdenes de Compra y es inmutable">
+                      <Lock size={10} /> Fijado por Compras
+                    </span>
+                  ) : null}
+                </div>
                 <div className={styles.priceInputWrap}>
                   <span className={styles.pricePrefix}>$</span>
                   <input
                     type="number"
                     value={formData.costPrice || ''}
+                    disabled={isEditing}
+                    readOnly={isEditing}
+                    title={isEditing ? 'El costo no puede modificarse manualmente; proviene de las Órdenes de Compra.' : 'Costo inicial de referencia'}
                     onChange={(e) => {
                       const val = parseFloat(e.target.value) || 0;
                       setFormData(prev => ({ 
                         ...prev, 
-                        costPrice: val, 
-                        basePrice: prev.basePrice && prev.basePrice !== prev.costPrice ? prev.basePrice : val 
+                        costPrice: val
                       }));
                     }}
-                    className={clsx(styles.input, styles.inputWithPrefix)}
+                    className={clsx(styles.input, styles.inputWithPrefix, isEditing && styles.inputLocked)}
                   />
                 </div>
               </div>
@@ -467,7 +476,7 @@ export function ProductEditor({ initialData }: Props) {
                   <input
                     type="number"
                     value={formData.basePrice || ''}
-                    placeholder={formData.costPrice ? String(formData.costPrice) : '0'}
+                    placeholder="0"
                     onChange={(e) => {
                       const val = parseFloat(e.target.value) || 0;
                       setFormData(prev => ({ ...prev, basePrice: val }));

@@ -9,6 +9,7 @@ tsconfig.tsbuildinfo
 backend/uploads/backups/
 docker-data/
 *.sql
+!scripts/*.sql
 *.dump
 *.tar.gz
 *.xlsx

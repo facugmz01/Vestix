@@ -32,14 +32,18 @@ export class StockMovementService {
       tx,
     );
 
-    if (tx) {
-      await tx.productVariant.update({
-        where: { id: payload.variantId },
-        data: { costPrice: unitCost },
-      });
-    } else {
-      await this.prisma.productVariant.update({
-        where: { id: payload.variantId },
+    const db = tx ?? this.prisma;
+    await db.productVariant.update({
+      where: { id: payload.variantId },
+      data: { costPrice: unitCost },
+    });
+    const parentVar = await db.productVariant.findUnique({
+      where: { id: payload.variantId },
+      select: { productId: true },
+    });
+    if (parentVar?.productId) {
+      await db.product.update({
+        where: { id: parentVar.productId },
         data: { costPrice: unitCost },
       });
     }

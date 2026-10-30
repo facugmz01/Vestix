@@ -59,7 +59,10 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
 
   const mutation = useMutation({
     mutationFn: (data: CreateVariantDto) => {
-      if (isEditing && variantToEdit) return variantsApi.updateVariant(variantToEdit.id, data);
+      if (isEditing && variantToEdit) {
+        const { costPrice: _cost, ...updatePayload } = data;
+        return variantsApi.updateVariant(variantToEdit.id, updatePayload as any);
+      }
       return variantsApi.createVariant(data);
     },
     onSuccess: () => {
@@ -147,15 +150,26 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
           <Input label="Talle / Tamaño" value={formData.size || ''} onChange={(e) => setFormData({ ...formData, size: e.target.value })} />
         </div>
 
-        <Input 
-          label="Precio Base ($) *" 
-          type="number" 
-          step="0.01" 
-          min="0" 
-          value={formData.basePrice} 
-          onChange={(e) => setFormData({ ...formData, basePrice: Number(e.target.value) })} 
-          required 
-        />
+        <div className="grid-responsive grid-cols-2">
+          <Input 
+            label="Precio de Venta ($) *" 
+            type="number" 
+            step="0.01" 
+            min="0" 
+            value={formData.basePrice} 
+            onChange={(e) => setFormData({ ...formData, basePrice: Number(e.target.value) })} 
+            required 
+          />
+          {isEditing && (
+            <Input 
+              label="Precio de Costo ($) [Bloqueado]" 
+              type="number"
+              value={formData.costPrice || 0}
+              disabled
+              title="El precio de costo está fijado por las órdenes de compra y no puede modificarse manualmente."
+            />
+          )}
+        </div>
 
         <div className={styles.checkboxRow}>
           <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />
