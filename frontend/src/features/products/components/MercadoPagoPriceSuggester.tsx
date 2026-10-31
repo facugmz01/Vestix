@@ -339,16 +339,6 @@ export function MercadoPagoPriceSuggester({
                 type="button"
                 variant="primary"
                 size="sm"
-                icon={<Check size={16} />}
-                onClick={() => onApplyPrice(suggestion.suggestedPrice)}
-              >
-                Aplicar Precio Base
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
                 icon={<PlusCircle size={16} />}
                 loading={creatingList || createPriceListMutation.isPending}
                 onClick={handleCreatePriceList}

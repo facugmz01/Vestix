@@ -122,13 +122,6 @@ export function VariantGeneratorModal({ open, onClose, productId }: Props) {
           </div>
         </div>
 
-        <Input 
-          label="Precio Base para todas las generadas ($)" 
-          type="number" 
-          value={basePrice} 
-          onChange={e => setBasePrice(Number(e.target.value))} 
-        />
-
       </div>
     </Drawer>
   );

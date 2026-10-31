@@ -150,23 +150,23 @@ export function VariantFormDrawer({ open, onClose, productId, variantToEdit }: P
           <Input label="Talle / Tamaño" value={formData.size || ''} onChange={(e) => setFormData({ ...formData, size: e.target.value })} />
         </div>
 
-        <div className="grid-responsive grid-cols-2">
-          <Input 
-            label="Precio de Venta ($) *" 
-            type="number" 
-            step="0.01" 
-            min="0" 
-            value={formData.basePrice} 
-            onChange={(e) => setFormData({ ...formData, basePrice: Number(e.target.value) })} 
-            required 
-          />
-          {isEditing && (
+        <div>
+          {isEditing ? (
             <Input 
               label="Precio de Costo ($) [Bloqueado]" 
               type="number"
               value={formData.costPrice || 0}
               disabled
               title="El precio de costo está fijado por las órdenes de compra y no puede modificarse manualmente."
+            />
+          ) : (
+            <Input 
+              label="Precio de Costo ($)" 
+              type="number" 
+              step="0.01" 
+              min="0" 
+              value={formData.costPrice || ''} 
+              onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })} 
             />
           )}
         </div>

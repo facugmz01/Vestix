@@ -469,27 +469,8 @@ export function ProductEditor({ initialData }: Props) {
                 </div>
               </div>
 
-              <div>
-                <label className={styles.label}>Precio base de venta</label>
-                <div className={styles.priceInputWrap}>
-                  <span className={styles.pricePrefix}>$</span>
-                  <input
-                    type="number"
-                    value={formData.basePrice || ''}
-                    placeholder="0"
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value) || 0;
-                      setFormData(prev => ({ ...prev, basePrice: val }));
-                    }}
-                    className={clsx(styles.input, styles.inputWithPrefix)}
-                  />
-                </div>
-              </div>
-
-              {priceLists?.map((pl: any, idx: number) => {
-                const referencePrice = (formData.basePrice && formData.basePrice > 0)
-                  ? formData.basePrice
-                  : (formData.costPrice || 0);
+              {priceLists?.filter((pl: any) => pl.isActive !== false).map((pl: any, idx: number) => {
+                const referencePrice = formData.costPrice || 0;
                 let percentage = 0;
                 let calculatedPrice = 0;
                 const isModifier = pl.type === 'MODIFIER' || pl.isPercentageBased;
@@ -612,7 +593,6 @@ export function ProductEditor({ initialData }: Props) {
                         <th>SKU</th>
                         <th>Barras</th>
                         <th>Costo</th>
-                        <th>Precio Base</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -648,7 +628,6 @@ export function ProductEditor({ initialData }: Props) {
                             />
                           </td>
                           <td>${v.costPrice}</td>
-                          <td>${v.basePrice}</td>
                         </tr>
                       ))}
                     </tbody>

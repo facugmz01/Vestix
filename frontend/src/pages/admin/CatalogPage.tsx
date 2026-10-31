@@ -115,11 +115,15 @@ function ProductCard({ product, onView, onEdit, onDelete, onDuplicate }: {
         </p>
         <div className={styles.cardFooter}>
           <StatusPill isActive={product.isActive} isPublished={product.isPublished} />
-          {product.basePrice != null && (
+          {product.costPrice != null && product.costPrice > 0 ? (
+            <span className={styles.cardPrice}>
+              Costo: ${product.costPrice.toLocaleString('es-AR')}
+            </span>
+          ) : product.basePrice != null && product.basePrice > 0 ? (
             <span className={styles.cardPrice}>
               ${product.basePrice.toLocaleString('es-AR')}
             </span>
-          )}
+          ) : null}
         </div>
       </div>
 

@@ -54,9 +54,9 @@ export default function PricingCalculatorPage() {
   // Query price lists to know existing ones
   const { data: priceListsData } = useQuery({
     queryKey: queryKeys.priceLists.all(),
-    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100 }),
+    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100, isActive: true }),
   });
-  const existingPriceLists = priceListsData?.data || [];
+  const existingPriceLists = (priceListsData?.data || []).filter(pl => pl.isActive !== false);
 
   // ─── Single Mode States ──────────────────────────────────────────────────
   const [costPrice, setCostPrice] = useState<number>(10000);

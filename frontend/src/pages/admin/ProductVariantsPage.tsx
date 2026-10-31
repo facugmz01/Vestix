@@ -195,9 +195,9 @@ export default function ProductVariantsPage() {
                 render: (v) => <span className={adminStyles.cellSecondaryMuted}>{v.barcode || '-'}</span>
               },
               { 
-                key: 'price', 
-                header: 'Precio Base',
-                render: (v) => <span className={adminStyles.pricePrimary}>{formatCurrency(v.basePrice)}</span>
+                key: 'costPrice', 
+                header: 'Costo',
+                render: (v) => <span className={adminStyles.pricePrimary}>{formatCurrency(v.costPrice || 0)}</span>
               },
               { 
                 key: 'isActive', 

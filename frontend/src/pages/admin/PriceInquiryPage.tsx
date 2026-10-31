@@ -92,11 +92,11 @@ export default function PriceInquiryPage() {
 
   const { data: priceListsData } = useQuery({
     queryKey: ['price-lists', 'list'],
-    queryFn: () => priceListsApi.getPriceLists({ pageSize: 50 }),
+    queryFn: () => priceListsApi.getPriceLists({ pageSize: 50, isActive: true }),
   });
 
   const branches = branchesData?.data || [];
-  const priceLists = priceListsData?.data || [];
+  const priceLists = (priceListsData?.data || []).filter(pl => pl.isActive !== false);
 
   // Debounce for manual typing (300ms)
   useEffect(() => {

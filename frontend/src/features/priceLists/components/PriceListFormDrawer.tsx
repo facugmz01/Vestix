@@ -59,7 +59,8 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Lista actualizada' : 'Lista creada');
-      queryClient.invalidateQueries({ queryKey: queryKeys.priceLists.all() });
+      queryClient.invalidateQueries({ queryKey: ['priceLists'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       onClose();
     },
     onError: (error: any) => {

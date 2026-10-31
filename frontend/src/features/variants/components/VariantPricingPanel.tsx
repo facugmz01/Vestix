@@ -12,11 +12,11 @@ export function VariantPricingPanel({ variantId, basePrice }: { variantId: strin
 
   const { data: priceListsData, isLoading } = useQuery({
     queryKey: queryKeys.priceLists.all(),
-    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100 }),
+    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100, isActive: true }),
   });
 
   // Only BASE lists support explicit overrides
-  const baseLists = priceListsData?.data.filter(l => l.type === 'BASE') || [];
+  const baseLists = priceListsData?.data.filter(l => l.type === 'BASE' && l.isActive !== false) || [];
 
   const [overrides, setOverrides] = useState<Record<string, number>>({});
   const [editingList, setEditingList] = useState<string | null>(null);

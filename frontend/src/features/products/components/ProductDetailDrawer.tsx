@@ -86,7 +86,7 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
                     <th>SKU</th>
                     <th>Color</th>
                     <th>Talle</th>
-                    <th className={styles.thRight}>Precio</th>
+                    <th className={styles.thRight}>Costo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -95,7 +95,7 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
                       <td>{v.sku}</td>
                       <td>{v.color || '-'}</td>
                       <td>{v.size || '-'}</td>
-                      <td className={styles.tdRight}>${v.basePrice}</td>
+                      <td className={styles.tdRight}>${v.costPrice}</td>
                     </tr>
                   ))}
                 </tbody>

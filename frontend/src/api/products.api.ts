@@ -79,9 +79,10 @@ export const productsApi = {
   updateAttribute: (id: string, dto: { name?: string; values?: string[] }) => patch<Attribute>(`/attributes/${id}`, dto),
   deleteAttribute: (id: string) => del(`/attributes/${id}`),
 
-  getPriceLists: () => get<{ data: any[] } | any[]>(`/price-lists?pageSize=100`).then(res =>
-    Array.isArray(res) ? res : (res as { data: any[] }).data ?? [],
-  ),
+  getPriceLists: () => get<{ data: any[] } | any[]>(`/price-lists?pageSize=100&isActive=true`).then(res => {
+    const list = Array.isArray(res) ? res : (res as { data: any[] }).data ?? [];
+    return list.filter((pl: any) => pl.isActive !== false);
+  }),
 
   getPriceHistory: (id: string) =>
     get<Array<{ id: string; variantId: string; sku?: string; oldPrice: number; newPrice: number; source: string; createdAt: string }>>(

@@ -283,7 +283,27 @@ export class PriceListService {
       );
     }
 
-    return this.prisma.priceList.delete({ where: { id } });
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Eliminar entradas asociadas a la lista para evitar errores de clave foránea
+      await tx.priceListEntry.deleteMany({
+        where: { priceListId: id },
+      });
+
+      // 2. Si estaba configurada como lista por defecto, limpiar la configuración
+      const currentSettings = await tx.systemSettings.findUnique({ where: { id: 'default' } });
+      const pricing = ((currentSettings?.pricing as Record<string, unknown>) ?? {});
+      if (pricing.defaultPriceListId === id) {
+        await tx.systemSettings.update({
+          where: { id: 'default' },
+          data: {
+            pricing: { ...pricing, defaultPriceListId: '' },
+          },
+        });
+      }
+
+      // 3. Eliminar la lista de precios
+      return tx.priceList.delete({ where: { id } });
+    });
   }
 
   async findItems(priceListId: string, page: number, pageSize: number) {

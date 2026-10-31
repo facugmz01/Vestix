@@ -31,7 +31,7 @@ export function VariantDetailDrawer({ open, onClose, variant }: Props) {
         <div className={`grid-responsive grid-cols-2 ${styles.infoGrid}`}>
           <InfoBox label="Talle / Tamaño" value={variant.size || '-'} />
           <InfoBox label="Color" value={variant.color || '-'} />
-          <InfoBox label="Precio Base" value={formatCurrency(variant.basePrice)} />
+          <InfoBox label="Costo" value={formatCurrency(variant.costPrice || 0)} />
         </div>
 
         {variant.barcode && (

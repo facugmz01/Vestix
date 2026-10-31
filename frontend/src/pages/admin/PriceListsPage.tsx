@@ -64,7 +64,8 @@ export default function PriceListsPage() {
     mutationFn: (id: string) => priceListsApi.deletePriceList(id),
     onSuccess: () => {
       toast.success('Lista eliminada');
-      queryClient.invalidateQueries({ queryKey: queryKeys.priceLists.all() });
+      queryClient.invalidateQueries({ queryKey: ['priceLists'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       setDeleteOpen(false);
     },
     onError: (err: any) => {
