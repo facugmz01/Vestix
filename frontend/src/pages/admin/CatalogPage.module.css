@@ -172,10 +172,76 @@
   justify-content: space-between;
 }
 
-.cardPrice {
-  font-size: 14px;
+.cardPricesRow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.cardPriceListItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.cardPriceListLabel {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.cardPriceListValue {
   font-weight: 700;
-  color: var(--green);
+  color: var(--accent);
+}
+
+.cardPrice {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.cardCost {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cardActionBtnZoom {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.cardActionBtnZoom:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+}
+
+.cardStock {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cardStockOk {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+}
+
+.cardStockLow {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+.cardStockZero {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
 }
 
 .variantChip {
@@ -228,6 +294,11 @@
   background: var(--surface-1);
 }
 
+.statRed {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
 .statValue {
   font-size: 22px;
   font-weight: 800;
@@ -237,6 +308,7 @@
 .statValueAccent { color: var(--accent); }
 .statValueGreen { color: var(--green); }
 .statValueBlue { color: var(--blue); }
+.statValueRed { color: #dc2626; }
 .statValueMuted { color: var(--text-muted); }
 
 .statLabel {
@@ -424,4 +496,96 @@
   background: var(--surface-0);
   color: var(--text-primary);
   font-family: inherit;
+}
+
+/* Lightbox Modal */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(8px);
+  padding: 24px;
+  cursor: zoom-out;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.lightboxContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 90vw;
+  max-height: 90vh;
+  cursor: default;
+}
+
+.lightboxImg {
+  max-width: 85vw;
+  max-height: 78vh;
+  border-radius: 12px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+  object-fit: contain;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  animation: scaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #000;
+}
+
+.lightboxFooter {
+  margin-top: 14px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.lightboxTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.lightboxSubtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+}
+
+.lightboxClose {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(20, 20, 25, 0.85);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.lightboxClose:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  transform: scale(1.08);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
 }

@@ -38,6 +38,7 @@ describe('ProductsService - isPublished default behavior', () => {
     },
     stockLevel: {
       findFirst: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn(),
       update: jest.fn(),
     },

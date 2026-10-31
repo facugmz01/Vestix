@@ -77,7 +77,7 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
           </div>
 
           {isLoading ? (
-            <p className={styles.emptyText}>Cargando variantes...</p>
+            <p className={styles.emptyText}>Cargando variantes y stock...</p>
           ) : displayProduct.variants && displayProduct.variants.length > 0 ? (
             <div className={styles.tableWrap}>
               <table className={styles.table}>
@@ -87,17 +87,28 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
                     <th>Color</th>
                     <th>Talle</th>
                     <th className={styles.thRight}>Costo</th>
+                    <th className={styles.thRight}>Venta</th>
+                    <th className={styles.thRight}>Stock</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {displayProduct.variants.map((v) => (
-                    <tr key={v.id}>
-                      <td>{v.sku}</td>
-                      <td>{v.color || '-'}</td>
-                      <td>{v.size || '-'}</td>
-                      <td className={styles.tdRight}>${v.costPrice}</td>
-                    </tr>
-                  ))}
+                  {displayProduct.variants.map((v) => {
+                    const avail = v.stock?.available ?? 0;
+                    return (
+                      <tr key={v.id}>
+                        <td><code>{v.sku}</code></td>
+                        <td>{v.color || '-'}</td>
+                        <td>{v.size || '-'}</td>
+                        <td className={styles.tdRight}>${v.costPrice?.toLocaleString('es-AR') || '0'}</td>
+                        <td className={styles.tdRight}>${(v.basePrice || displayProduct.basePrice || 0).toLocaleString('es-AR')}</td>
+                        <td className={styles.tdRight}>
+                          <Badge color={avail > 5 ? 'green' : avail > 0 ? 'yellow' : 'red'}>
+                            {avail} un.
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -6,6 +6,7 @@ export interface ProductFilters {
   search?: string;
   categoryId?: string;
   brandId?: string;
+  branchId?: string;
   isActive?: boolean;
   isPublished?: boolean;
   page?: number;

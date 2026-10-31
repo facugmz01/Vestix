@@ -274,13 +274,30 @@ export class ProductsService {
       where.OR = [
         { name: { contains: query.search, mode: 'insensitive' } },
         { baseSku: { contains: query.search, mode: 'insensitive' } },
+        { variants: { some: { sku: { contains: query.search, mode: 'insensitive' } } } },
+        { variants: { some: { barcode: { contains: query.search, mode: 'insensitive' } } } },
       ];
     }
 
     const [data, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
-        include: { category: true, brand: true },
+        include: {
+          category: true,
+          brand: true,
+          variants: {
+            where: { isActive: true },
+            include: {
+              priceListEntries: {
+                select: {
+                  priceListId: true,
+                  overridePrice: true,
+                },
+              },
+            },
+            orderBy: { sku: 'asc' },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         skip,
         take: pageSize,
@@ -288,7 +305,85 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
-    return { data, total, page, pageSize };
+    const allVariantIds = (data || []).flatMap((p: any) => p.variants?.map((v: any) => v.id) || []);
+    let stockLevels: any[] = [];
+    if (allVariantIds.length > 0 && (this.prisma as any).stockLevel?.findMany) {
+      const stockWhere: any = { variantId: { in: allVariantIds } };
+      if (query.branchId) {
+        stockWhere.branchId = query.branchId;
+      }
+      stockLevels = await this.prisma.stockLevel.findMany({
+        where: stockWhere,
+        select: {
+          id: true,
+          variantId: true,
+          warehouseId: true,
+          branchId: true,
+          physicalQuantity: true,
+          reservedQuantity: true,
+          availableQuantity: true,
+        },
+      });
+    }
+
+    const stockMap = new Map<string, { physical: number; reserved: number; available: number }>();
+    for (const s of stockLevels) {
+      const cur = stockMap.get(s.variantId) || { physical: 0, reserved: 0, available: 0 };
+      cur.physical += s.physicalQuantity || 0;
+      cur.reserved += s.reservedQuantity || 0;
+      cur.available += s.availableQuantity || 0;
+      stockMap.set(s.variantId, cur);
+    }
+
+    const enrichedData = (data || []).map((product: any) => {
+      let productAvailable = 0;
+      let productPhysical = 0;
+      let productReserved = 0;
+      let minPrice = Infinity;
+      let maxPrice = -Infinity;
+      let minCost = Infinity;
+      let maxCost = -Infinity;
+
+      const variantsWithStock = (product.variants || []).map((v: any) => {
+        const stock = stockMap.get(v.id) || { physical: 0, reserved: 0, available: 0 };
+        productAvailable += stock.available;
+        productPhysical += stock.physical;
+        productReserved += stock.reserved;
+
+        const effectiveBasePrice = v.basePrice ?? product.basePrice ?? 0;
+        const effectiveCost = v.costPrice ?? product.costPrice ?? 0;
+
+        if (effectiveBasePrice > 0) {
+          if (effectiveBasePrice < minPrice) minPrice = effectiveBasePrice;
+          if (effectiveBasePrice > maxPrice) maxPrice = effectiveBasePrice;
+        }
+        if (effectiveCost > 0) {
+          if (effectiveCost < minCost) minCost = effectiveCost;
+          if (effectiveCost > maxCost) maxCost = effectiveCost;
+        }
+
+        return {
+          ...v,
+          stock,
+        };
+      });
+
+      return {
+        ...product,
+        variants: variantsWithStock,
+        totalStock: productAvailable,
+        totalPhysical: productPhysical,
+        totalReserved: productReserved,
+        priceRange: {
+          minPrice: Number.isFinite(minPrice) ? minPrice : (product.basePrice || 0),
+          maxPrice: Number.isFinite(maxPrice) ? maxPrice : (product.basePrice || 0),
+          minCost: Number.isFinite(minCost) ? minCost : (product.costPrice || 0),
+          maxCost: Number.isFinite(maxCost) ? maxCost : (product.costPrice || 0),
+        },
+      };
+    });
+
+    return { data: enrichedData, total, page, pageSize };
   }
 
   async publishAll() {
@@ -379,7 +474,17 @@ export class ProductsService {
       include: {
         category: true,
         brand: true,
-        variants: true,
+        variants: {
+          include: {
+            priceListEntries: {
+              select: {
+                priceListId: true,
+                overridePrice: true,
+              },
+            },
+          },
+          orderBy: { sku: 'asc' },
+        },
         comboLines: {
           include: {
             childVariant: {
@@ -390,7 +495,48 @@ export class ProductsService {
       }
     });
     if (!product) throw new NotFoundException(`Producto ${id} no encontrado`);
-    return product;
+
+    const variantIds = (product.variants || []).map((v: any) => v.id);
+    let stockLevels: any[] = [];
+    if (variantIds.length > 0 && (this.prisma as any).stockLevel?.findMany) {
+      stockLevels = await this.prisma.stockLevel.findMany({
+        where: { variantId: { in: variantIds } },
+        select: {
+          id: true,
+          variantId: true,
+          warehouseId: true,
+          branchId: true,
+          physicalQuantity: true,
+          reservedQuantity: true,
+          availableQuantity: true,
+        },
+      });
+    }
+
+    const stockMap = new Map<string, { physical: number; reserved: number; available: number }>();
+    for (const s of stockLevels) {
+      const cur = stockMap.get(s.variantId) || { physical: 0, reserved: 0, available: 0 };
+      cur.physical += s.physicalQuantity || 0;
+      cur.reserved += s.reservedQuantity || 0;
+      cur.available += s.availableQuantity || 0;
+      stockMap.set(s.variantId, cur);
+    }
+
+    let totalStock = 0;
+    const variantsWithStock = (product.variants || []).map((v: any) => {
+      const stock = stockMap.get(v.id) || { physical: 0, reserved: 0, available: 0 };
+      totalStock += stock.available;
+      return {
+        ...v,
+        stock,
+      };
+    });
+
+    return {
+      ...product,
+      variants: variantsWithStock,
+      totalStock,
+    };
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {

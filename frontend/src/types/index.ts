@@ -177,6 +177,15 @@ export interface Product {
   images: string[]; 
   metadata?: Record<string, any>;
   createdAt: string;
+  totalStock?: number;
+  totalPhysical?: number;
+  totalReserved?: number;
+  priceRange?: {
+    minPrice: number;
+    maxPrice: number;
+    minCost: number;
+    maxCost: number;
+  };
 }
 
 export interface ProductVariant {
@@ -192,6 +201,12 @@ export interface ProductVariant {
   attributes?: Record<string, string>;
   imageUrl?: string;
   product?: Product;
+  stock?: {
+    physical: number;
+    reserved: number;
+    available: number;
+  };
+  priceListEntries?: Array<{ priceListId: string; overridePrice: number }>;
 }
 
 // ─── INVENTORY ───────────────────────────────────────────────────────────
