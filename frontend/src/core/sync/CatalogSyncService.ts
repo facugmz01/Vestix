@@ -163,22 +163,22 @@ export class CatalogSyncService {
     return all.find(item => item.allBarcodes.includes(normalized));
   }
 
-  static async searchOffline(query: string, limit = 20): Promise<PosCatalogItem[]> {
+  static async searchOffline(query: string, limit = 100): Promise<PosCatalogItem[]> {
     const q = query.trim().toLowerCase();
     if (q.length < 1) {
-      return db.catalog.orderBy('name').limit(200).toArray();
+      return db.catalog.orderBy('name').toArray();
     }
 
     const all = await db.catalog.toArray();
-    return all
-      .filter(item => {
-        if (item.sku.toLowerCase().includes(q)) return true;
-        if (item.primaryBarcode?.toLowerCase().includes(q)) return true;
-        if (item.allBarcodes.some(b => b.toLowerCase().includes(q))) return true;
-        if (item.name.toLowerCase().includes(q)) return true;
-        return false;
-      })
-      .slice(0, limit);
+    const filtered = all.filter(item => {
+      if (item.sku.toLowerCase().includes(q)) return true;
+      if (item.primaryBarcode?.toLowerCase().includes(q)) return true;
+      if (item.allBarcodes.some(b => b.toLowerCase().includes(q))) return true;
+      if (item.name.toLowerCase().includes(q)) return true;
+      return false;
+    });
+
+    return limit > 0 ? filtered.slice(0, limit) : filtered;
   }
 
   static async getAllForGrid(): Promise<PosCatalogItem[]> {

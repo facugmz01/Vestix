@@ -1239,42 +1239,159 @@ export class ProductsService {
   }
 
   async bulkUpdatePrices(dto: BulkUpdatePricesDto) {
-    const { categoryId, brandId, percentage } = dto;
-    const multiplier = 1 + (percentage / 100);
+    const { categoryId, brandId, percentage, priceListId, rounding } = dto;
+    const multiplier = 1 + percentage / 100;
 
-    return this.prisma.$transaction(async (tx) => {
-      const where: any = {};
-      if (categoryId) where.categoryId = categoryId;
-      if (brandId) where.brandId = brandId;
-
-      const products = await tx.product.findMany({ 
-        where, 
-        include: { variants: true } 
+    // 1. Resolve Category IDs (include subcategories if any)
+    let categoryIds: string[] | undefined;
+    if (categoryId) {
+      const childCategories = await this.prisma.category.findMany({
+        where: { parentId: categoryId },
+        select: { id: true },
       });
-      let updatedCount = 0;
+      categoryIds = [categoryId, ...childCategories.map((c) => c.id)];
+    }
 
-      for (const product of products) {
-        // Business Rule: costPrice is immutable and comes strictly from Purchase Orders.
-        // Bulk price updater modifies only basePrice (Selling Price).
-        for (const variant of product.variants) {
-          const vBase = Math.round((variant.basePrice || 0) * multiplier);
-          await tx.productVariant.update({
-            where: { id: variant.id },
-            data: { basePrice: vBase }
-          });
-          if (vBase !== variant.basePrice) {
-            await this.priceHistoryService.recordChange({
-              variantId: variant.id,
-              oldPrice: variant.basePrice,
-              newPrice: vBase,
-              source: 'BULK',
-            });
+    // 2. Build where filter for Products
+    const where: any = {};
+    if (categoryIds && categoryIds.length > 0) {
+      where.categoryId = { in: categoryIds };
+    }
+    if (brandId) {
+      where.brandId = brandId;
+    }
+
+    // 3. Resolve target Price List if selected
+    let targetPriceList: any = null;
+    if (priceListId) {
+      targetPriceList = await this.prisma.priceList.findUniqueOrThrow({
+        where: { id: priceListId },
+      });
+
+      if (targetPriceList.type === 'MODIFIER' || targetPriceList.isPercentageBased) {
+        throw new BadRequestException(
+          'Las listas de precios modificadoras aplican un porcentaje dinámico sobre el precio base. Para ajustar una lista modificadora, editala directamente en Listas de Precios o actualizá el Precio Base.',
+        );
+      }
+    }
+
+    // 4. Fetch matching products and their variants
+    const products = await this.prisma.product.findMany({
+      where,
+      include: {
+        variants: {
+          include: targetPriceList
+            ? {
+                priceListEntries: {
+                  where: { priceListId: targetPriceList.id },
+                },
+              }
+            : undefined,
+        },
+      },
+    });
+
+    const roundPrice = (price: number): number => {
+      if (rounding === 'none') return Number(price.toFixed(2));
+      if (rounding === 'ceil') return Math.ceil(price);
+      if (rounding === 'floor') return Math.floor(price);
+      return Math.round(price); // default for ARS retail
+    };
+
+    let updatedProductsCount = 0;
+    let updatedVariantsCount = 0;
+
+    await this.prisma.$transaction(
+      async (tx) => {
+        const historyRecords: any[] = [];
+
+        for (const product of products) {
+          let productUpdated = false;
+
+          for (const variant of product.variants) {
+            if (targetPriceList) {
+              // Target is a fixed/base Price List (PriceListEntry)
+              const existingEntry = (variant as any).priceListEntries?.[0];
+              const currentPrice = existingEntry?.overridePrice ?? variant.basePrice;
+              const newPrice = roundPrice((currentPrice || 0) * multiplier);
+
+              if (newPrice !== currentPrice || !existingEntry) {
+                await tx.priceListEntry.upsert({
+                  where: {
+                    priceListId_variantId: {
+                      priceListId: targetPriceList.id,
+                      variantId: variant.id,
+                    },
+                  },
+                  update: { overridePrice: newPrice },
+                  create: {
+                    priceListId: targetPriceList.id,
+                    variantId: variant.id,
+                    overridePrice: newPrice,
+                  },
+                });
+
+                if (newPrice !== currentPrice) {
+                  historyRecords.push({
+                    id: crypto.randomUUID(),
+                    variantId: variant.id,
+                    oldPrice: currentPrice,
+                    newPrice,
+                    source: 'PRICE_LIST',
+                    priceListId: targetPriceList.id,
+                  });
+                }
+                productUpdated = true;
+                updatedVariantsCount++;
+              }
+            } else {
+              // Target is Base Selling Price (ProductVariant.basePrice)
+              const currentPrice = variant.basePrice;
+              const newPrice = roundPrice((currentPrice || 0) * multiplier);
+
+              if (newPrice !== currentPrice) {
+                await tx.productVariant.update({
+                  where: { id: variant.id },
+                  data: { basePrice: newPrice },
+                });
+
+                historyRecords.push({
+                  id: crypto.randomUUID(),
+                  variantId: variant.id,
+                  oldPrice: currentPrice,
+                  newPrice,
+                  source: 'BULK',
+                  priceListId: null,
+                });
+                productUpdated = true;
+                updatedVariantsCount++;
+              }
+            }
+          }
+
+          if (productUpdated) {
+            updatedProductsCount++;
           }
         }
-        updatedCount++;
-      }
-      return { success: true, updatedCount };
-    });
+
+        if (historyRecords.length > 0) {
+          await tx.priceHistory.createMany({
+            data: historyRecords,
+          });
+        }
+      },
+      {
+        timeout: 30000,
+        maxWait: 5000,
+      },
+    );
+
+    return {
+      success: true,
+      updatedCount: updatedProductsCount,
+      updatedVariantsCount,
+      target: targetPriceList ? targetPriceList.name : 'Precio Base',
+    };
   }
 
   async getPublicProducts(query: any = {}) {

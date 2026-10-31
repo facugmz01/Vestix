@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, Eye, Tag, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Tag, Users, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { CATALOG_TABS } from '@/navigation/moduleTabs';
@@ -16,6 +16,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { PriceListFormDrawer } from '@/features/priceLists/components/PriceListFormDrawer';
 import { PriceListDetailDrawer } from '@/features/priceLists/components/PriceListDetailDrawer';
+import { BulkPriceUpdaterModal } from '@/features/products/components/BulkPriceUpdaterModal';
 import adminStyles from '@/styles/AdminListShared.module.css';
 import clsx from 'clsx';
 
@@ -31,6 +32,7 @@ export default function PriceListsPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [bulkUpdaterOpen, setBulkUpdaterOpen] = useState(false);
   const [selectedList, setSelectedList] = useState<PriceList | null>(null);
   const [assignSearch, setAssignSearch] = useState('');
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
@@ -116,11 +118,25 @@ export default function PriceListsPage() {
       title="Listas de Precios" 
       subtitle="Gestioná matrices de precios y reglas comerciales (descuentos, recargos)."
       action={
-        <ActionGuard action="manage" subject="Catalog">
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
-            Nueva Lista
-          </Button>
-        </ActionGuard>
+        <div className={adminStyles.rowActions}>
+          <ActionGuard action="update" subject="Catalog">
+            <Button
+              variant="secondary"
+              icon={<Zap size={16} />}
+              onClick={() => {
+                setSelectedList(null);
+                setBulkUpdaterOpen(true);
+              }}
+            >
+              Actualización Masiva
+            </Button>
+          </ActionGuard>
+          <ActionGuard action="manage" subject="Catalog">
+            <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreate}>
+              Nueva Lista
+            </Button>
+          </ActionGuard>
+        </div>
       }
     >
       <FiltersBar actions={<Badge color="gray">{total} listas</Badge>}>
@@ -287,6 +303,14 @@ export default function PriceListsPage() {
           )}
         </div>
       </Modal>
+
+      {bulkUpdaterOpen && (
+        <BulkPriceUpdaterModal
+          open={bulkUpdaterOpen}
+          onClose={() => setBulkUpdaterOpen(false)}
+          initialPriceListId={selectedList?.id ?? ''}
+        />
+      )}
     </PageContainer>
   );
 }

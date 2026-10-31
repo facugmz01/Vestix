@@ -33,11 +33,14 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
   }, []);
 
   const { data: gridProducts, isLoading: gridLoading } = useQuery({
-    queryKey: ['pos', 'gridProducts', selectedCustomerId, isOnline],
+    queryKey: ['pos', 'gridProducts', branchId, selectedCustomerId, isOnline],
     queryFn: async () => {
       if (isOnline) {
         try {
-          const online = await posApi.searchProduct('', selectedCustomerId || undefined);
+          const online = await posApi.searchProduct('', {
+            customerId: selectedCustomerId || undefined,
+            branchId: branchId || undefined,
+          });
           if (online?.length) return online;
         } catch {
           // fall through to local catalog cache
@@ -50,12 +53,16 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
   });
 
   const { data: searchResults, isLoading: searchLoading } = useQuery({
-    queryKey: ['pos', 'search', search, selectedCustomerId, isOnline],
+    queryKey: ['pos', 'search', search, branchId, selectedCustomerId, isOnline],
     queryFn: async () => {
       if (isOnline) {
-        return posApi.searchProduct(search, selectedCustomerId || undefined);
+        return posApi.searchProduct(search, {
+          customerId: selectedCustomerId || undefined,
+          branchId: branchId || undefined,
+          limit: 100,
+        });
       }
-      const offline = await CatalogSyncService.searchOffline(search, 20);
+      const offline = await CatalogSyncService.searchOffline(search, 100);
       return toVariants(offline);
     },
     enabled: search.length >= 2 || (!isOnline && search.length >= 1),
@@ -65,16 +72,19 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
   const lookupBarcode = useCallback(async (code: string): Promise<PosVariant[]> => {
     if (isOnline) {
       try {
-        return await posApi.searchProduct(code, selectedCustomerId || undefined);
+        return await posApi.searchProduct(code, {
+          customerId: selectedCustomerId || undefined,
+          branchId: branchId || undefined,
+        });
       } catch {
         // fall through to offline
       }
     }
     const item = await CatalogSyncService.findByBarcodeOrSku(code);
     if (item) return [CatalogSyncService.toProductVariant(item) as PosVariant];
-    const partial = await CatalogSyncService.searchOffline(code, 10);
+    const partial = await CatalogSyncService.searchOffline(code, 50);
     return toVariants(partial);
-  }, [isOnline, selectedCustomerId]);
+  }, [isOnline, selectedCustomerId, branchId]);
 
   const invalidateCatalogQueries = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['pos'] });

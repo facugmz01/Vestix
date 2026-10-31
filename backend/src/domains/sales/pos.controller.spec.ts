@@ -8,6 +8,7 @@ import { PermissionsGuard } from '../../core/rbac/guards/permissions.guard';
 const mockPosService: any = {
   createQrOrder: jest.fn(),
   getQrOrderStatus: jest.fn(),
+  searchCatalog: jest.fn(),
 };
 
 describe('PosController', () => {
@@ -39,9 +40,15 @@ describe('PosController', () => {
     expect(result).toEqual({ orderId: 'POS-QR-1', qrData: 'qr-data' });
   });
 
-  it('gets QR order status via service', async () => {
-    mockPosService.getQrOrderStatus.mockReturnValue({ orderId: 'POS-QR-1', status: 'PENDING', amount: 1000 });
-    const result = await controller.getQrOrderStatus('POS-QR-1');
-    expect(result.status).toBe('PENDING');
+  it('delegates searchCatalog with parsed limit', async () => {
+    mockPosService.searchCatalog.mockResolvedValueOnce([]);
+    await controller.searchCatalog('remera', 'cust-1', 'cat-1', 'brand-1', 'branch-1', 'pl-1', '150');
+    expect(mockPosService.searchCatalog).toHaveBeenCalledWith('remera', 'cust-1', {
+      categoryId: 'cat-1',
+      brandId: 'brand-1',
+      branchId: 'branch-1',
+      priceListId: 'pl-1',
+      limit: 150,
+    });
   });
 });

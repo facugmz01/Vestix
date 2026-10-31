@@ -34,8 +34,19 @@ export const productsApi = {
   bulkImport: (rows: any[]) =>
     post<{ success: boolean; createdCount: number; updatedCount: number }>('/products/bulk-import', { rows }),
 
-  bulkUpdatePrices: (dto: { categoryId?: string; brandId?: string; percentage: number }) =>
-    post<{ success: boolean; updatedCount: number }>('/products/bulk-update-prices', dto),
+  bulkUpdatePrices: (dto: {
+    categoryId?: string;
+    brandId?: string;
+    priceListId?: string;
+    percentage: number;
+    rounding?: 'none' | 'round' | 'ceil' | 'floor';
+  }) =>
+    post<{
+      success: boolean;
+      updatedCount: number;
+      updatedVariantsCount: number;
+      target: string;
+    }>('/products/bulk-update-prices', dto),
 
   updateProduct: (id: string, dto: UpdateProductDto) =>
     patch<Product>(`/products/${id}`, dto),

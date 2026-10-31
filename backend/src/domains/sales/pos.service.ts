@@ -350,13 +350,14 @@ export class PosService {
   async searchCatalog(
     query: string,
     customerId?: string,
-    filters?: { categoryId?: string; brandId?: string; branchId?: string; priceListId?: string },
+    filters?: { categoryId?: string; brandId?: string; branchId?: string; priceListId?: string; limit?: number },
   ) {
     const q = (query || '').replace(/[\r\n\t]/g, '').trim();
     const categoryId = filters?.categoryId?.trim() || undefined;
     const brandId = filters?.brandId?.trim() || undefined;
     const branchId = filters?.branchId?.trim() || undefined;
     const priceListId = filters?.priceListId?.trim() || undefined;
+    const limit = filters?.limit;
 
     // Empty query with no filters is intentional for the POS product grid
     // (frontend calls search with q=''). Purchase UIs gate requests until the
@@ -368,6 +369,15 @@ export class PosService {
     };
 
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(q);
+
+    // If limit is explicitly provided (> 0), apply it.
+    // If limit is 0, fetch all records (no limit).
+    // If limit is not specified:
+    // - For empty query (catalog browse / POS grid), fetch all without limiting to 50
+    // - For text query, keep a safe generous default (100) to keep search snappy
+    const take = limit !== undefined
+      ? (limit > 0 ? limit : undefined)
+      : (q ? 100 : undefined);
 
     const variants = await this.prisma.productVariant.findMany({
       where: {
@@ -402,7 +412,7 @@ export class PosService {
         },
         barcodes: true,
       },
-      take: 50,
+      ...(take ? { take } : {}),
       orderBy: { sku: 'asc' },
     });
 
@@ -438,7 +448,13 @@ export class PosService {
 
     const mapped = variants.map(v => {
       const variantStocks = stockByVariant.get(v.id) || [];
-      const totalStock = variantStocks.reduce((acc, s) => acc + s.availableQuantity, 0);
+      const branchStocks = branchId
+        ? variantStocks.filter(s => s.branchId === branchId || warehouseMap.get(s.warehouseId)?.branchId === branchId)
+        : variantStocks;
+      const totalStock = (branchId && branchStocks.length > 0 ? branchStocks : variantStocks).reduce(
+        (acc, s) => acc + s.availableQuantity,
+        0,
+      );
       const pricingInfo = priceMap.get(v.id) || {
         resolvedPrice: v.basePrice || 0,
         overridePrice: null,

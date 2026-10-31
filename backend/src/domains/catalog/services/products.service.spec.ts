@@ -27,6 +27,7 @@ describe('ProductsService - isPublished default behavior', () => {
     category: {
       findFirst: jest.fn(),
       create: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
     brand: {
       findFirst: jest.fn(),
@@ -39,6 +40,15 @@ describe('ProductsService - isPublished default behavior', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+    },
+    priceHistory: {
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+    priceList: {
+      findUniqueOrThrow: jest.fn(),
+    },
+    priceListEntry: {
+      upsert: jest.fn().mockResolvedValue({}),
     },
     $transaction: jest.fn((callback) => callback(prismaMock)),
   };
@@ -273,6 +283,97 @@ describe('ProductsService - isPublished default behavior', () => {
           basePrice: 17000,
         },
       });
+    });
+  });
+
+  describe('bulkUpdatePrices', () => {
+    it('applies category and brand filters including subcategories', async () => {
+      prismaMock.category.findMany.mockResolvedValue([{ id: 'sub-cat-1' }]);
+      prismaMock.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-filtered',
+          costPrice: 5000,
+          variants: [{ id: 'var-1', costPrice: 5000, basePrice: 10000 }],
+        },
+      ]);
+      prismaMock.productVariant.update = jest.fn().mockResolvedValue({});
+
+      const res = await service.bulkUpdatePrices({
+        categoryId: 'cat-parent',
+        brandId: 'brand-nike',
+        percentage: 10,
+      });
+
+      expect(prismaMock.category.findMany).toHaveBeenCalledWith({
+        where: { parentId: 'cat-parent' },
+        select: { id: true },
+      });
+      expect(prismaMock.product.findMany).toHaveBeenCalledWith({
+        where: {
+          categoryId: { in: ['cat-parent', 'sub-cat-1'] },
+          brandId: 'brand-nike',
+        },
+        include: { variants: { include: undefined } },
+      });
+      expect(prismaMock.productVariant.update).toHaveBeenCalledWith({
+        where: { id: 'var-1' },
+        data: { basePrice: 11000 },
+      });
+      expect(res.success).toBe(true);
+      expect(res.updatedCount).toBe(1);
+    });
+
+    it('updates specific fixed price list via priceListEntries upsert', async () => {
+      prismaMock.priceList.findUniqueOrThrow.mockResolvedValue({
+        id: 'pl-wholesale',
+        name: 'Mayorista',
+        type: 'BASE',
+        isPercentageBased: false,
+      });
+      prismaMock.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-1',
+          variants: [
+            {
+              id: 'var-10',
+              basePrice: 10000,
+              priceListEntries: [{ overridePrice: 9000 }],
+            },
+          ],
+        },
+      ]);
+      prismaMock.priceListEntry.upsert = jest.fn().mockResolvedValue({});
+
+      const res = await service.bulkUpdatePrices({
+        priceListId: 'pl-wholesale',
+        percentage: 20,
+      });
+
+      expect(prismaMock.priceListEntry.upsert).toHaveBeenCalledWith({
+        where: {
+          priceListId_variantId: { priceListId: 'pl-wholesale', variantId: 'var-10' },
+        },
+        update: { overridePrice: 10800 },
+        create: { priceListId: 'pl-wholesale', variantId: 'var-10', overridePrice: 10800 },
+      });
+      expect(res.target).toBe('Mayorista');
+      expect(res.success).toBe(true);
+    });
+
+    it('throws BadRequestException if target price list is dynamic MODIFIER', async () => {
+      prismaMock.priceList.findUniqueOrThrow.mockResolvedValue({
+        id: 'pl-modifier',
+        name: 'Efectivo Descuento',
+        type: 'MODIFIER',
+        isPercentageBased: true,
+      });
+
+      await expect(
+        service.bulkUpdatePrices({
+          priceListId: 'pl-modifier',
+          percentage: 10,
+        }),
+      ).rejects.toThrow('Las listas de precios modificadoras aplican un porcentaje dinámico');
     });
   });
 });

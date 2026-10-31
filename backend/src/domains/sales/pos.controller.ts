@@ -36,12 +36,15 @@ export class PosController {
     @Query('brandId') brandId?: string,
     @Query('branchId') branchId?: string,
     @Query('priceListId') priceListId?: string,
+    @Query('limit') limit?: string,
   ) {
+    const parsedLimit = limit !== undefined && limit !== '' ? parseInt(limit, 10) : undefined;
     return this.posService.searchCatalog(q ?? '', customerId, {
       categoryId,
       brandId,
       branchId,
       priceListId,
+      limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
     });
   }
 

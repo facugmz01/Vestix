@@ -276,7 +276,7 @@ describe('PosService', () => {
       barcodes: [],
     };
 
-    it('returns active variants for empty query (POS product grid)', async () => {
+    it('returns active variants for empty query (POS product grid) without arbitrary 50 limit', async () => {
       mockPrisma.productVariant.findMany.mockResolvedValueOnce([searchVariant]);
       mockPrisma.stockLevel.findMany.mockResolvedValueOnce([
         { variantId: 'variant-1', availableQuantity: 3 },
@@ -293,12 +293,29 @@ describe('PosService', () => {
       expect(mockPrisma.productVariant.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ isActive: true }),
-          take: 50,
+        }),
+      );
+      // Ensure take is NOT restricted to 50 when browsing whole catalog
+      const callArgs = mockPrisma.productVariant.findMany.mock.calls[0][0];
+      expect(callArgs.take).toBeUndefined();
+    });
+
+    it('respects explicit limit in filters', async () => {
+      mockPrisma.productVariant.findMany.mockResolvedValueOnce([searchVariant]);
+      mockPrisma.stockLevel.findMany.mockResolvedValueOnce([
+        { variantId: 'variant-1', availableQuantity: 3 },
+      ]);
+
+      await service.searchCatalog('', undefined, { limit: 250 });
+
+      expect(mockPrisma.productVariant.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 250,
         }),
       );
     });
 
-    it('filters by text query when provided', async () => {
+    it('filters by text query when provided with search default limit', async () => {
       mockPrisma.productVariant.findMany.mockResolvedValueOnce([]);
 
       await service.searchCatalog('remera');
@@ -309,6 +326,7 @@ describe('PosService', () => {
             isActive: true,
             OR: expect.any(Array),
           }),
+          take: 100,
         }),
       );
     });

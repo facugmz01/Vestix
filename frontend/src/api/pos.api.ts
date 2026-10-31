@@ -45,6 +45,7 @@ export interface PosSearchProductOptions {
   priceListId?: string;
   categoryId?: string;
   brandId?: string;
+  limit?: number;
 }
 
 export interface PriceCheckStockWarehouse {
@@ -137,6 +138,7 @@ export const posApi = {
     let priceListId: string | undefined;
     let categoryId: string | undefined;
     let brandId: string | undefined;
+    let limit: number | undefined;
 
     if (typeof customerIdOrOptions === 'object' && customerIdOrOptions !== null) {
       customerId = customerIdOrOptions.customerId;
@@ -144,12 +146,14 @@ export const posApi = {
       priceListId = customerIdOrOptions.priceListId;
       categoryId = customerIdOrOptions.categoryId;
       brandId = customerIdOrOptions.brandId;
+      limit = customerIdOrOptions.limit;
     } else {
       customerId = customerIdOrOptions;
       branchId = options?.branchId;
       priceListId = options?.priceListId;
       categoryId = options?.categoryId;
       brandId = options?.brandId;
+      limit = options?.limit;
     }
 
     return get<any[]>('/pos/catalog/search', {
@@ -160,6 +164,7 @@ export const posApi = {
         priceListId: priceListId || undefined,
         categoryId: categoryId || undefined,
         brandId: brandId || undefined,
+        limit: limit !== undefined ? limit : undefined,
       },
     });
   },
