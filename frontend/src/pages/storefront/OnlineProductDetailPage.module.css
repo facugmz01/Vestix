@@ -30,10 +30,16 @@
   flex-direction: column;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 860px) {
+  .layout {
+    gap: 36px;
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 1024px) {
   .layout {
     gap: 48px;
-    flex-direction: row;
   }
 }
 
@@ -395,10 +401,15 @@
 .info {
   width: 100%;
   flex-shrink: 0;
+  min-width: 0;
 }
 
-@media (min-width: 768px) {
-  .info { width: 430px; }
+@media (min-width: 860px) {
+  .info { width: 380px; }
+}
+
+@media (min-width: 1024px) {
+  .info { width: 440px; }
 }
 
 .meta {
@@ -431,6 +442,7 @@
   font-weight: 900;
   line-height: 1.2;
   color: var(--text-primary);
+  word-break: break-word;
 }
 
 @media (min-width: 768px) {
@@ -550,6 +562,27 @@
 .cartRow {
   display: flex;
   gap: 12px;
+}
+
+@media (max-width: 420px) {
+  .cartRow {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .qtyControl {
+    width: 100%;
+    justify-content: center;
+  }
+  .qtyBtn {
+    flex: 1;
+    text-align: center;
+  }
+  .qtyValue {
+    flex: 1;
+  }
+  .addBtn {
+    width: 100%;
+  }
 }
 
 .qtyControl {

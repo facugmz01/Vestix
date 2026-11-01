@@ -13,7 +13,13 @@
 }
 
 .panelPad {
-  padding: 28px;
+  padding: 20px 16px;
+}
+
+@media (min-width: 640px) {
+  .panelPad {
+    padding: 28px;
+  }
 }
 
 .panelPadSm {
@@ -31,12 +37,24 @@
 
 .formGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
+@media (min-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .span2 {
-  grid-column: span 2;
+  grid-column: span 1;
+}
+
+@media (min-width: 640px) {
+  .span2 {
+    grid-column: span 2;
+  }
 }
 
 .docRow {
@@ -524,4 +542,76 @@
 .couponRemoveBtn:hover {
   background: var(--red-bg);
 }
+
+@media (max-width: 640px) {
+  .panelPadSm {
+    padding: 16px 14px;
+  }
+
+  .docSelect {
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  .docInput {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .addressRow {
+    gap: 8px;
+  }
+
+  .addressState {
+    flex: 2;
+    min-width: 0;
+  }
+
+  .addressZip {
+    flex: 1;
+    min-width: 70px;
+  }
+
+  .cartItem {
+    padding: 16px 14px;
+    align-items: flex-start;
+  }
+
+  .itemControls {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .subtotalCol {
+    width: auto;
+    text-align: right;
+  }
+
+  .stepActionsBetween {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .stepActionsBetween button {
+    width: 100%;
+  }
+
+  .stepActions button {
+    width: 100%;
+  }
+
+  .confirmBtn {
+    width: 100%;
+  }
+
+  .optionCard {
+    min-width: 120px;
+    padding: 12px;
+  }
+}
+
 

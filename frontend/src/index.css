@@ -239,36 +239,56 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 /* ─── STOREFRONT RESPONSIVE GRIDS ─────────────────────────────────────── */
 .storefront-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .storefront-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  .storefront-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+  }
 }
 
 .storefront-checkout-container {
   max-width: 1000px;
+  width: 100%;
   margin: 0 auto;
   padding: 40px 24px;
   display: flex;
   gap: 32px;
   align-items: flex-start;
   flex-wrap: wrap;
+  box-sizing: border-box;
 }
 .storefront-checkout-left {
   flex: 1;
-  min-width: 300px;
+  min-width: 0;
+  width: 100%;
 }
 .storefront-checkout-right {
-  width: 320px;
+  width: 340px;
+  max-width: 100%;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
-@media (max-width: 768px) {
-  .storefront-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
+@media (max-width: 860px) {
   .storefront-checkout-container {
     flex-direction: column;
     padding: 20px 16px;
+    gap: 24px;
+  }
+  .storefront-checkout-left {
+    min-width: 0;
+    width: 100%;
   }
   .storefront-checkout-right {
     width: 100%;

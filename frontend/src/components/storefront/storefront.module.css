@@ -6,14 +6,28 @@
 
 .pageNarrow {
   max-width: 480px;
-  margin: 48px auto;
-  padding: 0 24px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .pageNarrow {
+    margin: 48px auto;
+    padding: 0 24px;
+  }
 }
 
 .pageMedium {
   max-width: 800px;
-  margin: 48px auto;
-  padding: 0 24px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .pageMedium {
+    margin: 48px auto;
+    padding: 0 24px;
+  }
 }
 
 .card {
@@ -21,9 +35,14 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
-.cardPad { padding: 32px 24px; }
+.cardPad { padding: 24px 16px; }
+
+@media (min-width: 640px) {
+  .cardPad { padding: 32px 24px; }
+}
 
 @media (min-width: 768px) {
   .cardPad { padding: 40px 32px; }
@@ -310,25 +329,42 @@
 
 .otpRow {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .otpDigit {
-  width: 48px;
-  height: 56px;
+  width: 42px;
+  height: 52px;
+  max-width: calc((100% - 30px) / 6);
   border-radius: 10px;
   border: 2px solid var(--border);
   background: var(--surface-0);
   color: var(--text-primary);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   text-align: center;
   outline: none;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   caret-color: var(--sf-primary, var(--accent));
   font-family: var(--font-mono, monospace);
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (min-width: 420px) {
+  .otpRow {
+    gap: 8px;
+  }
+  .otpDigit {
+    width: 48px;
+    height: 56px;
+    max-width: 48px;
+    font-size: 22px;
+    flex: 0 0 48px;
+  }
 }
 
 .otpDigitFilled {
@@ -491,6 +527,7 @@
 
 .flex1 {
   flex: 1;
+  min-width: 0;
 }
 
 .btnLoading {

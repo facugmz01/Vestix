@@ -218,7 +218,7 @@ export default function StorefrontLoginPage() {
                 <div className={sf.phonePrefix}>🇦🇷 +54</div>
                 <input
                   id="sf-login-id"
-                  className="storefront-input"
+                  className={clsx('storefront-input', sf.flex1)}
                   type={loginConfig.inputType}
                   inputMode={loginConfig.inputMode}
                   placeholder={loginConfig.placeholder}

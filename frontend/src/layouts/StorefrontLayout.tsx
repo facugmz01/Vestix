@@ -1,4 +1,4 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, LogOut, LogIn, ChevronDown, Loader2, UserCircle } from 'lucide-react';
 import { Suspense, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ export default function StorefrontLayout() {
   const totalItems = useCartStore(s => s.totalItems());
   const prefix = storePrefix();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['storefrontSettings', prefix],
@@ -26,6 +27,10 @@ export default function StorefrontLayout() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   useEffect(() => {
     loadCurrentCustomer();
