@@ -216,8 +216,7 @@ export default function PricingCalculatorPage() {
         name,
         code: code || 'MP_CALCULATED',
         currency: 'ARS',
-        type: 'MODIFIER',
-        modifierPercentage: modifierPct,
+        type: 'BASE',
         isActive: true,
         isDefault: false,
       });

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, Eye, Users, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Users, AlertCircle, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
@@ -15,6 +15,7 @@ import { ActionGuard } from '@/rbac/ActionGuard';
 
 import { CustomerFormDrawer } from '@/features/customers/components/CustomerFormDrawer';
 import { CustomerDetailDrawer } from '@/features/customers/components/CustomerDetailDrawer';
+import { AddCreditBalanceModal } from '@/features/customers/components/AddCreditBalanceModal';
 import { ImportBalancesModal } from '@/components/ui/ImportBalancesModal';
 import { FileSpreadsheet } from 'lucide-react';
 import { useListPage } from '@/hooks/useListPage';
@@ -36,6 +37,7 @@ export default function CustomersPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [creditBalanceModalOpen, setCreditBalanceModalOpen] = useState(false);
   
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
@@ -196,22 +198,30 @@ export default function CustomersPage() {
               },
               { 
                 key: 'credit', 
-                header: 'Cta. Cte.',
-                render: (c) => (
-                  <div className={adminStyles.cellRow}>
-                    {c.credit.limit > 0 ? (
-                      <div className={adminStyles.cellStack}>
-                        <span className={clsx(c.credit.used > 0 ? adminStyles.creditUsed : adminStyles.creditClear)}>
-                          Deuda: {formatCurrency(c.credit.used)}
+                header: 'Crédito / Saldo',
+                render: (c) => {
+                  const creditBal = Number(c.creditBalance) || 0;
+                  return (
+                    <div className={adminStyles.cellStack}>
+                      {creditBal > 0 && (
+                        <span style={{ color: 'var(--green, #10b981)', fontWeight: 600, fontSize: 13 }}>
+                          A favor: {formatCurrency(creditBal)}
                         </span>
-                        <span className={adminStyles.cellMutedXs}>Límite: {formatCurrency(c.credit.limit)}</span>
-                      </div>
-                    ) : (
-                      <span className={adminStyles.cellSecondaryMuted}>Contado</span>
-                    )}
-                    {c.credit.onHold && <AlertCircle size={14} color="var(--red)" />}
-                  </div>
-                )
+                      )}
+                      {c.credit.limit > 0 ? (
+                        <div className={adminStyles.cellStack}>
+                          <span className={clsx(c.credit.used > 0 ? adminStyles.creditUsed : adminStyles.creditClear)}>
+                            Deuda: {formatCurrency(c.credit.used)}
+                          </span>
+                          <span className={adminStyles.cellMutedXs}>Límite: {formatCurrency(c.credit.limit)}</span>
+                        </div>
+                      ) : (
+                        creditBal <= 0 && <span className={adminStyles.cellSecondaryMuted}>Sin saldo</span>
+                      )}
+                      {c.credit.onHold && <AlertCircle size={14} color="var(--red)" />}
+                    </div>
+                  );
+                }
               },
               {
                 key: 'actions',
@@ -221,6 +231,20 @@ export default function CustomersPage() {
                     <Button variant="ghost" size="sm" onClick={() => handleView(c)} aria-label="Ver" title="Ver ficha">
                       <Eye size={16} />
                     </Button>
+                    <ActionGuard action="manage" subject="Customers">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCustomer(c);
+                          setCreditBalanceModalOpen(true);
+                        }}
+                        aria-label="Cargar saldo a favor"
+                        title="Cargar saldo a favor / Anticipo"
+                      >
+                        <Wallet size={16} color="var(--green, #10b981)" />
+                      </Button>
+                    </ActionGuard>
                     <ActionGuard action="manage" subject="Customers">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(c)} aria-label="Editar" title="Editar cliente">
                         <Edit2 size={16} />
@@ -257,6 +281,12 @@ export default function CustomersPage() {
         open={detailOpen} 
         onClose={() => setDetailOpen(false)} 
         customer={selectedCustomer} 
+      />
+
+      <AddCreditBalanceModal
+        open={creditBalanceModalOpen}
+        onClose={() => setCreditBalanceModalOpen(false)}
+        customer={selectedCustomer}
       />
       
       <ConfirmDialog

@@ -6,7 +6,13 @@ import { usePosStore } from '../store/usePosStore';
 import type { Customer } from '@/types';
 import styles from '@/pages/pos/POSPage.module.css';
 
-export function PosCustomerSearch({ amountDue }: { amountDue: number }) {
+export function PosCustomerSearch({
+  amountDue,
+  onApplyCreditBalance,
+}: {
+  amountDue: number;
+  onApplyCreditBalance?: (balance: number) => void;
+}) {
   const selectedCustomerId = usePosStore(s => s.selectedCustomerId);
   const setCustomerId = usePosStore(s => s.setCustomerId);
   const setCustomerFormOpen = usePosStore(s => s.setCustomerFormOpen);
@@ -50,6 +56,7 @@ export function PosCustomerSearch({ amountDue }: { amountDue: number }) {
 
   const displayLabel = selectedCustomerId && selectedCustomer ? selectedCustomer.fullName : '';
   const creditLow = selectedCustomer?.credit && selectedCustomer.credit.available < amountDue;
+  const customerCreditBalance = Number(selectedCustomer?.creditBalance) || 0;
 
   return (
     <div className={styles.customerRow}>
@@ -77,21 +84,70 @@ export function PosCustomerSearch({ amountDue }: { amountDue: number }) {
             {searchResults.data.length === 0 ? (
               <div className={styles.customerDropdownEmpty}>Sin resultados</div>
             ) : (
-              searchResults.data.map(c => (
-                <button key={c.id} type="button" onClick={() => pickCustomer(c)} className={styles.customerOption}>
-                  <div className={styles.customerOptionName}>{c.fullName}</div>
-                  {c.credit && (
-                    <div className={styles.customerOptionCredit}>
-                      Disp. ${c.credit.available.toLocaleString('es-AR')}
+              searchResults.data.map(c => {
+                const bal = Number(c.creditBalance) || 0;
+                return (
+                  <button key={c.id} type="button" onClick={() => pickCustomer(c)} className={styles.customerOption}>
+                    <div className={styles.customerOptionName}>{c.fullName}</div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      {bal > 0 && (
+                        <span style={{ color: 'var(--green, #10b981)', fontSize: 11, fontWeight: 600 }}>
+                          Favor: ${bal.toLocaleString('es-AR')}
+                        </span>
+                      )}
+                      {c.credit && c.credit.available > 0 && (
+                        <span className={styles.customerOptionCredit}>
+                          Cta: ${c.credit.available.toLocaleString('es-AR')}
+                        </span>
+                      )}
                     </div>
-                  )}
-                </button>
-              ))
+                  </button>
+                );
+              })
             )}
           </div>
         )}
 
-        {selectedCustomer?.credit && (
+        {customerCreditBalance > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '4px 8px',
+              marginTop: 4,
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: 6,
+              fontSize: 12,
+              color: 'var(--green, #10b981)',
+            }}
+          >
+            <span>
+              Saldo a favor: <strong>${customerCreditBalance.toLocaleString('es-AR')}</strong>
+            </span>
+            {amountDue > 0 && onApplyCreditBalance && (
+              <button
+                type="button"
+                onClick={() => onApplyCreditBalance(customerCreditBalance)}
+                style={{
+                  background: 'var(--green, #10b981)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Descontar
+              </button>
+            )}
+          </div>
+        )}
+
+        {selectedCustomer?.credit && customerCreditBalance <= 0 && (
           <div className={`${styles.customerCreditHint} ${creditLow ? styles.customerCreditHintLow : ''}`}>
             Crédito disp. ${selectedCustomer.credit.available.toLocaleString('es-AR')}
             {creditLow && ' — insuficiente para esta venta'}

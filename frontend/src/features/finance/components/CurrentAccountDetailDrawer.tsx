@@ -191,6 +191,11 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
               <h2 className={clsx(styles.balanceValue, balanceClass)}>
                 {formatCurrency(Math.abs(account.balance))}
               </h2>
+              {isCustomer && Number(account.creditBalance) > 0 && (
+                <div style={{ marginTop: 8, padding: '4px 8px', borderRadius: 6, background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', color: 'var(--green, #10b981)', fontSize: 13, fontWeight: 600 }}>
+                  Saldo a Favor: {formatCurrency(account.creditBalance || 0)}
+                </div>
+              )}
               {account.creditLimit && (
                 <p className={styles.balanceLimit}>
                   Límite de Crédito: {formatCurrency(account.creditLimit)}
@@ -348,6 +353,11 @@ export function CurrentAccountDetailDrawer({ open, onClose, accountId }: Props) 
                   value={receiptAmount}
                   onChange={e => setReceiptAmount(Number(e.target.value))}
                 />
+                {isCustomer && (
+                  <span className={styles.hintText} style={{ marginTop: -8, marginBottom: 8 }}>
+                    Si el monto supera el saldo deudor ({formatCurrency(account.balance)}), el excedente se acreditará automáticamente como saldo a favor del cliente para descontar en futuras compras.
+                  </span>
+                )}
 
                 <div className={styles.textareaGroup}>
                   <label className={styles.textareaLabel}>

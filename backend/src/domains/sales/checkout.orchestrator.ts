@@ -27,7 +27,8 @@ export function normalizePaymentMethodType(raw?: string | null): string {
   if (['EFECTIVO', 'CASH', 'CONTADO', 'DINERO'].includes(u)) return 'CASH';
   if (['TRANSFERENCIA', 'TRANSFER', 'BANK_TRANSFER', 'DEPOSITO', 'DEPOSIT', 'BANCO'].includes(u)) return 'BANK_TRANSFER';
   if (['TARJETA', 'DEBIT_CARD', 'CREDIT_CARD', 'CARD', 'QR_MERCADOPAGO', 'MERCADOPAGO', 'MP', 'MERCADO_PAGO'].includes(u)) return 'CREDIT_CARD';
-  if (['CUENTA_CORRIENTE', 'CUSTOMER_CREDIT', 'STORE_CREDIT', 'CREDITO', 'CREDIT'].includes(u)) return 'CUSTOMER_CREDIT';
+  if (['CUENTA_CORRIENTE', 'CUSTOMER_CREDIT', 'CREDITO', 'CREDIT'].includes(u)) return 'CUSTOMER_CREDIT';
+  if (['STORE_CREDIT', 'SALDO_A_FAVOR', 'SALDO_FAVOR', 'CREDITO_A_FAVOR'].includes(u)) return 'STORE_CREDIT';
   if (u === 'GIFT_CARD') return 'GIFT_CARD';
   if (u === 'LOYALTY') return 'LOYALTY';
   return u;
@@ -473,6 +474,42 @@ export class CheckoutOrchestrator {
                   paymentMethodId: pm.id,
                   amount: amountDue,
                   referenceId: dto.paymentReference || null,
+                },
+              });
+            }
+          } else if (normMethod === 'STORE_CREDIT') {
+            if (!dto.customerId) throw new BadRequestException('Se requiere seleccionar un cliente para pagar con saldo a favor');
+            const customer = await tx.customer.findUnique({ where: { id: dto.customerId } });
+            if (!customer) throw new BadRequestException('Cliente no encontrado');
+            const available = Number((customer as any).creditBalance) || 0;
+            if (available < amountDue - 0.01) {
+              throw new BadRequestException(`Saldo a favor insuficiente. Disponible: $${available.toFixed(2)}, Requerido: $${amountDue.toFixed(2)}`);
+            }
+            const updated = await tx.customer.update({
+              where: { id: dto.customerId },
+              data: { creditBalance: { decrement: amountDue } },
+            });
+            await tx.currentAccountMovement.create({
+              data: {
+                accountId: dto.customerId,
+                entityType: 'CUSTOMER',
+                documentType: 'DEBIT_NOTE',
+                referenceId: order.id,
+                description: `Pago con saldo a favor - Venta #${order.id.slice(0, 8)}`,
+                amount: amountDue,
+                debit: amountDue,
+                credit: 0,
+                balanceAfter: Math.max(0, updated.creditBalance),
+              },
+            });
+            const pm = await this.ensurePaymentMethod(tx, 'STORE_CREDIT');
+            if (pm) {
+              await tx.saleOrderPayment.create({
+                data: {
+                  orderId: order.id,
+                  paymentMethodId: pm.id,
+                  amount: amountDue,
+                  referenceId: dto.paymentReference || 'Saldo a favor',
                 },
               });
             }
@@ -1239,6 +1276,41 @@ export class CheckoutOrchestrator {
         });
       }
     }
+
+    if (order.customerId) {
+      let storeCreditToRefund = 0;
+      if (normalizePaymentMethodType(order.paymentMethod) === 'STORE_CREDIT') {
+        storeCreditToRefund = order.grandTotal;
+      } else {
+        const scPayments = (order.payments || []).filter(
+          (p: { paymentMethod?: { type?: string }; amount: number }) =>
+            normalizePaymentMethodType(p.paymentMethod?.type) === 'STORE_CREDIT',
+        );
+        storeCreditToRefund = scPayments.reduce(
+          (sum: number, p: { amount: number }) => sum + p.amount,
+          0,
+        );
+      }
+      if (storeCreditToRefund > 0.01) {
+        const updated = await tx.customer.update({
+          where: { id: order.customerId },
+          data: { creditBalance: { increment: storeCreditToRefund } },
+        });
+        await tx.currentAccountMovement.create({
+          data: {
+            accountId: order.customerId,
+            entityType: 'CUSTOMER',
+            documentType: 'CREDIT_NOTE',
+            referenceId: order.id,
+            description: `Reintegro saldo a favor por anulación venta #${order.id.slice(0, 8)}`,
+            amount: storeCreditToRefund,
+            debit: 0,
+            credit: storeCreditToRefund,
+            balanceAfter: Math.max(0, updated.creditBalance),
+          },
+        });
+      }
+    }
   }
 
   private async resolvePaymentAccountId(
@@ -1316,6 +1388,42 @@ export class CheckoutOrchestrator {
               paymentMethodId: pm.id,
               amount: split.amount,
               referenceId: split.reference || null,
+            },
+          });
+        }
+      } else if (methodType === 'STORE_CREDIT') {
+        if (!dto.customerId) throw new BadRequestException('Se requiere seleccionar un cliente para usar saldo a favor');
+        const customer = await tx.customer.findUnique({ where: { id: dto.customerId } });
+        if (!customer) throw new BadRequestException('Cliente no encontrado');
+        const available = Number((customer as any).creditBalance) || 0;
+        if (available < split.amount - 0.01) {
+          throw new BadRequestException(`Saldo a favor insuficiente. Disponible: $${available.toFixed(2)}, Requerido: $${split.amount.toFixed(2)}`);
+        }
+        const updated = await tx.customer.update({
+          where: { id: dto.customerId },
+          data: { creditBalance: { decrement: split.amount } },
+        });
+        await tx.currentAccountMovement.create({
+          data: {
+            accountId: dto.customerId,
+            entityType: 'CUSTOMER',
+            documentType: 'DEBIT_NOTE',
+            referenceId: orderId,
+            description: `Pago parcial con saldo a favor - Venta #${orderId.slice(0, 8)}`,
+            amount: split.amount,
+            debit: split.amount,
+            credit: 0,
+            balanceAfter: Math.max(0, updated.creditBalance),
+          },
+        });
+        const pm = await this.ensurePaymentMethod(tx, 'STORE_CREDIT');
+        if (pm) {
+          await tx.saleOrderPayment.create({
+            data: {
+              orderId,
+              paymentMethodId: pm.id,
+              amount: split.amount,
+              referenceId: split.reference || 'Saldo a favor',
             },
           });
         }
@@ -1408,6 +1516,7 @@ export class CheckoutOrchestrator {
       BANK_TRANSFER: 'Transferencia Bancaria',
       CREDIT_CARD: 'Tarjeta / Pago Digital',
       CUSTOMER_CREDIT: 'Cuenta Corriente',
+      STORE_CREDIT: 'Saldo a Favor',
       GIFT_CARD: 'Tarjeta de Regalo',
       LOYALTY: 'Puntos de Fidelización',
     };

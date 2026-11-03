@@ -8,6 +8,7 @@ export interface CurrentAccountView {
   entityName: string;
   entityType: 'CUSTOMER' | 'SUPPLIER';
   balance: number;
+  creditBalance?: number;
   currency: string;
   creditLimit?: number;
   overdueAmount: number;
@@ -36,7 +37,10 @@ export class CurrentAccountsService {
       const customers = await this.prisma.customer.findMany({
         where: {
           isActive: true,
-          usedCredit: { gt: 0 },
+          OR: [
+            { usedCredit: { gt: 0 } },
+            { creditBalance: { gt: 0 } },
+          ],
           ...(search ? { fullName: { contains: search, mode: 'insensitive' } } : {}),
         },
         orderBy: { updatedAt: 'desc' },
@@ -222,16 +226,19 @@ export class CurrentAccountsService {
     fullName: string;
     usedCredit: number;
     creditLimit: number;
+    creditBalance?: number;
     phone?: string | null;
     email?: string | null;
     updatedAt: Date;
   }): CurrentAccountView {
+    const creditBalance = Number(c.creditBalance) || 0;
     return {
       id: c.id,
       entityId: c.id,
       entityName: c.fullName,
       entityType: 'CUSTOMER',
       balance: c.usedCredit,
+      creditBalance,
       currency: 'ARS',
       creditLimit: c.creditLimit,
       overdueAmount: c.creditLimit > 0 && c.usedCredit > c.creditLimit
@@ -523,16 +530,33 @@ export class CurrentAccountsService {
           }
         }
 
+        let newUsedCredit = customer.usedCredit;
+        let newCreditBalance = Number((customer as any).creditBalance) || 0;
+
+        if (input.customerEffect === 'decrement') {
+          if (customer.usedCredit > 0) {
+            if (input.amount <= customer.usedCredit) {
+              newUsedCredit = customer.usedCredit - input.amount;
+            } else {
+              const excess = input.amount - customer.usedCredit;
+              newUsedCredit = 0;
+              newCreditBalance += excess;
+            }
+          } else {
+            newCreditBalance += input.amount;
+          }
+        } else if (input.customerEffect === 'increment') {
+          newUsedCredit += input.amount;
+        }
+
         const updated = await tx.customer.update({
           where: { id: accountId },
           data: {
-            usedCredit:
-              input.customerEffect === 'increment'
-                ? { increment: input.amount }
-                : { decrement: input.amount },
+            usedCredit: newUsedCredit,
+            creditBalance: newCreditBalance,
           },
         });
-        const balanceAfter = Math.max(0, updated.usedCredit);
+        const balanceAfter = newUsedCredit > 0 ? newUsedCredit : newCreditBalance;
         const isCredit = input.customerEffect === 'decrement';
         const movement = await tx.currentAccountMovement.create({
           data: {

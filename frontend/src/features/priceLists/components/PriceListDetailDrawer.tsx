@@ -19,16 +19,15 @@ export function PriceListDetailDrawer({ open, onClose, priceList }: Props) {
   const [page, setPage] = useState(1);
 
   const { data } = useQuery({
-    queryKey: queryKeys.priceLists.items(priceList?.id || ''),
+    queryKey: queryKeys.priceLists.items(priceList?.id || '', page),
     queryFn: () => priceListsApi.getItems(priceList!.id, page, 20),
-    enabled: open && !!priceList && priceList.type === 'BASE', // Only base lists have explicit item overrides
+    enabled: open && !!priceList,
   });
 
   if (!priceList) return null;
 
   const items = data?.data || [];
   const total = data?.total || 0;
-
 
   return (
     <Drawer open={open} onClose={onClose} title="Detalle de Lista de Precios" width="lg">
@@ -42,27 +41,15 @@ export function PriceListDetailDrawer({ open, onClose, priceList }: Props) {
           </div>
           <div className={styles.openingAside}>
             {priceList.isActive ? <StatusChip label="Activa" color="green" /> : <StatusChip label="Inactiva" color="gray" />}
-            <div className={styles.balanceAction}>
-              <Badge color={priceList.type === 'MODIFIER' ? 'purple' : 'blue'}>
-                {priceList.type === 'BASE' ? 'Lista Base (Fija)' : `Modificadora (${priceList.modifierPercentage}%)`}
-              </Badge>
-            </div>
+            {priceList.isDefault && (
+              <Badge color="green">Por defecto</Badge>
+            )}
           </div>
         </div>
 
-        {/* Content */}
-        {priceList.type === 'MODIFIER' ? (
-          <div className={styles.emptyStateLg}>
-            <Percent size={48} color="var(--purple)" className={styles.purchaseEmptyIcon} />
-            <h4 className={styles.sectionPanelTitle}>Lista Modificadora Dinámica</h4>
-            <p className={styles.scopeHint}>
-              Esta lista aplica un factor de <strong>{priceList.modifierPercentage}%</strong> sobre los precios base de los productos.
-              No se requieren asignar precios manualmente a nivel de Variante.
-            </p>
-          </div>
-        ) : (
-          <div>
-            <div className={styles.sectionHeaderRow}>
+        {/* Content: Matriz de Precios */}
+        <div>
+          <div className={styles.sectionHeaderRow}>
               <h4 className={styles.sectionHeading}>
                 <DollarSign size={18} /> Matriz de Precios
               </h4>
@@ -99,7 +86,6 @@ export function PriceListDetailDrawer({ open, onClose, priceList }: Props) {
               </div>
             )}
           </div>
-        )}
 
       </div>
     </Drawer>

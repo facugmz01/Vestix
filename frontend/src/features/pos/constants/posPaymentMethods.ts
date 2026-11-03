@@ -9,6 +9,7 @@ export type PosPaymentMethodId =
   | 'QR_MERCADOPAGO'
   | 'BANK_TRANSFER'
   | 'CUSTOMER_CREDIT'
+  | 'STORE_CREDIT'
   | 'MULTIPLE';
 
 export interface PosPaymentMethodConfig {
@@ -28,6 +29,7 @@ export const POS_PAYMENT_METHODS: PosPaymentMethodConfig[] = [
   { id: 'QR_MERCADOPAGO', label: 'QR MercadoPago', shortLabel: 'QR MP', icon: QrCode, cssClass: 'bgQr', opensQrModal: true },
   { id: 'BANK_TRANSFER', label: 'Transferencia', shortLabel: 'Transfer.', icon: ArrowLeftRight, cssClass: 'bgTransfer' },
   { id: 'CUSTOMER_CREDIT', label: 'Cuenta Corriente', shortLabel: 'Cta. cte.', icon: Wallet, cssClass: 'bgAccount', requiresCustomer: true },
+  { id: 'STORE_CREDIT', label: 'Saldo a Favor', shortLabel: 'Saldo Favor', icon: Wallet, cssClass: 'bgAccount', requiresCustomer: true },
   { id: 'MULTIPLE', label: 'Pago Mixto', shortLabel: 'Mixto', icon: Layers, cssClass: 'bgMultiple', opensMixedModal: true },
 ];
 
@@ -37,9 +39,9 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   QR_MERCADOPAGO: 'QR MercadoPago',
   BANK_TRANSFER: 'Transferencia Bancaria',
   CUSTOMER_CREDIT: 'Cuenta Corriente',
+  STORE_CREDIT: 'Saldo a Favor',
   MULTIPLE: 'Pago Mixto',
   GIFT_CARD: 'Gift Card / Puntos',
   LOYALTY: 'Puntos Fidelización',
   DEBIT_CARD: 'Tarjeta de Débito',
-  STORE_CREDIT: 'Crédito a Favor',
 };

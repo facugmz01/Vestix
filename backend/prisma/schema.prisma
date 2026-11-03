@@ -419,6 +419,7 @@ model Customer {
   phone          String?
   creditLimit    Float           @default(0)
   usedCredit     Float           @default(0)
+  creditBalance  Float           @default(0)
   isActive       Boolean         @default(true)
   priceListId    String?
   priceList      PriceList?      @relation(fields: [priceListId], references: [id], onDelete: SetNull)

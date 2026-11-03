@@ -172,6 +172,7 @@ export class SetupService {
       { name: 'Transferencia Bancaria', type: 'BANK_TRANSFER' },
       { name: 'MercadoPago', type: 'DIGITAL_WALLET' },
       { name: 'Cuenta Corriente', type: 'CUSTOMER_CREDIT' },
+      { name: 'Saldo a Favor', type: 'STORE_CREDIT' },
     ];
 
     for (const pm of paymentMethods) {

@@ -241,6 +241,42 @@ export class ProductsService {
         });
       }
 
+      // 5. Create Price List Entries (if specified)
+      if (createProductDto.priceListPrices?.length) {
+        const createdVariants = await tx.productVariant.findMany({
+          where: { productId: product.id },
+        });
+
+        for (const variant of createdVariants) {
+          const matchedVariantDto = createProductDto.variants?.find(
+            v => (v.sku && v.sku.toUpperCase() === variant.sku.toUpperCase())
+          );
+          const pricesToApply = matchedVariantDto?.priceListPrices?.length
+            ? matchedVariantDto.priceListPrices
+            : createProductDto.priceListPrices || [];
+
+          for (const plp of pricesToApply) {
+            if (!plp.priceListId || plp.price == null) continue;
+            await tx.priceListEntry.upsert({
+              where: {
+                priceListId_variantId: {
+                  priceListId: plp.priceListId,
+                  variantId: variant.id,
+                },
+              },
+              create: {
+                priceListId: plp.priceListId,
+                variantId: variant.id,
+                overridePrice: Number(plp.price) || 0,
+              },
+              update: {
+                overridePrice: Number(plp.price) || 0,
+              },
+            });
+          }
+        }
+      }
+
       return tx.product.findUnique({
         where: { id: product.id },
         include: {
@@ -532,8 +568,15 @@ export class ProductsService {
       };
     });
 
+    const defaultVariant = product.variants?.[0];
+    const priceListPrices = defaultVariant?.priceListEntries?.map((e: any) => ({
+      priceListId: e.priceListId,
+      price: e.overridePrice,
+    })) || [];
+
     return {
       ...product,
+      priceListPrices,
       variants: variantsWithStock,
       totalStock,
     };
@@ -792,6 +835,48 @@ export class ProductsService {
                 costPrice: updateProductDto.costPrice || product.costPrice || 0,
                 isActive: true
               }
+            });
+          }
+        }
+      }
+
+      if (updateProductDto.basePrice !== undefined && (!variants || variants.length === 0)) {
+        await tx.productVariant.updateMany({
+          where: { productId: id },
+          data: { basePrice: Number(updateProductDto.basePrice) || 0 },
+        });
+      }
+
+      if (updateProductDto.priceListPrices !== undefined && Array.isArray(updateProductDto.priceListPrices)) {
+        const productVariants = await tx.productVariant.findMany({
+          where: { productId: id, isActive: true },
+        });
+
+        for (const variant of productVariants) {
+          const matchedVariantDto = updateProductDto.variants?.find(
+            v => (v.id && v.id === variant.id) || (v.sku && v.sku.toUpperCase() === variant.sku.toUpperCase())
+          );
+          const pricesToApply = matchedVariantDto?.priceListPrices?.length
+            ? matchedVariantDto.priceListPrices
+            : updateProductDto.priceListPrices || [];
+
+          for (const plp of pricesToApply) {
+            if (!plp.priceListId || plp.price == null) continue;
+            await tx.priceListEntry.upsert({
+              where: {
+                priceListId_variantId: {
+                  priceListId: plp.priceListId,
+                  variantId: variant.id,
+                },
+              },
+              create: {
+                priceListId: plp.priceListId,
+                variantId: variant.id,
+                overridePrice: Number(plp.price) || 0,
+              },
+              update: {
+                overridePrice: Number(plp.price) || 0,
+              },
             });
           }
         }
@@ -1415,9 +1500,12 @@ export class ProductsService {
       });
 
       if (targetPriceList.type === 'MODIFIER' || targetPriceList.isPercentageBased) {
-        throw new BadRequestException(
-          'Las listas de precios modificadoras aplican un porcentaje dinámico sobre el precio base. Para ajustar una lista modificadora, editala directamente en Listas de Precios o actualizá el Precio Base.',
-        );
+        await this.prisma.priceList.update({
+          where: { id: priceListId },
+          data: { type: 'BASE', isPercentageBased: false, modifierPercentage: 0 },
+        });
+        targetPriceList.type = 'BASE';
+        targetPriceList.isPercentageBased = false;
       }
     }
 
@@ -1455,13 +1543,18 @@ export class ProductsService {
           let productUpdated = false;
 
           for (const variant of product.variants) {
+            const variantCost = variant.costPrice > 0 ? variant.costPrice : (product.costPrice || 0);
+            const baseOrCost = variant.basePrice > 0 ? variant.basePrice : variantCost;
+
             if (targetPriceList) {
               // Target is a fixed/base Price List (PriceListEntry)
               const existingEntry = (variant as any).priceListEntries?.[0];
-              const currentPrice = existingEntry?.overridePrice ?? variant.basePrice;
+              const currentPrice = (existingEntry?.overridePrice != null && existingEntry.overridePrice > 0)
+                ? existingEntry.overridePrice
+                : baseOrCost;
               const newPrice = roundPrice((currentPrice || 0) * multiplier);
 
-              if (newPrice !== currentPrice || !existingEntry) {
+              if (newPrice > 0 && (newPrice !== currentPrice || !existingEntry)) {
                 await tx.priceListEntry.upsert({
                   where: {
                     priceListId_variantId: {
@@ -1492,10 +1585,10 @@ export class ProductsService {
               }
             } else {
               // Target is Base Selling Price (ProductVariant.basePrice)
-              const currentPrice = variant.basePrice;
+              const currentPrice = baseOrCost;
               const newPrice = roundPrice((currentPrice || 0) * multiplier);
 
-              if (newPrice !== currentPrice) {
+              if (newPrice > 0 && newPrice !== variant.basePrice) {
                 await tx.productVariant.update({
                   where: { id: variant.id },
                   data: { basePrice: newPrice },

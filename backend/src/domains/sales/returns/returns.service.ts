@@ -173,9 +173,28 @@ export class ReturnsService {
       }
 
       if (saleReturn.action === ReturnAction.STORE_CREDIT && sale.customerId) {
+        const customer = await tx.customer.findUnique({ where: { id: sale.customerId } });
+        let newUsedCredit = customer ? customer.usedCredit : 0;
+        let newCreditBalance = customer ? (Number((customer as any).creditBalance) || 0) : 0;
+
+        if (newUsedCredit > 0) {
+          if (totalRefund <= newUsedCredit) {
+            newUsedCredit -= totalRefund;
+          } else {
+            const excess = totalRefund - newUsedCredit;
+            newUsedCredit = 0;
+            newCreditBalance += excess;
+          }
+        } else {
+          newCreditBalance += totalRefund;
+        }
+
         const updated = await tx.customer.update({
           where: { id: sale.customerId },
-          data: { usedCredit: { decrement: totalRefund } },
+          data: {
+            usedCredit: newUsedCredit,
+            creditBalance: newCreditBalance,
+          },
         });
         await tx.currentAccountMovement.create({
           data: {
@@ -187,7 +206,7 @@ export class ReturnsService {
             amount: totalRefund,
             debit: 0,
             credit: totalRefund,
-            balanceAfter: Math.max(0, updated.usedCredit),
+            balanceAfter: newUsedCredit > 0 ? newUsedCredit : newCreditBalance,
           },
         });
       } else {

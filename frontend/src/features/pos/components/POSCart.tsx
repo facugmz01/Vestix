@@ -135,15 +135,48 @@ export function POSCart({
     toast.success('Pedido vaciado');
   };
 
+  const handleApplyCreditBalance = (balance: number) => {
+    if (balance <= 0) return;
+    if (amountDue <= balance) {
+      setSelectedMethod('STORE_CREDIT');
+      onCheckoutPayment('STORE_CREDIT');
+    } else {
+      usePosStore.getState().setPaymentSplits([
+        { method: 'STORE_CREDIT', amount: balance, reference: 'Saldo a favor' },
+        { method: 'CASH', amount: Math.round((amountDue - balance) * 100) / 100, reference: '' },
+      ]);
+      setSelectedMethod('MULTIPLE');
+      usePosStore.getState().setMixedPaymentModalOpen(true);
+    }
+  };
+
   const handlePay = () => {
     if (!selectedConfig) return;
-    if (selectedConfig.requiresCustomer && !selectedCustomerId) {
-      toast.error('Seleccioná un cliente para usar Cuenta Corriente');
-      return;
-    }
-    if (selectedConfig.requiresCustomer && selectedCustomer?.credit && selectedCustomer.credit.available < amountDue) {
-      toast.error('Crédito insuficiente para esta venta');
-      return;
+    if (selectedConfig.id === 'STORE_CREDIT') {
+      if (!selectedCustomerId) {
+        toast.error('Seleccioná un cliente para usar Saldo a Favor');
+        return;
+      }
+      const available = Number(selectedCustomer?.creditBalance) || 0;
+      if (available <= 0) {
+        toast.error('El cliente no tiene saldo a favor disponible');
+        return;
+      }
+      if (available < amountDue) {
+        toast.error(
+          `Saldo a favor ($${available.toLocaleString('es-AR')}) insuficiente para el total ($${amountDue.toLocaleString('es-AR')}). Usá Pago Mixto para descontarlo.`,
+        );
+        return;
+      }
+    } else if (selectedConfig.id === 'CUSTOMER_CREDIT') {
+      if (!selectedCustomerId) {
+        toast.error('Seleccioná un cliente para usar Cuenta Corriente');
+        return;
+      }
+      if (selectedCustomer?.credit && selectedCustomer.credit.available < amountDue) {
+        toast.error('Crédito insuficiente para esta venta');
+        return;
+      }
     }
     onCheckoutPayment(selectedConfig.id);
   };
@@ -177,7 +210,7 @@ export function POSCart({
       </div>
 
       <div className={styles.cartTop}>
-        <PosCustomerSearch amountDue={amountDue} />
+        <PosCustomerSearch amountDue={amountDue} onApplyCreditBalance={handleApplyCreditBalance} />
         <button
           type="button"
           className={styles.extrasToggle}

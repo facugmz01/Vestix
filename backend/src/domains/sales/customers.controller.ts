@@ -3,6 +3,7 @@ import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
+import { AddCreditBalanceDto } from './dto/add-credit-balance.dto';
 import { RequirePermissions } from '../../core/rbac/decorators/require-permissions.decorator';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,6 +18,15 @@ export class CustomersController {
   @RequirePermissions({ action: 'create', subject: 'Customers' })
   create(@Body() dto: CreateCustomerDto) {
     return this.customersService.create(dto);
+  }
+
+  @Post(':id/credit-balance')
+  @RequirePermissions({ action: 'manage', subject: 'Customers' })
+  addCreditBalance(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddCreditBalanceDto,
+  ) {
+    return this.customersService.addCreditBalance(id, dto);
   }
 
   @Post('bulk-import-balances')

@@ -130,7 +130,7 @@ fi
 
 # If VERSION unchanged, append git short sha for uniqueness
 if [ "$NEW_VERSION" = "$PREVIOUS_VERSION" ] && [ -d .git ]; then
-  NEW_VERSION="${NEW_VERSION}+$(git rev-parse --short HEAD)"
+  NEW_VERSION="${NEW_VERSION}-$(git rev-parse --short HEAD)"
 fi
 
 tmp_env="$(mktemp)"

@@ -141,15 +141,6 @@ export default function PriceListsPage() {
     >
       <FiltersBar actions={<Badge color="gray">{total} listas</Badge>}>
         <SearchInput placeholder="Buscar por nombre o código..." onSearch={(val) => { setSearch(val); setPage(1); }} />
-        <select
-          value={typeFilter}
-          onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-          className={adminStyles.filterSelectRadius}
-        >
-          <option value="">Todos los Tipos</option>
-          <option value="BASE">Base (Precios fijos)</option>
-          <option value="MODIFIER">Modificadoras (%)</option>
-        </select>
       </FiltersBar>
 
       <Section>
@@ -161,7 +152,7 @@ export default function PriceListsPage() {
           <EmptyState 
             icon={<Tag size={40} />}
             title="No hay listas de precios" 
-            message="Creá listas bases o modificadoras para asignar a tus clientes o sucursales." 
+            message="Creá listas de precios para asignar a tus clientes o sucursales." 
           />
         ) : (
           <Table
@@ -178,20 +169,6 @@ export default function PriceListsPage() {
                     {l.isDefault && <Badge color="green">Por defecto</Badge>}
                   </div>
                 )
-              },
-              { 
-                key: 'type', 
-                header: 'Tipo',
-                render: (l) => l.type === 'BASE' 
-                  ? <Badge color="blue">BASE</Badge> 
-                  : <Badge color="purple">MODIFICADOR</Badge>
-              },
-              { 
-                key: 'rule', 
-                header: 'Regla',
-                render: (l) => l.type === 'MODIFIER' 
-                  ? <span className={clsx((l.modifierPercentage || 0) < 0 ? adminStyles.modifierNegative : adminStyles.modifierPositive)}>{l.modifierPercentage}%</span> 
-                  : <span className={adminStyles.textMutedDash}>Fija (Override)</span>
               },
               { 
                 key: 'currency', 

@@ -58,6 +58,7 @@ const PAYMENT_METHOD_NAMES: Record<string, string> = {
   CREDIT_CARD: 'Tarjeta (Débito/Crédito)',
   BANK_TRANSFER: 'Transferencia',
   CUSTOMER_CREDIT: 'Cuenta Corriente',
+  STORE_CREDIT: 'Saldo a Favor',
   QR_MERCADOPAGO: 'QR MercadoPago',
   MULTIPLE: 'Múltiples medios',
 };

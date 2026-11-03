@@ -312,7 +312,7 @@ export interface GoodsReceipt {
 }
 
 // ─── SALES ───────────────────────────────────────────────────────────────
-export type PaymentMethod = 'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'|'QR_MERCADOPAGO';
+export type PaymentMethod = 'CASH'|'CREDIT_CARD'|'CUSTOMER_CREDIT'|'STORE_CREDIT'|'BANK_TRANSFER'|'MULTIPLE'|'QR_MERCADOPAGO';
 export interface PaymentMethodEntity { id: string; name: string; type: string; isActive: boolean; }
 export type OrderSource   = 'POS'|'ECOMMERCE'|'BACKOFFICE';
 export type SaleOrderStatus = 'QUOTATION' | 'QUOTE' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'COMPLETED' | 'READY_FOR_PICKUP' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
@@ -474,7 +474,10 @@ export interface Customer {
   source?: CustomerSource;
   taxId?: string; taxCondition?: CustomerTaxCondition | string;
   email?: string; phone?: string;
-  credit: { limit: number; used: number; available: number; onHold: boolean; };
+  creditLimit?: number;
+  usedCredit?: number;
+  creditBalance?: number;
+  credit: { limit: number; used: number; available: number; balance?: number; onHold: boolean; };
   priceListId?: string;
   createdAt: string;
 }
@@ -662,6 +665,7 @@ export interface CurrentAccount {
   entityName: string;
   entityType: 'CUSTOMER' | 'SUPPLIER';
   balance: number;
+  creditBalance?: number;
   currency: string;
   creditLimit?: number;
   overdueAmount: number;

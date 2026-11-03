@@ -429,7 +429,7 @@ export class AccountsService {
 
         for (const slice of paymentSlices) {
           if (slice.amount <= 0.01) continue;
-          if (slice.method === 'CUSTOMER_CREDIT') continue;
+          if (slice.method === 'CUSTOMER_CREDIT' || slice.method === 'STORE_CREDIT') continue;
 
           const accountId = await this.resolvePaymentAccountInTx(
             tx,

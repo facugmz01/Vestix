@@ -95,35 +95,13 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
         <Input label="Nombre de la Lista *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
         <Input label="Código (Ej: MAYORISTA_A) *" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required />
 
-        <div className="grid-responsive grid-cols-2">
-          <div className={styles.fieldGroupSm}>
-            <label className={styles.selectLabel}>Moneda</label>
-            <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} className={styles.select}>
-              <option value="ARS">ARS</option>
-              <option value="USD">USD</option>
-            </select>
-          </div>
-          <div className={styles.fieldGroupSm}>
-            <label className={styles.selectLabel}>Tipo de Lista</label>
-            <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as 'BASE'|'MODIFIER' })} disabled={isEditing} className={styles.select}>
-              <option value="BASE">Base (Precios fijos)</option>
-              <option value="MODIFIER">Modificadora (%)</option>
-            </select>
-          </div>
+        <div className={styles.fieldGroupSm}>
+          <label className={styles.selectLabel}>Moneda</label>
+          <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} className={styles.select}>
+            <option value="ARS">ARS</option>
+            <option value="USD">USD</option>
+          </select>
         </div>
-
-        {formData.type === 'MODIFIER' && (
-          <div className={styles.sectionPanel}>
-            <Input 
-              label="Porcentaje de Modificación (%)" 
-              type="number" 
-              step="0.1" 
-              value={formData.modifierPercentage} 
-              onChange={(e) => setFormData({ ...formData, modifierPercentage: Number(e.target.value) })} 
-             
-            />
-          </div>
-        )}
 
         <div className={styles.checkboxRow}>
           <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />

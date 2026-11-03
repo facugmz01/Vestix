@@ -26,10 +26,7 @@ export class PricingService {
   }
 
   async setVariantPrice(priceListId: string, variantId: string, overridePrice: number, changedBy?: string) {
-    const list = await this.prisma.priceList.findUniqueOrThrow({ where: { id: priceListId } });
-    if (list.isPercentageBased) {
-      throw new ConflictException('Cannot set explicit variant prices on a percentage-based price list.');
-    }
+    await this.prisma.priceList.findUniqueOrThrow({ where: { id: priceListId } });
 
     const existing = await this.prisma.priceListEntry.findUnique({
       where: { priceListId_variantId: { priceListId, variantId } },
@@ -132,14 +129,18 @@ export class PricingService {
     variant: { basePrice: number; costPrice: number },
     entryOverride?: number | null,
   ): number {
+    if (entryOverride != null) return entryOverride;
+
     const referencePrice = variant.basePrice > 0 ? variant.basePrice : variant.costPrice;
 
     if (this.isModifierList(list)) {
-      const multiplier = (100 + this.getModifierPercentage(list)) / 100;
-      return Number((referencePrice * multiplier).toFixed(2));
+      const modifier = this.getModifierPercentage(list);
+      if (modifier !== 0) {
+        const multiplier = (100 + modifier) / 100;
+        return Number((referencePrice * multiplier).toFixed(2));
+      }
     }
 
-    if (entryOverride != null) return entryOverride;
     return variant.basePrice > 0
       ? variant.basePrice
       : Number((variant.costPrice * (list.margin || 1.0)).toFixed(2));
@@ -168,13 +169,11 @@ export class PricingService {
     });
     if (!variant) return basePrice;
 
-    const entry = this.isModifierList(activePriceList)
-      ? null
-      : await this.prisma.priceListEntry.findUnique({
-          where: {
-            priceListId_variantId: { priceListId: activePriceList.id, variantId },
-          },
-        });
+    const entry = await this.prisma.priceListEntry.findUnique({
+      where: {
+        priceListId_variantId: { priceListId: activePriceList.id, variantId },
+      },
+    });
 
     return this.computePriceFromList(activePriceList, variant, entry?.overridePrice);
   }
@@ -220,7 +219,7 @@ export class PricingService {
     const variantIds = variants.map(v => v.id);
     let entryMap = new Map<string, number>();
 
-    if (isListActive && !this.isModifierList(activePriceList)) {
+    if (isListActive) {
       const entries = await this.prisma.priceListEntry.findMany({
         where: {
           priceListId: activePriceList.id,
@@ -306,13 +305,11 @@ export class PricingService {
     });
     if (!variant) return basePrice;
 
-    const entry = this.isModifierList(activePriceList)
-      ? null
-      : await this.prisma.priceListEntry.findUnique({
-          where: {
-            priceListId_variantId: { priceListId: activePriceList.id, variantId },
-          },
-        });
+    const entry = await this.prisma.priceListEntry.findUnique({
+      where: {
+        priceListId_variantId: { priceListId: activePriceList.id, variantId },
+      },
+    });
 
     return this.computePriceFromList(activePriceList, variant, entry?.overridePrice);
   }
@@ -338,10 +335,7 @@ export class PricingService {
     variantsData: { variantId: string; basePrice: number }[],
     modifierPercentage: number,
   ) {
-    const list = await this.prisma.priceList.findUniqueOrThrow({ where: { id: priceListId } });
-    if (list.isPercentageBased || list.type === 'MODIFIER') {
-      throw new ConflictException('Cannot bulk update explicit prices on a percentage-based price list.');
-    }
+    await this.prisma.priceList.findUniqueOrThrow({ where: { id: priceListId } });
 
     const multiplier = (100 + modifierPercentage) / 100;
 

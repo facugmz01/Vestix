@@ -245,7 +245,7 @@ export default function SalesPage() {
                 key: 'payment', 
                 header: 'Condición',
                 render: (s) => {
-                  const names: any = { CASH: 'Efectivo', CREDIT_CARD: 'Tarjeta', BANK_TRANSFER: 'Transferencia', CUSTOMER_CREDIT: 'Cta. Corriente' };
+                  const names: any = { CASH: 'Efectivo', CREDIT_CARD: 'Tarjeta', BANK_TRANSFER: 'Transferencia', CUSTOMER_CREDIT: 'Cta. Corriente', STORE_CREDIT: 'Saldo a Favor' };
                   return <span className={adminStyles.cellSecondaryMuted}>{names[s.paymentMethod] || s.paymentMethod}</span>
                 }
               },

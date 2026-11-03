@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   suggestMercadoPagoPrice, 
   MP_FEE_RATES, 
@@ -7,35 +6,27 @@ import {
   type MercadoPagoModality,
   type MercadoPagoInstallmentPlan
 } from '../utils/mercadopagoPricing';
-import { priceListsApi } from '@/api/priceLists.api';
-import { queryKeys } from '@/api/queryKeys';
 import { Button } from '@/components/ui';
 import { 
-  Check, 
   HelpCircle, 
   Copy, 
-  TrendingUp, 
-  PlusCircle, 
   ChevronDown, 
   ChevronUp,
-  CreditCard
+  CreditCard,
+  Info
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from './MercadoPagoPriceSuggester.module.css';
 
 interface Props {
   costPrice: number;
-  onApplyPrice: (price: number) => void;
+  onApplyPrice?: (price: number) => void;
   existingPriceLists?: Array<{ id: string; name: string; type: string; modifierPercentage?: number }>;
 }
 
 export function MercadoPagoPriceSuggester({ 
-  costPrice, 
-  onApplyPrice, 
-  existingPriceLists = [] 
+  costPrice 
 }: Props) {
-  const queryClient = useQueryClient();
-
   const [profitMargin, setProfitMargin] = useState<number>(60);
   const [shippingAllocated, setShippingAllocated] = useState<number>(0);
   const [otherExpenses, setOtherExpenses] = useState<number>(0);
@@ -49,9 +40,8 @@ export function MercadoPagoPriceSuggester({
 
   const [showAdvancedTaxes, setShowAdvancedTaxes] = useState<boolean>(false);
   const [showFundamentation, setShowFundamentation] = useState<boolean>(false);
-  const [creatingList, setCreatingList] = useState<boolean>(false);
 
-  // Cálculo en tiempo real
+  // Cálculo en tiempo real (exclusivamente informativo)
   const suggestion = useMemo(() => {
     if (!costPrice || costPrice <= 0) return null;
     try {
@@ -85,59 +75,16 @@ export function MercadoPagoPriceSuggester({
     productIvaPercent,
   ]);
 
-  // Mutation para crear o actualizar la lista de precios en Vestix
-  const createPriceListMutation = useMutation({
-    mutationFn: async (modifierPct: number) => {
-      const planSuffix = suggestion?.installmentsCount && suggestion.installmentsCount > 1
-        ? ` (${suggestion.installmentPlanLabel})`
-        : ' (Point/QR)';
-      const listName = `Mercado Pago${planSuffix}`;
-      const listCode = suggestion?.installmentsCount && suggestion.installmentsCount > 1
-        ? `MP_${suggestion.installmentsCount}CUOTAS`
-        : 'MP_POINT';
-      
-      const existing = existingPriceLists.find(
-        l => l.name.toLowerCase() === listName.toLowerCase() || (l as { code?: string }).code === listCode
-      );
-
-      if (existing) {
-        return priceListsApi.updatePriceList(existing.id, {
-          modifierPercentage: modifierPct,
-          isActive: true,
-        });
-      }
-
-      return priceListsApi.createPriceList({
-        name: listName,
-        code: listCode,
-        currency: 'ARS',
-        type: 'MODIFIER',
-        modifierPercentage: modifierPct,
-        isActive: true,
-        isDefault: false,
-      });
-    },
-    onSuccess: (_, modifierPct) => {
-      toast.success(`Lista de Precios guardada (+${modifierPct}%)`);
-      queryClient.invalidateQueries({ queryKey: queryKeys.priceLists.all() });
-      setCreatingList(false);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || 'Error al crear la lista de precios');
-      setCreatingList(false);
-    },
-  });
-
-  const handleCreatePriceList = () => {
-    if (!suggestion) return;
-    setCreatingList(true);
-    createPriceListMutation.mutate(suggestion.modifierPercentage);
-  };
-
   const handleCopyFundamentation = () => {
     if (!suggestion) return;
     navigator.clipboard.writeText(suggestion.fundamentationText);
     toast.success('Fundamentación copiada al portapapeles');
+  };
+
+  const handleCopyPrice = () => {
+    if (!suggestion) return;
+    navigator.clipboard.writeText(String(suggestion.suggestedPrice));
+    toast.success(`Precio sugerido ($${suggestion.suggestedPrice.toLocaleString('es-AR')}) copiado al portapapeles`);
   };
 
   if (!costPrice || costPrice <= 0) {
@@ -151,6 +98,7 @@ export function MercadoPagoPriceSuggester({
         <div className={styles.titleArea}>
           <CreditCard size={18} color="#009ee3" />
           <h4 className={styles.title}>Sugeridor de Precios Mercado Pago</h4>
+          <span className={styles.infoBadge}>Solo Informativo</span>
           <span className={styles.mpBadge}>Aranceles Oficiales</span>
           <span className={styles.guaranteeBadge}>Margen Protegido</span>
         </div>
@@ -163,6 +111,11 @@ export function MercadoPagoPriceSuggester({
           {showAdvancedTaxes ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           {showAdvancedTaxes ? 'Ocultar tasas fiscales' : 'Ajustar tasas fiscales (IIBB / IVA)'}
         </button>
+      </div>
+
+      <div className={styles.informativeNotice}>
+        <Info size={14} className={styles.noticeIcon} />
+        <span>Herramienta de simulación y consulta de aranceles. No genera ni altera precios cargados en el producto.</span>
       </div>
 
       {/* Advanced taxes row */}
@@ -337,21 +290,20 @@ export function MercadoPagoPriceSuggester({
             <div className={styles.actionButtons}>
               <Button
                 type="button"
-                variant="primary"
+                variant="outline"
                 size="sm"
-                icon={<PlusCircle size={16} />}
-                loading={creatingList || createPriceListMutation.isPending}
-                onClick={handleCreatePriceList}
-                title="Crea o actualiza una lista de precios modificadora con el porcentaje calculado"
+                icon={<Copy size={15} />}
+                onClick={handleCopyPrice}
+                title="Copiar precio sugerido al portapapeles"
               >
-                Generar Lista MP (+{suggestion.modifierPercentage}%)
+                Copiar Precio Sugerido
               </Button>
 
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                icon={<HelpCircle size={16} />}
+                icon={<HelpCircle size={15} />}
                 onClick={() => setShowFundamentation(prev => !prev)}
               >
                 {showFundamentation ? 'Ocultar Fundamentación' : 'Ver Fundamentación'}

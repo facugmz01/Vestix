@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Drawer, StatusChip, Badge, Button, Table } from '@/components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/api/queryKeys';
@@ -5,9 +6,10 @@ import { customersApi } from '@/api/customers.api';
 import { loyaltyApi } from '@/api/loyalty.api';
 import { priceListsApi } from '@/api/priceLists.api';
 import type { Customer } from '@/types';
-import { ShoppingCart, Star, CreditCard, ExternalLink } from 'lucide-react';
+import { ShoppingCart, Star, CreditCard, ExternalLink, Wallet, Plus } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatSaleId } from '@/utils/formatId';
+import { AddCreditBalanceModal } from './AddCreditBalanceModal';
 import styles from '@/styles/DetailDrawerShared.module.css';
 
 interface Props {
@@ -23,6 +25,7 @@ function formatTierLabel(tier?: string) {
 }
 
 export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
+  const [creditModalOpen, setCreditModalOpen] = useState(false);
   const customerId = customer?.id ?? '';
 
   const { data: history, isLoading } = useQuery({
@@ -82,6 +85,33 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
         </div>
 
         <div className={styles.cardsGrid}>
+          <div className={styles.infoCard}>
+            <div className={styles.infoCardHeader}>
+              <Wallet size={18} color="var(--green, #10b981)" />
+              <h4 className={styles.infoCardTitle}>Saldo a Favor</h4>
+            </div>
+            <div className={styles.infoCardBody}>
+              <div className={styles.infoRowTotal} style={{ marginTop: 0 }}>
+                <span className={styles.infoLabel}>Disponible:</span>
+                <span style={{ color: 'var(--green, #10b981)', fontSize: 16, fontWeight: 700 }}>
+                  {formatCurrency(Number(customer.creditBalance) || 0)}
+                </span>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 8px 0' }}>
+                Dinero a favor para descontar en futuras compras.
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setCreditModalOpen(true)}
+                icon={<Plus size={14} />}
+                style={{ width: '100%', marginTop: 4 }}
+              >
+                Cargar Saldo / Anticipo
+              </Button>
+            </div>
+          </div>
+
           <div className={styles.infoCard}>
             <div className={styles.infoCardHeader}>
               <CreditCard size={18} color="var(--accent)" />
@@ -168,6 +198,12 @@ export function CustomerDetailDrawer({ open, onClose, customer }: Props) {
         </div>
 
       </div>
+
+      <AddCreditBalanceModal
+        open={creditModalOpen}
+        onClose={() => setCreditModalOpen(false)}
+        customer={customer}
+      />
     </Drawer>
   );
 }

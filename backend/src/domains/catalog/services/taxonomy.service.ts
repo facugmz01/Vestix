@@ -193,34 +193,19 @@ export class PriceListService {
   }
 
   async create(data: any) {
-    const { name, code, currency, type, modifierPercentage, isActive, margin, isDefault } = data;
-    
-    const computedMargin = margin !== undefined ? Number(margin) : 1.0;
-    
-    let computedModifierPercentage = modifierPercentage !== undefined ? Number(modifierPercentage) : 0;
-    if (margin !== undefined && modifierPercentage === undefined) {
-      computedModifierPercentage = Math.round((computedMargin - 1) * 100);
-    }
-
-    let computedType = type || 'BASE';
-    if (margin !== undefined && type === undefined) {
-      computedType = 'MODIFIER';
-    }
-
-    const isPercentageBased = computedType === 'MODIFIER';
-    const percentageDiscount = isPercentageBased ? -computedModifierPercentage : null;
+    const { name, code, currency, isActive, isDefault } = data;
 
     const list = await this.prisma.priceList.create({
       data: {
         name,
         code: code || name || '',
         currency: currency || 'ARS',
-        type: computedType,
-        modifierPercentage: computedModifierPercentage,
+        type: 'BASE',
+        modifierPercentage: 0,
         isActive: isActive ?? true,
-        isPercentageBased,
-        percentageDiscount,
-        margin: computedMargin,
+        isPercentageBased: false,
+        percentageDiscount: null,
+        margin: 1.0,
         isDefault: isDefault ?? false,
       }
     });
@@ -229,9 +214,7 @@ export class PriceListService {
       await this.syncDefaultPriceList(list.id);
     }
 
-    if (computedType === 'BASE') {
-      await this.pricingService.seedBaseListEntries(list.id);
-    }
+    await this.pricingService.seedBaseListEntries(list.id);
 
     return list;
   }

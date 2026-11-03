@@ -12,7 +12,7 @@ export interface SharedCreateSaleDto {
   warehouseId?: string;
   source: 'POS' | 'ECOMMERCE' | 'BACKOFFICE';
   customerId?: string;
-  paymentMethod: 'CASH' | 'CREDIT_CARD' | 'CUSTOMER_CREDIT' | 'BANK_TRANSFER' | 'MULTIPLE' | 'QR_MERCADOPAGO';
+  paymentMethod: 'CASH' | 'CREDIT_CARD' | 'CUSTOMER_CREDIT' | 'STORE_CREDIT' | 'BANK_TRANSFER' | 'MULTIPLE' | 'QR_MERCADOPAGO';
   paymentAccountId?: string;
   paymentReference?: string;
   payments?: { method: string; amount: number; reference?: string }[];

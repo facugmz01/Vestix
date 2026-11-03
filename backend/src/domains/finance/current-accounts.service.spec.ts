@@ -130,4 +130,62 @@ describe('CurrentAccountsService', () => {
     });
     expect(tx.financialTransaction.create).toHaveBeenCalled();
   });
+
+  it('should generate credit balance (saldo a favor) when customer payment exceeds usedCredit', async () => {
+    const tx = {
+      financialAccount: {
+        findUnique: jest.fn<any>().mockResolvedValue({ id: 'fa-1', name: 'Caja Principal', balance: 5000, isActive: true, type: 'CASH' }),
+        update: jest.fn<any>().mockResolvedValue({ id: 'fa-1', balance: 7000 }),
+      },
+      financialTransaction: {
+        create: jest.fn<any>().mockResolvedValue({ id: 'ft-1' }),
+      },
+      paymentReceipt: {
+        create: jest.fn<any>().mockResolvedValue({ id: 'pr-1' }),
+      },
+      customer: {
+        update: jest.fn<any>().mockResolvedValue({ id: 'cust-1', usedCredit: 0, creditBalance: 1500 }),
+      },
+      currentAccountMovement: {
+        create: jest.fn<any>().mockResolvedValue({
+          id: 'mov-2',
+          accountId: 'cust-1',
+          documentType: 'RECEIPT',
+          referenceId: 'REC-002',
+          description: 'Cobro excedente',
+          amount: 2000,
+          credit: 2000,
+          debit: 0,
+          balanceAfter: 1500,
+          createdAt: new Date(),
+          financialAccountId: 'fa-1',
+        }),
+      },
+    };
+
+    mockPrisma.$transaction = jest.fn<any>((cb: any) => cb(tx));
+    // Customer owes 500 and pays 2000 -> 500 clears usedCredit, 1500 goes to creditBalance
+    mockPrisma.customer.findUnique.mockResolvedValueOnce({
+      id: 'cust-1',
+      fullName: 'Cliente B',
+      usedCredit: 500,
+      creditBalance: 0,
+    });
+
+    const res = await service.registerPaymentReceipt('cust-1', {
+      amount: 2000,
+      referenceId: 'REC-002',
+      description: 'Cobro excedente',
+      financialAccountId: 'fa-1',
+    });
+
+    expect(tx.customer.update).toHaveBeenCalledWith({
+      where: { id: 'cust-1' },
+      data: {
+        usedCredit: 0,
+        creditBalance: 1500,
+      },
+    });
+    expect(res.amount).toBe(2000);
+  });
 });

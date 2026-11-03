@@ -41,6 +41,17 @@ export const customersApi = {
   repayCredit: (id: string, amount: number, paymentReceiptId: string) =>
     post<Customer['credit']>(`/customers/${id}/repay`, { amount, paymentReceiptId }),
 
+  addCreditBalance: (
+    id: string,
+    dto: {
+      amount: number;
+      paymentMethod?: string;
+      financialAccountId?: string;
+      reference?: string;
+      description?: string;
+    },
+  ) => post<Customer>(`/customers/${id}/credit-balance`, dto),
+
   getHistory: (id: string) =>
     get<any[]>(`/customers/${id}/history`), // Should be typed with Order summary
 };

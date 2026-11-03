@@ -71,8 +71,6 @@ export function BulkPriceUpdaterModal({ open, onClose, initialPriceListId = '' }
     return priceLists.find(pl => pl.id === priceListId);
   }, [priceLists, priceListId]);
 
-  const isModifierSelected = selectedPriceList?.type === 'MODIFIER';
-
   const mutation = useMutation({
     mutationFn: async () => {
       const perc = parseFloat(percentage);
@@ -122,10 +120,6 @@ export function BulkPriceUpdaterModal({ open, onClose, initialPriceListId = '' }
       toast.error('Porcentaje inválido.');
       return;
     }
-    if (isModifierSelected) {
-      toast.error('No se pueden modificar precios fijos en una lista modificadora.');
-      return;
-    }
 
     if (!categoryId && !brandId) {
       const targetName = selectedPriceList ? `la lista "${selectedPriceList.name}"` : 'el Precio Base de TODOS los productos';
@@ -164,22 +158,11 @@ export function BulkPriceUpdaterModal({ open, onClose, initialPriceListId = '' }
             <option value="">Precio Base del Catálogo (General / Ventas por defecto)</option>
             {priceLists.map((pl) => (
               <option key={pl.id} value={pl.id}>
-                {pl.name} {pl.type === 'MODIFIER' ? `(Modificadora Dinámica %${pl.modifierPercentage})` : '(Lista Fija)'}
+                {pl.name} {pl.isDefault ? '(Por defecto)' : ''}
               </option>
             ))}
           </select>
         </div>
-
-        {isModifierSelected && (
-          <div className={styles.warningBox}>
-            <AlertTriangle size={18} />
-            <div>
-              <strong>Lista Modificadora Dinámica:</strong> Esta lista calcula automáticamente su valor aplicando un %
-              sobre el Precio Base. Para ajustar precios sobre esta lista, seleccioná <strong>Precio Base del Catálogo</strong> o
-              editá el porcentaje global en la sección Listas de Precios.
-            </div>
-          </div>
-        )}
 
         {/* Filters Grid: Category & Brand */}
         <div className={styles.gridTwo}>

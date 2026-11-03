@@ -22,6 +22,17 @@ export class ProductComboLineDto {
   quantity: number;
 }
 
+export class PriceListPriceDto {
+  @IsUUID('4')
+  @IsNotEmpty()
+  priceListId: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  price: number;
+}
+
 export class ProductVariantDto {
   @IsOptional()
   @IsString()
@@ -62,6 +73,12 @@ export class ProductVariantDto {
   @IsOptional()
   @IsObject()
   attributes?: Record<string, any>;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PriceListPriceDto)
+  priceListPrices?: PriceListPriceDto[];
 }
 
 
@@ -130,6 +147,12 @@ export class CreateProductDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, any>;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PriceListPriceDto)
+  priceListPrices?: PriceListPriceDto[];
 
   @IsOptional()
   @IsArray()

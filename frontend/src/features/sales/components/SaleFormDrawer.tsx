@@ -269,6 +269,17 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (data: { status: 'QUOTATION' | 'CONFIRMED' | 'PENDING_PAYMENT' }) => {
+      if (paymentMethod === 'STORE_CREDIT') {
+        if (!customerId) {
+          throw new Error('Debes seleccionar un cliente para pagar con Saldo a Favor');
+        }
+        const selected = customersData?.data.find(c => c.id === customerId);
+        const avail = Number(selected?.creditBalance) || 0;
+        if (avail < grandTotal) {
+          throw new Error(`Saldo a favor insuficiente ($${avail.toLocaleString('es-AR')}) para el total ($${grandTotal.toLocaleString('es-AR')})`);
+        }
+      }
+
       const linesPayload = lines.map(l => ({
         variantId: l.variantId,
         categoryId: 'default',
@@ -404,7 +415,11 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
             <label className={styles.fieldLabel}>Cliente (Opcional)</label>
             <select value={customerId} onChange={e => setCustomerId(e.target.value)} className={styles.fieldSelect}>
               <option value="">Consumidor Final</option>
-              {customersData?.data.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
+              {customersData?.data.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.fullName} {Number(c.creditBalance) > 0 ? `(Favor: $${Number(c.creditBalance).toLocaleString('es-AR')})` : ''}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -415,6 +430,7 @@ export function SaleFormDrawer({ open, onClose, saleIdToEdit = null }: Props) {
               <option value="CREDIT_CARD">Tarjeta (Débito/Crédito)</option>
               <option value="BANK_TRANSFER">Transferencia</option>
               <option value="CUSTOMER_CREDIT">Cuenta Corriente</option>
+              <option value="STORE_CREDIT">Saldo a Favor</option>
             </select>
           </div>
         </div>

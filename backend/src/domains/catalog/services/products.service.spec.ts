@@ -361,20 +361,38 @@ describe('ProductsService - isPublished default behavior', () => {
       expect(res.success).toBe(true);
     });
 
-    it('throws BadRequestException if target price list is dynamic MODIFIER', async () => {
+    it('converts legacy modifier price list to BASE and performs bulk update', async () => {
       prismaMock.priceList.findUniqueOrThrow.mockResolvedValue({
         id: 'pl-modifier',
         name: 'Efectivo Descuento',
         type: 'MODIFIER',
         isPercentageBased: true,
       });
+      prismaMock.priceList.update = jest.fn().mockResolvedValue({});
+      prismaMock.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-1',
+          variants: [
+            {
+              id: 'var-10',
+              basePrice: 10000,
+              priceListEntries: [],
+            },
+          ],
+        },
+      ]);
+      prismaMock.priceListEntry.upsert = jest.fn().mockResolvedValue({});
 
-      await expect(
-        service.bulkUpdatePrices({
-          priceListId: 'pl-modifier',
-          percentage: 10,
-        }),
-      ).rejects.toThrow('Las listas de precios modificadoras aplican un porcentaje dinámico');
+      const res = await service.bulkUpdatePrices({
+        priceListId: 'pl-modifier',
+        percentage: 10,
+      });
+
+      expect(prismaMock.priceList.update).toHaveBeenCalledWith({
+        where: { id: 'pl-modifier' },
+        data: { type: 'BASE', isPercentageBased: false, modifierPercentage: 0 },
+      });
+      expect(res.success).toBe(true);
     });
   });
 });

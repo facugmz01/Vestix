@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   ArrowLeft, Wand2, Image as ImageIcon,
-  Archive, Package, Truck, Lock
+  Archive, Package, Truck, Lock, Percent, DollarSign, Edit3, Sliders, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { upload } from '@/api/client';
@@ -65,6 +65,17 @@ export function ProductEditor({ initialData }: Props) {
     width: '',
     length: ''
   });
+
+  // Price Lists state & markup configuration
+  const [priceListConfigs, setPriceListConfigs] = useState<Array<{
+    priceListId: string;
+    priceListName: string;
+    isDefault?: boolean;
+    currency?: string;
+    mode: 'PERCENTAGE' | 'FIXED' | 'MANUAL';
+    markupValue: number;
+    finalPrice: number;
+  }>>([]);
 
   useEffect(() => {
     if (initialData) {
@@ -127,6 +138,209 @@ export function ProductEditor({ initialData }: Props) {
   const { data: brands } = useQuery({ queryKey: queryKeys.brands.all(), queryFn: () => productsApi.getBrands() });
   const { data: priceLists } = useQuery({ queryKey: queryKeys.priceLists.all(), queryFn: () => productsApi.getPriceLists() });
 
+  // Synchronize price list configurations with active priceLists and initialData
+  useEffect(() => {
+    if (!priceLists || !Array.isArray(priceLists)) return;
+
+    setPriceListConfigs(prev => {
+      const cost = formData.costPrice || 0;
+      if (priceLists.length === 0) {
+        if (prev.length > 0) return prev;
+        const initialBase = initialData?.variants?.[0]?.basePrice || initialData?.basePrice || formData.basePrice || 0;
+        let mode: 'PERCENTAGE' | 'FIXED' | 'MANUAL' = 'PERCENTAGE';
+        let markupValue = 100;
+        let finalPrice = cost > 0 ? Math.round(cost * 2) : initialBase;
+
+        if (initialBase > 0) {
+          finalPrice = initialBase;
+          if (cost > 0 && initialBase > cost) {
+            markupValue = Math.round(((initialBase - cost) / cost) * 100);
+          } else {
+            mode = 'MANUAL';
+            markupValue = initialBase;
+          }
+        }
+
+        return [{
+          priceListId: 'default-base',
+          priceListName: 'Precio Base General',
+          isDefault: true,
+          currency: 'ARS',
+          mode,
+          markupValue,
+          finalPrice,
+        }];
+      }
+
+      return priceLists.map((pl: any) => {
+        const existing = prev.find(p => p.priceListId === pl.id);
+        if (existing) return existing;
+
+        const savedPrice =
+          (initialData as any)?.priceListPrices?.find((p: any) => p.priceListId === pl.id)?.price ??
+          initialData?.variants?.[0]?.priceListEntries?.find((e: any) => e.priceListId === pl.id)?.overridePrice ??
+          (pl.isDefault && (initialData?.variants?.[0]?.basePrice || initialData?.basePrice)
+            ? (initialData?.variants?.[0]?.basePrice || initialData?.basePrice)
+            : undefined);
+
+        if (savedPrice != null && savedPrice > 0) {
+          let mode: 'PERCENTAGE' | 'FIXED' | 'MANUAL' = 'MANUAL';
+          let markupValue = savedPrice;
+          if (cost > 0 && savedPrice > cost) {
+            const pct = Math.round(((savedPrice - cost) / cost) * 100);
+            if (Math.round(cost * (1 + pct / 100)) === savedPrice) {
+              mode = 'PERCENTAGE';
+              markupValue = pct;
+            }
+          }
+          return {
+            priceListId: pl.id,
+            priceListName: pl.name,
+            isDefault: pl.isDefault,
+            currency: pl.currency || 'ARS',
+            mode,
+            markupValue,
+            finalPrice: savedPrice,
+          };
+        }
+
+        const defaultMarkup = 100;
+        const finalPrice = cost > 0 ? Math.round(cost * (1 + defaultMarkup / 100)) : 0;
+        return {
+          priceListId: pl.id,
+          priceListName: pl.name,
+          isDefault: pl.isDefault,
+          currency: pl.currency || 'ARS',
+          mode: 'PERCENTAGE',
+          markupValue: defaultMarkup,
+          finalPrice,
+        };
+      });
+    });
+  }, [priceLists, initialData]);
+
+  const handleCostPriceChange = (newCost: number) => {
+    setFormData(prev => ({ ...prev, costPrice: newCost }));
+    setPriceListConfigs(prev => {
+      const next = prev.map(cfg => {
+        if (cfg.mode === 'PERCENTAGE') {
+          const finalPrice = newCost > 0 ? Math.round(newCost * (1 + (cfg.markupValue || 0) / 100)) : 0;
+          return { ...cfg, finalPrice };
+        }
+        if (cfg.mode === 'FIXED') {
+          const finalPrice = newCost > 0 ? Math.round(newCost + (cfg.markupValue || 0)) : 0;
+          return { ...cfg, finalPrice };
+        }
+        return cfg;
+      });
+
+      const defaultList = next.find(c => c.isDefault) || next[0];
+      if (defaultList) {
+        setFormData(p => ({ ...p, basePrice: defaultList.finalPrice }));
+      }
+      return next;
+    });
+  };
+
+  const updateListPriceConfig = (
+    priceListId: string,
+    updates: Partial<{ mode: 'PERCENTAGE' | 'FIXED' | 'MANUAL'; markupValue: number; finalPrice: number }>
+  ) => {
+    setPriceListConfigs(prev => {
+      const cost = formData.costPrice || 0;
+      const next = prev.map(cfg => {
+        if (cfg.priceListId !== priceListId) return cfg;
+        const merged = { ...cfg, ...updates };
+
+        if (updates.mode !== undefined && updates.mode !== cfg.mode) {
+          if (updates.mode === 'PERCENTAGE') {
+            const pct = cost > 0 && cfg.finalPrice > cost
+              ? Math.round(((cfg.finalPrice - cost) / cost) * 100)
+              : 100;
+            merged.markupValue = pct;
+            merged.finalPrice = cost > 0 ? Math.round(cost * (1 + pct / 100)) : cfg.finalPrice;
+          } else if (updates.mode === 'FIXED') {
+            const fixed = cost > 0 && cfg.finalPrice > cost
+              ? Math.round(cfg.finalPrice - cost)
+              : 0;
+            merged.markupValue = fixed;
+            merged.finalPrice = cost > 0 ? Math.round(cost + fixed) : cfg.finalPrice;
+          } else if (updates.mode === 'MANUAL') {
+            merged.markupValue = cfg.finalPrice;
+            merged.finalPrice = cfg.finalPrice;
+          }
+        } else if (updates.markupValue !== undefined) {
+          if (merged.mode === 'PERCENTAGE') {
+            merged.finalPrice = cost > 0 ? Math.round(cost * (1 + (updates.markupValue || 0) / 100)) : 0;
+          } else if (merged.mode === 'FIXED') {
+            merged.finalPrice = cost > 0 ? Math.round(cost + (updates.markupValue || 0)) : 0;
+          }
+        } else if (updates.finalPrice !== undefined) {
+          merged.mode = 'MANUAL';
+          merged.markupValue = updates.finalPrice;
+          merged.finalPrice = updates.finalPrice;
+        }
+
+        return merged;
+      });
+
+      const defaultList = next.find(c => c.isDefault) || next[0];
+      if (defaultList) {
+        setFormData(p => ({ ...p, basePrice: defaultList.finalPrice }));
+      }
+      return next;
+    });
+  };
+
+  const applyMarkupToAll = (mode: 'PERCENTAGE' | 'FIXED' | 'MANUAL', val: number) => {
+    const cost = formData.costPrice || 0;
+    setPriceListConfigs(prev => {
+      const next = prev.map(cfg => {
+        let finalPrice = cfg.finalPrice;
+        if (mode === 'PERCENTAGE') {
+          finalPrice = cost > 0 ? Math.round(cost * (1 + val / 100)) : 0;
+        } else if (mode === 'FIXED') {
+          finalPrice = cost > 0 ? Math.round(cost + val) : 0;
+        } else {
+          finalPrice = val;
+        }
+        return {
+          ...cfg,
+          mode,
+          markupValue: val,
+          finalPrice,
+        };
+      });
+
+      const defaultList = next.find(c => c.isDefault) || next[0];
+      if (defaultList) {
+        setFormData(p => ({ ...p, basePrice: defaultList.finalPrice }));
+      }
+      return next;
+    });
+    toast.success(`Regla aplicada a todas las listas (${mode === 'PERCENTAGE' ? `+${val}%` : mode === 'FIXED' ? `+$${val}` : `$${val}`})`);
+  };
+
+  const roundAllFinalPrices = (step: number = 100) => {
+    setPriceListConfigs(prev => {
+      const next = prev.map(cfg => {
+        const rounded = Math.ceil((cfg.finalPrice || 0) / step) * step;
+        return {
+          ...cfg,
+          mode: 'MANUAL',
+          finalPrice: rounded,
+          markupValue: rounded,
+        };
+      });
+      const defaultList = next.find(c => c.isDefault) || next[0];
+      if (defaultList) {
+        setFormData(p => ({ ...p, basePrice: defaultList.finalPrice }));
+      }
+      return next;
+    });
+    toast.success('Precios redondeados a la centena');
+  };
+
   const mutation = useMutation({
     mutationFn: async (data: CreateProductDto) => {
       // Inject dimensions into metadata
@@ -145,6 +359,16 @@ export function ProductEditor({ initialData }: Props) {
       const dataUrlImages = allImages.filter((img) => typeof img === 'string' && img.startsWith('data:'));
       const remoteImages = allImages.filter((img) => typeof img === 'string' && !img.startsWith('data:'));
       
+      const priceListPrices = priceListConfigs
+        .filter(c => !c.priceListId.startsWith('default-'))
+        .map(c => ({
+          priceListId: c.priceListId,
+          price: c.finalPrice,
+        }));
+
+      const defaultList = priceListConfigs.find(c => c.isDefault) || priceListConfigs[0];
+      const effectiveBasePrice = defaultList ? defaultList.finalPrice : (data.basePrice || 0);
+
       // Sanitize payload to only include whitelisted properties to prevent backend validation errors
       const safePayload: any = {
         name: data.name,
@@ -156,7 +380,8 @@ export function ProductEditor({ initialData }: Props) {
         isVariable: data.type === 'VARIABLE' || data.isVariable,
         manageBatches: data.manageBatches,
         costPrice: data.costPrice,
-        basePrice: data.basePrice,
+        basePrice: effectiveBasePrice,
+        priceListPrices,
         isActive: data.isActive,
         isPublished: data.isPublished,
         metadata: meta,
@@ -180,7 +405,7 @@ export function ProductEditor({ initialData }: Props) {
             color: v.color,
             imageUrl: v.imageUrl,
             costPrice: v.costPrice,
-            basePrice: v.basePrice,
+            basePrice: v.basePrice || effectiveBasePrice,
             isActive: v.isActive,
             attributes: v.attributes,
           };
@@ -193,7 +418,7 @@ export function ProductEditor({ initialData }: Props) {
         const sv: any = {
           barcode: productBarcode.trim() || undefined,
           costPrice: data.costPrice,
-          basePrice: data.basePrice,
+          basePrice: effectiveBasePrice,
           isActive: true,
         };
         if (existingVariant?.id) sv.id = existingVariant.id;
@@ -439,85 +664,189 @@ export function ProductEditor({ initialData }: Props) {
               <span className={styles.badge}>Precios finales</span>
             </div>
 
-            <div className={styles.priceGrid}>
-              <div>
-                <div className={styles.costLabelRow}>
-                  <label className={styles.label}>Precio de costo</label>
-                  {isEditing ? (
-                    <span className={styles.costLockedBadge} title="El costo proviene de las Órdenes de Compra y es inmutable">
-                      <Lock size={10} /> Fijado por Compras
-                    </span>
-                  ) : null}
-                </div>
-                <div className={styles.priceInputWrap}>
-                  <span className={styles.pricePrefix}>$</span>
-                  <input
-                    type="number"
-                    value={formData.costPrice || ''}
-                    disabled={isEditing}
-                    readOnly={isEditing}
-                    title={isEditing ? 'El costo no puede modificarse manualmente; proviene de las Órdenes de Compra.' : 'Costo inicial de referencia'}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value) || 0;
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        costPrice: val
-                      }));
-                    }}
-                    className={clsx(styles.input, styles.inputWithPrefix, isEditing && styles.inputLocked)}
-                  />
-                </div>
+            {/* Cost Input */}
+            <div style={{ maxWidth: 280, marginBottom: 24 }}>
+              <div className={styles.costLabelRow}>
+                <label className={styles.label}>Precio de Costo de Referencia</label>
+                {isEditing ? (
+                  <span className={styles.costLockedBadge} title="El costo proviene de las Órdenes de Compra y es inmutable">
+                    <Lock size={10} /> Fijado por Compras
+                  </span>
+                ) : null}
               </div>
+              <div className={styles.priceInputWrap}>
+                <span className={styles.pricePrefix}>$</span>
+                <input
+                  type="number"
+                  value={formData.costPrice || ''}
+                  disabled={isEditing}
+                  readOnly={isEditing}
+                  placeholder="0.00"
+                  title={isEditing ? 'El costo no puede modificarse manualmente; proviene de las Órdenes de Compra.' : 'Costo inicial de referencia'}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    handleCostPriceChange(val);
+                  }}
+                  className={clsx(styles.input, styles.inputWithPrefix, isEditing && styles.inputLocked)}
+                />
+              </div>
+            </div>
 
-              {priceLists?.filter((pl: any) => pl.isActive !== false).map((pl: any, idx: number) => {
-                const referencePrice = formData.costPrice || 0;
-                let percentage = 0;
-                let calculatedPrice = 0;
-                const isModifier = pl.type === 'MODIFIER' || pl.isPercentageBased;
-                if (isModifier) {
-                  // Use modifierPercentage (markup). percentageDiscount is a legacy negated mirror.
-                  percentage = pl.modifierPercentage ?? -(pl.percentageDiscount || 0);
-                  calculatedPrice = referencePrice
-                    ? Math.round(referencePrice * (1 + (percentage / 100)))
-                    : 0;
-                } else {
-                  percentage = Math.round(((pl.margin || 1) - 1) * 100);
-                  calculatedPrice = referencePrice ? Math.round(referencePrice * (pl.margin || 1)) : 0;
-                }
-                const percentageText = percentage > 0 ? `+${percentage}%` : percentage < 0 ? `${percentage}%` : '0%';
+            {/* Quick Actions Bar */}
+            <div className={styles.quickPricingBar}>
+              <div className={styles.quickPricingTitle}>
+                <Sliders size={15} />
+                <span>Marca de precios rápida:</span>
+              </div>
+              <div className={styles.quickPricingActions}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => applyMarkupToAll('PERCENTAGE', 50)}>
+                  +50% Todas
+                </Button>
+                <Button type="button" variant="secondary" size="sm" onClick={() => applyMarkupToAll('PERCENTAGE', 100)}>
+                  +100% Todas
+                </Button>
+                <Button type="button" variant="secondary" size="sm" onClick={() => applyMarkupToAll('PERCENTAGE', 150)}>
+                  +150% Todas
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => roundAllFinalPrices(100)}>
+                  Redondear ($100)
+                </Button>
+              </div>
+            </div>
+
+            {/* Price Lists Cards Grid */}
+            <div className={styles.pricingCardsGrid}>
+              {priceListConfigs.map((cfg, idx) => {
+                const cost = formData.costPrice || 0;
+                const profit = cfg.finalPrice - cost;
+                const marginPct = cfg.finalPrice > 0 ? Math.round((profit / cfg.finalPrice) * 100) : 0;
 
                 return (
-                  <div key={pl.id}>
-                    <label className={clsx(styles.label, styles.labelMuted)}>
-                      {pl.name} <span className={styles.priceListBadge}>P{idx + 1}</span>
-                      <span className={clsx(styles.priceListPct, percentage > 0 ? styles.priceListPctUp : percentage < 0 ? styles.priceListPctDown : styles.priceListPctNeutral)}>{percentageText}</span>
-                    </label>
-                    <div className={styles.priceInputWrap}>
-                      <span className={styles.pricePrefix}>$</span>
-                      <input
-                        type="number"
-                        value={calculatedPrice}
-                        readOnly
-                        title="Precio calculado automáticamente sobre el costo según la configuración de la lista de precios."
-                        className={clsx(styles.input, styles.inputWithPrefix)}
-                      />
+                  <div key={cfg.priceListId} className={styles.pricingCard}>
+                    {/* Header */}
+                    <div className={styles.pricingCardHeader}>
+                      <div>
+                        <div className={styles.pricingCardTitle}>
+                          <span>{cfg.priceListName}</span>
+                          <span className={styles.priceListBadge}>P{idx + 1}</span>
+                          {cfg.isDefault && <span className={styles.profitMarginTag}>Por defecto</span>}
+                        </div>
+                      </div>
+                      {cfg.finalPrice > 0 && cost > 0 && (
+                        <div className={profit >= 0 ? styles.profitMarginTag : styles.profitMarginTagNegative}>
+                          {profit >= 0 ? `+${marginPct}% mg` : `${marginPct}% mg`}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mode Selector Buttons */}
+                    <div className={styles.modeSelectorGroup}>
+                      <button
+                        type="button"
+                        className={clsx(styles.modeButton, cfg.mode === 'PERCENTAGE' && styles.modeButtonActive)}
+                        onClick={() => updateListPriceConfig(cfg.priceListId, { mode: 'PERCENTAGE' })}
+                      >
+                        <Percent size={12} style={{ display: 'inline', marginRight: 4 }} />
+                        Porcentaje
+                      </button>
+                      <button
+                        type="button"
+                        className={clsx(styles.modeButton, cfg.mode === 'FIXED' && styles.modeButtonActive)}
+                        onClick={() => updateListPriceConfig(cfg.priceListId, { mode: 'FIXED' })}
+                      >
+                        <DollarSign size={12} style={{ display: 'inline', marginRight: 2 }} />
+                        Fijo (+ $)
+                      </button>
+                      <button
+                        type="button"
+                        className={clsx(styles.modeButton, cfg.mode === 'MANUAL' && styles.modeButtonActive)}
+                        onClick={() => updateListPriceConfig(cfg.priceListId, { mode: 'MANUAL' })}
+                      >
+                        <Edit3 size={12} style={{ display: 'inline', marginRight: 4 }} />
+                        Manual
+                      </button>
+                    </div>
+
+                    {/* Mode Specific Inputs */}
+                    <div className={styles.markupInputRow}>
+                      {cfg.mode === 'PERCENTAGE' && (
+                        <>
+                          <label className={styles.label}>Porcentaje sobre costo (%)</label>
+                          <div className={styles.priceInputWrap}>
+                            <input
+                              type="number"
+                              step="1"
+                              value={cfg.markupValue || ''}
+                              placeholder="100"
+                              onChange={(e) => updateListPriceConfig(cfg.priceListId, { markupValue: parseFloat(e.target.value) || 0 })}
+                              className={styles.input}
+                            />
+                          </div>
+                          <span className={styles.markupHint}>
+                            Costo (${cost.toLocaleString('es-AR')}) + {cfg.markupValue || 0}% = ${cfg.finalPrice.toLocaleString('es-AR')}
+                          </span>
+                        </>
+                      )}
+
+                      {cfg.mode === 'FIXED' && (
+                        <>
+                          <label className={styles.label}>Recargo fijo sobre costo ($)</label>
+                          <div className={styles.priceInputWrap}>
+                            <span className={styles.pricePrefix}>+$</span>
+                            <input
+                              type="number"
+                              step="50"
+                              value={cfg.markupValue || ''}
+                              placeholder="5000"
+                              onChange={(e) => updateListPriceConfig(cfg.priceListId, { markupValue: parseFloat(e.target.value) || 0 })}
+                              className={clsx(styles.input, styles.inputWithPrefix)}
+                            />
+                          </div>
+                          <span className={styles.markupHint}>
+                            Costo (${cost.toLocaleString('es-AR')}) + ${(cfg.markupValue || 0).toLocaleString('es-AR')} = ${cfg.finalPrice.toLocaleString('es-AR')}
+                          </span>
+                        </>
+                      )}
+
+                      {cfg.mode === 'MANUAL' && (
+                        <>
+                          <label className={styles.label}>Modo manual directo</label>
+                          <span className={styles.markupHint}>
+                            El precio no depende de una fórmula. Podés tipear el valor final directamente abajo.
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Final Price Result */}
+                    <div className={styles.finalPriceSection}>
+                      <div className={styles.costLabelRow}>
+                        <label className={styles.label}>Precio Final de Venta</label>
+                        {cost > 0 && cfg.finalPrice > 0 && (
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            Ganancia: ${(cfg.finalPrice - cost).toLocaleString('es-AR')}
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.priceInputWrap}>
+                        <span className={styles.pricePrefix}>$</span>
+                        <input
+                          type="number"
+                          value={cfg.finalPrice || ''}
+                          placeholder="0"
+                          onChange={(e) => updateListPriceConfig(cfg.priceListId, { finalPrice: parseFloat(e.target.value) || 0 })}
+                          className={clsx(styles.input, styles.inputWithPrefix, styles.finalPriceInput)}
+                        />
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* Sugeridor de Precios Mercado Pago con Fundamentación */}
+            {/* Sugeridor de Precios Mercado Pago (solo informativo) */}
             <MercadoPagoPriceSuggester
               costPrice={formData.costPrice || 0}
-              existingPriceLists={priceLists}
-              onApplyPrice={(suggestedPrice) => {
-                setFormData(prev => ({
-                  ...prev,
-                  basePrice: suggestedPrice,
-                }));
-                toast.success(`Precio base fijado en $${suggestedPrice.toLocaleString('es-AR')}`);
-              }}
             />
 
             <div className={styles.priceActions}>

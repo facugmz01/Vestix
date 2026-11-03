@@ -269,6 +269,13 @@ export function POSModals({
             </div>
           )}
 
+          {paymentMethod === 'STORE_CREDIT' && (
+            <div className={styles.alertCredit} style={{ borderLeftColor: 'var(--green, #10b981)', backgroundColor: 'rgba(16, 185, 129, 0.08)' }}>
+              Se descontará del saldo a favor de{' '}
+              <strong>{selectedCustomer?.fullName || 'cliente seleccionado'}</strong> (Disponible: {formatCurrency(selectedCustomer?.creditBalance || 0)}).
+            </div>
+          )}
+
           {paymentMethod === 'QR_MERCADOPAGO' && (
             <div className={styles.alertQr}>
               Pago QR MercadoPago confirmado{qrOrderId ? ` — ref. ${qrOrderId}` : ''}.

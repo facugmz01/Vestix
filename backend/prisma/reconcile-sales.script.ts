@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,8 @@ function normalizePaymentMethodType(raw?: string | null): string {
   if (['EFECTIVO', 'CASH', 'CONTADO', 'DINERO'].includes(u)) return 'CASH';
   if (['TRANSFERENCIA', 'TRANSFER', 'BANK_TRANSFER', 'DEPOSITO', 'DEPOSIT', 'BANCO'].includes(u)) return 'BANK_TRANSFER';
   if (['TARJETA', 'DEBIT_CARD', 'CREDIT_CARD', 'CARD', 'QR_MERCADOPAGO', 'MERCADOPAGO', 'MP', 'MERCADO_PAGO'].includes(u)) return 'CREDIT_CARD';
-  if (['CUENTA_CORRIENTE', 'CUSTOMER_CREDIT', 'STORE_CREDIT', 'CREDITO', 'CREDIT'].includes(u)) return 'CUSTOMER_CREDIT';
+  if (['CUENTA_CORRIENTE', 'CUSTOMER_CREDIT', 'CREDITO', 'CREDIT'].includes(u)) return 'CUSTOMER_CREDIT';
+  if (['STORE_CREDIT', 'SALDO_A_FAVOR', 'SALDO_FAVOR', 'CREDITO_A_FAVOR'].includes(u)) return 'STORE_CREDIT';
   if (u === 'GIFT_CARD') return 'GIFT_CARD';
   if (u === 'LOYALTY') return 'LOYALTY';
   return u;

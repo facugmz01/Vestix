@@ -4,6 +4,7 @@ import { paginate } from '../../core/prisma/paginate';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { BulkImportBalancesDto } from './dto/bulk-balances.dto';
+import { AddCreditBalanceDto } from './dto/add-credit-balance.dto';
 
 @Injectable()
 export class CustomersService {
@@ -11,14 +12,17 @@ export class CustomersService {
 
   private mapCustomer(c: any) {
     if (!c) return null;
-    const { creditLimit, usedCredit, ...rest } = c;
+    const { creditLimit, usedCredit, creditBalance, ...rest } = c;
+    const safeCreditBalance = Number(creditBalance) || 0;
     return {
       ...rest,
+      creditBalance: safeCreditBalance,
       source: c.source || 'ADMIN',
       credit: {
         limit: creditLimit,
         used: usedCredit,
         available: creditLimit - usedCredit,
+        balance: safeCreditBalance,
         onHold: false,
       }
     };
@@ -162,6 +166,69 @@ export class CustomersService {
         usedCredit: { increment: amount },
         updatedAt: new Date(),
       }
+    });
+  }
+
+  async addCreditBalance(id: string, dto: AddCreditBalanceDto) {
+    const customer = await this.prisma.customer.findUnique({ where: { id } });
+    if (!customer) throw new NotFoundException('Cliente no encontrado');
+
+    return this.prisma.$transaction(async (tx) => {
+      if (dto.financialAccountId) {
+        const fa = await tx.financialAccount.findUnique({ where: { id: dto.financialAccountId } });
+        if (!fa || !fa.isActive) {
+          throw new NotFoundException('Cuenta financiera no encontrada o inactiva');
+        }
+
+        await tx.financialAccount.update({
+          where: { id: dto.financialAccountId },
+          data: { balance: { increment: dto.amount } },
+        });
+
+        await tx.financialTransaction.create({
+          data: {
+            accountId: dto.financialAccountId,
+            type: 'DEBIT',
+            amount: dto.amount,
+            referenceId: dto.reference || `ANTICIPO-${Date.now()}`,
+            description: dto.description || `Carga de saldo a favor - ${customer.fullName}`,
+          },
+        });
+
+        await tx.paymentReceipt.create({
+          data: {
+            accountId: dto.financialAccountId,
+            amount: dto.amount,
+            payerName: customer.fullName,
+            referenceId: dto.reference || `ANTICIPO-${Date.now()}`,
+          },
+        });
+      }
+
+      const updated = await tx.customer.update({
+        where: { id },
+        data: {
+          creditBalance: { increment: dto.amount },
+          updatedAt: new Date(),
+        },
+      });
+
+      await tx.currentAccountMovement.create({
+        data: {
+          accountId: id,
+          entityType: 'CUSTOMER',
+          documentType: 'RECEIPT',
+          referenceId: dto.reference || `ANTICIPO-${Date.now()}`,
+          description: dto.description || 'Carga de saldo a favor / Anticipo',
+          amount: dto.amount,
+          debit: 0,
+          credit: dto.amount,
+          balanceAfter: updated.creditBalance,
+          financialAccountId: dto.financialAccountId || null,
+        },
+      });
+
+      return this.mapCustomer(updated);
     });
   }
 

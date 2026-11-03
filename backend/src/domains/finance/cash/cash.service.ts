@@ -279,7 +279,8 @@ export class CashService {
           if (type === 'CASH') totalCashSales += p.amount;
           else if (type === 'CREDIT_CARD') totalCardSales += p.amount;
           else if (type === 'BANK_TRANSFER') totalTransferSales += p.amount;
-          else if (type === 'CUSTOMER_CREDIT') totalCreditSales += p.amount;
+          else if (type === 'CUSTOMER_CREDIT' || type === 'STORE_CREDIT') totalCreditSales += p.amount;
+          else if (type === 'GIFT_CARD' || type === 'LOYALTY') { /* non-cash redemptions */ }
           else totalCashSales += p.amount;
         }
       } else {
@@ -287,7 +288,8 @@ export class CashService {
         if (type === 'CASH') totalCashSales += o.grandTotal;
         else if (type === 'CREDIT_CARD') totalCardSales += o.grandTotal;
         else if (type === 'BANK_TRANSFER') totalTransferSales += o.grandTotal;
-        else if (type === 'CUSTOMER_CREDIT') totalCreditSales += o.grandTotal;
+        else if (type === 'CUSTOMER_CREDIT' || type === 'STORE_CREDIT') totalCreditSales += o.grandTotal;
+        else if (type === 'GIFT_CARD' || type === 'LOYALTY') { /* non-cash redemptions */ }
         else totalCashSales += o.grandTotal;
       }
     }
