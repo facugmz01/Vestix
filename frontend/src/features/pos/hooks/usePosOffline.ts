@@ -26,8 +26,10 @@ function applyLocalFilters(items: PosVariant[], filters: PosCatalogFilters) {
   return items.filter(item => {
     if (filters.categoryId && item.categoryId !== filters.categoryId) return false;
     if (filters.brandId && item.brandId !== filters.brandId) return false;
-    if (filters.stock === 'IN_STOCK' && (item.stock ?? 0) <= 0) return false;
-    if (filters.stock === 'OUT_OF_STOCK' && (item.stock ?? 0) > 0) return false;
+    // An absent stock value means the source did not provide stock data; do
+    // not silently classify it as out of stock.
+    if (filters.stock === 'IN_STOCK' && (typeof item.stock !== 'number' || item.stock <= 0)) return false;
+    if (filters.stock === 'OUT_OF_STOCK' && (typeof item.stock !== 'number' || item.stock > 0)) return false;
     return true;
   });
 }
@@ -59,8 +61,6 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
           const online = await posApi.searchProduct('', {
             customerId: selectedCustomerId || undefined,
             branchId: branchId || undefined,
-            categoryId: filters.categoryId,
-            brandId: filters.brandId,
             priceListId: filters.priceListId,
           });
           if (online?.length) return applyLocalFilters(online as PosVariant[], filters);
@@ -82,8 +82,6 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
         const online = await posApi.searchProduct(search, {
           customerId: selectedCustomerId || undefined,
           branchId: branchId || undefined,
-          categoryId: filters.categoryId,
-          brandId: filters.brandId,
           priceListId: filters.priceListId,
           limit: 100,
         });
