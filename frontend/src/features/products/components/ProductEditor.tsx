@@ -327,7 +327,7 @@ export function ProductEditor({ initialData }: Props) {
         const rounded = Math.ceil((cfg.finalPrice || 0) / step) * step;
         return {
           ...cfg,
-          mode: 'MANUAL',
+          mode: 'MANUAL' as const,
           finalPrice: rounded,
           markupValue: rounded,
         };

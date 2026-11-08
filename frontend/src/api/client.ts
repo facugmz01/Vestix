@@ -19,7 +19,7 @@ apiClient.interceptors.response.use(
   (res) => res,
   (error) => {
     if (!error.response) {
-      toast.error('Sin conexión con el servidor. Verificá tu red.');
+      toast.error('Sin conexión con el servidor. Verificá tu red.', { id: 'api-connection' });
       return Promise.reject(normalizeError(error));
     }
 
@@ -59,10 +59,10 @@ apiClient.interceptors.response.use(
       case 429: toast.error('Demasiadas solicitudes. Esperá unos segundos.'); break;
       case 503:
         // Backup restore puts the API in maintenance; avoid alarming "Error 500" toasts.
-        toast.error(message || 'Servicio no disponible temporalmente. Reintentá en unos segundos.');
+        toast.error(message || 'Servicio no disponible temporalmente. Reintentá en unos segundos.', { id: 'api-maintenance' });
         break;
       default:
-        if (status >= 500) toast.error(`Error del servidor (${status}).`);
+        if (status >= 500) toast.error(`Error del servidor (${status}).`, { id: `api-server-${status}` });
     }
 
     return Promise.reject(normalizeError(error, message));

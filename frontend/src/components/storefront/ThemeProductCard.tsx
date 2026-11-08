@@ -190,7 +190,11 @@ export function ThemeProductCard({
   if (theme === 'catalog') {
     return (
       <div className={clsx(styles.catalogCard, 'theme-product-card')}>
-        <Link to={productUrl} className={clsx(styles.catalogImageWrap, 'theme-card-img')}>
+        <Link
+          to={productUrl}
+          className={clsx(styles.catalogImageWrap, 'theme-card-img')}
+          aria-label={`Ver ${product.name}`}
+        >
           <ProgressiveProductImage
             src={primaryImg}
             alt={product.name}
@@ -203,9 +207,7 @@ export function ThemeProductCard({
         </Link>
 
         <div className={styles.catalogBody}>
-          <Link to={productUrl} className={styles.catalogNameLink}>
-            <h4 className={styles.catalogName}>{product.name}</h4>
-          </Link>
+          <h4 className={styles.catalogName}>{product.name}</h4>
 
           {hidePrices ? (
             <span className={styles.catalogWaText}>Consultar precio</span>

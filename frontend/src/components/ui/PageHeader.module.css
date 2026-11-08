@@ -78,3 +78,16 @@
     flex: 0 0 auto;
   }
 }
+
+/* The admin content area is narrower than the viewport because of the sidebar.
+   Keep the title readable and let long action toolbars occupy their own row. */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .actionGroup {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

@@ -4,6 +4,13 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { clearApplicationCache } from '@/core/cache/applicationCache';
 import styles from './AppUpdateBanner.module.css';
 
+function waitAtMost(promise: Promise<unknown>, timeoutMs: number): Promise<void> {
+  return Promise.race([
+    promise.then(() => undefined),
+    new Promise<void>((resolve) => window.setTimeout(resolve, timeoutMs)),
+  ]);
+}
+
 export function AppUpdateBanner() {
   const [isUpdating, setIsUpdating] = useState(false);
   const {
@@ -14,8 +21,17 @@ export function AppUpdateBanner() {
   const update = useCallback(async () => {
     setIsUpdating(true);
     try {
-      await clearApplicationCache();
-      await updateServiceWorker(true);
+      // Cache cleanup is best-effort. A locked IndexedDB/cache entry must not
+      // leave the update button spinning forever.
+      await waitAtMost(clearApplicationCache(), 5000);
+
+      // Some browsers do not resolve updateServiceWorker(true) after sending
+      // SKIP_WAITING. Keep listening briefly, then reload as a safe fallback.
+      const updateRequest = updateServiceWorker(true).catch((error: unknown) => {
+        console.error('[AppUpdateBanner] No se pudo activar el service worker', error);
+      });
+      await waitAtMost(updateRequest, 3000);
+      window.location.reload();
     } catch (error) {
       console.error('[AppUpdateBanner] No se pudo aplicar la actualización', error);
       window.location.reload();

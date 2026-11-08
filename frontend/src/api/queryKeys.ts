@@ -60,7 +60,7 @@ export const queryKeys = {
   priceLists: {
     all:    (filters?: object) => withFilters(['priceLists', 'list'], filters),
     detail: (id: string)       => ['priceLists', 'detail', id]    as const,
-    items:  (id: string)       => ['priceLists', 'items', id]     as const,
+    items:  (id: string, filters?: object) => withFilters(['priceLists', 'items', id], filters),
   },
   promotions: {
     all:       (filters?: object) => withFilters(['promotions', 'list'], filters),

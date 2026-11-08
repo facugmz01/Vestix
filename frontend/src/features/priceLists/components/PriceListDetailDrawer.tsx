@@ -19,7 +19,7 @@ export function PriceListDetailDrawer({ open, onClose, priceList }: Props) {
   const [page, setPage] = useState(1);
 
   const { data } = useQuery({
-    queryKey: queryKeys.priceLists.items(priceList?.id || '', page),
+    queryKey: queryKeys.priceLists.items(priceList?.id || '', { page, pageSize: 20 }),
     queryFn: () => priceListsApi.getItems(priceList!.id, page, 20),
     enabled: open && !!priceList,
   });
