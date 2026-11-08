@@ -1,4 +1,3 @@
-import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Wallet, CheckCircle, Plus, Pencil, Scale } from 'lucide-react';
 
@@ -72,7 +71,6 @@ export default function CashSessionsPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={FINANCE_TABS} />}
       title="Tesorería y Arqueos"
       subtitle="Creá y administrá cuentas (caja/banco). Las cajas del POS se vinculan a una cuenta CASH. Los pagos a proveedores impactan estos saldos."
       action={

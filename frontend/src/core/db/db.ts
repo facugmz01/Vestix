@@ -6,6 +6,7 @@ export interface PosCatalogItem {
   name: string;
   categoryId: string;
   categoryName?: string;
+  brandId?: string;
   brandName?: string;
   sku: string;
   primaryBarcode: string | null;
@@ -36,7 +37,7 @@ export class PosDatabase extends Dexie {
     });
 
     this.version(2).stores({
-      catalog: '&id, productId, categoryId, sku, primaryBarcode, *allBarcodes, name, updatedAt',
+      catalog: '&id, productId, categoryId, brandId, sku, primaryBarcode, *allBarcodes, name, updatedAt',
       syncQueue: '++id, type, status, createdAt',
       syncMeta: '&key',
     }).upgrade(async tx => {

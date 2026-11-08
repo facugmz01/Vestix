@@ -1,10 +1,9 @@
-import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, Package, Clock } from 'lucide-react';
 import { useState } from 'react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip
 } from '@/components/ui';
 
 import { reservationsApi } from '@/api/reservations.api';
@@ -59,7 +58,6 @@ export default function ReservationsPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={INVENTORY_TABS} />}
       
       title="Reservas de Stock" 
       subtitle="Monitor de mercadería retenida y apartada temporalmente para clientes."

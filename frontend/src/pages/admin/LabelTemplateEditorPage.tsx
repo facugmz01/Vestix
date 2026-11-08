@@ -1,8 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageContainer, PageSpinner, ApiErrorDisplay } from '@/components/ui';
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
-import { Tabs } from '@/components/ui';
 import { labelsApi } from '@/api/labels.api';
 import { TemplateEditor } from '@/features/labels/components/TemplateEditor/TemplateEditor';
 
@@ -21,7 +19,6 @@ export default function LabelTemplateEditorPage() {
 
   return (
     <PageContainer title={isNew ? 'Nueva plantilla' : 'Editor de plantilla'}>
-      <Tabs items={CATALOG_TABS} />
       <TemplateEditor template={isNew ? null : template} />
     </PageContainer>
   );

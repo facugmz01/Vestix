@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Tags, Star } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Tags, Star, Grid2X2, List, Columns3, SlidersHorizontal, X } from 'lucide-react';
 import { usePosStore } from '../store/usePosStore';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { resolveProductImage } from '@/utils/imageUrl';
@@ -7,6 +7,8 @@ import { SafeImage } from '@/components/ui';
 import { PosFavoritesBar } from './PosFavoritesBar';
 import styles from '@/pages/pos/POSPage.module.css';
 import type { ProductVariant } from '@/types';
+import type { PriceList } from '@/types';
+import type { PosCatalogFilters } from '../hooks/usePosOffline';
 
 type PosVariant = ProductVariant & {
   name?: string;
@@ -15,6 +17,8 @@ type PosVariant = ProductVariant & {
   brand?: string;
   stock?: number;
   imageUrl?: string | null;
+  categoryId?: string;
+  brandId?: string;
   product?: { name?: string; images?: string[] };
 };
 
@@ -22,36 +26,65 @@ export function POSProductGrid({
   products,
   searchResults,
   search,
+  filters,
+  priceLists,
+  onFiltersChange,
 }: {
   products: PosVariant[] | undefined;
   searchResults: PosVariant[] | undefined;
   search: string;
+  filters: PosCatalogFilters;
+  priceLists: PriceList[];
+  onFiltersChange: (filters: PosCatalogFilters) => void;
 }) {
   const addVariantWithRecent = usePosStore(s => s.addVariantWithRecent);
   const toggleFavorite = usePosStore(s => s.toggleFavorite);
   const favoriteVariantIds = usePosStore(s => s.favoriteVariantIds);
   const recentVariantIds = usePosStore(s => s.recentVariantIds);
-
-  const [categoryFilter, setCategoryFilter] = useState('');
+  // La vista principal del POS prioriza velocidad de lectura y densidad.
+  const [viewMode, setViewMode] = useState<'cards' | 'list' | 'double'>(() => {
+    if (typeof window === 'undefined') return 'list';
+    const stored = window.localStorage.getItem('vestix-pos-view-mode');
+    return stored === 'cards' || stored === 'double' || stored === 'list' ? stored : 'list';
+  });
+  const [visibleCount, setVisibleCount] = useState(60);
 
   const displayedProducts = search.length >= 2 ? searchResults : products;
 
-  const categoryCounts = useMemo(() => {
-    const map = new Map<string, number>();
+  const categoryOptions = useMemo(() => {
+    const map = new Map<string, { name: string; count: number }>();
     products?.forEach(p => {
-      if (!p.category) return;
-      map.set(p.category, (map.get(p.category) || 0) + 1);
+      if (!p.categoryId || !p.category) return;
+      const current = map.get(p.categoryId);
+      map.set(p.categoryId, { name: p.category, count: (current?.count ?? 0) + 1 });
     });
-    return Array.from(map.entries())
-      .map(([name, count]) => ({ name, count }))
+    return Array.from(map.entries()).map(([id, value]) => ({ id, ...value }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [products]);
 
   const filteredProducts = useMemo(() => {
-    if (!displayedProducts) return [];
-    if (!categoryFilter) return displayedProducts;
-    return displayedProducts.filter(p => p.category === categoryFilter);
-  }, [displayedProducts, categoryFilter]);
+    return displayedProducts ?? [];
+  }, [displayedProducts]);
+
+  useEffect(() => {
+    setVisibleCount(60);
+  }, [search, filters.categoryId, filters.brandId, filters.priceListId, filters.stock, viewMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem('vestix-pos-view-mode', viewMode);
+  }, [viewMode]);
+
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const hasMoreProducts = visibleCount < filteredProducts.length;
+
+  const brandOptions = useMemo(() => Array.from(new Map(
+    (products ?? []).filter(p => p.brandId && p.brand).map(p => [p.brandId!, p.brand!]),
+  ).entries()).sort((a, b) => a[1].localeCompare(b[1])), [products]);
+  const activeFilterCount = [filters.categoryId, filters.brandId, filters.priceListId,
+    filters.stock && filters.stock !== 'ALL' ? filters.stock : undefined].filter(Boolean).length;
+  const updateFilter = (key: keyof PosCatalogFilters, value: string) =>
+    onFiltersChange({ ...filters, [key]: value || undefined });
+  const hasFilters = activeFilterCount > 0;
 
   const getName = (p: PosVariant) =>
     p.name || p.productName || p.product?.name || 'Producto';
@@ -67,28 +100,38 @@ export function POSProductGrid({
         onSelect={addVariantWithRecent}
       />
 
-      <div className={styles.categoryRibbon} role="tablist" aria-label="Categorías">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={!categoryFilter}
-          className={`${styles.categoryChip} ${!categoryFilter ? styles.categoryChipActive : ''}`}
-          onClick={() => setCategoryFilter('')}
-        >
-          <span className={styles.categoryChipName}>Todos</span>
-          <span className={styles.categoryChipCount}>{products?.length ?? 0}</span>
-        </button>
-        {categoryCounts.map(cat => (
-          <button
-            key={cat.name}
-            type="button"
-            role="tab"
-            aria-selected={categoryFilter === cat.name}
-            className={`${styles.categoryChip} ${categoryFilter === cat.name ? styles.categoryChipActive : ''}`}
-            onClick={() => setCategoryFilter(cat.name)}
-          >
-            <span className={styles.categoryChipName}>{cat.name}</span>
-            <span className={styles.categoryChipCount}>{cat.count}</span>
+      <div className={styles.posFilters} aria-label="Filtros de catálogo">
+        <div className={styles.filterTitle}><SlidersHorizontal size={15} /> Filtrar catálogo</div>
+        <select aria-label="Filtrar por categoría" value={filters.categoryId ?? ''} onChange={e => updateFilter('categoryId', e.target.value)}>
+          <option value="">Todas las categorías ({products?.length ?? 0})</option>
+          {categoryOptions.map(cat => <option key={cat.id} value={cat.id}>{cat.name} ({cat.count})</option>)}
+        </select>
+        <select aria-label="Filtrar por marca" value={filters.brandId ?? ''} onChange={e => updateFilter('brandId', e.target.value)}>
+          <option value="">Todas las marcas</option>
+          {brandOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+        </select>
+        <select aria-label="Filtrar por lista de precios" value={filters.priceListId ?? ''} onChange={e => updateFilter('priceListId', e.target.value)}>
+          <option value="">Precio general</option>
+          {priceLists.map(list => <option key={list.id} value={list.id}>{list.name}</option>)}
+        </select>
+        <select aria-label="Filtrar por stock" value={filters.stock ?? 'ALL'} onChange={e => updateFilter('stock', e.target.value as PosCatalogFilters['stock'] || 'ALL')}>
+          <option value="ALL">Cualquier stock</option>
+          <option value="IN_STOCK">Con stock</option>
+          <option value="OUT_OF_STOCK">Sin stock</option>
+        </select>
+        {hasFilters && <button type="button" className={styles.clearPosFilters} onClick={() => onFiltersChange({})}><X size={13} /> Limpiar ({activeFilterCount})</button>}
+        <div className={styles.viewToggle} role="group" aria-label="Vista de productos">
+          <button type="button" className={viewMode === 'cards' ? styles.viewToggleActive : ''} onClick={() => setViewMode('cards')} aria-label="Vista de tarjetas" aria-pressed={viewMode === 'cards'}><Grid2X2 size={15} /></button>
+          <button type="button" className={viewMode === 'list' ? styles.viewToggleActive : ''} onClick={() => setViewMode('list')} aria-label="Vista de listado" aria-pressed={viewMode === 'list'}><List size={15} /></button>
+          <button type="button" className={viewMode === 'double' ? styles.viewToggleActive : ''} onClick={() => setViewMode('double')} aria-label="Vista doble" aria-pressed={viewMode === 'double'}><Columns3 size={15} /></button>
+        </div>
+      </div>
+
+      <div className={styles.categoryQuickFilters} aria-label="Categorías rápidas">
+        <button type="button" className={!filters.categoryId ? styles.categoryQuickActive : ''} onClick={() => onFiltersChange({ ...filters, categoryId: undefined })}>Todos</button>
+        {categoryOptions.slice(0, 7).map(cat => (
+          <button key={cat.id} type="button" className={filters.categoryId === cat.id ? styles.categoryQuickActive : ''} onClick={() => updateFilter('categoryId', cat.id)}>
+            {cat.name}
           </button>
         ))}
       </div>
@@ -98,10 +141,37 @@ export function POSProductGrid({
         <span className={styles.productsCount}>{filteredProducts.length}</span>
       </div>
 
-      <div className={styles.productsGrid}>
-        {filteredProducts.map(p => {
+      <div className={viewMode === 'list' ? styles.productsList : viewMode === 'double' ? styles.productsDouble : styles.productsGrid}>
+        {visibleProducts.map(p => {
           const isFavorite = favoriteVariantIds.includes(p.id);
           const name = getName(p);
+          if (viewMode === 'list') {
+            return (
+              <article key={p.id} className={styles.productListRow}>
+                <div className={styles.productListIdentity}>
+                  <div className={styles.productListThumb}><SafeImage src={getImage(p)} alt="" className={styles.productImgFile} fallback={<Tags size={20} />} /></div>
+                  <div><div className={styles.productListName}>{name}</div><div className={styles.productListSku}>{p.sku || 'Sin SKU'}{p.size ? ` · ${p.size}` : ''}{p.color ? ` · ${p.color}` : ''}</div></div>
+                </div>
+                <span className={styles.productListStock} data-stock={typeof p.stock === 'number' ? (p.stock <= 0 ? 'empty' : p.stock <= 5 ? 'low' : 'ok') : 'unknown'}>{typeof p.stock === 'number' ? `Stock: ${p.stock}` : 'Stock —'}</span>
+                <span className={styles.productListPrice}>{formatCurrency(p.basePrice)}</span>
+                <button type="button" className={styles.productListFavorite} onClick={() => toggleFavorite(p.id)} aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}><Star size={15} fill={isFavorite ? 'currentColor' : 'none'} /></button>
+                <button type="button" className={styles.productListAdd} onClick={() => addVariantWithRecent(p)}>Agregar</button>
+              </article>
+            );
+          }
+          if (viewMode === 'double') {
+            return (
+              <article key={p.id} className={styles.productDoubleRow}>
+                <div className={styles.productListIdentity}>
+                  <div className={styles.productDoubleThumb}><SafeImage src={getImage(p)} alt="" className={styles.productImgFile} fallback={<Tags size={16} />} /></div>
+                  <div><div className={styles.productListName} title={name}>{name}</div><div className={styles.productListSku}>{p.sku || 'Sin SKU'}{p.size ? ` · ${p.size}` : ''}{p.color ? ` · ${p.color}` : ''}</div></div>
+                </div>
+                <span className={styles.productListStock} data-stock={typeof p.stock === 'number' ? (p.stock <= 0 ? 'empty' : p.stock <= 5 ? 'low' : 'ok') : 'unknown'}>{typeof p.stock === 'number' ? p.stock : '—'}</span>
+                <span className={styles.productListPrice}>{formatCurrency(p.basePrice)}</span>
+                <button type="button" className={styles.productListAdd} onClick={() => addVariantWithRecent(p)}>Agregar</button>
+              </article>
+            );
+          }
           return (
             <article key={p.id} className={styles.productCard}>
               <button
@@ -148,6 +218,12 @@ export function POSProductGrid({
             </article>
           );
         })}
+
+        {hasMoreProducts && (
+          <button type="button" className={styles.loadMoreProducts} onClick={() => setVisibleCount(count => count + 60)}>
+            Mostrar más productos ({filteredProducts.length - visibleCount} restantes)
+          </button>
+        )}
 
         {filteredProducts.length === 0 && (
           <div className={styles.emptyState}>

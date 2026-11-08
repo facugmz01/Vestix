@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Eye, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog
 } from '@/components/ui';
 
 import { suppliersApi } from '@/api/suppliers.api';
@@ -87,7 +86,6 @@ export default function SuppliersPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={PURCHASING_TABS} />}
       
       title="Proveedores" 
       subtitle="Gestioná a tus abastecedores y mantené el control de tus cuentas por pagar."

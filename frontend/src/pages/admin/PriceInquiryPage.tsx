@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import clsx from 'clsx';
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Search, 
@@ -24,7 +23,6 @@ import {
   Badge, 
   EmptyState, 
   TableSkeleton, 
-  Tabs,
   SafeImage
 } from '@/components/ui';
 
@@ -176,7 +174,6 @@ export default function PriceInquiryPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={CATALOG_TABS} />}
       title="Consulta de Precios"
       subtitle="Verificador rápido de precios, listas y disponibilidad de stock por código de barras o SKU."
     >

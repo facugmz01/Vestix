@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { Plus, Edit2, Trash2, Copy, Star, Tag, Download, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
-  PageContainer, Button, Table, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, Tabs, Badge,
+  PageContainer, Button, Table, EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, Badge,
 } from '@/components/ui';
 import { labelsApi } from '@/api/labels.api';
 import { ActionGuard } from '@/rbac/ActionGuard';
@@ -102,7 +101,6 @@ export default function LabelTemplatesPage() {
         </ActionGuard>
       }
     >
-      <Tabs items={CATALOG_TABS} />
 
       {error ? (
         <ApiErrorDisplay error={error} onRetry={refetch} />

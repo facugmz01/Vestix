@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import styles from './Drawer.module.css';
 import clsx from 'clsx';
@@ -9,7 +10,7 @@ interface Props {
   onClose:    () => void;
   children:   React.ReactNode;
   footer?:    React.ReactNode;
-  width?:     'sm' | 'md' | 'lg' | 'xl';
+  width?:     'sm' | 'md' | 'lg' | 'xl' | 'full';
   side?:      'right' | 'left';
   /** Stretch content to fill the panel (no body padding/scroll). Useful for split layouts. */
   fill?:      boolean;
@@ -42,7 +43,8 @@ export function Drawer({ open, title, onClose, children, footer, width = 'md', s
 
   if (!open) return null;
 
-  return (
+  // Keep fixed positioning relative to the viewport, outside page animations.
+  return createPortal(
     <div className={styles.overlay} onClick={onClose} aria-modal role="dialog" aria-label={title}>
       <aside
         className={clsx(styles.panel, styles[width], styles[side])}
@@ -57,6 +59,7 @@ export function Drawer({ open, title, onClose, children, footer, width = 'md', s
         <div className={clsx(styles.body, fill && styles.bodyFill)}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }

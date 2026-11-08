@@ -1,10 +1,9 @@
-import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton
 } from '@/components/ui';
 
 import { paymentsApi } from '@/api/payments.api';
@@ -49,7 +48,6 @@ export default function PaymentsPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={FINANCE_TABS} />}
       
       title="Pagos y Cobranzas" 
       subtitle="Historial de transacciones, cobros en POS, transferencias y pagos en línea."

@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { INVENTORY_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { SlidersHorizontal, History, Settings2, ClipboardCheck } from 'lucide-react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton
 } from '@/components/ui';
 
 import { inventoryApi, type EnrichedStockLevel } from '@/api/inventory.api';
@@ -62,7 +61,6 @@ export default function InventoryPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={INVENTORY_TABS} />}
       
       title="Estado de Inventario" 
       subtitle="Visualización consolidada de existencias, disponibilidades y reservas por depósito."

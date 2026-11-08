@@ -24,3 +24,8 @@
 .qtyBtnMicro:active {
   transform: scale(0.86) !important;
 }
+
+.paySection { padding: 8px 12px 12px; }
+.payPrimaryBtn { width:100%; min-height:48px; border:0; border-radius:12px; background:var(--pos-accent,#6366f1); color:#fff; font-size:15px; font-weight:800; cursor:pointer; }
+.payPrimaryBtn:disabled { opacity:.45; cursor:not-allowed; }
+.latestItem { border-color:var(--pos-accent,#6366f1) !important; box-shadow:0 0 0 1px color-mix(in srgb,var(--pos-accent,#6366f1) 32%,transparent); }

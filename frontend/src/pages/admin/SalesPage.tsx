@@ -1,10 +1,9 @@
-import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Eye, ShoppingCart, PackageCheck, CheckCircle, CreditCard, XCircle, Truck, FileText } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip
 } from '@/components/ui';
 
 import { salesApi } from '@/api/sales.api';
@@ -158,7 +157,6 @@ export default function SalesPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={SALES_TABS} />}
       
       title="Operaciones de Venta (Backoffice)" 
       subtitle="Monitor general de ventas confirmadas y presupuestos (Quotations) generados en todas las sucursales."

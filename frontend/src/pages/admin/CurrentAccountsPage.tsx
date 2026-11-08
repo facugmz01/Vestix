@@ -1,11 +1,10 @@
-import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { FileText, Banknote, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton
 } from '@/components/ui';
 
 import { financeApi } from '@/api/finance.api';
@@ -47,7 +46,6 @@ export default function CurrentAccountsPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={FINANCE_TABS} />}
       
       title="Cuentas Corrientes" 
       subtitle="Saldos y movimientos de clientes y proveedores. Las deudas de compras aparecen acá filtrando Solo Proveedores."

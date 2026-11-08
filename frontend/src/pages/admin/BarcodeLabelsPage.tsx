@@ -3,8 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '@/api/products.api';
 import { labelsApi } from '@/api/labels.api';
 import { settingsApi } from '@/api/settings.api';
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
-import { PageContainer, Button, Tabs } from '@/components/ui';
+import { PageContainer, Button } from '@/components/ui';
 import { Search, Plus, Trash2, Printer, FileDown, Eye } from 'lucide-react';
 import { LabelRenderer } from '@/features/labels/components/LabelRenderer';
 import type { LabelTemplate, LabelPrintData } from '@/features/labels/types/label.types';
@@ -182,7 +181,6 @@ export default function BarcodeLabelsPage() {
 
   return (
     <PageContainer title="Impresión de Etiquetas">
-      <Tabs items={CATALOG_TABS} />
 
       <div className={styles.container}>
         <div className={styles.noPrint}>

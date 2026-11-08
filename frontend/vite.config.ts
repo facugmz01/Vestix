@@ -10,7 +10,10 @@ export default defineConfig({
       injectRegister: 'auto',
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
       },
       // Manifest is dynamically served by the backend, so we disable static manifest generation
       manifest: false,

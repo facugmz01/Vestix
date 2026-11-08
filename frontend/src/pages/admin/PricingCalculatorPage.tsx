@@ -1,12 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { 
   PageContainer, 
   Section, 
   Button, 
-  Badge, 
-  Tabs 
+  Badge
 } from '@/components/ui';
 import { 
   Calculator, 
@@ -277,7 +275,6 @@ export default function PricingCalculatorPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={CATALOG_TABS} />}
       title="Calculadora de Precios & Costos"
       subtitle="Calculá precios sugeridos absorbiendo comisiones de Mercado Pago, prorrateando flete por lote y deducciones fiscales."
       action={

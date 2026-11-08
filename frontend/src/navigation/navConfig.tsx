@@ -171,7 +171,7 @@ export const NAV_SEGMENTS: NavSegment[] = [
       },
       {
         id: 'sales',
-        label: 'Ventas & Despachos',
+        label: 'Ventas',
         to: '/admin/sales',
         icon: ShoppingCart,
         action: 'read',
@@ -179,8 +179,18 @@ export const NAV_SEGMENTS: NavSegment[] = [
         children: [
           { id: 'sales-history', label: 'Historial de Ventas', to: '/admin/sales', icon: Receipt, end: true },
           { id: 'sales-returns', label: 'Devoluciones', to: '/admin/returns', icon: Undo2 },
-          { id: 'sales-delivery', label: 'Despachos y Envíos', to: '/admin/delivery', icon: Send, action: 'read', subject: 'Delivery' },
-          { id: 'sales-carriers', label: 'Carriers y Tarifas', to: '/admin/delivery/carriers', icon: Navigation, action: 'read', subject: 'Delivery' },
+        ],
+      },
+      {
+        id: 'fulfillment',
+        label: 'Pedidos y despachos',
+        to: '/admin/delivery',
+        icon: Send,
+        action: 'read',
+        subject: 'Delivery',
+        children: [
+          { id: 'fulfillment-orders', label: 'Preparación y envíos', to: '/admin/delivery', icon: Send, end: true },
+          { id: 'fulfillment-carriers', label: 'Carriers y tarifas', to: '/admin/delivery/carriers', icon: Navigation },
         ],
       },
       {
@@ -242,6 +252,9 @@ export const NAV_SEGMENTS: NavSegment[] = [
         subject: 'Catalog',
         children: [
           { id: 'ch-storefront', label: 'Ver Tienda Web', to: '/store', icon: Globe },
+          { id: 'ch-integrations', label: 'Integraciones', to: '/admin/integrations', icon: PlugZap, action: 'manage', subject: 'Settings' },
+          { id: 'ch-sync', label: 'Sincronización', to: '/admin/sync', icon: RefreshCw, action: 'read', subject: 'Reports' },
+          { id: 'ch-notifications', label: 'Notificaciones', to: '/admin/notifications', icon: BellRing, action: 'manage', subject: 'Settings' },
         ],
       },
       {

@@ -1,10 +1,9 @@
-import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, FileText, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton
 } from '@/components/ui';
 
 import { invoicesApi } from '@/api/invoices.api';
@@ -46,7 +45,6 @@ export default function InvoicesPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={FINANCE_TABS} />}
             title="Facturación Electrónica (AFIP)"
       subtitle="Registro de comprobantes electrónicos: Facturas A/B/C y Notas de Crédito."
       action={

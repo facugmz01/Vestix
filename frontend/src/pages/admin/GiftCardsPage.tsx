@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 import {
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar,
-  EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, ActiveChip, Input, Tabs,
+  EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, ActiveChip, Input,
 } from '@/components/ui';
 import { giftCardsApi, type GiftCard, type GiftCardVerification } from '@/api/gift-cards.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -18,7 +18,6 @@ import { IssueGiftCardDrawer } from '@/features/gift-cards/components/IssueGiftC
 import { GiftCardDigitalModal } from '@/features/gift-cards/components/GiftCardDigitalModal';
 import { GiftCardVerifyResult } from '@/features/gift-cards/components/GiftCardVerifyResult';
 import { extractGiftCardVerifyToken } from '@/features/gift-cards/utils/giftCardVerify';
-import { CRM_TABS } from '@/navigation/moduleTabs';
 
 const FUNDING_LABELS: Record<string, string> = {
   INCOME: 'Ingreso',
@@ -77,7 +76,6 @@ export default function GiftCardsPage() {
     <PageContainer
       title="Gift Cards"
       subtitle="Emití tarjetas de regalo, consultá saldos y desactivá códigos."
-      tabs={<Tabs items={CRM_TABS} />}
       action={
         <ActionGuard action="create" subject="Sales">
           <Button variant="primary" icon={<Plus size={16} />} onClick={() => setIssueOpen(true)}>

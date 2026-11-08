@@ -11,13 +11,32 @@ type PosVariant = ProductVariant & {
   brand?: string;
   stock?: number;
   imageUrl?: string | null;
+  categoryId?: string;
+  brandId?: string;
 };
+
+export interface PosCatalogFilters {
+  categoryId?: string;
+  brandId?: string;
+  priceListId?: string;
+  stock?: 'ALL' | 'IN_STOCK' | 'OUT_OF_STOCK';
+}
+
+function applyLocalFilters(items: PosVariant[], filters: PosCatalogFilters) {
+  return items.filter(item => {
+    if (filters.categoryId && item.categoryId !== filters.categoryId) return false;
+    if (filters.brandId && item.brandId !== filters.brandId) return false;
+    if (filters.stock === 'IN_STOCK' && (item.stock ?? 0) <= 0) return false;
+    if (filters.stock === 'OUT_OF_STOCK' && (item.stock ?? 0) > 0) return false;
+    return true;
+  });
+}
 
 function toVariants(items: Awaited<ReturnType<typeof CatalogSyncService.searchOffline>>): PosVariant[] {
   return items.map(item => CatalogSyncService.toProductVariant(item) as PosVariant);
 }
 
-export function usePosOffline(branchId: string, selectedCustomerId: string, search: string) {
+export function usePosOffline(branchId: string, selectedCustomerId: string, search: string, filters: PosCatalogFilters = {}) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const queryClient = useQueryClient();
 
@@ -33,40 +52,49 @@ export function usePosOffline(branchId: string, selectedCustomerId: string, sear
   }, []);
 
   const { data: gridProducts, isLoading: gridLoading } = useQuery({
-    queryKey: ['pos', 'gridProducts', branchId, selectedCustomerId, isOnline],
+    queryKey: ['pos', 'gridProducts', branchId, selectedCustomerId, isOnline, filters],
     queryFn: async () => {
       if (isOnline) {
         try {
           const online = await posApi.searchProduct('', {
             customerId: selectedCustomerId || undefined,
             branchId: branchId || undefined,
+            categoryId: filters.categoryId,
+            brandId: filters.brandId,
+            priceListId: filters.priceListId,
           });
-          if (online?.length) return online;
+          if (online?.length) return applyLocalFilters(online as PosVariant[], filters);
         } catch {
           // fall through to local catalog cache
         }
       }
       const offline = await CatalogSyncService.getAllForGrid();
-      return toVariants(offline);
+      return applyLocalFilters(toVariants(offline), filters);
     },
     staleTime: isOnline ? 30_000 : 60_000,
+    placeholderData: previous => previous,
   });
 
   const { data: searchResults, isLoading: searchLoading } = useQuery({
-    queryKey: ['pos', 'search', search, branchId, selectedCustomerId, isOnline],
+    queryKey: ['pos', 'search', search, branchId, selectedCustomerId, isOnline, filters],
     queryFn: async () => {
       if (isOnline) {
-        return posApi.searchProduct(search, {
+        const online = await posApi.searchProduct(search, {
           customerId: selectedCustomerId || undefined,
           branchId: branchId || undefined,
+          categoryId: filters.categoryId,
+          brandId: filters.brandId,
+          priceListId: filters.priceListId,
           limit: 100,
         });
+        return applyLocalFilters(online as PosVariant[], filters);
       }
       const offline = await CatalogSyncService.searchOffline(search, 100);
-      return toVariants(offline);
+      return applyLocalFilters(toVariants(offline), filters);
     },
     enabled: search.length >= 2 || (!isOnline && search.length >= 1),
     staleTime: 5_000,
+    placeholderData: previous => previous,
   });
 
   const lookupBarcode = useCallback(async (code: string): Promise<PosVariant[]> => {

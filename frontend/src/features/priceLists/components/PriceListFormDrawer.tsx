@@ -6,6 +6,7 @@ import { queryKeys } from '@/api/queryKeys';
 import type { PriceList } from '@/types';
 import toast from 'react-hot-toast';
 import styles from '@/styles/DetailDrawerShared.module.css';
+import formStyles from './PriceListFormDrawer.module.css';
 
 
 interface Props {
@@ -82,7 +83,7 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
       open={open}
       title={isEditing ? 'Editar Lista de Precios' : 'Nueva Lista de Precios'}
       onClose={onClose}
-      width="sm"
+      width="lg"
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancelar</Button>
@@ -90,7 +91,7 @@ export function PriceListFormDrawer({ open, onClose, listToEdit }: Props) {
         </>
       }
     >
-      <form onSubmit={handleSubmit} className={styles.formStackMd}>
+      <form onSubmit={handleSubmit} className={formStyles.form}>
         
         <Input label="Nombre de la Lista *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
         <Input label="Código (Ej: MAYORISTA_A) *" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required />

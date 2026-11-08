@@ -1,10 +1,9 @@
-import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, PackageCheck } from 'lucide-react';
 import { useState } from 'react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip
 } from '@/components/ui';
 
 import { receiptsApi } from '@/api/receipts.api';
@@ -49,7 +48,6 @@ export default function GoodsReceiptsPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={PURCHASING_TABS} />}
       
       title="Recepciones (Remitos de Proveedor)" 
       subtitle="Conteo físico e ingreso al inventario de la mercadería despachada por proveedores."

@@ -4,17 +4,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import {
   TrendingUp, ShoppingBag, Package, Wallet,
-  BarChart2, AlertCircle, DollarSign,
+  BarChart2, AlertCircle, ArrowUpRight,
 } from 'lucide-react';
 
 import { PageContainer, Section } from '@/components/ui';
 import { formatCurrency } from '@/utils/formatCurrency';
 import {
-  KpiCard,
   KpiCardSkeleton,
   EmptyState,
   ErrorState,
-  ResponsiveBarChart,
 } from '@/features/reports/components/ChartPrimitives';
 import { ReportFilterBar } from '@/features/reports/components/ReportFilterBar';
 import { SalesReportPanel }     from '@/features/reports/components/SalesReportPanel';
@@ -24,7 +22,6 @@ import { CashReportPanel }      from '@/features/reports/components/CashReportPa
 import { useDashboard }         from '@/features/reports/hooks/useDashboard';
 import { useDashboardFilters }  from '@/features/reports/hooks/useDashboardFilters';
 import { OnboardingQuickStart } from '@/components/dashboard/OnboardingQuickStart';
-import adminStyles from '@/styles/AdminListShared.module.css';
 import styles from './ReportsPage.module.css';
 
 type ReportTab = 'overview' | 'sales' | 'stock' | 'purchases' | 'cash';
@@ -39,7 +36,7 @@ const TABS: { id: ReportTab; label: string; icon: React.ReactNode }[] = [
 
 function TabNav({ activeTab, onChange }: { activeTab: ReportTab; onChange: (t: ReportTab) => void }) {
   return (
-    <div className={clsx('glass-panel', styles.tabNav)}>
+    <nav className={styles.tabNav} aria-label="Reportes">
       {TABS.map(t => (
         <button
           key={t.id}
@@ -50,11 +47,11 @@ function TabNav({ activeTab, onChange }: { activeTab: ReportTab; onChange: (t: R
           {t.icon}{t.label}
         </button>
       ))}
-    </div>
+    </nav>
   );
 }
 
-function OverviewTab({ branchId }: { branchId?: string }) {
+function OverviewTab({ branchId, onTabChange }: { branchId?: string; onTabChange: (tab: ReportTab) => void }) {
   const navigate = useNavigate();
   const { dashboard, isLoading, isError, refetch } = useDashboard(branchId, true);
 
@@ -81,108 +78,32 @@ function OverviewTab({ branchId }: { branchId?: string }) {
     return <EmptyState message="No hay datos disponibles para el período." icon={<AlertCircle size={32} />} />;
   }
 
+  const money = (value?: number) => value == null ? '—' : formatCurrency(value);
+  const sellers = [...(dashboard.topSellers ?? [])].sort((a, b) => b.totalUnitsSold - a.totalUnitsSold).slice(0, 5);
+  const maxUnits = Math.max(1, ...sellers.map(item => item.totalUnitsSold));
+  const alerts = dashboard.lowStockAlerts ?? [];
+  const updatedAt = new Date(dashboard.generatedAt);
+
   return (
-    <>
-      <div className={adminStyles.statCardGrid4}>
-        <KpiCard
-          label="Ventas Hoy"
-          value={formatCurrency(dashboard.today?.revenue ?? 0)}
-          icon={<DollarSign size={20} />}
-          color="#22c55e"
-          trend={{ value: 0, label: `${dashboard.today?.orders ?? 0} pedidos` }}
-        />
-        <KpiCard
-          label="Compras Hoy"
-          value={formatCurrency(dashboard.today?.purchasesTotal ?? 0)}
-          icon={<ShoppingBag size={20} />}
-          color="#0ea5e9"
-          trend={{ value: 0, label: `Pagos ${formatCurrency(dashboard.today?.supplierPayments ?? 0)}` }}
-        />
-        <KpiCard
-          label="Deuda Proveedores"
-          value={formatCurrency(dashboard.supplierPayableBalance ?? 0)}
-          icon={<ShoppingBag size={20} />}
-          color={(dashboard.supplierPayableBalance ?? 0) > 0 ? '#ef4444' : '#22c55e'}
-          trend={{ value: 0, label: `Mes ${formatCurrency(dashboard.thisMonth?.purchasesDebt ?? 0)}` }}
-        />
-        <KpiCard
-          label="Saldo Cajas (Efectivo)"
-          value={formatCurrency(dashboard.today?.cashInDrawers ?? 0)}
-          icon={<Wallet size={20} />}
-          color="#8b5cf6"
-        />
+    <div className={styles.overview}>
+      <div className={styles.overviewHeading}><h2>La operación de hoy</h2>{!Number.isNaN(updatedAt.getTime()) && <span>Actualizado {updatedAt.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>}</div>
+      <div className={styles.metricsWrap}>
+        <div className={clsx(styles.metricBlock, styles.leadMetric)}><span>Ventas de hoy</span><strong>{money(dashboard.today?.revenue)}</strong><small>{dashboard.today?.orders ?? '—'} pedidos · pesos argentinos</small></div>
+        <div className={styles.metricBlock}><span>Efectivo en cajas</span><strong>{money(dashboard.today?.cashInDrawers)}</strong><small>Saldo disponible hoy</small></div>
+        <div className={styles.metricBlock}><span>Compras de hoy</span><strong>{money(dashboard.today?.purchasesTotal)}</strong><small>Pagos a proveedores: {money(dashboard.today?.supplierPayments)}</small></div>
       </div>
-
-      <div className={adminStyles.statCardGrid4} style={{ marginTop: 16 }}>
-        <KpiCard
-          label="Ventas del Mes"
-          value={formatCurrency(dashboard.thisMonth?.revenue ?? 0)}
-          icon={<TrendingUp size={20} />}
-          color="#3b82f6"
-          trend={{ value: 0, label: `${dashboard.thisMonth?.orders ?? 0} pedidos` }}
-        />
-        <KpiCard
-          label="Compras del Mes"
-          value={formatCurrency(dashboard.thisMonth?.purchasesTotal ?? 0)}
-          icon={<ShoppingBag size={20} />}
-          color="#0284c7"
-          trend={{ value: 0, label: `Pagado ${formatCurrency(dashboard.thisMonth?.purchasesPaid ?? 0)}` }}
-        />
-        <KpiCard
-          label="Egresos Tesorería (Mes)"
-          value={formatCurrency(dashboard.thisMonth?.cashExpenses ?? 0)}
-          icon={<Wallet size={20} />}
-          color="#f59e0b"
-          trend={{ value: 0, label: `Neto ${formatCurrency(dashboard.thisMonth?.netCash ?? 0)}` }}
-        />
-        <KpiCard
-          label="Artículos Stock Bajo"
-          value={String(dashboard.lowStockAlerts?.length ?? 0)}
-          icon={<Package size={20} />}
-          color={(dashboard.lowStockAlerts?.length ?? 0) > 5 ? '#ef4444' : '#f59e0b'}
-        />
+      <div className={styles.dashboardGrid}>
+        <section className={styles.panel} aria-labelledby="sellers-heading"><div className={styles.panelHeading}><div><h2 id="sellers-heading">Lo más vendido</h2><p>Este mes · unidades por variante</p></div><button className={styles.textAction} onClick={() => onTabChange('sales')}>Ver ventas <ArrowUpRight size={15} /></button></div>
+          {sellers.length ? <ol className={styles.sellerList}>{sellers.map(item => <li key={item.variantId}><div className={styles.sellerRow}><div><span>{item.name}</span><small>{item.sku}</small></div><strong>{item.totalUnitsSold.toLocaleString('es-AR')} <small>un.</small></strong></div><div className={styles.barTrack}><div style={{ width: (item.totalUnitsSold / maxUnits * 100) + '%' }} /></div></li>)}</ol> : <p className={styles.emptyMessage}>Todavía no hay productos vendidos este mes. Las ventas aparecerán acá cuando se registren.</p>}
+        </section>
+        <section className={styles.panel} aria-labelledby="pending-heading"><div className={styles.panelHeading}><div><h2 id="pending-heading">Para resolver</h2><p>Despachos, reposición y proveedores</p></div></div>
+          <button className={styles.taskRow} onClick={() => navigate('/admin/delivery')}><div><span>Pedidos por despachar</span><small>{dashboard.pendingOrders ? 'Continuar con la preparación' : 'Sin despachos pendientes'}</small></div><strong>{dashboard.pendingOrders ?? '—'}</strong><ArrowUpRight size={16} /></button>
+          <button className={styles.taskRow} onClick={() => onTabChange('stock')}><div><span>Variantes con stock bajo</span><small>{alerts.length ? 'Revisar talles y colores' : 'Sin alertas de reposición'}</small></div><strong className={alerts.length ? styles.warning : undefined}>{alerts.length}</strong><ArrowUpRight size={16} /></button>
+          <div className={styles.payable}><span>Deuda con proveedores</span><strong>{money(dashboard.supplierPayableBalance)}</strong><small>Deuda de compras del mes: {money(dashboard.thisMonth?.purchasesDebt)}</small></div>
+        </section>
       </div>
-
-      {dashboard.topSellers && dashboard.topSellers.length > 0 && (
-        <div className="glass-panel" style={{ marginTop: 24, padding: 20, borderRadius: 'var(--radius-lg)' }}>
-          <h4 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700 }}>
-            Top 5 Productos del Mes
-          </h4>
-          <ResponsiveBarChart
-            data={dashboard.topSellers.map(t => ({
-              label: t.name.length > 18 ? t.name.slice(0, 16) + '…' : t.name,
-              sublabel: `${(t as any).category || 'General'} | SKU: ${t.sku}`,
-              value: t.totalUnitsSold,
-              color: '#3b82f6',
-            }))}
-            height={190}
-            formatValue={(v) => `${v} un.`}
-          />
-        </div>
-      )}
-
-      {(dashboard.pendingOrders ?? 0) > 0 && (
-        <div
-          className={styles.pendingCard}
-          style={{ marginTop: 16, cursor: 'pointer' }}
-          onClick={() => navigate('/admin/delivery')}
-          title="Ver envíos en Envíos y Despacho"
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              navigate('/admin/delivery');
-            }
-          }}
-        >
-          <h4 className={styles.pendingTitle}>Pedidos Pendientes de Despacho</h4>
-          <p className={styles.pendingValue}>
-            {dashboard.pendingOrders} pedidos pendientes de entrega
-          </p>
-        </div>
-      )}
-    </>
+      <section className={styles.monthPanel} aria-labelledby="month-heading"><div className={styles.panelHeading}><h2 id="month-heading">El mes en números</h2><span>Mes actual · ARS</span></div><div className={styles.monthMetrics}><div className={styles.metricBlock}><span>Ventas del mes</span><strong>{money(dashboard.thisMonth?.revenue)}</strong><small>{dashboard.thisMonth?.orders ?? '—'} pedidos</small></div><div className={styles.metricBlock}><span>Compras del mes</span><strong>{money(dashboard.thisMonth?.purchasesTotal)}</strong><small>Pagado: {money(dashboard.thisMonth?.purchasesPaid)}</small></div><div className={styles.metricBlock}><span>Egresos de tesorería</span><strong>{money(dashboard.thisMonth?.cashExpenses)}</strong><small>Neto: {money(dashboard.thisMonth?.netCash)}</small></div></div></section>
+    </div>
   );
 }
 
@@ -202,25 +123,25 @@ export default function ReportsPage() {
 
   return (
     <PageContainer
-      title="Reportes y Dashboards"
-      subtitle="Análisis operativo y financiero con agregaciones en tiempo real (Hora Argentina UTC-3)."
+      title="Dashboard"
+      className={styles.page}
+      subtitle="Ventas, stock y caja de tu negocio. Hora Argentina."
     >
-      <OnboardingQuickStart />
 
-      {/* Barra de Filtros Globales Sticky con Sucursal y Presets de Fecha */}
+      <TabNav activeTab={activeTab} onChange={setActiveTab} />
       <ReportFilterBar
         filters={filters}
+        showDates={activeTab !== 'overview' && activeTab !== 'stock'}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       />
 
-      <TabNav activeTab={activeTab} onChange={setActiveTab} />
-
-      {activeTab === 'overview'  && <Section><OverviewTab branchId={branchId || undefined} /></Section>}
+      {activeTab === 'overview'  && <Section><OverviewTab branchId={branchId || undefined} onTabChange={setActiveTab} /></Section>}
       {activeTab === 'sales'     && <Section><SalesReportPanel from={from} to={to} branchId={branchId || undefined} /></Section>}
       {activeTab === 'stock'     && <Section><StockReportPanel branchId={branchId || undefined} /></Section>}
       {activeTab === 'purchases' && <Section><PurchasesReportPanel from={from} to={to} branchId={branchId || undefined} /></Section>}
       {activeTab === 'cash'      && <Section><CashReportPanel from={from} to={to} branchId={branchId || undefined} /></Section>}
+      <OnboardingQuickStart />
     </PageContainer>
   );
 }

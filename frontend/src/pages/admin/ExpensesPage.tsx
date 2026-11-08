@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FINANCE_TABS } from '@/navigation/moduleTabs';
 import {
   PageContainer,
   Section,
@@ -13,7 +12,6 @@ import {
   EmptyState,
   ApiErrorDisplay,
   TableSkeleton,
-  Tabs,
 } from '@/components/ui';
 import { financeApi } from '@/api/finance.api';
 import { branchesApi } from '@/api/branches.api';
@@ -128,7 +126,6 @@ export default function ExpensesPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={FINANCE_TABS} />}
       title="Gastos Operativos (Expenses)"
       subtitle="Registro, categorización y trazabilidad de salidas de caja chica y cuentas bancarias."
       action={

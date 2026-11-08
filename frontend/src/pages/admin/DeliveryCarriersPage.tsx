@@ -4,8 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Save, Truck } from 'lucide-react';
 import clsx from 'clsx';
 
-import { DELIVERY_TABS } from '@/navigation/moduleTabs';
-import { PageContainer, Section, Button, Input, ToggleSwitch, Tabs } from '@/components/ui';
+import { PageContainer, Section, Button, Input, ToggleSwitch } from '@/components/ui';
 import { useGetSettings, useUpdateSettingsSection } from '@/features/settings/hooks/useSettings';
 import {
   storefrontSettingsSchema,
@@ -34,7 +33,6 @@ export default function DeliveryCarriersPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={DELIVERY_TABS} />}
       title="Carriers"
       subtitle="Configurá integraciones con Andreani y Mercado Envíos para despachos automáticos."
     >

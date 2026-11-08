@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { PURCHASING_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, Truck, Package, Trash2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, ConfirmDialog
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, ConfirmDialog
 } from '@/components/ui';
 
 import { purchasesApi } from '@/api/purchases.api';
@@ -102,7 +101,6 @@ export default function PurchasingPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={PURCHASING_TABS} />}
       
       title="Compras y Abastecimiento (PO)" 
       subtitle="Órdenes de compra, recepción y pagos. Al emitir o ingresar mercadería, el pago/deuda impacta en Finanzas → Cuentas Corrientes y Tesorería."

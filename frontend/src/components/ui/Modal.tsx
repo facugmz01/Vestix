@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import styles from './Modal.module.css';
 
@@ -34,7 +35,8 @@ export function Modal({ open, title, onClose, children, footer, size = 'md', wid
 
   if (!open) return null;
 
-  return (
+  // Render outside animated page containers so fixed positioning uses the viewport.
+  return createPortal(
     <div className={styles.overlay} onClick={onClose} role="presentation">
       <div
         ref={panelRef}
@@ -52,6 +54,7 @@ export function Modal({ open, title, onClose, children, footer, size = 'md', wid
         <div className={styles.body}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

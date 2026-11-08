@@ -13,6 +13,7 @@ interface CatalogSyncItem {
   basePrice: number;
   categoryId: string;
   categoryName?: string;
+  brandId?: string;
   brandName?: string;
   size?: string | null;
   color?: string | null;
@@ -54,6 +55,7 @@ export class CatalogSyncService {
       price: item.basePrice,
       categoryId: item.categoryId,
       categoryName: item.categoryName,
+      brandId: item.brandId,
       brandName: item.brandName,
       size: item.size ?? null,
       color: item.color ?? null,
@@ -92,6 +94,7 @@ export class CatalogSyncService {
       name: item.name,
       category: item.categoryName,
       categoryId: item.categoryId,
+      brandId: item.brandId,
       brand: item.brandName,
       stock: item.stock,
       imageUrl: normalizeImageUrl(item.imageUrl),
@@ -100,6 +103,7 @@ export class CatalogSyncService {
       name: string;
       category?: string;
       categoryId?: string;
+      brandId?: string;
       brand?: string;
       stock?: number;
       imageUrl?: string | null;

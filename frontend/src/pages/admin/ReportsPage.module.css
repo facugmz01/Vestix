@@ -115,3 +115,67 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+.overview { display: grid; gap: 16px; }
+.overviewHeading, .panelHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.overviewHeading h2, .panelHeading h2 { margin: 0; color: var(--text-primary); font-size: 18px; font-weight: 600; }
+.overviewHeading span, .panelHeading > span { color: var(--text-secondary); font-size: 12px; }
+.metrics, .monthMetrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.metricsWrap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 17px 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-0); }
+.metrics { padding: 17px 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-0); }
+.metric { display: flex; min-width: 0; flex-direction: column; gap: 5px; padding: 0 18px; border-left: 1px solid var(--border); }
+.metricBlock { display: flex; min-width: 0; flex-direction: column; gap: 5px; padding: 0 18px; border-left: 1px solid var(--border); }
+.metricBlock:first-child { padding-left: 0; border-left: 0; }
+.metricBlock:last-child { padding-right: 0; }
+.metricBlock > span { color: var(--text-secondary); font-size: 13px; }
+.metricBlock > strong { color: var(--text-primary); font-size: 23px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.metricBlock > small { color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+.metric:first-child { padding-left: 0; border-left: 0; }
+.metric:last-child { padding-right: 0; }
+.metric > span, .payable > span { color: var(--text-secondary); font-size: 13px; }
+.metric > strong { color: var(--text-primary); font-size: 23px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.metric > small, .payable > small { color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+.leadMetric > strong { color: #1d5fbf; font-size: 29px; font-weight: 600; }
+.dashboardGrid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
+.panel, .monthPanel { min-width: 0; padding: 18px 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-0); }
+.panelHeading { margin-bottom: 12px; }
+.panelHeading p { margin: 4px 0 0; color: var(--text-secondary); font-size: 12px; }
+.textAction { display: inline-flex; align-items: center; gap: 4px; padding: 5px 0 5px 8px; border: 0; background: transparent; color: var(--text-primary); font: 500 12px inherit; cursor: pointer; }
+.sellerList { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.sellerList li { padding: 9px 0 10px; border-top: 1px solid var(--surface-1); }
+.sellerRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sellerRow > div { display: grid; min-width: 0; gap: 3px; }
+.sellerRow > div > span { overflow: hidden; color: var(--text-primary); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.sellerRow small { color: var(--text-secondary); font-size: 11px; }
+.sellerRow > strong { flex: none; color: var(--text-primary); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.barTrack { height: 3px; margin-top: 7px; background: var(--surface-1); }
+.barTrack > div { height: 100%; background: #1d5fbf; }
+.taskRow { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) auto 16px; align-items: center; gap: 10px; padding: 11px 0; border: 0; border-top: 1px solid var(--surface-1); background: transparent; color: var(--text-primary); text-align: left; cursor: pointer; }
+.taskRow > div { display: grid; min-width: 0; gap: 3px; }
+.taskRow span { font-size: 13px; font-weight: 500; }
+.taskRow small { color: var(--text-secondary); font-size: 11px; }
+.taskRow strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.taskRow svg { color: var(--text-secondary); }
+.warning { color: #9a5b00; }
+.payable { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; margin-top: 5px; padding-top: 12px; border-top: 1px solid var(--border); }
+.payable > strong { color: var(--text-primary); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.payable > small { grid-column: 1 / -1; }
+.monthMetrics { padding-top: 5px; }
+.monthMetrics .metric > strong { font-size: 19px; }
+.monthMetrics .metricBlock > strong { font-size: 19px; }
+.emptyMessage { margin: 16px 0 4px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 680px) {
+  .overviewHeading { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .metrics, .monthMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px 0; }
+  .metrics, .metricsWrap { padding: 15px; }
+  .metric { padding: 0 10px; }
+  .metricBlock { padding: 0 10px; }
+  .metric:nth-child(3) { grid-column: 1 / -1; padding: 12px 0 0; border-top: 1px solid var(--border); border-left: 0; }
+  .metricBlock:nth-child(3) { grid-column: 1 / -1; padding: 12px 0 0; border-top: 1px solid var(--border); border-left: 0; }
+  .dashboardGrid { grid-template-columns: 1fr; }
+  .panel, .monthPanel { padding: 15px; }
+  .metric > strong { font-size: 18px; overflow-wrap: anywhere; }
+  .metricBlock > strong { font-size: 18px; overflow-wrap: anywhere; }
+  .leadMetric > strong { font-size: 23px; }
+}

@@ -1,10 +1,9 @@
-import { SALES_TABS } from '@/navigation/moduleTabs';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Eye, ArrowRightLeft } from 'lucide-react';
 import { useState } from 'react';
 
 import { 
-  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs
+  PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar, Pagination, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip
 } from '@/components/ui';
 
 import { returnsApi } from '@/api/returns.api';
@@ -71,7 +70,6 @@ export default function ReturnsPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={SALES_TABS} />}
       
       title="Gestión de Devoluciones y Cambios" 
       subtitle="Autorización de notas de crédito, retornos de mercadería y cambios de producto (RMA)."

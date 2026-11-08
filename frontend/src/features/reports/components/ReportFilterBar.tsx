@@ -8,18 +8,18 @@ import type { Branch } from '@/types';
 import { Button } from '@/components/ui';
 import {
   DATE_PRESETS,
-  type DatePreset,
   type UseDashboardFiltersReturn,
 } from '../hooks/useDashboardFilters';
 import styles from './ReportFilterBar.module.css';
 
 interface Props {
   filters: UseDashboardFiltersReturn;
+  showDates?: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
 
-export function ReportFilterBar({ filters, onRefresh, isRefreshing }: Props) {
+export function ReportFilterBar({ filters, onRefresh, isRefreshing, showDates = true }: Props) {
   const { branchId, setBranchId, preset, applyPreset, from, to, setFrom, setTo } = filters;
 
   const { data: branchData } = useQuery({
@@ -31,7 +31,7 @@ export function ReportFilterBar({ filters, onRefresh, isRefreshing }: Props) {
   const branches: Branch[] = branchData?.data || (branchData as any)?.items || [];
 
   return (
-    <div className={clsx('glass-panel', styles.filterBarSticky)}>
+    <div className={styles.filterBarSticky}>
       <div className={styles.leftControls}>
         {/* Selector de Sucursal */}
         <div className={styles.selectGroup}>
@@ -52,11 +52,12 @@ export function ReportFilterBar({ filters, onRefresh, isRefreshing }: Props) {
         </div>
 
         {/* Presets rápidos */}
-        <div className={styles.presetGroup}>
+        {showDates && <><div className={styles.presetGroup}>
           {DATE_PRESETS.map(p => (
             <button
               key={p.value}
               type="button"
+              aria-pressed={preset === p.value}
               onClick={() => applyPreset(p.value)}
               className={clsx(styles.presetBtn, preset === p.value && styles.presetBtnActive)}
             >
@@ -83,7 +84,7 @@ export function ReportFilterBar({ filters, onRefresh, isRefreshing }: Props) {
             className={styles.dateInput}
             aria-label="Fecha hasta"
           />
-        </div>
+        </div></>}
       </div>
 
       {onRefresh && (
@@ -102,3 +103,4 @@ export function ReportFilterBar({ filters, onRefresh, isRefreshing }: Props) {
     </div>
   );
 }
+

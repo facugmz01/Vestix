@@ -33,8 +33,8 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 /**
- * Returns only the nav items the current user is permitted to see.
- * Used by the Sidebar and any other navigation surfaces.
+ * @deprecated Use `@/navigation/navConfig` and `useNavGroups` as the single
+ * navigation source. Kept temporarily for compatibility with older imports.
  */
 export function useNavItems(): NavItem[] {
   const { can } = usePermissions();

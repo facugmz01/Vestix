@@ -11,6 +11,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { usePosStore } from '@/features/pos/store/usePosStore';
 import { usePosCheckout } from '@/features/pos/hooks/usePosCheckout';
 import { usePosOffline } from '@/features/pos/hooks/usePosOffline';
+import type { PosCatalogFilters } from '@/features/pos/hooks/usePosOffline';
+import { priceListsApi } from '@/api/priceLists.api';
 import { useDexieSync } from '@/hooks/useDexieSync';
 import { useSyncEngine } from '@/hooks/useSyncEngine';
 import { useOfflineQueueStore } from '@/store/offlineQueue.store';
@@ -71,6 +73,14 @@ export default function POSPage() {
   const [issueInvoice, setIssueInvoice] = useState(false);
   const [variantPickerOpen, setVariantPickerOpen] = useState(false);
   const [variantPickerOptions, setVariantPickerOptions] = useState<ProductVariant[]>([]);
+  const [catalogFilters, setCatalogFilters] = useState<PosCatalogFilters>({});
+
+  const { data: priceListsData } = useQuery({
+    queryKey: ['pos', 'price-lists'],
+    queryFn: () => priceListsApi.getPriceLists({ pageSize: 100, isActive: true }),
+    staleTime: 300_000,
+    placeholderData: previous => previous,
+  });
 
   useEffect(() => {
     if (systemSettings?.invoicing?.autoIssueOnSale !== undefined) {
@@ -95,7 +105,7 @@ export default function POSPage() {
     searchResults,
     lookupBarcode,
     invalidateCatalogQueries,
-  } = usePosOffline(currentBranchId, selectedCustomerId, search);
+  } = usePosOffline(currentBranchId, selectedCustomerId, search, catalogFilters);
 
   const handleForceCatalogSync = useCallback(async (full?: boolean) => {
     const result = await forceCatalogSync(full);
@@ -329,6 +339,9 @@ export default function POSPage() {
           products={gridProducts}
           searchResults={searchResults}
           search={search}
+          filters={catalogFilters}
+          priceLists={priceListsData?.data ?? []}
+          onFiltersChange={setCatalogFilters}
         />
 
         <POSCart

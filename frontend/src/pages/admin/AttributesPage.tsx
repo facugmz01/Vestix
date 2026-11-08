@@ -4,10 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Tag, List, Pencil, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import {
   PageContainer, Section, Button, Badge, SearchInput, FiltersBar,
-  EmptyState, TableSkeleton, ConfirmDialog, Tabs, Table, ApiErrorDisplay,
+  EmptyState, TableSkeleton, ConfirmDialog, Table, ApiErrorDisplay,
 } from '@/components/ui';
 import { productsApi } from '@/api/products.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -167,7 +166,6 @@ export default function AttributesPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={CATALOG_TABS} />}
       title="Categorías y Atributos"
       subtitle="Taxonomía del catálogo: categorías, marcas y atributos de variantes."
       action={

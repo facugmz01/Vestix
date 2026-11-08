@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  FileText, PauseCircle, CloudOff, Tags, Trash2, Gift, ChevronDown, Tag, Edit3, Percent, DollarSign,
+  FileText, PauseCircle, CloudOff, Tags, Trash2, Gift, ChevronDown, Tag,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePosStore } from '../store/usePosStore';
 import { customersApi } from '@/api/customers.api';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { computeIvaBreakdown } from '../utils/posTax';
-import { POS_PAYMENT_METHODS, type PosPaymentMethodId } from '../constants/posPaymentMethods';
+import { type PosPaymentMethodId } from '../constants/posPaymentMethods';
+import { CheckoutDialog } from './CheckoutDialog';
 import { PosCustomerSearch } from './PosCustomerSearch';
 import { PosRedemptionPanel } from './PosRedemptionPanel';
 import { DiscountModal, type DiscountApplyData } from './DiscountModal';
 import { resolveProductImage } from '@/utils/imageUrl';
 import { SafeImage } from '@/components/ui';
+import orderStyles from './OrderPanel.module.css';
 import styles from '@/pages/pos/POSPage.module.css';
 import cartStyles from './POSCart.module.css';
 
@@ -22,6 +24,7 @@ type CartVariant = {
   name?: string;
   productName?: string;
   size?: string;
+  color?: string;
   sku?: string;
   basePrice: number;
   imageUrl?: string | null;
@@ -91,7 +94,8 @@ export function POSCart({
   const suspendSale = usePosStore(s => s.suspendSale);
 
   const [extrasOpen, setExtrasOpen] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<PosPaymentMethodId>('CASH');
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [initialCheckoutMethod, setInitialCheckoutMethod] = useState<PosPaymentMethodId>();
   const [pulsingVariantId, setPulsingVariantId] = useState<string | null>(null);
 
   const handleUpdateQty = (variantId: string, newQty: number) => {
@@ -122,7 +126,6 @@ export function POSCart({
 
   const iva = computeIvaBreakdown(grandTotal);
   const hasRedemptionApplied = giftCardAmount > 0 || loyaltyDiscount > 0;
-  const selectedConfig = POS_PAYMENT_METHODS.find(m => m.id === selectedMethod);
 
   const getVariantName = (variant: CartVariant) =>
     variant.name || variant.productName || variant.product?.name || 'Producto';
@@ -138,21 +141,21 @@ export function POSCart({
   const handleApplyCreditBalance = (balance: number) => {
     if (balance <= 0) return;
     if (amountDue <= balance) {
-      setSelectedMethod('STORE_CREDIT');
-      onCheckoutPayment('STORE_CREDIT');
+      setInitialCheckoutMethod('STORE_CREDIT');
+      setCheckoutOpen(true);
     } else {
-      usePosStore.getState().setPaymentSplits([
-        { method: 'STORE_CREDIT', amount: balance, reference: 'Saldo a favor' },
-        { method: 'CASH', amount: Math.round((amountDue - balance) * 100) / 100, reference: '' },
-      ]);
-      setSelectedMethod('MULTIPLE');
-      usePosStore.getState().setMixedPaymentModalOpen(true);
+      setInitialCheckoutMethod('MULTIPLE');
+      setCheckoutOpen(true);
     }
   };
 
   const handlePay = () => {
-    if (!selectedConfig) return;
-    if (selectedConfig.id === 'STORE_CREDIT') {
+    setInitialCheckoutMethod(undefined);
+    setCheckoutOpen(true);
+  };
+
+  const startPayment = (method: PosPaymentMethodId, reference?: string) => {
+    if (method === 'STORE_CREDIT') {
       if (!selectedCustomerId) {
         toast.error('Seleccioná un cliente para usar Saldo a Favor');
         return;
@@ -168,7 +171,7 @@ export function POSCart({
         );
         return;
       }
-    } else if (selectedConfig.id === 'CUSTOMER_CREDIT') {
+    } else if (method === 'CUSTOMER_CREDIT') {
       if (!selectedCustomerId) {
         toast.error('Seleccioná un cliente para usar Cuenta Corriente');
         return;
@@ -178,13 +181,15 @@ export function POSCart({
         return;
       }
     }
-    onCheckoutPayment(selectedConfig.id);
+    setCheckoutOpen(false);
+    onCheckoutPayment(method);
+    usePosStore.getState().setPaymentReference(reference || '');
   };
 
   return (
-    <aside className={styles.cartArea} aria-label="Pedido actual">
+    <aside className={`${styles.cartArea} ${orderStyles.panel}`} aria-label="Pedido actual">
       {isOffline && (
-        <div className={styles.offlineBanner}>
+        <div className={orderStyles.offline}>
           <CloudOff size={16} />
           <span>
             Offline{catalogCount ? ` · ${catalogCount} en catálogo` : ''}
@@ -192,14 +197,14 @@ export function POSCart({
         </div>
       )}
 
-      <div className={styles.orderHeader}>
-        <div>
-          <div className={styles.orderTitle}>Pedido</div>
-          <div className={styles.orderMeta}>{totalItems} ítem{totalItems === 1 ? '' : 's'}</div>
+      <div className={orderStyles.header}>
+        <div className={orderStyles.heading}>
+          <div className={orderStyles.title}>Pedido</div>
+          <div className={orderStyles.meta}>{cart.length} artículo{cart.length === 1 ? '' : 's'} · {totalItems} unidad{totalItems === 1 ? '' : 'es'}</div>
         </div>
         <button
           type="button"
-          className={styles.clearOrderBtn}
+          className={orderStyles.clear}
           onClick={handleClearCart}
           disabled={cart.length === 0}
           aria-label="Vaciar pedido"
@@ -209,34 +214,35 @@ export function POSCart({
         </button>
       </div>
 
-      <div className={styles.cartTop}>
+      <div className={orderStyles.customer}>
         <PosCustomerSearch amountDue={amountDue} onApplyCreditBalance={handleApplyCreditBalance} />
         <button
           type="button"
-          className={styles.extrasToggle}
+          className={orderStyles.extras}
           onClick={() => setExtrasOpen(v => !v)}
           aria-expanded={extrasOpen}
         >
           <Gift size={14} />
           <span>Gift card / Puntos{hasRedemptionApplied ? ' · aplicado' : ''}</span>
-          <ChevronDown size={16} className={extrasOpen ? styles.extrasChevronOpen : undefined} />
+          <ChevronDown size={15} className={extrasOpen ? styles.extrasChevronOpen : undefined} />
         </button>
         {extrasOpen && (
-          <div className={styles.extrasPanel}>
+          <div className={orderStyles.extrasBody}>
             <PosRedemptionPanel merchandiseTotal={grandTotal} />
           </div>
         )}
       </div>
 
-      <div className={styles.tableContainer} data-has-items={cart.length > 0}>
-        <div className={styles.cartList}>
-          {cart.length === 0 ? (
-            <div className={styles.cartEmpty}>
-              <Tags size={28} />
-              <p>Elegí productos del catálogo</p>
-            </div>
-          ) : (
-            cart.map((item, index) => {
+      <div className={orderStyles.list}>
+        {cart.length === 0 ? (
+          <div className={orderStyles.empty}>
+            <Tags size={22} className={orderStyles.emptyIcon} />
+            <p className={orderStyles.emptyTitle}>El pedido está vacío</p>
+            <p className={orderStyles.emptyHint}>Escaneá un código o elegí prendas del catálogo.<br/>F2 para buscar · F4 para efectivo</p>
+          </div>
+        ) : (
+        <div className={orderStyles.items}>
+            {cart.map((item, index) => {
               const variant = item.variant as CartVariant;
               const imageUrl = getVariantImage(variant);
               const effectivePrice = item.customUnitPrice ?? variant.basePrice;
@@ -251,64 +257,60 @@ export function POSCart({
               const comboLines = variant.product?.comboLines;
 
               return (
-                <div key={`${variant.id}-${index}`} className={styles.cartItem}>
-                  <div className={styles.cartItemThumb} aria-hidden={!imageUrl}>
+                <div key={`${variant.id}-${index}`} className={`${orderStyles.item} ${index === cart.length - 1 ? orderStyles.itemLatest : ''}`}>
+                  <div className={orderStyles.thumb} aria-hidden={!imageUrl}>
                     <SafeImage
                       src={imageUrl}
                       alt=""
-                      className={styles.cartItemThumbImg}
+                      className={orderStyles.thumb}
                       fallback={<Tags size={18} />}
                     />
                   </div>
 
-                  <div className={styles.cartItemDetails}>
-                    <span className={styles.cartItemName}>
+                  <div className={orderStyles.details}>
+                    <div className={orderStyles.topline}>
+                    <span className={orderStyles.name}>
                       {getVariantName(variant)}
                       {isCombo && <span className={styles.comboBadge}>COMBO</span>}
                     </span>
-                    <span className={styles.cartItemSku}>
-                      {variant.sku || '—'}
-                      {variant.size ? ` · ${variant.size}` : ''}
-                      {isPriceOverridden && (
-                        <span style={{ color: 'var(--color-primary-600, #2563eb)', fontWeight: 600, marginLeft: 4 }}>
-                          · Precio: {formatCurrency(effectivePrice)}
-                        </span>
-                      )}
-                      {hasDiscount && (
-                        <span style={{ color: 'var(--color-danger-600, #dc2626)', fontWeight: 600, marginLeft: 4 }}>
-                          · −{item.discountType === 'FIXED' ? formatCurrency(item.discountValue || 0) : `${item.discountValue ?? item.discountPct}%`}
-                        </span>
-                      )}
-                    </span>
+                    <span className={orderStyles.lineTotal}>{formatCurrency(lineTotal)}</span>
+                    </div>
+                    <div className={orderStyles.subline}>
+                      <span className={orderStyles.sku}>{variant.sku || 'Sin SKU'}</span>
+                      {variant.color && <span>{variant.color}</span>}
+                      {variant.size && <span>Talle {variant.size}</span>}
+                      <span>{formatCurrency(effectivePrice)} c/u</span>
+                      {hasDiscount && <span className={orderStyles.discount}>−{item.discountType === 'FIXED' ? formatCurrency(item.discountValue || 0) : `${item.discountValue ?? item.discountPct}%`}</span>}
+                      {isPriceOverridden && <span>Precio editado</span>}
+                      {isCombo && comboLines?.length ? <span>Combo · {comboLines.length} prendas</span> : null}
+                    </div>
 
                     {isCombo && comboLines && comboLines.length > 0 && (
-                      <div className={styles.comboBreakdown}>
-                        <div className={styles.comboBreakdownTitle}>
-                          Contiene {comboLines.length} producto{comboLines.length === 1 ? '' : 's'}:
-                        </div>
-                        <ul className={styles.comboBreakdownList}>
+                      <details className={orderStyles.combo}>
+                        <summary>Ver componentes del combo</summary>
+                        <ul>
                           {comboLines.map((cl, clIdx) => {
                             const compName = cl.childVariant?.product?.name || cl.productName || 'Componente';
                             const compSku = cl.childVariant?.sku || cl.variantSku;
                             const compQty = cl.quantity * item.qty;
                             return (
-                              <li key={cl.id || cl.childVariantId || clIdx} className={styles.comboBreakdownItem}>
-                                <span className={styles.comboItemQty}>• {compQty}x</span>
-                                <span className={styles.comboItemName}>
+                              <li key={cl.id || cl.childVariantId || clIdx}>
+                                <span>{compQty} × </span>
+                                <span>
                                   {compName} {cl.childVariant?.size ? `(${cl.childVariant.size})` : ''}
                                 </span>
-                                {compSku && <span className={styles.comboItemSku}>[{compSku}]</span>}
+                                {compSku && <span> · {compSku}</span>}
                               </li>
                             );
                           })}
                         </ul>
-                      </div>
+                      </details>
                     )}
 
-                    <div className={`${styles.qtyControl} ${pulsingVariantId === variant.id ? (cartStyles.qtyPulse || styles.qtyPulse) : ''}`}>
+                    <div className={`${orderStyles.tools} ${pulsingVariantId === variant.id ? cartStyles.qtyPulse : ''}`}>
+                      <div className={orderStyles.qty}>
                       <button
                         type="button"
-                        className={`${styles.qtyBtn} ${cartStyles.qtyBtnMicro}`}
                         aria-label="Reducir cantidad"
                         onClick={() => handleUpdateQty(variant.id, item.qty - 1)}
                       >
@@ -316,7 +318,7 @@ export function POSCart({
                       </button>
                       <input
                         type="number"
-                        className={styles.qtyInput}
+                        className={orderStyles.qtyInput}
                         value={item.qty}
                         min={1}
                         aria-label="Cantidad"
@@ -324,13 +326,14 @@ export function POSCart({
                       />
                       <button
                         type="button"
-                        className={`${styles.qtyBtn} ${cartStyles.qtyBtnMicro}`}
                         aria-label="Aumentar cantidad"
                         onClick={() => handleUpdateQty(variant.id, item.qty + 1)}
                       >
                         +
                       </button>
 
+                      </div>
+                      <div className={orderStyles.actions}>
                       <button
                         type="button"
                         onClick={() =>
@@ -347,65 +350,47 @@ export function POSCart({
                           })
                         }
                         title="Modificar precio o aplicar descuento a esta línea"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '3px',
-                          padding: '3px 7px',
-                          fontSize: '0.75rem',
-                          fontWeight: 500,
-                          borderRadius: '4px',
-                          border: isPriceOverridden || hasDiscount ? '1px solid var(--color-primary-300, #93c5fd)' : '1px solid var(--color-border-subtle, #cbd5e1)',
-                          background: isPriceOverridden || hasDiscount ? 'var(--color-primary-50, #eff6ff)' : '#fff',
-                          color: isPriceOverridden || hasDiscount ? 'var(--color-primary-700, #1d4ed8)' : 'var(--color-text-secondary, #475569)',
-                          cursor: 'pointer',
-                          marginLeft: '4px',
-                        }}
+                        className={orderStyles.iconAction}
                       >
-                        <Tag size={12} />
-                        {isPriceOverridden || hasDiscount ? 'Editado' : 'Desc / Precio'}
+                        <Tag size={14} />
+                        <span className={orderStyles.srOnly}>{isPriceOverridden || hasDiscount ? 'Editar descuento o precio' : 'Aplicar descuento o precio'}</span>
                       </button>
+                      <button type="button" className={`${orderStyles.iconAction} ${orderStyles.remove}`} aria-label={`Eliminar ${getVariantName(variant)}`} onClick={() => removeLine(variant.id)}><Trash2 size={14}/></button>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className={styles.cartItemRight}>
-                    <span className={styles.cartItemLineTotal}>{formatCurrency(lineTotal)}</span>
-                    <button type="button" className={styles.removeBtn} aria-label="Eliminar línea" onClick={() => removeLine(variant.id)}>
-                      ×
-                    </button>
                   </div>
                 </div>
               );
-            })
-          )}
+            })}
         </div>
+        )}
       </div>
 
       {appliedPromotions && appliedPromotions.length > 0 && (
-        <div className={styles.promoBar}>
+        <div className={orderStyles.promo}>
           {appliedPromotions.map(p => (
-            <span key={p} className={styles.promoChip}>{p}</span>
+            <span key={p} className={orderStyles.promoChip}>{p}</span>
           ))}
         </div>
       )}
 
-      <div className={styles.checkoutDock}>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryRow}>
+      <footer className={orderStyles.footer}>
+        <div className={orderStyles.totals}>
+          <div className={orderStyles.totalLine}>
             <span>Subtotal</span>
-            <span>{formatCurrency(subtotal)}</span>
+            <span className={orderStyles.totalValue}>{formatCurrency(subtotal)}</span>
           </div>
 
           {lineDiscounts > 0 && (
-            <div className={styles.summaryRow} style={{ color: 'var(--color-danger-600, #dc2626)' }}>
+            <div className={orderStyles.totalLine}>
               <span>Descuentos Línea</span>
-              <span className={styles.discountTotal}>(−) {formatCurrency(lineDiscounts)}</span>
+              <span className={orderStyles.discount}>(−) {formatCurrency(lineDiscounts)}</span>
             </div>
           )}
 
-          <div className={`${styles.summaryRow} ${styles.summaryRowCenter}`}>
-            <span className={styles.discountLabelRow}>
-              <span>Desc. Global:</span>
+          <div className={orderStyles.totalLine}>
+            <span>
+              Desc. Global{' '}
               <button
                 type="button"
                 onClick={() =>
@@ -416,111 +401,50 @@ export function POSCart({
                     discountValue: globalDiscountValue,
                   })
                 }
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  border: '1px solid var(--color-border-subtle, #cbd5e1)',
-                  background: globalDiscount > 0 ? 'var(--color-primary-50, #eff6ff)' : '#fff',
-                  color: globalDiscount > 0 ? 'var(--color-primary-700, #1d4ed8)' : 'var(--color-text-secondary, #475569)',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  marginLeft: '4px',
-                }}
+                className={orderStyles.discountButton}
               >
                 {globalDiscountType === 'FIXED' ? '$' : '%'} {globalDiscountValue > 0 ? `${globalDiscountValue}${globalDiscountType === 'PERCENTAGE' ? '%' : ''}` : 'Aplicar'}
               </button>
             </span>
-            <span className={styles.discountTotal}>(−) {formatCurrency(globalDiscount)}</span>
+            <span className={orderStyles.discount}>(−) {formatCurrency(globalDiscount)}</span>
           </div>
 
-          <div className={styles.summaryRow}>
+          <div className={orderStyles.totalLine}>
             <span>IVA 21%</span>
-            <span>{formatCurrency(iva.iva)}</span>
+            <span className={orderStyles.totalValue}>{formatCurrency(iva.iva)}</span>
           </div>
 
           {(giftCardAmount > 0 || loyaltyDiscount > 0) && (
             <>
               {giftCardAmount > 0 && (
-                <div className={styles.summaryRow}>
+                <div className={orderStyles.totalLine}>
                   <span>Gift card</span>
-                  <span className={styles.discountTotal}>(−) {formatCurrency(giftCardAmount)}</span>
+                  <span className={orderStyles.discount}>(−) {formatCurrency(giftCardAmount)}</span>
                 </div>
               )}
               {loyaltyDiscount > 0 && (
-                <div className={styles.summaryRow}>
+                <div className={orderStyles.totalLine}>
                   <span>Puntos</span>
-                  <span className={styles.discountTotal}>(−) {formatCurrency(loyaltyDiscount)}</span>
+                  <span className={orderStyles.discount}>(−) {formatCurrency(loyaltyDiscount)}</span>
                 </div>
               )}
             </>
           )}
-          <div className={styles.totalRow}>
+          <div className={`${orderStyles.totalLine} ${orderStyles.total}`}>
             <span>{amountDue < grandTotal ? 'A cobrar' : 'Total'}</span>
-            <span>{formatCurrency(amountDue)}</span>
+            <span className={orderStyles.totalValue}>{formatCurrency(amountDue)}</span>
           </div>
         </div>
 
-        <div className={styles.paySection}>
-          <div className={styles.paySectionLabel}>Forma de pago</div>
-          <div className={styles.methodChips} role="radiogroup" aria-label="Forma de pago">
-            {POS_PAYMENT_METHODS.map(method => {
-              const Icon = method.icon;
-              const active = selectedMethod === method.id;
-              return (
-                <button
-                  key={method.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  className={`${styles.methodChip} ${active ? styles.methodChipActive : ''}`}
-                  disabled={cart.length === 0}
-                  onClick={() => setSelectedMethod(method.id)}
-                  title={method.label}
-                >
-                  <Icon size={15} />
-                  <span>{method.shortLabel}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            type="button"
-            className={styles.payPrimaryBtn}
-            disabled={cart.length === 0}
-            onClick={handlePay}
-          >
-            Cobrar · {selectedConfig?.shortLabel || 'Pago'}
-          </button>
-
-          <div className={styles.secondaryActions}>
-            <button type="button" className={styles.secondaryBtn} disabled={cart.length === 0} onClick={onCheckoutQuotation}>
-              <FileText size={15} />
-              Cotización
-            </button>
-            <button
-              type="button"
-              className={styles.secondaryBtn}
-              disabled={cart.length === 0}
-              onClick={() => {
-                const pendingBefore = usePosStore.getState().suspendedSales.length;
-                suspendSale(grandTotal);
-                const pendingAfter = usePosStore.getState().suspendedSales.length;
-                if (pendingAfter > pendingBefore) {
-                  toast.success(`Venta suspendida (${pendingAfter} pendiente${pendingAfter === 1 ? '' : 's'})`);
-                }
-              }}
-            >
-              <PauseCircle size={15} />
-              Suspender
-            </button>
-          </div>
+        <button type="button" className={orderStyles.pay} disabled={cart.length === 0} onClick={handlePay}>Cobrar · {formatCurrency(amountDue)}</button>
+        <div className={orderStyles.secondary}>
+          <button type="button" disabled={cart.length === 0} onClick={onCheckoutQuotation}><FileText size={13}/> Cotización</button>
+          <button type="button" disabled={cart.length === 0} onClick={() => { const before = usePosStore.getState().suspendedSales.length; suspendSale(grandTotal); const after = usePosStore.getState().suspendedSales.length; if (after > before) toast.success(`Venta suspendida (${after} pendiente${after === 1 ? '' : 's'})`); }}><PauseCircle size={13}/> Suspender</button>
+          <button type="button" disabled={usePosStore.getState().suspendedSales.length === 0} onClick={() => usePosStore.getState().setSuspendModalOpen(true)}>Recuperar</button>
         </div>
-      </div>
+      </footer>
+
+      {checkoutOpen && <CheckoutDialog open={checkoutOpen} onClose={() => setCheckoutOpen(false)} onSelectMethod={startPayment} amountDue={amountDue} grandTotal={grandTotal} cart={cart} totalItems={totalItems} customerName={selectedCustomer?.fullName || 'Consumidor final'} initialMethod={initialCheckoutMethod} />}
 
       {/* DISCOUNT MODAL (LINE / GLOBAL) */}
       <DiscountModal
@@ -556,3 +480,5 @@ export function POSCart({
     </aside>
   );
 }
+
+

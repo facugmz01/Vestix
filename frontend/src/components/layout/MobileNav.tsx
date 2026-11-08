@@ -9,10 +9,12 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
+  Search,
 } from 'lucide-react';
 import { useNavGroups } from '@/navigation/useNav';
 import type { NavSubItem } from '@/navigation/navConfig';
 import { useSidebarStore } from '@/store/sidebar.store';
+import { useGlobalSearchStore } from '@/store/globalSearch.store';
 import { APP_CONFIG } from '@/config/app.config';
 import styles from './MobileNav.module.css';
 
@@ -25,6 +27,7 @@ import styles from './MobileNav.module.css';
 export function MobileNav() {
   const location = useLocation();
   const segments = useNavGroups();
+  const openSearch = useGlobalSearchStore((s) => s.open);
   const {
     isMobileOpen,
     closeMobile,
@@ -146,6 +149,20 @@ export function MobileNav() {
             <X size={20} />
           </button>
         </div>
+
+        <button
+          type="button"
+          className={styles.drawerSearch}
+          onClick={() => {
+            closeMobile();
+            openSearch();
+          }}
+          aria-label="Buscar en el ERP"
+        >
+          <Search size={17} aria-hidden="true" />
+          <span>Buscar en el ERP</span>
+          <kbd>Ctrl K</kbd>
+        </button>
 
         {/* POS Direct Launcher en Drawer */}
         <div className={styles.drawerPosLauncher}>

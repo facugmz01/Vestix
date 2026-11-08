@@ -1,11 +1,10 @@
-import { DELIVERY_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, PackageCheck, CheckCircle, ShoppingBag, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 
 import {
-  PageContainer, Section, Table, Button, Badge, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Tabs, Modal, Input
+  PageContainer, Section, Table, Button, Badge, FiltersBar, EmptyState, ApiErrorDisplay, TableSkeleton, StatusChip, Modal, Input
 } from '@/components/ui';
 
 import { shippingApi, type FulfillmentListItem, type DispatchResult } from '@/api/shipping.api';
@@ -166,7 +165,6 @@ export default function SalesFulfillmentPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={DELIVERY_TABS} />}
       title="Envíos y Despacho"
       subtitle="Gestioná pedidos web: preparación, despacho, tracking GPS y validación de entrega."
     >

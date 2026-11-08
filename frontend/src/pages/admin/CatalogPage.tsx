@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Package, LayoutGrid, List, TableProperties,
@@ -11,7 +10,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 import {
-  PageContainer, Tabs, Pagination, EmptyState, ApiErrorDisplay,
+  PageContainer, Pagination, EmptyState, ApiErrorDisplay,
   TableSkeleton, ConfirmDialog, SearchInput, Button, SafeImage
 } from '@/components/ui';
 
@@ -367,7 +366,6 @@ export default function CatalogPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={CATALOG_TABS} />}
       title="Catálogo Maestro"
       subtitle="Gestioná los productos, variantes, precios y existencias de stock de forma consolidada."
       action={

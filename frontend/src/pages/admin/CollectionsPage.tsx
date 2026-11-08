@@ -3,10 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { CATALOG_TABS } from '@/navigation/moduleTabs';
 import {
   PageContainer, Section, Table, Button, Badge, SearchInput, FiltersBar,
-  EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, ActiveChip, Tabs,
+  EmptyState, ApiErrorDisplay, TableSkeleton, ConfirmDialog, ActiveChip,
 } from '@/components/ui';
 import { collectionsApi, type ProductCollection } from '@/api/collections.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -44,7 +43,6 @@ export default function CollectionsPage() {
 
   return (
     <PageContainer
-      tabs={<Tabs items={CATALOG_TABS} />}
       title="Colecciones y Temporadas"
       subtitle="Agrupá productos por temporada, campaña o colección de indumentaria."
       action={

@@ -1,0 +1,30 @@
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Keep the form comfortably dense inside the large drawer. */
+.form > :nth-child(3) {
+  grid-column: 1 / -1;
+  max-width: 360px;
+}
+
+.form > :nth-child(n + 3) {
+  grid-column: 1 / -1;
+}
+
+.form select {
+  max-width: 360px;
+}
+
+@media (max-width: 900px) {
+  .form { gap: 20px; }
+}
+
+@media (max-width: 600px) {
+  .form { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .form select { max-width: none; }
+}
