@@ -127,15 +127,6 @@ export function POSProductGrid({
         </div>
       </div>
 
-      <div className={styles.categoryQuickFilters} aria-label="Categorías rápidas">
-        <button type="button" className={!filters.categoryId ? styles.categoryQuickActive : ''} onClick={() => onFiltersChange({ ...filters, categoryId: undefined })}>Todos</button>
-        {categoryOptions.slice(0, 7).map(cat => (
-          <button key={cat.id} type="button" className={filters.categoryId === cat.id ? styles.categoryQuickActive : ''} onClick={() => updateFilter('categoryId', cat.id)}>
-            {cat.name}
-          </button>
-        ))}
-      </div>
-
       <div className={styles.productsHeader}>
         <h2 className={styles.chooseProductsTitle}>Elegir productos</h2>
         <span className={styles.productsCount}>{filteredProducts.length}</span>
