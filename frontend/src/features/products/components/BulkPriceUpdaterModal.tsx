@@ -303,7 +303,7 @@ export function BulkPriceUpdaterModal({ open, onClose, initialPriceListId = '' }
           <Button
             variant="primary"
             onClick={handleApply}
-            disabled={mutation.isPending || !percentage || isModifierSelected}
+            disabled={mutation.isPending || !percentage}
             icon={mutation.isPending ? undefined : <CheckCircle2 size={16} />}
           >
             {mutation.isPending ? 'Actualizando precios...' : 'Aplicar Actualización'}
