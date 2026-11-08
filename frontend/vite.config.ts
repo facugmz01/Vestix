@@ -7,13 +7,16 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      injectRegister: 'auto',
-      registerType: 'autoUpdate',
+      // The React hook below owns registration and exposes update state.
+      injectRegister: null,
+      // Let the app show a visible update action instead of reloading in the
+      // middle of a sale or while an offline operation is being edited.
+      registerType: 'prompt',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
+        skipWaiting: false,
+        clientsClaim: false,
       },
       // Manifest is dynamically served by the backend, so we disable static manifest generation
       manifest: false,

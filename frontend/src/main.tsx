@@ -17,16 +17,7 @@ import '@fontsource/jetbrains-mono/600.css';
 import App from './App';
 import './styles/tokens.css';
 import './index.css';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 2,   // 2 min
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import { queryClient } from './core/queryClient';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

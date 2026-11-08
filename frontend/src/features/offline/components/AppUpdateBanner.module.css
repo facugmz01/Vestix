@@ -1,0 +1,57 @@
+.banner {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  z-index: 10001;
+  width: min(560px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 14px 14px 18px;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  animation: enter 0.24s ease-out;
+}
+
+.copy, .actions { display: flex; align-items: center; }
+
+.copy { gap: 12px; min-width: 0; color: var(--accent); }
+.copy div { display: grid; gap: 2px; min-width: 0; }
+.copy strong { color: var(--text-primary); font-size: 14px; }
+.copy span { color: var(--text-secondary); font-size: 12px; line-height: 1.35; }
+
+.actions { gap: 8px; flex-shrink: 0; }
+.updateButton, .dismissButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  font: 600 13px var(--font-sans);
+  cursor: pointer;
+}
+.updateButton {
+  padding: 0 13px;
+  color: var(--text-inverted);
+  background: var(--accent);
+}
+.updateButton:hover:not(:disabled) { background: var(--accent-hover); }
+.dismissButton { width: 36px; color: var(--text-secondary); }
+.dismissButton:hover:not(:disabled) { background: var(--surface-1); color: var(--text-primary); }
+.updateButton:focus-visible, .dismissButton:focus-visible { outline: 3px solid var(--accent-glow); outline-offset: 2px; }
+.updateButton:disabled, .dismissButton:disabled { opacity: 0.65; cursor: wait; }
+.spin { animation: spin 0.8s linear infinite; }
+
+@keyframes enter { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 560px) {
+  .banner { top: 8px; right: 8px; width: calc(100vw - 16px); align-items: flex-start; flex-direction: column; gap: 12px; }
+  .actions { width: 100%; justify-content: flex-end; }
+}

@@ -5,6 +5,7 @@ import { PageSpinner }      from '@/components/ui/Spinner';
 import { useAuthInit }      from '@/hooks/useAuthInit';
 import { useSyncEngine }    from '@/hooks/useSyncEngine';
 import { OfflineStatusBar } from '@/features/offline/components/OfflineStatusBar';
+import { AppUpdateBanner } from '@/features/offline/components/AppUpdateBanner';
 import { AdminLayout }      from '@/components/layout/AdminLayout';
 import { AuthLayout }       from '@/components/layout/AuthLayout';
 import { isStorefrontDomain } from '@/utils/storefrontDomain';
@@ -118,6 +119,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      <AppUpdateBanner />
       <OfflineStatusBar />
       <Suspense fallback={<PageSpinner />}>
         <Routes>

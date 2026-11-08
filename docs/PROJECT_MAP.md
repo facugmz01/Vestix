@@ -44,6 +44,7 @@ Los dominios funcionales viven en `backend/src/domains/`; infraestructura en `co
 - `src/api/`: wrappers tipados; `client.ts` configura credenciales, errores y redirecciones; `queryKeys.ts` organiza claves de caché.
 - `src/rbac/`: guards activos importados por App, permisos, navegación y gates; hay helpers/layouts con nombres duplicados en otras carpetas. Seguir imports.
 - `src/store/`: auth ERP y tienda separados, carrito, cola offline, tema y sidebar. Carrito POS adicional en `features/pos/store/usePosStore.ts`.
+- `src/features/offline/components/AppUpdateBanner.tsx`: detecta nuevas versiones de la PWA y ofrece actualizar limpiando caches descartables; `src/core/cache/applicationCache.ts` no debe borrar la cola offline.
 - `src/components/ui/`: componentes reutilizables; `src/styles/tokens.css`, `src/index.css` y CSS Modules definen el aspecto.
 - `Drawer` y `Modal` se montan mediante portal en document.body para evitar recortes por contenedores animados. La creación/edición de listas de precios usa un drawer `lg` de 700px, con márgenes para tablet y ancho completo en móvil.
 - `src/types/`, `shared/types/index.ts`: contratos; comprobar DTO backend antes de confiar en tipos compartidos, que no cubren todo el sistema.

@@ -15,6 +15,7 @@ El código actual, los módulos registrados y `schema.prisma` prevalecen sobre e
 - PostgreSQL mediante Prisma 5.10: **71 modelos** en 7 schemas (`core`, `catalog`, `inventory`, `sales`, `purchasing`, `finance`, `settings`). Fuente: `backend/prisma/schema.prisma`.
 - Redis + BullMQ para trabajos; cron Nest para tareas y outbox. No asumir que todos los procesos asíncronos usan una misma cola.
 - UI: React Router, TanStack Query, Zustand, Axios, CSS Modules y tokens CSS. PWA y catálogo offline Dexie; cola de operaciones persistida con idb-keyval.
+- La PWA usa actualización con confirmación visible: cuando hay un service worker nuevo, `AppUpdateBanner` permite limpiar caches descartables y aplicar la actualización. La acción conserva `erp-offline-queue` para no perder operaciones pendientes.
 
 ## Entradas que resuelven la mayoría de las tareas
 
