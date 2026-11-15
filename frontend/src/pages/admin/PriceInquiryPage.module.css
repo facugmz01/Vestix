@@ -61,6 +61,87 @@
   flex-wrap: wrap;
 }
 
+.filterToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filterToggle:hover,
+.filterToggle:focus-visible,
+.clearFiltersButton:focus-visible,
+.priceListCard:focus-visible {
+  outline: 3px solid var(--accent-glow);
+  outline-offset: 2px;
+}
+
+.filterCount,
+.listCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.filterField {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stockFilter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.stockFilter input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+}
+
+.clearFiltersButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .selectWrapper {
   display: flex;
   align-items: center;
@@ -177,6 +258,99 @@
   gap: 8px;
 }
 
+.priceListsPanel {
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-1);
+}
+
+.panelHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.panelHeading h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.panelHeading p {
+  max-width: 700px;
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.priceListGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.priceListCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface-0);
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.refreshingStatus {
+  margin: -4px 0 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.priceListCard:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.priceListCardActive {
+  border-color: var(--accent);
+  background: var(--accent-soft, rgba(59, 130, 246, 0.08));
+}
+
+.priceListCard span {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.priceListCard strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.priceListCard small {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.listSelectedIcon {
+  flex: 0 0 auto;
+  color: var(--green);
+}
+
 .hintItem {
   display: flex;
   align-items: center;
@@ -219,6 +393,28 @@
 @media (max-width: 900px) {
   .heroCard {
     grid-template-columns: 1fr;
+  }
+
+  .filterControls {
+    display: none;
+    width: 100%;
+    align-items: stretch;
+    padding-top: 4px;
+  }
+
+  .filterControlsOpen {
+    display: flex;
+  }
+
+  .filterField,
+  .filterField .selectInput {
+    width: 100%;
+  }
+
+  .filterField {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
   }
 }
 
@@ -525,4 +721,81 @@
 
 .lightboxClose:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 640px) {
+  .searchSection,
+  .priceListsPanel {
+    padding: 14px;
+  }
+
+  .searchHeader {
+    align-items: stretch;
+  }
+
+  .searchTitleRow {
+    font-size: 14px;
+  }
+
+  .filterToggle {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .searchHint {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .panelHeading {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .priceListGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroCard {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .heroImageWrap {
+    max-width: none;
+    width: min(100%, 220px);
+    justify-self: center;
+  }
+
+  .heroTitle {
+    font-size: 20px;
+  }
+
+  .heroPriceBox {
+    min-width: 0;
+    padding: 16px;
+    text-align: left;
+  }
+
+  .heroPriceValue {
+    font-size: 30px;
+  }
+
+  .stockHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulseDot,
+  .priceListCard,
+  .heroImg,
+  .clearButton,
+  .selectInput,
+  .scanInput {
+    animation: none;
+    transition: none;
+  }
 }

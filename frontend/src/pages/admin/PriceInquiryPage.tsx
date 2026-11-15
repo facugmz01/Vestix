@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -13,7 +13,9 @@ import {
   Sparkles, 
   CheckCircle2, 
   AlertCircle,
-  Maximize2
+  SlidersHorizontal,
+  RotateCcw,
+  CircleDollarSign
 } from 'lucide-react';
 
 import { 
@@ -29,6 +31,7 @@ import {
 import { posApi } from '@/api/pos.api';
 import { priceListsApi } from '@/api/priceLists.api';
 import { branchesApi } from '@/api/branches.api';
+import { productsApi } from '@/api/products.api';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { resolveProductImage } from '@/utils/imageUrl';
 import adminStyles from '@/styles/AdminListShared.module.css';
@@ -69,6 +72,10 @@ export default function PriceInquiryPage() {
   const [activeQuery, setActiveQuery] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const [selectedPriceListId, setSelectedPriceListId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('');
+  const [onlyWithStock, setOnlyWithStock] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -93,6 +100,18 @@ export default function PriceInquiryPage() {
     queryFn: () => priceListsApi.getPriceLists({ pageSize: 50, isActive: true }),
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories', 'list'],
+    queryFn: productsApi.getCategories,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: brands = [] } = useQuery({
+    queryKey: ['brands', 'list'],
+    queryFn: productsApi.getBrands,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const branches = branchesData?.data || [];
   const priceLists = (priceListsData?.data || []).filter(pl => pl.isActive !== false);
 
@@ -111,14 +130,19 @@ export default function PriceInquiryPage() {
   }, [search]);
 
   // Main price search query
-  const { data: results, isLoading, isError } = useQuery({
-    queryKey: ['price-inquiry', activeQuery, selectedBranchId, selectedPriceListId],
+  const { data: results, isLoading, isFetching, isError } = useQuery({
+    queryKey: ['price-inquiry', activeQuery, selectedBranchId, selectedPriceListId, selectedCategoryId, selectedBrandId],
     queryFn: () =>
       posApi.searchProduct(activeQuery, undefined, {
         branchId: selectedBranchId || undefined,
         priceListId: selectedPriceListId || undefined,
+        categoryId: selectedCategoryId || undefined,
+        brandId: selectedBrandId || undefined,
+        limit: 50,
       }),
     enabled: activeQuery.length >= 2,
+    staleTime: 15_000,
+    placeholderData: (previousData) => previousData,
   });
 
   // Sound feedback on query resolution
@@ -155,19 +179,32 @@ export default function PriceInquiryPage() {
   }, []);
 
   // Determine if there is a primary match or variable product family to display
-  const hasResults = results && results.length > 0;
-  const exactMatchedItem = hasResults ? results.find((r: any) => r.isExactMatch) : null;
-  const primaryItem = exactMatchedItem || (hasResults ? results[0] : null);
+  const filteredResults = useMemo(
+    () => onlyWithStock ? (results || []).filter((r: any) => (r.stock ?? 0) > 0) : (results || []),
+    [results, onlyWithStock],
+  );
+  const hasResults = filteredResults.length > 0;
+  const exactMatchedItem = hasResults ? filteredResults.find((r: any) => r.isExactMatch) : null;
+  const primaryItem = exactMatchedItem || (hasResults ? filteredResults[0] : null);
 
   // If results contain items from the same parent product, group them
   const sameProductVariants = hasResults && primaryItem
-    ? results.filter((r: any) => r.productId === primaryItem.productId || r.product?.id === primaryItem.productId)
+    ? filteredResults.filter((r: any) => r.productId === primaryItem.productId || r.product?.id === primaryItem.productId)
     : [];
 
   const isVariableFamily = sameProductVariants.length > 1;
   const otherProductResults = hasResults && primaryItem
-    ? results.filter((r: any) => r.productId !== primaryItem.productId && r.product?.id !== primaryItem.productId)
+    ? filteredResults.filter((r: any) => r.productId !== primaryItem.productId && r.product?.id !== primaryItem.productId)
     : [];
+
+  const activeFilterCount = [selectedBranchId, selectedPriceListId, selectedCategoryId, selectedBrandId].filter(Boolean).length + (onlyWithStock ? 1 : 0);
+  const clearFilters = useCallback(() => {
+    setSelectedBranchId('');
+    setSelectedPriceListId('');
+    setSelectedCategoryId('');
+    setSelectedBrandId('');
+    setOnlyWithStock(false);
+  }, []);
 
   // Images resolution
   const heroImage = resolveProductImage(primaryItem);
@@ -186,7 +223,17 @@ export default function PriceInquiryPage() {
               <span>Lector de Código de Barras / SKU</span>
             </div>
 
-            <div className={styles.filterControls}>
+            <button
+              type="button"
+              className={styles.filterToggle}
+              onClick={() => setFiltersOpen((open) => !open)}
+              aria-expanded={filtersOpen}
+              aria-controls="price-inquiry-filters"
+            >
+              <SlidersHorizontal size={16} />
+              Filtros{activeFilterCount > 0 && <span className={styles.filterCount}>{activeFilterCount}</span>}
+            </button>
+            <div id="price-inquiry-filters" className={clsx(styles.filterControls, filtersOpen && styles.filterControlsOpen)}>
               <div className={styles.selectWrapper}>
                 <Building size={14} />
                 <select
@@ -220,6 +267,33 @@ export default function PriceInquiryPage() {
                   ))}
                 </select>
               </div>
+
+              <label className={styles.filterField}>
+                <span>Categoría</span>
+                <select value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className={styles.selectInput}>
+                  <option value="">Todas</option>
+                  {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                </select>
+              </label>
+
+              <label className={styles.filterField}>
+                <span>Marca</span>
+                <select value={selectedBrandId} onChange={(e) => setSelectedBrandId(e.target.value)} className={styles.selectInput}>
+                  <option value="">Todas</option>
+                  {brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+                </select>
+              </label>
+
+              <label className={styles.stockFilter}>
+                <input type="checkbox" checked={onlyWithStock} onChange={(e) => setOnlyWithStock(e.target.checked)} />
+                Solo con stock
+              </label>
+
+              {activeFilterCount > 0 && (
+                <button type="button" className={styles.clearFiltersButton} onClick={clearFilters}>
+                  <RotateCcw size={14} /> Limpiar
+                </button>
+              )}
             </div>
           </div>
 
@@ -264,6 +338,30 @@ export default function PriceInquiryPage() {
           </div>
         </div>
 
+        <section className={styles.priceListsPanel} aria-labelledby="available-price-lists-title">
+          <div className={styles.panelHeading}>
+            <div>
+              <h2 id="available-price-lists-title">Listas de precios disponibles</h2>
+              <p>Elegí una lista para consultar su precio aplicado. La lista general usa el precio base del catálogo.</p>
+            </div>
+            <span className={styles.listCount}>{priceLists.length} activas</span>
+          </div>
+          <div className={styles.priceListGrid}>
+            <button type="button" className={clsx(styles.priceListCard, !selectedPriceListId && styles.priceListCardActive)} onClick={() => setSelectedPriceListId('')}>
+              <CircleDollarSign size={18} />
+              <span><strong>Precio general</strong><small>Precio base del catálogo</small></span>
+              {!selectedPriceListId && <CheckCircle2 size={16} className={styles.listSelectedIcon} />}
+            </button>
+            {priceLists.map((list) => (
+              <button type="button" key={list.id} className={clsx(styles.priceListCard, selectedPriceListId === list.id && styles.priceListCardActive)} onClick={() => setSelectedPriceListId(list.id)}>
+                <Layers size={18} />
+                <span><strong>{list.name}</strong><small>{list.currency || 'ARS'}{list.type === 'MODIFIER' && list.modifierPercentage != null ? ` · ${list.modifierPercentage}%` : ' · Precio definido'}</small></span>
+                {selectedPriceListId === list.id && <CheckCircle2 size={16} className={styles.listSelectedIcon} />}
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* ─── Results Section ──────────────────────────────────────────── */}
         <Section>
           {!activeQuery || activeQuery.length < 2 ? (
@@ -288,6 +386,7 @@ export default function PriceInquiryPage() {
             />
           ) : (
             <div>
+              {isFetching && <div className={styles.refreshingStatus} role="status" aria-live="polite">Actualizando resultados…</div>}
               {/* ─── Hero Card for Primary Matched Product ─────────────────── */}
               {primaryItem && (
                 <div
@@ -302,6 +401,7 @@ export default function PriceInquiryPage() {
                     onClick={() => heroImage && setPreviewImage(heroImage)}
                     role={heroImage ? 'button' : undefined}
                     tabIndex={heroImage ? 0 : undefined}
+                    aria-label={heroImage ? `Ampliar imagen de ${primaryItem.product?.name || primaryItem.name}` : undefined}
                     onKeyDown={(e) => heroImage && e.key === 'Enter' && setPreviewImage(heroImage)}
                     title={heroImage ? 'Click para ampliar imagen' : undefined}
                   >
@@ -529,6 +629,7 @@ export default function PriceInquiryPage() {
                               onClick={() => imgUrl && setPreviewImage(imgUrl)}
                               role={imgUrl ? 'button' : undefined}
                               tabIndex={imgUrl ? 0 : undefined}
+                              aria-label={imgUrl ? `Ampliar imagen de ${v.product?.name || v.name || v.sku}` : undefined}
                               onKeyDown={(e) =>
                                 imgUrl && e.key === 'Enter' && setPreviewImage(imgUrl)
                               }
@@ -621,7 +722,11 @@ export default function PriceInquiryPage() {
           <div
             className={styles.lightbox}
             onClick={() => setPreviewImage(null)}
-            role="presentation"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Vista previa de imagen"
+            onKeyDown={(e) => e.key === 'Escape' && setPreviewImage(null)}
+            tabIndex={-1}
           >
             <img src={previewImage} alt="Preview ampliado" className={styles.lightboxImg} />
             <button
