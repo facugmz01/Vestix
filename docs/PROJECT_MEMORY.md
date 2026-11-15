@@ -55,6 +55,12 @@ El código actual, los módulos registrados y `schema.prisma` prevalecen sobre e
 - En esta revisión `git ls-files '*node_modules*'` devolvió cero: la advertencia histórica de dependencias versionadas ya no describe este checkout.
 - Hay 65 archivos unitarios `*.spec.ts`; no afirmar que pasan 246 tests sin ejecutar la suite actual. E2E modifica DB y puede omitirse si no está disponible.
 
+## Preparación de app móvil
+
+- La documentación de producto, arquitectura, contrato API, offline/sync y release vive en `docs/mobile/README.md` y sus documentos enlazados.
+- La app móvil propuesta es una superficie interna separada del storefront; reutiliza dominios REST existentes, pero requiere autenticación móvil con refresh rotativo antes de producción nativa.
+- `POST /api/offline/sync` ya existe para lotes POS y usa `clientGeneratedId` como clave de idempotencia; no asumir que todos los flujos ERP son seguros offline.
+
 ## Alcance de la revisión
 
 Se inspeccionaron estructura, manifiestos, arranque, módulos, rutas, esquema, servicios centrales, persistencia offline, configuración Docker y preparación de tests. No se ejecutaron builds/tests ni se conectó a DB o proveedores. La existencia de un adaptador no demuestra su funcionamiento con credenciales reales. Ver hallazgos y precauciones concretas en PROJECT_OPERATIONS.md.

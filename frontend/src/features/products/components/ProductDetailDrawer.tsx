@@ -99,7 +99,7 @@ export function ProductDetailDrawer({ open, onClose, product }: Props) {
                         <td><code>{v.sku}</code></td>
                         <td>{v.color || '-'}</td>
                         <td>{v.size || '-'}</td>
-                        <td className={styles.tdRight}>${v.costPrice?.toLocaleString('es-AR') || '0'}</td>
+                        <td className={styles.tdRight}>${(v.costPrice || displayProduct.costPrice || 0).toLocaleString('es-AR')}</td>
                         <td className={styles.tdRight}>${(v.basePrice || displayProduct.basePrice || 0).toLocaleString('es-AR')}</td>
                         <td className={styles.tdRight}>
                           <Badge color={avail > 5 ? 'green' : avail > 0 ? 'yellow' : 'red'}>

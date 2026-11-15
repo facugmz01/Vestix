@@ -52,6 +52,15 @@ function StatusPill({ isActive, isPublished }: { isActive: boolean; isPublished:
   );
 }
 
+function getProductCostLabel(product: Product): string | null {
+  const minCost = product.priceRange?.minCost ?? product.costPrice ?? 0;
+  const maxCost = product.priceRange?.maxCost ?? product.costPrice ?? 0;
+  if (maxCost <= 0) return null;
+  return minCost === maxCost
+    ? formatCurrency(minCost)
+    : `${formatCurrency(minCost)} - ${formatCurrency(maxCost)}`;
+}
+
 function ProductCard({
   product,
   priceLists,
@@ -81,6 +90,7 @@ function ProductCard({
     basePrice: product.basePrice,
     costPrice: product.costPrice,
   } as any);
+  const costLabel = getProductCostLabel(product);
 
   // Active price lists to display: if a filter is chosen, show only that one; otherwise show up to 2 active lists
   const activeLists = selectedPriceListId
@@ -176,9 +186,9 @@ function ProductCard({
               </span>
             ) : null
           )}
-          {product.costPrice != null && product.costPrice > 0 ? (
+          {costLabel ? (
             <span className={styles.cardCost}>
-              Costo: {formatCurrency(product.costPrice)}
+              Costo: {costLabel}
             </span>
           ) : null}
         </div>

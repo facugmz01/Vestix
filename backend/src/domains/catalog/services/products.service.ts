@@ -387,7 +387,9 @@ export class ProductsService {
         productReserved += stock.reserved;
 
         const effectiveBasePrice = v.basePrice ?? product.basePrice ?? 0;
-        const effectiveCost = v.costPrice ?? product.costPrice ?? 0;
+        // A zero variant cost means "not set" in the catalog. Use the product
+        // reference cost so list ranges match the detail/fallback presentation.
+        const effectiveCost = v.costPrice > 0 ? v.costPrice : (product.costPrice ?? 0);
 
         if (effectiveBasePrice > 0) {
           if (effectiveBasePrice < minPrice) minPrice = effectiveBasePrice;
