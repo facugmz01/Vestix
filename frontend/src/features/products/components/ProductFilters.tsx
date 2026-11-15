@@ -10,14 +10,20 @@ interface Props {
   onSearchChange: (v: string) => void;
   categoryId: string;
   onCategoryChange: (v: string) => void;
+  brandId?: string;
+  onBrandChange?: (v: string) => void;
   statusFilter: string;
   onStatusChange: (v: string) => void;
 }
 
-export function ProductFilters({ total, search, onSearchChange, categoryId, onCategoryChange, statusFilter, onStatusChange }: Props) {
+export function ProductFilters({ total, search, onSearchChange, categoryId, onCategoryChange, brandId = '', onBrandChange, statusFilter, onStatusChange }: Props) {
   const { data: categories } = useQuery({
     queryKey: queryKeys.categories.all(),
     queryFn: () => productsApi.getCategories(),
+  });
+  const { data: brands } = useQuery({
+    queryKey: queryKeys.brands.all(),
+    queryFn: () => productsApi.getBrands(),
   });
 
   return (
@@ -32,6 +38,18 @@ export function ProductFilters({ total, search, onSearchChange, categoryId, onCa
         <option value="">Todas las Categorías</option>
         {categories?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select>
+
+      {onBrandChange && (
+        <select
+          value={brandId}
+          onChange={(e) => onBrandChange(e.target.value)}
+          className={styles.select}
+          aria-label="Filtrar por marca"
+        >
+          <option value="">Todas las Marcas</option>
+          {brands?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+      )}
 
       <select
         value={statusFilter}

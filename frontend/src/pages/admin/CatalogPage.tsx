@@ -245,6 +245,7 @@ export default function CatalogPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [categoryId, setCategoryId] = useState('');
+  const [brandId, setBrandId] = useState('');
   const [branchId, setBranchId] = useState('');
   const [selectedPriceListId, setSelectedPriceListId] = useState('');
   const [stockFilter, setStockFilter] = useState('');
@@ -285,7 +286,7 @@ export default function CatalogPage() {
   }, [previewImage]);
 
   const apiFilters = {
-    page, pageSize, search, categoryId,
+    page, pageSize, search, categoryId, brandId,
     branchId: branchId || undefined,
     isActive: statusFilter === 'ACTIVE' || statusFilter === 'PUBLISHED' ? true : statusFilter === 'INACTIVE' ? false : undefined,
     isPublished: statusFilter === 'PUBLISHED' ? true : undefined,
@@ -299,6 +300,11 @@ export default function CatalogPage() {
   const { data: categories } = useQuery({
     queryKey: queryKeys.categories.all(),
     queryFn: () => productsApi.getCategories(),
+  });
+
+  const { data: brands } = useQuery({
+    queryKey: queryKeys.brands.all(),
+    queryFn: () => productsApi.getBrands(),
   });
 
   const { data: branchesData } = useQuery({
@@ -471,6 +477,16 @@ export default function CatalogPage() {
         </select>
 
         <select
+          value={brandId}
+          onChange={(e) => { setBrandId(e.target.value); setPage(1); }}
+          className={styles.select}
+          aria-label="Filtrar por marca"
+        >
+          <option value="">Todas las Marcas</option>
+          {brands?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+
+        <select
           value={branchId}
           onChange={(e) => { setBranchId(e.target.value); setPage(1); }}
           className={styles.select}
@@ -537,7 +553,7 @@ export default function CatalogPage() {
         <EmptyState
           icon={<Package size={40} />}
           title="No se encontraron productos"
-          message="Probá cambiando los filtros de búsqueda, categoría, sucursal o stock."
+          message="Probá cambiando los filtros de búsqueda, categoría, marca, sucursal o stock."
         />
       ) : viewMode === 'unified' ? (
         <ProductUnifiedTable

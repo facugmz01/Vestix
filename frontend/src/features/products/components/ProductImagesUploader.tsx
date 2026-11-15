@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UploadCloud, X, Loader2 } from 'lucide-react';
+import { UploadCloud, X, Loader2, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import clsx from 'clsx';
 import { upload } from '@/api/client';
 import { productsApi } from '@/api/products.api';
@@ -15,6 +15,15 @@ interface Props {
 export function ProductImagesUploader({ images, onChange, productId }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= images.length || fromIndex === toIndex) return;
+    const next = [...images];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    onChange(next);
+  };
 
   const processFiles = async (files: File[]) => {
     if (!files.length) return;
@@ -83,6 +92,11 @@ export function ProductImagesUploader({ images, onChange, productId }: Props) {
     onChange(next);
   };
 
+  const handleImageDrop = (toIndex: number) => {
+    if (draggedIndex !== null) moveImage(draggedIndex, toIndex);
+    setDraggedIndex(null);
+  };
+
   return (
     <div className={styles.uploaderStack}>
       <div
@@ -116,13 +130,44 @@ export function ProductImagesUploader({ images, onChange, productId }: Props) {
       </div>
 
       {images.length > 0 && (
-        <div className={styles.previewRow}>
+        <div className={styles.previewRow} aria-label="Orden de imágenes del producto">
           {images.map((img, i) => (
-            <div key={i} className={styles.previewItem}>
-              <img src={img} alt={`Preview ${i}`} className={styles.previewImg} />
+            <div
+              key={`${img}-${i}`}
+              className={clsx(styles.previewItem, draggedIndex === i && styles.previewItemDragging)}
+              draggable
+              onDragStart={() => setDraggedIndex(i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleImageDrop(i)}
+              onDragEnd={() => setDraggedIndex(null)}
+              title="Arrastrá para reordenar"
+            >
+              <img src={img} alt={`Imagen ${i + 1}${i === 0 ? ' principal' : ''}`} className={styles.previewImg} />
+              {i === 0 && <span className={styles.previewPrimary}>Principal</span>}
+              <GripVertical size={14} className={styles.previewDragHandle} aria-hidden="true" />
               <button type="button" onClick={() => handleRemove(i)} className={styles.previewRemove}>
                 <X size={12} />
               </button>
+              <div className={styles.previewMoveControls}>
+                <button
+                  type="button"
+                  onClick={() => moveImage(i, i - 1)}
+                  disabled={i === 0}
+                  aria-label={`Mover imagen ${i + 1} hacia la izquierda`}
+                  title="Mover hacia la izquierda"
+                >
+                  <ChevronLeft size={12} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveImage(i, i + 1)}
+                  disabled={i === images.length - 1}
+                  aria-label={`Mover imagen ${i + 1} hacia la derecha`}
+                  title="Mover hacia la derecha"
+                >
+                  <ChevronRight size={12} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
