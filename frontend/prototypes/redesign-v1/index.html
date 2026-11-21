@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f9fa" />
+    <title>Vestix · Prototipo de rediseño</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" /> <!-- taste-skill-ignore: fonts from the selected app direction. -->
+    <link rel="stylesheet" href="assets/foundation.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="assets/charts.js"></script>
+    <script defer src="data/demo-data.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#screenContent">Saltar al contenido</a>
+    <div id="appRoot" class="app-root">
+      <aside id="sidebar" class="sidebar" aria-label="Navegación principal">
+        <div class="brand-lockup">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M6 7h20L21 25H11L6 7Z"/><path d="m11 12 5 10 5-10M10 9h12"/></svg>
+          <span>vestix</span>
+          <button id="closeNav" class="icon-button close-nav" type="button" aria-label="Cerrar menú"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </div>
+        <div class="workspace-scope"><span class="scope-mark">P</span><span><strong>Palermo</strong><small>Sucursal 01 · Buenos Aires</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></div>
+        <nav class="primary-nav" aria-label="Secciones">
+          <p class="nav-heading">Operación</p>
+          <button class="nav-item is-active" type="button" data-screen="home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1V10Z"/></svg><span>Inicio</span></button>
+          <button class="nav-item" type="button" data-screen="catalog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H20v15H5.5A1.5 1.5 0 0 1 4 17.5v-12Z"/><path d="M4 17.5A1.5 1.5 0 0 1 5.5 16H20M8 8h8M8 11h6"/></svg><span>Catálogo</span></button>
+          <button class="nav-item" type="button" data-screen="inventory"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg><span>Inventario</span><span class="nav-count" id="inventoryNavCount" aria-label="5 productos para revisar">5</span></button>
+          <p class="nav-heading nav-heading-spaced">Atención</p>
+          <button class="nav-item" type="button" data-screen="sales"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16l-3-2-4 2-4-2-3 2V4Z"/><path d="M8 8h8M8 12h5"/></svg><span>Ventas y pedidos</span></button>
+          <button class="nav-item" type="button" data-screen="purchases"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16l-1 13H5L4 7Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg><span>Compras</span></button>
+          <button class="nav-item" type="button" data-screen="finance"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Caja y finanzas</span></button>
+          <p class="nav-heading nav-heading-spaced">Gestión</p>
+          <button class="nav-item" type="button" data-screen="reports"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h17M8 16v-4M13 16V8M18 16v-7"/></svg><span>Reportes</span></button>
+          <button class="nav-item" type="button" data-screen="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.7-1.4-2.4 1.4-1.1a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.7 1.4 2.4-1.4 1.1a8 8 0 0 1 0 2Z"/></svg><span>Configuración</span></button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sync-status"><span class="sync-dot"></span><span><strong>Todo sincronizado</strong><small>Última conexión hace 2 min</small></span></div>
+          <div class="user-row"><span class="user-mark">A</span><span><strong>Administración</strong><small>Administrador</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></div>
+        </div>
+      </aside>
+
+      <header class="topbar">
+        <button id="openNav" class="icon-button menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+        <div class="crumb"><span>Vestix</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg><strong id="crumbCurrent">Inicio</strong></div>
+        <button id="globalSearchOpen" class="global-search" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span>Buscar productos, ventas...</span><kbd>Ctrl K</kbd></button>
+        <div class="topbar-actions"><span class="topbar-status"><span class="sync-dot"></span> En línea</span><button class="icon-button help-button" type="button" aria-label="Ayuda"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.3 2.3 0 1 1 3.8 1.7c-1.1.9-1.6 1.3-1.6 2.8M12 17h.01"/></svg></button></div>
+      </header>
+
+      <main id="screenContent" class="work-sheet" tabindex="-1">
+        <section class="screen-view" data-view="home" aria-labelledby="homeTitle">
+          <div class="screen-inner">
+            <div class="page-title-row">
+              <div><p class="breadcrumb-line">Operación / <span>Hoy</span></p><h1 id="homeTitle">Operación de hoy</h1><p class="page-subtitle">Palermo · sábado 21 de noviembre · turno de caja abierto · datos sintéticos</p></div>
+              <button class="btn primary" type="button" data-go="pos"><span>Iniciar venta</span><kbd>F9</kbd></button>
+            </div>
+
+            <div class="home-main-grid">
+              <section class="panel sales-panel" aria-labelledby="salesHeading">
+                <header class="panel-heading"><div><h2 id="salesHeading">Ritmo de ventas</h2><p class="meta">Importe por hora · Palermo</p></div><span class="freshness">Actualizado 14:28</span></header>
+                <div class="sales-chart-wrap"><div class="sales-chart-copy"><span id="chartSubline">Importe de ventas por hora · ARS</span></div><div id="salesChart" class="sales-chart" role="img" aria-label="Ventas por hora"></div></div>
+                <div class="chart-legend"><span><i></i> Hoy</span><span>09:00 <b>·</b> 14:00</span></div>
+                <div class="sales-tabs" role="tablist" aria-label="Métrica del gráfico">
+                  <button type="button" role="tab" aria-selected="true" data-metric="revenue"><span>Ventas</span><strong id="tabRevenue">Cargando</strong></button>
+                  <button type="button" role="tab" aria-selected="false" data-metric="orders"><span>Operaciones</span><strong id="tabOrders">Cargando</strong></button>
+                  <button type="button" role="tab" aria-selected="false" data-metric="units"><span>Unidades</span><strong id="tabUnits">Cargando</strong></button>
+                </div>
+              </section>
+
+              <section class="panel work-queue" aria-labelledby="queueHeading">
+                <header class="panel-heading"><div><h2 id="queueHeading">Para resolver</h2><p class="meta">Tareas abiertas en esta sucursal</p></div><span id="queueCount" class="plain-count">Cargando</span></header>
+                <ul id="queueList" class="queue-list"></ul>
+                <button class="text-link" type="button" data-screen="sales">Ver todas las tareas <span aria-hidden="true">→</span></button>
+              </section>
+            </div>
+
+            <section class="panel size-panel" aria-labelledby="sizeHeading">
+              <header class="panel-heading"><div><h2 id="sizeHeading">Talles con poca disponibilidad</h2></div><button class="text-link" type="button" data-screen="inventory">Abrir inventario <span aria-hidden="true">→</span></button></header>
+              <div class="size-focus"><div><span class="swatch swatch-teal"></span><div><strong>Remera Nube</strong><small>Verde petróleo · SKU RN-042</small></div></div><span class="stock-location">Depósito Palermo</span></div>
+              <div id="homeSizeRun" class="size-run" aria-label="Disponibilidad por talle"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="screen-view" data-view="catalog" aria-labelledby="catalogTitle" hidden>
+          <div class="screen-inner">
+            <div class="page-title-row">
+              <div><p class="breadcrumb-line">Catálogo / <span>Productos</span></p><h1 id="catalogTitle">Productos</h1><p class="page-subtitle">Productos y variantes · Palermo · datos de muestra</p></div>
+              <div class="title-actions"><button class="btn" type="button" id="importProducts">Importar CSV</button><button class="btn" type="button" id="bulkPrices">Actualización masiva</button><button class="btn" type="button" id="publishAll">Publicar todos</button><button class="btn primary" type="button" id="newProduct"><span>Nuevo producto</span><span aria-hidden="true">+</span></button></div>
+            </div>
+            <div class="catalog-summary"><strong id="productCount">Cargando</strong><span>productos activos</span><span class="summary-separator"></span><strong id="variantCount">Cargando</strong><span>variantes</span></div>
+            <div class="list-toolbar">
+              <label class="search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span class="sr-only">Buscar producto</span><input id="productSearch" type="search" placeholder="Buscar por nombre, SKU o código" autocomplete="off" /></label>
+              <label class="select-field"><span class="sr-only">Categoría</span><select id="catalogCategory"><option value="all">Todas las categorías</option></select></label>
+              <label class="select-field"><span class="sr-only">Estado</span><select id="catalogStatus"><option value="all">Todos los estados</option><option value="Publicado">Publicado</option><option value="Borrador">Borrador</option></select></label>
+              <label class="select-field"><span class="sr-only">Disponibilidad</span><select id="catalogStock"><option value="all">Todo el stock</option><option value="available">Con stock</option><option value="low">Stock bajo (≤ 2)</option><option value="empty">Agotados</option></select></label>
+              <button class="btn quiet" type="button" id="resetCatalog">Limpiar filtros</button>
+              <div class="toolbar-spacer"></div><button class="btn" type="button" id="exportProducts">Exportar vista</button>
+            </div>
+            <section class="panel table-panel" aria-label="Listado de productos">
+              <div class="table-scroll"><table class="data-table" id="catalogTable"><thead><tr><th scope="col">Producto</th><th scope="col">Categoría</th><th scope="col">Variantes</th><th scope="col">Stock disponible</th><th scope="col" class="numeric">Precio base</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead><tbody id="catalogRows"></tbody></table></div>
+              <div id="catalogEmpty" class="empty-inline" hidden>No hay productos que coincidan con esos filtros.</div>
+              <footer class="table-footer"><span id="catalogRange">Cargando</span><div><button class="btn small" type="button" disabled>Anterior</button><button class="btn small" type="button" disabled>Siguiente</button></div></footer>
+            </section>
+            <p class="prototype-note">Prototipo de interfaz: los datos y acciones no modifican el ERP.</p>
+          </div>
+        </section>
+
+        <section class="screen-view" data-view="variants" aria-labelledby="variantsTitle" hidden><div class="screen-inner"><div class="page-title-row"><div><p class="breadcrumb-line">Catálogo / Productos / <span>Variantes</span></p><h1 id="variantsTitle">Variantes de producto</h1><p id="variantsSubtitle" class="page-subtitle">SKUs físicos, atributos y códigos de barras.</p></div><div class="title-actions"><button class="btn" type="button" id="generateVariants">Generador masivo</button><button class="btn primary" type="button" id="addVariant">Nueva variante</button></div></div><section class="panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>SKU</th><th>Color</th><th>Talle</th><th>Código de barras</th><th class="numeric">Costo</th><th>Estado</th><th></th></tr></thead><tbody id="variantRows"></tbody></table></div></section></div></section>
+
+        <section class="screen-view" data-view="inventory" aria-labelledby="inventoryTitle" hidden>
+          <div class="screen-inner">
+            <div class="page-title-row">
+              <div><p class="breadcrumb-line">Inventario / <span>Disponibilidad</span></p><h1 id="inventoryTitle">Stock por variante</h1><p class="page-subtitle">Separá físico, reservado y disponible por talle.</p></div>
+              <div class="title-actions"><button class="btn" type="button" id="movementButton">Ver movimientos</button><button class="btn primary" type="button" id="adjustButton">Registrar ajuste</button></div>
+            </div>
+            <div class="inventory-filters">
+              <label class="select-field"><span>Depósito</span><select id="warehouseSelect"><option>Depósito Palermo</option><option>Depósito Central</option></select></label>
+              <label class="select-field"><span>Categoría</span><select id="inventoryCategory"><option value="all">Todas</option><option value="Remeras">Remeras</option><option value="Abrigos">Abrigos</option><option value="Pantalones">Pantalones</option></select></label>
+              <span class="inventory-summary"><i class="warning-dot"></i><strong id="lowStockCount">Cargando</strong> variantes para reponer</span>
+            </div>
+            <section class="panel inventory-panel" aria-labelledby="inventoryMatrixHeading">
+              <header class="panel-heading"><div><h2 id="inventoryMatrixHeading">Disponibilidad por talle</h2><p class="meta">Disponible = físico − reservado · valores de ejemplo</p></div><span class="unit-note">Unidades</span></header>
+              <div class="table-scroll"><table class="matrix-table"><thead><tr><th scope="col">Producto / color</th><th scope="col">SKU base</th><th scope="col">XS</th><th scope="col">S</th><th scope="col">M</th><th scope="col">L</th><th scope="col">XL</th><th scope="col" class="numeric">Total</th></tr></thead><tbody id="inventoryRows"></tbody></table></div>
+              <footer class="matrix-footer"><span><i class="warning-dot"></i> 0–2 disponibles · requiere revisión</span><button class="text-link" type="button" data-screen="catalog">Ir al catálogo <span aria-hidden="true">→</span></button></footer>
+            </section>
+            <section class="inventory-bottom-grid">
+              <div class="panel compact-panel"><h2>Revisá los talles sin disponibilidad</h2><p>Podés crear una transferencia o registrar un ajuste con motivo.</p><button class="btn" type="button" id="replenishButton">Preparar reposición</button></div>
+              <div class="panel compact-panel"><h2>Stock físico y reservado</h2><p>La matriz muestra unidades disponibles. Consultá los movimientos para ver ingresos, ventas y reservas.</p><button class="text-link" type="button" id="stockHelp">Cómo se calcula <span aria-hidden="true">→</span></button></div>
+            </section>
+            <p class="prototype-note">La matriz ilustra la propuesta; confirmar depósito, reservas y umbrales contra las reglas vigentes.</p>
+          </div>
+        </section>
+
+        <section class="screen-view" data-view="sales" aria-labelledby="salesTitle" hidden>
+          <div class="screen-inner"><div class="page-title-row"><div><p class="breadcrumb-line">Ventas / <span>Actividad reciente</span></p><h1 id="salesTitle">Ventas y pedidos</h1><p class="page-subtitle">Resumen ilustrativo para mostrar el patrón de trabajo.</p></div><button class="btn primary" type="button" data-go="pos">Iniciar venta</button></div><section class="panel"><header class="panel-heading"><div><h2>Actividad reciente</h2><p class="meta">Operaciones de muestra · hoy</p></div></header><div class="table-scroll"><table class="data-table"><thead><tr><th>Hora</th><th>Venta</th><th>Cliente</th><th>Unidades</th><th class="numeric">Total</th><th>Pago</th><th>Estado</th></tr></thead><tbody id="salesRows"></tbody></table></div></section></div>
+        </section>
+
+        <section class="screen-view" data-view="purchases" aria-labelledby="purchasesTitle" hidden><div class="screen-inner"><div class="page-title-row"><div><p class="breadcrumb-line">Compras / <span>Recepción</span></p><h1 id="purchasesTitle">Compras</h1><p class="page-subtitle">Vista de ejemplo para continuar la propuesta por módulos.</p></div></div><section class="panel"><h2>Patrón en evaluación</h2><p class="body-copy">Órdenes, recepción parcial y diferencias visibles antes de confirmar.</p></section></div></section>
+        <section class="screen-view" data-view="finance" aria-labelledby="financeTitle" hidden><div class="screen-inner"><div class="page-title-row"><div><p class="breadcrumb-line">Finanzas / <span>Caja</span></p><h1 id="financeTitle">Caja y finanzas</h1><p class="page-subtitle">Vista de ejemplo para continuar la propuesta por módulos.</p></div></div><section class="panel"><h2>Patrón en evaluación</h2><p class="body-copy">Turnos, medios de pago y diferencias agrupados antes del cierre.</p></section></div></section>
+        <section class="screen-view" data-view="reports" aria-labelledby="reportsTitle" hidden><div class="screen-inner"><div class="page-title-row"><div><p class="breadcrumb-line">Gestión / <span>Reportes</span></p><h1 id="reportsTitle">Reportes</h1><p class="page-subtitle">Vista de ejemplo para continuar la propuesta por módulos.</p></div></div><section class="panel"><h2>Patrón en evaluación</h2><p class="body-copy">Indicadores con período y sucursal explícitos; cada gráfico responde una pregunta.</p></section></div></section>
+        <section class="screen-view" data-view="settings" aria-labelledby="settingsTitle" hidden><div class="screen-inner"><div class="page-title-row"><div><p class="breadcrumb-line">Gestión / <span>Configuración</span></p><h1 id="settingsTitle">Configuración</h1><p class="page-subtitle">Vista de ejemplo para continuar la propuesta por módulos.</p></div></div><section class="panel"><h2>Patrón en evaluación</h2><p class="body-copy">Secciones por tarea con etiquetas persistentes, ayuda contextual y estado de guardado.</p></section></div></section>
+      </main>
+    </div>
+
+    <section id="posScreen" class="pos-screen" hidden aria-label="Terminal de venta">
+      <header class="pos-topbar">
+        <div class="pos-brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M6 7h20L21 25H11L6 7Z"/><path d="m11 12 5 10 5-10M10 9h12"/></svg><strong>vestix</strong><span class="pos-divider"></span><span>Terminal de venta</span></div>
+        <div class="pos-context"><span>Palermo · Caja 1</span><span class="online-state"><i></i> En línea</span><button id="exitPos" class="btn" type="button">Volver al panel <kbd>Esc</kbd></button></div>
+      </header>
+      <div class="pos-workspace">
+        <section class="pos-products" aria-labelledby="posTitle">
+          <div class="pos-heading"><div><p class="breadcrumb-line">Turno abierto · Administración</p><h1 id="posTitle">Nueva venta</h1></div><span class="scanner-hint"><kbd>/</kbd> Buscar producto o escanear</span></div>
+          <label class="pos-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span class="sr-only">Buscar producto para agregar</span><input id="posSearch" type="search" placeholder="Nombre, SKU o código de barras" autocomplete="off" /><kbd>F2</kbd></label>
+          <div class="pos-category-row" role="group" aria-label="Filtrar productos por categoría"><button type="button" class="category-button is-selected" data-pos-category="all">Todo</button><button type="button" class="category-button" data-pos-category="Remeras">Remeras</button><button type="button" class="category-button" data-pos-category="Pantalones">Pantalones</button><button type="button" class="category-button" data-pos-category="Abrigos">Abrigos</button></div>
+          <div id="posProductList" class="pos-product-list"></div>
+          <p class="prototype-note">Prueba de interacción local; el ejemplo no registra una venta real.</p>
+        </section>
+        <aside class="pos-cart-panel" aria-labelledby="cartTitle">
+          <header class="cart-heading"><div><p class="breadcrumb-line">Venta actual</p><h2 id="cartTitle">Carrito</h2></div><button id="clearCart" class="text-link danger-link" type="button">Vaciar</button></header>
+          <div class="customer-field"><div><span>Cliente</span><strong>Consumidor final</strong></div><button id="customerButton" class="icon-button" type="button" aria-label="Cambiar cliente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+          <div id="cartItems" class="cart-items"></div>
+          <div id="cartEmpty" class="cart-empty"><span>Sumá productos para empezar</span><small>Escaneá un código o elegí un artículo.</small></div>
+          <div class="cart-bottom"><div class="subtotal-line"><span>Subtotal</span><strong id="cartSubtotal" class="num">$ 0</strong></div><div class="subtotal-line"><span>Descuentos</span><button type="button" class="text-link" id="discountButton">Agregar</button></div><div class="total-line"><span>Total</span><strong id="cartTotal" class="num">$ 0</strong></div><button id="reviewSale" class="btn primary checkout-button" type="button" disabled>Revisar venta <span aria-hidden="true">→</span></button><div class="payment-hints"><span>Efectivo</span><span>Débito</span><span>Crédito</span><span>QR</span></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <dialog id="searchDialog" class="dialog search-dialog" data-ui aria-labelledby="searchDialogTitle"><form method="dialog"><div class="dialog-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><label class="sr-only" id="searchDialogTitle" for="globalSearchInput">Buscar en Vestix</label><input id="globalSearchInput" type="search" placeholder="¿Qué necesitás encontrar?" /><button class="icon-button" value="cancel" aria-label="Cerrar búsqueda"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div></form><div class="search-suggestions"><p>Accesos rápidos</p><button type="button" data-screen="catalog">Buscar productos <kbd>↵</kbd></button><button type="button" data-screen="inventory">Revisar inventario</button><button type="button" data-go="pos">Iniciar venta <kbd>F9</kbd></button></div></dialog>
+    <dialog id="saleDialog" class="dialog sale-dialog" data-ui aria-labelledby="saleDialogTitle"><form method="dialog"><div class="dialog-head"><div><h2 id="saleDialogTitle">Revisar venta</h2></div><button class="icon-button" value="cancel" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><p class="dialog-intro">Confirmá el resumen antes de continuar con el cobro.</p><div id="saleReviewLines" class="review-lines"></div><div class="review-total"><span>Total de la venta</span><strong id="reviewTotal" class="num">Cargando</strong></div><label class="payment-select-label" for="paymentMethod">Medio de pago de muestra</label><select id="paymentMethod" class="input"><option>Efectivo</option><option>Tarjeta de débito</option><option>Tarjeta de crédito</option><option>Transferencia</option></select><p class="demo-warning">Demostración: no se procesa el pago ni se guarda una venta.</p><div class="dialog-actions"><button class="btn" value="cancel">Volver al carrito</button><button id="simulateSale" class="btn primary" type="button">Mostrar confirmación</button></div></form></dialog>
+    <dialog id="resultDialog" class="dialog result-dialog" data-ui aria-labelledby="resultTitle"><form method="dialog"><div class="result-mark" aria-hidden="true">OK</div><h2 id="resultTitle">Vista de confirmación</h2><p>Así se vería el resultado cuando la API confirme una venta real.</p><span class="demo-warning">Prototipo: no se creó ninguna operación.</span><button class="btn primary" value="close">Volver al POS</button></form></dialog>
+    <dialog id="productDetailDialog" class="dialog product-work-dialog" data-ui><div class="dialog-head"><div><p class="breadcrumb-line">Ficha de producto</p><h2 id="detailName"></h2></div><button class="icon-button" type="button" data-close="productDetailDialog" aria-label="Cerrar">×</button></div><div id="detailContent" class="detail-content"></div><div class="dialog-actions"><button class="btn" type="button" id="detailDuplicate">Duplicar</button><button class="btn" type="button" id="detailVariants">Gestionar variantes</button><button class="btn primary" type="button" id="detailEdit">Editar producto</button></div><div class="dialog-actions destructive-actions"><button class="text-link" type="button" id="detailDelete">Archivar producto de muestra</button><button class="text-link" type="button" id="detailPublish">Cambiar publicación</button></div></dialog>
+    <dialog id="productEditorDialog" class="dialog product-editor-dialog" data-ui><form id="productForm"><div class="dialog-head"><div><p class="breadcrumb-line">Catálogo / Productos</p><h2 id="editorTitle">Nuevo producto</h2></div><button class="icon-button" type="button" data-close="productEditorDialog" aria-label="Cerrar">×</button></div><p class="dialog-intro">Completá la ficha, configurá precios y generá los SKUs antes de guardar.</p><div class="editor-tabs" role="tablist"><button type="button" role="tab" data-editor-tab="general" aria-selected="true">General</button><button type="button" role="tab" data-editor-tab="precios" aria-selected="false">Precios</button><button type="button" role="tab" data-editor-tab="variantes" aria-selected="false">Variantes</button></div>
+      <section class="editor-pane" data-editor-pane="general"><div class="editor-grid"><label>Nombre *<input name="name" required placeholder="Ej. Remera Nube"></label><label>Tipo<select name="type"><option value="VARIABLE">Variable · talles y colores</option><option value="SINGLE">Simple · unidad estándar</option><option value="COMBO">Combo · receta o kit</option></select></label><label>SKU base<input name="id" required placeholder="RN-042"></label><label>Categoría<select name="category"><option>Remeras</option><option>Pantalones</option><option>Abrigos</option><option>Camisas</option><option>Accesorios</option></select></label><label>Marca<input name="brand" placeholder="Marca"></label><label>Color<input name="color" placeholder="Color principal"></label><label class="full-field">Descripción<textarea name="description" rows="3" placeholder="Materiales, calce y cuidados"></textarea></label></div><div class="media-placeholder"><strong>Fotos del producto</strong><span>La primera imagen se usa como portada · JPG, PNG o WebP</span><button class="btn" type="button" id="chooseImages">Agregar imágenes</button><input id="imageFiles" type="file" accept="image/*" multiple hidden></div></section>
+      <section class="editor-pane" data-editor-pane="precios" hidden><div class="editor-grid"><label>Costo de referencia<input name="cost" type="number" min="0" placeholder="0"></label><label>Precio base · ARS<input name="price" type="number" min="0" required placeholder="0"></label></div><div class="price-list-preview"><h3>Listas de precios</h3><div><span>Minorista · por defecto</span><strong id="retailPreview">Sin definir</strong></div><div><span>Mayorista</span><strong id="wholesalePreview">Sin definir</strong></div><div class="quick-markup"><span>Aplicar margen de muestra</span><button type="button" data-markup="50">+50%</button><button type="button" data-markup="100">+100%</button><button type="button" data-markup="150">+150%</button></div></div><p class="prototype-note">El editor vigente admite reglas por lista, margen, redondeo y precio en USD. Esta vista resume el patrón; valores solo locales.</p></section>
+      <section class="editor-pane" data-editor-pane="variantes" hidden><div class="editor-grid"><label>Talles (separados por coma)<input name="sizes" placeholder="XS, S, M, L, XL"></label><label>Color de variante<input name="variantColor" placeholder="Verde petróleo"></label><label>SKU base<input name="variantSku" placeholder="RN-042"></label></div><div class="editor-actions"><button class="btn" type="button" id="buildVariantMatrix">Generar matriz</button><span id="variantBuildCount">Sin variantes nuevas</span></div><div class="table-scroll"><table class="data-table"><thead><tr><th>Combinación</th><th>SKU</th><th>Cód. barras</th><th>Stock inicial</th></tr></thead><tbody id="editorVariantRows"><tr><td colspan="4" class="empty-inline">Ingresá talles y generá la matriz.</td></tr></tbody></table></div><div id="comboRecipe" class="combo-recipe" hidden><h3>Receta del combo</h3><p>Agregá productos componentes y cantidades por kit.</p><div class="editor-actions"><select id="comboComponent" aria-label="Producto componente"></select><input id="comboQuantity" type="number" min="1" value="1" aria-label="Cantidad del componente"><button class="btn" type="button" id="addComboComponent">Agregar componente</button></div><ul id="comboLines"></ul></div></section>
+      <aside class="editor-publish"><label class="check-line"><input name="published" type="checkbox" checked> Publicar en catálogo online</label><label class="check-line"><input name="active" type="checkbox" checked> Producto activo</label><label class="stock-initial" id="initialStockWrap">Stock inicial (unidad simple)<input name="initialStock" type="number" min="0" value="0"></label></aside><div class="dialog-actions"><button class="btn" type="button" data-close="productEditorDialog">Cancelar</button><button class="btn primary" type="submit">Guardar producto de muestra</button></div><p class="demo-warning">Guardado temporal en memoria del navegador. No se envía al ERP.</p></form></dialog>
+    <dialog id="stockActionDialog" class="dialog product-work-dialog" data-ui><form id="stockActionForm"><div class="dialog-head"><div><p class="breadcrumb-line">Inventario / <span id="stockDialogSku"></span></p><h2 id="stockDialogTitle">Detalle de existencias</h2></div><button class="icon-button" type="button" data-close="stockActionDialog" aria-label="Cerrar">×</button></div><div id="stockActionContent"></div><label class="stock-initial">Ajuste de muestra · nueva cantidad física<input name="quantity" type="number" min="0" required></label><label class="stock-initial">Motivo<select name="reason"><option>Conteo físico</option><option>Mercadería dañada</option><option>Corrección de carga</option><option>Otro</option></select></label><div class="dialog-actions"><button class="btn" type="button" data-close="stockActionDialog">Cancelar</button><button class="btn primary" type="submit">Previsualizar ajuste</button></div><p class="demo-warning">El ajuste se aplica solo a la maqueta y se pierde al recargar.</p></form></dialog>
+    <dialog id="productConfirmDialog" class="dialog" data-ui><form method="dialog"><div class="dialog-head"><h2 id="confirmTitle">Acción de muestra</h2><button class="icon-button" aria-label="Cerrar">×</button></div><p id="confirmMessage" class="dialog-intro"></p><div class="dialog-actions"><button class="btn primary">Entendido</button></div></form></dialog>
+    <input id="csvImportInput" type="file" accept=".csv,text/csv" hidden>
+    <div id="mobileBackdrop" class="mobile-backdrop" hidden></div>
+    <div id="liveRegion" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
