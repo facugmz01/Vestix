@@ -51,6 +51,12 @@ export default function OnlineProductDetailPage() {
     setActiveImageIndex((prev) => (prev < totalImages - 1 ? prev + 1 : 0));
   }, [totalImages]);
 
+  const handleMainImageKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!hasImages || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    setIsLightboxOpen(true);
+  };
+
   // Touch swipe handling for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
@@ -153,6 +159,7 @@ export default function OnlineProductDetailPage() {
 
   const selectedVariant = product.variants?.find(v => v.id === selectedVariantId);
   const isAvailable = selectedVariant ? selectedVariant.stock > 0 : product.inStock;
+  const canAddToCart = isAvailable && ((product.variants?.length ?? 0) === 0 || Boolean(selectedVariant));
   const displayPrice = selectedVariant?.price ?? product.price ?? product.basePrice ?? 0;
   const priceRange =
     product.maxPrice && product.maxPrice > product.price
@@ -200,9 +207,10 @@ export default function OnlineProductDetailPage() {
             <div
               className={clsx(styles.mainImage, hasImages && styles.mainImageHasPhoto)}
               onClick={() => hasImages && setIsLightboxOpen(true)}
+              onKeyDown={handleMainImageKeyDown}
               role={hasImages ? 'button' : undefined}
               tabIndex={hasImages ? 0 : undefined}
-              title={hasImages ? 'Ampliar imagen' : undefined}
+              aria-label={hasImages ? `Ampliar imagen de ${product.name}` : undefined}
             >
               {hasImages ? (
                 <img src={productImages[activeImageIndex] || productImages[0]} alt={product.name} />
@@ -307,7 +315,7 @@ export default function OnlineProductDetailPage() {
           <div className={styles.buyBox}>
             <div className={styles.priceBlock}>
               {hidePrices ? (
-                <span style={{ color: '#16a34a', fontSize: '1.25rem', fontWeight: 700 }}>
+                <span className={styles.inquiryPrice}>
                   Consultar Precio
                 </span>
               ) : (
@@ -320,7 +328,7 @@ export default function OnlineProductDetailPage() {
                   )}
                 </>
               )}
-              <div className={styles.stockRow}>
+              <div className={styles.stockRow} aria-live="polite">
                 <span
                   className={clsx(
                     styles.stockDot,
@@ -335,8 +343,8 @@ export default function OnlineProductDetailPage() {
 
             {product.variants && product.variants.length > 0 && (
               <div className={styles.variantBlock}>
-                <label className={styles.variantLabel}>Variante</label>
-                <div className={styles.variantList}>
+                <p id="product-variant-label" className={styles.variantLabel}>Elegí una variante</p>
+                <div className={styles.variantList} role="group" aria-labelledby="product-variant-label">
                   {product.variants.map((v: any) => {
                     const isSel = selectedVariantId === v.id;
                     const noStock = v.stock === 0;
@@ -345,6 +353,8 @@ export default function OnlineProductDetailPage() {
                         key={v.id}
                         type="button"
                         onClick={() => !noStock && setSelectedVariantId(v.id)}
+                        disabled={noStock}
+                        aria-pressed={isSel}
                         title={noStock ? 'Sin stock' : undefined}
                         className={clsx(
                           styles.variantBtn,
@@ -361,7 +371,7 @@ export default function OnlineProductDetailPage() {
             )}
 
             {hidePrices ? (
-              <div style={{ marginTop: '8px', width: '100%' }}>
+              <div className={styles.inquiryAction}>
                 <WhatsAppInquiryButton
                   product={product}
                   variant={selectedVariant}
@@ -375,25 +385,29 @@ export default function OnlineProductDetailPage() {
             ) : (
               <div className={styles.cartRow}>
                 <div className={styles.qtyControl}>
-                  <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className={styles.qtyBtn}>−</button>
-                  <div className={styles.qtyValue}>{qty}</div>
-                  <button type="button" onClick={() => setQty(qty + 1)} className={styles.qtyBtn}>+</button>
+                  <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className={styles.qtyBtn} aria-label="Disminuir cantidad" disabled={qty <= 1}>−</button>
+                  <output className={styles.qtyValue} aria-label="Cantidad seleccionada">{qty}</output>
+                  <button type="button" onClick={() => setQty(qty + 1)} className={styles.qtyBtn} aria-label="Aumentar cantidad">+</button>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={!isAvailable}
+                  disabled={!canAddToCart}
                   className={clsx(
                     styles.addBtn,
-                    justAdded ? styles.addBtnSuccess : isAvailable ? styles.addBtnAvailable : styles.addBtnDisabled,
+                    justAdded ? styles.addBtnSuccess : canAddToCart ? styles.addBtnAvailable : styles.addBtnDisabled,
                   )}
                 >
-                  {justAdded ? <><Check size={18} /> Agregado!</> : <><ShoppingCart size={18} /> {isAvailable ? 'Agregar al Carrito' : 'Agotado'}</>}
+                  {justAdded ? <><Check size={18} aria-hidden="true" /> Agregado!</> : <><ShoppingCart size={18} aria-hidden="true" /> {isAvailable ? 'Agregar al Carrito' : 'Agotado'}</>}
                 </button>
               </div>
             )}
           </div>
+
+          <p className={styles.srOnly} aria-live="polite">
+            {justAdded ? `${qty} ${qty === 1 ? 'unidad agregada' : 'unidades agregadas'} al carrito.` : ''}
+          </p>
 
           {product.relatedProducts && product.relatedProducts.length > 0 && (
             <div className={styles.related}>
@@ -411,7 +425,7 @@ export default function OnlineProductDetailPage() {
                     <div className={styles.relatedBody}>
                       <p className={styles.relatedName}>{rp.name}</p>
                       {hidePrices ? (
-                        <p className={styles.relatedPrice} style={{ color: '#16a34a', fontWeight: 600 }}>
+                        <p className={clsx(styles.relatedPrice, styles.relatedInquiryPrice)}>
                           Consultar
                         </p>
                       ) : (
@@ -432,7 +446,7 @@ export default function OnlineProductDetailPage() {
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className={styles.trustItem}>
                 <div className={styles.trustIcon}>
-                  <Icon size={20} />
+                  <Icon size={20} aria-hidden="true" />
                 </div>
                 <div>
                   <p className={styles.trustTitle}>{title}</p>
@@ -442,6 +456,38 @@ export default function OnlineProductDetailPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className={styles.mobileActionBar} role="region" aria-label="Acción principal del producto">
+        <div className={styles.mobileActionContext}>
+          <span className={styles.mobileActionName}>{product.name}</span>
+          <strong className={styles.mobileActionPrice}>
+            {hidePrices ? 'Consultar precio' : selectedVariant ? formatCurrency(displayPrice) : priceRange}
+          </strong>
+        </div>
+        {hidePrices ? (
+          <WhatsAppInquiryButton
+            product={product}
+            variant={selectedVariant}
+            whatsappNumber={settings?.whatsappNumber || settings?.whatsapp}
+            messageTemplate={settings?.whatsappMessageTemplate}
+            size="md"
+            className={styles.mobileWhatsApp}
+            label="Consultar"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={!canAddToCart}
+            className={clsx(
+              styles.mobileAddBtn,
+              justAdded ? styles.addBtnSuccess : canAddToCart ? styles.addBtnAvailable : styles.addBtnDisabled,
+            )}
+          >
+            {justAdded ? <><Check size={17} aria-hidden="true" /> Agregado</> : <><ShoppingCart size={17} aria-hidden="true" /> Agregar</>}
+          </button>
+        )}
       </div>
 
       {/* Lightbox / Fullscreen Modal */}

@@ -29,6 +29,7 @@ export default function StorefrontLayout() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchDockExpanded, setSearchDockExpanded] = useState(window.innerWidth >= 768);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchDockRef = useRef<HTMLDivElement>(null);
 
   const previousLocationRef = useRef(`${location.pathname}${location.search}`);
   const lastScrollPositionRef = useRef(0);
@@ -211,7 +212,7 @@ export default function StorefrontLayout() {
       </header>
 
       {!isStorefrontLogin && (
-        <div className={clsx(styles.editorialSearchDock, !searchDockExpanded && styles.editorialSearchDockCollapsed)}>
+        <div ref={searchDockRef} className={clsx(styles.editorialSearchDock, !searchDockExpanded && styles.editorialSearchDockCollapsed)}>
           {searchDockExpanded ? (
             <StorefrontSearchBar
               hidePrices={Boolean(settings?.hidePrices)}
@@ -221,7 +222,12 @@ export default function StorefrontLayout() {
             <button
               type="button"
               className={styles.editorialSearchCollapsedButton}
-              onClick={() => setSearchDockExpanded(true)}
+              onClick={() => {
+                setSearchDockExpanded(true);
+                window.requestAnimationFrame(() => {
+                  searchDockRef.current?.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
+                });
+              }}
               aria-label="Abrir búsqueda"
             >
               <Search size={17} aria-hidden />
