@@ -539,6 +539,49 @@
   flex-shrink: 0;
 }
 
+/* Editorial storefront overrides: keep checkout controls on the same visual system. */
+:global(.storefront-theme-editorial) .panel {
+  background: var(--sf-surface);
+  border-color: rgba(216, 207, 196, 0.34);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:global(.storefront-theme-editorial) .couponRow {
+  background: var(--sf-surface);
+  border-color: rgba(216, 207, 196, 0.48);
+  border-radius: 0;
+}
+
+:global(.storefront-theme-editorial) .couponInput {
+  color: var(--sf-ink) !important;
+  caret-color: var(--sf-coral);
+}
+
+:global(.storefront-theme-editorial) .couponInput::placeholder {
+  color: var(--sf-muted);
+}
+
+:global(.storefront-theme-editorial) .couponIcon {
+  color: var(--sf-coral);
+}
+
+:global(.storefront-theme-editorial) .couponBtn,
+:global(.storefront-theme-editorial) :global(.storefront-btn) {
+  border-radius: 0;
+  background: var(--sf-ink);
+  color: var(--sf-paper);
+  box-shadow: none;
+}
+
+:global(.storefront-theme-editorial) .couponBtn:hover:not(:disabled),
+:global(.storefront-theme-editorial) :global(.storefront-btn:hover:not(:disabled)) {
+  background: var(--sf-coral);
+  color: #fff;
+  filter: none;
+  transform: none;
+}
+
 .couponRemoveBtn:hover {
   background: var(--red-bg);
 }

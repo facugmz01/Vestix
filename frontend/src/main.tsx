@@ -28,15 +28,30 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           position="bottom-right"
           toastOptions={{
             style: {
-              background: 'var(--toast-bg)',
-              color: 'var(--toast-text)',
-              border: '1px solid var(--toast-border)',
+              background: '#171512',
+              color: '#FFFFFF',
+              border: '1px solid #3A342E',
               fontFamily: 'Inter, sans-serif',
               fontSize: '14px',
+              fontWeight: 600,
               boxShadow: 'var(--shadow-md)',
             },
-            success: { iconTheme: { primary: 'var(--green)', secondary: 'var(--surface-0)' } },
-            error:   { iconTheme: { primary: 'var(--red)', secondary: 'var(--surface-0)' } },
+            success: {
+              style: {
+                background: '#166534',
+                color: '#FFFFFF',
+                border: '1px solid #15803D',
+              },
+              iconTheme: { primary: '#BBF7D0', secondary: '#166534' },
+            },
+            error: {
+              style: {
+                background: '#991B1B',
+                color: '#FFFFFF',
+                border: '1px solid #B91C1C',
+              },
+              iconTheme: { primary: '#FECACA', secondary: '#991B1B' },
+            },
           }}
         />
       </BrowserRouter>

@@ -854,6 +854,46 @@
   color: var(--sf-primary, var(--accent));
 }
 
+/* Keep the purchase surface aligned with the editorial storefront instead of
+   falling back to the legacy indigo controls. */
+:global(.storefront-theme-editorial) .buyBox {
+  background: var(--sf-surface);
+  border-color: rgba(216, 207, 196, 0.34);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:global(.storefront-theme-editorial) .addBtnAvailable,
+:global(.storefront-theme-editorial) .mobileAddBtn.addBtnAvailable {
+  background: var(--sf-ink);
+  color: var(--sf-paper);
+  box-shadow: none;
+}
+
+:global(.storefront-theme-editorial) .addBtnAvailable:hover,
+:global(.storefront-theme-editorial) .mobileAddBtn.addBtnAvailable:hover {
+  background: var(--sf-coral);
+  color: #fff;
+}
+
+:global(.storefront-theme-editorial) .variantBtnSelected {
+  border-color: var(--sf-coral);
+  background: rgba(220, 104, 75, 0.12);
+  color: var(--sf-coral);
+}
+
+:global(.storefront-theme-editorial) .trustIcon {
+  background: rgba(220, 104, 75, 0.12);
+  color: var(--sf-coral);
+}
+
+:global(.storefront-theme-editorial) .mainNavBtn,
+:global(.storefront-theme-editorial) .thumbArrowBtn {
+  background: var(--sf-paper);
+  border-color: rgba(216, 207, 196, 0.42);
+  color: var(--sf-ink);
+}
+
 @media (max-width: 767px) {
   .page {
     padding-bottom: 176px;
