@@ -125,7 +125,7 @@ export interface ArcaSettings {
 }
 
 export interface StorefrontSettings {
-  storefrontTheme?: 'classic' | 'minimal' | 'streetwear' | 'catalog' | 'app_like';
+  storefrontTheme?: 'editorial';
   enabled: boolean;
   primaryColor: string;
   fontFamily: string;
@@ -169,6 +169,18 @@ export interface StorefrontSettings {
       andreani?: { enabled: boolean; apiKey?: string; clientId?: string; contract?: string };
       mercadoEnvios?: { enabled: boolean; accessToken?: string; userId?: string };
     };
+  };
+  companyInfo?: {
+    companyName?: string;
+    legalName?: string;
+    taxId?: string;
+    address?: string;
+    city?: string;
+    province?: string;
+    country?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
   };
 }
 

@@ -384,8 +384,8 @@ export class GenerateArcaCsrDto {
 
 export class StorefrontSettingsDto {
   @IsOptional()
-  @IsIn(['classic', 'minimal', 'streetwear', 'catalog', 'app_like'])
-  storefrontTheme?: 'classic' | 'minimal' | 'streetwear' | 'catalog' | 'app_like';
+  @IsIn(['editorial'])
+  storefrontTheme?: 'editorial';
 
   @IsOptional() @IsBoolean() enabled?: boolean;
   @IsOptional() @IsString() primaryColor?: string;

@@ -17,6 +17,11 @@
   font-weight: 600;
   margin-bottom: 24px;
   font-size: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .backLink:hover {

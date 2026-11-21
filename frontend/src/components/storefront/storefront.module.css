@@ -38,6 +38,24 @@
   overflow: hidden;
 }
 
+:global(.storefront-theme-editorial) .card {
+  border-radius: 0;
+  border-color: var(--border);
+  background: var(--surface-0);
+  box-shadow: none;
+}
+
+:global(.storefront-theme-editorial) .cardIcon {
+  border-radius: 0;
+  background: var(--sf-ink);
+  box-shadow: none;
+}
+
+:global(.storefront-theme-editorial) .cardTitle {
+  font-weight: 500;
+  letter-spacing: -.04em;
+}
+
 .cardPad { padding: 24px 16px; }
 
 @media (min-width: 640px) {

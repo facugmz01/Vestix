@@ -1,5 +1,5 @@
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, LogIn, ChevronDown, Loader2, UserCircle } from 'lucide-react';
+import { Outlet, Link, useNavigate, useLocation, useNavigationType } from 'react-router-dom';
+import { ShoppingCart, User, LogOut, LogIn, ChevronDown, ChevronUp, Loader2, UserCircle, Search, MapPin, Phone, Mail, Globe2, Building2 } from 'lucide-react';
 import { Suspense, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCartStore } from '@/store/cart.store';
@@ -7,7 +7,7 @@ import { useStorefrontAuthStore } from '@/store/storefrontAuth.store';
 import { storePrefix } from '@/utils/storefrontDomain';
 import { storefrontApi } from '@/api/storefront.api';
 import { buildStorefrontThemeCss } from '@/utils/storefrontTheme';
-import { StorefrontSearchBar, ThemeBottomNav } from '@/components/storefront';
+import { StorefrontSearchBar } from '@/components/storefront';
 import clsx from 'clsx';
 import styles from './StorefrontLayout.module.css';
 
@@ -16,6 +16,7 @@ export default function StorefrontLayout() {
   const prefix = storePrefix();
   const navigate = useNavigate();
   const location = useLocation();
+  const navigationType = useNavigationType();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['storefrontSettings', prefix],
@@ -26,11 +27,56 @@ export default function StorefrontLayout() {
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchDockExpanded, setSearchDockExpanded] = useState(window.innerWidth >= 768);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const previousLocationRef = useRef(`${location.pathname}${location.search}`);
+  const lastScrollPositionRef = useRef(0);
+  const scrollStorageKey = `vestix:storefront-scroll:${prefix}`;
+
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    const isCatalog = location.pathname === `${prefix}/` || location.pathname === prefix;
+    if (!isCatalog) return;
+
+    const saveScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      lastScrollPositionRef.current = scrollTop;
+      sessionStorage.setItem(scrollStorageKey, String(scrollTop));
+    };
+    window.addEventListener('scroll', saveScroll, { passive: true });
+    return () => window.removeEventListener('scroll', saveScroll);
+  }, [location.pathname, prefix, scrollStorageKey]);
+
+  useEffect(() => {
+    const currentLocation = `${location.pathname}${location.search}`;
+    const previousLocation = previousLocationRef.current;
+    const catalogPath = `${prefix}/`;
+    const isCatalog = location.pathname === catalogPath || location.pathname === prefix;
+    const wasCatalog = previousLocation.startsWith(catalogPath);
+
+    // Capture the catalog position before opening a product. This works for
+    // product links as well as browser/device back navigation.
+    if (wasCatalog && location.pathname.includes('/product/')) {
+      sessionStorage.setItem(scrollStorageKey, String(lastScrollPositionRef.current));
+    }
+
+    if (isCatalog && navigationType === 'POP') {
+      const savedScroll = Number(sessionStorage.getItem(scrollStorageKey) || 0);
+      const restore = () => {
+        document.documentElement.scrollTop = savedScroll;
+        document.body.scrollTop = savedScroll;
+        window.scrollTo(0, savedScroll);
+        lastScrollPositionRef.current = savedScroll;
+      };
+      requestAnimationFrame(restore);
+      window.setTimeout(restore, 250);
+      window.setTimeout(restore, 650);
+    } else if (!isCatalog) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    previousLocationRef.current = currentLocation;
+  }, [location.pathname, location.search, navigationType, prefix, scrollStorageKey]);
 
   useEffect(() => {
     loadCurrentCustomer();
@@ -75,28 +121,25 @@ export default function StorefrontLayout() {
     if (shellRef.current) shellRef.current.style.fontFamily = fontFamily;
   }, [fontFamily]);
 
-  const theme = settings?.storefrontTheme || 'classic';
+  // A single public storefront system is intentionally used everywhere.
+  const theme = 'editorial' as const;
+  const isStorefrontLogin = location.pathname.endsWith('/login');
+  const companyInfo = settings?.companyInfo;
+  const companyAddress = [companyInfo?.address, companyInfo?.city, companyInfo?.province]
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <div ref={shellRef} className={clsx(styles.shell, `storefront-theme-${theme}`)}>
-      <style>{buildStorefrontThemeCss(primaryColor, theme)}</style>
+      <style>{buildStorefrontThemeCss(primaryColor)}</style>
 
+      <a className={styles.skipLink} href="#storefront-content">Saltar al contenido</a>
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <Link to={`${prefix}/`} className={styles.logo}>
             <div className={styles.logoMark}>{storeName.charAt(0).toUpperCase()}</div>
             {showStoreName && <span className={styles.logoName}>{storeName}</span>}
           </Link>
-
-          {!isMobile && (
-            <div className={styles.searchWrap}>
-              <StorefrontSearchBar
-                hidePrices={Boolean(settings?.hidePrices)}
-                placeholder="Buscar por nombre, categoría, marca, SKU..."
-              />
-            </div>
-          )}
-
 
           <div className={styles.navControls}>
             {isAuthenticated && customer ? (
@@ -165,18 +208,39 @@ export default function StorefrontLayout() {
           </div>
         </div>
 
-        {isMobile && (
-          <div className={styles.mobileSearchRow}>
-            <StorefrontSearchBar
-              hidePrices={Boolean(settings?.hidePrices)}
-              placeholder="Buscar productos, marcas, SKUs..."
-            />
-          </div>
-        )}
       </header>
 
+      {!isStorefrontLogin && (
+        <div className={clsx(styles.editorialSearchDock, !searchDockExpanded && styles.editorialSearchDockCollapsed)}>
+          {searchDockExpanded ? (
+            <StorefrontSearchBar
+              hidePrices={Boolean(settings?.hidePrices)}
+              placeholder="Buscar productos, categorías o marcas..."
+            />
+          ) : (
+            <button
+              type="button"
+              className={styles.editorialSearchCollapsedButton}
+              onClick={() => setSearchDockExpanded(true)}
+              aria-label="Abrir búsqueda"
+            >
+              <Search size={17} aria-hidden />
+              <span>Buscar productos</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className={styles.editorialSearchDockToggle}
+            onClick={() => setSearchDockExpanded(value => !value)}
+            aria-expanded={searchDockExpanded}
+            aria-label={searchDockExpanded ? 'Comprimir búsqueda' : 'Expandir búsqueda'}
+          >
+            {searchDockExpanded ? <ChevronDown size={16} aria-hidden /> : <ChevronUp size={16} aria-hidden />}
+          </button>
+        </div>
+      )}
 
-      <main className={styles.main}>
+      <main id="storefront-content" className={clsx(styles.main, styles.mainEditorial)}>
         {isLoading ? (
           <div className={styles.loadingCenter}>
             <Loader2 size={32} className="spin" color="var(--accent)" aria-label="Cargando" />
@@ -190,24 +254,34 @@ export default function StorefrontLayout() {
 
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <h2 className={styles.footerTitle}>{storeName}</h2>
-          <p className={styles.footerText}>
-            Tecnología al servicio del comercio. Compra segura y envío a todo el país.
-          </p>
+          <div className={styles.footerTop}>
+            <div className={styles.footerBrand}>
+              <p className={styles.footerEyebrow}>Tienda online</p>
+              <h2 className={styles.footerTitle}>{storeName}</h2>
+              <p className={styles.footerText}>Prendas para todos los días. Atención personalizada y envíos a todo el país.</p>
+            </div>
+            {(companyAddress || companyInfo?.legalName || companyInfo?.companyName) && (
+              <div className={styles.footerBusiness} aria-label="Información del negocio">
+                <h3><Building2 size={16} aria-hidden /> Datos del negocio</h3>
+                {(companyInfo?.legalName || companyInfo?.companyName) && <p>{companyInfo.legalName || companyInfo.companyName}</p>}
+                {companyAddress && <p><MapPin size={15} aria-hidden /> {companyAddress}{companyInfo?.country ? `, ${companyInfo.country}` : ''}</p>}
+              </div>
+            )}
+            {(companyInfo?.phone || companyInfo?.email || companyInfo?.website) && (
+              <div className={styles.footerContact} aria-label="Contacto">
+                <h3>Contacto</h3>
+                {companyInfo?.phone && <a href={`tel:${companyInfo.phone}`}><Phone size={15} aria-hidden /> {companyInfo.phone}</a>}
+                {companyInfo?.email && <a href={`mailto:${companyInfo.email}`}><Mail size={15} aria-hidden /> {companyInfo.email}</a>}
+                {companyInfo?.website && <a href={companyInfo.website.startsWith('http') ? companyInfo.website : `https://${companyInfo.website}`} target="_blank" rel="noreferrer"><Globe2 size={15} aria-hidden /> Sitio web</a>}
+              </div>
+            )}
+          </div>
           <div className={styles.footerCopy}>
             © {new Date().getFullYear()} Todos los derechos reservados.
           </div>
         </div>
       </footer>
 
-      {theme === 'app_like' && (
-        <ThemeBottomNav
-          prefix={prefix}
-          whatsappNumber={settings?.whatsappNumber || settings?.whatsapp}
-          hidePrices={Boolean(settings?.hidePrices)}
-          totalItems={totalItems}
-        />
-      )}
     </div>
   );
 }

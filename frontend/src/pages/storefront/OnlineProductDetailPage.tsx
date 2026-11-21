@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link, useOutletContext } from 'react-router-dom';
+import { useParams, Link, useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, ShoppingCart, ShieldCheck, Truck, RotateCcw, Check, Maximize2, X } from 'lucide-react';
 import clsx from 'clsx';
@@ -16,6 +16,7 @@ import styles from './OnlineProductDetailPage.module.css';
 export default function OnlineProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const prefix = storePrefix();
+  const navigate = useNavigate();
   const addItem = useCartStore(s => s.addItem);
   const { settings } = useOutletContext<{ settings?: StorefrontSettings }>();
   const hidePrices = Boolean(settings?.hidePrices);
@@ -184,9 +185,9 @@ export default function OnlineProductDetailPage() {
 
   return (
     <div className={styles.page}>
-      <Link to={`${prefix}/`} className={styles.backLink}>
+      <button type="button" onClick={() => navigate(-1)} className={styles.backLink}>
         <ChevronLeft size={18} /> Volver al catálogo
-      </Link>
+      </button>
 
       <div className={styles.layout}>
         <div className={styles.gallery}>

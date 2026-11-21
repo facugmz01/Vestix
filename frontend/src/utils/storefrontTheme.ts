@@ -1,4 +1,5 @@
-export type StorefrontTheme = 'classic' | 'minimal' | 'streetwear' | 'catalog' | 'app_like';
+/** The public storefront has one supported visual system. */
+export type StorefrontTheme = 'editorial';
 
 export function hexToRgb(hex: string): string {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -8,121 +9,109 @@ export function hexToRgb(hex: string): string {
 }
 
 /** Injects storefront tokens and brand overrides based on the active theme. */
-export function buildStorefrontThemeCss(primaryColor: string, theme: StorefrontTheme = 'classic'): string {
+export function buildStorefrontThemeCss(primaryColor: string, _theme: StorefrontTheme = 'editorial'): string {
   const rgb = hexToRgb(primaryColor);
 
-  let themeOverrides = '';
-
-  if (theme === 'minimal') {
-    themeOverrides = `
+  const themeOverrides = `
       :root, html.dark {
-        --surface-0: #FFFFFF;
-        --surface-1: #FAFAFB;
-        --surface-2: #F4F4F6;
-        --bg-base: #FCFCFD;
-        --bg-surface: #FFFFFF;
-        --text-primary: #18181B;
-        --text-secondary: #52525B;
-        --text-muted: #71717A;
-        --border: #F1F1F4;
-        --border-strong: #E4E4E7;
-        --radius: 4px;
-        --radius-lg: 6px;
+        --surface-0: #fbf8f2;
+        --surface-1: #f1ebe2;
+        --surface-2: #e7ddd1;
+        --bg-base: #f6f2eb;
+        --bg-surface: #fbf8f2;
+        --bg-surface-hover: #eee5da;
+        --bg-elevated: #fffdf9;
+        --text-primary: #171512;
+        --text-secondary: #534b42;
+        --text-muted: #746b62;
+        --text-inverted: #fbf8f2;
+        --border: #d8cfc4;
+        --border-strong: #b9ada0;
+        --radius: 0px;
+        --radius-lg: 0px;
+        --sf-paper: #f6f2eb;
+        --sf-ink: #171512;
+        --sf-muted: #746b62;
+        --sf-coral: #dc684b;
+        --sf-surface: #fbf8f2;
+        --sf-focus: #dc684b;
       }
-      .storefront-theme-minimal .theme-card-img {
-        aspect-ratio: 3 / 4 !important;
-        border-radius: 4px;
+      .storefront-theme-editorial {
+        background: var(--sf-paper) !important;
+        color: var(--sf-ink) !important;
       }
-      .storefront-theme-minimal .theme-product-card {
-        border: none !important;
+      .storefront-theme-editorial :where(button, a, input, select, textarea):focus-visible {
+        outline: 3px solid rgba(220, 104, 75, .42);
+        outline-offset: 3px;
+      }
+      .storefront-theme-editorial .storefront-input,
+      .storefront-theme-editorial input,
+      .storefront-theme-editorial select,
+      .storefront-theme-editorial textarea {
+        border-radius: 0 !important;
+        border-color: var(--border) !important;
+        background: var(--surface-0) !important;
+        color: var(--text-primary) !important;
+      }
+      .storefront-theme-editorial .storefront-btn {
+        min-height: 44px;
+        border-radius: 0 !important;
+        background: var(--sf-ink) !important;
+        border-color: var(--sf-ink) !important;
+        color: var(--text-inverted) !important;
         box-shadow: none !important;
+      }
+      .storefront-theme-editorial .storefront-btn:hover:not(:disabled) {
+        background: var(--sf-coral) !important;
+        border-color: var(--sf-coral) !important;
+      }
+      .storefront-theme-editorial .storefront-btn-secondary {
         background: transparent !important;
+        color: var(--sf-ink) !important;
+        border-color: var(--border-strong) !important;
       }
-      .storefront-theme-minimal .theme-product-card:hover {
-        transform: translateY(-2px);
+      .storefront-theme-editorial .storefront-checkout-container {
+        max-width: 1320px;
+        margin-inline: auto;
       }
-    `;
-  } else if (theme === 'streetwear') {
-    themeOverrides = `
-      :root, html.dark {
-        --surface-0: #09090B;
-        --surface-1: #18181B;
-        --surface-2: #27272A;
-        --bg-base: #000000;
-        --bg-surface: #09090B;
-        --bg-surface-hover: #18181B;
-        --text-primary: #FFFFFF;
-        --text-secondary: #A1A1AA;
-        --text-muted: #71717A;
-        --text-inverted: #000000;
-        --border: #27272A;
-        --border-strong: #3F3F46;
-        --radius: 2px;
-        --radius-lg: 4px;
+      .storefront-theme-editorial .storefront-card {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        border-color: var(--border) !important;
+        background: var(--surface-0) !important;
       }
-      .storefront-theme-streetwear {
-        background: #000000 !important;
-        color: #FFFFFF !important;
+      .storefront-theme-editorial .storefront-page-title,
+      .storefront-theme-editorial .storefront-page h1,
+      .storefront-theme-editorial .storefront-page h2 {
+        letter-spacing: -.04em;
       }
-      .storefront-theme-streetwear .theme-product-card {
-        background: #121215 !important;
-        border: 1px solid #27272A !important;
-        border-radius: 4px !important;
+      @media (prefers-reduced-motion: reduce) {
+        .storefront-theme-editorial *,
+        .storefront-theme-editorial *::before,
+        .storefront-theme-editorial *::after {
+          animation-duration: .01ms !important;
+          animation-iteration-count: 1 !important;
+          scroll-behavior: auto !important;
+          transition-duration: .01ms !important;
+        }
       }
-      .storefront-theme-streetwear .theme-card-img {
-        aspect-ratio: 4 / 5 !important;
-      }
-    `;
-  } else if (theme === 'catalog') {
-    themeOverrides = `
-      :root, html.dark {
-        --surface-0: #FFFFFF;
-        --surface-1: #F8FAFC;
-        --surface-2: #F1F5F9;
-        --bg-base: #F8FAFC;
-        --bg-surface: #FFFFFF;
-        --border: #E2E8F0;
-        --border-strong: #CBD5E1;
-        --radius: 8px;
-      }
-      .storefront-theme-catalog .theme-product-card {
-        border: 1px solid #E2E8F0 !important;
-        border-radius: 8px !important;
-        padding: 8px;
-        background: #FFFFFF !important;
-      }
-      .storefront-theme-catalog .theme-card-img {
-        aspect-ratio: 1 / 1 !important;
-        border-radius: 6px;
+      html.dark .storefront-theme-editorial {
+        --surface-0: #211f1c;
+        --surface-1: #2a2723;
+        --surface-2: #38322c;
+        --bg-base: #181715;
+        --bg-surface: #211f1c;
+        --text-primary: #fbf8f2;
+        --text-secondary: #d8cfc4;
+        --text-muted: #b9ada0;
+        --text-inverted: #171512;
+        --border: #51483f;
+        --border-strong: #746b62;
+        --sf-paper: #181715;
+        --sf-ink: #fbf8f2;
+        --sf-surface: #211f1c;
       }
     `;
-  } else if (theme === 'app_like') {
-    themeOverrides = `
-      :root, html.dark {
-        --surface-0: #FFFFFF;
-        --surface-1: #F8FAFC;
-        --surface-2: #F1F5F9;
-        --bg-base: #F8FAFC;
-        --bg-surface: #FFFFFF;
-        --border: #F1F5F9;
-        --border-strong: #E2E8F0;
-        --radius: 20px;
-        --radius-lg: 24px;
-      }
-      .storefront-theme-app_like {
-        padding-bottom: 72px;
-      }
-      .storefront-theme-app_like .theme-product-card {
-        border-radius: 20px !important;
-        border: 1px solid #F1F5F9 !important;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.03) !important;
-      }
-      .storefront-theme-app_like .theme-card-img {
-        aspect-ratio: 4 / 5 !important;
-        border-radius: 16px;
-      }
-    `;
-  }
 
   return `
     :root, html.dark {

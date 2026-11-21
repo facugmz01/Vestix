@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
-import { Search, PackageX, ChevronDown, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { PackageX, ChevronDown, Filter, ChevronLeft, ChevronRight, X, ArrowUpRight } from 'lucide-react';
 import clsx from 'clsx';
 import { storefrontApi, StorefrontSettings } from '@/api/storefront.api';
 import { queryKeys } from '@/api/queryKeys';
@@ -11,7 +11,8 @@ import { apiClient } from '@/api/client';
 import { StorefrontSEO } from '@/features/storefront/components/StorefrontSEO';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { useDebounce } from '@/hooks/useDebounce';
-import { ThemeProductCard, ThemeStoriesBar } from '@/components/storefront';
+import { normalizeImageUrl } from '@/utils/imageUrl';
+import { ProgressiveProductImage, ThemeProductCard } from '@/components/storefront';
 import styles from './OnlineCatalogPage.module.css';
 
 interface Banner {
@@ -24,15 +25,24 @@ interface Banner {
 
 function BannerCarousel({ banners }: { banners: Banner[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
-    if (isHovered) return;
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReduceMotion(media.matches);
+    update();
+    media.addEventListener?.('change', update);
+    return () => media.removeEventListener?.('change', update);
+  }, []);
+
+  useEffect(() => {
+    if (isPaused || reduceMotion) return;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % banners.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [isHovered, banners.length]);
+  }, [isPaused, reduceMotion, banners.length]);
 
   const handleNext = () => setCurrentIndex((prev) => (prev + 1) % banners.length);
   const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
@@ -43,8 +53,11 @@ function BannerCarousel({ banners }: { banners: Banner[] }) {
   return (
     <div 
       className={styles.carousel}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+      aria-roledescription="carrusel"
     >
       {banners.map((banner, index) => {
         const isActive = index === currentIndex;
@@ -91,6 +104,57 @@ function BannerCarousel({ banners }: { banners: Banner[] }) {
         </>
       )}
     </div>
+  );
+}
+
+function EditorialHero({
+  storeName,
+  product,
+  prefix,
+}: {
+  storeName: string;
+  product?: { name?: string; images?: string[]; id?: string };
+  prefix: string;
+}) {
+  const image = product?.images?.map(normalizeImageUrl).find(Boolean);
+
+  return (
+    <section className={styles.editorialHero} aria-labelledby="storefront-hero-title">
+      <div className={styles.editorialCopy}>
+        <p className={styles.editorialKicker}>Vestix / colección diaria</p>
+        <h1 id="storefront-hero-title" className={styles.editorialTitle}>
+          Vestite como te sentís.
+        </h1>
+        <p className={styles.editorialText}>
+          Prendas simples, materiales nobles y ese detalle que cambia todo. Explorá la selección de {storeName}.
+        </p>
+        <a className={styles.editorialCta} href="#catalogo">
+          Ver la colección <ArrowUpRight size={17} aria-hidden />
+        </a>
+      </div>
+
+      <div className={styles.editorialVisual}>
+        {image ? (
+          <ProgressiveProductImage
+            src={image}
+            alt={product?.name || 'Prenda destacada'}
+            productName={product?.name}
+            loading="eager"
+            className={styles.editorialImageFrame}
+            imgClassName={styles.editorialImage}
+          />
+        ) : (
+          <div className={styles.editorialPlaceholder} aria-hidden="true">
+            <span>Tu próxima</span>
+            <strong>prenda favorita</strong>
+          </div>
+        )}
+        <Link to={product?.id ? `${prefix}/product/${product.id}` : '#catalogo'} className={styles.editorialStamp}>
+          <span>Descubrí</span>
+          <ArrowUpRight size={18} aria-hidden />
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -218,6 +282,9 @@ export default function OnlineCatalogPage() {
   };
 
   const activeFiltersCount = (categoryId ? 1 : 0) + (brandId ? 1 : 0) + (debouncedSearch ? 1 : 0);
+  const isEditorial = true;
+  const orderedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  const orderedBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
   const renderFilterButton = (
     label: string,
@@ -236,52 +303,13 @@ export default function OnlineCatalogPage() {
   const filtersContent = (
     <div className={styles.filters}>
       <div>
-        <h4 className={styles.filterSectionTitle}>Buscar</h4>
-        <div className={styles.searchWrap}>
-          <input
-            type="search"
-            className={clsx('storefront-input', styles.searchInput)}
-            placeholder="Ej: Remera, Zapatillas, SKU..."
-            value={searchInput}
-            onChange={e => setSearchInput(e.target.value)}
-            aria-label="Buscar productos"
-          />
-          <Search size={16} className={styles.searchIcon} aria-hidden />
-          {searchInput && (
-            <button
-              type="button"
-              onClick={() => setSearchInput('')}
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '4px',
-              }}
-              aria-label="Limpiar búsqueda"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <hr className={styles.divider} />
-
-      <div>
         <h4 className={styles.filterSectionTitle}>Categorías</h4>
         <div className={styles.filterList}>
           {renderFilterButton('Todas las Categorías', categoryId === '', () => {
             setCategoryId('');
             if (isMobile) setShowFiltersMobile(false);
           })}
-          {categories.map(c => renderFilterButton(c.name, categoryId === c.id, () => {
+          {orderedCategories.map(c => renderFilterButton(c.name, categoryId === c.id, () => {
 
             setCategoryId(c.id);
             if (isMobile) setShowFiltersMobile(false);
@@ -299,7 +327,7 @@ export default function OnlineCatalogPage() {
                 setBrandId('');
                 if (isMobile) setShowFiltersMobile(false);
               })}
-              {brands.map(b => renderFilterButton(b.name, brandId === b.id, () => {
+              {orderedBrands.map(b => renderFilterButton(b.name, brandId === b.id, () => {
                 setBrandId(b.id);
                 if (isMobile) setShowFiltersMobile(false);
               }))}
@@ -316,7 +344,7 @@ export default function OnlineCatalogPage() {
     </div>
   );
 
-  const theme = settings?.storefrontTheme || 'classic';
+  const storeName = settings?.storeName || 'Vestix';
 
   return (
     <main className={styles.main}>
@@ -330,44 +358,48 @@ export default function OnlineCatalogPage() {
       )}
 
       {(!settings?.imagesCarousel || settings.imagesCarousel.length === 0) && (
-        <div className={styles.hero}>
-          <div className={styles.heroBadge}>Catálogo Online</div>
-          <h1 className={styles.heroTitle}>Nueva Colección</h1>
-          <p className={styles.heroText}>
-            Descubrí nuestros últimos productos y encontrá tu estilo perfecto comprando directo desde nuestra tienda oficial.
-          </p>
-        </div>
+        <EditorialHero storeName={storeName} product={products[0]} prefix={prefix} />
       )}
+      <div id="catalogo" className={styles.catalogIntro}>
+        <div>
+          <p className={styles.catalogKicker}>La selección</p>
+          <h2 className={styles.catalogTitle}>Piezas para todos los días</h2>
+        </div>
+        <p className={styles.catalogDescription}>Una selección curada para combinar sin esfuerzo.</p>
+      </div>
 
-      {theme === 'app_like' && (
-        <ThemeStoriesBar
-          categories={categories}
-          selectedCategory={categoryId}
-          onSelectCategory={(id) => {
-            setCategoryId(id);
-            setPage(1);
-          }}
-          whatsappNumber={settings?.whatsappNumber || settings?.whatsapp}
-        />
+      {!isMobile && (
+        <section className={styles.editorialFilterBar} aria-label="Explorar catálogo">
+          <div className={styles.editorialFilterHeading}>
+            <Filter size={16} aria-hidden />
+            <span>Explorar por</span>
+            {activeFiltersCount > 0 && <span className={styles.editorialFilterBadge}>{activeFiltersCount}</span>}
+          </div>
+          <label className={styles.editorialSelectLabel}>
+            <span>Categoría</span>
+            <select value={categoryId} onChange={event => { setCategoryId(event.target.value); setPage(1); }}>
+              <option value="">Todas las categorías</option>
+              {orderedCategories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
+            </select>
+          </label>
+          <label className={styles.editorialSelectLabel}>
+            <span>Marca</span>
+            <select value={brandId} onChange={event => { setBrandId(event.target.value); setPage(1); }}>
+              <option value="">Todas las marcas</option>
+              {orderedBrands.map(brand => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+            </select>
+          </label>
+          {activeFiltersCount > 0 && <button type="button" className={styles.editorialClearFilter} onClick={clearFilters}>Limpiar</button>}
+        </section>
       )}
 
       <div className={clsx(styles.layout, isMobile && styles.layoutMobile)}>
-        {!isMobile && (
-          <aside className={styles.sidebar}>
-            <div className={styles.sidebarTitle}>
-              <Filter size={18} color="var(--text-primary)" />
-              <h3>Filtros</h3>
-            </div>
-            {filtersContent}
-          </aside>
-        )}
-
         {isMobile && showFiltersMobile && (
-          <div className={styles.drawerOverlay} onClick={() => setShowFiltersMobile(false)} role="presentation">
-            <div className={styles.drawer} onClick={e => e.stopPropagation()} role="dialog" aria-label="Filtros">
+          <div className={clsx(styles.drawerOverlay, isEditorial && styles.editorialDrawerOverlay)} onClick={() => setShowFiltersMobile(false)} role="presentation">
+            <div className={clsx(styles.drawer, isEditorial && styles.editorialDrawer)} onClick={e => e.stopPropagation()} role="dialog" aria-label="Filtros">
               <div className={styles.drawerHeader}>
                 <h3 className={styles.drawerTitle}><Filter size={18} /> Filtros</h3>
-                <button type="button" onClick={() => setShowFiltersMobile(false)} className={styles.drawerClose} aria-label="Cerrar filtros">✕</button>
+                <button type="button" onClick={() => setShowFiltersMobile(false)} className={styles.drawerClose} aria-label="Cerrar filtros"><X size={16} aria-hidden /></button>
               </div>
               {filtersContent}
             </div>
@@ -460,15 +492,13 @@ export default function OnlineCatalogPage() {
             </div>
           ) : (
             <>
-              <div className={clsx(styles.grid, `theme-grid-${theme}`)}>
+              <div className={styles.grid}>
                 {products.map(p => (
                   <ThemeProductCard
                     key={p.id}
                     product={p}
                     prefix={prefix}
-                    theme={theme}
                     hidePrices={Boolean(settings?.hidePrices)}
-                    isMobile={isMobile}
                     whatsappNumber={settings?.whatsappNumber || settings?.whatsapp}
                     whatsappMessageTemplate={settings?.whatsappMessageTemplate}
                   />

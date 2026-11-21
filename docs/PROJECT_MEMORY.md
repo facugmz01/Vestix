@@ -16,6 +16,7 @@ El código actual, los módulos registrados y `schema.prisma` prevalecen sobre e
 - Redis + BullMQ para trabajos; cron Nest para tareas y outbox. No asumir que todos los procesos asíncronos usan una misma cola.
 - UI: React Router, TanStack Query, Zustand, Axios, CSS Modules y tokens CSS. PWA y catálogo offline Dexie; cola de operaciones persistida con idb-keyval.
 - La PWA usa actualización con confirmación visible: cuando hay un service worker nuevo, `AppUpdateBanner` permite limpiar caches descartables y aplicar la actualización. La acción conserva `erp-offline-queue` para no perder operaciones pendientes.
+- Storefront público: desde 2026-11-21 usa un único sistema visual editorial; los temas legacy (`classic`, `minimal`, `streetwear`, `catalog`, `app_like`) ya no se exponen ni se renderizan. El backend conserva el campo `storefrontTheme` por compatibilidad, pero normaliza la respuesta a `editorial`.
 
 ## Entradas que resuelven la mayoría de las tareas
 

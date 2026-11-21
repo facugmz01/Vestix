@@ -33,7 +33,7 @@ const DEFAULT_DELIVERY_SETTINGS = {
 };
 
 export const DEFAULT_STOREFRONT_SETTINGS = {
-  storefrontTheme: 'classic' as 'classic' | 'minimal' | 'streetwear' | 'catalog' | 'app_like',
+  storefrontTheme: 'editorial' as const,
   enabled: false,
   primaryColor: '#3b82f6',
   fontFamily: 'Inter',
@@ -71,7 +71,7 @@ export const DEFAULT_STOREFRONT_SETTINGS = {
 };
 
 export const storefrontSettingsSchema = z.object({
-  storefrontTheme: z.enum(['classic', 'minimal', 'streetwear', 'catalog', 'app_like']).catch('classic'),
+  storefrontTheme: z.literal('editorial').catch('editorial'),
   enabled: bool(DEFAULT_STOREFRONT_SETTINGS.enabled),
   primaryColor: str(DEFAULT_STOREFRONT_SETTINGS.primaryColor),
   fontFamily: str(DEFAULT_STOREFRONT_SETTINGS.fontFamily),

@@ -90,6 +90,7 @@ export class StorefrontController {
   @Get('settings')
   async getSettings() {
     const storefront = await this.settingsService.getStorefrontSettings();
+    const general = await this.settingsService.getGeneralSettings();
     const pwa = await this.settingsService.getPwaSettings();
 
     // Fetch allowed payment methods details
@@ -103,11 +104,23 @@ export class StorefrontController {
 
     return {
       ...storefront,
-      storefrontTheme: storefront.storefrontTheme || 'classic',
+      storefrontTheme: 'editorial',
       hidePrices: Boolean(storefront.hidePrices),
       whatsappNumber: storefront.whatsappNumber || storefront.whatsapp || '',
       whatsappMessageTemplate:
         storefront.whatsappMessageTemplate || 'Hola, quiero consultar el precio de {product_name} (SKU: {sku})',
+      companyInfo: {
+        companyName: general.companyName || '',
+        legalName: general.legalName || '',
+        taxId: general.taxId || '',
+        address: general.address || '',
+        city: general.city || '',
+        province: general.province || '',
+        country: general.country || '',
+        phone: general.phone || '',
+        email: general.email || '',
+        website: general.website || '',
+      },
       pwa,
       paymentMethods,
     };

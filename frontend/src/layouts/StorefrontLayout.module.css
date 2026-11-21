@@ -283,3 +283,100 @@
   padding-top: 24px;
   font-size: 13px;
 }
+
+/* Editorial store shell. Scoped so the legacy templates stay selectable. */
+:global(.storefront-theme-editorial) .shell { background: var(--sf-paper); color: var(--sf-ink); }
+:global(.storefront-theme-editorial) .header { background: var(--sf-paper); border-bottom: 1px solid var(--border); box-shadow: none; }
+:global(.storefront-theme-editorial) .headerInner { max-width: 1440px; padding: 18px clamp(18px, 4vw, 64px); }
+:global(.storefront-theme-editorial) .logoMark { width: 30px; height: 30px; border-radius: 0; background: var(--sf-ink); color: var(--sf-paper); }
+:global(.storefront-theme-editorial) .logoName { color: var(--sf-ink); font-size: 19px; letter-spacing: -.04em; }
+:global(.storefront-theme-editorial) .navBtn,
+:global(.storefront-theme-editorial) .cartLink { background: transparent; border: 0; border-radius: 0; color: var(--sf-ink); }
+:global(.storefront-theme-editorial) .navBtn:hover,
+:global(.storefront-theme-editorial) .cartLink:hover { background: var(--bg-surface-hover); border-color: transparent; }
+:global(.storefront-theme-editorial) .cartLink { padding: 8px 4px; }
+:global(.storefront-theme-editorial) .main { max-width: none; padding: 0; }
+:global(.storefront-theme-editorial) .footer { background: var(--sf-ink); color: var(--border); text-align: left; padding: 52px clamp(18px, 4vw, 64px) 24px; }
+:global(.storefront-theme-editorial) .footerInner { max-width: 1320px; margin: 0 auto; }
+:global(.storefront-theme-editorial) .footerTop { display: grid; grid-template-columns: minmax(260px, 1.35fr) repeat(2, minmax(210px, 1fr)); gap: 48px; padding-bottom: 42px; }
+:global(.storefront-theme-editorial) .footerEyebrow { margin: 0 0 12px; color: var(--sf-coral); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+:global(.storefront-theme-editorial) .footerTitle { margin: 0 0 14px; color: var(--sf-paper); font-size: 42px; font-weight: 500; letter-spacing: -.05em; }
+:global(.storefront-theme-editorial) .footerText { max-width: 360px; margin: 0; color: var(--border); line-height: 1.55; }
+:global(.storefront-theme-editorial) .footerBusiness,
+:global(.storefront-theme-editorial) .footerContact { display: grid; align-content: start; gap: 10px; color: var(--border); font-size: 14px; line-height: 1.45; }
+:global(.storefront-theme-editorial) .footerBusiness h3,
+:global(.storefront-theme-editorial) .footerContact h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; color: var(--sf-paper); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+:global(.storefront-theme-editorial) .footerBusiness p { display: flex; align-items: flex-start; gap: 8px; margin: 0; }
+:global(.storefront-theme-editorial) .footerContact a { display: flex; align-items: center; gap: 8px; color: var(--border); text-decoration: none; overflow-wrap: anywhere; }
+:global(.storefront-theme-editorial) .footerContact a:hover { color: var(--sf-paper); }
+:global(.storefront-theme-editorial) .footerBusiness svg,
+:global(.storefront-theme-editorial) .footerContact svg { flex: 0 0 auto; color: var(--sf-coral); }
+:global(.storefront-theme-editorial) .footerLabel { color: var(--sf-paper); font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+:global(.storefront-theme-editorial) .footerCopy { border-color: rgba(216, 207, 196, .28); padding-top: 18px; }
+.skipLink { position: absolute; left: -9999px; top: 8px; z-index: 300; padding: 10px 14px; background: var(--sf-ink, #171512); color: var(--text-inverted, #fff); }
+.skipLink:focus { left: 12px; }
+@media (max-width: 767px) {
+  :global(.storefront-theme-editorial) .headerInner { padding: 14px 16px; }
+  :global(.storefront-theme-editorial) .footer { padding: 40px 18px 20px; }
+  :global(.storefront-theme-editorial) .footerTop { grid-template-columns: 1fr; gap: 30px; padding-bottom: 30px; }
+  :global(.storefront-theme-editorial) .footerTitle { font-size: 34px; }
+}
+:global(.storefront-theme-editorial) .searchWrap,
+:global(.storefront-theme-editorial) .mobileSearchRow { display: none !important; }
+:global(.storefront-theme-editorial) .editorialSearchDock {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(680px, calc(100% - 48px));
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface-0);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 12px 28px rgba(23, 21, 18, .14);
+}
+:global(.storefront-theme-editorial) .editorialSearchDock > :first-child { flex: 1; min-width: 0; }
+:global(.storefront-theme-editorial) .editorialSearchDock input {
+  min-height: 44px;
+  border-radius: 0;
+  background: var(--surface-0);
+  border-color: transparent;
+  font-size: 14px;
+}
+:global(.storefront-theme-editorial) .editorialSearchDock [role="listbox"] {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+:global(.storefront-theme-editorial) .editorialSearchDockToggle,
+:global(.storefront-theme-editorial) .editorialSearchCollapsedButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0;
+  background: var(--sf-ink);
+  color: var(--sf-paper);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+:global(.storefront-theme-editorial) .editorialSearchDockToggle { width: 44px; flex: 0 0 44px; }
+:global(.storefront-theme-editorial) .editorialSearchCollapsedButton { flex: 1; justify-content: flex-start; padding: 0 16px; }
+:global(.storefront-theme-editorial) .editorialSearchDockCollapsed { width: min(280px, calc(100% - 48px)); }
+:global(.storefront-theme-editorial) .editorialSearchDockToggle:hover,
+:global(.storefront-theme-editorial) .editorialSearchCollapsedButton:hover { background: var(--sf-coral); }
+:global(.storefront-theme-editorial) .mainEditorial { padding-bottom: 116px; }
+@media (max-width: 767px) {
+  :global(.storefront-theme-editorial) .editorialSearchDock { right: 12px; bottom: 12px; width: calc(100% - 24px); padding: 5px; }
+  :global(.storefront-theme-editorial) .editorialSearchDockCollapsed { width: calc(100% - 24px); }
+  :global(.storefront-theme-editorial) .editorialSearchDock input { min-height: 42px; font-size: 16px; }
+  :global(.storefront-theme-editorial) .editorialSearchDockToggle,
+  :global(.storefront-theme-editorial) .editorialSearchCollapsedButton { min-height: 42px; }
+  :global(.storefront-theme-editorial) .mainEditorial { padding-bottom: 96px; }
+}
