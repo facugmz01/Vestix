@@ -17,6 +17,7 @@ export default function StorefrontLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const navigationType = useNavigationType();
+  const isCatalogRoute = location.pathname === prefix || location.pathname === `${prefix}/`;
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['storefrontSettings', prefix],
@@ -30,6 +31,26 @@ export default function StorefrontLayout() {
   const [searchDockExpanded, setSearchDockExpanded] = useState(window.innerWidth >= 768);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchDockRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const updateKeyboardInset = () => {
+      const keyboardInset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      document.documentElement.style.setProperty('--storefront-keyboard-inset', `${keyboardInset}px`);
+    };
+
+    updateKeyboardInset();
+    viewport.addEventListener('resize', updateKeyboardInset);
+    viewport.addEventListener('scroll', updateKeyboardInset);
+
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardInset);
+      viewport.removeEventListener('scroll', updateKeyboardInset);
+      document.documentElement.style.removeProperty('--storefront-keyboard-inset');
+    };
+  }, []);
 
   const previousLocationRef = useRef(`${location.pathname}${location.search}`);
   const lastScrollPositionRef = useRef(0);
@@ -211,7 +232,7 @@ export default function StorefrontLayout() {
 
       </header>
 
-      {!isStorefrontLogin && (
+      {!isStorefrontLogin && isCatalogRoute && (
         <div ref={searchDockRef} className={clsx(styles.editorialSearchDock, !searchDockExpanded && styles.editorialSearchDockCollapsed)}>
           {searchDockExpanded ? (
             <StorefrontSearchBar
@@ -223,9 +244,15 @@ export default function StorefrontLayout() {
               type="button"
               className={styles.editorialSearchCollapsedButton}
               onClick={() => {
+                const currentScrollY = window.scrollY;
                 setSearchDockExpanded(true);
                 window.requestAnimationFrame(() => {
-                  searchDockRef.current?.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
+                  const input = searchDockRef.current?.querySelector<HTMLInputElement>('input[type="search"]');
+                  input?.focus({ preventScroll: true });
+                  window.scrollTo({ top: currentScrollY, behavior: 'auto' });
+                  window.requestAnimationFrame(() => {
+                    window.scrollTo({ top: currentScrollY, behavior: 'auto' });
+                  });
                 });
               }}
               aria-label="Abrir búsqueda"

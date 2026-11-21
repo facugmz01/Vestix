@@ -373,7 +373,7 @@
 :global(.storefront-theme-editorial) .editorialSearchCollapsedButton:hover { background: var(--sf-coral); }
 :global(.storefront-theme-editorial) .mainEditorial { padding-bottom: 116px; }
 @media (max-width: 767px) {
-  :global(.storefront-theme-editorial) .editorialSearchDock { right: 12px; bottom: 12px; width: calc(100% - 24px); padding: 5px; }
+  :global(.storefront-theme-editorial) .editorialSearchDock { right: 12px; bottom: calc(12px + var(--storefront-keyboard-inset, 0px)); width: calc(100% - 24px); padding: 5px; }
   :global(.storefront-theme-editorial) .editorialSearchDockCollapsed { width: calc(100% - 24px); }
   :global(.storefront-theme-editorial) .editorialSearchDock input { min-height: 42px; font-size: 16px; }
   :global(.storefront-theme-editorial) .editorialSearchDockToggle,
