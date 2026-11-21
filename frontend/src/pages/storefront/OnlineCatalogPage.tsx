@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
@@ -165,11 +165,20 @@ export default function OnlineCatalogPage() {
   const [searchInput, setSearchInput] = useState(urlSearchTerm);
   const debouncedSearch = useDebounce<string>(searchInput.trim(), 350);
 
-  const [categoryId, setCategoryId] = useState('');
-  const [brandId, setBrandId] = useState('');
-  const [sortBy, setSortBy] = useState<'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST'>('NEWEST');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(24);
+  const readPositiveParam = (name: string, fallback: number) => {
+    const value = Number(searchParams.get(name));
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+  };
+
+  const [categoryId, setCategoryId] = useState(() => searchParams.get('category') || '');
+  const [brandId, setBrandId] = useState(() => searchParams.get('brand') || '');
+  const [sortBy, setSortBy] = useState<'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST'>(() => {
+    const value = searchParams.get('sort');
+    return value === 'PRICE_ASC' || value === 'PRICE_DESC' ? value : 'NEWEST';
+  });
+  const [page, setPage] = useState(() => readPositiveParam('page', 1));
+  const [pageSize, setPageSize] = useState(() => readPositiveParam('pageSize', 24));
+  const hasInitializedCatalogState = useRef(false);
   const prefix = storePrefix();
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -193,23 +202,32 @@ export default function OnlineCatalogPage() {
     }
   }, [urlSearchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update URL search parameters without destroying existing params (preserving category, brand, etc.)
+  // Keep the catalog state in the URL so browser/device back restores the exact listing.
   useEffect(() => {
-    const currentParam = searchParams.get('search') || searchParams.get('q') || '';
-    if (debouncedSearch !== currentParam) {
-      const nextParams = new URLSearchParams(searchParams);
-      if (debouncedSearch) {
-        nextParams.set('search', debouncedSearch);
-        nextParams.delete('q');
-      } else {
-        nextParams.delete('search');
-        nextParams.delete('q');
-      }
+    const nextParams = new URLSearchParams(searchParams);
+    const setOrDelete = (name: string, value: string | number) => {
+      if (value) nextParams.set(name, String(value));
+      else nextParams.delete(name);
+    };
+
+    setOrDelete('search', debouncedSearch);
+    nextParams.delete('q');
+    setOrDelete('category', categoryId);
+    setOrDelete('brand', brandId);
+    setOrDelete('sort', sortBy === 'NEWEST' ? '' : sortBy);
+    setOrDelete('page', page === 1 ? '' : page);
+    setOrDelete('pageSize', pageSize === 24 ? '' : pageSize);
+
+    if (nextParams.toString() !== searchParams.toString()) {
       setSearchParams(nextParams, { replace: true });
     }
-  }, [debouncedSearch, searchParams, setSearchParams]);
+  }, [debouncedSearch, categoryId, brandId, sortBy, page, pageSize, searchParams, setSearchParams]);
 
   useEffect(() => {
+    if (!hasInitializedCatalogState.current) {
+      hasInitializedCatalogState.current = true;
+      return;
+    }
     setPage(1);
   }, [debouncedSearch, categoryId, brandId, sortBy, pageSize]);
 
@@ -278,6 +296,11 @@ export default function OnlineCatalogPage() {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('search');
     nextParams.delete('q');
+    nextParams.delete('category');
+    nextParams.delete('brand');
+    nextParams.delete('sort');
+    nextParams.delete('page');
+    nextParams.delete('pageSize');
     setSearchParams(nextParams, { replace: true });
   };
 
