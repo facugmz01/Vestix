@@ -643,7 +643,19 @@ export class ProductsService {
       if (exists) throw new ConflictException('El SKU Base ya está en uso por otro producto');
     }
 
-    const { variants, images, basePrice, costPrice, comboLines, type, isVariable, ...data } = updateProductDto;
+    const {
+      variants,
+      images,
+      basePrice,
+      costPrice,
+      comboLines,
+      type,
+      isVariable,
+      categoryId,
+      brandId,
+      priceListPrices,
+      ...data
+    } = updateProductDto;
     const nextType = type !== undefined ? normalizeProductType({ type, isVariable }) : undefined;
     const effectiveType = nextType ?? product.type;
     const normalizedMetadata = updateProductDto.metadata
@@ -683,20 +695,28 @@ export class ProductsService {
         where: { id },
         data: {
           ...data,
+          ...(categoryId !== undefined ? { category: { connect: { id: categoryId } } } : {}),
+          ...(brandId !== undefined
+            ? { brand: brandId ? { connect: { id: brandId } } : { disconnect: true } }
+            : {}),
           // Cost is immutable and only originates from Purchase Orders.
           // Only permit initial cost setting if current cost is 0 and no PO has set it yet.
           ...(product.costPrice === 0 && costPrice !== undefined ? { costPrice: Number(costPrice) || 0 } : {}),
           ...(nextType !== undefined ? { type: nextType, isVariable: syncIsVariableFlag(nextType) } : {}),
           ...(normalizedMetadata !== undefined ? { metadata: normalizedMetadata } : {}),
           ...(persistedImages !== undefined ? { images: persistedImages as any } : {}),
-          comboLines: effectiveType === 'COMBO' && comboLines?.length ? {
-            create: comboLines.map((cl: any) => ({
-              childVariantId: cl.childVariantId,
-              quantity: Number(cl.quantity) || 1,
-            }))
-          } : undefined
         },
       });
+
+      if (effectiveType === 'COMBO' && comboLines?.length) {
+        await tx.productComboLine.createMany({
+          data: comboLines.map((cl: any) => ({
+            parentProductId: id,
+            childVariantId: cl.childVariantId,
+            quantity: Number(cl.quantity) || 1,
+          })),
+        });
+      }
 
       if (variants && Array.isArray(variants)) {
         const existingVariants = await tx.productVariant.findMany({ where: { productId: id } });
@@ -849,7 +869,7 @@ export class ProductsService {
         });
       }
 
-      if (updateProductDto.priceListPrices !== undefined && Array.isArray(updateProductDto.priceListPrices)) {
+      if (priceListPrices !== undefined && Array.isArray(priceListPrices)) {
         const productVariants = await tx.productVariant.findMany({
           where: { productId: id, isActive: true },
         });
@@ -860,7 +880,7 @@ export class ProductsService {
           );
           const pricesToApply = matchedVariantDto?.priceListPrices?.length
             ? matchedVariantDto.priceListPrices
-            : updateProductDto.priceListPrices || [];
+            : priceListPrices || [];
 
           for (const plp of pricesToApply) {
             if (!plp.priceListId || plp.price == null) continue;
