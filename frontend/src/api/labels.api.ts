@@ -6,6 +6,11 @@ import type {
 } from '@/features/labels/types/label.types';
 
 export const labelsApi = {
+  getCatalog: (search: string, page: number, pageSize = 50, filters?: { categoryId?: string; brandId?: string }) =>
+    get<{ data: LabelCatalogVariant[]; total: number; page: number; pageSize: number }>(
+      '/variants/labels/catalog', { params: { search, page, pageSize, ...filters } },
+    ),
+
   getTemplates: () => get<LabelTemplate[]>('/labels/templates'),
 
   getTemplate: (id: string) => get<LabelTemplate>(`/labels/templates/${id}`),
@@ -59,3 +64,14 @@ export const labelsApi = {
     return data;
   },
 };
+
+export interface LabelCatalogVariant {
+  id: string;
+  sku: string;
+  barcode?: string | null;
+  size?: string | null;
+  color?: string | null;
+  basePrice: number;
+  stock: { available: number };
+  product: { name: string };
+}

@@ -246,6 +246,20 @@ export class ProductsController {
 export class VariantsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Get('labels/catalog')
+  @RequirePermissions({ action: 'read', subject: 'Catalog' })
+  findLabelCatalog(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('brandId') brandId?: string,
+  ) {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safePageSize = Math.min(100, Math.max(1, Number(pageSize) || 50));
+    return this.productsService.findLabelCatalog(search, safePage, safePageSize, categoryId, brandId);
+  }
+
   @Get()
   @RequirePermissions({ action: 'read', subject: 'Catalog' })
   findAll(@Query('search') search?: string) {

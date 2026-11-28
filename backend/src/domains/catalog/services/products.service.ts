@@ -1470,7 +1470,7 @@ export class ProductsService {
         { product: { baseSku: { contains: term, mode: 'insensitive' } } },
       ];
     }
-    return this.prisma.productVariant.findMany({
+    const variants = await this.prisma.productVariant.findMany({
       where,
       include: {
         product: {
@@ -1489,6 +1489,55 @@ export class ProductsService {
       },
       take: 50,
     });
+    const stockLevels = variants.length
+      ? await this.prisma.stockLevel.findMany({ where: { variantId: { in: variants.map(v => v.id) } } })
+      : [];
+    const stockByVariant = new Map<string, number>();
+    for (const stock of stockLevels) {
+      stockByVariant.set(stock.variantId, (stockByVariant.get(stock.variantId) ?? 0) + stock.availableQuantity);
+    }
+    return variants.map(variant => ({ ...variant, stock: { available: stockByVariant.get(variant.id) ?? 0 } }));
+  }
+
+  async findLabelCatalog(search?: string, page = 1, pageSize = 50, categoryId?: string, brandId?: string) {
+    const term = search?.trim();
+    const where: any = { isActive: true, product: { isActive: true } };
+    if (categoryId) where.product.categoryId = categoryId;
+    if (brandId) where.product.brandId = brandId;
+    if (term) {
+      where.OR = [
+        { sku: { contains: term, mode: 'insensitive' } },
+        { barcode: { contains: term, mode: 'insensitive' } },
+        { product: { name: { contains: term, mode: 'insensitive' } } },
+        { product: { baseSku: { contains: term, mode: 'insensitive' } } },
+      ];
+    }
+    const [data, total] = await Promise.all([
+      this.prisma.productVariant.findMany({
+        where,
+        include: { product: { select: { name: true } } },
+        orderBy: [{ product: { name: 'asc' } }, { sku: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.productVariant.count({ where }),
+    ]);
+    const stockLevels = data.length
+      ? await this.prisma.stockLevel.findMany({ where: { variantId: { in: data.map(v => v.id) } } })
+      : [];
+    const stockByVariant = new Map<string, number>();
+    for (const stock of stockLevels) {
+      stockByVariant.set(stock.variantId, (stockByVariant.get(stock.variantId) ?? 0) + stock.availableQuantity);
+    }
+    return {
+      data: data.map(variant => ({
+        ...variant,
+        stock: { available: stockByVariant.get(variant.id) ?? 0 },
+      })),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async bulkUpdatePrices(dto: BulkUpdatePricesDto) {

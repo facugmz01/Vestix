@@ -66,7 +66,7 @@ export class LabelsZplService {
         const value = data.barcode || data.sku;
         if (!value) continue;
         const symbology = element.type === 'QR' ? 'QR' : layout.barcodeSymbology;
-        lines.push(...this.barcodeZpl(x, y, w, h, value, symbology));
+        lines.push(...this.barcodeZpl(x, y, w, h, value, symbology, element.showValue !== false));
       } else if (element.type === 'IMAGE' && element.field === 'logo' && data.logoUrl) {
         // Logo requires downloaded image — placeholder text in ZPL
         lines.push(`^FO${x},${y}^A0N,${Math.max(12, h)},${Math.max(10, w)}^FD[LOGO]^FS`);
@@ -84,6 +84,7 @@ export class LabelsZplService {
     h: number,
     value: string,
     symbology: BarcodeSymbology,
+    showValue = true,
   ): string[] {
     if (symbology === 'NONE' || !value) return [];
 
@@ -96,10 +97,10 @@ export class LabelsZplService {
     const module = Math.max(2, Math.min(4, Math.round(w / 80)));
 
     if (symbology === 'EAN13' && /^\d{13}$/.test(value)) {
-      return [`^FO${x},${y}^BY${module}^BEN,${barH},Y,N,N^FD${value}^FS`];
+      return [`^FO${x},${y}^BY${module}^BEN,${barH},${showValue ? 'Y' : 'N'},N,N^FD${value}^FS`];
     }
 
-    return [`^FO${x},${y}^BY${module}^BCN,${barH},Y,N,N^FD${this.escapeZpl(value)}^FS`];
+    return [`^FO${x},${y}^BY${module}^BCN,${barH},${showValue ? 'Y' : 'N'},N,N^FD${this.escapeZpl(value)}^FS`];
   }
 
   private resolveField(element: LabelElement, data: LabelPrintData): string {

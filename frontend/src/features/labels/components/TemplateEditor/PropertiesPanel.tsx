@@ -145,6 +145,14 @@ export function PropertiesPanel({
         </>
       )}
 
+      {element.type === 'BARCODE' && barcodeSymbology !== 'QR' && barcodeSymbology !== 'NONE' && (
+        <ToggleSwitch
+          label="Mostrar números debajo del código"
+          checked={element.showValue !== false}
+          onChange={(e) => patch({ showValue: e.target.checked })}
+        />
+      )}
+
       <div className={styles.grid2}>
         <Input label="X (mm)" type="number" step="0.5" value={element.x} onChange={(e) => patch({ x: Number(e.target.value) })} />
         <Input label="Y (mm)" type="number" step="0.5" value={element.y} onChange={(e) => patch({ y: Number(e.target.value) })} />

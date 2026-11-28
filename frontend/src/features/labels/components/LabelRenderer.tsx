@@ -41,11 +41,13 @@ function BarcodeElement({
   symbology,
   widthMm,
   heightMm,
+  displayValue,
 }: {
   value: string;
   symbology: BarcodeSymbology;
   widthMm: number;
   heightMm: number;
+  displayValue: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const format = pickFormat(symbology, value);
@@ -57,7 +59,7 @@ function BarcodeElement({
         format: format === 'EAN13' ? 'EAN13' : 'CODE128',
         width: 1.2,
         height: Math.max(20, heightMm * 2),
-        displayValue: true,
+        displayValue,
         fontSize: 10,
         margin: 0,
       });
@@ -66,12 +68,12 @@ function BarcodeElement({
         format: 'CODE128',
         width: 1.2,
         height: Math.max(20, heightMm * 2),
-        displayValue: true,
+        displayValue,
         fontSize: 10,
         margin: 0,
       });
     }
-  }, [value, format, heightMm]);
+  }, [value, format, heightMm, displayValue]);
 
   useLayoutEffect(() => {
     if (!svgRef.current) return;
@@ -153,6 +155,7 @@ export function LabelRenderer({ data, layout, widthMm, heightMm, className }: Pr
                 symbology={symbology}
                 widthMm={elementWidth}
                 heightMm={elementHeight}
+                displayValue={element.showValue !== false}
               />
             </div>
           );

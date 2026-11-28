@@ -28,6 +28,8 @@ export interface LabelElement {
   fontSize?: number;
   fontWeight?: 'normal' | 'bold';
   textAlign?: 'left' | 'center' | 'right';
+  /** Show the encoded value below a 1D barcode. Defaults to true for old templates. */
+  showValue?: boolean;
   visible: boolean;
 }
 

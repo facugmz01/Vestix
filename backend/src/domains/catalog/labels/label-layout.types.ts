@@ -26,6 +26,8 @@ export interface LabelElement {
   fontSize?: number;
   fontWeight?: 'normal' | 'bold';
   textAlign?: 'left' | 'center' | 'right';
+  /** Show the encoded value below a 1D barcode. Defaults to true for old templates. */
+  showValue?: boolean;
   visible: boolean;
 }
 
@@ -164,6 +166,16 @@ export function buildLayoutFromOptions(
 }
 
 export const PRESET_LABEL_TEMPLATES = [
+  {
+    name: 'Detonger P1 40×30 mm',
+    description: 'Rollo térmico para Detonger P1',
+    isDefault: false,
+    isSystem: true,
+    labelWidth: 40,
+    labelHeight: 30,
+    paperType: 'ROLL',
+    layout: buildLayoutFromOptions(40, 30, { barcodeSymbology: 'CODE128' }),
+  },
   {
     name: 'Rollo 38×25 mm',
     description: 'Etiqueta térmica continua estándar para retail',

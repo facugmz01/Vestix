@@ -40,6 +40,9 @@ function DraggableCanvasElement({ element, selected, scale, onSelect }: Draggabl
       ref={setNodeRef}
       className={`${styles.canvasElement} ${selected ? styles.selected : ''} ${!element.visible ? styles.hiddenEl : ''}`}
       style={style}
+      // Select before dnd-kit activates its pointer sensor; otherwise its
+      // pointer handling can cancel the click and leave the properties panel idle.
+      onPointerDownCapture={onSelect}
       onClick={(e) => { e.stopPropagation(); onSelect(); }}
       {...listeners}
       {...attributes}

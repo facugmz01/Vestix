@@ -175,6 +175,7 @@ export class LabelsRenderService {
     symbology: BarcodeSymbology,
     widthMm: number,
     heightMm: number,
+    displayValue = true,
   ): Promise<Buffer | null> {
     if (symbology === 'NONE' || !value) return null;
 
@@ -196,7 +197,7 @@ export class LabelsRenderService {
       text: value,
       scale: 2,
       height: Math.max(6, Math.round(heightMm * 2)),
-      includetext: true,
+      includetext: displayValue,
       textxalign: 'center',
       width: widthPx,
     });
@@ -312,7 +313,13 @@ export class LabelsRenderService {
       } else if (element.type === 'BARCODE' || element.type === 'QR') {
         const value = data.barcode || data.sku;
         const symbology = element.type === 'QR' ? 'QR' : layout.barcodeSymbology;
-        const png = await this.renderBarcodePng(value, symbology, element.width ?? labelWidthMm - 4, element.height ?? 8);
+        const png = await this.renderBarcodePng(
+          value,
+          symbology,
+          element.width ?? labelWidthMm - 4,
+          element.height ?? 8,
+          element.showValue !== false,
+        );
         if (png) {
           doc.image(png, x, y, { width: w, height: h, fit: [w, h] });
         }

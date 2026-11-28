@@ -146,9 +146,11 @@ export function TemplateEditor({ template }: Props) {
         ? labelsApi.updateTemplate(template!.id, payload)
         : labelsApi.createTemplate(payload);
     },
-    onSuccess: () => {
+    onSuccess: (savedTemplate) => {
       toast.success(isEdit ? 'Plantilla guardada' : 'Plantilla creada');
+      queryClient.setQueryData(['labelTemplate', savedTemplate.id], savedTemplate);
       queryClient.invalidateQueries({ queryKey: ['labelTemplates'] });
+      queryClient.invalidateQueries({ queryKey: ['labelTemplate', savedTemplate.id] });
       navigate('/admin/label-templates');
     },
     onError: (err: { message?: string }) => toast.error(err.message || 'Error al guardar'),

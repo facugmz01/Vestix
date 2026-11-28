@@ -13,6 +13,7 @@ interface PaletteItem {
 const PALETTE_ITEMS: PaletteItem[] = [
   { type: 'TEXT', field: 'storeName', label: FIELD_LABELS.storeName, icon: <Type size={14} /> },
   { type: 'TEXT', field: 'productName', label: FIELD_LABELS.productName, icon: <Type size={14} /> },
+  { type: 'TEXT', field: 'sku', label: FIELD_LABELS.sku, icon: <Type size={14} /> },
   { type: 'TEXT', field: 'sizeColor', label: FIELD_LABELS.sizeColor, icon: <Type size={14} /> },
   { type: 'TEXT', field: 'price', label: FIELD_LABELS.price, icon: <Type size={14} /> },
   { type: 'TEXT', field: 'brand', label: FIELD_LABELS.brand, icon: <Type size={14} /> },
